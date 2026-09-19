@@ -17,7 +17,7 @@
 | T8 | (B.3) 符号的双边界 `\|1−ξŜ(p)\| ≍ \|1−ξ\| + \|p\|²` | `Propagator/SymbolBound.lean` | Claude Code #2 | **完成** |
 | T9 | 无穷体积核 + 围道平移 (B.4)(B.5) | `Propagator/Contour.lean` | Claude Code #2 | **完成** |
 | T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | `Propagator/Poisson.lean`、`Propagator/DecayComplex.lean` | Claude Code #2 | **完成** |
-| T11 | dyadic 分解 → (2.53)(2.54) 的一般证明 | 同上 | 空闲 | 排在第 3 节之后 |
+| T11 | dyadic 分解 → (2.53)(2.54) 的一般证明 | — | — | **已由 T33 以闭式路线解决**（不必再走 dyadic） |
 | T12 | 数值回归测试 | `Test/Numeric.lean` | Claude Code | **完成** |
 | T13 | Thm 2.2：由 local law 推 delocalization | `Delocalization.lean` | Claude Code | **完成**（确定性部分） |
 | T15 | §2.1 模型层：S_W、S = S^(B)⊗S_W、E_a、N = WL | `Defs/Model.lean` | Claude Code | **完成** |
@@ -39,7 +39,7 @@
 | T30 | Lemma 3.6 与循环不变性对真正的 `K`（`Kgen`）无条件成立 | `Loop/WardKgen.lean` | Claude Code | **完成** |
 | T31 | Def 3.8/3.9：长内部边 `F_long`、按 π 分层、`K^(π)` 与 `Σ^(π)` | `Loop/Layer.lean`（新建） | Claude Code #2 | **完成** |
 | T32 | Corollary 3.7（由 Lemma 3.6 直接推出） | `Loop/WardKgen.lean`, `Loop/Cyclic.lean` | Claude Code | **完成**（(3.14) 在 bulk `\|E\| ≤ 2−k` 无条件：`cor37_bulk`） |
-| T33 | (2.53)(2.54) 推到复 ξ（原 T11，现已解锁） | `Propagator/DiffComplex.lean`（新建） | **Cowork** | 进行中 |
+| T33 | (2.53)(2.54) 推到复 ξ（原 T11，现已解锁） | `Propagator/DiffComplex.lean` | **Cowork** | **完成**（Lemma 2.14 全部六条现已覆盖整个圆盘） |
 | T34 | Lemma 3.10：对称性与 sum-zero 性质 | `Loop/SumZero.lean`（新建） | **Claude Code #2** | 进行中 |
 | T35 | 储备 B6：Lemma 2.8 的定量部分 (2.40)（`t ≥ c_κ`、`|E| ≤ 2−cκ`、`Im z_t ≍ Im z`） | `Defs/Semicircle.lean` | Claude Code | **完成**（`lemma28_quant`，常数与 κ 无关） |
 

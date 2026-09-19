@@ -503,7 +503,9 @@
 \begin{lemma}[(2.53) for complex $\xi$]\label{lem:Theta-diff-complex}
   \lean{RBM.one_add_rho_sq_mul, RBM.half_le_norm_one_add_rho,
     RBM.norm_one_sub_rho_sq_le_three, RBM.norm_AA_mul_one_sub_rho_le_complex,
-    RBM.ellHat_mul_sqrt_le, RBM.norm_Theta_sub_shift_le_complex}
+    RBM.ellHat_mul_sqrt_le, RBM.norm_Theta_sub_shift_le_complex,
+    RBM.norm_one_sub_rho_le_sqrt, RBM.norm_AA_mul_one_sub_rho_sq_le_complex,
+    RBM.norm_Theta_second_diff_le_complex, RBM.norm_Theta_second_diff_le_inv_dist_complex}
   \leanok\uses{lem:Theta-diff, lem:closed-form, lem:rho}
   \[ \bigl|(\Th_\xi)_{x,y}-(\Th_\xi)_{x,y+1}\bigr| \;\le\;
      \frac{144}{\hat\ell(\xi)\,\|1-\xi\|^{1/2}} \qquad (\|\xi\| < 1). \]
@@ -512,6 +514,13 @@
   $\|1-\rho\|^2 = \|1-\xi\|\,\|1+\rho+\rho^2\|$ with $\|1+\rho+\rho^2\|\le 3$, and
   $\|1+\rho\| \ge 1/2$ --- the root never approaches $-1$ on the disc, since
   $(1+\rho)^2\xi = \rho(3+\xi)$ would force $\xi$ towards $-3$.
+
+  The second difference follows the same route and lands on the paper's form,
+  \[ \bigl|2(\Th_\xi)_{x,y}-(\Th_\xi)_{x,y+1}-(\Th_\xi)_{x,y-1}\bigr|
+     \;\le\; \frac{1728}{\|x-y\|+1} , \]
+  keeping the factor $\|\rho\|^{\|x-y\|-1}$ throughout, as the real case taught us to.
+  \textbf{With this, all six parts of Lemma 2.14 hold on the whole disc $\|\xi\|<1$},
+  and the dyadic decomposition of Appendix B is not needed for them.
 \end{lemma}
 
 \begin{definition}[Loops and cut-and-glue operators, Definitions 2.9--2.10]\label{def:loops}

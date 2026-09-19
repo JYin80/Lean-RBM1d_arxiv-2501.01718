@@ -123,6 +123,14 @@ theorem cutGlueR_fullLoop_last (hμ : μ.length + 1 = a'.length) (hk : 2 ≤ k)
   · rw [List.drop_append_of_le_length (by omega), List.take_append_of_le_length (by simp),
       List.take_of_length_le (by simp)]
 
+/-- The right chain never contains the last label `x`. -/
+theorem cutGlueR_fullLoop_indep (y : α) (hk : 1 ≤ k) (hkl : k < l) (hl : l ≤ a'.length + 1) :
+    (fullLoop μ a' x).cutGlueR k l b = (fullLoop μ a' y).cutGlueR k l b := by
+  simp only [fullLoop, cutGlueR]
+  congr 1
+  rw [List.drop_append_of_le_length (by omega), List.drop_append_of_le_length (by omega),
+    List.take_append_of_le_length (by simp; omega), List.take_append_of_le_length (by simp; omega)]
+
 /-- The right chain of `pmLoop s` at `(1, m)` is `pmLoop s` of the base of the left chain of
 `fullLoop` at `(m, n)` (`cutGlueL_fullLoop_last`). -/
 theorem cutGlueR_pmLoop_one (s : Bool) (hm : 1 < l) :

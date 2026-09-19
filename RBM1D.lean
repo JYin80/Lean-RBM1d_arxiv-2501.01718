@@ -14,6 +14,7 @@ import RBM1D.Loop.Primitive
 import RBM1D.Loop.Unique
 import RBM1D.Loop.Ward
 import RBM1D.Loop.WardInd
+import RBM1D.Loop.WardStep
 import RBM1D.Loop.Tree
 import RBM1D.Loop.TreeRep
 import RBM1D.Propagator.Basic

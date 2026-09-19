@@ -575,4 +575,105 @@ theorem Qlayer_cut (hn : 2 ≤ n) (m : Bool → ℂ) (t : ℝ) (σ : Fin n → B
 
 end MoleculeSum
 
+section Leaves
+
+theorem fin_congr {N : ℕ} {α : Type*} (σ : Fin N → α) {a b : ℕ} (ha : a < N) (hb : b < N)
+    (h : a = b) : σ ⟨a, ha⟩ = σ ⟨b, hb⟩ := by
+  subst h; rfl
+
+/-- A cyclic product over consecutive pairs, written over `range`. -/
+theorem prod_cyc {k : ℕ} (τ : Fin (k + 1) → Bool) (g : Bool → Bool → ℂ) :
+    ∏ v : Fin (k + 1), g (τ v) (τ (v + 1)) =
+      (∏ v ∈ range k, g (τ ⟨min v k, by omega⟩) (τ ⟨min (v + 1) k, by omega⟩)) *
+        g (τ (Fin.last k)) (τ 0) := by
+  rw [Fin.prod_univ_castSucc, Fin.last_add_one]
+  refine congrArg₂ (· * ·) ?_ rfl
+  rw [← Fin.prod_univ_eq_prod_range
+    (fun v => g (τ ⟨min v k, by omega⟩) (τ ⟨min (v + 1) k, by omega⟩)) k]
+  refine prod_congr rfl fun i _ => ?_
+  have hi := i.isLt
+  have h1 : Fin.castSucc i = ⟨min i k, by omega⟩ :=
+    Fin.ext (by rw [Fin.val_castSucc]; exact (min_eq_left hi.le).symm)
+  have h2 : Fin.castSucc i + 1 = ⟨min (i + 1) k, by omega⟩ := by
+    ext
+    rw [Fin.val_add_one_of_lt (Fin.castSucc_lt_last i), Fin.val_castSucc]
+    exact (min_eq_left hi).symm
+  rw [h2, h1]
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- **The boundary edges across the cut.**  Every boundary edge of the `n`-gon is a boundary
+edge of exactly one of the two smaller polygons, and each of them has one more boundary edge,
+the cut edge `J` (read from each side):
+`∏_v g(σ_v, σ_{v+1}) · g(σ_j, σ_i) g(σ_i, σ_j) = ∏_{in} · ∏_{out}`. -/
+theorem prod_leaves_cut (hJd : IsDiag n J.1 J.2) (σ : Fin n → Bool) (g : Bool → Bool → ℂ) :
+    (∏ v : Fin n, g (σ v) (σ (v + 1))) * (g (σ J.2) (σ J.1) * g (σ J.1) (σ J.2)) =
+      (∏ k : Fin (wIn J + 1), g (sigmaIn σ J k) (sigmaIn σ J (k + 1))) *
+        ∏ k : Fin (n - wIn J + 1), g (sigmaOut σ J k) (sigmaOut σ J (k + 1)) := by
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by have := NeZero.pos n; omega⟩
+  obtain ⟨hlt, hne1, hnot⟩ := hJd
+  rw [Fin.lt_def] at hlt
+  have hjn : J.2.val ≤ n' := by have := J.2.isLt; omega
+  have hw : wIn J = J.2.val - J.1.val := rfl
+  have hunc : ∀ v, v ≤ J.1.val → unCol J v = v := fun v hv => unCol_of_le hv
+  have hunc' : ∀ v, J.1.val < v → unCol J v = v + (wIn J - 1) := fun v hv => unCol_of_gt hv
+  -- the extended charges
+  set σ' : ℕ → Bool := fun r => σ ⟨min r n', by omega⟩ with hσ'
+  set G : ℕ → ℂ := fun r => g (σ' r) (σ' (r + 1)) with hG
+  have hJ1 : σ J.1 = σ' J.1.val := fin_congr σ J.1.isLt (by omega) (by omega)
+  have hJ2 : σ J.2 = σ' J.2.val := fin_congr σ J.2.isLt (by omega) (by omega)
+  have horig : ∏ v : Fin (n' + 1), g (σ v) (σ (v + 1)) =
+      (∏ v ∈ range n', G v) * g (σ' n') (σ' 0) := by
+    rw [prod_cyc σ g]
+    refine congrArg₂ (· * ·) rfl (congrArg₂ g ?_ ?_) <;>
+      exact fin_congr σ _ _ (by simp)
+  have hin : ∏ k : Fin (wIn J + 1), g (sigmaIn σ J k) (sigmaIn σ J (k + 1)) =
+      (∏ v ∈ Ico J.1.val J.2.val, G v) * g (σ' J.2.val) (σ' J.1.val) := by
+    rw [prod_cyc (sigmaIn σ J) g, prod_Ico_eq_prod_range]
+    refine congrArg₂ (· * ·) (prod_congr rfl fun v hv => ?_) (congrArg₂ g ?_ ?_)
+    · rw [mem_range] at hv
+      exact congrArg₂ g (fin_congr σ _ _ (by simp; omega)) (fin_congr σ _ _ (by simp; omega))
+    · exact fin_congr σ _ _ (by simp; omega)
+    · exact fin_congr σ _ _ (by simp)
+  have hout : ∏ k : Fin (n' + 1 - wIn J + 1), g (sigmaOut σ J k) (sigmaOut σ J (k + 1)) =
+      (∏ v ∈ range J.1.val, G v) * g (σ' J.1.val) (σ' J.2.val) *
+        (∏ v ∈ Ico J.2.val n', G v) * g (σ' n') (σ' 0) := by
+    rw [prod_cyc (sigmaOut σ J) g]
+    refine congrArg₂ (· * ·) ?_ (congrArg₂ g ?_ ?_)
+    · rw [← prod_range_mul_prod_Ico _ (show J.1.val ≤ n' + 1 - wIn J by omega),
+        prod_eq_prod_Ico_succ_bot (show J.1.val < n' + 1 - wIn J by omega), ← mul_assoc]
+      refine congrArg₂ (· * ·) (congrArg₂ (· * ·) (prod_congr rfl fun v hv => ?_) ?_) ?_
+      · rw [mem_range] at hv
+        refine congrArg₂ g (fin_congr σ _ _ ?_) (fin_congr σ _ _ ?_)
+        · simp only [min_eq_left (show v ≤ n' + 1 - wIn J by omega)]
+          rw [hunc _ (by omega)]; omega
+        · simp only [min_eq_left (show v + 1 ≤ n' + 1 - wIn J by omega)]
+          rw [hunc _ (by omega)]; omega
+      · refine congrArg₂ g (fin_congr σ _ _ ?_) (fin_congr σ _ _ ?_)
+        · simp only [min_eq_left (show J.1.val ≤ n' + 1 - wIn J by omega)]
+          rw [hunc _ le_rfl]; omega
+        · simp only [min_eq_left (show J.1.val + 1 ≤ n' + 1 - wIn J by omega)]
+          rw [hunc' _ (by omega)]; omega
+      · rw [prod_Ico_eq_prod_range, prod_Ico_eq_prod_range,
+          show n' + 1 - wIn J - (J.1.val + 1) = n' - J.2.val by omega]
+        refine prod_congr rfl fun v hv => ?_
+        rw [mem_range] at hv
+        refine congrArg₂ g (fin_congr σ _ _ ?_) (fin_congr σ _ _ ?_)
+        · simp only [min_eq_left (show J.1.val + 1 + v ≤ n' + 1 - wIn J by omega)]
+          rw [hunc' _ (by omega)]; omega
+        · simp only [min_eq_left (show J.1.val + 1 + v + 1 ≤ n' + 1 - wIn J by omega)]
+          rw [hunc' _ (by omega)]; omega
+    · refine fin_congr σ _ _ ?_
+      simp only [Fin.val_last, min_self]
+      rw [hunc' _ (by omega)]; omega
+    · refine fin_congr σ _ _ ?_
+      simp only [Fin.val_zero, Nat.zero_min]
+      rw [hunc _ (Nat.zero_le _)]; omega
+  rw [horig, hin, hout, hJ1, hJ2]
+  rw [← prod_range_mul_prod_Ico G (show J.1.val ≤ n' by omega),
+    ← prod_Ico_consecutive G (show J.1.val ≤ J.2.val by omega) hjn]
+  ring
+
+end Leaves
+
 end RBM

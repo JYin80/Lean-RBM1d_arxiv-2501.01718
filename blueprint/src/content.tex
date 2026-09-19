@@ -1322,6 +1322,18 @@
   (A.16)'s error by positivity of $CEC^\dagger$; a real-number bootstrap closes (A.14)(A.17).
 \end{proof}
 
+\begin{lemma}[Continuity estimate on loops, Lemma 5.1 (\S6 assembly)]\label{lem:5.1}
+  \lean{RBM.IsGLoopProd, RBM.norm_trace_smul_sub_pow_mul_le, RBM.exists_conjTranspose_mul_Eblk, RBM.trace_gram_blockCols_pow, RBM.trace_gram_rpow_le, RBM.sum_norm_gchain_row_sq_le, RBM.wmass_gchain_mul_gchain_le, RBM.wmass_gchainMixed_le, RBM.norm_gloop_symIdx_le_tilde, RBM.loopMax_two_mul_le_tilde, RBM.loopMax_one_le, RBM.StochDom.of_forall_rpow_mul, RBM.StochDom.of_le_add_sqrt_mul, RBM.StochDom.odd_of_even, RBM.StochDom.continuity_recursion, RBM.LoopScaling, RBM.Sample.gmaxEvent, RBM.lemma_5_1, RBM.lemma_5_1'}
+  \leanok\uses{lem:continuity-skeleton, lem:6.1, def:flow-hypotheses}
+  For $c\le t_1\le t_2<1$, if (5.5) holds at $t_1$ and (6.1) is given as a hypothesis, then
+  $\mathbf 1_\Omega\max|L_{t_2,\sigma,a}|\prec(W\ell_1\eta_2)^{-n+1}$ for all $n\ge1$ (and the (5.7) form).
+\end{lemma}
+\begin{proof}\leanok
+  (6.10) via Lemma 6.1 with $\operatorname{tr}A^p=W^p\operatorname{tr}((Y^\dagger YE_b)^p)$ and Ward;
+  (6.11); the recursion (6.13) by strong induction on even lengths, base case (5.6), odd lengths by
+  (6.4), closed by $X\prec A+A^{1/2}X^{1/2}\Rightarrow X\prec A$; $p$ large absorbs $(W\ell\eta)^{1/p}$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

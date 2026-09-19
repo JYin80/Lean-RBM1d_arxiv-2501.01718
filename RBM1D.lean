@@ -40,6 +40,7 @@ import RBM1D.Loop.KBound
 import RBM1D.Loop.ChainBound
 import RBM1D.Loop.ChainExpand
 import RBM1D.Loop.Continuity
+import RBM1D.Loop.ContinuityAssembly
 import RBM1D.Loop.Split
 import RBM1D.Flow.Consequences
 import RBM1D.Flow.Hypotheses

@@ -727,6 +727,116 @@ theorem norm_Kgen_pure_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤
         rw [hlen]
         ring
 
+omit [NeZero W] in
+/-- **Pure `2`-loops summed**: `∑_{a₁a₂} K_{t,(b,b),a} = L W⁻¹ m(b)² (1 - t m(b)²)⁻¹`, of size
+`≤ L W⁻¹ / √k` in the bulk. -/
+theorem norm_totalSum_pure_two {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) (b : Bool) :
+    ‖totalSum L (Kgen L W (mSigma E) t) (List.replicate 2 b)‖
+      ≤ L * ((W : ℝ)⁻¹ * (Real.sqrt k)⁻¹) := by
+  have hm1 := norm_mSigma_le_one hE
+  have hmm : ‖mSigma E b * mSigma E b‖ ≤ 1 := by
+    rw [norm_mul]
+    exact (mul_le_mul (hm1 b) (hm1 b) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+  have hξ : ‖(t : ℂ) * (mSigma E b * mSigma E b)‖ < 1 := by
+    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht0]
+    nlinarith [norm_nonneg (mSigma E b * mSigma E b)]
+  have hgap := gap_mSigma hk0 hk1 hEk ht0 ht1.le b
+  have hδ : 0 < Real.sqrt k := Real.sqrt_pos.2 hk0
+  have e : totalSum L (Kgen L W (mSigma E) t) (List.replicate 2 b)
+      = ∑ x : ZMod L, ∑ y : ZMod L, kTwo L W (mSigma E) t b b x y := by
+    simp only [totalSum, List.length_replicate, allSum]
+    rfl
+  rw [e]
+  simp only [kTwo, ← Finset.mul_sum, sum_Theta_row L hL hξ, Finset.sum_const, Finset.card_univ,
+    ZMod.card, nsmul_eq_mul, norm_mul, Complex.norm_natCast, norm_inv]
+  have h1 : ‖1 - (t : ℂ) * (mSigma E b * mSigma E b)‖⁻¹ ≤ (Real.sqrt k)⁻¹ :=
+    inv_anti₀ hδ hgap
+  calc _ ≤ (W : ℝ)⁻¹ * (1 * 1) * (L * (Real.sqrt k)⁻¹) := by
+        gcongr
+        · exact hm1 b
+        · exact hm1 b
+    _ = _ := by ring
+
+/-- The rate `r = e^{-c/(m-1)}` of the product bound for pure `m`-loops. -/
+noncomputable def pureRate (m : ℕ) (k : ℝ) : ℝ :=
+  Real.exp (-(cor35Rate (Real.sqrt k) / (m - 1 : ℕ)))
+
+/-- The constant of the summed pure-loop bound: it covers `m = 2` and `m ≥ 3` at once. -/
+noncomputable def pureConst (m : ℕ) (k : ℝ) : ℝ :=
+  (Real.sqrt k)⁻¹ + cor35Const m (Real.sqrt k) * (2 / (1 - pureRate m k)) ^ (m - 1)
+
+omit hL hE in
+theorem pureRate_lt_one {m : ℕ} (hm : 2 ≤ m) {k : ℝ} (hk0 : 0 < k) : pureRate m k < 1 := by
+  rw [pureRate, Real.exp_lt_one_iff, neg_lt_zero]
+  have : (0 : ℝ) < (m - 1 : ℕ) := by exact_mod_cast (by omega : 0 < m - 1)
+  have := cZero_pos
+  have := Real.sqrt_pos.2 (Real.sqrt_pos.2 hk0)
+  unfold cor35Rate
+  positivity
+
+omit hL hE in
+theorem cor35Const_nonneg (m : ℕ) {δ : ℝ} (hδ : 0 < δ) : 0 ≤ cor35Const m δ := by
+  have := cTwo52_pos
+  have := cZero_pos
+  unfold cor35Const
+  have h : Real.exp (-(cZero * Real.sqrt δ / (2 * ((m * m : ℕ) : ℝ)))) ≤ 1 := by
+    rw [Real.exp_le_one_iff, neg_nonpos]
+    positivity
+  have : 0 ≤ 2 / (1 - Real.exp (-(cZero * Real.sqrt δ / (2 * ((m * m : ℕ) : ℝ))))) :=
+    div_nonneg zero_le_two (by linarith)
+  positivity
+
+omit hL hE in
+theorem pureConst_nonneg {m : ℕ} (hm : 2 ≤ m) {k : ℝ} (hk0 : 0 < k) : 0 ≤ pureConst m k := by
+  have := pureRate_lt_one hm hk0
+  have := cor35Const_nonneg m (Real.sqrt_pos.2 hk0)
+  have : 0 ≤ 2 / (1 - pureRate m k) := div_nonneg zero_le_two (by linarith)
+  unfold pureConst
+  positivity
+
+/-- **Pure loops summed over all labels, with the `W`-power**:
+`‖∑_a K_{t,(b,…,b),a}‖ ≤ L W^{-(m-1)} C_m(k)` for `m ≥ 2`, `|E| ≤ 2 - k`, `0 ≤ t < 1`. -/
+theorem norm_totalSum_pure_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) (b : Bool) {m : ℕ} (hm : 2 ≤ m) :
+    ‖totalSum L (Kgen L W (mSigma E) t) (List.replicate m b)‖
+      ≤ L * (((W : ℝ)⁻¹) ^ (m - 1) * pureConst m k) := by
+  have hδ : 0 < Real.sqrt k := Real.sqrt_pos.2 hk0
+  have hW0 : 0 ≤ ((W : ℝ)⁻¹) ^ (m - 1) := by positivity
+  have hC35 := cor35Const_nonneg m hδ
+  have hr1 := pureRate_lt_one hm hk0
+  have hq : 0 ≤ (2 / (1 - pureRate m k)) ^ (m - 1) :=
+    pow_nonneg (div_nonneg zero_le_two (by linarith)) _
+  have hL0 : (0 : ℝ) ≤ L := Nat.cast_nonneg _
+  rcases Nat.lt_or_ge m 3 with h2 | h3
+  · obtain rfl : m = 2 := by omega
+    refine (norm_totalSum_pure_two hL W hE hk0 hk1 hEk ht0 ht1 b).trans ?_
+    rw [pow_one, pureConst]
+    gcongr
+    exact le_add_of_nonneg_right (mul_nonneg hC35 hq)
+  · have hlen : (List.replicate m b).length = m := List.length_replicate
+    have hc : 0 < cor35Rate (Real.sqrt k) := by
+      have := cZero_pos
+      have := Real.sqrt_pos.2 hδ
+      unfold cor35Rate
+      positivity
+    have hprod := prod_bound_of_pairwise (Kgen L W (mSigma E) t) (List.replicate m b)
+      (by omega) (mul_nonneg hW0 hC35) hc (fun a ha i j hi hj => by
+        rw [hlen] at ha hi hj
+        rw [mul_assoc]
+        exact norm_Kgen_pure_le hL W hE hk0 hk1 hEk ht0 ht1 b h3 a ha hi hj)
+    have h := norm_totalSum_le_of_prod (Kgen L W (mSigma E) t) (List.replicate m b) (by omega)
+      (mul_nonneg hW0 hC35) (Real.exp_pos _).le (by rw [hlen]; exact hr1) hprod
+    rw [hlen] at h
+    refine h.trans ?_
+    calc _ = L * (((W : ℝ)⁻¹) ^ (m - 1) *
+          (cor35Const m (Real.sqrt k) * (2 / (1 - pureRate m k)) ^ (m - 1))) := by
+          rw [pureRate]; ring
+      _ ≤ _ := by
+          rw [pureConst]
+          gcongr
+          exact le_add_of_nonneg_left (inv_nonneg.2 hδ.le)
+
 end PurePointwise
 
 end RBM

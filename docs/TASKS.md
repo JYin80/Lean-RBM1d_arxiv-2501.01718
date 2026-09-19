@@ -59,7 +59,19 @@ def DetDom (ξ ζ : ℕ → ℝ) : Prop := ∀ τ > 0, ∀ᶠ N in Filter.atTop,
 > 然后按 `CLAUDE.md` 的硬性规则做：不留 sorry、不发明 Mathlib 引理名、
 > 每条主定理跑 `#print axioms`、偏离论文记进 `docs/paper-deltas.md`。
 
-## git 约定
+## 共享同一个工作树
 
-两边都会提交。因为按文件切分，冲突只可能出现在 `docs/*.md` 和 `blueprint/src/content.tex`。
-**推之前先 `git pull --rebase`。**
+两边指向的是**同一个文件夹、同一个 git 仓库、同一个工作树**，不是两份副本。
+所以：工单不需要 push 对方就能看到；也**不需要 `git pull --rebase`**（没有第二份要拉）。
+
+真正的风险因此不是合并冲突，而是三种并发争用：
+
+1. **同时写同一个文件** —— 靠上面的按文件切分避免。共享文档（`docs/*.md`、
+   `blueprint/src/content.tex`、`CLAUDE.md`）改动要小、要立刻提交，不要长时间持有。
+2. **git index.lock 争用** —— 两边同时 `git add`/`commit` 会撞。撞到就等几秒重试；
+   若残留 `.git/index.lock` 且确认没有别的 git 在跑，删掉它即可。
+3. **`build.log` 是共用的** —— `watch.sh` 全量编译，两边的报错都会写进同一个文件。
+   读日志时按文件名过滤自己那部分，别把对方进行中的报错当成自己的。
+
+`watch.sh` 只要开着，任何一边改动都会触发重编，这对双方都有用。
+单文件快速检查用 `lake env lean RBM1D/Propagator/Xxx.lean`，它不抢 lake 的构建锁。

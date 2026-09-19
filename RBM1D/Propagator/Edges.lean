@@ -257,6 +257,106 @@ theorem one_sub_exp_neg_ge {lam : ℝ} (hlam : 0 < lam) :
   rw [div_le_iff₀ (by linarith)]
   nlinarith [hkey]
 
+
+/-- `∑_u e^{-λ dist(u)} ≤ 2(1+λ)/λ` on the cycle: an exponential of decay length `1/λ`
+sums to `O(1/λ)`, uniformly in `L`. -/
+theorem sum_exp_neg_zdist_le {lam : ℝ} (hlam : 0 < lam) :
+    ∑ u : ZMod L, Real.exp (-(lam * (zdist L u : ℝ))) ≤ 2 * ((1 + lam) / lam) := by
+  have hr0 : (0 : ℝ) ≤ Real.exp (-lam) := (Real.exp_pos _).le
+  have hr1 : Real.exp (-lam) < 1 := by
+    rw [Real.exp_lt_one_iff]; linarith
+  have hterm : ∀ u : ZMod L,
+      Real.exp (-(lam * (zdist L u : ℝ))) = Real.exp (-lam) ^ zdist L u := by
+    intro u
+    rw [← Real.exp_nat_mul]
+    congr 1
+    ring
+  simp_rw [hterm]
+  refine (sum_pow_zdist_le L hr0 hr1).trans ?_
+  have h1 : lam / (1 + lam) ≤ 1 - Real.exp (-lam) := one_sub_exp_neg_ge hlam
+  have h2 : 0 < lam / (1 + lam) := by positivity
+  have key : (1 - Real.exp (-lam))⁻¹ ≤ (1 + lam) / lam := by
+    calc (1 - Real.exp (-lam))⁻¹ = 1 / (1 - Real.exp (-lam)) := by rw [inv_eq_one_div]
+      _ ≤ 1 / (lam / (1 + lam)) := one_div_le_one_div_of_le h2 h1
+      _ = (1 + lam) / lam := by rw [one_div_div]
+  linarith
 end Summation
+
+section L1Edge
+
+variable (L : ℕ) [NeZero L]
+
+/-- **The `ℓ¹` bound implied by (2.52)**, for every `‖ξ‖ < 1`:
+`∑_b |(Θ_ξ)_{ab}| ≤ 2C(1/c + 2)/|1 - ξ|`.
+
+Summing the exponential of (2.52) over the cycle costs a factor `ℓ̂`, which cancels the
+`ℓ̂` in the denominator of (2.52) and leaves `1/|1-ξ|`.  For the long edge `ξ = t` this is
+`1/(1-t) ≍ 1/η_t`, the second half of (3.36); for the short edge `|1-ξ|` is bounded
+below, so the same bound is `O(1)`, the first half. -/
+theorem sum_norm_Theta_row_le_complex (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (a : ZMod L) :
+    ∑ b : ZMod L, ‖Theta L ξ a b‖ ≤ 2 * cTwo52 * (1 / cZero + 2) / ‖1 - ξ‖ := by
+  have hell : 1 / 2 ≤ ellHat L ξ := half_le_ellHat L hL hξ
+  have hellpos : 0 < ellHat L ξ := lt_of_lt_of_le (by norm_num) hell
+  have hne : (1 : ℂ) - ξ ≠ 0 := by
+    intro h
+    have : ξ = 1 := by linear_combination -h
+    rw [this, norm_one] at hξ
+    exact absurd hξ (lt_irrefl 1)
+  have hD : 0 < ‖1 - ξ‖ := norm_pos_iff.mpr hne
+  have hC := cTwo52_pos
+  set lam := cZero / ellHat L ξ with hlamdef
+  have hlam : 0 < lam := div_pos cZero_pos hellpos
+  have hpt : ∀ b : ZMod L, ‖Theta L ξ a b‖
+      ≤ cTwo52 / (‖1 - ξ‖ * ellHat L ξ) * Real.exp (-(lam * (zdist L (a - b) : ℝ))) := by
+    intro b
+    have h := norm_Theta_apply_le_complex hL hξ a b
+    have hexparg : -(cZero * (zdist L (a - b) : ℝ) / ellHat L ξ)
+        = -(lam * (zdist L (a - b) : ℝ)) := by
+      rw [hlamdef]; ring
+    rw [hexparg] at h
+    refine h.trans (le_of_eq ?_)
+    field_simp
+  have hcoef : (0 : ℝ) ≤ cTwo52 / (‖1 - ξ‖ * ellHat L ξ) := by positivity
+  calc ∑ b : ZMod L, ‖Theta L ξ a b‖
+      ≤ ∑ b : ZMod L, cTwo52 / (‖1 - ξ‖ * ellHat L ξ)
+          * Real.exp (-(lam * (zdist L (a - b) : ℝ))) :=
+        Finset.sum_le_sum fun b _ => hpt b
+    _ = cTwo52 / (‖1 - ξ‖ * ellHat L ξ)
+          * ∑ b : ZMod L, Real.exp (-(lam * (zdist L (a - b) : ℝ))) := by
+        rw [← Finset.mul_sum]
+    _ = cTwo52 / (‖1 - ξ‖ * ellHat L ξ)
+          * ∑ u : ZMod L, Real.exp (-(lam * (zdist L u : ℝ))) := by
+        congr 1
+        exact Fintype.sum_equiv (Equiv.subLeft a) _ _ fun b => rfl
+    _ ≤ cTwo52 / (‖1 - ξ‖ * ellHat L ξ) * (2 * ((1 + lam) / lam)) :=
+        mul_le_mul_of_nonneg_left (sum_exp_neg_zdist_le L hlam) hcoef
+    _ = 2 * cTwo52 * (1 / cZero + 1 / ellHat L ξ) / ‖1 - ξ‖ := by
+        have hc0 : cZero ≠ 0 := ne_of_gt cZero_pos
+        rw [hlamdef]
+        field_simp
+    _ ≤ 2 * cTwo52 * (1 / cZero + 2) / ‖1 - ξ‖ := by
+        have h1l : 1 / ellHat L ξ ≤ 2 := by
+          rw [div_le_iff₀ hellpos]; linarith
+        gcongr
+
+/-- **(3.36), short edge**: `∑_b |(Θ_{t m²})_{ab}| = O_κ(1)`, uniformly in `t` and `L`. -/
+theorem sum_norm_Theta_short_edge_le (hL : 3 ≤ L) {E k t : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1)
+    (hE : |E| ≤ 2 - k) (ht0 : 0 ≤ t) (ht1 : t < 1) (a : ZMod L) :
+    ∑ b : ZMod L, ‖Theta L ((t : ℂ) * (mE E) ^ 2) a b‖
+      ≤ 2 * cTwo52 * (1 / cZero + 2) / Real.sqrt k := by
+  have hE2 : |E| ≤ 2 := le_trans hE (by linarith)
+  have hξ : ‖(t : ℂ) * (mE E) ^ 2‖ < 1 := by
+    rw [norm_short_edge hE2 ht0]; exact ht1
+  have hk : 0 < Real.sqrt k := Real.sqrt_pos.mpr hk0
+  have hden : Real.sqrt k ≤ ‖1 - (t : ℂ) * (mE E) ^ 2‖ :=
+    sqrt_le_norm_one_sub_short hk0 hk1 hE ht0 ht1.le
+  refine (sum_norm_Theta_row_le_complex L hL hξ a).trans ?_
+  have hC := cTwo52_pos
+  have hnum : (0 : ℝ) ≤ 2 * cTwo52 * (1 / cZero + 2) := by
+    have := cZero_pos
+    positivity
+  gcongr
+
+end L1Edge
 
 end RBM

@@ -408,7 +408,9 @@
 \begin{lemma}[Difference estimates (2.53)--(2.54)]\label{lem:Theta-diff}
   \lean{RBM.kern_succ_sub, RBM.kern_second_diff, RBM.norm_AA_mul_one_sub_rho_le,
     RBM.norm_AA_mul_one_sub_rho_sq_le, RBM.norm_Theta_sub_shift_le,
-    RBM.kern_wrap_second, RBM.norm_Theta_second_diff_le, RBM.norm_Theta_second_diff_diag_le}
+    RBM.kern_wrap_second, RBM.norm_Theta_second_diff_le, RBM.norm_Theta_second_diff_diag_le,
+    RBM.norm_Theta_second_diff_le_pow, RBM.mul_exp_neg_le_exp_neg_one,
+    RBM.norm_Theta_second_diff_le_inv_dist}
   \leanok\uses{lem:Theta-decay, lem:prefactor}
   For real $\xi = t \in (0,1)$,
   \[ \bigl|(\Th_t)_{x,y}-(\Th_t)_{x,y+1}\bigr| \le \frac{8\sqrt3}{\hat\ell(t)\,(1-t)^{1/2}},
@@ -426,6 +428,13 @@
   kernel $\rho^d+\rho^{L-d}$ has a cusp and only one factor $1-\rho$ comes out, giving
   $4\|A(1-\rho)\| = O(1)$ --- consistent with the paper's right-hand side
   $1/(\|x-y\|+1)$, which is $1$ at $x = y$.
+
+  \emph{A gap found by re-reading the paper's statement}: the bound $24/\hat\ell$ carries no
+  decay, and therefore does \emph{not} imply the paper's $1/(\|x-y\|+1)$ once
+  $\|x-y\|\gg\hat\ell$.  Keeping the factor $\rho^{\|x-y\|-1}$ closes it:
+  $\bigl|2\Th_{x,y}-\Th_{x,y+1}-\Th_{x,y-1}\bigr| \le 60/(\|x-y\|+1)$, proved in the regime
+  $\hat\ell = L$ from $\|x-y\|\le L/2$ and in the regime $\hat\ell = (1-t)^{-1/2}$ from
+  $u e^{-u}\le e^{-1}\le 1/2$.
 \end{proof}
 
 \chapter{The primitive equation and $\Kcal$}

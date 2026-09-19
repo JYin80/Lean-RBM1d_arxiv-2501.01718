@@ -1044,10 +1044,28 @@
 \end{proof}
 
 \begin{lemma}[Bound on $\Kcal$, Lemma 3.11]\label{lem:3.11}
-  \uses{lem:3.10, lem:3.11-empty}
-  \emph{The case $\pi=\emptyset$ is Lemma~\ref{lem:3.11-empty}; $\pi\neq\emptyset$ is not yet
-  formalized.}
+  \lean{RBM.treeValW_leaf_smul, RBM.treeValW_long_cut, RBM.innerId, RBM.innerKer, RBM.innerId_eq,
+    RBM.sum_comp_add_const, RBM.sum_norm_oddPart_le, RBM.sum_norm_evenPart_le,
+    RBM.sum_prod_taylor_le_at, RBM.sum_prod_taylor_le_noval, RBM.sum_taylor_single_eq_zero_pt,
+    RBM.prod_taylor_expand, RBM.sum_norm_innerId_alt_le, RBM.sum_norm_innerId_short_le,
+    RBM.sum_norm_innerId_le, RBM.aIn, RBM.aOut, RBM.Kpi_cut, RBM.sum_norm_SB_row,
+    RBM.exists_uniform, RBM.norm_Kpi_le, RBM.norm_Kgen_le}
+  \leanok\uses{lem:3.10, lem:3.11-empty, def:3.8, lem:tree-accept}
+  For $|E|\le2-k$ and $3\le n\le N$ there is $C=C(N,k)$ such that for every layer $\pi$,
+  $|K^{(\pi)}_{t,\sigma,a}|\le C(\eta_t\hat\ell(t))^{-n+1}$ (3.45) and
+  $|K_{t,\sigma,a}|\le C(W\eta_t\hat\ell(t))^{-n+1}$ (3.46), uniformly in $L\ge3$ and $0<t<1$.
 \end{lemma}
+\begin{proof}\leanok\uses{lem:3.11-empty, lem:taylor, lem:long-diff}
+  Induction on $n$; $\pi=\emptyset$ is Lemma~\ref{lem:3.11-empty}.  For $\pi\ne\emptyset$ cut at an
+  innermost long edge $J$: $\Theta_t-1=(t\cdot1)S\Theta_t$ splits every tree into the inside
+  polygon with an identity root leaf (the molecule $A(c_1)$ of (3.75)) and the outside polygon, a
+  genuine tree of the layer $\pi\setminus J$.  Hence
+  $|K^{(\pi)}|\le t\sum_u|A(u)|\cdot\sup_w|K^{(\pi')}(w)|$.  The molecule satisfies
+  $\sum_u|A(u)|=O((\eta_t\hat\ell)^{-N_{in}+2})$ by the same Taylor expansion pinned at the root
+  (the $\ell^1$ sum over the centre falls on a value factor, or on an odd/even piece using
+  $\sum|\nabla\Theta_t|\le3\hat\ell$, $\sum|\Delta\Theta_t|\le6$), and the outside loop is bounded by
+  induction.  (3.46) follows from (3.41) and at most $2^{n^2}$ layers.
+\end{proof}
 
 \chapter{Delocalization from the local law}
 

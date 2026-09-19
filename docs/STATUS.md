@@ -996,4 +996,6 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 **T37 进度（Claude Code）**：`Propagator/LongDiff.lean`（P1：均匀 `|∇Θ_t| ≤ 3/2`、`Σ|∇Θ_t| ≤ 3ℓ̂`、`|ΔΘ_t| ≤ 3`、`Σ|ΔΘ_t| ≤ 6`）；
 `Loop/KBound.lean`：(3.43) `norm_SigmaPi_empty_le`、加权 ℓ¹ `sum_pinned_SigmaPi_le`、离散 Taylor、展开 `Kpi_empty_expand`、
 余项 `sum_prod_taylor_le`、一阶相消 `sum_taylor_single_eq_zero`，**(3.45) 的 π = ∅ 情形 `norm_Kpi_empty_le`**（任意 σ；交替 `norm_Kpi_empty_alt_le`，
-含短边 `norm_Kpi_empty_short_le`）。paper-deltas #22。**下一步**：π ≠ ∅（论文的度 1 分子归纳，`B = tS·K^(π')`）。
+含短边 `norm_Kpi_empty_short_le`）。paper-deltas #22。**π ≠ ∅ 完成**：`treeValW_long_cut`（单棵树在长边处切割，`Θ−1 = (t·1)SΘ`）、`Kpi_cut`（(3.75) 的层版本）、
+`innerId`/`sum_norm_innerId_le`（根叶为恒等的内分子，`Σ_u|A(u)| = O(X^{N−2})`）、**`norm_Kpi_le`**（(3.45) 对所有 π，n ≤ N_max 一致）、
+**`norm_Kgen_le`**（(3.46)：`|K| ≤ C (W η_t ℓ̂)^{−(n−1)}`）。**T37 完成。**

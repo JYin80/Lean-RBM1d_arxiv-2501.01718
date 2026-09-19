@@ -673,4 +673,98 @@ theorem norm_Theta_apply_le_of_real (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 
 
 end Decay52
 
+section Differences
+
+variable {L : ℕ} {ξ : ℂ}
+
+/-! ### (2.53)(2.54): the differences of the closed-form kernel
+
+Writing `L = n + 1 + j`, so that the two exponents of `kern` at `n` are `n` and
+`j + 1`, the differences telescope against the factor `1 - ρ`:
+
+* first difference  → one factor `1 - ρ`, hence `≍ |1-ξ|^{1/2}`;
+* second difference → two factors, hence `≍ |1-ξ|`.
+
+That is the whole content of (2.53) and (2.54): each lattice difference costs
+exactly one power of `1 - ρ ≍ |1-ξ|^{1/2}`, i.e. one inverse decay length. -/
+
+/-- The first difference of the kernel. -/
+theorem kern_succ_sub (n j : ℕ) (hL : L = n + 1 + j) :
+    kern L ξ (n + 1) - kern L ξ n = AA L ξ * (1 - rho ξ) * (rho ξ ^ j - rho ξ ^ n) := by
+  subst hL
+  have e1 : n + 1 + j - (n + 1) = j := by omega
+  have e2 : n + 1 + j - n = j + 1 := by omega
+  unfold kern
+  rw [e1, e2]
+  ring
+
+/-- The second difference of the kernel. -/
+theorem kern_second_diff (m j : ℕ) (hL : L = m + 2 + j) :
+    kern L ξ (m + 2) + kern L ξ m - 2 * kern L ξ (m + 1)
+      = AA L ξ * (1 - rho ξ) ^ 2 * (rho ξ ^ m + rho ξ ^ j) := by
+  subst hL
+  have e1 : m + 2 + j - (m + 2) = j := by omega
+  have e2 : m + 2 + j - m = j + 2 := by omega
+  have e3 : m + 2 + j - (m + 1) = j + 1 := by omega
+  unfold kern
+  rw [e1, e2, e3]
+  ring
+
+/-- **The cost of one lattice difference**: `‖A(1-ρ)‖ ≤ 4√3 / (ℓ̂ · √(1-t))`.
+This is the right-hand side of (2.53). -/
+theorem norm_AA_mul_one_sub_rho_le {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) (hL : 3 ≤ L) :
+    ‖AA L (t : ℂ) * (1 - rho (t : ℂ))‖ ≤
+      4 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t)) := by
+  obtain ⟨r, hrho, hr0, hr1, hlow, hhigh⟩ := rho_real_bounds ht0 ht1
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
+  have hsq : Real.sqrt (1 - t) * Real.sqrt (1 - t) = 1 - t := Real.mul_self_sqrt h1t.le
+  have hell : 0 < ellHat L (t : ℂ) := by
+    rw [ellHat_ofReal L ht1]
+    refine lt_min (by positivity) ?_
+    have : 0 < L := by omega
+    exact_mod_cast this
+  have hA := norm_AA_le_of_real ht0 ht1 hL
+  have hApos : (0 : ℝ) ≤ ‖AA L (t : ℂ)‖ := norm_nonneg _
+  have hrn : ‖1 - rho (t : ℂ)‖ = 1 - r := by
+    rw [hrho, show (1 : ℂ) - (r : ℂ) = ((1 - r : ℝ) : ℂ) by push_cast; ring,
+      Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
+  rw [norm_mul, hrn]
+  have key : ‖AA L (t : ℂ)‖ * (1 - r) ≤
+      (4 / ((1 - t) * ellHat L (t : ℂ))) * (Real.sqrt 3 * Real.sqrt (1 - t)) :=
+    mul_le_mul hA hhigh (by linarith) (by positivity)
+  refine key.trans (le_of_eq ?_)
+  field_simp
+  nlinarith [hsq, Real.sqrt_nonneg 3, hs.le, hell.le]
+
+/-- **The cost of two lattice differences**: `‖A(1-ρ)²‖ ≤ 12 / ℓ̂`.
+The `(1-t)` of the prefactor is cancelled exactly, which is why (2.54) has no
+`|1-ξ|` left in it. -/
+theorem norm_AA_mul_one_sub_rho_sq_le {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) (hL : 3 ≤ L) :
+    ‖AA L (t : ℂ) * (1 - rho (t : ℂ)) ^ 2‖ ≤ 12 / ellHat L (t : ℂ) := by
+  obtain ⟨r, hrho, hr0, hr1, hlow, hhigh⟩ := rho_real_bounds ht0 ht1
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
+  have hsq : Real.sqrt (1 - t) * Real.sqrt (1 - t) = 1 - t := Real.mul_self_sqrt h1t.le
+  have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
+  have hell : 0 < ellHat L (t : ℂ) := by
+    rw [ellHat_ofReal L ht1]
+    refine lt_min (by positivity) ?_
+    have : 0 < L := by omega
+    exact_mod_cast this
+  have hA := norm_AA_le_of_real ht0 ht1 hL
+  have hrn : ‖1 - rho (t : ℂ)‖ = 1 - r := by
+    rw [hrho, show (1 : ℂ) - (r : ℂ) = ((1 - r : ℝ) : ℂ) by push_cast; ring,
+      Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
+  have hsq2 : (1 - r) ^ 2 ≤ 3 * (1 - t) := by nlinarith [hhigh, hs.le, hsq, h3]
+  rw [norm_mul, norm_pow, hrn]
+  have key : ‖AA L (t : ℂ)‖ * (1 - r) ^ 2 ≤
+      (4 / ((1 - t) * ellHat L (t : ℂ))) * (3 * (1 - t)) :=
+    mul_le_mul hA hsq2 (by positivity) (by positivity)
+  refine key.trans (le_of_eq ?_)
+  field_simp
+  ring
+
+end Differences
+
 end RBM

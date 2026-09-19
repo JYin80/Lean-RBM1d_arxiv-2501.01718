@@ -997,4 +997,153 @@ theorem norm_Kpi_empty_alt_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |
 
 end Alternating
 
+section NonAlternating
+
+/-! ### Lemma 3.11 for `π = ∅` with a short boundary edge
+
+If `σ_{v*} = σ_{v*+1}` for some `v*`, the boundary edge at `v*` is short: `|Θ_{t m²}|` decays on
+the scale of the bulk gap, so its `ℓ¹` norm is `O(1)`.  Summing the centre with that edge and
+bounding every other edge by its sup (`≤ C A`) gives `C A^{n-1}` without any expansion. -/
+
+/-- A short edge `Θ_{t m(s)²}` decays on the scale of the bulk gap. -/
+theorem norm_thetaEdge_same_le {L : ℕ} [NeZero L] (hL : 3 ≤ L) {E k : ℝ} (hE : |E| < 2)
+    (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (s : Bool) (x y : ZMod L) :
+    ‖thetaEdge L (mSigma E) t s s x y‖ ≤
+      (2 * cTwo52 / Real.sqrt k + 1) *
+        Real.exp (-(cZero * Real.sqrt (Real.sqrt k) * zdist L (x - y))) := by
+  have hm1 := norm_mSigma_le_one hE
+  let m' : Bool → ℂ := fun b => mSigma E (if b then s else !s)
+  have hm1' : ∀ b, ‖m' b‖ ≤ 1 := fun b => hm1 _
+  have hgap' : Real.sqrt k ≤ ‖1 - (t : ℂ) * (m' true * m' true)‖ := by
+    simp only [m', ite_true]
+    exact gap_mSigma hk0 hk1 hEk ht0 ht1.le s
+  have h := (norm_thetaEdge_le hL hm1' ht0 ht1 (Real.sqrt_pos.2 hk0) hgap' x y).1
+  have e : thetaEdge L (mSigma E) t s s = thetaEdge L m' t true true := by
+    simp only [thetaEdge, m', ite_true]
+  rw [e]
+  exact h
+
+/-- **Lemma 3.11, (3.45), for `π = ∅` and `σ` with a short boundary edge**. -/
+theorem norm_Kpi_empty_short_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k)
+    {n : ℕ} [NeZero n] (hn : 2 ≤ n) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+      ∀ σ : Fin n → Bool, (∃ v, σ v = σ (v + 1)) → ∀ a : Fin n → ZMod L,
+        ‖Kpi L (mSigma E) t σ a ∅‖ ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (n - 1) := by
+  set Bk := 2 * cTwo52 / Real.sqrt k + 1
+  set κ := cZero * Real.sqrt (Real.sqrt k)
+  have hδ : 0 < Real.sqrt k := Real.sqrt_pos.2 hk0
+  have hκ : 0 < κ := mul_pos cZero_pos (Real.sqrt_pos.2 hδ)
+  have hBk : 1 ≤ Bk := by
+    have := cTwo52_pos
+    have : 0 ≤ 2 * cTwo52 / Real.sqrt k := by positivity
+    simp only [Bk]; linarith
+  set S1 := 2 / (1 - Real.exp (-κ))
+  have hS1 : 0 ≤ S1 := (zero_le_one.trans (one_le_two_div hκ))
+  set SW0 := sigWeightConst n k 0
+  have hSW0 : 0 ≤ SW0 := sigWeightConst_nonneg hk0 0
+  set e8 := 8 * Real.exp 1
+  have he2 : 2 ≤ Real.exp 1 := by have := Real.add_one_le_exp (1 : ℝ); linarith
+  refine ⟨SW0 * (Bk * S1) * (Bk * e8) ^ (n - 1), by positivity, ?_⟩
+  intro L _ hL t ht0 ht1 σ ⟨v₀, hv₀⟩ a
+  have hE : |E| < 2 := by linarith
+  have hE2 : |E| ≤ 2 := hE.le
+  set η := etaT E t with hηdef
+  set ℓ := ellHat L (t : ℂ) with hℓdef
+  have hη : 0 < η := etaT_pos hE ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hηℓ0 : 0 < η * ℓ := by positivity
+  set A := e8 * (η * ℓ)⁻¹ with hAdef
+  have hA1 : 1 ≤ A := by
+    have : 1 ≤ (η * ℓ)⁻¹ := one_le_inv₀ hηℓ0 |>.2 hηℓ
+    simp only [A, e8]; nlinarith
+  set θ : Fin n → Matrix (ZMod L) (ZMod L) ℂ := fun v => thetaEdge L (mSigma E) t (σ v) (σ (v + 1))
+  -- every edge is at most `Bk A`
+  have hsup : ∀ v x y, ‖θ v x y‖ ≤ Bk * A := by
+    intro v x y
+    by_cases hv : σ v = σ (v + 1)
+    · have h := norm_thetaEdge_same_le hL hE hk0 hk1 hEk ht0.le ht1 (σ v) x y
+      simp only [θ]; rw [← hv]
+      calc _ ≤ Bk * Real.exp (-(κ * zdist L (x - y))) := h
+        _ ≤ Bk * 1 := by
+            gcongr; rw [Real.exp_le_one_iff, neg_nonpos]; positivity
+        _ ≤ Bk * A := by gcongr
+    · simp only [θ]
+      rw [thetaEdge_of_ne hE2 t hv]
+      have h := norm_Theta_long_edge_le L hL hk0 (by linarith) hEk ht0 ht1 x y
+      rw [← etaT_eq_zt_im, div_eq_mul_inv] at h
+      calc _ ≤ A := h
+        _ = 1 * A := (one_mul A).symm
+        _ ≤ Bk * A := by gcongr
+  -- the short edge is summable
+  have hl1 : ∀ x (s : ZMod L), ∑ c : ZMod L, ‖θ v₀ x (s + c)‖ ≤ Bk * S1 := by
+    intro x s
+    calc ∑ c : ZMod L, ‖θ v₀ x (s + c)‖
+        ≤ ∑ c : ZMod L, Bk * Real.exp (-(κ * zdist L (c - (x - s)))) := by
+          refine sum_le_sum fun c _ => ?_
+          have h := norm_thetaEdge_same_le hL hE hk0 hk1 hEk ht0.le ht1 (σ v₀) x (s + c)
+          simp only [θ]; rw [← hv₀]
+          rw [show x - (s + c) = -(c - (x - s)) by ring, zdist_neg] at h
+          exact h
+      _ = Bk * ∑ c : ZMod L, Real.exp (-(κ * zdist L (c - (x - s)))) := by rw [mul_sum]
+      _ ≤ Bk * S1 := by gcongr; exact sum_exp_zdist_le L hκ _
+  have hm := norm_mul_mSigma_lt_one hE2 ht0.le ht1
+  set g : (Fin n → ZMod L) → ℂ := fun s => SigmaPi L (mSigma E) t σ ∅ s
+  have hgadd : ∀ s c, g (fun v => s v + c) = g s := fun s c =>
+    SigmaPi_add_const (mSigma E) hm hL σ ∅ s c
+  have hSg := sum_pinned_SigmaPi_le hL hE hk0 hk1 hEk ht0.le ht1 σ hn 0
+  simp only [pow_zero, prod_const_one, mul_one] at hSg
+  have hT : (univ.erase v₀).card = n - 1 := by
+    rw [card_erase_of_mem (mem_univ _), card_univ, Fintype.card_fin]
+  rw [Kpi_eq_sum_SigmaPi L, sum_center (M := ℂ)]
+  calc ‖∑ c : ZMod L, ∑ s ∈ pinned L n,
+          SigmaPi L (mSigma E) t σ ∅ (fun v => s v + c) * ∏ v, θ v (a v) (s v + c)‖
+      ≤ ∑ c : ZMod L, ∑ s ∈ pinned L n, ‖g s‖ * ∏ v, ‖θ v (a v) (s v + c)‖ := by
+        refine (norm_sum_le _ _).trans (sum_le_sum fun c _ => ?_)
+        refine (norm_sum_le _ _).trans (le_of_eq (sum_congr rfl fun s _ => ?_))
+        rw [norm_mul, norm_prod, show SigmaPi L (mSigma E) t σ ∅ (fun v => s v + c) = g s from
+          hgadd s c]
+    _ = ∑ s ∈ pinned L n, ‖g s‖ * ∑ c : ZMod L, ∏ v, ‖θ v (a v) (s v + c)‖ := by
+        rw [sum_comm]; simp only [mul_sum]
+    _ ≤ ∑ s ∈ pinned L n, ‖g s‖ * ((Bk * S1) * (Bk * A) ^ (n - 1)) := by
+        refine sum_le_sum fun s _ => mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+        calc ∑ c : ZMod L, ∏ v, ‖θ v (a v) (s v + c)‖
+            = ∑ c : ZMod L, ‖θ v₀ (a v₀) (s v₀ + c)‖ * ∏ v ∈ univ.erase v₀, ‖θ v (a v) (s v + c)‖ := by
+              refine sum_congr rfl fun c _ => ?_
+              rw [mul_prod_erase _ (fun v => ‖θ v (a v) (s v + c)‖) (mem_univ v₀)]
+          _ ≤ (∑ c : ZMod L, ‖θ v₀ (a v₀) (s v₀ + c)‖) * ∏ _v ∈ univ.erase v₀, (Bk * A) :=
+              sum_mul_prod_le _ (fun v c => ‖θ v (a v) (s v + c)‖) _ _ (fun c => norm_nonneg _)
+                (fun v c => norm_nonneg _) fun v _ c => hsup v _ _
+          _ ≤ (Bk * S1) * (Bk * A) ^ (n - 1) := by
+              rw [prod_const, hT]
+              gcongr
+              exact hl1 _ _
+    _ = (∑ s ∈ pinned L n, ‖g s‖) * ((Bk * S1) * (Bk * A) ^ (n - 1)) := by rw [sum_mul]
+    _ ≤ SW0 * ((Bk * S1) * (Bk * A) ^ (n - 1)) := by gcongr
+    _ = SW0 * (Bk * S1) * (Bk * e8) ^ (n - 1) * (η * ℓ)⁻¹ ^ (n - 1) := by
+        simp only [A, mul_pow]; ring
+
+/-- **Lemma 3.11, (3.45), for `π = ∅`**: for `|E| ≤ 2 - k` there is `C = C(n,k)` with
+`|K^(∅)_{t,σ,a}| ≤ C (η_t ℓ̂(t))^{-(n-1)}` for every `σ`, `a`, `0 < t < 1` and `L ≥ 3`. -/
+theorem norm_Kpi_empty_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k)
+    {n : ℕ} [NeZero n] (hn : 3 ≤ n) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+      ∀ (σ : Fin n → Bool) (a : Fin n → ZMod L),
+        ‖Kpi L (mSigma E) t σ a ∅‖ ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (n - 1) := by
+  obtain ⟨C₁, hC₁, h₁⟩ := norm_Kpi_empty_alt_le hk0 hk1 hEk hn
+  obtain ⟨C₂, hC₂, h₂⟩ := norm_Kpi_empty_short_le hk0 hk1 hEk (n := n) (by omega)
+  refine ⟨C₁ + C₂, by positivity, fun L _ hL t ht0 ht1 σ a => ?_⟩
+  have hE : |E| < 2 := by linarith
+  have hX : 0 ≤ (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (n - 1) := by
+    have := etaT_pos hE ht1
+    have := one_le_ellHat L hL ht0 ht1
+    positivity
+  by_cases halt : ∀ v, σ v ≠ σ (v + 1)
+  · exact (h₁ L hL t ht0 ht1 σ halt a).trans (by nlinarith)
+  · push Not at halt
+    exact (h₂ L hL t ht0 ht1 σ halt a).trans (by nlinarith)
+
+end NonAlternating
+
 end RBM

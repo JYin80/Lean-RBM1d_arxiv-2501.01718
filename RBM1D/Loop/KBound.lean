@@ -419,4 +419,55 @@ theorem sum_pinned_SigmaPi_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E|
 
 end Center
 
+section Expand
+
+/-! ### Expanding `K^(∅)` around the first point
+
+`K^(∅)_a = ∑_c ∑_{s₀=0} Σ^(∅)(s) ∏_v f_v(c + s_v)` with `f_v = (Θ_v)_{a_v, ·}`, and each factor
+splits as `f_v(c) + o_v(c, s_v) + e_v(c, s_v)`; multiplying out, `K^(∅)` is a sum over the
+`3ⁿ` choices `τ : Fin n → Fin 3` (`Kpi_empty_expand`). -/
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- The three Taylor pieces: `0 ↦ f(c)`, `1 ↦ o(c,x)`, `2 ↦ e(c,x)`. -/
+noncomputable def taylorTerm (f : ZMod L → ℂ) (j : Fin 3) (c x : ZMod L) : ℂ :=
+  ![f c, oddPart f c x, evenPart f c x] j
+
+omit [NeZero L] [NeZero n] in
+theorem sum_taylorTerm (f : ZMod L → ℂ) (c x : ZMod L) :
+    ∑ j : Fin 3, taylorTerm f j c x = f (c + x) := by
+  rw [Fin.sum_univ_three, apply_add_eq f c x]
+  rfl
+
+/-- A long edge: opposite charges give `ξ = t |m|² = t`. -/
+theorem thetaEdge_of_ne {E : ℝ} (hE : |E| ≤ 2) (t : ℝ) {s s' : Bool} (h : s ≠ s') :
+    thetaEdge L (mSigma E) t s s' = Theta L (t : ℂ) := by
+  rw [thetaEdge, mSigma_mul_of_ne hE h, mul_one]
+
+variable (hL : 3 ≤ L) {E : ℝ} (hE : |E| < 2)
+include hL hE
+
+/-- **The expansion**: `K^(∅)_a = ∑_τ ∑_c ∑_{s₀ = 0} Σ^(∅)(s) ∏_v T_{τ_v}(f_v; c, s_v)`. -/
+theorem Kpi_empty_expand {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : Fin n → Bool)
+    (a : Fin n → ZMod L) :
+    Kpi L (mSigma E) t σ a ∅ =
+      ∑ τ : Fin n → Fin 3, ∑ c : ZMod L, ∑ s ∈ pinned L n,
+        SigmaPi L (mSigma E) t σ ∅ s *
+          ∏ v, taylorTerm (fun y => thetaEdge L (mSigma E) t (σ v) (σ (v + 1)) (a v) y)
+            (τ v) c (s v) := by
+  have hm := norm_mul_mSigma_lt_one (le_of_lt hE) ht0 ht1
+  rw [Kpi_eq_sum_SigmaPi L, sum_center (M := ℂ)]
+  conv_rhs => rw [sum_comm]
+  refine sum_congr rfl fun c _ => ?_
+  conv_rhs => rw [sum_comm]
+  refine sum_congr rfl fun s _ => ?_
+  rw [← mul_sum, SigmaPi_add_const (mSigma E) hm hL σ ∅ s c,
+    ← Fintype.prod_sum (fun v (j : Fin 3) =>
+      taylorTerm (fun y => thetaEdge L (mSigma E) t (σ v) (σ (v + 1)) (a v) y) j c (s v))]
+  congr 1
+  refine prod_congr rfl fun v _ => ?_
+  rw [sum_taylorTerm, add_comm c (s v)]
+
+end Expand
+
 end RBM

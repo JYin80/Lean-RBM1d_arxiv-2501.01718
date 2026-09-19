@@ -343,8 +343,9 @@ noncomputable def treeValG (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool) (a
 theorem treeValW_eq_gval (F : Finset (Fin n × Fin n)) (a : Fin n → ZMod L)
     (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) :
     treeValW L F a M E
-      = gval L a M (fun v => ⟨leafPar F v, leafPar_mem F v⟩) E
-          (fun d => ⟨d.1, mem_nodes_of_mem d.2⟩) (fun d => ⟨nodePar F d, nodePar_mem F d⟩) :=
+      = gval L a M (fun v => (⟨leafPar F v, leafPar_mem F v⟩ : ↥(nodes F))) E
+          (fun d => (⟨d.1, mem_nodes_of_mem d.2⟩ : ↥(nodes F)))
+          (fun d => (⟨nodePar F d, nodePar_mem F d⟩ : ↥(nodes F))) :=
   rfl
 
 /-- The empty family is the star `∑_b ∏_v (M_v)_{a_v b}`. -/

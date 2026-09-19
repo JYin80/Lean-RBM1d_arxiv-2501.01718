@@ -258,8 +258,29 @@
   $(1-\rho)^2 = (1-\xi)(1+\rho+\rho^2)$ and $1 \le 1+\rho+\rho^2 \le 3$.
 \end{proof}
 
+\begin{lemma}[The prefactor of (2.52)]\label{lem:prefactor}
+  \lean{RBM.AA_eq, RBM.pow_mul_one_add_le, RBM.le_one_sub_pow, RBM.ellHat,
+    RBM.ellHat_mul_one_sub_le, RBM.norm_AA_le_of_real}
+  \leanok\uses{lem:closed-form, lem:rho-rate}
+  The constant of the closed form simplifies to
+  \[ A(\xi) \;=\; \frac{1-\rho}{(1-\xi)\,(1-\rho^L)\,(1+\rho)} , \]
+  and for real $\xi = t \in (0,1)$,
+  \[ |A(t)| \;\le\; \frac{4}{(1-t)\,\hat\ell(t)},
+     \qquad \hat\ell(t) = \min\bigl((1-t)^{-1/2}, L\bigr). \]
+\end{lemma}
+\begin{proof}\leanok\uses{lem:closed-form, lem:rho-rate}
+  Substituting $(1-\xi)\cdot 3\rho = \xi(1-\rho)^2$ into
+  $A = 3\rho/[\xi(\rho^L-1)(\rho^2-1)]$ cancels one factor $1-\rho$ against
+  $\rho^2-1$ and converts $1/\xi$ into $1/(1-\xi)$.  For the bound, Bernoulli
+  $1+Lx \le (1+x)^L$ together with $(1-x)(1+x)\le 1$ gives
+  $1-\rho^L \ge L(1-\rho)/(1+L(1-\rho))$, which is $\asymp \min(1, L(1-\rho))$;
+  the two regimes of the $\min$ in $\hat\ell$ are exactly $L(1-\rho)\gtrsim 1$ and
+  $L(1-\rho)\lesssim 1$, and $\sqrt{1-t}\le 1-\rho\le\sqrt 3\sqrt{1-t}$ converts
+  between them.  No exponentials are needed.
+\end{proof}
+
 \begin{lemma}[Lemma 2.14 (4): exponential decay, (2.52)]\label{lem:Theta-decay}
-  \uses{lem:Theta-band, lem:closed-form, lem:rho-rate}
+  \uses{lem:Theta-band, lem:closed-form, lem:rho-rate, lem:prefactor}
   With $\hat\ell(\xi):=\min(|1-\xi|^{-1/2},L)$,
   \[ \bigl|(\Th_\xi)_{xy}\bigr| \;\le\;
      \frac{C\,e^{-c|x-y|/\hat\ell(\xi)}}{|1-\xi|\cdot\hat\ell(\xi)} . \]

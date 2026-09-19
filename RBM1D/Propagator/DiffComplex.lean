@@ -305,6 +305,100 @@ theorem norm_Theta_second_diff_le_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ 
         field_simp
         ring
 
+
+/-- **(2.54) in the paper's form, complex `ξ`**:
+`‖2Θ_{x,y} - Θ_{x,y+1} - Θ_{x,y-1}‖ ≤ 1728/(‖x-y‖+1)` for `x ≠ y`.
+As in the real case the decay factor is what makes this follow; a bound of size `1/ℓ̂`
+alone would not. -/
+theorem norm_Theta_second_diff_le_inv_dist_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L ξ x y - Theta L ξ x (y + 1) - Theta L ξ x (y - 1)‖
+      ≤ 1728 / ((zdist L (x - y) : ℝ) + 1) := by
+  obtain ⟨hlow, hhigh⟩ := rho_complex_bounds hξ0 hξ
+  have hnr : ‖rho ξ‖ < 1 := norm_rho_lt_one hξ0 hξ
+  have hr0 : (0 : ℝ) ≤ ‖rho ξ‖ := norm_nonneg _
+  have hlam : 0 < 1 - ‖rho ξ‖ := by linarith
+  have hxi1 : (1 : ℂ) - ξ ≠ 0 := by
+    intro h
+    have : ξ = 1 := by linear_combination -h
+    rw [this, norm_one] at hξ
+    exact absurd hξ (lt_irrefl 1)
+  have hD : 0 < ‖1 - ξ‖ := norm_pos_iff.mpr hxi1
+  have hs : 0 < Real.sqrt ‖1 - ξ‖ := Real.sqrt_pos.mpr hD
+  have hell : 1 / 2 ≤ ellHat L ξ := half_le_ellHat L hL hξ
+  have hellpos : 0 < ellHat L ξ := by linarith
+  -- `x ≠ y` gives `dist ≥ 1`
+  have hd1 : 1 ≤ zdist L (x - y) := by
+    rcases Nat.eq_zero_or_pos (zdist L (x - y)) with h0 | hpos
+    · exfalso
+      have hval : (x - y).val = 0 ∨ L - (x - y).val = 0 := by
+        rw [zdist] at h0
+        rcases min_cases (x - y).val (L - (x - y).val) with ⟨h, _⟩ | ⟨h, _⟩
+        · exact Or.inl (by omega)
+        · exact Or.inr (by omega)
+      have hlt : (x - y).val < L := ZMod.val_lt _
+      have : (x - y).val = 0 := by omega
+      exact hxy (sub_eq_zero.mp ((ZMod.val_eq_zero _).mp this))
+    · exact hpos
+  have hcast : ((zdist L (x - y) - 1 : ℕ) : ℝ) = (zdist L (x - y) : ℝ) - 1 := by
+    have : (1 : ℕ) ≤ zdist L (x - y) := hd1
+    push_cast [Nat.cast_sub this]
+    ring
+  have hpow1 : ‖rho ξ‖ ^ (zdist L (x - y) - 1) ≤ 1 := pow_le_one₀ hr0 hnr.le
+  have hpow0 : (0 : ℝ) ≤ ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by positivity
+  have hrd : ‖rho ξ‖ ^ (zdist L (x - y) - 1)
+      ≤ Real.exp (-(((zdist L (x - y) : ℝ) - 1) * (1 - ‖rho ξ‖))) := by
+    have hre : ‖rho ξ‖ ≤ Real.exp (-(1 - ‖rho ξ‖)) := by
+      have := Real.add_one_le_exp (-(1 - ‖rho ξ‖)); linarith
+    calc ‖rho ξ‖ ^ (zdist L (x - y) - 1)
+        ≤ Real.exp (-(1 - ‖rho ξ‖)) ^ (zdist L (x - y) - 1) := pow_le_pow_left₀ hr0 hre _
+      _ = Real.exp (((zdist L (x - y) - 1 : ℕ) : ℝ) * -(1 - ‖rho ξ‖)) :=
+          (Real.exp_nat_mul _ _).symm
+      _ = Real.exp (-(((zdist L (x - y) : ℝ) - 1) * (1 - ‖rho ξ‖))) := by rw [hcast]; ring_nf
+  have hkey : ((zdist L (x - y) : ℝ) + 1) * ‖rho ξ‖ ^ (zdist L (x - y) - 1)
+      ≤ 6 * ellHat L ξ := by
+    rcases le_total (1 / Real.sqrt ‖1 - ξ‖) ((L : ℝ)) with hcase | hcase
+    · -- `ℓ̂ = ‖1-ξ‖^{-1/2}`; the exponential carries the estimate
+      have hellval : ellHat L ξ = 1 / Real.sqrt ‖1 - ξ‖ := by rw [ellHat, min_eq_left hcase]
+      have hprod : ellHat L ξ * Real.sqrt ‖1 - ξ‖ = 1 := by
+        rw [hellval]; field_simp
+      have hsplit : Real.sqrt ‖1 - ξ‖ = Real.sqrt (‖1 - ξ‖ / 8) * Real.sqrt 8 := by
+        rw [← Real.sqrt_mul (by positivity)]
+        congr 1
+        field_simp
+      have hs8 : Real.sqrt 8 ≤ 3 := by
+        have h := Real.sqrt_le_sqrt (by norm_num : (8:ℝ) ≤ 9)
+        have h9 : Real.sqrt 9 = 3 := by
+          rw [show (9 : ℝ) = 3 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+        linarith [h, h9.le, h9.ge]
+      have hsle : Real.sqrt ‖1 - ξ‖ ≤ 3 * (1 - ‖rho ξ‖) := by
+        rw [hsplit]
+        nlinarith [hlow, hs8, Real.sqrt_nonneg (‖1 - ξ‖ / 8)]
+      have hinv : 1 ≤ 3 * ellHat L ξ * (1 - ‖rho ξ‖) := by
+        nlinarith [hprod, hsle, hellpos, hs.le]
+      -- `(d-1) e^{-(d-1)λ} ≤ e^{-1}/λ ≤ (3/2) ℓ̂` and `2 e^{-…} ≤ 2 ≤ 4 ℓ̂`
+      have hu0 : (0 : ℝ) ≤ ((zdist L (x - y) : ℝ) - 1) * (1 - ‖rho ξ‖) := by
+        have : (1 : ℝ) ≤ (zdist L (x - y) : ℝ) := by exact_mod_cast hd1
+        nlinarith [hlam]
+      have hue := mul_exp_neg_le_exp_neg_one hu0
+      have he1 := exp_neg_one_le_half
+      have hexp0 : (0 : ℝ) < Real.exp (-(((zdist L (x - y) : ℝ) - 1) * (1 - ‖rho ξ‖))) :=
+        Real.exp_pos _
+      have hexp1 : Real.exp (-(((zdist L (x - y) : ℝ) - 1) * (1 - ‖rho ξ‖))) ≤ 1 := by
+        rw [Real.exp_le_one_iff]
+        linarith
+      nlinarith [hrd, hue, he1, hexp0.le, hexp1, hinv, hellpos, hlam, hpow0]
+    · -- `ℓ̂ = L`; the prefactor alone suffices since `dist ≤ L/2`
+      have hellval : ellHat L ξ = (L : ℝ) := by rw [ellHat, min_eq_right hcase]
+      have hhalf := two_mul_zdist_le L (x - y)
+      have hhalf' : 2 * (zdist L (x - y) : ℝ) ≤ (L : ℝ) := by exact_mod_cast hhalf
+      have hL3 : (3 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL
+      rw [hellval]
+      nlinarith [hpow1, hpow0, hhalf', hL3]
+  have hstep := norm_Theta_second_diff_le_complex L hL hξ0 hξ hxy
+  refine hstep.trans ?_
+  rw [div_le_div_iff₀ hellpos (by positivity)]
+  nlinarith [hkey, hellpos]
 end SecondDiffComplex
 
 end RBM

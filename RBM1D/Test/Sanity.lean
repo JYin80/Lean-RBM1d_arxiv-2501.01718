@@ -96,3 +96,7 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.not_hasDerivAt_starK_two
 #print axioms RBM.kTwo_eq_edge
 #print axioms RBM.gammaFour_eq
+#print axioms RBM.noncrossing_split
+#print axioms RBM.isDiag_split_lt
+#print axioms RBM.treeSum_four
+#print axioms RBM.kTwo_eq_treeSum

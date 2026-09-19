@@ -473,6 +473,27 @@
   $\mathbf 1(a_1=a_2=a_3)$.
 \end{proof}
 
+\begin{definition}[General tree value, Definition 3.3]\label{def:3.3-general}
+  \lean{RBM.polyVal, RBM.treeVal, RBM.treeSum, RBM.diagList, RBM.noncrossing_split,
+    RBM.isDiag_split_lt}
+  \leanok\uses{def:3.3, def:TSP}
+  $\Gamma_F$ is defined by recursion on $F$: for $F=\emptyset$ the star; otherwise the
+  lexicographically first diagonal $(i,j)$ splits the polygon into regions $i,\dots,j$ and
+  $j,\dots,n-1,0,\dots,i$, joined by one internal edge $\Th_{tm_im_j}-1$, and the remaining
+  pairs go to the side containing them (a non-crossing pair lies on one side).  Both sides
+  are smaller since a diagonal is not adjacent.  For $n\le2$ the tree is the single edge.
+\end{definition}
+
+\begin{lemma}[Acceptance at $n=4$; Lemma 3.4 at $n=2$]\label{lem:tree-accept}
+  \lean{RBM.treeSum_four, RBM.kTwo_eq_treeSum}\leanok
+  \uses{def:3.3-general, lem:tree-four, lem:tree-two}
+  $\sum_{F\in\mathcal T_{SP}(4)}\Gamma_F$ is the $n=4$ display, and at $n=2$
+  $m_\sigma W^{-1}\sum_\Gamma\Gamma = K$ of Example 2.15.
+\end{lemma}
+\begin{proof}\leanok\uses{def:3.3-general, lem:tree-four, lem:tree-two}
+  Unfold the recursion on $\emptyset$, $\{(0,2)\}$, $\{(1,3)\}$; the last needs $\Th$ symmetric.
+\end{proof}
+
 \begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
   \uses{def:TSP, def:primitive, lem:Theta-deriv, ex:2.16}
   \emph{Not yet formalized.}  Formalization strategy: take the tree sum as the

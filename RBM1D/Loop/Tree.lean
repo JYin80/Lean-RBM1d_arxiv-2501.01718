@@ -38,6 +38,15 @@ See `docs/paper-deltas.md`.
 * `RBM.starGamma` : the star graph, `∑_b ∏_i (Θ_{t m_i m_{i+1}})_{a_i b}`
 * `RBM.gammaFour`  : the `n = 4` display, with corrected boundary factors
 * `RBM.splitGamma₀₂`, `RBM.splitGamma₁₃` : the two trees with one internal edge
+* `RBM.polyVal`, `RBM.treeVal`, `RBM.treeSum` : the general tree value of Definition 3.3,
+  by recursion on the pairing set, and the sum over `T_{SP}` in (3.5)
+
+## Main results
+
+* `RBM.noncrossing_split`, `RBM.isDiag_split_lt` : a pair not crossing a diagonal lies on one
+  side of it, and both sides are smaller polygons (well-definedness and termination)
+* `RBM.treeSum_four` : **acceptance**, the general definition reduces to `RBM.gammaFour`
+* `RBM.kTwo_eq_treeSum` : Lemma 3.4 at `n = 2`
 -/
 
 namespace RBM
@@ -190,5 +199,216 @@ theorem gammaFour_eq :
   simp only [Fin.prod_univ_four]
 
 end Four
+
+section General
+
+/-!
+### The general tree value (Definition 3.3)
+
+Following the proof of Lemma 3.2, the value of the tree with pairing set `F` is defined by
+recursion on `F` rather than by building the tree.  A polygon is stored as its region charges
+`rs` (region `k` holds the `k`-th polygon edge) and its vertices `vs`, each with a label and a
+boundary matrix; vertex `k` lies between regions `k` and `k + 1` (mod `n`).
+
+* `F = []`: the star, `∑_b ∏_k (M_k)_{a_k b}`.
+* `(i, j) :: F` with `(i, j)` a diagonal: the internal edge between regions `i` and `j`
+  splits the polygon into the left piece (regions `i, …, j`, vertices `i, …, j - 1`) and the
+  right piece (regions `j, …, n - 1, 0, …, i`, vertices `j, …, n - 1, 0, …, i - 1`), each
+  closed up by a new vertex with the summed label `y`.  On the left the new vertex carries
+  `(Θ_{t m_i m_j} - 1)ᵀ` and on the right the identity, which pins the right centre to `y`;
+  together they produce the single internal edge `(Θ_{t m_i m_j} - 1)` between the centres.
+  The remaining pairs go to the piece containing them (`RBM.noncrossing_split`).
+* A head `(i, j)` that is not a diagonal is skipped.
+
+**Termination.**  A diagonal has `j - i ≥ 2` and is not `(0, n - 1)` (`RBM.IsDiag` excludes
+adjacent regions, including the wrap-around pair).  Hence the pieces have `j - i + 1 ≤ n - 1`
+and `n - (j - i) + 1 ≤ n - 1` regions, and `n + |F|` decreases.  This is the entire
+termination argument, and the reason adjacent pairs are not diagonals.
+
+**Choice of pivot.**  The pivot is the head of the list; `RBM.diagList` lists a `Finset` of
+diagonals in lexicographic order, so the value of a `Finset` is well defined without proving
+independence of the pivot.  Independence (needed later, e.g. to expand along another
+diagonal) is not proved here.
+-/
+
+/-- **Non-crossing ⇒ separable.**  A pair `f` that does not cross the diagonal `e = (i, j)`
+lies entirely in the left arc `[i, j]` or entirely in the right arc `[j, n - 1] ∪ [0, i]`.
+This is what makes the split of `F` in `RBM.polyVal` well defined for crossing-free `F`. -/
+theorem noncrossing_split {n : ℕ} {e f : Fin n × Fin n} (h : ¬Crossing e f) :
+    (e.1 ≤ f.1 ∧ f.2 ≤ e.2) ∨ (f.2 ≤ e.1 ∨ e.2 ≤ f.1 ∨ (f.1 ≤ e.1 ∧ e.2 ≤ f.2)) := by
+  simp only [Crossing, not_or, not_and, not_lt] at h
+  obtain ⟨h1, h2⟩ := h
+  simp only [Fin.le_def, Fin.lt_def] at h1 h2 ⊢
+  omega
+
+/-- Both pieces of a split along a diagonal are smaller polygons: `j - i + 1 < n` and
+`n - (j - i) + 1 < n`. -/
+theorem isDiag_split_lt {n : ℕ} {i j : Fin n} (h : IsDiag n i j) :
+    j.val - i.val + 1 < n ∧ n - (j.val - i.val) + 1 < n := by
+  obtain ⟨hij, hadj, hwrap⟩ := h
+  have := j.isLt
+  rw [Fin.lt_def] at hij
+  omega
+
+/-- Re-index a region of the right piece: `r ↦ (r - j) mod n`. -/
+def reindexR (n j : ℕ) (p : ℕ × ℕ) : ℕ × ℕ :=
+  let k := (p.1 + n - j) % n
+  let l := (p.2 + n - j) % n
+  (min k l, max k l)
+
+/-- The pairs that go to the left piece of the split at `(i, j)`, re-indexed. -/
+def leftPairs (i j : ℕ) (F : List (ℕ × ℕ)) : List (ℕ × ℕ) :=
+  (F.filter fun p => i ≤ p.1 ∧ p.2 ≤ j).map fun p => (p.1 - i, p.2 - i)
+
+/-- The pairs that go to the right piece of the split at `(i, j)`, re-indexed. -/
+def rightPairs (n i j : ℕ) (F : List (ℕ × ℕ)) : List (ℕ × ℕ) :=
+  (F.filter fun p => ¬(i ≤ p.1 ∧ p.2 ≤ j)).map (reindexR n j)
+
+theorem length_leftPairs_le (i j : ℕ) (F : List (ℕ × ℕ)) : (leftPairs i j F).length ≤ F.length := by
+  rw [leftPairs, List.length_map]
+  exact List.length_filter_le _ _
+
+theorem length_rightPairs_le (n i j : ℕ) (F : List (ℕ × ℕ)) :
+    (rightPairs n i j F).length ≤ F.length := by
+  rw [rightPairs, List.length_map]
+  exact List.length_filter_le _ _
+
+/-- The value of a polygon with region charges `rs`, labelled vertices with boundary matrices
+`vs`, and pairing list `F`. -/
+noncomputable def polyVal (m : Bool → ℂ) (t : ℝ) :
+    List Bool → List (ZMod L × Matrix (ZMod L) (ZMod L) ℂ) → List (ℕ × ℕ) → ℂ
+  | _, vs, [] => ∑ b : ZMod L, (vs.map fun v => v.2 v.1 b).prod
+  | rs, vs, (i, j) :: F =>
+    if h : i + 2 ≤ j ∧ j < rs.length ∧ ¬(i = 0 ∧ j = rs.length - 1) then
+      ∑ y : ZMod L,
+        polyVal m t ((rs.drop i).take (j - i + 1))
+          ((vs.drop i).take (j - i) ++
+            [(y, (thetaEdge L m t (rs.getD i false) (rs.getD j false) - 1).transpose)])
+          (leftPairs i j F) *
+        polyVal m t (rs.drop j ++ rs.take (i + 1)) (vs.drop j ++ vs.take i ++ [(y, 1)])
+          (rightPairs rs.length i j F)
+    else polyVal m t rs vs F
+termination_by rs _ F => rs.length + F.length
+decreasing_by
+  all_goals simp only [List.length_take, List.length_drop, List.length_append,
+    List.length_cons]
+  · have := length_leftPairs_le i j F
+    omega
+  · have := length_rightPairs_le rs.length i j F
+    omega
+  · omega
+
+/-- The polygon of Definition 3.3: vertex `k` has label `a_k` and boundary matrix
+`Θ_{t m(σ_k) m(σ_{k+1})}`. -/
+noncomputable def bdList (m : Bool → ℂ) (t : ℝ) (σ : List Bool) (a : List (ZMod L)) :
+    List (ZMod L × Matrix (ZMod L) (ZMod L) ℂ) :=
+  (List.range σ.length).map fun k =>
+    (a.getD k 0, thetaEdge L m t (σ.getD k false) (σ.getD ((k + 1) % σ.length) false))
+
+/-- **Definition 3.3**: the value `Γ_a(t, σ)` of the tree with pairing list `F`.  For `n ≤ 2`
+the tree is the single edge `a₀ — a₁` (see `RBM.not_hasDerivAt_starK_two`). -/
+noncomputable def treeVal (m : Bool → ℂ) (t : ℝ) (σ : List Bool) (a : List (ZMod L))
+    (F : List (ℕ × ℕ)) : ℂ :=
+  if σ.length ≤ 2 then
+    thetaEdge L m t (σ.getD 0 false) (σ.getD 1 false) (a.getD 0 0) (a.getD 1 0)
+  else polyVal L m t σ (bdList L m t σ a) F
+
+/-- The diagonals of `F`, in lexicographic order, as pairs of natural numbers. -/
+def diagList {n : ℕ} (F : Finset (Fin n × Fin n)) : List (ℕ × ℕ) :=
+  ((F.image fun p => p.1.val * n + p.2.val).sort (· ≤ ·)).map fun c => (c / n, c % n)
+
+/-- `∑_{Γ ∈ T_{SP}(P_a)} Γ_a(t, σ)`, the sum in (3.5). -/
+noncomputable def treeSum (m : Bool → ℂ) (t : ℝ) (σ : List Bool) (a : List (ZMod L)) : ℂ :=
+  ∑ F ∈ TSP σ.length, treeVal L m t σ a (diagList F)
+
+end General
+
+section Acceptance
+
+variable (m : Bool → ℂ) (t : ℝ) (σ : Fin 4 → Bool) (a : Fin 4 → ZMod L)
+
+theorem bdList_four :
+    bdList L m t [σ 0, σ 1, σ 2, σ 3] [a 0, a 1, a 2, a 3]
+      = [(a 0, bd L m t σ 0), (a 1, bd L m t σ 1), (a 2, bd L m t σ 2), (a 3, bd L m t σ 3)] := by
+  simp only [bdList, List.length_cons, List.length_nil, List.range_succ, List.range_zero,
+    List.nil_append, List.cons_append, List.map_cons, List.map_nil]
+  rfl
+
+theorem treeVal_four_nil :
+    treeVal L m t [σ 0, σ 1, σ 2, σ 3] [a 0, a 1, a 2, a 3] [] = starGamma L m t σ a := by
+  rw [treeVal, ite_eq_right (by simp), bdList_four, polyVal, starGamma]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+    Fin.prod_univ_four, mul_assoc]
+
+theorem treeVal_four_02 :
+    treeVal L m t [σ 0, σ 1, σ 2, σ 3] [a 0, a 1, a 2, a 3] [(0, 2)] = splitGamma₀₂ L m t σ a := by
+  rw [treeVal, ite_eq_right (by simp), bdList_four, polyVal, dite_eq_left (by simp)]
+  simp only [leftPairs, rightPairs, List.filter_nil, List.map_nil, polyVal]
+  simp only [List.drop, List.take, List.getD_cons_zero, List.getD_cons_succ, List.cons_append,
+    List.nil_append, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+    Matrix.one_apply, Matrix.transpose_apply, mul_ite, mul_zero, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+  rw [splitGamma₀₂, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  ring
+
+/-- The `{(1, 3)}` tree.  The display after Figure 6 orients this internal edge from the
+centre of `a₀, a₃` to that of `a₁, a₂`, the recursion the other way; they agree because `Θ`
+is symmetric. -/
+theorem treeVal_four_13 (hL : 3 ≤ L) (h13 : ‖(t : ℂ) * (m (σ 1) * m (σ 3))‖ < 1) :
+    treeVal L m t [σ 0, σ 1, σ 2, σ 3] [a 0, a 1, a 2, a 3] [(1, 3)] = splitGamma₁₃ L m t σ a := by
+  rw [treeVal, ite_eq_right (by simp), bdList_four, polyVal, dite_eq_left (by simp)]
+  simp only [leftPairs, rightPairs, List.filter_nil, List.map_nil, polyVal]
+  simp only [List.drop, List.take, List.getD_cons_zero, List.getD_cons_succ, List.cons_append,
+    List.nil_append, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+    Matrix.one_apply, Matrix.transpose_apply, mul_ite, mul_zero, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+  have hsym : ∀ x y : ZMod L, (thetaEdge L m t (σ 1) (σ 3) - 1) y x
+      = (thetaEdge L m t (σ 1) (σ 3) - 1) x y := by
+    intro x y
+    have h := congrFun (congrFun (Theta_transpose L hL h13) x) y
+    simp only [Matrix.sub_apply, Matrix.one_apply, thetaEdge]
+    rw [← h]
+    simp only [Matrix.transpose_apply, eq_comm (a := y)]
+  rw [splitGamma₁₃]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  rw [hsym]
+  ring
+
+theorem diagList_empty {n : ℕ} : diagList (∅ : Finset (Fin n × Fin n)) = [] := by
+  simp [diagList]
+
+theorem diagList_four_02 : diagList ({(0, 2)} : Finset (Fin 4 × Fin 4)) = [(0, 2)] := by
+  simp [diagList]
+
+theorem diagList_four_13 : diagList ({(1, 3)} : Finset (Fin 4 × Fin 4)) = [(1, 3)] := by
+  simp [diagList]
+
+/-- **Acceptance.**  The general tree sum `∑_{F ∈ T_{SP}(4)} Γ_F` is the `n = 4` display
+(`RBM.gammaFour`, with corrected boundary indices). -/
+theorem treeSum_four (hL : 3 ≤ L) (h13 : ‖(t : ℂ) * (m (σ 1) * m (σ 3))‖ < 1) :
+    treeSum L m t [σ 0, σ 1, σ 2, σ 3] [a 0, a 1, a 2, a 3] = gammaFour L m t σ a := by
+  have hlen : [σ 0, σ 1, σ 2, σ 3].length = 4 := rfl
+  rw [gammaFour_eq, treeSum, hlen, TSP_four, Finset.sum_insert (by decide),
+    Finset.sum_insert (by decide), Finset.sum_singleton, diagList_empty, diagList_four_02,
+    diagList_four_13, treeVal_four_nil, treeVal_four_02, treeVal_four_13 L m t σ a hL h13,
+    add_assoc]
+
+/-- **Lemma 3.4 at `n = 2`.**  `T_{SP}(2) = {∅}` and the general tree sum is the single edge,
+so `m_σ W⁻¹ ∑_Γ Γ_a(t, σ)` is Example 2.15. -/
+theorem kTwo_eq_treeSum (W : ℕ) (σ₁ σ₂ : Bool) (a₁ a₂ : ZMod L) :
+    kTwo L W m t σ₁ σ₂ a₁ a₂ = (m σ₁ * m σ₂) * (W : ℂ)⁻¹ * treeSum L m t [σ₁, σ₂] [a₁, a₂] := by
+  have hTSP : TSP 2 = {∅} := by decide
+  have hlen : [σ₁, σ₂].length = 2 := rfl
+  rw [treeSum, hlen, hTSP, Finset.sum_singleton, treeVal, ite_eq_left (by simp),
+    kTwo_eq_edge]
+  rfl
+
+end Acceptance
 
 end RBM

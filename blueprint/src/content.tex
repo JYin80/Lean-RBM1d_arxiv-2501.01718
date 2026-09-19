@@ -784,6 +784,26 @@
   with $K$.
 \end{proof}
 
+\begin{corollary}[Pure loop $\Kcal$, Corollary 3.5]\label{cor:3.5}
+  \lean{RBM.Cor35.sum_pow_zdist_le, RBM.Cor35.chain, RBM.Cor35.dist_bounds,
+    RBM.Cor35.norm_treeValW_le, RBM.Cor35.norm_Theta_apply_le_of_gap,
+    RBM.Cor35.norm_thetaEdge_le, RBM.Cor35.gap_of_le, RBM.cor35Const, RBM.cor35Rate,
+    RBM.cor35, RBM.cor35_two}\leanok
+  \uses{lem:3.4, lem:Theta-decay-complex}
+  Under the hypotheses of Lemma~\ref{lem:3.4}, if $\sigma=(+,\dots,+)$ and
+  $|1-tm(+)^2|\ge\delta>0$ on $[0,T_0]$, then
+  $|K_{t,\sigma,a}|\le C_{n,\delta}\,e^{-c_\delta\|a_i-a_j\|}$ for all $i,j$ (3.6), with
+  $C_{n,\delta}$, $c_\delta=c_0\sqrt\delta/4$ independent of $L$, $W$, $t$, $a$.
+\end{corollary}
+\begin{proof}\leanok\uses{lem:3.4, lem:Theta-decay-complex}
+  All edges are $\Theta_\xi$ or $\Theta_\xi-1$ with $\xi=tm(+)^2$; by (2.52) and the gap every
+  entry is $\le B e^{-\kappa\|x-y\|}$.  In a tree the distance from any node to the root, and
+  between any two leaves (up to a factor $2$), is at most the total edge length $D$.  Split
+  $e^{-\kappa D}=e^{-\kappa D/2}e^{-\kappa D/2}$: the first factor gives the decay, the second
+  dominates $\prod_\nu e^{-\kappa\|b_\nu-a_n\|/(2n^2)}$, whose label sum is
+  $\bigl(\sum_x e^{-\lambda\|x\|}\bigr)^{\#\text{nodes}}$, uniformly bounded in $L$.
+\end{proof}
+
 \begin{lemma}[Cyclic invariance of $\Kcal$]\label{lem:K-cyclic}
   \lean{RBM.LoopIdx.rot, RBM.primRhs_rot, RBM.primInit_rot, RBM.rot_eq_on_level,
     RBM.isPrimitive_rot, RBM.Kgen_rot}\leanok

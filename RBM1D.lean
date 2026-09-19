@@ -20,6 +20,7 @@ import RBM1D.Loop.WardKgen
 import RBM1D.Loop.Tree
 import RBM1D.Loop.TreeRep
 import RBM1D.Loop.TreeRepGeneral
+import RBM1D.Loop.Cor35
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds

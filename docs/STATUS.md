@@ -845,3 +845,20 @@ Cowork 在 `7472752` 先认领了 T29，Claude Code 的认领脚本随后（`9fc
 `Loop/WardKgen.lean`：借 #2 的 Lemma 3.4（`isPrimitive_Kgen` + `norm_Kgen_two_le`），
 **`RBM.ward_Kgen`**（(3.13)）与 **`RBM.Kgen_rot`**（循环不变）对树表示 `Kgen`（`m = m^{(E)}`, `|E| < 2`）
 在所有 `0 ≤ t < 1` 上成立，不再需要「2-圈有界」这一假设。下一步可做 Cor 3.7 (3.14)（依赖 T28 的 Cor 3.5）。
+
+---
+
+### `RBM1D/Loop/Cor35.lean` — Corollary 3.5（T28，Claude Code #2）
+
+| Lean | 论文 |
+|---|---|
+| `RBM.Cor35.sum_pow_zdist_le` / `sum_exp_zdist_le` | `Σ_u r^{‖u‖} ≤ 2/(1−r)`，对 `L` 一致 |
+| `RBM.Cor35.chain` / `chain'` | 树中任一内部顶点到根的距离 ≤ 内部边总长（沿父链归纳） |
+| `RBM.Cor35.dist_bounds` | 任两叶距离 ≤ 2D；任一顶点到末叶距离 ≤ D（D = 全部边长之和） |
+| `RBM.Cor35.norm_treeValW_le` | 各边 `≤ B e^{−κ‖x−y‖}` 的树值 `≤ B^{n+n²}(2/(1−e^{−κ/(2n²)}))^{n²} e^{−κ‖a_i−a_j‖/4}` |
+| `RBM.Cor35.norm_Theta_apply_le_of_gap` | 复 ξ 的 (2.52) + gap `δ ≤ \|1−ξ\|` ⟹ `\|Θ_xy\| ≤ (2C/δ) e^{−c₀√δ‖x−y‖}` |
+| `RBM.Cor35.norm_thetaEdge_le` | `Θ_{tm(+)²}` 与 `Θ_{tm(+)²} − 1` 的逐元素指数衰减 |
+| **`RBM.cor35`** | **Corollary 3.5 (3.6)**，n ≥ 3：`\|K_{t,(+…+),a}\| ≤ C_{n,δ} e^{−c_δ‖a_i−a_j‖}` |
+| `RBM.cor35_two` | n = 2（即 (2.52)） |
+
+gap 假设见 paper-deltas #17（`T₀ < 1` 时 `δ = 1 − T₀` 自动成立，`gap_of_le`）。

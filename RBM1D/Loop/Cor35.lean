@@ -37,7 +37,7 @@ explicit hypothesis `δ ≤ ‖1 - t m(+)²‖` (for `t ≤ T₀ < 1` it holds w
 * `RBM.Cor35.norm_treeValW_le` : a tree with exponentially decaying edges decays in the
   distance between any two leaves
 * `RBM.Cor35.norm_thetaEdge_le` : the entries of `Θ_{t m(+)²}` and `Θ_{t m(+)²} - 1` decay
-* `RBM.cor35` : **Corollary 3.5**
+* `RBM.cor35` : **Corollary 3.5** for `n ≥ 3`; `RBM.cor35_two` : the case `n = 2`
 -/
 
 namespace RBM
@@ -497,6 +497,36 @@ theorem cor35 {T : Set ℝ} {K : ℝ → LoopIdx (ZMod L) → ℂ}
         simp only [X, cor35Const, cor35Rate]
         rw [hlen]
         ring
+
+/-- **Corollary 3.5 at `n = 2`**: here `K = W⁻¹ m(+)² (Θ_{t m(+)²})_{a₁a₂}` (Example 2.15),
+and (3.6) is (2.52) with the gap. -/
+theorem cor35_two {T : Set ℝ} {K : ℝ → LoopIdx (ZMod L) → ℂ}
+    (hK : IsPrimitive L W m T K) (hT : Set.Icc 0 T₀ ⊆ T) {R : ℝ}
+    (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 → ‖K t I‖ ≤ R)
+    {δ : ℝ} (hδ : 0 < δ) (hgap : ∀ t ∈ Set.Icc 0 T₀, δ ≤ ‖1 - (t : ℂ) * (m true * m true)‖)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 T₀) (I : LoopIdx (ZMod L)) (hI : I.WF) (hlen : I.length = 2)
+    (hσ : I.σ = [true, true]) :
+    ‖K t I‖ ≤ 2 * cTwo52 / δ *
+      exp (-(cZero * Real.sqrt δ * zdist L (I.a.getD 0 0 - I.a.getD 1 0))) := by
+  rw [eq_Kgen_of_isPrimitive hL W m hm1 hT₀ hK hT hR t ht I hI (by omega)]
+  simp only [Kgen, hlen, hσ, (by decide : ¬(2 : ℕ) = 1), ↓reduceIte, List.getD_cons_zero,
+    List.getD_cons_succ]
+  have hξ : ‖(t : ℂ) * (m true * m true)‖ < 1 := by
+    rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.1]
+    have := mul_le_mul (hm1 true) (hm1 true) (norm_nonneg _) zero_le_one
+    nlinarith [ht.1, ht.2, hT₀]
+  have hΘ := norm_Theta_apply_le_of_gap hL hξ hδ (hgap t ht) (I.a.getD 0 0) (I.a.getD 1 0)
+  have hW : ‖(W : ℂ)⁻¹‖ ≤ 1 := by
+    rw [norm_inv, Complex.norm_natCast]
+    exact inv_le_one_of_one_le₀ (by exact_mod_cast Nat.one_le_iff_ne_zero.2 (NeZero.ne W))
+  have hmm : ‖m true * m true‖ ≤ 1 := by
+    rw [norm_mul]
+    exact (mul_le_mul (hm1 true) (hm1 true) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+  unfold kTwo
+  rw [norm_mul, norm_mul]
+  calc _ ≤ 1 * 1 * ‖Theta L (t * (m true * m true)) (I.a.getD 0 0) (I.a.getD 1 0)‖ := by
+        gcongr
+    _ ≤ _ := by rw [one_mul, one_mul]; exact hΘ
 
 end Main
 

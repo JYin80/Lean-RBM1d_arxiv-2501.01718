@@ -2163,4 +2163,147 @@ theorem sum_norm_innerId_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E|
 
 end InnerBound
 
+section LayerCut
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- The labels of the inside polygon (the root label is overwritten). -/
+def aIn (J : Fin n × Fin n) (a : Fin n → ZMod L) : Fin (wIn J + 1) → ZMod L :=
+  fun k => a (unShift J (k, k)).1
+
+/-- The labels of the outside polygon, with glue label `w`. -/
+def aOut (J : Fin n × Fin n) (a : Fin n → ZMod L) (w : ZMod L) :
+    Fin (n - wIn J + 1) → ZMod L :=
+  Function.update (fun k => a (unColP J (k, k)).1) (glueV J) w
+
+variable (hL : 3 ≤ L) (hn : 2 ≤ n) (m : Bool → ℂ) {t : ℝ}
+  (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hL hn hm
+
+/-- **(3.75) for the layer `π`**: at an innermost long edge `J`,
+`K^(π)_a = ∑_{u,w} ξ_J A(u) S_{uw} K^(π')_{a_out(w)}` with `A` the inner molecule. -/
+theorem Kpi_cut (σ : Fin n → Bool) {F₀ : Finset (Fin n × Fin n)} (hF₀ : F₀ ∈ TSP n)
+    {π : Finset (Fin n × Fin n)} {J : Fin n × Fin n} (hπ : Flong F₀ σ = π) (hJπ : J ∈ π)
+    (hinner : ∀ e ∈ π, ArcLe e J → e = J) (a : Fin n → ZMod L) :
+    Kpi L m t σ a π = ∑ u : ZMod L, ∑ w : ZMod L,
+      ((t : ℂ) * (m (σ J.1) * m (σ J.2)) * innerId m t (sigmaIn σ J) (aIn J a) (Fin.last _) u)
+        * SB L u w * Kpi L m t (sigmaOut σ J) (aOut J a w) ((π.erase J).image (shiftOut J)) := by
+  have hF₀' := isTSP_of_mem_TSP hF₀
+  have hJF₀ : J ∈ F₀ := Flong_subset F₀ σ (hπ ▸ hJπ)
+  have hJd : IsDiag n J.1 J.2 := hF₀'.1 J hJF₀
+  have hJw := width_of_isDiag hJd
+  have hJ2 : J.1.val < J.2.val := by omega
+  have hJn := J.2.isLt
+  set π' := (π.erase J).image (shiftOut J)
+  set σi := sigmaIn σ J
+  set σo := sigmaOut σ J
+  set ξ : ℂ := (t : ℂ) * (m (σ J.1) * m (σ J.2))
+  set ai : ZMod L → Fin (wIn J + 1) → ZMod L := fun u => Function.update (aIn J a) (Fin.last _) u
+  set ao : ZMod L → Fin (n - wIn J + 1) → ZMod L := fun w => aOut J a w
+  -- the side conditions of the cut
+  have hσi : ∀ i : Fin (wIn J + 1), σi i = σ (unShift J (i, i)).1 := by
+    intro i; simp only [σi, sigmaIn, unShift]; congr 2; omega
+  have hσo : ∀ i : Fin (n - wIn J + 1), σo i = σ (unColP J (i, i)).1 := fun i => rfl
+  have hai0 : ∀ u, ai u (Fin.last _) = u := fun u => Function.update_self _ _ _
+  have hai1 : ∀ u, ∀ v : LIn J, ai u (inV J v) = a v := by
+    intro u v
+    have hv := v.2
+    simp only [InArc, Fin.le_def, Fin.lt_def] at hv
+    have h1 := inV_val v.2
+    have hne : inV J v.1 ≠ Fin.last _ := by
+      intro h
+      have := congrArg Fin.val h
+      rw [h1, Fin.val_last] at this
+      simp only [wIn] at this
+      omega
+    simp only [ai, Function.update_of_ne hne, aIn]
+    congr 1
+    exact Fin.ext (by rw [(unShift_val _).1, h1]; omega)
+  have hao0 : ∀ w, ao w (glueV J) = w := fun w => Function.update_self _ _ _
+  have hao1 : ∀ w, ∀ v : LOut J, ao w (outV J v) = a v := by
+    intro w v
+    have hv := v.2
+    simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt] at hv
+    have hvs : v.1.val < J.1.val ∨ J.2.val ≤ v.1.val := by omega
+    have h1 := outV_val v.1 hJ2
+    have hg : (glueV J).val = J.1.val := by simp only [glueV, wIn]; omega
+    have hne : outV J v.1 ≠ glueV J := by
+      intro h
+      have := congrArg Fin.val h
+      rw [h1, hg] at this
+      rcases hvs with h' | h'
+      · rw [col_of_le (by omega)] at this; omega
+      · rw [col_of_gt (by omega)] at this; simp only [wIn] at this; omega
+    simp only [ao, aOut, Function.update_of_ne hne]
+    congr 1
+    exact Fin.ext (by
+      rw [(unColP_val _ hJ2).1, h1, unCol_col (by omega) hJw])
+  -- the layer is cut along `J`
+  have hlayer : TSPlong n σ π = ((TSP n).filter fun F => J ∈ F).filter fun F => Flong F σ = π := by
+    ext F
+    simp only [TSPlong, mem_filter]
+    constructor
+    · rintro ⟨hF, h⟩
+      exact ⟨⟨hF, Flong_subset F σ (h ▸ hJπ)⟩, h⟩
+    · rintro ⟨⟨hF, -⟩, h⟩
+      exact ⟨hF, h⟩
+  set X : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) →
+      Finset (Fin (wIn J + 1) × Fin (wIn J + 1)) → ZMod L → ZMod L → ℂ := fun G H u w =>
+    (ξ * treeValW L H (ai u)
+        (Function.update (fun v => thetaEdge L m t (σi v) (σi (v + 1))) (Fin.last _) 1)
+        (fun d => thetaEdge L m t (σi d.1.1) (σi d.1.2) - 1))
+      * SB L u w * treeValG L m t σo (ao w) G
+  set f : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) →
+      Finset (Fin (wIn J + 1) × Fin (wIn J + 1)) → ℂ := fun G H =>
+    (if Flong G σo = π' then 1 else 0) * (if Flong H σi = ∅ then 1 else 0) *
+      ∑ u : ZMod L, ∑ w : ZMod L, X G H u w
+  have hpt : ∀ F ∈ (TSP n).filter (fun F => J ∈ F),
+      (if Flong F σ = π then treeValG L m t σ a F else 0) = f (FOut F J) (FIn F J) := by
+    intro F hF
+    obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
+    have hF' := isTSP_of_mem_TSP hFT
+    have hiff := Flong_eq_iff_cut hF' hn hJF σ hF₀' hπ hJπ hinner
+    have hcut := treeValW_long_cut hL hF' hn hJF m t hm σ a σi ai σo ao hσi hσo hai0 hai1
+      hao0 hao1
+    by_cases h : Flong F σ = π
+    · obtain ⟨h1, h2⟩ := hiff.1 h
+      have h1' : Flong (FOut F J) σo = π' := h1
+      have h2' : Flong (FIn F J) σi = ∅ := h2
+      rw [ite_cond_eq_true _ _ (eq_true h), hcut]
+      simp only [f, X, h1', h2', ite_true, one_mul]
+      rfl
+    · simp only [f, h, ite_false]
+      by_cases h1 : Flong (FOut F J) σo = π'
+      · have h2 : ¬Flong (FIn F J) σi = ∅ := fun h2 => h (hiff.2 ⟨h1, h2⟩)
+        simp [h2]
+      · simp [h1]
+  have e2 : ∀ G, ∑ H ∈ TSP (wIn J + 1), f G H = if Flong G σo = π' then
+      ∑ H ∈ TSPlong _ σi ∅, ∑ u : ZMod L, ∑ w : ZMod L, X G H u w else 0 := by
+    intro G
+    split_ifs with hG
+    · rw [TSPlong, sum_filter]
+      refine sum_congr rfl fun H _ => ?_
+      simp only [f, hG, ite_true, one_mul]
+      split_ifs <;> simp
+    · exact sum_eq_zero fun H _ => by simp only [f, hG, ite_false, zero_mul]
+  unfold Kpi
+  rw [hlayer, sum_filter, sum_congr rfl hpt, sum_cut hJd hn f, sum_congr rfl fun G _ => e2 G,
+    ← sum_filter]
+  change ∑ G ∈ TSPlong _ σo π', ∑ H ∈ TSPlong _ σi ∅, ∑ u : ZMod L, ∑ w : ZMod L, X G H u w = _
+  calc ∑ G ∈ TSPlong _ σo π', ∑ H ∈ TSPlong _ σi ∅, ∑ u : ZMod L, ∑ w : ZMod L, X G H u w
+      = ∑ G ∈ TSPlong _ σo π', ∑ u : ZMod L, ∑ H ∈ TSPlong _ σi ∅, ∑ w : ZMod L, X G H u w :=
+        sum_congr rfl fun G _ => sum_comm
+    _ = ∑ u : ZMod L, ∑ G ∈ TSPlong _ σo π', ∑ H ∈ TSPlong _ σi ∅, ∑ w : ZMod L, X G H u w :=
+        sum_comm
+    _ = ∑ u : ZMod L, ∑ G ∈ TSPlong _ σo π', ∑ w : ZMod L, ∑ H ∈ TSPlong _ σi ∅, X G H u w :=
+        sum_congr rfl fun u _ => sum_congr rfl fun G _ => sum_comm
+    _ = ∑ u : ZMod L, ∑ w : ZMod L, ∑ G ∈ TSPlong _ σo π', ∑ H ∈ TSPlong _ σi ∅, X G H u w :=
+        sum_congr rfl fun u _ => sum_comm
+    _ = _ := by
+        refine sum_congr rfl fun u _ => sum_congr rfl fun w _ => ?_
+        simp only [X, innerId, mul_sum, sum_mul]
+        rw [sum_comm]
+
+end LayerCut
+
 end RBM

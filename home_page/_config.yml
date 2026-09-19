@@ -1,7 +1,10 @@
-title: RBM1D
-description: Lean formalization of Yau-Yin, Delocalization of One-Dimensional Random Band Matrices
+title: Lean-RBM1d
+description: Lean 4 formalization of Yau-Yin, Delocalization of One-Dimensional Random Band Matrices (arXiv:2501.01718)
 baseurl: ""
-url: ""
+url: "https://jyin80.github.io/Lean-RBM1d_arxiv-2501.01718"
+
+repository: JYin80/Lean-RBM1d_arxiv-2501.01718
+github_username: JYin80
 
 remote_theme: pages-themes/cayman@v0.2.0
 plugins:

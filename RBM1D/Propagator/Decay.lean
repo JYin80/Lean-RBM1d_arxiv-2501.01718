@@ -581,4 +581,96 @@ theorem norm_AA_le_of_real {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) {L : ℕ} (hL :
 
 end EllHat
 
+section Decay52
+
+variable {L : ℕ} [NeZero L]
+
+theorem zdist_le (u : ZMod L) : zdist L u ≤ L :=
+  le_trans (min_le_left _ _) (ZMod.val_lt u).le
+
+/-- **Lemma 2.14 (4) / equation (2.52), for real `ξ = t ∈ (0,1)`.**
+
+`|(Θ_t)_{xy}| ≤ C · exp(-‖x-y‖ / ℓ̂(t)) / ((1-t) · ℓ̂(t))` with `C = 8e` and `c = 1`,
+where `ℓ̂(t) = min((1-t)^{-1/2}, L)` and `‖x-y‖` is the distance on the cycle.
+
+This is the long-edge case `ξ = t|m|² = t` of the paper (`|m| = 1` makes `ξ` real),
+which is the case that needs the sharp length scale.  Two regimes:
+
+* `(1-t)^{-1/2} ≤ L`: the exponential does the work, because
+  `ρ ≤ e^{-(1-ρ)} ≤ e^{-√(1-t)} = e^{-1/ℓ̂}`;
+* `L ≤ (1-t)^{-1/2}`: the exponential is useless (`e^{-d/L} ≥ e^{-1}` for `d ≤ L`)
+  and the prefactor `‖A‖ ≤ 4/((1-t)L)` carries the estimate on its own.
+
+No contour shift and no Poisson summation: the closed form plus `1 - ρ ≍ √(1-t)`. -/
+theorem norm_Theta_apply_le_of_real (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1)
+    (x y : ZMod L) :
+    ‖Theta L (t : ℂ) x y‖ ≤
+      8 * Real.exp 1 * Real.exp (-(zdist L (x - y) : ℝ) / ellHat L (t : ℂ)) /
+        ((1 - t) * ellHat L (t : ℂ)) := by
+  obtain ⟨r, hrho, hr0, hr1, hlow, hhigh⟩ := rho_real_bounds ht0 ht1
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast ne_of_gt ht0
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
+  have hLpos : (0 : ℝ) < (L : ℝ) := by
+    have : 0 < L := by omega
+    exact_mod_cast this
+  set d := zdist L (x - y) with hd
+  have hdnn : (0 : ℝ) ≤ (d : ℝ) := Nat.cast_nonneg d
+  have hdL : (d : ℝ) ≤ (L : ℝ) := by exact_mod_cast zdist_le (x - y)
+  have hell : ellHat L (t : ℂ) = min (1 / Real.sqrt (1 - t)) (L : ℝ) := ellHat_ofReal L ht1
+  have hellpos : 0 < ellHat L (t : ℂ) := by
+    rw [hell]; exact lt_min (by positivity) hLpos
+  have hnr : ‖rho (t : ℂ)‖ = r := by
+    rw [hrho, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hr0]
+  have he1 : (1 : ℝ) ≤ Real.exp 1 := by
+    have := Real.add_one_le_exp (1 : ℝ); linarith
+  -- `ρ^d ≤ e · exp(-d/ℓ̂)`
+  have hrd : r ^ d ≤ Real.exp (-(d : ℝ) * (1 - r)) := by
+    have hre : r ≤ Real.exp (-(1 - r)) := by
+      have := Real.add_one_le_exp (-(1 - r)); linarith
+    calc r ^ d ≤ Real.exp (-(1 - r)) ^ d := pow_le_pow_left₀ hr0.le hre d
+      _ = Real.exp ((d : ℝ) * -(1 - r)) := (Real.exp_nat_mul _ d).symm
+      _ = Real.exp (-(d : ℝ) * (1 - r)) := by ring_nf
+  have step3 : r ^ d ≤ Real.exp 1 * Real.exp (-(d : ℝ) / ellHat L (t : ℂ)) := by
+    rcases le_total (1 / Real.sqrt (1 - t)) ((L : ℝ)) with hcase | hcase
+    · rw [hell, min_eq_left hcase]
+      have hx : -(d : ℝ) / (1 / Real.sqrt (1 - t)) = -(d : ℝ) * Real.sqrt (1 - t) := by
+        field_simp
+      rw [hx]
+      calc r ^ d ≤ Real.exp (-(d : ℝ) * (1 - r)) := hrd
+        _ ≤ Real.exp (-(d : ℝ) * Real.sqrt (1 - t)) := by
+            refine Real.exp_le_exp.mpr ?_
+            nlinarith [mul_le_mul_of_nonneg_left hlow hdnn]
+        _ = 1 * Real.exp (-(d : ℝ) * Real.sqrt (1 - t)) := (one_mul _).symm
+        _ ≤ Real.exp 1 * Real.exp (-(d : ℝ) * Real.sqrt (1 - t)) :=
+            mul_le_mul_of_nonneg_right he1 (Real.exp_pos _).le
+    · rw [hell, min_eq_right hcase]
+      have hratio : (d : ℝ) / (L : ℝ) ≤ 1 := (div_le_one hLpos).mpr hdL
+      have hexp : Real.exp (-1 : ℝ) ≤ Real.exp (-(d : ℝ) / (L : ℝ)) := by
+        refine Real.exp_le_exp.mpr ?_
+        rw [neg_div]; linarith
+      calc r ^ d ≤ 1 := pow_le_one₀ hr0.le hr1.le
+        _ = Real.exp 1 * Real.exp (-1 : ℝ) := by
+            rw [← Real.exp_add]; norm_num
+        _ ≤ Real.exp 1 * Real.exp (-(d : ℝ) / (L : ℝ)) :=
+            mul_le_mul_of_nonneg_left hexp (Real.exp_pos 1).le
+  -- assemble
+  have step2 := norm_AA_le_of_real ht0 ht1 hL
+  have hdenpos : (0 : ℝ) < (1 - t) * ellHat L (t : ℂ) := mul_pos h1t hellpos
+  calc ‖Theta L (t : ℂ) x y‖ ≤ 2 * ‖AA L (t : ℂ)‖ * ‖rho (t : ℂ)‖ ^ d :=
+        norm_theta_apply_le_rho_pow L hL htne hnorm x y
+    _ = 2 * ‖AA L (t : ℂ)‖ * r ^ d := by rw [hnr]
+    _ ≤ 2 * (4 / ((1 - t) * ellHat L (t : ℂ))) *
+          (Real.exp 1 * Real.exp (-(d : ℝ) / ellHat L (t : ℂ))) := by
+        refine mul_le_mul (by linarith) step3 (pow_nonneg hr0.le d) ?_
+        positivity
+    _ = 8 * Real.exp 1 * Real.exp (-(d : ℝ) / ellHat L (t : ℂ)) /
+          ((1 - t) * ellHat L (t : ℂ)) := by
+        field_simp
+        ring
+
+end Decay52
+
 end RBM

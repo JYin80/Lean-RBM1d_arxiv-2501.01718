@@ -1053,5 +1053,10 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 (5.118) `loopXi_le`；(6.4) `loopMax_odd_sq_le`；**Lemma 6.1 `sum_norm_inner_sq_le_trace_rpow`**（实 p ≥ 1）。`loopMax` 为 iSup 形式的 max。paper-deltas #30。
 T53（Step 3）现已解锁。
 
-**⚠ HEAD 构建失败（非 Claude Code 文件）**：`RBM1D/Hierarchy/SumZero.lean:70:44: unsolved goals`（Cowork T52，`c694b61`），
-在本机 Lean 4.34 / Mathlib `5ed2965256` 下不编译，`lake build RBM1D` 因此失败；其余模块均单独编译通过。
+（`Hierarchy/SumZero.lean` 的编译问题 Cowork 已修复，HEAD 已恢复全绿。）
+
+### `RBM1D/Flow/Iteration.lean` — Lemma 2.18–2.20 由 Theorem 2.21 推出（T57，Claude Code 并行 agent）
+
+**`Bounds_of_Thm221`**：`Thm221 X κ`、`|E| ≤ 2−κ`、`0 ≤ t N`、最终 `N^{−1+τ} ≤ 1 − t N` ⟹ `Bounds X E t`（(2.60)(2.62)(2.63)(2.64)），
+**无额外假设**；基例 `Bounds_zero`（(2.67)，零误差）；网格 `Band.eventually_flow_grid`。**`stochDom_norm_Lval_of_Thm221`**：(2.61) 对所有 `n ≥ 1`
+（`Band.norm_Kval_le`：n ≥ 3 用 (2.59) `norm_Kgen_le`，n = 1 用 `Kgen_one`，n = 2 用新证的 `norm_Kval_two_le`）。paper-deltas #31。

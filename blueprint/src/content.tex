@@ -1181,6 +1181,19 @@
   p.25); (2.61) follows from (2.60) and (2.59).
 \end{definition}
 
+\begin{theorem}[Lemmas 2.18--2.20 from Theorem 2.21, \S2.7 p.24]\label{thm:2.18-from-2.21}
+  \lean{RBM.StochDom.congr_eventually, RBM.UnifDetDom.congr_eventually, RBM.StochDom.of_eq_zero, RBM.Band.scale_eq_flowScale, RBM.Band.scale_nonneg, RBM.Band.one_le_W, RBM.Band.one_le_L, RBM.Sample.Lval_zero_eq_Kval, RBM.Sample.lkErr_zero, RBM.Sample.llErr_zero, RBM.Sample.expErr_zero, RBM.Bounds_zero, RBM.Bounds.congr, RBM.Band.eventually_L_le_W, RBM.Band.eventually_le_W, RBM.Band.eventually_rpow_WL_le, RBM.Band.eventually_flow_grid, RBM.Bounds_of_Thm221, RBM.norm_primInit_le, RBM.Band.scale_zero_le, RBM.Band.norm_Kval_le_of_ne_two, RBM.Band.norm_Kval_two_le, RBM.Band.norm_Kval_le, RBM.stochDom_norm_Lval_of_LmK, RBM.stochDom_norm_Lval_of_Thm221}
+  \leanok\uses{def:flow-hypotheses, eq:2.67, lem:flow-scales, lem:3.11}
+  Assuming Theorem 2.21 (\texttt{Thm221}), for $|E|\le2-\kappa$ and $0\le t\le1-N^{-1+\tau}$
+  the bounds (2.60), (2.62)--(2.64) hold at $t$, and (2.61)
+  $\max_{\sigma,a}|L_{t,\sigma,a}|\prec(W\ell_t\eta_t)^{-n+1}$ for every $n\ge1$.
+\end{theorem}
+\begin{proof}\leanok
+  Base case $t=0$ is (2.67) with no error; iterate \texttt{Thm221} along the truncated geometric
+  grid, whose step condition is (2.72); $n_0$ depends on $\tau$ only.  (2.61) from (2.60) and
+  $|K_{t,\sigma,a}|\le C(W\ell_t\eta_t)^{-n+1}$ (Lemma 3.11 for $n\ge3$, direct for $n=1,2$).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -9,19 +9,31 @@ import RBM1D.Loop.WardKgen
 /-!
 # Lemma 3.10: symmetry and the sum-zero property of the self-energy
 
-Paper p.40–45.
+Paper pp.40–45 (Lemma 3.10 and its proof, §3.4).
 
-**Lemma 3.10 (1)** says `Σ^(∅)(t, σ^(alt), d)` is translation invariant and symmetric,
-`Σ(d) = Σ(-d)`.  The paper calls this a "simple consequence of the explicit expression"; here
-it is proved for **every** `σ` and every layer `π` (`SigmaPi_add_const`, `SigmaPi_neg`), from
-the corresponding properties of each edge weight (`selfW_add_const`, `selfW_neg`).
+**Lemma 3.10 (1)**: `Σ^(∅)(t, σ^(alt), d)` is translation invariant and even in `d`.  The
+paper calls this a simple consequence of the explicit expression; here it is proved for
+**every** `σ` and every layer `π` (`SigmaPi_add_const`, `SigmaPi_neg`).
 
-**(3.47)–(3.48)**: summing `K^(π)` over all boundary labels `a` turns every boundary edge into
-its row sum `(1 - t m_i m_{i+1})^{-1}` (`S^(B) 1 = 1`), so
-`∑_a K^(π)(t,σ,a) = ∏_i (1 - t m_i m_{i+1})^{-1} · ∑_d Σ^(π)(t,σ,d)` (`sum_Kpi_eq`), an exact
-identity.
+**Lemma 3.10 (2)**, (3.44): `L^{-1} ∑_d Σ^(∅)(t, σ^(alt), d) = O(η_t)` (`sum_zero`).
+
+## The proof: closed forms of fully summed trees
+
+If every edge weight of a tree has constant column sums `r_e`, peeling childless vertices gives
+`∑_b ∏_e E_e(b_e, b_{par e}) = L ∏_e r_e` (`treeZ_eq`, via `sum_out`).  Hence
+`L^{-1} ∑_a K^(π)(t,σ,a) = A(σ,π) := ∏_v (1-ξ_v)^{-1} · Q(σ,π)` with
+`Q(σ,π) = ∑_{F ∈ T_SP(σ,π)} ∏_{e∈F} ((1-ξ_e)^{-1} - 1)` (`sum_Kpi_closed`), independent of `L`
+and `W`; and `L^{-1} ∑_d Σ^(π)(t,σ,d) = Q(σ,π)` (`sum_SigmaPi`).  The steps of §3.4 become:
+
+* (3.47)–(3.48): `sum_Kpi_eq`, `sum_Kpi_closed`;
+* (3.49): `norm_sum_Alayer_le`, from Corollary 3.7 (`cor37_bulk`) with (3.41);
+* (3.52)–(3.64): at an innermost long edge `J` of `π` the inside of `J` is one molecule
+  (`Qlayer_cut`, using the cut bijection `sum_cut` of Lemma 3.4, `prod_cut`,
+  `Flong_eq_iff_cut`, `prod_leaves_cut`), and `A(σ,π) = ξ_J(1-ξ_J) A(σ_in, ∅) A(σ_out, π∖J)`
+  with `ξ_J = t` (`Alayer_cut`) — the closed form of the paper's `f*(c₁)` argument;
+* (3.50), (3.65): `norm_Alayer_le`, by induction on `n`;
+* (3.51): for alternating `σ` every boundary edge is long, `Q = (1-t)^n A = O(η_t)`.
 -/
-
 namespace RBM
 
 open Finset
@@ -912,7 +924,8 @@ theorem norm_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 
       rw [← hn]
       exact_mod_cast hc
     have htri : ‖Alayer (mSigma E) t σ ∅‖ ≤
-        ‖Alayer (mSigma E) t σ ∅ + ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ +
+        ‖Alayer (mSigma E) t σ ∅ +
+            ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ +
           ‖∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ := by
       have := norm_sub_le (Alayer (mSigma E) t σ ∅ +
         ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π)
@@ -933,5 +946,56 @@ theorem norm_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 
     linarith
 
 end Induction350
+
+section Lemma310
+
+variable {E : ℝ}
+
+/-- **Lemma 3.10 (2), the sum-zero property (3.44)**: in the bulk `|E| ≤ 2 - k`, for an
+alternating loop (`σ_v ≠ σ_{v+1}` for all `v`, cyclically; so `n` is even) the single-molecule
+self-energy satisfies `|L^{-1} ∑_{d ∈ Z_L^n} Σ^(∅)(t, σ, d)| ≤ C η_t`, uniformly in `L` and
+`t ∈ [0,1)`.  (Lemma 3.10 (1) is `SigmaPi_add_const` / `SigmaPi_neg`, for every `σ` and `π`.) -/
+theorem sum_zero {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {n : ℕ} [NeZero n]
+    (hn : 3 ≤ n) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 ≤ t → t < 1 →
+      ∀ σ : Fin n → Bool, (∀ v, σ v ≠ σ (v + 1)) →
+        ‖(L : ℂ)⁻¹ * ∑ d : Fin n → ZMod L, SigmaPi L (mSigma E) t σ ∅ d‖ ≤ C * etaT E t := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  set ι := (mE E).im with hι
+  have hι0 : 0 < ι := mE_im_pos hE
+  obtain ⟨C, hC0, hC⟩ := norm_Alayer_le hk0 hk1 hEk n
+  refine ⟨C * ι⁻¹ ^ n, by positivity, fun L _ hL t ht0 ht1 σ halt => ?_⟩
+  have hm := norm_mul_mSigma_lt_one hE2 ht0 ht1
+  have hL0 : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne L)
+  rw [sum_SigmaPi (mSigma E) hm hL (by omega), ← mul_assoc, inv_mul_cancel₀ hL0, one_mul]
+  -- `Q = ∏_v (1 - ξ_v) · A`, and every `ξ_v = t`
+  have hξ : ∀ v, (1 : ℂ) - t * (mSigma E (σ v) * mSigma E (σ (v + 1))) = ((1 - t : ℝ) : ℂ) := by
+    intro v; rw [mSigma_mul_of_ne hE2 (halt v)]; push_cast; ring
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hQ : Qlayer (mSigma E) t σ ∅ = ((1 - t : ℝ) : ℂ) ^ n * Alayer (mSigma E) t σ ∅ := by
+    unfold Alayer
+    simp_rw [hξ]
+    rw [prod_const, card_univ, Fintype.card_fin, ← mul_assoc, ← mul_pow,
+      mul_inv_cancel₀ (by exact_mod_cast h1t.ne'), one_pow, one_mul]
+  have hA := hC n hn le_rfl σ ∅ t ht0 ht1
+  have hη : etaT E t = (1 - t) * ι := rfl
+  rw [hQ, norm_mul, norm_pow, Complex.norm_of_nonneg h1t.le]
+  calc (1 - t) ^ n * ‖Alayer (mSigma E) t σ ∅‖
+      ≤ (1 - t) ^ n * (C * (etaT E t)⁻¹ ^ (n - 1)) := by gcongr
+    _ = C * ι⁻¹ ^ n * etaT E t := by
+        have key : ∀ p : ℕ, (1 - t) ^ (p + 1) * (C * ((1 - t) * ι)⁻¹ ^ p) =
+            C * ι⁻¹ ^ (p + 1) * ((1 - t) * ι) := by
+          intro p
+          have h1 : (1 - t) ≠ 0 := h1t.ne'
+          have h2 : ι ≠ 0 := hι0.ne'
+          rw [mul_inv, mul_pow, pow_succ, pow_succ]
+          field_simp
+          rw [one_div, inv_pow]
+          field_simp
+        have := key (n - 1)
+        rwa [Nat.sub_add_cancel (by omega : 1 ≤ n), ← hη] at this
+
+end Lemma310
 
 end RBM

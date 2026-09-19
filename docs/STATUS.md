@@ -899,3 +899,17 @@ gap 假设见 paper-deltas #17（`T₀ < 1` 时 `δ = 1 − T₀` 自动成立�
 * (3.52)：取 π 中最内的长边 J，`Q(σ,π) = r_J · Q(内, ∅) · Q(外, π∖J)`（T25b 的剪切双射 `sum_cut`），
   即 `A_n = t(1−t) · A_内 · A_外`（论文 (3.60)–(3.64) 的 `f*` 论证的闭式）；
 * (3.65) π = ∅ 由总和减去 π ≠ ∅；(3.51) 交替 σ 时 `Q(σ^alt, ∅) = (1−t)^n A_n = O(η)`。
+
+### `RBM1D/Loop/SumZero.lean` — Lemma 3.10（T34，Claude Code #2）✔
+
+| Lean | 论文 |
+|---|---|
+| `RBM.SigmaPi_add_const` / `SigmaPi_neg` | **Lemma 3.10 (1)**，对所有 σ、π |
+| `RBM.sum_out` / `treeZ_peel` / **`treeZ_eq`** | 全标号求和的树值闭式 `Σ_b Π_e E_e(b_e,b_{par e}) = L Π_e r_e` |
+| `RBM.sum_SigmaPi` / `sum_Kpi_closed` | (3.47)(3.48)：`L⁻¹Σ_a K^(π) = A(σ,π) = Π_v(1−ξ_v)⁻¹ Q(σ,π)`，`L⁻¹Σ_d Σ^(π) = Q` |
+| `RBM.norm_sum_Alayer_le` | (3.49)：由 `cor37_bulk`（W = 1）+ (3.41) |
+| `RBM.Qlayer_cut` / `prod_leaves_cut` / **`Alayer_cut`** | (3.52)–(3.64)：最内长边处 `A = t(1−t) A_内 A_外` |
+| **`RBM.norm_Alayer_le`** | (3.50)(3.65)：`\|A(σ,π)\| ≤ C_n η_t^{-(n-1)}`，对 n 归纳 |
+| **`RBM.sum_zero`** | **Lemma 3.10 (2)**，(3.44)：交替 σ 时 `\|L⁻¹Σ_d Σ^(∅)\| ≤ C η_t` |
+
+公理审计：`sum_zero`、`norm_Alayer_le` 只含 propext / Classical.choice / Quot.sound。paper-deltas #21。

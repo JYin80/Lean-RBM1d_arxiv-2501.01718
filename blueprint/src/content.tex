@@ -936,10 +936,28 @@
   sum is $O(L)$; for $m=2$ the sum is exactly $LW^{-1}m^2(1-tm^2)^{-1}$.
 \end{proof}
 
-\begin{lemma}[Sum-zero property, Lemma 3.10]\label{lem:3.10}
-  \uses{lem:3.6, lem:Theta-decay}
-  \emph{Not yet formalized.}
+\begin{lemma}[Symmetry and sum zero, Lemma 3.10]\label{lem:3.10}
+  \lean{RBM.selfW_add_const, RBM.selfW_neg, RBM.SigmaPi_add_const, RBM.SigmaPi_neg,
+    RBM.sum_Kpi_eq, RBM.sum_out, RBM.treeZ, RBM.treeZ_peel, RBM.treeZ_eq, RBM.sum_selfW,
+    RBM.Qlayer, RBM.Alayer, RBM.sum_SigmaPi, RBM.sum_Kpi_closed, RBM.sigmaIn, RBM.sigmaOut,
+    RBM.prod_cut, RBM.Flong_FOut, RBM.Flong_FIn, RBM.Flong_eq_iff_cut, RBM.Qlayer_cut,
+    RBM.prod_leaves_cut, RBM.Alayer_cut, RBM.norm_sum_Alayer_le, RBM.exists_innermost,
+    RBM.norm_Alayer_le, RBM.sum_zero}\leanok
+  \uses{def:3.9, lem:3.4, lem:tree-cut, cor:3.7}
+  (1) For every $\sigma$ and $\pi$, $\Sigma^{(\pi)}(t,\sigma,d)$ is translation invariant and
+  $\Sigma^{(\pi)}(t,\sigma,-d)=\Sigma^{(\pi)}(t,\sigma,d)$.  (2) In the bulk, for alternating
+  $\sigma$, $L^{-1}\sum_d\Sigma^{(\emptyset)}(t,\sigma,d)=O(\eta_t)$ (3.44), uniformly in $L$.
 \end{lemma}
+\begin{proof}\leanok\uses{def:3.9, lem:3.4, lem:tree-cut, cor:3.7}
+  Fully summed trees have a closed form: peeling childless vertices,
+  $\sum_b\prod_eE_e(b_e,b_{\mathrm{par}\,e})=L\prod_er_e$ when $E_e$ has column sums $r_e$.  So
+  $A(\sigma,\pi):=L^{-1}\sum_aK^{(\pi)}=\prod_v(1-\xi_v)^{-1}Q(\sigma,\pi)$ with
+  $Q=\sum_{F}\prod_{e\in F}\xi_e/(1-\xi_e)=L^{-1}\sum_d\Sigma^{(\pi)}$.  (3.49) is Corollary 3.7
+  with (3.41).  At an innermost long edge $J$ the cut bijection of Lemma 3.4 gives
+  $A(\sigma,\pi)=t(1-t)A(\sigma_{\rm in},\emptyset)A(\sigma_{\rm out},\pi\setminus J)$, whence
+  (3.50) by induction on $n$ (for $\pi=\emptyset$ subtract the other layers from (3.49)).  For
+  alternating $\sigma$, $Q=(1-t)^nA=O(\eta_t)$.
+\end{proof}
 
 \begin{lemma}[Bound on $\Kcal$, Lemma 3.11]\label{lem:3.11}
   \uses{lem:3.10}

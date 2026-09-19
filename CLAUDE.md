@@ -110,3 +110,9 @@ Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry�
 2. `grep -rn "sorry" RBM1D/` → 只有 `Test/Sanity.lean` 里那句注释
 3. 更新 `docs/STATUS.md`（新增的声明、下一步）
 4. `git commit`
+
+## 队列空了怎么办
+
+**不要停下来等新工单。** `docs/TASKS.md` 末尾有「永不停工规则」和储备工单 B1–B6：
+队列一空就按那个顺序自己挑活（先 T8–T11 的一般 Fourier 机器，再 B1–B6，再常规维护），
+并在工单表里补一行说明你在做什么。空转是这个项目里唯一不可接受的状态。

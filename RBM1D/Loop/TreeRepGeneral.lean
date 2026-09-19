@@ -114,6 +114,128 @@ theorem leafPar_empty (v : Fin n) : leafPar (∅ : Finset (Fin n × Fin n)) v = 
     exact h1
   · exact h
 
+/-! ### Laminarity -/
+
+/-- `F` is a family of diagonals with no crossing pair: an element of `T_SP(n)`. -/
+def IsTSP (F : Finset (Fin n × Fin n)) : Prop :=
+  (∀ d ∈ F, IsDiag n d.1 d.2) ∧ CrossingFree F
+
+omit [NeZero n] in
+theorem isTSP_of_mem_TSP {F : Finset (Fin n × Fin n)} (h : F ∈ TSP n) : IsTSP F := by
+  rw [mem_TSP] at h
+  refine ⟨fun d hd => ?_, h.2⟩
+  have := h.1 hd
+  simp only [diagonals, mem_filter, mem_univ, true_and] at this
+  exact this
+
+theorem arcLe_wholeP (d : Fin n × Fin n) : ArcLe d (wholeP n) := by
+  refine ⟨Fin.zero_le _, ?_⟩
+  simp only [wholeP, Fin.le_def]
+  have := d.2.isLt
+  omega
+
+theorem lt_of_mem_nodes {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n)
+    {d : Fin n × Fin n} (hd : d ∈ nodes F) : d.1 < d.2 := by
+  rcases mem_insert.1 hd with rfl | hd
+  · simp only [wholeP, Fin.lt_def, Fin.val_zero]; omega
+  · exact (hF.1 d hd).1
+
+/-- **Laminarity**: two nodes are nested or have disjoint arcs. -/
+theorem nodes_laminar {F : Finset (Fin n × Fin n)} (hF : IsTSP F) {d e : Fin n × Fin n}
+    (hd : d ∈ nodes F) (he : e ∈ nodes F) :
+    ArcLe d e ∨ ArcLe e d ∨ d.2 ≤ e.1 ∨ e.2 ≤ d.1 := by
+  rcases mem_insert.1 he with rfl | he'
+  · exact Or.inl (arcLe_wholeP d)
+  rcases mem_insert.1 hd with rfl | hd'
+  · exact Or.inr (Or.inl (arcLe_wholeP e))
+  have h1 := hF.2 d hd' e he'
+  have hd2 := (hF.1 d hd').1
+  have he2 := (hF.1 e he').1
+  simp only [Crossing, not_or, not_and, not_lt] at h1
+  simp only [ArcLe, Fin.le_def, Fin.lt_def] at h1 hd2 he2 ⊢
+  omega
+
+omit [NeZero n] in
+theorem InArc.mono {d e : Fin n × Fin n} {v : Fin n} (h : InArc d v) (hde : ArcLe d e) :
+    InArc e v := by
+  simp only [InArc, ArcLe, Fin.le_def, Fin.lt_def] at *
+  omega
+
+omit [NeZero n] in
+theorem ArcLe.trans {d e f : Fin n × Fin n} (h1 : ArcLe d e) (h2 : ArcLe e f) : ArcLe d f := by
+  simp only [ArcLe, Fin.le_def] at *
+  omega
+
+omit [NeZero n] in
+theorem ArcLe.antisymm {d e : Fin n × Fin n} (h1 : ArcLe d e) (h2 : ArcLe e d) : d = e := by
+  simp only [ArcLe, Fin.le_def] at *
+  exact Prod.ext (Fin.ext (by omega)) (Fin.ext (by omega))
+
+omit [NeZero n] in
+theorem arcWidth_le_of_arcLe {d e : Fin n × Fin n} (h : ArcLe d e) :
+    arcWidth d ≤ arcWidth e := by
+  simp only [ArcLe, arcWidth, Fin.le_def] at *
+  omega
+
+omit [NeZero n] in
+theorem eq_of_arcLe_of_width {d e : Fin n × Fin n} (hd : d.1 ≤ d.2) (h : ArcLe d e)
+    (hw : arcWidth e ≤ arcWidth d) : d = e := by
+  simp only [ArcLe, arcWidth, Fin.le_def] at *
+  exact Prod.ext (Fin.ext (by omega)) (Fin.ext (by omega))
+
+/-- The containers of a vertex are totally ordered by inclusion. -/
+theorem arcLe_total_of_inArc {F : Finset (Fin n × Fin n)} (hF : IsTSP F) {d e : Fin n × Fin n}
+    (hd : d ∈ nodes F) (he : e ∈ nodes F) {v : Fin n} (hdv : InArc d v) (hev : InArc e v) :
+    ArcLe d e ∨ ArcLe e d := by
+  rcases nodes_laminar hF hd he with h | h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · simp only [InArc, Fin.le_def, Fin.lt_def] at hdv hev h; omega
+  · simp only [InArc, Fin.le_def, Fin.lt_def] at hdv hev h; omega
+
+/-- **Characterization of `leafPar`**: the node that contains `v` and is contained in every
+node containing `v`. -/
+theorem leafPar_eq {F : Finset (Fin n × Fin n)} {v : Fin n} {e : Fin n × Fin n}
+    (he : e ∈ nodes F) (hev : InArc e v)
+    (hmin : ∀ e' ∈ nodes F, InArc e' v → ArcLe e e') : leafPar F v = e := by
+  have hmem : e ∈ (nodes F).filter fun e => InArc e v := mem_filter.2 ⟨he, hev⟩
+  obtain ⟨h1, h2⟩ := minNode_le hmem
+  have h3 := mem_filter.1 h1
+  exact (eq_of_arcLe_of_width (le_of_lt (lt_of_le_of_lt hev.1 hev.2)) (hmin _ h3.1 h3.2) h2).symm
+
+/-- The root vertex `n - 1` hangs on `whole`. -/
+theorem leafPar_root (F : Finset (Fin n × Fin n)) {v : Fin n} (hv : v.val = n - 1) :
+    leafPar F v = wholeP n := by
+  rcases minNode_mem_or (s := (nodes F).filter fun e => InArc e v) with h | h
+  · exfalso
+    have := (mem_filter.1 h).2
+    simp only [InArc, Fin.lt_def] at this
+    have := (minNode ((nodes F).filter fun e => InArc e v)).2.isLt
+    omega
+  · exact h
+
+/-- **Characterization of `nodePar`**: the node strictly above `d` contained in every node
+strictly above `d`. -/
+theorem nodePar_eq {F : Finset (Fin n × Fin n)} {d e : Fin n × Fin n} (hd : d.1 ≤ d.2)
+    (he : e ∈ nodes F) (hde : ArcLe d e) (hne : e ≠ d)
+    (hmin : ∀ e' ∈ nodes F, ArcLe d e' → e' ≠ d → ArcLe e e') : nodePar F d = e := by
+  have hmem : e ∈ (nodes F).filter fun e => ArcLe d e ∧ e ≠ d := mem_filter.2 ⟨he, hde, hne⟩
+  obtain ⟨h1, h2⟩ := minNode_le hmem
+  have h3 := mem_filter.1 h1
+  have he12 : e.1 ≤ e.2 := le_trans hde.1 (le_trans hd hde.2)
+  exact (eq_of_arcLe_of_width he12 (hmin _ h3.1 h3.2.1 h3.2.2) h2).symm
+
+/-- The strict containers of a node are totally ordered by inclusion. -/
+theorem arcLe_total_of_arcLe {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n)
+    {d e e' : Fin n × Fin n} (hd : d ∈ nodes F) (he : e ∈ nodes F) (he' : e' ∈ nodes F)
+    (h1 : ArcLe d e) (h2 : ArcLe d e') : ArcLe e e' ∨ ArcLe e' e := by
+  have hlt := lt_of_mem_nodes hF hn hd
+  rcases nodes_laminar hF he he' with h | h | h | h
+  · exact Or.inl h
+  · exact Or.inr h
+  · simp only [ArcLe, Fin.le_def, Fin.lt_def] at h1 h2 h hlt; omega
+  · simp only [ArcLe, Fin.le_def, Fin.lt_def] at h1 h2 h hlt; omega
+
 end Laminar
 
 section Value

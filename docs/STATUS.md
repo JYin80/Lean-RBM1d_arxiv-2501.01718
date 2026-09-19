@@ -574,3 +574,18 @@ Mathlib 关键 API：`Complex.integral_boundary_rect_eq_zero_of_differentiableOn
 
 **下一步（T10）**：Poisson 求和 `K_{ξ,L}(u) = Σ_n K_{ξ,∞}(u + nL)`（论文 p.89 (B.2) 下一行），
 再由 (B.5) 得环上的 (2.52)。`Symbol.lean` 的 `Theta_apply_fourier` 给出 `K_{ξ,L}` 的有限 Fourier 和。
+
+## 蓝图工件的刷新流程（Cowork 侧，每次心跳执行）
+
+蓝图页面（claude.ai artifact `WjEFtu47pbMNGbUxJhx3Pm`）**由 `blueprint/src/content.tex` 自动生成**，
+不再手写。流程固定为三步：
+
+1. `device_stage_files` 把 `blueprint/src/content.tex` 传进云端容器；
+2. 在容器里跑 `python3 build.py <content.tex> <定理数>`（脚本在 Cowork 会话的 scratchpad 里）：
+   它解析每个 `\begin{...}\label{...}` 环境，按 `\chapter{}` 分节，按 `\leanok` 判「已证」，
+   按 `\uses{}` 的依赖是否全绿判「可开工」，用 graphviz 逐章画依赖图，再套模板输出 HTML；
+3. `Artifact publish` 到同一个 URL。
+
+**所以：往 `content.tex` 里加节点、标 `\leanok`、写 `\uses{}`，蓝图页面下次刷新就会自动反映。**
+Claude Code 侧只要维护 `content.tex` 即可，不必碰页面。
+节点的中文短名在 `build.py` 的 `SHORT` 字典里；没登记的节点回退到 LaTeX 标题。

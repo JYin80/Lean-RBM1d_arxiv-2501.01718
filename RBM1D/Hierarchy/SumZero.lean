@@ -242,4 +242,29 @@ theorem SumZero_ThetaOp (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t :
             rfl
         _ = 0 := by rw [hA x, mul_zero]
 
+/-- `P` is compatible with subtraction. -/
+theorem Psum_sub {n : ℕ} (A B : LoopArg L (n + 1) → ℂ) :
+    Psum L (A - B) = Psum L A - Psum L B := by
+  funext x
+  simp [Psum, Finset.sum_sub_distrib]
+
+/-- The commutator `[Q_t, Theta_{t,sigma}]` of (5.89). -/
+noncomputable def commQT {n : ℕ} (ξ : Fin (n + 1) → ℂ) (t : ℂ)
+    (A : LoopArg L (n + 1) → ℂ) : LoopArg L (n + 1) → ℂ :=
+  Qop L t (ThetaOp L ξ t A) - ThetaOp L ξ t (Qop L t A)
+
+/-- **(5.90)**: the commutator `[Q_t, Theta_{t,sigma}]` always lands in the sum-zero
+tensors.  Both summands do: `Q_t . X` is sum-zero for every `X` (`SumZero_Qop`), and
+`Theta_{t,sigma} . (Q_t . A)` is sum-zero because `Q_t . A` is (`SumZero_ThetaOp`). -/
+theorem SumZero_commQT (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) (htt : ‖t‖ < 1) (A : LoopArg L (n + 1) → ℂ) :
+    SumZero L (commQT L ξ t A) := by
+  intro x
+  rw [commQT, Psum_sub]
+  have h1 : Psum L (Qop L t (ThetaOp L ξ t A)) x = 0 :=
+    SumZero_Qop L hL htt (ThetaOp L ξ t A) x
+  have h2 : Psum L (ThetaOp L ξ t (Qop L t A)) x = 0 :=
+    SumZero_ThetaOp L hL ht (SumZero_Qop L hL htt A) x
+  simp [h1, h2]
+
 end RBM

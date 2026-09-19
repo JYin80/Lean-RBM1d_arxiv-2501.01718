@@ -731,7 +731,12 @@ T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 
   `FIn_glueF`/`FOut_glueF`/`glueF_cut` 互逆；**`sum_cut`：`Σ_{F∈TSP n, J∈F} f(FOut F J, FIn F J) = Σ_{G∈TSP(外)} Σ_{H∈TSP(内)} f G H`**。
 * 步骤 5a ✔（`4b99515`）：`treeValW_leaf_mul`（叶的行线性，处理叶边/根边项）；**`treeValW_internal_cut`**：
   带 Θ 权时把 `Θ_J S Θ_J` 放在边 J 上 = `Σ_{u,w} treeValG(内侧, 根 u) S_{uw} treeValG(外侧, 胶 w)`，小多边形的 σ、a 只通过简单的重标号假设进入。
-* 下一步：步骤 5b——定义列表上的 `K`（n=1 取 m，n=2 取 `kTwo`，n≥3 取 `m_σ W^{-(n-1)} Σ_F treeValG`），
+* 步骤 5b ✔（`7e030b3`）：`Kn`（函数形式的 (3.5)）、`hasDerivAt_Kn`（每叶一项 + 每条内部边一项）、
+  `leaf_term`（叶 v ⟹ `Σ_x (μΘS)_{a_v x} Kn(a_v := x)`）、`sum_edges_swap`、
+  **`internal_term`**（边 J 对所有含 J 的树求和 ⟹ `W Σ_{x,y} Kn(外, 胶 x) S_{xy} Kn(内, 根 y)`，正是 J 的剪接项）。
+  **函数层面的 (2.48) 已全部到位**，只差列表层对接。
+* 下一步：步骤 5c——列表层：`Kgen`（n=1: m；n=2: `kTwo`；n≥3: `Kn`），`primRhs` 的 `(k,l)` 按「叶/根/对角线」三类拆分，
+  `cutGlueL/R` 列表的 `getD` 对到 `leaf_term`/`internal_term` 的假设上；再初值、唯一性。原步骤 5b 说明：（n=1 取 m，n=2 取 `kTwo`，n≥3 取 `m_σ W^{-(n-1)} Σ_F treeValG`），
   把 `cutGlueL/R` 列表的 `getD` 对到 5a 的重标号假设上；然后导数、初值、唯一性。原步骤 5 说明：(i) 叶边/根边两种退化剪切（同一族 F、另一侧为 2-loop 单边）；(ii) 树值的时间导数按边求和后交换求和
   `Σ_F Σ_{J∈F} = Σ_J Σ_{F∋J}`，套 `treeValW_cut`+`gval_in_eq`/`gval_out_eq`+`sum_cut`；(iii) 与 `primRhs` 的 `(k,l)` 及 `cutGlueL/R` 列表对接；
   (iv) 初值；(v) 唯一性收口。原计划（剪切双射）： `{F ∈ TSP n : J ∈ F} ≃ TSP(外) × TSP(内)`（`F ↦ (FOut, FIn)`，需证 FOut/FIn 是 TSP、反向拼接），

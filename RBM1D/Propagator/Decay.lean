@@ -270,4 +270,40 @@ theorem norm_theta_apply_le_rho_pow (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖�
 
 end Pointwise
 
+section Rate
+
+variable {ξ : ℂ}
+
+/-- The inverse of the map `ξ ↦ ρ(ξ)`: `ξ (1 + ρ + ρ²) = 3ρ`. -/
+theorem xi_mul_poly (hξ0 : ξ ≠ 0) : ξ * (1 + rho ξ + rho ξ ^ 2) = 3 * rho ξ := by
+  have h := rho_eq ξ
+  have hc : ξ * cc ξ = 3 - ξ := by unfold cc; field_simp
+  linear_combination ξ * h + rho ξ * hc
+
+/-- **The source of the square root in the decay length.**
+`(1 - ξ) · 3ρ = ξ (1 - ρ)²`, i.e. `1 - ξ = (1-ρ)² / (1 + ρ + ρ²)`.
+
+`ξ = 1` corresponds to `ρ = 1`, and it is a *double* zero.  That is exactly why
+the decay length `1/(1 - ρ)` scales like `|1 - ξ|^{-1/2}` rather than
+`|1 - ξ|^{-1}`, and it is an exact identity, not an asymptotic one. -/
+theorem one_sub_xi_mul (hξ0 : ξ ≠ 0) : (1 - ξ) * (3 * rho ξ) = ξ * (1 - rho ξ) ^ 2 := by
+  linear_combination (-(1 : ℂ)) * xi_mul_poly hξ0
+
+/-- The identity above, in norms. -/
+theorem norm_one_sub_rho_sq (hξ0 : ξ ≠ 0) :
+    ‖ξ‖ * ‖1 - rho ξ‖ ^ 2 = 3 * ‖1 - ξ‖ * ‖rho ξ‖ := by
+  have h := one_sub_xi_mul hξ0
+  have := congrArg (‖·‖) h
+  simpa [norm_mul, norm_pow, mul_comm, mul_left_comm, mul_assoc] using this.symm
+
+/-- `ρ(ξ) → 1` as `ξ → 1`, quantitatively: `‖1 - ρ‖² ≤ 3 ‖1 - ξ‖ / ‖ξ‖`. -/
+theorem norm_one_sub_rho_le (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) :
+    ‖ξ‖ * ‖1 - rho ξ‖ ^ 2 ≤ 3 * ‖1 - ξ‖ := by
+  rw [norm_one_sub_rho_sq hξ0]
+  have h1 : ‖rho ξ‖ ≤ 1 := (norm_rho_lt_one hξ0 hξ).le
+  have h2 : (0 : ℝ) ≤ 3 * ‖1 - ξ‖ := by positivity
+  nlinarith [norm_nonneg (1 - ξ)]
+
+end Rate
+
 end RBM

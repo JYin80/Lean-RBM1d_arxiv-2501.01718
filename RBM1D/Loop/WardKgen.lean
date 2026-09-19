@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Loop.WardGeneral
 import RBM1D.Loop.TreeRepGeneral
 import RBM1D.Loop.Cor35
+import RBM1D.Propagator.Edges
 
 /-!
 # Ward's identity and cyclic invariance for the primitive loop itself
@@ -577,6 +578,7 @@ theorem prod_map_pow_eq (l : List (ZMod L)) (r : ℝ) (d : ZMod L → ℕ) :
   | nil => simp
   | cons x l ih => simp [ih, pow_add]
 
+omit [NeZero L] in
 /-- **From a pairwise bound to a product bound.**  If `|K_{σ,a}| ≤ B e^{-c‖a_i - a_j‖}` for
 every pair, then `|K_{σ,(a₀,rest)}| ≤ B ∏_{x ∈ rest} r^{‖x - a₀‖}`, `r = e^{-c/(m-1)}`: the
 bound for the farthest label dominates the geometric mean. -/
@@ -623,5 +625,108 @@ theorem prod_bound_of_pairwise (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool) (
     _ ≤ r ^ (rest.map fun x => zdist L (x - a₀)).sum := pow_le_pow_of_le_one hr0 hr1 hsum
 
 end PureSum
+
+section PurePointwise
+
+open Cor35
+
+omit hL hE in
+/-- The bulk gap for either charge: `|1 - t m(b)²| ≥ √k` for `|E| ≤ 2 - k`, `0 ≤ t ≤ 1`. -/
+theorem gap_mSigma {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (b : Bool) :
+    Real.sqrt k ≤ ‖1 - (t : ℂ) * (mSigma E b * mSigma E b)‖ := by
+  have h := sqrt_le_norm_one_sub_short hk0 hk1 hEk ht0 ht1
+  cases b
+  · have e : 1 - (t : ℂ) * (mSigma E false * mSigma E false)
+        = (starRingEnd ℂ) (1 - (t : ℂ) * (mE E) ^ 2) := by
+      simp [mSigma_false, sq, map_mul]
+    rw [e, Complex.norm_conj]
+    exact h
+  · rw [mSigma_true, ← sq]
+    exact h
+
+/-- **Pure loops, with the `W`-power**: for `σ = (b, …, b)`, `n ≥ 3`, `|E| ≤ 2 - k`,
+`|K_{t,σ,a}| ≤ W^{-(n-1)} C_n e^{-c ‖a_i - a_j‖}`, with `C_n`, `c` depending on `n` and `k` only. -/
+theorem norm_Kgen_pure_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) (b : Bool) {n : ℕ} (hn : 3 ≤ n) (a : List (ZMod L))
+    (ha : a.length = n) {i j : ℕ} (hi : i < n) (hj : j < n) :
+    ‖Kgen L W (mSigma E) t ⟨List.replicate n b, a⟩‖ ≤ ((W : ℝ)⁻¹) ^ (n - 1) *
+      (cor35Const n (Real.sqrt k) *
+        Real.exp (-(cor35Rate (Real.sqrt k) * zdist L (a.getD i 0 - a.getD j 0)))) := by
+  set δ := Real.sqrt k with hδdef
+  have hδ : 0 < δ := Real.sqrt_pos.2 hk0
+  set I : LoopIdx (ZMod L) := ⟨List.replicate n b, a⟩ with hIdef
+  have hI : I.WF := by simp [I, LoopIdx.WF, ha]
+  have hlen : I.length = n := ha
+  have hm1 := norm_mSigma_le_one hE
+  have hrep := treeRep_general hL W (mSigma E) hm1 ht1
+    (isPrimitive_Kgen hL W (mSigma E) hm1 ht1) subset_rfl
+    (fun s hs J hJ hJ2 => norm_Kgen_two_le hL W (mSigma E) hm1 ht1 hs J hJ hJ2)
+    ⟨ht0, le_rfl⟩ I hI (by omega)
+  have : NeZero I.length := ⟨by omega⟩
+  have hrep' : Kgen L W (mSigma E) t I = (I.σ.map (mSigma E)).prod * (W : ℂ)⁻¹ ^ (I.length - 1) *
+      ∑ F ∈ TSP I.length,
+        treeValG L (mSigma E) t (fun i => I.σ.getD i false) (fun i => I.a.getD i 0) F := hrep
+  rw [hrep']
+  have hκ : 0 < cZero * Real.sqrt δ := mul_pos cZero_pos (Real.sqrt_pos.2 hδ)
+  have hB : 1 ≤ 2 * cTwo52 / δ + 1 := by
+    have := cTwo52_pos
+    have : 0 ≤ 2 * cTwo52 / δ := by positivity
+    linarith
+  have hσ' : ∀ k' : Fin I.length, I.σ.getD k' false = b := fun k' => by
+    have hk : (k' : ℕ) < n := hlen ▸ k'.isLt
+    exact List.getD_replicate _ (by simpa using hk)
+  -- the edge bounds, for the relabelled `m` with `m' true = m b`
+  let m' : Bool → ℂ := fun s => mSigma E (if s then b else !b)
+  have hm1' : ∀ s, ‖m' s‖ ≤ 1 := fun s => hm1 _
+  have hgap' : δ ≤ ‖1 - (t : ℂ) * (m' true * m' true)‖ := by
+    simp only [m', ite_true]
+    exact gap_mSigma hk0 hk1 hEk ht0 ht1.le b
+  have hedge := norm_thetaEdge_le hL hm1' ht0 ht1 hδ hgap'
+  have hedge_b : ∀ x y, thetaEdge L (mSigma E) t b b x y = thetaEdge L m' t true true x y := by
+    intro x y
+    simp only [thetaEdge, m', ite_true]
+  set X := (2 * cTwo52 / δ + 1) ^ (I.length + I.length * I.length) *
+    (2 / (1 - Real.exp (-(cZero * Real.sqrt δ / (2 * ((I.length * I.length : ℕ) : ℝ)))))) ^
+      (I.length * I.length) *
+    Real.exp (-(cZero * Real.sqrt δ / 4 * zdist L (I.a.getD i 0 - I.a.getD j 0)))
+  have htree : ∀ F ∈ TSP I.length,
+      ‖treeValG L (mSigma E) t (fun k' => I.σ.getD k' false) (fun k' => I.a.getD k' 0) F‖
+        ≤ X := by
+    intro F hF
+    refine norm_treeValW_le (isTSP_of_mem_TSP hF) (by omega) _ _ _ hB hκ
+      (fun v x y => ?_) (fun d x y => ?_) ⟨i, by omega⟩ ⟨j, by omega⟩
+    · simp only [hσ', hedge_b]
+      exact (hedge x y).1
+    · simp only [hσ', Matrix.sub_apply]
+      rw [hedge_b]
+      exact (hedge x y).2
+  have hprod : ‖(I.σ.map (mSigma E)).prod‖ ≤ 1 := by
+    simp only [I, List.map_replicate, List.prod_replicate, norm_pow]
+    exact pow_le_one₀ (norm_nonneg _) (hm1 b)
+  have hW : ‖(W : ℂ)⁻¹ ^ (I.length - 1)‖ = ((W : ℝ)⁻¹) ^ (n - 1) := by
+    rw [norm_pow, norm_inv, Complex.norm_natCast, hlen]
+  have hX : 0 ≤ X := by
+    have := one_le_two_div (lam := cZero * Real.sqrt δ / (2 * ((I.length * I.length : ℕ) : ℝ)))
+      (by have : (0 : ℝ) < ((I.length * I.length : ℕ) : ℝ) := by
+            rw [hlen]; exact_mod_cast Nat.mul_pos (by omega) (by omega)
+          have := cZero_pos
+          positivity)
+    positivity
+  have hsum : ‖∑ F ∈ TSP I.length,
+      treeValG L (mSigma E) t (fun k' => I.σ.getD k' false) (fun k' => I.a.getD k' 0) F‖
+      ≤ (TSP I.length).card * X := by
+    refine (norm_sum_le _ _).trans ?_
+    refine (Finset.sum_le_sum htree).trans ?_
+    rw [Finset.sum_const, nsmul_eq_mul]
+  rw [norm_mul, norm_mul, hW]
+  calc _ ≤ 1 * ((W : ℝ)⁻¹) ^ (n - 1) * ((TSP I.length).card * X) := by
+        gcongr
+    _ = _ := by
+        simp only [X, cor35Const, cor35Rate]
+        rw [hlen]
+        ring
+
+end PurePointwise
 
 end RBM

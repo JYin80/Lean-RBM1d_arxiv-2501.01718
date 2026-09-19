@@ -7,6 +7,7 @@ import RBM1D.Defs.Domination
 import RBM1D.Delocalization
 import RBM1D.Defs.Model
 import RBM1D.Loop.Index
+import RBM1D.Loop.Primitive
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
@@ -77,3 +78,7 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.im_green_apply_self
 #print axioms RBM.sq_norm_eigenvector_le_im_green
 #print axioms RBM.sq_norm_eigenvector_le_of_norm_green_le
+#print axioms RBM.primRhs_two
+#print axioms RBM.hasDerivAt_kTwo
+#print axioms RBM.kTwo_zero
+#print axioms RBM.hasDerivAt_kTwoLoop

@@ -341,3 +341,20 @@ Mathlib 里应该有类似 `Complex.eq_conj_iff_re` / `Complex.normSq` 的工具
 | **`RBM.sq_norm_eigenvector_le_of_norm_green_le`** | `‖G_xx(λ_k+iη)‖ ≤ C ⇒ |ψ_k(x)|² ≤ Cη`（Thm 2.2 的确定性内核） |
 
 local law 作为假设，概率部分待随机层（paper-deltas #5）。
+
+### `RBM1D/Loop/Primitive.lean` — Def 2.12 + Example 2.15（T18，Claude Code）
+
+**下标核对通过**：`primRhs_two` 证明一般式 (2.48) 在 n=2 用 `cutGlueL/R` 展开后恰为 (2.55)。
+算子给出 `Σ_{a,b} K_{σ,(a,a₂)} S_ab K_{σ,(a₁,b)}`（与工单手算一致，`change` 定义性验证），
+对换哑指标 + `S^(B)` 对称即得 (2.55)。`Loop/Index.lean` 的约定与论文一致，无需改动。
+
+| Lean | 内容 |
+|---|---|
+| `RBM.primRhs` / **`primRhs_two`** | (2.48) 右端；n=2 时 = (2.55) |
+| `RBM.primInit` / `RBM.IsPrimitive` | Def 2.12 初值；谓词形式（时间集 `T`，`m : Bool → ℂ` 作参数，n=1 单列） |
+| `RBM.kTwo` / **`hasDerivAt_kTwo`** | **Example 2.15**：(2.57) 满足 (2.55)，假设 `‖t m₁m₂‖ < 1` |
+| `RBM.kTwo_zero` / `Theta_zero` | `t=0` 时等于 Def 2.12 的初值 |
+| `RBM.kTwoLoop` / **`hasDerivAt_kTwoLoop`** | 同上，一般式 (2.48) 的形式 |
+| 两条 `example` | (2.58) 的 σ=(+,−)、(+,+) |
+
+等 T19 的 `m_sc`/`m^{(E)}` 落地后，把 `m` 实例化即可。

@@ -823,4 +823,178 @@ theorem etaT_mul_ellHat_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht0 : 0 < t) (h
 
 end LongFacts
 
+section Alternating
+
+/-! ### Lemma 3.11 for `π = ∅` and alternating charges
+
+All boundary edges are long, `Θ_t` with `t` real.  With `A = 8e/(η_t ℓ̂)`:
+`|Θ_t| ≤ A`, `∑|Θ_t| ≤ 1/η_t`, `|∇Θ_t| ≤ 3/2`, `|ΔΘ_t| ≤ 3` and `|ΔΘ_t| ≤ 24/ℓ̂` off the
+diagonal (`Propagator/LongDiff.lean`); `η_t ℓ̂² ≤ 1` gives `1/η_t ≤ A²` and `(1/η_t)(24/ℓ̂) ≤ 2A`.
+The leading term is `O(η_t)` by the sum-zero property (Lemma 3.10), the first-order terms vanish by
+symmetry, and the rest are bounded by `sum_prod_taylor_le`. -/
+
+theorem sigWeightConst_nonneg {n : ℕ} [NeZero n] {k : ℝ} (hk0 : 0 < k) (p : ℕ) :
+    0 ≤ sigWeightConst n k p := by
+  have hδ : 0 < Real.sqrt k := Real.sqrt_pos.2 hk0
+  have h1 := cor35Const_nonneg n hδ
+  have hr : 0 < cor35Rate (Real.sqrt k) / n := by
+    have := cZero_pos
+    have : (0 : ℝ) < n := by exact_mod_cast NeZero.pos n
+    have := Real.sqrt_pos.2 hδ
+    simp only [cor35Rate]
+    positivity
+  have h2 : 0 ≤ polyExpSum (cor35Rate (Real.sqrt k) / n) p := by
+    unfold polyExpSum; positivity
+  unfold sigWeightConst
+  positivity
+
+/-- **Lemma 3.11, (3.45), for `π = ∅` and alternating `σ`**:
+`|K^(∅)_{t,σ,a}| ≤ C (η_t ℓ̂(t))^{-(n-1)}` for `|E| ≤ 2 - k`, `0 < t < 1`, uniformly in `L` and `a`. -/
+theorem norm_Kpi_empty_alt_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {n : ℕ}
+    [NeZero n] (hn : 3 ≤ n) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+      ∀ σ : Fin n → Bool, (∀ v, σ v ≠ σ (v + 1)) → ∀ a : Fin n → ZMod L,
+        ‖Kpi L (mSigma E) t σ a ∅‖ ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (n - 1) := by
+  obtain ⟨Csz, hCsz0, hCsz⟩ := sum_zero hk0 hk1 hEk hn
+  set SW := sigWeightConst n k 2
+  have hSW : 0 ≤ SW := sigWeightConst_nonneg hk0 2
+  set e8 := 8 * Real.exp 1
+  have he2 : 2 ≤ Real.exp 1 := by have := Real.add_one_le_exp (1 : ℝ); linarith
+  refine ⟨3 ^ n * ((Csz + 19 / 4 * SW) * e8 ^ (n - 1)), by positivity, ?_⟩
+  intro L _ hL t ht0 ht1 σ halt a
+  have hE : |E| < 2 := by linarith
+  have hE2 : |E| ≤ 2 := hE.le
+  set η := etaT E t with hηdef
+  set ℓ := ellHat L (t : ℂ) with hℓdef
+  have hη : 0 < η := etaT_pos hE ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hηℓ2 : η * ℓ ^ 2 ≤ 1 := etaT_mul_ellHat_sq_le hE2 ht1
+  have hηℓ0 : 0 < η * ℓ := by positivity
+  set A := e8 * (η * ℓ)⁻¹ with hAdef
+  have hA : 3 / 2 ≤ A := by
+    have : 1 ≤ (η * ℓ)⁻¹ := one_le_inv₀ hηℓ0 |>.2 hηℓ
+    simp only [A, e8]; nlinarith
+  -- the kernels
+  set f : Fin n → ZMod L → ℂ := fun v y => thetaEdge L (mSigma E) t (σ v) (σ (v + 1)) (a v) y
+  have hf : ∀ v y, f v y = Theta L (t : ℂ) (a v) y := fun v y => by
+    simp only [f, thetaEdge_of_ne hE2 t (halt v)]
+  have hsup : ∀ v y, ‖f v y‖ ≤ A := fun v y => by
+    rw [hf, hAdef, hηdef, etaT_eq_zt_im, ← div_eq_mul_inv]
+    exact norm_Theta_long_edge_le L hL hk0 (by linarith) hEk ht0 ht1 _ _
+  have hl1 : ∀ v, ∑ y, ‖f v y‖ ≤ η⁻¹ := fun v => by
+    simp only [hf]; rw [hηdef, etaT_eq_zt_im]
+    exact sum_norm_Theta_long_edge_le L hL hk0 (by linarith) hEk ht0 ht1 _
+  have hgrad : ∀ v u, ‖f v (u + 1) - f v u‖ ≤ 3 / 2 := fun v u => by
+    rw [hf, hf, norm_sub_rev]; exact norm_Theta_sub_shift_le_uniform L hL ht0 ht1 _ _
+  have hlap_eq : ∀ v u, ‖lap (f v) u‖ =
+      ‖2 * Theta L (t : ℂ) (a v) u - Theta L (t : ℂ) (a v) (u + 1) - Theta L (t : ℂ) (a v) (u - 1)‖ :=
+    fun v u => by
+      simp only [lap, hf]
+      rw [← norm_neg]; congr 1; ring
+  have hlap : ∀ v u, ‖lap (f v) u‖ ≤ 3 := fun v u => by
+    rw [hlap_eq]; exact norm_Theta_second_diff_le_three L hL ht0 ht1 _ _
+  have hoff : ∀ v u, u ≠ a v → ‖lap (f v) u‖ ≤ 24 / ℓ := fun v u hu => by
+    rw [hlap_eq]; exact norm_Theta_second_diff_le L hL ht0 ht1 (Ne.symm hu)
+  have hMoff : 0 ≤ 24 / ℓ := by positivity
+  have h₁ : η⁻¹ * (24 / ℓ) ≤ 2 * A := by
+    rw [hAdef, show η⁻¹ * (24 / ℓ) = 24 * (η * ℓ)⁻¹ by field_simp]
+    have : 0 < (η * ℓ)⁻¹ := by positivity
+    simp only [e8]; nlinarith
+  have h₂ : η⁻¹ ≤ 1 * A ^ 2 := by
+    rw [one_mul, hAdef, mul_pow, inv_pow]
+    rw [show η⁻¹ = (η * ℓ ^ 2) * ((η * ℓ) ^ 2)⁻¹ by field_simp]
+    have : 0 < ((η * ℓ) ^ 2)⁻¹ := by positivity
+    have : 1 ≤ e8 ^ 2 := by simp only [e8]; nlinarith
+    nlinarith
+  -- the three kinds of terms
+  set g : (Fin n → ZMod L) → ℂ := fun s => SigmaPi L (mSigma E) t σ ∅ s
+  have hm := norm_mul_mSigma_lt_one hE2 ht0.le ht1
+  have hgneg : ∀ s, g (fun v => -s v) = g s := fun s => SigmaPi_neg (mSigma E) hm hL σ ∅ s
+  have hgadd : ∀ s c, g (fun v => s v + c) = g s := fun s c =>
+    SigmaPi_add_const (mSigma E) hm hL σ ∅ s c
+  set B := (Csz + 19 / 4 * SW) * A ^ (n - 1)
+  have hterm : ∀ τ : Fin n → Fin 3,
+      ‖∑ c : ZMod L, ∑ s ∈ pinned L n, g s * ∏ v, taylorTerm (f v) (τ v) c (s v)‖ ≤ B := by
+    intro τ
+    have hA0 : 0 ≤ A := by linarith
+    have hB0 : 0 ≤ B := by positivity
+    by_cases hR : (∃ v, τ v = 2) ∨ ∃ v₁ v₂, v₁ ≠ v₂ ∧ τ v₁ = 1 ∧ τ v₂ = 1
+    · -- the remainder terms
+      have hW : ∀ s ∈ pinned L n, ∑ c, ∏ v, ‖taylorTerm (f v) (τ v) c (s v)‖ ≤
+          (2 / 2 + 3 / 2 + 9 / 4 * 1) * A ^ (n - 1) * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ 2 := by
+        intro s hs
+        simp only [pinned, mem_filter, mem_univ, true_and] at hs
+        exact sum_prod_taylor_le f a hA hsup hl1 hgrad hlap hoff hMoff h₁ h₂ (by norm_num)
+          (by norm_num) τ hR s hs
+      have hS := sum_pinned_SigmaPi_le hL hE hk0 hk1 hEk ht0.le ht1 σ (by omega) 2
+      calc ‖∑ c : ZMod L, ∑ s ∈ pinned L n, g s * ∏ v, taylorTerm (f v) (τ v) c (s v)‖
+          ≤ ∑ c : ZMod L, ∑ s ∈ pinned L n, ‖g s‖ * ∏ v, ‖taylorTerm (f v) (τ v) c (s v)‖ := by
+            refine (norm_sum_le _ _).trans (sum_le_sum fun c _ => ?_)
+            refine (norm_sum_le _ _).trans (le_of_eq (sum_congr rfl fun s _ => ?_))
+            rw [norm_mul, norm_prod]
+        _ = ∑ s ∈ pinned L n, ‖g s‖ * ∑ c : ZMod L, ∏ v, ‖taylorTerm (f v) (τ v) c (s v)‖ := by
+            rw [sum_comm]; simp only [mul_sum]
+        _ ≤ ∑ s ∈ pinned L n, ‖g s‖ *
+              ((2 / 2 + 3 / 2 + 9 / 4 * 1) * A ^ (n - 1) * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ 2) :=
+            sum_le_sum fun s hs => mul_le_mul_of_nonneg_left (hW s hs) (norm_nonneg _)
+        _ = 19 / 4 * A ^ (n - 1) *
+              ∑ s ∈ pinned L n, ‖g s‖ * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ 2 := by
+            rw [mul_sum]; refine sum_congr rfl fun s _ => by ring
+        _ ≤ 19 / 4 * A ^ (n - 1) * SW := by gcongr
+        _ ≤ B := by
+            simp only [B]
+            have : 0 ≤ Csz * A ^ (n - 1) := by positivity
+            nlinarith
+    push Not at hR
+    obtain ⟨hn2, hn11⟩ := hR
+    have key : ∀ j : Fin 3, j ≠ 2 → j ≠ 1 → j = 0 := by decide
+    by_cases h1 : ∃ v₁, τ v₁ = 1
+    · -- a single odd piece
+      obtain ⟨v₁, hv₁⟩ := h1
+      have h0 : ∀ v, v ≠ v₁ → τ v = 0 := fun v hv =>
+        key _ (hn2 v) (hn11 v₁ v (Ne.symm hv) hv₁)
+      rw [sum_taylor_single_eq_zero g hgneg f τ v₁ hv₁ h0, norm_zero]
+      exact hB0
+    · -- the leading term
+      push Not at h1
+      have h0 : ∀ v, τ v = 0 := fun v => key _ (hn2 v) (h1 v)
+      rw [sum_taylor_zero_eq g f τ h0, norm_mul]
+      have hlead : ‖∑ c : ZMod L, ∏ v, f v c‖ ≤ η⁻¹ * A ^ (n - 1) := by
+        have hT : (univ.erase (0 : Fin n)).card = n - 1 := by
+          rw [card_erase_of_mem (mem_univ _), card_univ, Fintype.card_fin]
+        calc ‖∑ c : ZMod L, ∏ v, f v c‖ ≤ ∑ c : ZMod L, ‖f 0 c‖ * ∏ v ∈ univ.erase 0, ‖f v c‖ := by
+              refine (norm_sum_le _ _).trans (le_of_eq (sum_congr rfl fun c _ => ?_))
+              rw [norm_prod, mul_prod_erase _ (fun v => ‖f v c‖) (mem_univ 0)]
+          _ ≤ (∑ c : ZMod L, ‖f 0 c‖) * ∏ _v ∈ univ.erase (0 : Fin n), A :=
+              sum_mul_prod_le _ (fun v c => ‖f v c‖) _ _ (fun c => norm_nonneg _)
+                (fun v c => norm_nonneg _) fun v _ c => hsup v c
+          _ ≤ η⁻¹ * A ^ (n - 1) := by
+              rw [prod_const, hT]
+              gcongr
+              exact hl1 0
+      have hzero : ‖∑ s ∈ pinned L n, g s‖ ≤ Csz * η := by
+        have h := hCsz L hL t ht0.le ht1 σ halt
+        have hL0 : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne L)
+        rw [sum_eq_mul_sum_pinned g hgadd, ← mul_assoc, inv_mul_cancel₀ hL0, one_mul] at h
+        exact h
+      calc ‖∑ c : ZMod L, ∏ v, f v c‖ * ‖∑ s ∈ pinned L n, g s‖
+          ≤ (η⁻¹ * A ^ (n - 1)) * (Csz * η) := by gcongr
+        _ = Csz * A ^ (n - 1) := by field_simp
+        _ ≤ B := by
+            simp only [B]
+            have : 0 ≤ SW * A ^ (n - 1) := by positivity
+            nlinarith
+  rw [Kpi_empty_expand hL hE ht0.le ht1 σ a]
+  calc ‖∑ τ : Fin n → Fin 3, ∑ c : ZMod L, ∑ s ∈ pinned L n,
+          g s * ∏ v, taylorTerm (f v) (τ v) c (s v)‖
+      ≤ ∑ τ : Fin n → Fin 3, B := (norm_sum_le _ _).trans (sum_le_sum fun τ _ => hterm τ)
+    _ = 3 ^ n * B := by
+        rw [sum_const, card_univ, Fintype.card_fun, Fintype.card_fin, Fintype.card_fin,
+          nsmul_eq_mul]; push_cast; ring
+    _ = 3 ^ n * ((Csz + 19 / 4 * SW) * e8 ^ (n - 1)) * (η * ℓ)⁻¹ ^ (n - 1) := by
+        simp only [B, A, mul_pow]; ring
+
+end Alternating
+
 end RBM

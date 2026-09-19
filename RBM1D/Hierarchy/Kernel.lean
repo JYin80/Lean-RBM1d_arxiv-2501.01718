@@ -16,7 +16,8 @@ For an `n`-loop the paper introduces two linear operators on tensors
 
 * (5.16) the generator   `(Theta_{t,sigma} . A)_a = sum_i sum_c (xi_i * Theta_{t xi_i})_{a_i c} A_{a^(i)}`
 * (5.17) the propagator  `(U_{s,t,sigma} . A)_a = sum_b prod_i K_i(a_i, b_i) A_b`,
-  where `K_i = (1 - s xi_i S^(B)) (1 - t xi_i S^(B))^{-1}` and `xi_i = m(sigma_i) m(sigma_{i+1})`.
+  where `K_i = (1 - s xi_i S^(B)) (1 - t xi_i S^(B))^{-1}`
+  and `xi_i = m(sigma_i) m(sigma_{i+1})`.
 
 The whole section rests on the single-edge identity (5.18)
 
@@ -63,7 +64,9 @@ theorem sum_norm_row_le (M : Matrix (ZMod L) (ZMod L) ℂ) (a : ZMod L) :
   have h : ∑ b : ZMod L, ‖M a b‖₊ ≤ ‖M‖₊ := by
     rw [Matrix.linfty_opNNNorm_def]
     exact Finset.le_sup (f := fun i => ∑ j : ZMod L, ‖M i j‖₊) (Finset.mem_univ a)
-  exact_mod_cast h
+  have h2 : ((∑ b : ZMod L, ‖M a b‖₊ : NNReal) : ℝ) ≤ ((‖M‖₊ : NNReal) : ℝ) :=
+    NNReal.coe_le_coe.mpr h
+  simpa using h2
 
 end Interchange
 
@@ -125,7 +128,7 @@ section Operators
 variable (L : ℕ) [NeZero L]
 
 /-- The paper's edge parameter `xi_i = m(sigma_i) m(sigma_{i+1})` of Definition 5.2. -/
-noncomputable def xiOf {n : ℕ} (m : Bool → ℂ) (σ : Fin n → Bool) (i : Fin n) : ℂ :=
+noncomputable def xiOf {n : ℕ} [NeZero n] (m : Bool → ℂ) (σ : Fin n → Bool) (i : Fin n) : ℂ :=
   m (σ i) * m (σ (i + 1))
 
 /-- **(5.17)**: the evolution kernel `U_{s,t,sigma}`. -/
@@ -172,7 +175,7 @@ theorem norm_Uker_apply_le (hL : 3 ≤ L) {n : ℕ} {ξ : Fin n → ℂ} {s t : 
     rw [sum_prod_pi L (fun i c => ‖edgeKer L (ξ i) s t (a i) c‖)]
     calc (∏ i : Fin n, ∑ c : ZMod L, ‖edgeKer L (ξ i) s t (a i) c‖)
         ≤ ∏ _i : Fin n, C :=
-          Finset.prod_le_prod (fun i _ => Finset.sum_nonneg fun _ _ => norm_nonneg _)
+          Finset.prod_le_prod₀ (fun i _ => Finset.sum_nonneg fun _ _ => norm_nonneg _)
             (fun i _ => hrow i)
       _ = C ^ n := by simp
   calc ‖Uker L ξ s t A a‖

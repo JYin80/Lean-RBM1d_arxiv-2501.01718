@@ -1372,6 +1372,19 @@
   continuity argument.
 \end{proof}
 
+\begin{theorem}[Theorems 2.5 (QUE) and 2.6 (bulk universality), \S2.3 and \S7.2]\label{thm:2.5-2.6}
+  \lean{RBM.imGreen, RBM.imGreen_eq_spectral, RBM.trace_imGreen_mul_imGreen, RBM.sum_window_le, RBM.sq_norm_eigOverlap_le, RBM.queObs, RBM.queObs_eq, RBM.trace_imGreen_mul_imGreen_eq, RBM.norm_integral_trace_imGreen_queObs_le, RBM.norm_Theta_sub_Theta_le, RBM.norm_mul_ThetaTilde_sub_le, RBM.msc_gap, RBM.queBad, RBM.measure_queBad_le, RBM.queEta, RBM.que_of_QDExpect, RBM.que_literal_of_QDExpect, RBM.queEvent212, RBM.queEvent213, RBM.theorem2_5_of_QDExpect, RBM.QDExpect.of_Thm221, RBM.theorem2_5_of_Thm221, RBM.corrPairing, RBM.gueCorr, RBM.OUFlow, RBM.BulkUniversality, RBM.theorem2_6_of_steps, RBM.Eq747, RBM.que_flow_of_eq747, RBM.blockM_eq, RBM.measure_bad_flow_of_eq747}
+  \leanok\uses{thm:2.3-2.4, lem:Theta-diff, def:flow-hypotheses}
+  (2.12)(2.13) for $H$ from the expectation bounds (2.8)(2.9), hence from Theorem 2.21;
+  (2.27) for $H_t$ from (7.47) (placeholder \texttt{Eq747} until T65); (2.18) from (2.21) [51],
+  (2.23)$\Rightarrow$(2.24) [37,70] and (2.23), all three as hypotheses.
+\end{theorem}
+\begin{proof}\leanok
+  (2.14) by the spectral decomposition of $\operatorname{Im}G$; (2.15) trace algebra with the
+  $\Theta$-oscillation from (2.53) and the gap (2.16); (2.17) and Markov; the bad event $B_y$ of
+  Step 3 via (2.27).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

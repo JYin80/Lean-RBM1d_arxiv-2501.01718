@@ -50,6 +50,7 @@ import RBM1D.Flow.Hypotheses
 import RBM1D.Flow.Initial
 import RBM1D.Flow.Iteration
 import RBM1D.Flow.Scales
+import RBM1D.Flow.Universality
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds

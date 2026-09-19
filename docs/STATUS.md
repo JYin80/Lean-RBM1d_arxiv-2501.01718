@@ -1179,3 +1179,11 @@ T60 可 import 此文件替换其 (5.77) 占位。paper-deltas #42。
 (5.4) `eq54`、(5.5) `eq55`（起点 `max(s,1/2)`）、(5.8) `eq58`；(5.2) `norm_Lval_le_of_le_half`。
 假设（结构 `Hyp`）：(6.1) `LoopScaling`、`NetLift`（网 + (5.1)）、`Lemma41Flow`（Lemma 4.1 沿 `z_u`——现有 `entry_bound_stochDom` 只对固定谱参数）、`u ↦ ‖G_u−m‖_max` 连续。
 **额外假设** `∃ c>0, N^c ≤ Wℓ_tη_t`（尚未从 `t ≤ 1−N^{−1+τ}` 经 `flowScale_ge` 推出，需 W/N 换算）。paper-deltas #44。
+
+### `RBM1D/Flow/Universality.lean` — Theorems 2.5（QUE）与 2.6（普适性）（T68，Claude Code 并行 agent）
+
+**Theorem 2.5 全证**：(2.14) `sum_window_le`（谱分解，常数 4）、(2.15) `norm_integral_trace_imGreen_queObs_le`、(2.16) `msc_gap`、(2.17)+Markov →
+`theorem2_5_of_QDExpect`（(2.12)(2.13) 字面事件 `queEvent212/213`），并经 `QDExpect.of_Thm221` 接上 Thm 2.21 → 2.4 → 2.5（`theorem2_5_of_Thm221`，固定能量切片）。
+**Theorem 2.6**：`theorem2_6_of_steps`——(2.21) `DBMUniversality`[51]、(2.23)⇒(2.24) `GreenComparison`[37,70]、(2.23) `StepTwoClaim` 为假设；GUE 关联函数 `gueCorr` 按特征值密度的边缘显式写出。
+Step 3 已做部分：(2.27) `que_flow_of_eq747`、坏事件 `measure_bad_flow_of_eq747`（概率 ≤ 3N^{-c/18}，阈值 N^{-c/36}——疑似论文笔误）。
+**剩余缺口**：(2.25)–(2.33) ⇒ (2.23) 的 L₁/L₂ 估计（需 [70, L4.18/4.20]、离域化、特征值计数）；`Eq747` 待 T65 替换。paper-deltas #45。

@@ -30,7 +30,7 @@
 | T22 | (2.48) 解的唯一性：双线性结构 + n=2 的 Grönwall | `Loop/Unique.lean` | Claude Code #2 | **完成** |
 | T23 | Example 2.16（n=3）：第一个非平凡的树表示实例 | `Loop/Example3.lean` | Claude Code #2 | **完成** |
 | T24 | 公理审计 + 删 `Probe.lean` + linter 清理 | `Test/Axioms.lean`（新建）等 | Claude Code | **完成** |
-| T25 | **Lemma 3.4：树表示**（第 3 节主定理） | `Loop/TreeRep.lean`（新建） | 空闲 | **可开工（优先）** |
+| T25 | **Lemma 3.4：树表示**（第 3 节主定理） | `Loop/TreeRep.lean`（新建） | **Claude Code #2** | 进行中 |
 | T26 | Lemma 3.6：𝒦 的 Ward 恒等式 | `Loop/Ward.lean`（新建） | 空闲 | **可开工** |
 | T27 | Def 2.9 的 G-loop 本身（确定性 H） | `Loop/GLoop.lean`（新建） | **Cowork** | 进行中 |
 | T28 | Corollary 3.5：纯 loop 的界 | `Loop/Cor35.lean`（新建） | 空闲 | 待 T25 |

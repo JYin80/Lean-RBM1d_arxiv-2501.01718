@@ -2182,6 +2182,36 @@ theorem root_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)
   rw [h0, mul_comm (m (I.σ.getD 0 false))]
   rfl
 
+omit [NeZero L] in
+/-- The charges of the two chains: the inside chain has `σ_p, …, σ_q`, the outside chain
+`σ_0, …, σ_p, σ_q, …, σ_{n-1}`, so together they have every charge once and `σ_p, σ_q` twice. -/
+theorem prod_chains (g : ℕ → ℂ) {n p q : ℕ} (hpq : p + 2 ≤ q) (hq : q < n) :
+    (∏ i ∈ Finset.range (q - p + 1), g (p + i)) *
+        ∏ i ∈ Finset.range (n - (q - p) + 1), g (if i ≤ p then i else i + (q - p - 1))
+      = (∏ i ∈ Finset.range n, g i) * (g p * g q) := by
+  have h1 : ∏ i ∈ Finset.range (q - p + 1), g (p + i) = ∏ i ∈ Finset.Ico p (q + 1), g i := by
+    rw [Finset.prod_Ico_eq_prod_range, show q + 1 - p = q - p + 1 by omega]
+  have h2 : ∏ i ∈ Finset.range (n - (q - p) + 1), g (if i ≤ p then i else i + (q - p - 1))
+      = (∏ i ∈ Finset.range (p + 1), g i) * ∏ i ∈ Finset.Ico q n, g i := by
+    rw [← Finset.prod_range_mul_prod_Ico _ (show p + 1 ≤ n - (q - p) + 1 by omega)]
+    have e1 : ∀ i ∈ Finset.range (p + 1), g (if i ≤ p then i else i + (q - p - 1)) = g i := by
+      intro i hi; rw [Finset.mem_range] at hi; rw [ite_eq_left (by omega)]
+    have e2 : ∀ i ∈ Finset.Ico (p + 1) (n - (q - p) + 1),
+        g (if i ≤ p then i else i + (q - p - 1)) = g (i + (q - p - 1)) := by
+      intro i hi; rw [Finset.mem_Ico] at hi; rw [ite_eq_right (by omega)]
+    rw [Finset.prod_congr rfl e1, Finset.prod_congr rfl e2,
+      Finset.prod_Ico_add' g (p + 1) (n - (q - p) + 1) (q - p - 1),
+      show p + 1 + (q - p - 1) = q by omega, show n - (q - p) + 1 + (q - p - 1) = n by omega]
+  rw [h1, h2]
+  -- split everything at `p`, `p + 1`, `q`, `q + 1`
+  rw [← Finset.prod_range_mul_prod_Ico g (show p + 1 ≤ n by omega),
+    Finset.prod_eq_prod_Ico_succ_bot (show p < q + 1 by omega),
+    ← Finset.prod_Ico_consecutive g (show p + 1 ≤ q + 1 by omega) (show q + 1 ≤ n by omega),
+    Finset.prod_eq_prod_Ico_succ_bot (show q < n by omega)]
+  rw [← Finset.prod_Ico_consecutive g (show p + 1 ≤ q by omega) (show q ≤ q + 1 by omega)]
+  simp only [Nat.Ico_succ_singleton, Finset.prod_singleton]
+  ring
+
 end Lists
 
 end RBM

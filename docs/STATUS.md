@@ -612,3 +612,18 @@ Claude Code 侧只要维护 `content.tex` 即可，不必碰页面。
 
 **T11（下一步）**：(2.53)(2.54) 的 dyadic 分解证明（论文 p.90–91 (B.6)）。
 Cowork 已用闭式证了实 ξ 的 (2.53)（`e118333`）；T11 是一般机器版本，难点是离散分部求和。
+
+### `RBM1D/Loop/Ward.lean` — Lemma 3.6 Step 1（T26 进行中，Claude Code）
+
+| Lean | 内容 |
+|---|---|
+| `RBM.etaT` / `etaT_eq_zt_im` | `η_t = (1−t) Im m = Im z_t`（(2.35)） |
+| `RBM.mE_mul_conj` / `mE_sub_conj` | `m m̄ = 1`、`m − m̄ = 2i Im m` |
+| **`RBM.ward_two`** | (3.13) 在 n=2，即 (3.16)：两边都是 `W⁻¹(1−t)⁻¹` |
+| `RBM.mul_Theta_sub_mul_Theta` | `m A − m' B = (m − m') A B`（`m ξ₂ = m' ξ₁` 时） |
+| **`RBM.ward_three`** | (3.13) 在 n=3（`kThree`，σ = (+, σ₂, −)） |
+
+**剩余（一般 n，论文 Step 2–5）**：对满足 `IsPrimitive` 的 `K` 定义 `D = Σ_{aₙ} K − (K⁺ − K⁻)/(2Wiη_t)`，
+证 `∂_t D = W Σ_k Σ_{a,b} D(a_k→a) S_ab K_{(σ_k,σ_{k+1}),(a_k,b)} + D/(1−t)`（(3.18)）与 `D(0) = 0`，
+再用 #2 的 Grönwall（`Loop/Unique.lean` 的 `eq_zero_of_abs_deriv…` 那一套）得 `D ≡ 0`。
+难点在 (3.18) 的推导：要把 `primRhs` 在 `Σ_{aₙ}` 下按 `k, l` 是否碰到第 n 条边分类，用到 n−1 长度的 Ward（归纳假设）。

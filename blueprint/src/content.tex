@@ -625,9 +625,22 @@
   rather than developing existence theory for the ODE.
 \end{lemma}
 
+\begin{lemma}[Ward identity for $\Kcal$ at $n=2,3$, Lemma 3.6 Step 1]\label{lem:3.6-small}
+  \lean{RBM.etaT, RBM.ward_two, RBM.mul_Theta_sub_mul_Theta, RBM.ward_three}\leanok
+  \uses{ex:2.15, lem:Theta-rowsum, lem:2.8}
+  With $m=m^{(E)}$, $\eta_t=(1-t)\operatorname{Im}m$ and $\sigma_1=+$, $\sigma_n=-$:
+  $\sum_{a_n}K_{t,\sigma,a}=(K_{t,\sigma^+,a/a_n}-K_{t,\sigma^-,a/a_n})/(2Wi\eta_t)$ for the
+  explicit loops at $n=2$ ((3.16)) and $n=3$.
+\end{lemma}
+\begin{proof}\leanok\uses{ex:2.15, lem:Theta-rowsum, lem:2.8}
+  $n=2$: $|m|=1$ and the row sums of $\Th$ give $W^{-1}(1-t)^{-1}$ on both sides.
+  $n=3$: with $A=\Th_{tmq}$, $B=\Th_{t\bar mq}$, $mA-\bar mB=(m-\bar m)AB$, because the
+  $\SB$ terms of $mB^{-1}-\bar mA^{-1}$ cancel.
+\end{proof}
+
 \begin{lemma}[Ward identity for $\Kcal$, Lemma 3.6]\label{lem:3.6}
-  \uses{lem:3.4, lem:Theta-rowsum}
-  \emph{Not yet formalized.}  The difference $D$ of the two sides satisfies a
+  \uses{lem:3.4, lem:Theta-rowsum, lem:3.6-small}
+  \emph{Not yet formalized for general $n$.}  The difference $D$ of the two sides satisfies a
   homogeneous linear ODE with zero initial value.
 \end{lemma}
 

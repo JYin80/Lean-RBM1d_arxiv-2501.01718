@@ -122,14 +122,12 @@ theorem green_sub_green_conj' {H : Matrix n n ℂ} {z : ℂ}
     green H z - green H ((starRingEnd ℂ) z)
       = (2 * Complex.I * (z.im : ℂ)) • (green H ((starRingEnd ℂ) z) * green H z) := by
   have h := green_sub_green hz' hz
-  have h' : green H z - green H ((starRingEnd ℂ) z)
-      = (-((starRingEnd ℂ) z - z)) • (green H ((starRingEnd ℂ) z) * green H z) := by
-    rw [← h]; module
-  rw [h']
-  congr 1
-  rw [Complex.sub_conj]
-  push_cast
-  ring
+  have hc : (2 * Complex.I * (z.im : ℂ)) = -((starRingEnd ℂ) z - z) := by
+    have h0 := Complex.sub_conj z
+    push_cast at h0
+    linear_combination -h0
+  rw [hc, neg_smul, ← h]
+  abel
 
 /-- The traced Ward identity, with the resolvents in the order `G(\bar z)G(z)`. -/
 theorem trace_green_sub_trace_green_conj' {H : Matrix n n ℂ} {z : ℂ}
@@ -238,6 +236,45 @@ theorem sum_gloop_two_ward {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} 
       Matrix.trace (green H ((starRingEnd ℂ) z) * (green H z * Eblk L W a))) = _
   rw [← Matrix.mul_assoc]
   ring
+
+/-- **The `(+,-)` `2`-loop is a sum of squared Green's function entries.**
+\[ \mathcal L_{(+,-),(a,b)}
+   = W^{-2}\sum_{p \in I_b}\sum_{q \in I_a} \bigl|G_{pq}\bigr|^2 . \]
+This is the bridge between the loop layer and delocalization: the left-hand side is
+what the loop hierarchy evolves, the right-hand side is the mass of the Green's
+function between the blocks `I_b` and `I_a`.  In particular the loop is a nonnegative
+real. -/
+theorem gloop_two_plus_minus {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
+    (hH : H.IsHermitian) (a b : ZMod L) :
+    gloop L W H z ⟨[true, false], [a, b]⟩
+      = ((W : ℂ)⁻¹) ^ 2 * ∑ p : ZMod L × Fin W, ∑ q : ZMod L × Fin W,
+          (if p.1 = b then if q.1 = a then (Complex.normSq (green H z p q) : ℂ) else 0
+            else 0) := by
+  have hG : green H ((starRingEnd ℂ) z) = (green H z)ᴴ := (Gsig_conjTranspose hH z true).symm
+  have hdiag : ∀ p : ZMod L × Fin W,
+      Matrix.diag (green H z * Eblk L W a * ((green H z)ᴴ * Eblk L W b)) p
+        = ∑ q : ZMod L × Fin W,
+            (green H z p q * (if q.1 = a then (W : ℂ)⁻¹ else 0))
+              * ((starRingEnd ℂ) (green H z p q) * (if p.1 = b then (W : ℂ)⁻¹ else 0)) := by
+    intro p
+    rw [Matrix.diag_apply, Matrix.mul_apply]
+    refine Finset.sum_congr rfl fun q _ => ?_
+    congr 1
+    · simp only [Eblk, Matrix.mul_diagonal]
+    · simp only [Eblk, Matrix.mul_diagonal, Matrix.conjTranspose_apply, Complex.star_def]
+  have hterm : ∀ p q : ZMod L × Fin W,
+      (green H z p q * (if q.1 = a then (W : ℂ)⁻¹ else 0))
+          * ((starRingEnd ℂ) (green H z p q) * (if p.1 = b then (W : ℂ)⁻¹ else 0))
+        = ((W : ℂ)⁻¹) ^ 2
+            * (if p.1 = b then if q.1 = a then (Complex.normSq (green H z p q) : ℂ) else 0
+                else 0) := by
+    intro p q
+    rw [mul_mul_mul_comm, Complex.mul_conj]
+    split_ifs <;> ring
+  rw [gloop_two]
+  simp only [Gsig_true, Gsig_false, hG]
+  rw [Matrix.trace]
+  simp only [hdiag, hterm, ← Finset.mul_sum]
 
 end Loop
 

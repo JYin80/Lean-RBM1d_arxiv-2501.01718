@@ -1037,3 +1037,12 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 (6.3) `green_eq_add_smul_mul`/`Gsig_eq_add_smul_mul`；(6.7) `list_prod_add_eq`（非交换）；(6.8) `gchain_eq_add_sum_gchainMixed`；
 (6.9) `norm_gchain_apply_sq_le`；(6.5) `gloop_symm_eq_trace`；(6.12) **`ward_chain_row`**/`ward_chain_row'`；
 `ztTilde_arith`（`z̃` 的四条算术界）。未做（范围外）：(6.1)、(6.10)(6.11)(6.13) 总装；(6.4)/Lemma 6.1 属 T44。paper-deltas #28。
+
+### `RBM1D/Flow/Hypotheses.lean` — 随机层假设接口（T54，Claude Code 并行 agent）
+
+**接口约定（T57 按此）**：固定 `(Ω, P)`，时间是 `N` 的序列 `s t : ℕ → ℝ`；定长 `n` 的 loop 的 max 化为参数集
+`LoopData (L N) n = (Fin n → Bool) × (Fin n → ZMod (L N))` 上的一致性；Steps 的 `u ∈ [s,t]` 进参数集 `TimeIcc s t N`。
+`Band`（维数、(2.2)）、`Sample`（(2.34)，`G`、`Lval`、`ELval`）、`BoundsCore`/`Bounds`（(2.60)(2.62)–(2.64)）、`Cond272`、`Thm221`、
+`Steps`（(2.73)–(2.80) 八个字段）、`Transfer`（(2.39)(2.65)(2.66)）。已证：`BoundsCore_of_Steps`/`Bounds_of_Steps`、
+`BoundsCore.stochDom_norm_Lval`（(2.61)，n ≥ 3，需 `1 ≤ Wℓη`——T57 可用 `Flow/Scales.lean` 的 `flowScale_ge` 消去）、
+`Transfer.green_sub_msc`（(2.65)）。paper-deltas #29。

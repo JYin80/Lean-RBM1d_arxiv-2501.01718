@@ -1157,6 +1157,17 @@
   $2i\eta\,G(\sigma)G(\sigma)^\dagger=G(+)-G(-)$.
 \end{proof}
 
+\begin{definition}[Interface to the random layer, \S2.6--2.7]\label{def:flow-hypotheses}
+  \lean{RBM.StochDom.precomp_param, RBM.StochDom.of_le_left, RBM.UnifDetDom.precomp_param, RBM.LoopData, RBM.LoopData.idx, RBM.LoopData.idx_wf, RBM.Band, RBM.Band.Idx, RBM.Band.ell, RBM.Band.scale, RBM.Band.Kval, RBM.Band.decayProf, RBM.Band.scale_pos, RBM.Sample, RBM.Sample.G, RBM.Sample.Lval, RBM.Sample.ELval, RBM.BoundsCore, RBM.Bounds, RBM.Cond272, RBM.Thm221, RBM.TimeIcc, RBM.Steps, RBM.BoundsCore_of_Steps, RBM.Bounds_of_Steps, RBM.BoundsCore.stochDom_norm_Lval, RBM.Transfer, RBM.Transfer.green_sub_msc}
+  \leanok\uses{def:2.1-i, def:gloop, lem:3.11}
+  The stochastic flow is not formalized; its outputs enter as structure fields (never axioms):
+  the sample $H_t$ ((2.34), Hermitian, $H_0=0$), the bounds (2.60)/(2.62)--(2.64) as \texttt{Bounds},
+  Theorem 2.21 as \texttt{Thm221}, Steps 1--6 (2.73)--(2.80) as \texttt{Steps}, and the
+  distributional identities (2.39)/(2.65)/(2.66) as one-directional bound transfers.
+  Sanity checks: \texttt{Bounds} at $t$ follows from \texttt{Steps} at $u=t$ (Step 6 can be dropped,
+  p.25); (2.61) follows from (2.60) and (2.59).
+\end{definition}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

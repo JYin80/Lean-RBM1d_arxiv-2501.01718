@@ -401,7 +401,7 @@ def TSP (n : ℕ) : Finset (Finset (Fin n × Fin n)) :=
 3. Lemma 2.8 的构造：给定 `0 < Im z`，令
    `E := −2 · (msc z).re / ‖msc z‖`（**实数**）、`t := (msc z)^2 / (m^{(E)})^2`。
    要证：
-   * `t = ‖msc z‖ ^ 2`，特别地 `t` 是**实的、正的、< 1`。
+   * `t = ‖msc z‖ ^ 2`，特别地 `t` 是**实的、正的、小于 1** 的。
      （因为 `m^{(E)} = msc z / ‖msc z‖`——这正是论文证明里那句
      「`m^{(E)} = m_sc(z)/|m_sc(z)|`」，先把这条证出来，后面全是它的推论。）
    * (2.38)：`msc z = Real.sqrt t * m^{(E)}`

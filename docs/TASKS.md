@@ -77,7 +77,7 @@
 | T49 | 附录 A 的确定性核心：双边 chain→loop、(A.8)–(A.10)、(A.18)、(A.21)–(A.27)、(A.15) | `Loop/ChainExpand.lean`（新建） | Claude Code | 进行中 |
 | T50 | §6 的确定性骨架：(6.3)(6.5)(6.7)(6.8)(6.9)(6.12) + `z̃` 的算术 | `Loop/Continuity.lean`（新建） | Claude Code | **完成** |
 | T51 | Lemma 7.2 (7.2) 与 Lemma 7.3 (7.13)–(7.24)（核的快衰减/sum-zero 增益） | `Hierarchy/KernelDecay.lean`（新建） | Claude Code | 进行中 |
-| T52 | Def 5.12 的 `P`、`ϑ_t`、`Q_t`；Lemma 5.13 (5.87)、(5.90)(5.99)(5.104) | `Hierarchy/SumZero.lean` | **Cowork** | 进行中（定义层 + `P∘ϑ=1` + `P∘Q=0` + 行和恒等式已落地；剩 `P∘A=0 ⟹ P∘Θ_{t,σ}∘A=0`、(5.90)(5.99)(5.104)） |
+| T52 | Def 5.12 的 `P`、`ϑ_t`、`Q_t`；Lemma 5.13 (5.87)、(5.90)(5.99)(5.104) | `Hierarchy/SumZero.lean` | **Cowork** | 进行中（定义层、`P∘ϑ=1`、`P∘Q=0`、行和恒等式、**`P∘A=0 ⟹ P∘Θ_{t,σ}∘A=0`**、**(5.90)** 全部落地；剩 (5.99) 的定量界与 (5.104) 的 `Q⊗Q`，后者要等 Def 5.4 的 `E⊗E` 层） |
 | T53 | Step 3：(5.76)(5.107)(5.108) 与 (n,k) 双重归纳 (5.109) ⟹ (2.77) | `Hierarchy/Step3.lean`（新建） | Claude Code | 进行中 |
 | T54 | 随机层假设接口：`Bounds`/`Thm221`/`Steps`/`Transfer`（**不得用 axiom**） | `Flow/Hypotheses.lean`（新建） | Claude Code | **完成** |
 | T55 | Steps 4 与 5：(5.125) ⟹ (2.78)；两段劈分 ⟹ (2.79) | `Hierarchy/Step45.lean`（新建） | 待认领 | 未开工（等 T53） |

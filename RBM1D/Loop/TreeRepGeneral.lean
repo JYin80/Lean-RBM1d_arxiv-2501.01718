@@ -1467,6 +1467,104 @@ theorem glueF_mem_TSP {G : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1))}
     · exact (crossGH g' h (outE g' hg')).2
     · exact crossHH h hh h' hh'
 
+theorem FIn_glueF {G : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1))}
+    {H : Finset (Fin (wIn J + 1) × Fin (wIn J + 1))} (hG : G ∈ TSP (n - wIn J + 1))
+    (hH : H ∈ TSP (wIn J + 1)) : FIn (glueF J G H) J = H := by
+  rw [mem_TSP] at hG hH
+  ext y
+  constructor
+  · intro hy
+    obtain ⟨x, hx, rfl⟩ := mem_image.1 hy
+    obtain ⟨hxg, hxJ, hne⟩ := mem_filter.1 hx
+    rcases mem_insert.1 hxg with rfl | hxg
+    · exact absurd rfl hne
+    rcases mem_union.1 hxg with hxg | hxg
+    · obtain ⟨g, hg, rfl⟩ := mem_image.1 hxg
+      exact absurd hxJ (not_arcLe_unColP hJd (mem_diagonals_iff.1 (hG.1 hg)))
+    · obtain ⟨h, hh, rfl⟩ := mem_image.1 hxg
+      rw [shiftIn_unShift]; exact hh
+  · intro hy
+    refine mem_image.2 ⟨unShift J y, mem_filter.2 ⟨?_, arcLe_unShift hJd y,
+      unShift_ne (mem_diagonals_iff.1 (hH.1 hy))⟩, shiftIn_unShift y⟩
+    exact mem_insert_of_mem (mem_union_right _ (mem_image_of_mem _ hy))
+
+theorem FOut_glueF {G : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1))}
+    {H : Finset (Fin (wIn J + 1) × Fin (wIn J + 1))} (hG : G ∈ TSP (n - wIn J + 1)) :
+    FOut (glueF J G H) J = G := by
+  have hJw := width_of_isDiag hJd
+  rw [mem_TSP] at hG
+  ext y
+  constructor
+  · intro hy
+    obtain ⟨x, hx, rfl⟩ := mem_image.1 hy
+    obtain ⟨hxg, hxJ⟩ := mem_filter.1 hx
+    rcases mem_insert.1 hxg with rfl | hxg
+    · exact absurd ⟨le_refl _, le_refl _⟩ hxJ
+    rcases mem_union.1 hxg with hxg | hxg
+    · obtain ⟨g, hg, rfl⟩ := mem_image.1 hxg
+      rw [shiftOut_unColP g hJw]; exact hg
+    · obtain ⟨h, -, rfl⟩ := mem_image.1 hxg
+      exact absurd (arcLe_unShift hJd h) hxJ
+  · intro hy
+    refine mem_image.2 ⟨unColP J y, mem_filter.2 ⟨?_,
+      not_arcLe_unColP hJd (mem_diagonals_iff.1 (hG.1 hy))⟩, shiftOut_unColP y hJw⟩
+    exact mem_insert_of_mem (mem_union_left _ (mem_image_of_mem _ hy))
+
+theorem glueF_cut {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) (hJ : J ∈ F) :
+    glueF J (FOut F J) (FIn F J) = F := by
+  have hJw := width_of_isDiag hJd
+  ext x
+  constructor
+  · intro hx
+    rcases mem_insert.1 hx with rfl | hx
+    · exact hJ
+    rcases mem_union.1 hx with hx | hx
+    · obtain ⟨y, hy, rfl⟩ := mem_image.1 hx
+      obtain ⟨d, hd, rfl⟩ := mem_image.1 hy
+      obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+      rw [unColP_shiftOut (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw]
+      exact hdF
+    · obtain ⟨y, hy, rfl⟩ := mem_image.1 hx
+      obtain ⟨d, hd, rfl⟩ := mem_image.1 hy
+      obtain ⟨hdF, hdJ, -⟩ := mem_filter.1 hd
+      rw [unShift_shiftIn hdJ (le_of_lt (hF.1 d hdF).1)]
+      exact hdF
+  · intro hx
+    by_cases h1 : x = J
+    · rw [h1]; exact mem_insert_self _ _
+    refine mem_insert_of_mem ?_
+    by_cases h2 : ArcLe x J
+    · refine mem_union_right _ (mem_image.2 ⟨shiftIn J x, mem_image_of_mem _
+        (mem_filter.2 ⟨hx, h2, h1⟩), unShift_shiftIn h2 (le_of_lt (hF.1 x hx).1)⟩)
+    · refine mem_union_left _ (mem_image.2 ⟨shiftOut J x, mem_image_of_mem _
+        (mem_filter.2 ⟨hx, h2⟩), unColP_shiftOut
+          (outEnds_of hF hn hJ (mem_nodes_of_mem hx) h2) hJw⟩)
+
+/-- **The cut bijection**: `{F ∈ T_SP(n) : J ∈ F} ≃ T_SP(outside) × T_SP(inside)`. -/
+theorem sum_cut (hn : 2 ≤ n)
+    (f : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) →
+      Finset (Fin (wIn J + 1) × Fin (wIn J + 1)) → ℂ) :
+    ∑ F ∈ (TSP n).filter (fun F => J ∈ F), f (FOut F J) (FIn F J)
+      = ∑ G ∈ TSP (n - wIn J + 1), ∑ H ∈ TSP (wIn J + 1), f G H := by
+  rw [← Finset.sum_product']
+  refine Finset.sum_nbij' (fun F => (FOut F J, FIn F J)) (fun p => glueF J p.1 p.2)
+    ?_ ?_ ?_ ?_ ?_
+  · intro F hF
+    obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
+    have hF' := isTSP_of_mem_TSP hFT
+    exact mem_product.2 ⟨FOut_mem_TSP hJd hF' hn hJF, FIn_mem_TSP hF'⟩
+  · intro p hp
+    obtain ⟨hG, hH⟩ := mem_product.1 hp
+    exact mem_filter.2 ⟨glueF_mem_TSP hJd hG hH, mem_insert_self _ _⟩
+  · intro F hF
+    obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
+    exact glueF_cut hJd (isTSP_of_mem_TSP hFT) hn hJF
+  · intro p hp
+    obtain ⟨hG, hH⟩ := mem_product.1 hp
+    exact Prod.ext (FOut_glueF hJd hG) (FIn_glueF hJd hG hH)
+  · intro F _
+    rfl
+
 end CutBij
 
 end RBM

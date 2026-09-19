@@ -359,4 +359,58 @@ theorem sum_norm_Theta_short_edge_le (hL : 3 ≤ L) {E k t : ℝ} (hk0 : 0 < k) 
 
 end L1Edge
 
+section LongEdge
+
+variable (L : ℕ) [NeZero L]
+
+/-- **(3.35), long edge**: `|(Θ_t)_{xy}| ≤ 8e/(η_t · ℓ̂(t))`.
+The paper writes the right-hand side as `1/(ℓ_t η_t)`; the dictionary `η_t ≤ 1-t` of
+`zt_im_le` turns our `(1-t)` into the paper's `η_t`. -/
+theorem norm_Theta_long_edge_le (hL : 3 ≤ L) {E k t : ℝ} (hk0 : 0 < k) (hk2 : k ≤ 2)
+    (hE : |E| ≤ 2 - k) (ht0 : 0 < t) (ht1 : t < 1) (x y : ZMod L) :
+    ‖Theta L (t : ℂ) x y‖ ≤ 8 * Real.exp 1 / ((zt E t).im * ellHat L (t : ℂ)) := by
+  have hE2 : |E| ≤ 2 := le_trans hE (by linarith)
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hell : 1 / 2 ≤ ellHat L (t : ℂ) := half_le_ellHat L hL (by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1)
+  have hellpos : 0 < ellHat L (t : ℂ) := lt_of_lt_of_le (by norm_num) hell
+  have heta_le : (zt E t).im ≤ 1 - t := zt_im_le hE2 ht1.le
+  have heta_pos : 0 < (zt E t).im := by
+    have h := le_zt_im hk0 hk2 hE ht1.le
+    have hsq : 0 < Real.sqrt (2 * k) := Real.sqrt_pos.mpr (by linarith)
+    nlinarith [h, h1t, hsq]
+  have hmain := norm_Theta_apply_le_of_real hL ht0 ht1 x y
+  have hexp : Real.exp (-(zdist L (x - y) : ℝ) / ellHat L (t : ℂ)) ≤ 1 := by
+    rw [Real.exp_le_one_iff, neg_div]
+    have : (0 : ℝ) ≤ (zdist L (x - y) : ℝ) / ellHat L (t : ℂ) := by positivity
+    linarith
+  refine hmain.trans ?_
+  set ee := Real.exp (-(zdist L (x - y) : ℝ) / ellHat L (t : ℂ)) with hee
+  have h3 : (0 : ℝ) ≤ 8 * Real.exp 1 := by positivity
+  have h4 : (0 : ℝ) ≤ (zt E t).im * ellHat L (t : ℂ) := by positivity
+  have h2 : (zt E t).im * ellHat L (t : ℂ) ≤ (1 - t) * ellHat L (t : ℂ) :=
+    mul_le_mul_of_nonneg_right heta_le hellpos.le
+  rw [div_le_div_iff₀ (by positivity) (by positivity)]
+  calc 8 * Real.exp 1 * ee * ((zt E t).im * ellHat L (t : ℂ))
+      ≤ 8 * Real.exp 1 * 1 * ((zt E t).im * ellHat L (t : ℂ)) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hexp h3) h4
+    _ = 8 * Real.exp 1 * ((zt E t).im * ellHat L (t : ℂ)) := by ring
+    _ ≤ 8 * Real.exp 1 * ((1 - t) * ellHat L (t : ℂ)) := mul_le_mul_of_nonneg_left h2 h3
+
+/-- **(3.36), long edge**: `∑_b |(Θ_t)_{ab}| = (1-t)^{-1} ≤ 1/η_t`. -/
+theorem sum_norm_Theta_long_edge_le (hL : 3 ≤ L) {E k t : ℝ} (hk0 : 0 < k) (hk2 : k ≤ 2)
+    (hE : |E| ≤ 2 - k) (ht0 : 0 < t) (ht1 : t < 1) (a : ZMod L) :
+    ∑ b : ZMod L, ‖Theta L (t : ℂ) a b‖ ≤ ((zt E t).im)⁻¹ := by
+  have hE2 : |E| ≤ 2 := le_trans hE (by linarith)
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have heta_le : (zt E t).im ≤ 1 - t := zt_im_le hE2 ht1.le
+  have heta_pos : 0 < (zt E t).im := by
+    have h := le_zt_im hk0 hk2 hE ht1.le
+    have hsq : 0 < Real.sqrt (2 * k) := Real.sqrt_pos.mpr (by linarith)
+    nlinarith [h, h1t, hsq]
+  rw [sum_norm_Theta_row_of_real L hL ht0 ht1 a, ← one_div, ← one_div]
+  exact one_div_le_one_div_of_le heta_pos heta_le
+
+end LongEdge
+
 end RBM

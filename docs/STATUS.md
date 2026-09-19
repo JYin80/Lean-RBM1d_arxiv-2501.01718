@@ -722,3 +722,12 @@ T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 
 * 步骤 2 ✔（`0ab6d4d`）：层状性 `nodes_laminar`、`leafPar_eq`/`nodePar_eq`（父亲 = 最小容器的刻画）、`leafPar_root`。
 * 下一步：步骤 3，沿区间 `J` 剪切：`N(F) = N_out ⊔ N_in`，叶与边的归属，标号和按 Fubini 分解；然后把两块搬运到
   `cutGlueL`/`cutGlueR` 的列表坐标上（左链：J 塌缩成胶点；右链：J 平移到 0 且胶点为根）。
+
+T26 一般 n 的推进方案（比论文 Step 3–4 简单，不需要四角特判和 3-圈 Ward）：
+记 `fullLoop μ a' x = (+, μ, −; a', x)`、`pmLoop ± μ a' = (±, μ; a')`（`Loop/WardInd.lean`）。
+* 所有 `l ≤ n−1` 的切口：`fullLoop` 的左链仍是 `fullLoop`（末标号还是 `x`），`pmLoop ±` 的左链是对应的 `pmLoop ±`，
+  所以对 `x` 求和后恰为「下一层的 `D` + 下一层的 `K**`」；`k ≥ 2` 时右链与首电荷无关，直接抵消。
+* `(1,m)` 与 `(m,n)`（**所有** `2 ≤ m ≤ n−1`）两两抵消：`pmLoop ±` 在 `(1,m)` 的右链正是 `fullLoop` 在 `(m,n)` 的左链的 `pmLoop ±`，
+  剩下一个因子用循环不变性对上。
+* 剩下的正好是 (3.18)：相邻切口的 `D·S·(2-圈)` 与 `(1,n)` 切口 + `∂_t η_t⁻¹` 合成的 `D/(1−t)`。
+第 1 阶段（上述列表恒等式）已提交。

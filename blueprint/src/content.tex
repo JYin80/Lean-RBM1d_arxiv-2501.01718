@@ -296,6 +296,28 @@
       needed is a lower bound on $|1-tm^2|$, which is where the complex-$\xi$ estimate
       (Lemma~\ref{lem:Theta-decay-complex}) enters.
   \end{itemize}
+  The two analytic ingredients are now in place (Lemma~\ref{lem:edges}); what remains is
+  to assemble them.
+\end{lemma}
+
+\begin{lemma}[Short versus long edge: the exact modulus]\label{lem:edges}
+  \lean{RBM.normSq_one_sub_mul_sq_mE, RBM.two_mul_mul_le_normSq_one_sub,
+    RBM.zt_im_le, RBM.le_zt_im}
+  \leanok\uses{lem:2.8}
+  For $m = m^{(E)}$ with $|E|\le 2$,
+  \[ \bigl|1 - t m^2\bigr|^2 \;=\; (1-t)^2 + t\,(4 - E^2) , \]
+  an identity, not an estimate.  The first term is what the long edge $\xi = t$ gives on
+  its own; the second is the gap that makes the short edge non-degenerate, and it is
+  controlled exactly by the paper's hypothesis $|E| \le 2-\kappa$, which yields
+  $|1 - tm^2|^2 \ge 2t\kappa$.  At $E = \pm 2$ the gap closes and the short edge
+  degenerates into the long one.
+
+  The same computation supplies the dictionary between the paper's $\eta_t$ and the
+  parameter $1-t$ our estimates use: by Definition 2.7,
+  $\eta_t = (1-t)\operatorname{Im}m^{(E)}$ with
+  $\operatorname{Im}m^{(E)} = \sqrt{4-E^2}/2 \in (0,1]$, so
+  $(1-t)\sqrt{2\kappa}/2 \le \eta_t \le 1-t$.  This needs only Definition 2.7 --- not the
+  deferred quantitative half (2.40) of Lemma 2.8, as first supposed.
 \end{lemma}
 
 \begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}

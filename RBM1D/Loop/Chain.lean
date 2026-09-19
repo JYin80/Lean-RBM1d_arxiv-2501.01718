@@ -53,8 +53,6 @@ variable {L W} {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
     gchain L W H z (s :: tau) (b :: a) = Gsig H z s * Eblk L W b * gchain L W H z tau a := rfl
 
 /-- Appending one block at the end of a chain. -/
-theorem gchain_snoc (s b : ZMod L → Prop) : True := trivial
-
 theorem gchain_append_one {tau : List Bool} {a : List (ZMod L)}
     (h : tau.length = a.length + 1) (s : Bool) (b : ZMod L) :
     gchain L W H z (tau ++ [s]) (a ++ [b])
@@ -94,10 +92,10 @@ theorem gchain_conjTranspose (hH : H.IsHermitian) {tau : List Bool} {a : List (Z
       simp only [List.map_cons, List.reverse_cons, List.reverse_cons]
       rw [gchain_append_one hlen, Matrix.mul_assoc]
 
-/-- **A chain becomes a loop** (Appendix A): `⟨C_{tau,a} E_b⟩ = L_{tau, a ++ [b]}`. -/
-theorem trace_gchain_mul_Eblk {tau : List Bool} {a : List (ZMod L)}
+/-- **A chain closed by one `E` is a loop product** (matrix level). -/
+theorem gchain_mul_Eblk {tau : List Bool} {a : List (ZMod L)}
     (h : tau.length = a.length + 1) (b : ZMod L) :
-    Matrix.trace (gchain L W H z tau a * Eblk L W b) = gloop L W H z ⟨tau, a ++ [b]⟩ := by
+    gchain L W H z tau a * Eblk L W b = gloopProd L W H z ⟨tau, a ++ [b]⟩ := by
   induction tau generalizing a with
   | nil => simp at h
   | cons t tau ih =>
@@ -105,15 +103,16 @@ theorem trace_gchain_mul_Eblk {tau : List Bool} {a : List (ZMod L)}
     | nil =>
       have htau : tau = [] := List.eq_nil_of_length_eq_zero (by simpa using h)
       subst htau
-      simp [gchain, gloop, gloopProd_cons, gloopProd_nil]
+      simp [gchain, gloopProd_cons, gloopProd_nil]
     | cons c a =>
       have h' : tau.length = a.length + 1 := by simpa using h
-      rw [gchain_cons, gloop, List.cons_append, gloopProd_cons, Matrix.mul_assoc,
-        Matrix.mul_assoc, Matrix.trace_mul_comm, ← Matrix.mul_assoc]
-      rw [← gloop, ← ih h']
-      rw [Matrix.trace_mul_comm]
-      ring_nf
-      rw [Matrix.mul_assoc]
+      rw [gchain_cons, List.cons_append, gloopProd_cons, Matrix.mul_assoc, ih h']
+
+/-- **A chain becomes a loop** (Appendix A): `⟨C_{tau,a} E_b⟩ = L_{tau, a ++ [b]}`. -/
+theorem trace_gchain_mul_Eblk {tau : List Bool} {a : List (ZMod L)}
+    (h : tau.length = a.length + 1) (b : ZMod L) :
+    Matrix.trace (gchain L W H z tau a * Eblk L W b) = gloop L W H z ⟨tau, a ++ [b]⟩ := by
+  rw [gloop, gchain_mul_Eblk h b]
 
 end Chain
 

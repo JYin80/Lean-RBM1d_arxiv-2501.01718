@@ -1214,6 +1214,13 @@ theorem unColP_val (g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) (hJ : J.1.va
   constructor <;> omega
 
 omit [NeZero n] in
+theorem unCol_of_le {r : ℕ} (h : r ≤ J.1.val) : unCol J r = r := by simp [unCol, h]
+
+omit [NeZero n] in
+theorem unCol_of_gt {r : ℕ} (h : J.1.val < r) : unCol J r = r + (wIn J - 1) := by
+  simp [unCol, not_le.2 h]
+
+omit [NeZero n] in
 theorem col_unCol {r : ℕ} : col J (unCol J r) = r := by
   simp only [col, unCol, wIn]
   split_ifs <;> omega
@@ -1566,5 +1573,156 @@ theorem sum_cut (hn : 2 ≤ n)
     rfl
 
 end CutBij
+
+section Assembly
+
+variable (L : ℕ) [NeZero L] {n : ℕ} [NeZero n]
+
+/-- **Linearity in one leaf**: `M_v = A B` gives `∑_z A_{a_v z}` times the tree with the leaf
+relabelled `z` and weight `B`. -/
+theorem treeValW_leaf_mul (F : Finset (Fin n × Fin n)) (a : Fin n → ZMod L)
+    (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (v : Fin n)
+    (A B : Matrix (ZMod L) (ZMod L) ℂ) :
+    treeValW L F a (Function.update M v (A * B)) E
+      = ∑ z : ZMod L, A (a v) z * treeValW L F (Function.update a v z) (Function.update M v B) E := by
+  simp only [treeValW, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  rw [prod_update_eq (fun w => M w (a w) (b ⟨leafPar F w, leafPar_mem F w⟩)) _ v
+    (fun w hw => by rw [Function.update_of_ne hw]), Function.update_self, Matrix.mul_apply,
+    Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun z _ => ?_
+  rw [prod_update_eq (fun w => M w (a w) (b ⟨leafPar F w, leafPar_mem F w⟩)) _ v
+    (fun w hw => by rw [Function.update_of_ne hw, Function.update_of_ne hw]),
+    Function.update_self, Function.update_self]
+  ring
+
+variable {L}
+variable (hL : 3 ≤ L) {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n)
+  {J : Fin n × Fin n} (hJ : J ∈ F)
+  (m : Bool → ℂ) (t : ℝ) (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hL hF hn hJ hm
+
+/-- **The internal edge `J`, differentiated, is a product of two smaller trees.**  With leaf
+weights `Θ_{t m(σ_v) m(σ_{v+1})}` and internal weights `Θ - 1`, putting `Θ_J S Θ_J` on the edge
+`J` gives `∑_{u,w} (inside polygon, root label u) S_{uw} (outside polygon, glue label w)`.
+The small polygons enter only through their charges `σi`, `σo` (read off `σ`) and labels. -/
+theorem treeValW_internal_cut (σ : Fin n → Bool) (a : Fin n → ZMod L)
+    (σi : Fin (wIn J + 1) → Bool) (ai : ZMod L → Fin (wIn J + 1) → ZMod L)
+    (σo : Fin (n - wIn J + 1) → Bool) (ao : ZMod L → Fin (n - wIn J + 1) → ZMod L)
+    (hσi : ∀ i : Fin (wIn J + 1), σi i = σ (unShift J (i, i)).1)
+    (hσo : ∀ i : Fin (n - wIn J + 1), σo i = σ (unColP J (i, i)).1)
+    (hai0 : ∀ u, ai u (Fin.last _) = u) (hai1 : ∀ u, ∀ v : LIn J, ai u (inV J v) = a v)
+    (hao0 : ∀ w, ao w (glueV J) = w) (hao1 : ∀ w, ∀ v : LOut J, ao w (outV J v) = a v) :
+    treeValW L F a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
+        (Function.update (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) ⟨J, hJ⟩
+          (thetaEdge L m t (σ J.1) (σ J.2) * SB L * thetaEdge L m t (σ J.1) (σ J.2)))
+      = ∑ u : ZMod L, ∑ w : ZMod L,
+          treeValG L m t σi (ai u) (FIn F J) * SB L u w * treeValG L m t σo (ao w) (FOut F J) := by
+  have hJd := hF.1 J hJ
+  have hJw := width_of_isDiag hJd
+  have hJ2 : J.1.val < J.2.val := by omega
+  have hJn := J.2.isLt
+  have hw : wIn J = J.2.val - J.1.val := rfl
+  -- vertex / region bookkeeping
+  have si : ∀ i : Fin (wIn J + 1), (unShift J (i, i)).1.val = i.val + J.1.val := fun i =>
+    (unShift_val (i, i)).1
+  have so : ∀ i : Fin (n - wIn J + 1), (unColP J (i, i)).1.val = unCol J i.val := fun i =>
+    (unColP_val (i, i) hJ2).1
+  have hΘT : (thetaEdge L m t (σ J.1) (σ J.2)).transpose = thetaEdge L m t (σ J.2) (σ J.1) := by
+    rw [thetaEdge_comm L m t (σ J.2)]
+    exact Theta_transpose L hL (hm _ _)
+  have hσi' : ∀ (i : Fin (wIn J + 1)) (v : Fin n), v.val = i.val + J.1.val → σi i = σ v := by
+    intro i v hv; rw [hσi i]; congr 1; exact Fin.ext (by rw [si i, hv])
+  have hσo' : ∀ (i : Fin (n - wIn J + 1)) (v : Fin n), v.val = unCol J i.val → σo i = σ v := by
+    intro i v hv; rw [hσo i]; congr 1; exact Fin.ext (by rw [so i, hv])
+  have hone : (1 : Fin n).val = 1 := by
+    rw [Fin.val_one', Nat.mod_eq_of_lt (by omega)]
+  have hsucc : ∀ v : Fin n, v.val < n - 1 → (v + 1 : Fin n).val = v.val + 1 := by
+    intro v hv; rw [Fin.val_add, hone, Nat.mod_eq_of_lt (by omega)]
+  -- inside side conditions
+  have hM0i : thetaEdge L m t (σi (Fin.last _)) (σi (Fin.last _ + 1))
+      = (thetaEdge L m t (σ J.1) (σ J.2)).transpose := by
+    rw [hΘT, Fin.last_add_one, hσi' _ J.2 (by simp only [Fin.val_last, wIn]; omega),
+      hσi' 0 J.1 (by simp)]
+  have hM1i : ∀ v : LIn J, thetaEdge L m t (σi (inV J v)) (σi (inV J v + 1))
+      = thetaEdge L m t (σ v.1) (σ (v.1 + 1)) := by
+    intro v
+    have hv := v.2
+    simp only [InArc, Fin.le_def, Fin.lt_def] at hv
+    have h1 := inV_val v.2
+    have hlt : (inV J v.1).val < wIn J := by rw [h1]; simp only [wIn]; omega
+    have hvn : v.1.val < n - 1 := by omega
+    rw [hσi' _ v.1 (by rw [h1]; omega), hσi' _ (v.1 + 1) (by
+      rw [hsucc v.1 hvn, Fin.val_add_one_of_lt (by rw [Fin.lt_def, Fin.val_last]; exact hlt), h1]
+      omega)]
+  have hEi : ∀ d : EIn F J, thetaEdge L m t (σi (shiftIn J d.1.1).1) (σi (shiftIn J d.1.1).2) - 1
+      = thetaEdge L m t (σ d.1.1.1) (σ d.1.1.2) - 1 := by
+    intro d
+    have hlt := (hF.1 d.1.1 d.1.2).1
+    have hv := shiftIn_val d.2.1 (le_of_lt hlt)
+    have hdJ := d.2.1
+    simp only [ArcLe, Fin.le_def] at hdJ
+    rw [hσi' _ d.1.1.1 (by rw [hv.1]; omega),
+      hσi' _ d.1.1.2 (by rw [hv.2]; omega)]
+  -- outside side conditions
+  have hg : (glueV J).val = J.1.val := by simp only [glueV, wIn]; omega
+  have hM0o : thetaEdge L m t (σo (glueV J)) (σo (glueV J + 1))
+      = thetaEdge L m t (σ J.1) (σ J.2) := by
+    have hg1 : (glueV J + 1).val = J.1.val + 1 := by
+      rw [Fin.val_add_one_of_lt (by rw [Fin.lt_def, Fin.val_last, hg]; simp only [wIn]; omega), hg]
+    rw [hσo' _ J.1 (by rw [hg, unCol_of_le le_rfl]), hσo' _ J.2 (by
+      rw [hg1, unCol_of_gt (by omega)]; simp only [wIn]; omega)]
+  have hM1o : ∀ v : LOut J, thetaEdge L m t (σo (outV J v)) (σo (outV J v + 1))
+      = thetaEdge L m t (σ v.1) (σ (v.1 + 1)) := by
+    intro v
+    have hvs : v.1.val < J.1.val ∨ J.2.val ≤ v.1.val := by
+      have := v.2; simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt] at this; omega
+    have h1 := outV_val v.1 hJ2
+    rw [hσo' _ v.1 (by rw [h1, unCol_col (by omega) hJw])]
+    congr 1
+    by_cases hr : v.1.val = n - 1
+    · have hlast : outV J v.1 = Fin.last _ := by
+        refine Fin.ext ?_
+        rw [h1, Fin.val_last, col_of_gt (by omega), hr]; simp only [wIn]; omega
+      have hv1 : v.1 + 1 = 0 := by
+        refine Fin.ext ?_
+        rw [Fin.val_add, hone, hr, Nat.sub_add_cancel (by omega), Nat.mod_self]; rfl
+      rw [hlast, Fin.last_add_one, hv1]
+      exact hσo' 0 0 (by simp [unCol])
+    · have hvn : v.1.val < n - 1 := by have := v.1.isLt; omega
+      have hlt : (outV J v.1).val < n - wIn J := by
+        rw [h1]; rcases hvs with h | h
+        · rw [col_of_le (by omega)]; simp only [wIn]; omega
+        · rw [col_of_gt (by omega)]; simp only [wIn]; omega
+      refine hσo' _ _ ?_
+      rw [hsucc v.1 hvn, Fin.val_add_one_of_lt (by rw [Fin.lt_def, Fin.val_last]; exact hlt), h1]
+      rcases hvs with h | h
+      · rw [col_of_le (by omega)]
+        by_cases h' : v.1.val + 1 ≤ J.1.val
+        · rw [unCol_of_le h']
+        · have : v.1.val + 1 = J.1.val := by omega
+          rw [this, unCol_of_le le_rfl]
+      · rw [col_of_gt (by omega), unCol_of_gt (by simp only [wIn]; omega)]
+        simp only [wIn]; omega
+  have hEo : ∀ d : EOut F J, thetaEdge L m t (σo (shiftOut J d.1.1).1) (σo (shiftOut J d.1.1).2) - 1
+      = thetaEdge L m t (σ d.1.1.1) (σ d.1.1.2) - 1 := by
+    intro d
+    have hE := outEnds_of hF hn hJ (mem_nodes_of_mem d.1.2) d.2
+    have hv := shiftOut_val d.1.1 hJ2
+    rw [hσo' _ d.1.1.1 (by rw [hv.1, unCol_col hE.1 hJw]),
+      hσo' _ d.1.1.2 (by rw [hv.2, unCol_col hE.2.1 hJw])]
+  rw [treeValW_cut L hF hn hJ a _ _ (thetaEdge L m t (σ J.1) (σ J.2)) (SB L)
+    (thetaEdge L m t (σ J.1) (σ J.2))]
+  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun w _ => ?_
+  rw [gval_in_eq hF hn hJ L a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
+      (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) u _ (ai u) (fun v => thetaEdge L m t (σi v) (σi (v + 1)))
+      (fun d => thetaEdge L m t (σi d.1.1) (σi d.1.2) - 1) (hai0 u) (hai1 u) hM0i hM1i hEi,
+    gval_out_eq hF hn hJ L a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
+      (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) w _ (ao w) (fun v => thetaEdge L m t (σo v) (σo (v + 1)))
+      (fun d => thetaEdge L m t (σo d.1.1) (σo d.1.2) - 1) (hao0 w) (hao1 w) hM0o hM1o hEo]
+  rfl
+
+end Assembly
 
 end RBM

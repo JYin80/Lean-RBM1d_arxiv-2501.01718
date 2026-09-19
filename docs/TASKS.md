@@ -7,6 +7,7 @@
 | # | 任务 | 文件 | 认领 | 状态 |
 |---|---|---|---|---|
 | T1 | `1 − ‖ρ(ξ)‖ ≍ \|1−ξ\|^{1/2}` 的定量估计 | `Propagator/Decay.lean` | **Cowork** | 进行中（精确恒等式已证） |
+| T1c | T1 的复 ξ 情形：`‖1−ξ‖/8 ≤ (1−‖ρ‖)² ≤ 3‖1−ξ‖`，对全部 `‖ξ‖<1` 一致（实 ξ 情形 Cowork 已在 `c1210a4` 完成） | `Propagator/RateComplex.lean`（新建） | **Claude Code #2** | 进行中 |
 | T2 | `‖A(ξ)‖` 的上界 | `Propagator/Decay.lean` | **Cowork** | 待 T1 |
 | T3 | 组装成论文 (2.52) 的形式 | `Propagator/Decay.lean` | **Cowork** | 待 T1,T2 |
 | T4 | (2.53)(2.54) 差分估计 | `Propagator/Decay.lean` | **Cowork** | 待 T3 |

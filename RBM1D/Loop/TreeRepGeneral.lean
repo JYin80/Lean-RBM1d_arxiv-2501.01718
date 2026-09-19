@@ -639,4 +639,218 @@ theorem treeValW_cut (a : Fin n → ZMod L) (M : Fin n → Matrix (ZMod L) (ZMod
 
 end Cut
 
+section CutIn
+
+variable {n : ℕ} [NeZero n]
+
+/-- The width `j - i` of the cut `J = (i, j)`: the inside polygon has `wIn J + 1` vertices. -/
+def wIn (J : Fin n × Fin n) : ℕ := J.2.val - J.1.val
+
+/-- Shift a region pair inside `J` to the inside polygon: `(x₁, x₂) ↦ (x₁ - i, x₂ - i)`. -/
+def shiftIn (J : Fin n × Fin n) (d : Fin n × Fin n) : Fin (wIn J + 1) × Fin (wIn J + 1) :=
+  (⟨min (d.1.val - J.1.val) (wIn J), by omega⟩, ⟨min (d.2.val - J.1.val) (wIn J), by omega⟩)
+
+/-- The family of the inside polygon: the edges strictly inside `J`, shifted. -/
+def FIn (F : Finset (Fin n × Fin n)) (J : Fin n × Fin n) :
+    Finset (Fin (wIn J + 1) × Fin (wIn J + 1)) :=
+  (F.filter fun d => ArcLe d J ∧ d ≠ J).image (shiftIn J)
+
+/-- The inside vertex `v ∈ J` in the inside polygon: `v - i`. -/
+def inV (J : Fin n × Fin n) (v : Fin n) : Fin (wIn J + 1) :=
+  ⟨min (v.val - J.1.val) (wIn J), by omega⟩
+
+variable {J : Fin n × Fin n}
+
+omit [NeZero n] in
+theorem shiftIn_val {d : Fin n × Fin n} (h : ArcLe d J) (h12 : d.1 ≤ d.2) :
+    (shiftIn J d).1.val = d.1.val - J.1.val ∧ (shiftIn J d).2.val = d.2.val - J.1.val := by
+  simp only [ArcLe, Fin.le_def] at h h12
+  simp only [shiftIn, wIn]
+  constructor <;> omega
+
+omit [NeZero n] in
+theorem inV_val {v : Fin n} (h : InArc J v) : (inV J v).val = v.val - J.1.val := by
+  simp only [InArc, Fin.le_def, Fin.lt_def] at h
+  simp only [inV, wIn]
+  omega
+
+omit [NeZero n] in
+theorem shiftIn_self : shiftIn J J = wholeP (wIn J + 1) := by
+  refine Prod.ext (Fin.ext ?_) (Fin.ext ?_) <;> simp [shiftIn, wholeP, wIn]
+
+omit [NeZero n] in
+theorem shiftIn_injOn {d e : Fin n × Fin n} (hd : ArcLe d J) (hd12 : d.1 ≤ d.2)
+    (he : ArcLe e J) (he12 : e.1 ≤ e.2) (h : shiftIn J d = shiftIn J e) : d = e := by
+  have h1 := shiftIn_val hd hd12
+  have h2 := shiftIn_val he he12
+  have h3 := congrArg (fun x => x.1.val) h
+  have h4 := congrArg (fun x => x.2.val) h
+  simp only [ArcLe, Fin.le_def] at hd he hd12 he12
+  exact Prod.ext (Fin.ext (by omega)) (Fin.ext (by omega))
+
+omit [NeZero n] in
+theorem arcLe_shiftIn_iff {d e : Fin n × Fin n} (hd : ArcLe d J) (hd12 : d.1 ≤ d.2)
+    (he : ArcLe e J) (he12 : e.1 ≤ e.2) :
+    ArcLe (shiftIn J d) (shiftIn J e) ↔ ArcLe d e := by
+  have h1 := shiftIn_val hd hd12
+  have h2 := shiftIn_val he he12
+  simp only [ArcLe, Fin.le_def] at hd he hd12 he12 ⊢
+  omega
+
+omit [NeZero n] in
+theorem inArc_shiftIn_iff {d : Fin n × Fin n} (hd : ArcLe d J) (hd12 : d.1 ≤ d.2) {v : Fin n}
+    (hv : InArc J v) : InArc (shiftIn J d) (inV J v) ↔ InArc d v := by
+  have h1 := shiftIn_val hd hd12
+  have h2 := inV_val hv
+  simp only [ArcLe, InArc, Fin.le_def, Fin.lt_def] at hd hv hd12 ⊢
+  omega
+
+variable {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) (hJ : J ∈ F)
+include hF hJ
+
+theorem shiftIn_mem_nodes {x : Fin n × Fin n} (hx : x ∈ nodes F) (hxJ : ArcLe x J) :
+    shiftIn J x ∈ nodes (FIn F J) := by
+  by_cases h : x = J
+  · subst h
+    rw [shiftIn_self]
+    exact wholeP_mem_nodes _
+  · have hxF : x ∈ F := by
+      rcases mem_insert.1 hx with rfl | hx
+      · exact absurd hxJ (not_arcLe_wholeP hF hJ)
+      · exact hx
+    exact mem_nodes_of_mem (mem_image_of_mem _ (mem_filter.2 ⟨hxF, hxJ, h⟩))
+
+omit hF in
+theorem exists_of_mem_nodes_FIn {y : Fin (wIn J + 1) × Fin (wIn J + 1)}
+    (hy : y ∈ nodes (FIn F J)) : ∃ x ∈ nodes F, ArcLe x J ∧ shiftIn J x = y := by
+  rcases mem_insert.1 hy with rfl | hy
+  · exact ⟨J, mem_nodes_of_mem hJ, ⟨le_refl _, le_refl _⟩, shiftIn_self⟩
+  · obtain ⟨x, hx, rfl⟩ := mem_image.1 hy
+    have hx' := mem_filter.1 hx
+    exact ⟨x, mem_nodes_of_mem hx'.1, hx'.2.1, rfl⟩
+
+include hn
+
+/-- **The inside part of a cut is a tree value on the inside polygon** `Fin (wIn J + 1)`:
+`J` becomes the root node, the inside leaves are shifted by `-i`, and the cut leaf becomes the
+root vertex `wIn J`. -/
+theorem gval_in_eq (L : ℕ) [NeZero L] (a : Fin n → ZMod L) (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ)
+    (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (u : ZMod L) (R : Matrix (ZMod L) (ZMod L) ℂ)
+    (a' : Fin (wIn J + 1) → ZMod L) (M' : Fin (wIn J + 1) → Matrix (ZMod L) (ZMod L) ℂ)
+    (E' : ↥(FIn F J) → Matrix (ZMod L) (ZMod L) ℂ)
+    (ha0 : a' (Fin.last _) = u) (ha1 : ∀ v : LIn J, a' (inV J v) = a v)
+    (hM0 : M' (Fin.last _) = R) (hM1 : ∀ v : LIn J, M' (inV J v) = M v)
+    (hE : ∀ d : EIn F J,
+      E' ⟨shiftIn J d.1.1, mem_image_of_mem _ (mem_filter.2 ⟨d.1.2, d.2⟩)⟩ = E d.1) :
+    gval L (fun o : Option (LIn J) => o.elim u (fun v => a v.1))
+        (fun o => o.elim R (fun v => M v.1))
+        (fun o => o.elim (cutIn hJ) (inLeafPar hF hJ)) (fun d : EIn F J => E d.1)
+        inChild (inPar hF hn hJ)
+      = treeValW L (FIn F J) a' M' E' := by
+  have h12 : ∀ x ∈ nodes F, x.1 ≤ x.2 := fun x hx => le_of_lt (lt_of_mem_nodes hF hn hx)
+  -- the three bijections
+  let fN : NIn F J → ↥(nodes (FIn F J)) := fun x =>
+    ⟨shiftIn J x.1.1, shiftIn_mem_nodes hF hJ x.1.2 x.2⟩
+  have hfN : Function.Bijective fN := by
+    constructor
+    · intro x y h
+      have := congrArg Subtype.val h
+      exact Subtype.ext (Subtype.ext (shiftIn_injOn x.2 (h12 _ x.1.2) y.2 (h12 _ y.1.2) this))
+    · intro y
+      obtain ⟨x, hx, hxJ, hxy⟩ := exists_of_mem_nodes_FIn hJ y.2
+      exact ⟨⟨⟨x, hx⟩, hxJ⟩, Subtype.ext hxy⟩
+  let fL : Option (LIn J) → Fin (wIn J + 1) := fun o => o.elim (Fin.last _) (fun v => inV J v.1)
+  have hlt : ∀ v : LIn J, (inV J v.1).val < wIn J := by
+    intro v
+    have h1 := inV_val v.2
+    have h2 := v.2
+    simp only [InArc, Fin.le_def, Fin.lt_def] at h2
+    simp only [wIn]; omega
+  have hfL : Function.Bijective fL := by
+    constructor
+    · rintro (_ | v) (_ | v') h
+      · rfl
+      · have := hlt v'; simp only [fL, Option.elim, Fin.ext_iff, Fin.val_last] at h; omega
+      · have := hlt v; simp only [fL, Option.elim, Fin.ext_iff, Fin.val_last] at h; omega
+      · simp only [fL, Option.elim, Fin.ext_iff] at h
+        have h1 := inV_val v.2
+        have h2 := inV_val v'.2
+        have h3 := v.2
+        have h4 := v'.2
+        simp only [InArc, Fin.le_def] at h3 h4
+        exact congrArg some (Subtype.ext (Fin.ext (by omega)))
+    · intro i
+      by_cases hi : i.val = wIn J
+      · exact ⟨none, Fin.ext (by simp [fL, hi])⟩
+      · have hi' : i.val < wIn J := by have := i.isLt; omega
+        have hv : i.val + J.1.val < n := by
+          have := J.2.isLt; simp only [wIn] at hi'; omega
+        have hin : InArc J ⟨i.val + J.1.val, hv⟩ := by
+          simp only [InArc, Fin.le_def, Fin.lt_def]; simp only [wIn] at hi'; omega
+        refine ⟨some ⟨⟨i.val + J.1.val, hv⟩, hin⟩, Fin.ext ?_⟩
+        simp only [fL, Option.elim]
+        rw [inV_val hin]; simp
+  let fE : EIn F J → ↥(FIn F J) := fun d =>
+    ⟨shiftIn J d.1.1, mem_image_of_mem _ (mem_filter.2 ⟨d.1.2, d.2⟩)⟩
+  have hfE : Function.Bijective fE := by
+    constructor
+    · intro d e h
+      have := congrArg Subtype.val h
+      exact Subtype.ext (Subtype.ext (shiftIn_injOn d.2.1 (h12 _ (mem_nodes_of_mem d.1.2))
+        e.2.1 (h12 _ (mem_nodes_of_mem e.1.2)) this))
+    · intro y
+      obtain ⟨x, hx, hxy⟩ := mem_image.1 y.2
+      have hx' := mem_filter.1 hx
+      exact ⟨⟨⟨x, hx'.1⟩, hx'.2⟩, Subtype.ext hxy⟩
+  rw [treeValW_eq_gval]
+  refine gval_congr (Equiv.ofBijective fN hfN) (Equiv.ofBijective fL hfL)
+    (Equiv.ofBijective fE hfE) ?_ ?_ ?_ ?_ ?_ ?_
+  · rintro (_ | v)
+    · simpa [fL] using ha0
+    · simpa [fL] using ha1 v
+  · rintro (_ | v)
+    · simpa [fL] using hM0
+    · simpa [fL] using hM1 v
+  · rintro (_ | v)
+    · refine Subtype.ext ?_
+      simp only [Equiv.ofBijective_apply, fL, fN, Option.elim, cutIn]
+      rw [leafPar_root _ (by simp), shiftIn_self]
+    · refine Subtype.ext ?_
+      simp only [Equiv.ofBijective_apply, fL, fN, Option.elim, inLeafPar]
+      have hr := lt_of_inArc v.2
+      have hspec := leafPar_spec hF hr
+      have hin := leafPar_arcLe_of_inArc hF hJ v.2
+      have hmem := leafPar_mem F v.1
+      refine leafPar_eq (shiftIn_mem_nodes hF hJ hmem hin)
+        ((inArc_shiftIn_iff hin (h12 _ hmem) v.2).2 hspec.1) ?_
+      intro e' he' hev'
+      obtain ⟨x, hx, hxJ, rfl⟩ := exists_of_mem_nodes_FIn hJ he'
+      have hxv := (inArc_shiftIn_iff hxJ (h12 _ hx) v.2).1 hev'
+      exact (arcLe_shiftIn_iff hin (h12 _ hmem) hxJ (h12 _ hx)).2 (hspec.2 x hx hxv)
+  · intro d
+    simpa [fE] using hE d
+  · intro d
+    rfl
+  · intro d
+    refine Subtype.ext ?_
+    simp only [Equiv.ofBijective_apply, fE, fN, inPar]
+    have hd := mem_nodes_of_mem d.1.2
+    have hspec := nodePar_spec hF hn hd (ne_wholeP hF d.1.2)
+    have hin := nodePar_arcLe hF hn hJ d.1.2 d.2.1 d.2.2
+    have hpm := nodePar_mem F d.1.1
+    have hdd := shiftIn_val d.2.1 (h12 _ hd)
+    have hlt' := lt_of_mem_nodes hF hn hd
+    refine nodePar_eq ?_ (shiftIn_mem_nodes hF hJ hpm hin)
+      ((arcLe_shiftIn_iff d.2.1 (h12 _ hd) hin (h12 _ hpm)).2 hspec.2.1) ?_ ?_
+    · rw [Fin.le_def, hdd.1, hdd.2]; rw [Fin.lt_def] at hlt'; omega
+    · intro h
+      exact hspec.2.2.1 (shiftIn_injOn hin (h12 _ hpm) d.2.1 (h12 _ hd) h)
+    · intro e' he' hde' hne'
+      obtain ⟨x, hx, hxJ, rfl⟩ := exists_of_mem_nodes_FIn hJ he'
+      have hdx := (arcLe_shiftIn_iff d.2.1 (h12 _ hd) hxJ (h12 _ hx)).1 hde'
+      have hxd : x ≠ d.1.1 := fun h => hne' (by rw [h])
+      exact (arcLe_shiftIn_iff hin (h12 _ hpm) hxJ (h12 _ hx)).2 (hspec.2.2.2 x hx hdx hxd)
+
+end CutIn
+
 end RBM

@@ -1093,8 +1093,8 @@ theorem sum_eq_mul_sum_pinned (g : (Fin n → ZMod L) → ℂ)
 /-- The choice with a single odd piece at `v₁` contributes nothing. -/
 theorem sum_taylor_single_eq_zero (g : (Fin n → ZMod L) → ℂ) (hg : ∀ s, g (fun v => -s v) = g s)
     (f : Fin n → ZMod L → ℂ) (τ : Fin n → Fin 3) (v₁ : Fin n) (h1 : τ v₁ = 1)
-    (h0 : ∀ v, v ≠ v₁ → τ v = 0) :
-    ∑ c : ZMod L, ∑ s ∈ pinned L n 0, g s * ∏ v, taylorTerm (f v) (τ v) c (s v) = 0 := by
+    (h0 : ∀ v, v ≠ v₁ → τ v = 0) (q : Fin n := 0) :
+    ∑ c : ZMod L, ∑ s ∈ pinned L n q, g s * ∏ v, taylorTerm (f v) (τ v) c (s v) = 0 := by
   refine sum_eq_zero fun c _ => ?_
   have e : ∀ s : Fin n → ZMod L, ∏ v, taylorTerm (f v) (τ v) c (s v)
       = oddPart (f v₁) c (s v₁) * ∏ v ∈ univ.erase v₁, f v c := by
@@ -1105,13 +1105,13 @@ theorem sum_taylor_single_eq_zero (g : (Fin n → ZMod L) → ℂ) (hg : ∀ s, 
     · refine prod_congr rfl fun v hv => ?_
       rw [h0 v (ne_of_mem_erase hv)]; rfl
   simp_rw [e, ← mul_assoc]
-  rw [← sum_mul, sum_pinned_odd_eq_zero g hg, zero_mul]
+  rw [← sum_mul, sum_pinned_odd_eq_zero g hg _ _ _ q, zero_mul]
 
 /-- The choice with no odd or even piece factorises: `(∑_c ∏_v f_v(c)) (∑_{s₀=0} g(s))`. -/
 theorem sum_taylor_zero_eq (g : (Fin n → ZMod L) → ℂ) (f : Fin n → ZMod L → ℂ)
-    (τ : Fin n → Fin 3) (h0 : ∀ v, τ v = 0) :
-    ∑ c : ZMod L, ∑ s ∈ pinned L n 0, g s * ∏ v, taylorTerm (f v) (τ v) c (s v)
-      = (∑ c : ZMod L, ∏ v, f v c) * ∑ s ∈ pinned L n 0, g s := by
+    (τ : Fin n → Fin 3) (h0 : ∀ v, τ v = 0) (q : Fin n := 0) :
+    ∑ c : ZMod L, ∑ s ∈ pinned L n q, g s * ∏ v, taylorTerm (f v) (τ v) c (s v)
+      = (∑ c : ZMod L, ∏ v, f v c) * ∑ s ∈ pinned L n q, g s := by
   rw [sum_mul]
   refine sum_congr rfl fun c _ => ?_
   rw [mul_sum]
@@ -1653,5 +1653,72 @@ theorem treeValW_long_cut (σ : Fin n → Bool) (a : Fin n → ZMod L)
   rfl
 
 end LongCut
+
+section Inner
+
+/-! ### The inner molecule `A(c₁)` of (3.75)
+
+The inside polygon of the cut at a long edge is a single molecule whose root leaf is the
+identity.  Summing its root label, `∑_u |A(u)| = O(A^{N-2})`: one power of `A` less than a genuine
+`N`-loop, because the root carries no propagator. -/
+
+variable {L : ℕ} [NeZero L] {N : ℕ} [NeZero N]
+
+/-- The inner molecule with identity root leaf at `p` and root label `u`. -/
+noncomputable def innerId (m : Bool → ℂ) (t : ℝ) (σ' : Fin N → Bool) (a' : Fin N → ZMod L)
+    (p : Fin N) (u : ZMod L) : ℂ :=
+  ∑ H ∈ TSPlong N σ' ∅, treeValW L H (Function.update a' p u)
+    (Function.update (fun v => thetaEdge L m t (σ' v) (σ' (v + 1))) p 1)
+    (fun d => thetaEdge L m t (σ' d.1.1) (σ' d.1.2) - 1)
+
+/-- The kernels of the inner molecule: `1` at the root, `(Θ_v)_{a'_v, ·}` elsewhere. -/
+noncomputable def innerKer (m : Bool → ℂ) (t : ℝ) (σ' : Fin N → Bool) (a' : Fin N → ZMod L)
+    (p : Fin N) : Fin N → ZMod L → ℂ :=
+  Function.update (fun v y => thetaEdge L m t (σ' v) (σ' (v + 1)) (a' v) y) p (fun _ => 1)
+
+variable (hL : 3 ≤ L)
+include hL
+
+/-- **Centring the inner molecule at its root**:
+`A(u) = ∑_{s_p = 0} Σ^(∅)(s) ∏_v F_v(u + s_v)` with `F_p = 1`. -/
+theorem innerId_eq (m : Bool → ℂ) {t : ℝ} (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+    (σ' : Fin N → Bool) (a' : Fin N → ZMod L) (p : Fin N) (u : ZMod L) :
+    innerId m t σ' a' p u = ∑ s ∈ pinned L N p,
+      SigmaPi L m t σ' ∅ s * ∏ v, innerKer m t σ' a' p v (u + s v) := by
+  unfold innerId
+  simp_rw [treeValW_eq_sum_selfW]
+  rw [sum_comm]
+  simp_rw [← sum_mul]
+  have hS : ∀ d : Fin N → ZMod L,
+      ∑ H ∈ TSPlong N σ' ∅, selfW L H (fun d => thetaEdge L m t (σ' d.1.1) (σ' d.1.2) - 1) d
+        = SigmaPi L m t σ' ∅ d := fun d => rfl
+  simp_rw [hS]
+  rw [sum_center (M := ℂ) _ p]
+  have hterm : ∀ c : ZMod L, ∀ s ∈ pinned L N p,
+      SigmaPi L m t σ' ∅ (fun v => s v + c) *
+        ∏ v, Function.update (fun v => thetaEdge L m t (σ' v) (σ' (v + 1))) p 1 v
+          (Function.update a' p u v) (s v + c)
+      = if c = u then SigmaPi L m t σ' ∅ s * ∏ v, innerKer m t σ' a' p v (u + s v) else 0 := by
+    intro c s hs
+    simp only [pinned, mem_filter, mem_univ, true_and] at hs
+    rw [SigmaPi_add_const m hm hL σ' ∅ s c,
+      ← mul_prod_erase _ (fun v => Function.update (fun v => thetaEdge L m t (σ' v) (σ' (v + 1)))
+        p 1 v (Function.update a' p u v) (s v + c)) (mem_univ p),
+      Function.update_self, Function.update_self, hs, zero_add, Matrix.one_apply]
+    by_cases hc : c = u
+    · subst hc
+      simp only [ite_true, one_mul]
+      rw [← mul_prod_erase _ (fun v => innerKer m t σ' a' p v (c + s v)) (mem_univ p)]
+      simp only [innerKer, Function.update_self, one_mul]
+      congr 1
+      refine Finset.prod_congr rfl fun v hv => ?_
+      have hvp := ne_of_mem_erase hv
+      rw [Function.update_of_ne hvp, Function.update_of_ne hvp, Function.update_of_ne hvp,
+        add_comm (s v) c]
+    · simp only [Ne.symm hc, hc, ite_false, zero_mul, mul_zero]
+  rw [sum_congr rfl fun c _ => sum_congr rfl (hterm c), sum_comm]
+  simp only [sum_ite_eq', mem_univ, ite_true]
+
+end Inner
 
 end RBM

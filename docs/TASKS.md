@@ -16,7 +16,7 @@
 | T7 | 删掉 `RBM1D/Probe.lean` | — | Claude Code | **完成** |
 | T8 | (B.3) 符号的双边界 `\|1−ξŜ(p)\| ≍ \|1−ξ\| + \|p\|²` | `Propagator/SymbolBound.lean` | Claude Code #2 | **完成** |
 | T9 | 无穷体积核 + 围道平移 (B.4)(B.5) | `Propagator/Contour.lean` | Claude Code #2 | **完成** |
-| T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | 同上 | **Claude Code #2** | 进行中（永不停工规则） |
+| T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | `Propagator/Poisson.lean`、`Propagator/DecayComplex.lean` | Claude Code #2 | **完成** |
 | T11 | dyadic 分解 → (2.53)(2.54) 的一般证明 | 同上 | 空闲 | 排在第 3 节之后 |
 | T12 | 数值回归测试 | `Test/Numeric.lean` | Claude Code | **完成** |
 | T13 | Thm 2.2：由 local law 推 delocalization | `Delocalization.lean` | Claude Code | **完成**（确定性部分） |

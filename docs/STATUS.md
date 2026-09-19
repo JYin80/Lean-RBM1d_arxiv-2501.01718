@@ -589,3 +589,26 @@ Mathlib 关键 API：`Complex.integral_boundary_rect_eq_zero_of_differentiableOn
 **所以：往 `content.tex` 里加节点、标 `\leanok`、写 `\uses{}`，蓝图页面下次刷新就会自动反映。**
 Claude Code 侧只要维护 `content.tex` 即可，不必碰页面。
 节点的中文短名在 `build.py` 的 `SHORT` 字典里；没登记的节点回退到 LaTeX 标题。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T10 完成 —— 周期化与复 ξ 的 (2.52)
+
+全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+
+**`Propagator/Poisson.lean`**（`870f86d`）：论文 (B.2) 下一行 `Θ_xy = Σ_n K_{ξ,∞}(u + nL)`（`Theta_apply_periodize`）。
+**没走 Fourier 反演**，而是用逆的唯一性：`∫_{−π}^{π} e^{ipw} = 2πδ_{w0}` ⟹ `K_∞ − ξSK_∞ = δ₀` 于 ℤ（`Kinf_sub_SB`）；
+由 (B.5) 周期化绝对收敛（`summable_Kinf_shift`）且在 ℤ_L 上解同一方程（`perK_sub_SB_mulVec`）；
+其 circulant 与 `Theta_eq_circulant_fourierKernel` 同法用 `eq_Theta_of_mul` 收口。
+
+**`Propagator/DecayComplex.lean`**（`d70e341`）：**(2.52) 对所有 `‖ξ‖ < 1`**（`norm_Theta_apply_le_complex`）
+
+    ‖Θ_xy‖ ≤ C · exp(−c₀·zdist(x−y)/ℓ̂) / (‖1−ξ‖·ℓ̂),   ℓ̂ = ellHat L ξ,  c₀ = 1/(16π²)
+
+照论文 p.90 分两区：`κL ≥ 1` 用周期化 + (B.5) + 两条几何级数（`tsum_exp_neg_abs_shift_le`）；
+`κL < 1` 用 (B.1) + (B.3)，零模 `1/(κ²L)`，其余 `(3/2)ZL`（`Z = Σ_{n≠0} n⁻²`，`zetaTwoInt`，未求值）。
+陈述形状与 Cowork 的实版本 `norm_Theta_apply_le_of_real` 一致（同一 `ellHat`、`zdist`），可直接替换或并用。
+这条只用 T8–T10 的一般 Fourier 机器，不用最近邻闭式，所以是一般 variance profile 时仍然成立的那条证明。
+
+**T11（下一步）**：(2.53)(2.54) 的 dyadic 分解证明（论文 p.90–91 (B.6)）。
+Cowork 已用闭式证了实 ξ 的 (2.53)（`e118333`）；T11 是一般机器版本，难点是离散分部求和。

@@ -261,6 +261,19 @@
   and $\int_{-\pi}^{\pi}dp/(\kappa^2+p^2)\le\pi/\kappa$.
 \end{proof}
 
+\begin{lemma}[Periodization, after (B.2)]\label{eq:B.2-per}
+  \lean{RBM.integral_exp_int, RBM.Kinf_sub_SB, RBM.summable_Kinf_shift, RBM.perSum, RBM.perK,
+    RBM.perK_sub_SB_mulVec, RBM.Theta_eq_circulant_perK, RBM.Theta_apply_periodize}\leanok
+  \uses{eq:B.5, def:Theta, lem:Theta-inv}
+  $(\Th_\xi)_{xy}=\sum_{n\in\mathbb Z}K_{\xi,\infty}(u+nL)$, $u=x-y$, the sum converging
+  absolutely.
+\end{lemma}
+\begin{proof}\leanok\uses{eq:B.5, def:Theta, lem:Theta-inv}
+  Instead of Fourier inversion: $\int_{-\pi}^{\pi}e^{ipw}dp=2\pi\delta_{w,0}$ gives
+  $K_\infty-\xi\SB K_\infty=\delta_0$ on $\mathbb Z$; by (B.5) the periodization converges
+  absolutely and solves the same equation on $\ZL$, so its circulant inverts $1-\xi\SB$.
+\end{proof}
+
 \begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}
   \lean{RBM.rho, RBM.norm_root_ne_one, RBM.norm_rho_lt_one}\leanok\uses{def:Theta}
   Write $c = 3/\xi - 1$.  The characteristic equation of the three-term recursion
@@ -342,6 +355,22 @@
   the two regimes of the $\min$ in $\hat\ell$ are exactly $L(1-\rho)\gtrsim 1$ and
   $L(1-\rho)\lesssim 1$, and $\sqrt{1-t}\le 1-\rho\le\sqrt 3\sqrt{1-t}$ converts
   between them.  No exponentials are needed.
+\end{proof}
+
+\begin{lemma}[(2.52) for complex $\xi$, Fourier route]\label{lem:Theta-decay-complex}
+  \lean{RBM.tsum_exp_neg_abs_shift_le, RBM.norm_Theta_apply_le_large,
+    RBM.norm_Theta_apply_le_small, RBM.norm_Theta_apply_le_complex,
+    RBM.norm_Theta_apply_le_exists}\leanok
+  \uses{eq:B.2-per, eq:B.5, eq:B.3, eq:B.1}
+  For every $|\xi|<1$, with $\hat\ell(\xi)=\min(|1-\xi|^{-1/2},L)$ and $c_0=1/(16\pi^2)$,
+  \[ \bigl|(\Th_\xi)_{xy}\bigr|\le\frac{C\,e^{-c_0\|x-y\|/\hat\ell(\xi)}}{|1-\xi|\,\hat\ell(\xi)} ,\]
+  $C$ independent of $L$ and $\xi$.
+\end{lemma}
+\begin{proof}\leanok\uses{eq:B.2-per, eq:B.5, eq:B.3, eq:B.1}
+  $\kappa L\ge1$: periodization and (B.5); the terms $n\ge0$ and $n<0$ are geometric series
+  from $e^{-c_0\kappa\|u\|}$ with ratio $\le e^{-c_0}$.  $\kappa L<1$: (B.1) and (B.3); the zero
+  mode gives $1/(\kappa^2L)$, the rest $\frac32 ZL$ with $Z=\sum_{n\neq0}n^{-2}$, and
+  $L\le1/(\kappa^2L)$.
 \end{proof}
 
 \begin{lemma}[Lemma 2.14 (4): exponential decay, (2.52)]\label{lem:Theta-decay}

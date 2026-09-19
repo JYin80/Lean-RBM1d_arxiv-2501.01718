@@ -15,7 +15,9 @@ import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Decay
+import RBM1D.Propagator.DecayComplex
 import RBM1D.Propagator.Deriv
+import RBM1D.Propagator.Poisson
 import RBM1D.Propagator.RateComplex
 import RBM1D.Propagator.Root
 import RBM1D.Propagator.Support

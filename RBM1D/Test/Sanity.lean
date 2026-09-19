@@ -9,6 +9,7 @@ import RBM1D.Defs.Model
 import RBM1D.Defs.Semicircle
 import RBM1D.Loop.Index
 import RBM1D.Loop.Primitive
+import RBM1D.Loop.Tree
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
@@ -91,3 +92,7 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.msc_eq_sqrt_mul_mE
 #print axioms RBM.eq_inv_sqrt_mul_zt
 #print axioms RBM.hasDerivAt_kTwo_mSigma
+#print axioms RBM.starGamma_two
+#print axioms RBM.not_hasDerivAt_starK_two
+#print axioms RBM.kTwo_eq_edge
+#print axioms RBM.gammaFour_eq

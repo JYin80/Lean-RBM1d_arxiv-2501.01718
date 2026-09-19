@@ -393,6 +393,36 @@
   By \texttt{decide}.
 \end{proof}
 
+\begin{definition}[Tree values: star graph and $n=4$, Definition 3.3]\label{def:3.3}
+  \lean{RBM.thetaEdge, RBM.starGamma, RBM.gammaFour, RBM.splitGamma₀₂, RBM.splitGamma₁₃}
+  \leanok\uses{def:TSP, def:Theta}
+  The boundary edge at $a_i$ lies between $R_i$ and $R_{i+1}$ and carries
+  $\Th_{t m_i m_{i+1}}$; an internal edge between $R_k$, $R_l$ carries $\Th_{tm_km_l}-1$.
+  The star value is $\sum_b\prod_i(\Th_{tm_im_{i+1}})_{a_ib}$.
+\end{definition}
+
+\begin{lemma}[$n=4$ display and the three trees]\label{lem:tree-four}
+  \lean{RBM.gammaFour_eq}\leanok\uses{def:3.3, lem:TSP-small}
+  The $n=4$ display after Figure 6 (with boundary factors $\Th_{tm_im_{i+1}}$) equals the sum
+  of the values of the three trees of $\mathcal T_{SP}(4)=\{\emptyset,\{(0,2)\},\{(1,3)\}\}$.
+  The display as printed uses $\Th_{tm_{i-1}m_i}$; only the corrected indices solve (2.48)
+  (checked numerically at $n=3,4$).  See \texttt{docs/paper-deltas.md}.
+\end{lemma}
+\begin{proof}\leanok\uses{def:3.3}
+  Collapse the Kronecker deltas.
+\end{proof}
+
+\begin{lemma}[The case $n=2$]\label{lem:tree-two}
+  \lean{RBM.starGamma_two, RBM.not_hasDerivAt_starK_two, RBM.kTwo_eq_edge}\leanok
+  \uses{def:3.3, ex:2.15}
+  For $n=2$ the star formula gives $(\Th^2)_{a_1a_2}$, which does not solve (2.55): at $t=0$
+  its derivative is twice the right-hand side.  The tree of the $2$-gon is the single edge
+  $a_1$--$a_2$, which gives Example 2.15.
+\end{lemma}
+\begin{proof}\leanok\uses{def:3.3, ex:2.15}
+  Differentiate $\sum_b\Th_{a_1b}\Th_{ba_2}$ at $t=0$ with $\Th_0=1$ and compare.
+\end{proof}
+
 \begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
   \uses{def:TSP, def:primitive, lem:Theta-deriv}
   \emph{Not yet formalized.}  Formalization strategy: take the tree sum as the

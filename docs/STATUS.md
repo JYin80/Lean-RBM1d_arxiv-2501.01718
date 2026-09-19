@@ -395,3 +395,28 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
 一并带走（共享 index：我暂存了自己的 hunk，对方的 `git commit` 把整个 index 提交了）。
 内容无误，只是提交信息不对应。**教训：共享工作树里不要把东西留在 index 上等待；
 用 `git commit -- <文件名>` 一步提交，或者暂存后立刻提交。**
+
+### `RBM1D/Loop/Tree.lean` — Def 3.3 的星图与 n=4（T20，Claude Code）
+
+**判断与发现（工单要求写进这里）：**
+
+1. **n = 4 显示式的边界下标是笔误。** Def 3.3 第 1 条：`a_i` 在 `R_i` 与 `R_{i+1}` 之间，边界边取 `Θ_{t m_i m_{i+1}}`；
+   Figure 6 下的显示式写成 `Θ_{t m_{i−1} m_i}`，工单里的星图公式抄的是后者。
+   用 Python 有限差分在 `L = 5` 直接核对 (2.48)（用我们的 `cutGlueL/R`，n=2 用 `kTwo`）：
+   `Θ_{t m_i m_{i+1}}` 在 n=3、4 误差 `~1e−11`；`Θ_{t m_{i−1} m_i}` 误差 `~1e−2`。内部边两项无误。
+   Lean 采用更正后的下标（paper-deltas #8）。
+2. **n = 2 必须特判（工单的猜测正确）。** 星图值是 `Θ²`，`not_hasDerivAt_starK_two` **严格证明**它不满足 (2.55)
+   （t=0 处导数是右端的 2 倍）。二角形的树是单条边 `a₁—a₂`，`kTwo_eq_edge`：此时 (3.5) = Example 2.15（paper-deltas #9）。
+3. 设计上按工单建议，**不构造图**：树值直接写成求和式；n=4 的三棵树 `starGamma`、`splitGamma₀₂`、`splitGamma₁₃`
+   分别对应 `TSP_four` 的 `∅`、`{(0,2)}`、`{(1,3)}`。
+
+| Lean | 内容 |
+|---|---|
+| `RBM.thetaEdge` / `starGamma` | `Θ_{t m m'}`；星图值 `Σ_b Π_i (Θ_{t m_i m_{i+1}})_{a_i b}` |
+| `RBM.starGamma_two` | n=2 星图 = `(Θ·Θ)_{a₀a₁}` |
+| **`RBM.not_hasDerivAt_starK_two`** | n=2 星图值**不**解 (2.55) |
+| `RBM.kTwo_eq_edge` | n=2 单边树 = Example 2.15 |
+| `RBM.gammaFour` / **`gammaFour_eq`** | n=4 显示式（更正下标）= 三棵树之和 —— **一般树值定义的验收标准** |
+
+下一步：一般 `F ∈ TSP n` 的树值（按 `F` 递归劈多边形），在 n=4 化归到 `gammaFour`，n=2 单列；
+然后 Lemma 3.4（需 (2.48) 解的唯一性 / Grönwall）。

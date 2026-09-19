@@ -8,6 +8,7 @@ import RBM1D.Defs.Semicircle
 import RBM1D.Loop.Crossing
 import RBM1D.Loop.Index
 import RBM1D.Loop.Primitive
+import RBM1D.Loop.Tree
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Decay

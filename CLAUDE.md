@@ -46,6 +46,33 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 - 每落地一个声明，去 `blueprint/src/content.tex` 对应节点补 `\lean{}` + `\leanok`；
   节点名与论文编号一一对应（`lem:2.14`、`eq:2.52`、`lem:3.6`）
 
+## 分工：Claude Code 与 Cowork
+
+两边都在用，边界按**迭代延迟**划，不按角色划。
+
+| | Claude Code（本机） | Cowork / chat（云端） |
+|---|---|---|
+| 证明的试错循环 | **主场**。`lake env lean 单文件` 秒级返回 | 一轮约 2 分钟，不适合高频试错 |
+| 读论文 PDF | 需要 `paper/` 下有 PDF（本地有，不入库） | PDF 在会话里，随时翻页 |
+| 蓝图渲染 / 依赖图 | 需本机装 plasTeX + graphviz | 工具链现成，可直接发布成网页 |
+| 路线规划、阶段划分 | — | **主场** |
+| git / CI / GitHub Pages | 都行 | 都行 |
+
+### 交接契约
+
+`docs/STATUS.md` 是两边**唯一**的共享状态。任何一边：
+
+- 开工前先读它
+- 收工前更新它（新增了哪些声明、卡在哪、下一步是什么）
+- 卡住时在里面写清楚「卡在 X，试过 Y 和 Z，失败原因是 W」，另一边才接得上
+
+`docs/paper-deltas.md` 同理：偏离论文字面陈述的地方，谁发现谁记，不要只在对话里说。
+
+### 论文 PDF
+
+`paper/250520-YinJun-v2.pdf` 放在本地供 Claude Code 读，已在 `.gitignore` 里排除，
+不会推到公开仓库。
+
 ## 当前位置与下一步
 
 Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry。详见 `docs/STATUS.md`。

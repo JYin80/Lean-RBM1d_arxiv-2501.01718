@@ -530,3 +530,15 @@ T20 的边界约定 `Θ_{t mᵢ mᵢ₊₁}` 在这里被 ODE 独立验证了一
 
 **下一步（T9）**：无穷体积核 + 围道平移 (B.4)(B.5)，同一文件或新文件。T8 给的下界正是
 `1/(1−ξŜ)` 的 Fourier 求和可控的依据。
+
+### T24（+ T7）：硬性公理审计、删 Probe、linter 清理（Claude Code）
+
+* **`#assert_rbm_axioms`**（`RBM1D/Test/Axioms.lean`）：遍历 `RBM` 命名空间的**全部**声明，用 `Lean.collectAxioms`
+  （即 `#print axioms` 的底层）收集公理，出现 `propext / Classical.choice / Quot.sound` 之外的任何东西
+  （含 `sorryAx`、项目自己的 `axiom`）就**编译失败**；少于 50 个声明也失败（防命名空间改名后空跑）。
+  在根文件 `RBM1D.lean` 末尾执行，所以覆盖整个库，没有 import 清单需要同步。已用含 `sorry` 与 `axiom`
+  的反例验证它会报错。当前：684 个声明全部通过。随机层引入 `axiom` 接口时须在 `allowedAxioms` 显式登记。
+* `RBM1D/Probe.lean` 已删；结论并入 **`docs/mathlib-api.md`**（外加本期新核实的 API 与本工具链的弃用名对照）。
+  `CLAUDE.md` 规则 2、3 相应更新。
+* linter：我名下文件的警告清零（unused section variables → `omit`，`if_neg` → `ite_eq_right`，
+  超长行，未用 simp 参数，maxHeartbeats 注释位置）。`Decay.lean` 与 #2 的文件未动。

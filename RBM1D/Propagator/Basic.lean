@@ -37,6 +37,7 @@ section Norm
 
 variable (L : ℕ) [NeZero L]
 
+omit [NeZero L] in
 theorem nnnorm_sbKernel (u : ZMod L) :
     ‖sbKernel L u‖₊ = if u ∈ sbSupport L then (3 : ℝ≥0)⁻¹ else 0 := by
   rw [sbKernel]
@@ -124,7 +125,7 @@ theorem Theta_commute_SB (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) :
     Commute (Theta L ξ) (SB L) := by
   have hb : Commute (1 - ξ • SB L) (SB L) := by
     unfold Commute SemiconjBy
-    simp [sub_mul, mul_sub, Matrix.smul_mul, Matrix.mul_smul]
+    simp [sub_mul, mul_sub]
   have key : Theta L ξ * SB L = SB L * Theta L ξ := by
     calc Theta L ξ * SB L
         = Theta L ξ * SB L * ((1 - ξ • SB L) * Theta L ξ) := by
@@ -141,7 +142,7 @@ theorem Theta_commute (hL : 3 ≤ L) {ξ ξ' : ℂ} (hξ : ‖ξ‖ < 1) (hξ' :
   have h1 : Commute (Theta L ξ) (1 - ξ' • SB L) := by
     have := Theta_commute_SB L hL hξ
     unfold Commute SemiconjBy at this ⊢
-    simp [mul_sub, sub_mul, Matrix.mul_smul, Matrix.smul_mul, this]
+    simp [mul_sub, sub_mul, this]
   have h2 : Theta L ξ * Theta L ξ' = Theta L ξ' * Theta L ξ := by
     calc Theta L ξ * Theta L ξ'
         = Theta L ξ' * (1 - ξ' • SB L) * (Theta L ξ * Theta L ξ') := by

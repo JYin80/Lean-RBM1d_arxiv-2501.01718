@@ -13,7 +13,7 @@
 | T4 | (2.53)(2.54) 差分估计 | `Propagator/Decay.lean` | **Cowork** | 待 T3 |
 | T5 | 附录 B (B.1) 的 Fourier 表示 | `Propagator/Symbol.lean` | Claude Code | **完成** |
 | T6 | Def 2.1(ii) 的确定性 ≺ | `Defs/Domination.lean` | Claude Code | **完成** |
-| T7 | 删掉 `RBM1D/Probe.lean` | — | **Claude Code** | 进行中 |
+| T7 | 删掉 `RBM1D/Probe.lean` | — | Claude Code | **完成** |
 | T8 | (B.3) 符号的双边界 `\|1−ξŜ(p)\| ≍ \|1−ξ\| + \|p\|²` | `Propagator/SymbolBound.lean` | Claude Code #2 | **完成** |
 | T9 | 无穷体积核 + 围道平移 (B.4)(B.5) | 同上 | 空闲 | 排在第 3 节之后 |
 | T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | 同上 | 空闲 | 排在第 3 节之后 |
@@ -29,7 +29,7 @@
 | T21 | 一般树值 Γ 的递归定义（Def 3.3 完整版） | `Loop/Tree.lean` | Claude Code | **完成** |
 | T22 | (2.48) 解的唯一性：双线性结构 + n=2 的 Grönwall | `Loop/Unique.lean` | Claude Code #2 | **完成** |
 | T23 | Example 2.16（n=3）：第一个非平凡的树表示实例 | `Loop/Example3.lean` | Claude Code #2 | **完成** |
-| T24 | 公理审计 + 删 `Probe.lean` + linter 清理 | `Test/Axioms.lean`（新建）等 | **Claude Code** | 进行中 |
+| T24 | 公理审计 + 删 `Probe.lean` + linter 清理 | `Test/Axioms.lean`（新建）等 | Claude Code | **完成** |
 
 ---
 

@@ -18,7 +18,8 @@ Formalization of Horng-Tzer Yau and Jun Yin,
 Example 2.15.
 
 The primitive loop `K_{t,σ,a}` solves (2.48):
-`d/dt K_{t,σ,a} = W ∑_{1≤k<l≤n} ∑_{a,b} (G^{(a),L}_{k,l} ∘ K_{t,σ,a}) S^(B)_{ab} (G^{(b),R}_{k,l} ∘ K_{t,σ,a})`,
+`d/dt K_{t,σ,a} = W ∑_{1≤k<l≤n} ∑_{a,b}
+  (G^{(a),L}_{k,l} ∘ K_{t,σ,a}) S^(B)_{ab} (G^{(b),R}_{k,l} ∘ K_{t,σ,a})`,
 where `G ∘ K_{t,σ,a} = K_{t, G(σ,a)}` (2.49).
 
 ## Main results

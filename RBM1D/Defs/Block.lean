@@ -116,6 +116,7 @@ section Stochastic
 
 variable (L : ℕ) [NeZero L]
 
+omit [NeZero L] in
 /-- A sum over the three-point support, written out. -/
 theorem sum_over_sbSupport (hL : 3 ≤ L) (f : ZMod L → ℂ) :
     ∑ v ∈ sbSupport L, f v = f 0 + f 1 + f (-1) := by

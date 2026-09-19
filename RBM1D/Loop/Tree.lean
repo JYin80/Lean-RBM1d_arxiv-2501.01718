@@ -192,7 +192,8 @@ noncomputable def splitGamma₁₃ : ℂ :=
 /-- **Acceptance criterion for the general tree value.**  The `n = 4` display is the sum of
 the values of the three trees of `TSP 4 = {∅, {(0,2)}, {(1,3)}}` (`RBM.TSP_four`). -/
 theorem gammaFour_eq :
-    gammaFour L m t σ a = starGamma L m t σ a + splitGamma₀₂ L m t σ a + splitGamma₁₃ L m t σ a := by
+    gammaFour L m t σ a
+      = starGamma L m t σ a + splitGamma₀₂ L m t σ a + splitGamma₁₃ L m t σ a := by
   simp only [gammaFour, mul_add, Finset.sum_add_distrib, mul_ite, mul_zero, mul_one,
     Finset.sum_ite_irrel, Finset.sum_const_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   rw [starGamma, splitGamma₀₂, splitGamma₁₃]

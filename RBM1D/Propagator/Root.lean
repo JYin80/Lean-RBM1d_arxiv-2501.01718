@@ -118,7 +118,7 @@ theorem norm_rho_lt_one (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) : ‖rho ξ‖ < 
       rw [← norm_mul, root_mul, norm_one]
     nlinarith [norm_nonneg (root2 ξ)]
 
-theorem rho_ne_zero (_hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) : rho ξ ≠ 0 := by
+theorem rho_ne_zero (_hξ0 : ξ ≠ 0) (_hξ : ‖ξ‖ < 1) : rho ξ ≠ 0 := by
   intro h
   have := rho_eq ξ
   rw [h] at this

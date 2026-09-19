@@ -40,7 +40,7 @@ theorem SB_pow_apply_eq_zero (hL : 3 ≤ L) :
     intro x y h
     have hxy : x - y ≠ 0 := ne_zero_of_zdist_ne_zero L (by omega)
     have : x ≠ y := fun he => hxy (by rw [he, sub_self])
-    simp [Matrix.one_apply, this]
+    simp [this]
   | succ k ih =>
     intro x y h
     rw [pow_succ, Matrix.mul_apply]

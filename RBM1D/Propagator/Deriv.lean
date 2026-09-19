@@ -60,6 +60,7 @@ theorem Theta_sub_Theta (hL : 3 ≤ L) {ξ ζ : ℂ} (hξ : ‖ξ‖ < 1) (hζ :
     _ = Theta L ζ * ((ζ - ξ) • SB L) * Theta L ξ := by rw [hd]
     _ = (ζ - ξ) • (Theta L ζ * SB L * Theta L ξ) := by simp
 
+omit [NeZero L] in
 theorem continuous_matrix_entry (a b : ZMod L) :
     Continuous fun M : Matrix (ZMod L) (ZMod L) ℂ => M a b :=
   (continuous_apply b).comp (continuous_apply a)

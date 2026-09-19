@@ -77,7 +77,8 @@ theorem green_apply_self {z : ℂ} (hz : ∀ l, (hH.eigenvalues l : ℂ) ≠ z) 
       = ∑ l, (Complex.normSq (hH.eigenvectorBasis l x) : ℂ) / ((hH.eigenvalues l : ℂ) - z) := by
   rw [green_eq_spectral hH hz, mul_apply]
   refine Finset.sum_congr rfl fun l _ => ?_
-  rw [mul_diagonal, star_apply, IsHermitian.eigenvectorUnitary_apply, Complex.normSq_eq_conj_mul_self]
+  rw [mul_diagonal, star_apply, IsHermitian.eigenvectorUnitary_apply,
+    Complex.normSq_eq_conj_mul_self]
   simp only [RCLike.star_def]
   ring
 

@@ -55,15 +55,15 @@ theorem Theta5_mul : Theta5 * (1 - (1 / 2 : ℚ) • SBq 5) = 1 := by
   fin_cases i <;> fin_cases j <;>
     simp [SBq, Theta5, Matrix.mul_apply, Fin.sum_univ_succ, Matrix.one_apply] <;> norm_num
 
--- 49 entries, each a 7-term rational sum unfolded by `simp`: needs more than the default.
 set_option maxHeartbeats 2000000 in
+-- 49 entries, each a 7-term rational sum unfolded by `simp`: needs more than the default.
 example : (1 - (1 / 2 : ℚ) • SBq 7) * Theta7 = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [SBq, Theta7, Matrix.mul_apply, Fin.sum_univ_succ, Matrix.one_apply] <;> norm_num
 
--- 49 entries, each a 7-term rational sum unfolded by `simp`: needs more than the default.
 set_option maxHeartbeats 2000000 in
+-- 49 entries, each a 7-term rational sum unfolded by `simp`: needs more than the default.
 example : Theta7 * (1 - (1 / 2 : ℚ) • SBq 7) = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>

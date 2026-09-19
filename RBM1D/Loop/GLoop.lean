@@ -83,6 +83,20 @@ theorem green_sub_green {H : Matrix n n ℂ} {z w : ℂ}
     _ = (z - w) • (green H z * green H w) := by
         simp [mul_smul_comm, smul_mul_assoc]
 
+/-- **The Ward identity in resolvent form.**  With `z = E + iη`,
+`G(z) - G(z̄) = 2iη · G(z)G(z̄)`, i.e. `Im G = η G G†`.  This is the special case
+`w = z̄` of `green_sub_green`, and it is the form used throughout the paper. -/
+theorem green_sub_green_conj {H : Matrix n n ℂ} {z : ℂ}
+    (hz : IsUnit (H - z • (1 : Matrix n n ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix n n ℂ))) :
+    green H z - green H ((starRingEnd ℂ) z)
+      = (2 * Complex.I * (z.im : ℂ)) • (green H z * green H ((starRingEnd ℂ) z)) := by
+  rw [green_sub_green hz hz']
+  congr 1
+  rw [Complex.sub_conj]
+  push_cast
+  ring
+
 end Gsig
 
 section Loop
@@ -133,6 +147,18 @@ theorem gloop_rotate (s : Bool) (b : ZMod L) {σ : List Bool} {a : List (ZMod L)
   rw [gloop, gloop, gloopProd_cons, gloopProd_append h [s] [b]]
   rw [Matrix.trace_mul_comm]
   simp only [gloopProd_cons, gloopProd_nil, Matrix.mul_one]
+
+/-- **Summing one block index.**  Because `∑_a E_a = W⁻¹ I` (`sum_Eblk`), summing a
+loop over one of its labels deletes that `E` and produces a factor `W⁻¹`.
+This is the first step of the paper's Ward identity for loops. -/
+theorem sum_gloop_head (s : Bool) (σ : List Bool) (a : List (ZMod L)) :
+    ∑ b : ZMod L, gloop L W H z ⟨s :: σ, b :: a⟩
+      = (W : ℂ)⁻¹ * Matrix.trace (Gsig H z s * gloopProd L W H z ⟨σ, a⟩) := by
+  have hterm : ∀ b : ZMod L, gloop L W H z ⟨s :: σ, b :: a⟩
+      = Matrix.trace (Gsig H z s * Eblk L W b * gloopProd L W H z ⟨σ, a⟩) := fun _ => rfl
+  simp_rw [hterm]
+  rw [← Matrix.trace_sum, ← Finset.sum_mul, ← Finset.mul_sum, sum_Eblk L W]
+  rw [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
 
 end Loop
 

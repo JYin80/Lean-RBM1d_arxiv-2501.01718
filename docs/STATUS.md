@@ -715,3 +715,10 @@ n = 2 特判为单边（与 T20/T21 一致）。
 T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 Def 2.12 且 2-圈有界的 `K` 成立（不只是显式的 `kTwo`）。
 证法即论文 Step 2 的 Grönwall：`D = Σ_{a₂}K − c_t`，`c_t = (W(1−t))⁻¹`，`∂_t D = W Σ K S D + W c_t D`（因 `∂_t c_t = W c_t²`），`D₀ = 0`。
 这验证了一般 n 收尾所需的 Grönwall 骨架。下一步：n ≥ 3 的 (3.19)(3.20) 与四类切口。
+
+**T25b 进度（Claude Code #2）**：`Loop/TreeRepGeneral.lean`
+* 步骤 1 ✔（`904301a`）：无轴树值 `treeValW`/`treeValG`（对全部内部顶点标号求和），`treeValW_empty`（星图），
+  `hasDerivAt_treeValW`（导数 = 每条边各求一次导之和）。
+* 步骤 2 ✔（`0ab6d4d`）：层状性 `nodes_laminar`、`leafPar_eq`/`nodePar_eq`（父亲 = 最小容器的刻画）、`leafPar_root`。
+* 下一步：步骤 3，沿区间 `J` 剪切：`N(F) = N_out ⊔ N_in`，叶与边的归属，标号和按 Fubini 分解；然后把两块搬运到
+  `cutGlueL`/`cutGlueR` 的列表坐标上（左链：J 塌缩成胶点；右链：J 平移到 0 且胶点为根）。

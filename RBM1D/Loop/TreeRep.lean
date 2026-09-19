@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Loop.Example3
 import RBM1D.Loop.Unique
+import RBM1D.Propagator.Bounds
 
 /-!
 # Lemma 3.4: the tree representation, for `n ≤ 4`
@@ -559,5 +560,170 @@ theorem hasDerivAt_kLoop4 (hL : 3 ≤ L) (hm : ∀ s s' : Bool, ‖(t : ℂ) * (
   exact hasDerivAt_kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ a₃ hL hm
 
 end Assembly
+
+section Uniqueness
+
+variable {L}
+
+/-- `kThree` is `m_σ W⁻²` times the general tree sum (`T_SP(3) = {∅}`, the star). -/
+theorem kThree_eq_treeSum (W : ℕ) (m : Bool → ℂ) (t : ℝ) (s₁ s₂ s₃ : Bool) (a₁ a₂ a₃ : ZMod L) :
+    kThree W m t s₁ s₂ s₃ a₁ a₂ a₃
+      = (W : ℂ)⁻¹ ^ 2 * (m s₁ * m s₂ * m s₃) * treeSum L m t [s₁, s₂, s₃] [a₁, a₂, a₃] := by
+  have hlen : [s₁, s₂, s₃].length = 3 := rfl
+  have hbd : bdList L m t [s₁, s₂, s₃] [a₁, a₂, a₃]
+      = [(a₁, thetaEdge L m t s₁ s₂), (a₂, thetaEdge L m t s₂ s₃),
+          (a₃, thetaEdge L m t s₃ s₁)] := by
+    simp only [bdList, List.length_cons, List.length_nil, List.range_succ, List.range_zero,
+      List.nil_append, List.cons_append, List.map_cons, List.map_nil]
+    rfl
+  rw [treeSum, hlen, TSP_three, Finset.sum_singleton, diagList_empty, treeVal,
+    ite_eq_right (by simp), hbd, polyVal, kThree]
+  congr 1
+  refine Finset.sum_congr rfl fun b _ => ?_
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+
+omit [NeZero L] in
+/-- A well-formed loop of length `2`, `3` or `4` is one of the three explicit shapes. -/
+theorem loop_cases {I : LoopIdx (ZMod L)} (hI : I.WF) (h2 : 2 ≤ I.length) (h4 : I.length ≤ 4) :
+    (∃ s₁ s₂ x₁ x₂, I = ⟨[s₁, s₂], [x₁, x₂]⟩) ∨
+    (∃ s₁ s₂ s₃ x₁ x₂ x₃, I = ⟨[s₁, s₂, s₃], [x₁, x₂, x₃]⟩) ∨
+    (∃ s₀ s₁ s₂ s₃ x₀ x₁ x₂ x₃, I = ⟨[s₀, s₁, s₂, s₃], [x₀, x₁, x₂, x₃]⟩) := by
+  obtain ⟨σ, a⟩ := I
+  simp only [LoopIdx.WF, LoopIdx.length] at hI h2 h4
+  have hσ : σ.length = a.length := hI
+  interval_cases h : a.length
+  · obtain ⟨x₁, x₂, rfl⟩ := List.length_eq_two.1 h
+    obtain ⟨s₁, s₂, rfl⟩ := List.length_eq_two.1 hσ
+    exact Or.inl ⟨s₁, s₂, x₁, x₂, rfl⟩
+  · obtain ⟨x₁, x₂, x₃, rfl⟩ := List.length_eq_three.1 h
+    obtain ⟨s₁, s₂, s₃, rfl⟩ := List.length_eq_three.1 hσ
+    exact Or.inr (Or.inl ⟨s₁, s₂, s₃, x₁, x₂, x₃, rfl⟩)
+  · obtain ⟨x₀, x₁, x₂, x₃, rfl⟩ := List.length_eq_four.1 h
+    obtain ⟨s₀, s₁, s₂, s₃, rfl⟩ := List.length_eq_four.1 hσ
+    exact Or.inr (Or.inr ⟨s₀, s₁, s₂, s₃, x₀, x₁, x₂, x₃, rfl⟩)
+
+variable (W : ℕ) [NeZero W] (m : Bool → ℂ)
+
+/-- `kLoop4` satisfies (2.48) on every loop of length `2`, `3` or `4`. -/
+theorem hasDerivAt_kLoop4_of_le (hL : 3 ≤ L) {t : ℝ}
+    (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) {I : LoopIdx (ZMod L)} (hI : I.WF)
+    (h2 : 2 ≤ I.length) (h4 : I.length ≤ 4) :
+    HasDerivAt (fun r => kLoop4 W m r I) (primRhs L W (kLoop4 W m t) I) t := by
+  rcases loop_cases hI h2 h4 with ⟨s₁, s₂, x₁, x₂, rfl⟩ | ⟨s₁, s₂, s₃, x₁, x₂, x₃, rfl⟩ |
+    ⟨s₀, s₁, s₂, s₃, x₀, x₁, x₂, x₃, rfl⟩
+  · rw [primRhs_two]
+    exact hasDerivAt_kTwo L hL W m s₁ s₂ (hm _ _) x₁ x₂
+  · rw [primRhs_three]
+    exact hasDerivAt_kThree hL W m s₁ s₂ s₃ (hm _ _) (hm _ _) (hm _ _) x₁ x₂ x₃
+  · exact hasDerivAt_kLoop4 W m t s₀ s₁ s₂ s₃ x₀ x₁ x₂ x₃ hL hm
+
+omit [NeZero W] in
+/-- `kLoop4` has the initial value of Definition 2.12 on loops of length `2`, `3`, `4`. -/
+theorem kLoop4_zero_of_le {I : LoopIdx (ZMod L)} (hI : I.WF) (h2 : 2 ≤ I.length)
+    (h4 : I.length ≤ 4) : kLoop4 W m 0 I = primInit L W m I := by
+  rcases loop_cases hI h2 h4 with ⟨s₁, s₂, x₁, x₂, rfl⟩ | ⟨s₁, s₂, s₃, x₁, x₂, x₃, rfl⟩ |
+    ⟨s₀, s₁, s₂, s₃, x₀, x₁, x₂, x₃, rfl⟩
+  · exact kTwo_zero L W m s₁ s₂ x₁ x₂
+  · exact kThree_zero W m s₁ s₂ s₃ x₁ x₂ x₃
+  · exact kFour_zero W m s₀ s₁ s₂ s₃ x₀ x₁ x₂ x₃
+
+omit [NeZero W] in
+theorem norm_mul_le_of_mem_Icc {t T₀ : ℝ} (hm1 : ∀ s, ‖m s‖ ≤ 1) (ht : t ∈ Set.Icc 0 T₀)
+    (s s' : Bool) : ‖(t : ℂ) * (m s * m s')‖ ≤ T₀ := by
+  rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.1]
+  have h1 := mul_le_mul (hm1 s) (hm1 s') (norm_nonneg _) zero_le_one
+  rw [one_mul] at h1
+  have := mul_le_mul_of_nonneg_left h1 ht.1
+  linarith [ht.2]
+
+omit [NeZero W] in
+/-- The `2`-loops of the tree formula are bounded on `[0, T₀]`, `T₀ < 1`. -/
+theorem norm_kLoop4_two_le (hL : 3 ≤ L) (hm1 : ∀ s, ‖m s‖ ≤ 1) {t T₀ : ℝ}
+    (ht : t ∈ Set.Icc 0 T₀) (hT₀ : T₀ < 1) {I : LoopIdx (ZMod L)} (hI : I.WF)
+    (h2 : I.length = 2) : ‖kLoop4 W m t I‖ ≤ (W : ℝ)⁻¹ * (1 - T₀)⁻¹ := by
+  rcases loop_cases hI h2.ge (h2.le.trans (by norm_num)) with ⟨s₁, s₂, x₁, x₂, rfl⟩ |
+    ⟨s₁, s₂, s₃, x₁, x₂, x₃, rfl⟩ | ⟨s₀, s₁, s₂, s₃, x₀, x₁, x₂, x₃, rfl⟩
+  · have hq := norm_mul_le_of_mem_Icc m hm1 ht s₁ s₂
+    have hq1 : ‖(t : ℂ) * (m s₁ * m s₂)‖ < 1 := hq.trans_lt hT₀
+    have hΘ := norm_Theta_apply_le L hL hq1 x₁ x₂
+    have hmm : ‖m s₁ * m s₂‖ ≤ 1 := by
+      rw [norm_mul]; nlinarith [hm1 s₁, hm1 s₂, norm_nonneg (m s₁), norm_nonneg (m s₂)]
+    have hinv : (1 - ‖(t : ℂ) * (m s₁ * m s₂)‖)⁻¹ ≤ (1 - T₀)⁻¹ :=
+      inv_anti₀ (by linarith) (by linarith)
+    change ‖kTwo L W m t s₁ s₂ x₁ x₂‖ ≤ _
+    rw [kTwo, norm_mul, norm_mul, norm_inv, Complex.norm_natCast]
+    calc (W : ℝ)⁻¹ * ‖m s₁ * m s₂‖ * ‖Theta L (t * (m s₁ * m s₂)) x₁ x₂‖
+        ≤ (W : ℝ)⁻¹ * 1 * (1 - T₀)⁻¹ := by gcongr; exact hΘ.trans hinv
+      _ = (W : ℝ)⁻¹ * (1 - T₀)⁻¹ := by ring
+  · simp [LoopIdx.length] at h2
+  · simp [LoopIdx.length] at h2
+
+/-- **Lemma 3.4 for `n ≤ 4`.**  Every solution `K` of Definition 2.12 on `[0, T₀]`, `T₀ < 1`,
+with bounded `2`-loops and `|m| ≤ 1`, is given on loops of length `2, 3, 4` by the tree
+formula `kLoop4`. -/
+theorem eq_kLoop4_of_isPrimitive (hL : 3 ≤ L) (hm1 : ∀ s, ‖m s‖ ≤ 1) {T : Set ℝ}
+    {K : ℝ → LoopIdx (ZMod L) → ℂ} (hK : IsPrimitive L W m T K) {T₀ R : ℝ} (hT₀ : T₀ < 1)
+    (hT : Set.Icc 0 T₀ ⊆ T)
+    (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 → ‖K t I‖ ≤ R) :
+    ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → 2 ≤ I.length → I.length ≤ 4 →
+      K t I = kLoop4 W m t I := by
+  set R' := max R ((W : ℝ)⁻¹ * (1 - T₀)⁻¹) with hR'
+  have hR'0 : 0 ≤ R' := le_trans (by have : 0 < 1 - T₀ := by linarith
+                                     positivity) (le_max_right _ _)
+  have hbound : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 →
+      ‖K t I‖ ≤ R' ∧ ‖kLoop4 W m t I‖ ≤ R' := fun t ht I hI h2 =>
+    ⟨(hR t ht I hI h2).trans (le_max_left _ _),
+      (norm_kLoop4_two_le W m hL hm1 ht hT₀ hI h2).trans (le_max_right _ _)⟩
+  have hmt : ∀ t ∈ Set.Icc 0 T₀, ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1 :=
+    fun t ht s s' => (norm_mul_le_of_mem_Icc m hm1 ht s s').trans_lt hT₀
+  have main : ∀ n : ℕ, n ≤ 4 → ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF →
+      2 ≤ I.length → I.length = n → K t I = kLoop4 W m t I := by
+    intro n
+    induction n using Nat.strong_induction_on with
+    | _ n ih =>
+      intro hn4 t ht I hI h2 hIn
+      have hn : 2 ≤ n := hIn ▸ h2
+      refine eq_on_level L hL W K (kLoop4 W m) T₀ R' n hR'0
+        (fun s hs J hJ hJn => hK.1 s (hT hs) J hJ (hJn ▸ hn))
+        (fun s hs J hJ hJn => hasDerivAt_kLoop4_of_le W m hL (hmt s hs) hJ (hJn ▸ hn)
+          (hJn ▸ hn4))
+        hbound ?_ ?_ t ht I hI hIn
+      · intro s hs J hJ hJ2 hJn
+        exact ih _ hJn (by omega) s hs J hJ hJ2 rfl
+      · intro J hJ hJn
+        rw [hK.2.1 J hJ (hJn ▸ hn), kLoop4_zero_of_le W m hJ (hJn ▸ hn) (hJn ▸ hn4)]
+  exact fun t ht I hI h2 h4 => main _ h4 t ht I hI h2 rfl
+
+/-- **Lemma 3.4, (3.5), for `n ≤ 4`, in the paper's form**:
+`K_{t,σ,a} = m_σ W^{-n+1} ∑_{Γ ∈ T_SP(P_a)} Γ_a(t, σ)`. -/
+theorem treeRep_of_isPrimitive (hL : 3 ≤ L) (hm1 : ∀ s, ‖m s‖ ≤ 1) {T : Set ℝ}
+    {K : ℝ → LoopIdx (ZMod L) → ℂ} (hK : IsPrimitive L W m T K) {T₀ R : ℝ} (hT₀ : T₀ < 1)
+    (hT : Set.Icc 0 T₀ ⊆ T)
+    (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 → ‖K t I‖ ≤ R) :
+    ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → 2 ≤ I.length → I.length ≤ 4 →
+      K t I = (I.σ.map m).prod * (W : ℂ)⁻¹ ^ (I.length - 1) * treeSum L m t I.σ I.a := by
+  intro t ht I hI h2 h4
+  rw [eq_kLoop4_of_isPrimitive W m hL hm1 hK hT₀ hT hR t ht I hI h2 h4]
+  have hmt : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1 :=
+    fun s s' => (norm_mul_le_of_mem_Icc m hm1 ht s s').trans_lt hT₀
+  rcases loop_cases hI h2 h4 with ⟨s₁, s₂, x₁, x₂, rfl⟩ | ⟨s₁, s₂, s₃, x₁, x₂, x₃, rfl⟩ |
+    ⟨s₀, s₁, s₂, s₃, x₀, x₁, x₂, x₃, rfl⟩
+  · change kTwo L W m t s₁ s₂ x₁ x₂ = _
+    rw [kTwo_eq_treeSum]
+    simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, LoopIdx.length,
+      List.length_cons, List.length_nil]
+    ring
+  · change kThree W m t s₁ s₂ s₃ x₁ x₂ x₃ = _
+    rw [kThree_eq_treeSum]
+    simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, LoopIdx.length,
+      List.length_cons, List.length_nil]
+    ring
+  · change kFour W m t s₀ s₁ s₂ s₃ x₀ x₁ x₂ x₃ = _
+    rw [kFour_eq_treeSum hL W m t s₀ s₁ s₂ s₃ x₀ x₁ x₂ x₃ (hmt _ _)]
+    simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, LoopIdx.length,
+      List.length_cons, List.length_nil]
+    ring
+
+end Uniqueness
 
 end RBM

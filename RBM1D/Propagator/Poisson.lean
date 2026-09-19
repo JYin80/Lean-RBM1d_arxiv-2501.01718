@@ -59,7 +59,8 @@ theorem integral_exp_int (w : ℤ) :
     rw [integral_exp_mul_complex hc]
     have h2 : Complex.exp (Complex.I * w * (π : ℝ))
         = Complex.exp (Complex.I * w * ((-π : ℝ) : ℂ)) := by
-      have : Complex.I * w * (π : ℝ) = Complex.I * w * ((-π : ℝ) : ℂ) + w * (2 * π * Complex.I) := by
+      have : Complex.I * w * (π : ℝ)
+          = Complex.I * w * ((-π : ℝ) : ℂ) + w * (2 * π * Complex.I) := by
         push_cast; ring
       rw [this, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one]
     rw [h2, sub_self, zero_div]
@@ -248,7 +249,8 @@ theorem perSum_sub_SB (hξ : ‖ξ‖ < 1) (v : ℤ) :
     have a2 : v + 1 + n * L = v + n * L + 1 := by ring
     rw [a1, a2]; ring
   simp_rw [e]
-  rw [Summable.tsum_sub s0 (((s0.add s1).add s2).mul_left _), Summable.tsum_mul_left _ ((s0.add s1).add s2),
+  rw [Summable.tsum_sub s0 (((s0.add s1).add s2).mul_left _),
+    Summable.tsum_mul_left _ ((s0.add s1).add s2),
     Summable.tsum_add (s0.add s1) s2, Summable.tsum_add s0 s1]
   simp only [perSum]
   ring

@@ -782,7 +782,7 @@
 
 \begin{lemma}[Cyclic invariance of $\Kcal$]\label{lem:K-cyclic}
   \lean{RBM.LoopIdx.rot, RBM.primRhs_rot, RBM.primInit_rot, RBM.rot_eq_on_level,
-    RBM.isPrimitive_rot}\leanok
+    RBM.isPrimitive_rot, RBM.Kgen_rot}\leanok
   \uses{def:primitive, def:loops}
   A solution of Definition 2.12 on $[0,T_0]$ with bounded $2$-loops satisfies
   $K_{t,(\sigma_2,\dots,\sigma_n,\sigma_1),(a_2,\dots,a_n,a_1)}=K_{t,\sigma,a}$.
@@ -812,11 +812,13 @@
 
 \begin{lemma}[Ward identity for $\Kcal$, Lemma 3.6, (3.13)]\label{lem:3.6}
   \lean{RBM.ward_of_isPrimitive, RBM.sum_fullLoop_eq, RBM.ward_rhs_identity, RBM.ward_level,
-    RBM.wD_primInit, RBM.wardKappa, RBM.wStar, RBM.wD}\leanok
+    RBM.wD_primInit, RBM.wardKappa, RBM.wStar, RBM.wD, RBM.ward_Kgen}\leanok
   \uses{def:primitive, lem:Theta-rowsum, lem:3.6-small, lem:K-cyclic, lem:2.8}
   For a solution of Definition 2.12 with $m=m^{(E)}$ on $[0,T_0]$, $T_0<1$, with bounded
   $2$-loops, and $\sigma_1=+$, $\sigma_n=-$:
   $\sum_{a_n}K_{t,\sigma,a}=(K_{t,\sigma^+,a/a_n}-K_{t,\sigma^-,a/a_n})/(2Wi\eta_t)$.
+  By Lemma 3.4 the primitive loop itself is such a solution, so the identity holds for it for
+  every $0\le t<1$ without further hypotheses.
 \end{lemma}
 \begin{proof}\leanok
   \uses{def:primitive, lem:Theta-rowsum, lem:3.6-small, lem:K-cyclic, lem:2.8}

@@ -839,3 +839,9 @@ Cowork 在 `7472752` 先认领了 T29，Claude Code 的认领脚本随后（`9fc
 
 **与 T21 `treeSum` 的关系**：一般 n 用的是新的无轴编码（paper-deltas #16）；两者在 n ≤ 4 相等已证，一般 n 的等价未证、也不需要。
 **解锁**：T28（Cor 3.5）现在可开工；T26（Ward，一般 n）也可直接用 `eq_Kgen_of_isPrimitive`。
+
+### T30：Lemma 3.6 与循环不变性对真正的 `K` 无条件成立（Claude Code）
+
+`Loop/WardKgen.lean`：借 #2 的 Lemma 3.4（`isPrimitive_Kgen` + `norm_Kgen_two_le`），
+**`RBM.ward_Kgen`**（(3.13)）与 **`RBM.Kgen_rot`**（循环不变）对树表示 `Kgen`（`m = m^{(E)}`, `|E| < 2`）
+在所有 `0 ≤ t < 1` 上成立，不再需要「2-圈有界」这一假设。下一步可做 Cor 3.7 (3.14)（依赖 T28 的 Cor 3.5）。

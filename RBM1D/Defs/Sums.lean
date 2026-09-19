@@ -148,4 +148,69 @@ theorem sum_exp_zdist_le {lam : ℝ} (hlam : 0 < lam) (c : ZMod L) :
 
 end Sums
 
+
+section Moved
+
+variable (L : ℕ) [NeZero L]
+
+/-! ### An elementary lower bound for `1 - r^L`
+
+The prefactor of (2.52) is `1/(|1-ξ| ℓ̂)` with `ℓ̂ = min(|1-ξ|^{-1/2}, L)`, and the
+`ℓ̂` in it comes entirely from the factor `1 - ρ^L` in `AA_eq`: it interpolates
+between `1` (when `L(1-ρ) ≳ 1`) and `L(1-ρ)` (when `L(1-ρ) ≲ 1`).  The
+following two lemmas are that interpolation, with no exponentials: Bernoulli
+`1 + Lx ≤ (1+x)^L` plus `(1-x)(1+x) ≤ 1` give `(1-x)^L (1 + Lx) ≤ 1`. -/
+
+theorem pow_mul_one_add_le {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x ≤ 1) (L : ℕ) :
+    (1 - x) ^ L * (1 + L * x) ≤ 1 := by
+  have h1 : (1 : ℝ) + L * x ≤ (1 + x) ^ L := one_add_mul_le_pow (by linarith) L
+  have h2 : (0 : ℝ) ≤ (1 - x) ^ L := pow_nonneg (by linarith) L
+  calc (1 - x) ^ L * (1 + L * x) ≤ (1 - x) ^ L * (1 + x) ^ L :=
+        mul_le_mul_of_nonneg_left h1 h2
+    _ = ((1 - x) * (1 + x)) ^ L := (mul_pow _ _ _).symm
+    _ = (1 - x ^ 2) ^ L := by ring_nf
+    _ ≤ 1 := pow_le_one₀ (by nlinarith) (by nlinarith)
+
+/-- `1 - r^L ≥ L(1-r) / (1 + L(1-r))`.  The right-hand side is `≍ min(1, L(1-r))`. -/
+theorem le_one_sub_pow {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) (L : ℕ) :
+    (L : ℝ) * (1 - r) / (1 + L * (1 - r)) ≤ 1 - r ^ L := by
+  have hx0 : (0 : ℝ) ≤ 1 - r := by linarith
+  have hd : (0 : ℝ) < 1 + L * (1 - r) := by positivity
+  rw [div_le_iff₀ hd]
+  have h := pow_mul_one_add_le hx0 (by linarith) L
+  have hr : (1 : ℝ) - (1 - r) = r := by ring
+  rw [hr] at h
+  nlinarith [h]
+
+theorem mul_exp_neg_le_exp_neg_one {x : ℝ} (hx : 0 ≤ x) :
+    x * Real.exp (-x) ≤ Real.exp (-1) := by
+  have h := Real.add_one_le_exp (x - 1)
+  have hx' : x ≤ Real.exp (-1) / Real.exp (-x) := by
+    rw [← Real.exp_sub]
+    have : -1 - -x = x - 1 := by ring
+    rw [this]
+    linarith
+  have hpos : 0 < Real.exp (-x) := Real.exp_pos _
+  calc x * Real.exp (-x) ≤ (Real.exp (-1) / Real.exp (-x)) * Real.exp (-x) :=
+        mul_le_mul_of_nonneg_right hx' hpos.le
+    _ = Real.exp (-1) := div_mul_cancel₀ _ (ne_of_gt hpos)
+
+theorem exp_neg_one_le_half : Real.exp (-1) ≤ 1 / 2 := by
+  have h1 : (2 : ℝ) ≤ Real.exp 1 := by
+    have := Real.add_one_le_exp (1 : ℝ); linarith
+  have h2 : Real.exp (-1) = (Real.exp 1)⁻¹ := by
+    rw [Real.exp_neg]
+  rw [h2]
+  rw [inv_le_comm₀ (Real.exp_pos 1) (by norm_num)]
+  linarith
+
+theorem two_mul_zdist_le (u : ZMod L) : 2 * zdist L u ≤ L := by
+  have h := ZMod.val_lt u
+  rw [zdist]
+  rcases le_total u.val (L - u.val) with h' | h'
+  · rw [min_eq_left h']; omega
+  · rw [min_eq_right h']; omega
+
+end Moved
+
 end RBM

@@ -252,7 +252,7 @@ theorem totalSum_rotate (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool) (hσ : 2
     have hτ : 2 ≤ τ.length := by rw [List.length_rotate]; exact hσ
     rw [totalSum, totalSum, List.length_rotate, ← allSum_rotate]
     refine allSum_congr _ fun a ha => ?_
-    exact hcyc ⟨τ, a⟩ ha.symm (by show 2 ≤ a.length; rw [ha]; exact hτ)
+    exact hcyc ⟨τ, a⟩ ha.symm (by change 2 ≤ a.length; rw [ha]; exact hτ)
 
 theorem totalSum_nonneg_aux (n : ℕ) (κ : ℂ) (P : ℕ → ℝ) (hP : ∀ m, 0 ≤ P m) :
     0 ≤ ∑ m ∈ Finset.Icc 1 n, ‖κ‖ ^ (n - m) * P m :=
@@ -333,5 +333,168 @@ theorem norm_totalSum_le (K : LoopIdx (ZMod L) → ℂ) (κ : ℂ)
       exact pure false (List.eq_replicate_iff.2 ⟨hσ, hf⟩)
 
 end Reduction
+
+section Translate
+
+omit hL hE in
+theorem allSum_map_add (n : ℕ) (c : ZMod L) (g : List (ZMod L) → ℂ) :
+    allSum L n (fun l => g (l.map (· + c))) = allSum L n g := by
+  induction n generalizing g with
+  | zero => rfl
+  | succ n ih =>
+    simp only [allSum, List.map_cons]
+    rw [← Equiv.sum_comp (Equiv.addRight c) (fun y => allSum L n fun l => g (y :: l))]
+    exact Finset.sum_congr rfl fun x _ => ih (fun l => g ((x + c) :: l))
+
+/-- **Translation invariance of the primitive loop**, for `0 ≤ t < 1`. -/
+theorem Kgen_shift {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) (c : ZMod L) (I : LoopIdx (ZMod L))
+    (hI : I.WF) (h2 : 2 ≤ I.length) :
+    Kgen L W (mSigma E) t (I.shift L c) = Kgen L W (mSigma E) t I :=
+  isPrimitive_shift L hL W (mSigma E)
+    (isPrimitive_Kgen hL W (mSigma E) (norm_mSigma_le_one hE) ht1) subset_rfl
+    (by positivity : (0 : ℝ) ≤ (W : ℝ)⁻¹ * (1 - t)⁻¹)
+    (fun _ hs J hJ hJ2 => norm_Kgen_two_le hL W (mSigma E) (norm_mSigma_le_one hE) ht1 hs J
+      hJ hJ2) c t ⟨ht0, le_rfl⟩ I hI h2
+
+omit hL hE in
+/-- For a translation invariant `K`, the sum over `a₂, …, aₙ` does not depend on `a₁`, so it is
+`L⁻¹` times the sum over all labels. -/
+theorem partialSum_eq (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool) (hσ : 2 ≤ σ.length)
+    (hsh : ∀ (c : ZMod L) (I : LoopIdx (ZMod L)), I.WF → 2 ≤ I.length → K (I.shift L c) = K I)
+    (a₁ : ZMod L) :
+    allSum L (σ.length - 1) (fun rest => K ⟨σ, a₁ :: rest⟩)
+      = (L : ℂ)⁻¹ * totalSum L K σ := by
+  have hind : ∀ x : ZMod L, allSum L (σ.length - 1) (fun rest => K ⟨σ, x :: rest⟩)
+      = allSum L (σ.length - 1) (fun rest => K ⟨σ, 0 :: rest⟩) := by
+    intro x
+    rw [← allSum_map_add (σ.length - 1) (-x) (fun rest => K ⟨σ, 0 :: rest⟩)]
+    refine allSum_congr _ fun rest hrest => ?_
+    have e : (⟨σ, x :: rest⟩ : LoopIdx (ZMod L))
+        = (⟨σ, 0 :: rest.map (· + -x)⟩ : LoopIdx (ZMod L)).shift L x := by
+      simp [LoopIdx.shift, List.map_map, Function.comp_def]
+    rw [e, hsh x _ (by change σ.length = (0 :: rest.map (· + -x)).length; simp; omega)
+      (by change 2 ≤ (0 :: rest.map (· + -x)).length; simp; omega)]
+  have htot : totalSum L K σ
+      = (L : ℂ) * allSum L (σ.length - 1) (fun rest => K ⟨σ, 0 :: rest⟩) := by
+    rw [totalSum, show σ.length = σ.length - 1 + 1 by omega, allSum]
+    simp only [show σ.length - 1 + 1 - 1 = σ.length - 1 by omega]
+    rw [Finset.sum_congr rfl fun x _ => hind x, Finset.sum_const, Finset.card_univ, ZMod.card,
+      nsmul_eq_mul]
+  have hL0 : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne L)
+  rw [hind a₁, htot, ← mul_assoc, inv_mul_cancel₀ hL0, one_mul]
+
+end Translate
+
+section Cor37
+
+omit hL in
+theorem mE_im_le_one : (mE E).im ≤ 1 :=
+  le_of_abs_le ((Complex.abs_im_le_norm _).trans (norm_mE hE.le).le)
+
+omit hL in
+theorem etaT_pos {t : ℝ} (ht1 : t < 1) : 0 < etaT E t := by
+  rw [etaT]
+  exact mul_pos (by linarith) (mE_im_pos hE)
+
+omit hL in
+theorem etaT_le_one {t : ℝ} (ht0 : 0 ≤ t) : etaT E t ≤ 1 := by
+  rw [etaT]
+  have h1 := mE_im_le_one hE
+  have h2 := (mE_im_pos hE).le
+  nlinarith
+
+omit hL [NeZero W] in
+theorem norm_wardKappa {t : ℝ} (ht1 : t < 1) :
+    ‖wardKappa W E t‖ = ((2 * W * etaT E t : ℝ))⁻¹ := by
+  have hη := etaT_pos hE ht1
+  rw [wardKappa, norm_inv, norm_mul, norm_mul, norm_mul, Complex.norm_I, mul_one,
+    Complex.norm_natCast, Complex.norm_real, Real.norm_of_nonneg hη.le]
+  norm_num
+
+/-- **Corollary 3.7, (3.15)**: for `0 ≤ t < 1`, every charge list `σ` of length `n ≥ 2` and
+every `a₁`, the sum over `a₂, …, aₙ` of the primitive loop is at most
+`L⁻¹ 2ⁿ⁻¹ ∑_{m=1}^n (2 W η_t)^{-(n-m)} P_m`, `P_m` the pure loops of length `m`. -/
+theorem cor37_reduction {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : List Bool)
+    (hσ : 2 ≤ σ.length) (a₁ : ZMod L) :
+    ‖allSum L (σ.length - 1) (fun rest => Kgen L W (mSigma E) t ⟨σ, a₁ :: rest⟩)‖
+      ≤ (L : ℝ)⁻¹ * (2 ^ (σ.length - 1) * ∑ m ∈ Finset.Icc 1 σ.length,
+          ((2 * W * etaT E t : ℝ))⁻¹ ^ (σ.length - m) * pureNorm (Kgen L W (mSigma E) t) m) := by
+  rw [partialSum_eq _ σ hσ (fun c I hI h2 => Kgen_shift hL W hE ht0 ht1 c I hI h2) a₁,
+    norm_mul, norm_inv, Complex.norm_natCast, ← norm_wardKappa W hE ht1]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  refine norm_totalSum_le _ _ (fun J hJ hJ2 => Kgen_rot hL W hE ht0 ht1 J hJ hJ2) ?_ _
+    (by omega) σ rfl
+  intro μ a' ha'
+  rw [ward_Kgen hL W hE ht0 ht1 μ a' ha'.symm, wardKappa, div_eq_inv_mul]
+
+omit hL hE [NeZero W] in
+theorem pureNorm_one (m : Bool → ℂ) (hm : ∀ s, ‖m s‖ = 1) (t : ℝ) :
+    pureNorm (Kgen L W m t) 1 = 2 * L := by
+  have e : ∀ s, totalSum L (Kgen L W m t) (List.replicate 1 s)
+      = ∑ x : ZMod L, Kgen L W m t ⟨[s], [x]⟩ := fun _ => rfl
+  rw [pureNorm, e, e]
+  simp only [Kgen_one, Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul, norm_mul,
+    Complex.norm_natCast, hm]
+  ring
+
+/-- **Corollary 3.7, (3.14)**, given the pure-loop bound of Corollary 3.5 in the form
+`L⁻¹ P_m ≤ C W^{-(m-1)}` (`m ≥ 2`): the sum over `a₂, …, aₙ` is `O((W η_t)^{-(n-1)})`, explicitly
+`≤ 2ⁿ⁻¹ n C (W η_t)^{-(n-1)}`. -/
+theorem cor37 {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : List Bool) (hσ : 2 ≤ σ.length)
+    (a₁ : ZMod L) {C : ℝ} (hC : 2 ≤ C)
+    (hpure : ∀ m, 2 ≤ m → m ≤ σ.length →
+      (L : ℝ)⁻¹ * pureNorm (Kgen L W (mSigma E) t) m ≤ C * ((W : ℝ)⁻¹) ^ (m - 1)) :
+    ‖allSum L (σ.length - 1) (fun rest => Kgen L W (mSigma E) t ⟨σ, a₁ :: rest⟩)‖
+      ≤ 2 ^ (σ.length - 1) * σ.length * C * ((W * etaT E t : ℝ))⁻¹ ^ (σ.length - 1) := by
+  set n := σ.length with hn
+  have hη := etaT_pos hE ht1
+  have hη1 := etaT_le_one hE ht0
+  have hW1 : (1 : ℝ) ≤ W := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne W)
+  have hL0 : (0 : ℝ) < L := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne L)
+  set a : ℝ := (W : ℝ)⁻¹ with ha
+  set b : ℝ := (etaT E t)⁻¹ with hb
+  have ha0 : 0 ≤ a := by positivity
+  have hb1 : 1 ≤ b := by rw [hb]; exact one_le_inv₀ hη |>.2 hη1
+  -- the pure bounds, including `m = 1`
+  have hP : ∀ m ∈ Finset.Icc 1 n,
+      (L : ℝ)⁻¹ * pureNorm (Kgen L W (mSigma E) t) m ≤ C * a ^ (m - 1) := by
+    intro m hm
+    rw [Finset.mem_Icc] at hm
+    rcases hm.1.lt_or_eq with h | h
+    · exact hpure m h hm.2
+    · subst h
+      rw [pureNorm_one W (mSigma E) (norm_mSigma hE.le) t, Nat.sub_self, pow_zero, mul_one,
+        show (L : ℝ)⁻¹ * (2 * L) = 2 by field_simp]
+      exact hC
+  have hk : ((2 * W * etaT E t : ℝ))⁻¹ ≤ a * b := by
+    rw [ha, hb, ← mul_inv, mul_assoc]
+    exact inv_anti₀ (by positivity) (by nlinarith)
+  refine (cor37_reduction hL W hE ht0 ht1 σ hσ a₁).trans ?_
+  rw [Finset.mul_sum, Finset.mul_sum]
+  calc ∑ m ∈ Finset.Icc 1 n, (L : ℝ)⁻¹ * (2 ^ (n - 1) *
+          (((2 * W * etaT E t : ℝ))⁻¹ ^ (n - m) * pureNorm (Kgen L W (mSigma E) t) m))
+      ≤ ∑ m ∈ Finset.Icc 1 n, 2 ^ (n - 1) * (C * (a * b) ^ (n - 1)) := by
+        refine Finset.sum_le_sum fun m hm => ?_
+        have hm' := Finset.mem_Icc.1 hm
+        have hPm := hP m hm
+        have hpn : 0 ≤ pureNorm (Kgen L W (mSigma E) t) m := by unfold pureNorm; positivity
+        calc (L : ℝ)⁻¹ * (2 ^ (n - 1) *
+              (((2 * W * etaT E t : ℝ))⁻¹ ^ (n - m) * pureNorm (Kgen L W (mSigma E) t) m))
+            = 2 ^ (n - 1) * (((2 * W * etaT E t : ℝ))⁻¹ ^ (n - m) *
+                ((L : ℝ)⁻¹ * pureNorm (Kgen L W (mSigma E) t) m)) := by ring
+          _ ≤ 2 ^ (n - 1) * ((a * b) ^ (n - m) * (C * a ^ (m - 1))) := by gcongr
+          _ = 2 ^ (n - 1) * (C * (a ^ (n - 1) * b ^ (n - m))) := by
+              rw [mul_pow, show n - 1 = (n - m) + (m - 1) by omega, pow_add]
+              ring
+          _ ≤ 2 ^ (n - 1) * (C * (a ^ (n - 1) * b ^ (n - 1))) := by
+              gcongr
+              all_goals first | exact hb1 | omega
+          _ = 2 ^ (n - 1) * (C * (a * b) ^ (n - 1)) := by rw [mul_pow]
+    _ = 2 ^ (n - 1) * n * C * ((W * etaT E t : ℝ))⁻¹ ^ (n - 1) := by
+        rw [Finset.sum_const, Nat.card_Icc, nsmul_eq_mul, ha, hb, ← mul_inv]
+        simp only [Nat.add_sub_cancel]
+        ring
+
+end Cor37
 
 end RBM

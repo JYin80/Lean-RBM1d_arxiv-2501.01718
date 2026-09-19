@@ -854,6 +854,34 @@
   on $n$.
 \end{proof}
 
+\begin{lemma}[Translation invariance of $\Kcal$]\label{lem:K-shift}
+  \lean{RBM.LoopIdx.shift, RBM.primRhs_shift, RBM.primInit_shift, RBM.isPrimitive_shift,
+    RBM.Kgen_shift}\leanok
+  \uses{def:primitive, lem:SB-basic}
+  $K_{t,\sigma,a+c}=K_{t,\sigma,a}$; the paper uses this ``by definition of $K$''.
+\end{lemma}
+\begin{proof}\leanok\uses{def:primitive, lem:SB-basic}
+  Shifting the labels commutes with cut and glue and $\SB$ is translation invariant, so
+  $K\circ\mathrm{shift}$ solves (2.48) with the same initial value; uniqueness.
+\end{proof}
+
+\begin{corollary}[Corollary 3.7, (3.14)--(3.15)]\label{cor:3.7}
+  \lean{RBM.allSum, RBM.totalSum, RBM.pureNorm, RBM.totalSum_ward, RBM.totalSum_rotate,
+    RBM.exists_rotate_true_false, RBM.norm_totalSum_le, RBM.partialSum_eq,
+    RBM.cor37_reduction, RBM.cor37}\leanok
+  \uses{lem:3.6, lem:K-cyclic, lem:K-shift}
+  (3.15): $\bigl|\sum_{a_2,\dots,a_n}K_{t,\sigma,a}\bigr|\le L^{-1}2^{n-1}
+  \sum_{m=1}^n(2W\eta_t)^{-(n-m)}P_m$, with $P_m$ the pure loops of length $m$.
+  Given the pure-loop bound $L^{-1}P_m\le CW^{-(m-1)}$ (Corollary 3.5), (3.14):
+  $\sum_{a_2,\dots,a_n}K_{t,\sigma,a}=O((W\eta_t)^{-n+1})$.
+\end{corollary}
+\begin{proof}\leanok\uses{lem:3.6, lem:K-cyclic, lem:K-shift}
+  By translation invariance the sum over $a_2,\dots,a_n$ is $L^{-1}$ times the sum over all
+  labels.  A mixed charge list has a cyclic pair $(-,+)$; rotating it to the seam, (3.13)
+  sums out the last label at the cost $(2W\eta_t)^{-1}$ and two loops one shorter.  Iterate
+  down to pure loops.
+\end{proof}
+
 \begin{lemma}[Sum-zero property, Lemma 3.10]\label{lem:3.10}
   \uses{lem:3.6, lem:Theta-decay}
   \emph{Not yet formalized.}

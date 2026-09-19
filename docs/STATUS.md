@@ -862,3 +862,12 @@ Cowork 在 `7472752` 先认领了 T29，Claude Code 的认领脚本随后（`9fc
 | `RBM.cor35_two` | n = 2（即 (2.52)） |
 
 gap 假设见 paper-deltas #17（`T₀ < 1` 时 `δ = 1 − T₀` 自动成立，`gap_of_le`）。
+
+### T32：Corollary 3.7（Claude Code）
+
+论文说它是 Lemma 3.6 的直接推论，实际证明还要：K 的**平移不变性**（论文「by definition」）、**循环不变性**、以及 **Cor 3.5 的纯圈界**。
+* `Loop/Cyclic.lean`：**`isPrimitive_shift`**（任意解，2-圈有界）——平移与 cut-and-glue 交换、`S^(B)` 平移不变，唯一性收尾。
+* `Loop/WardKgen.lean`：`allSum`（对所有标号列表求和）、`exists_rotate_true_false`（混合电荷列必有一个轮换形如 `(+,μ,−)`）、
+  `totalSum_ward` / `totalSum_rotate` / **`norm_totalSum_le`**（(3.15) 的代数部分，常数 `2ⁿ⁻¹`）、`partialSum_eq`（平移不变 ⇒ 对 `a₂…aₙ` 求和 = `L⁻¹` 总和）、
+  **`cor37_reduction`**（(3.15)，对真正的 K 无条件）、**`cor37`**（(3.14)：`≤ 2ⁿ⁻¹ n C (Wη_t)^{-(n-1)}`，以 `L⁻¹P_m ≤ C W^{-(m-1)}`（m ≥ 2）为假设）。
+**待办**：T28（Cor 3.5）落地后，从其逐点指数界导出 `L⁻¹P_m ≤ C W^{-(m-1)}` 并去掉 `cor37` 的假设。paper-deltas #18。

@@ -324,4 +324,255 @@ theorem sum_Kpi_closed (hL : 3 ≤ L) (hn : 2 ≤ n) (σ : Fin n → Bool)
 
 end Closed
 
+section Molecule
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- The charges of the inside polygon of the cut at `J`: its region `k` is region `J.1 + k`
+(`k = wIn J` is region `J.2`). -/
+def sigmaIn (σ : Fin n → Bool) (J : Fin n × Fin n) : Fin (wIn J + 1) → Bool :=
+  fun k => σ ⟨min (J.1.val + k.val) (n - 1), by have := NeZero.pos n; omega⟩
+
+/-- The charges of the outside polygon of the cut at `J`: its region `k` is region
+`unCol J k` (the regions strictly between `J.1` and `J.2` are removed). -/
+def sigmaOut (σ : Fin n → Bool) (J : Fin n × Fin n) : Fin (n - wIn J + 1) → Bool :=
+  fun k => σ ⟨min (unCol J k.val) (n - 1), by have := NeZero.pos n; omega⟩
+
+omit [NeZero n] in
+theorem arcLe_le {d : Fin n × Fin n} (h : ArcLe d J) (h12 : d.1 ≤ d.2) :
+    J.1.val ≤ d.1.val ∧ d.2.val ≤ J.2.val ∧ d.1.val ≤ d.2.val := by
+  simp only [ArcLe, Fin.le_def] at h h12
+  exact ⟨h.1, h.2, h12⟩
+
+theorem sigmaIn_shiftIn (σ : Fin n → Bool) {d : Fin n × Fin n} (hd : ArcLe d J)
+    (h12 : d.1 ≤ d.2) :
+    sigmaIn σ J (shiftIn J d).1 = σ d.1 ∧ sigmaIn σ J (shiftIn J d).2 = σ d.2 := by
+  obtain ⟨h1, h2⟩ := shiftIn_val hd h12
+  obtain ⟨a1, a2, a3⟩ := arcLe_le hd h12
+  have hd1 := d.1.isLt
+  have hd2 := d.2.isLt
+  constructor <;> (unfold sigmaIn; congr 1; ext; simp only [h1, h2]; omega)
+
+theorem sigmaOut_shiftOut (σ : Fin n → Bool) {d : Fin n × Fin n} (hd : OutEnds J d)
+    (hJ : J.1.val + 2 ≤ J.2.val) :
+    sigmaOut σ J (shiftOut J d).1 = σ d.1 ∧ sigmaOut σ J (shiftOut J d).2 = σ d.2 := by
+  obtain ⟨h1, h2⟩ := shiftOut_val d (by omega : J.1.val < J.2.val)
+  have hd1 := d.1.isLt
+  have hd2 := d.2.isLt
+  have e1 := unCol_col hd.1 hJ
+  have e2 := unCol_col hd.2.1 hJ
+  constructor <;> (unfold sigmaOut; congr 1; ext; simp only [h1, h2, e1, e2]; omega)
+
+variable {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) (hJ : J ∈ F)
+include hF hn hJ
+
+/-- **A product over the edges of `F ∋ J` splits over the cut**: the edge `J`, the outside
+family and the inside family, each with its own charges. -/
+theorem prod_cut (σ : Fin n → Bool) (w : Bool → Bool → ℂ) :
+    ∏ e ∈ F, w (σ e.1) (σ e.2) =
+      w (σ J.1) (σ J.2) * (∏ g ∈ FOut F J, w (sigmaOut σ J g.1) (sigmaOut σ J g.2)) *
+        ∏ h ∈ FIn F J, w (sigmaIn σ J h.1) (sigmaIn σ J h.2) := by
+  have hJw := diag_width hF hJ
+  have h12 : ∀ d ∈ F, d.1 ≤ d.2 := fun d hd => le_of_lt (hF.1 d hd).1
+  rw [← mul_prod_erase F _ hJ, mul_assoc]
+  congr 1
+  rw [← prod_filter_mul_prod_filter_not (F.erase J) (fun d => ArcLe d J), mul_comm]
+  have hout : (F.erase J).filter (fun d => ¬ArcLe d J) = F.filter (fun d => ¬ArcLe d J) := by
+    ext d
+    simp only [mem_filter, mem_erase]
+    constructor
+    · exact fun h => ⟨h.1.2, h.2⟩
+    · exact fun h => ⟨⟨fun hdJ => h.2 (hdJ ▸ ⟨le_rfl, le_rfl⟩), h.1⟩, h.2⟩
+  have hin : (F.erase J).filter (fun d => ArcLe d J) = F.filter (fun d => ArcLe d J ∧ d ≠ J) := by
+    ext d
+    simp only [mem_filter, mem_erase]
+    tauto
+  rw [hout, hin]
+  congr 1
+  · unfold FOut
+    rw [prod_image]
+    · refine prod_congr rfl fun d hd => ?_
+      obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+      obtain ⟨e1, e2⟩ := sigmaOut_shiftOut σ (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw
+      rw [e1, e2]
+    · intro d hd e he h
+      obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+      obtain ⟨heF, heJ⟩ := mem_filter.1 he
+      exact shiftOut_injOn (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ)
+        (outEnds_of hF hn hJ (mem_nodes_of_mem heF) heJ) hJw h
+  · unfold FIn
+    rw [prod_image]
+    · refine prod_congr rfl fun d hd => ?_
+      obtain ⟨hdF, hdJ, -⟩ := mem_filter.1 hd
+      obtain ⟨e1, e2⟩ := sigmaIn_shiftIn σ hdJ (h12 d hdF)
+      rw [e1, e2]
+    · intro d hd e he h
+      obtain ⟨hdF, hdJ, -⟩ := mem_filter.1 hd
+      obtain ⟨heF, heJ, -⟩ := mem_filter.1 he
+      exact shiftIn_injOn hdJ (h12 d hdF) heJ (h12 e heF) h
+
+/-- The long edges of the outside family are the outside long edges of `F`. -/
+theorem Flong_FOut (σ : Fin n → Bool) :
+    Flong (FOut F J) (sigmaOut σ J) =
+      ((Flong F σ).filter fun d => ¬ArcLe d J).image (shiftOut J) := by
+  have hJw := diag_width hF hJ
+  unfold Flong FOut
+  rw [filter_image]
+  congr 1
+  ext d
+  simp only [mem_filter]
+  constructor
+  · rintro ⟨⟨hdF, hdJ⟩, hl⟩
+    obtain ⟨e1, e2⟩ := sigmaOut_shiftOut σ (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw
+    exact ⟨⟨hdF, by rwa [e1, e2] at hl⟩, hdJ⟩
+  · rintro ⟨⟨hdF, hl⟩, hdJ⟩
+    obtain ⟨e1, e2⟩ := sigmaOut_shiftOut σ (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw
+    exact ⟨⟨hdF, hdJ⟩, by rwa [e1, e2]⟩
+
+omit hn hJ in
+/-- The long edges of the inside family are the long edges of `F` strictly inside `J`. -/
+theorem Flong_FIn (σ : Fin n → Bool) :
+    Flong (FIn F J) (sigmaIn σ J) =
+      ((Flong F σ).filter fun d => ArcLe d J ∧ d ≠ J).image (shiftIn J) := by
+  have h12 : ∀ d ∈ F, d.1 ≤ d.2 := fun d hd => le_of_lt (hF.1 d hd).1
+  unfold Flong FIn
+  rw [filter_image]
+  congr 1
+  ext d
+  simp only [mem_filter]
+  constructor
+  · rintro ⟨⟨hdF, hdJ, hne⟩, hl⟩
+    obtain ⟨e1, e2⟩ := sigmaIn_shiftIn σ hdJ (h12 d hdF)
+    exact ⟨⟨hdF, by rwa [e1, e2] at hl⟩, hdJ, hne⟩
+  · rintro ⟨⟨hdF, hl⟩, hdJ, hne⟩
+    obtain ⟨e1, e2⟩ := sigmaIn_shiftIn σ hdJ (h12 d hdF)
+    exact ⟨⟨hdF, hdJ, hne⟩, by rwa [e1, e2]⟩
+
+/-- **The layer condition across the cut.**  Let `π = F_long(F₀, σ)` for some tree `F₀` and let
+`J ∈ π` be innermost (no other long edge of `π` inside `J`).  Then a tree `F ∋ J` lies in the
+layer `π` iff its inside family has no long edges and the long edges of its outside family are
+`π ∖ {J}`, collapsed. -/
+theorem Flong_eq_iff_cut (σ : Fin n → Bool) {F₀ : Finset (Fin n × Fin n)} (hF₀ : IsTSP F₀)
+    {π : Finset (Fin n × Fin n)} (hπ : Flong F₀ σ = π) (hJπ : J ∈ π)
+    (hinner : ∀ e ∈ π, ArcLe e J → e = J) :
+    Flong F σ = π ↔ Flong (FOut F J) (sigmaOut σ J) = (π.erase J).image (shiftOut J) ∧
+      Flong (FIn F J) (sigmaIn σ J) = ∅ := by
+  have hJw := diag_width hF hJ
+  have hJF₀ : J ∈ F₀ := Flong_subset F₀ σ (hπ ▸ hJπ)
+  have hJlong : σ J.1 ≠ σ J.2 := (mem_Flong.1 (hπ ▸ hJπ)).2
+  have hπout : ∀ e ∈ π.erase J, OutEnds J e ∧ ¬ArcLe e J := by
+    intro e he
+    obtain ⟨hne, heπ⟩ := mem_erase.1 he
+    have hnot : ¬ArcLe e J := fun h => hne (hinner e heπ h)
+    exact ⟨outEnds_of hF₀ hn hJF₀ (mem_nodes_of_mem (Flong_subset F₀ σ (hπ ▸ heπ))) hnot, hnot⟩
+  have hπerase : π.filter (fun d => ¬ArcLe d J) = π.erase J := by
+    ext e
+    simp only [mem_filter, mem_erase]
+    constructor
+    · rintro ⟨heπ, hnot⟩
+      exact ⟨fun h => hnot (h ▸ ⟨le_rfl, le_rfl⟩), heπ⟩
+    · rintro ⟨hne, heπ⟩
+      exact ⟨heπ, fun h => hne (hinner e heπ h)⟩
+  have hπin : π.filter (fun d => ArcLe d J ∧ d ≠ J) = ∅ := by
+    refine filter_eq_empty_iff.2 fun e heπ h => h.2 (hinner e heπ h.1)
+  rw [Flong_FOut hF hn hJ, Flong_FIn hF σ]
+  constructor
+  · intro h
+    rw [h, hπerase, hπin, image_empty]
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨hout, hin⟩
+    have hin' : (Flong F σ).filter (fun d => ArcLe d J ∧ d ≠ J) = ∅ := image_eq_empty.1 hin
+    have hout' : (Flong F σ).filter (fun d => ¬ArcLe d J) = π.erase J := by
+      ext e
+      constructor
+      · intro he
+        obtain ⟨heF, heJ⟩ := mem_filter.1 he
+        have heO := outEnds_of hF hn hJ (mem_nodes_of_mem (Flong_subset F σ heF)) heJ
+        have : shiftOut J e ∈ (π.erase J).image (shiftOut J) := hout ▸ mem_image_of_mem _ he
+        obtain ⟨e', he', hee'⟩ := mem_image.1 this
+        rwa [← shiftOut_injOn (hπout e' he').1 heO hJw hee']
+      · intro he
+        have : shiftOut J e ∈ ((Flong F σ).filter fun d => ¬ArcLe d J).image (shiftOut J) :=
+          hout ▸ mem_image_of_mem _ he
+        obtain ⟨e', he', hee'⟩ := mem_image.1 this
+        obtain ⟨he'F, he'J⟩ := mem_filter.1 he'
+        have he'O := outEnds_of hF hn hJ (mem_nodes_of_mem (Flong_subset F σ he'F)) he'J
+        rwa [← shiftOut_injOn he'O (hπout e he).1 hJw hee']
+    ext e
+    constructor
+    · intro he
+      by_cases heJ : e = J
+      · exact heJ ▸ hJπ
+      by_cases hin : ArcLe e J
+      · have : e ∈ (Flong F σ).filter (fun d => ArcLe d J ∧ d ≠ J) := mem_filter.2 ⟨he, hin, heJ⟩
+        rw [hin'] at this
+        exact absurd this (notMem_empty e)
+      · have : e ∈ (Flong F σ).filter (fun d => ¬ArcLe d J) := mem_filter.2 ⟨he, hin⟩
+        rw [hout'] at this
+        exact (mem_erase.1 this).2
+    · intro he
+      by_cases heJ : e = J
+      · exact heJ ▸ mem_Flong.2 ⟨hJ, hJlong⟩
+      · have : e ∈ π.erase J := mem_erase.2 ⟨heJ, he⟩
+        rw [← hout'] at this
+        exact (mem_filter.1 this).1
+
+end Molecule
+
+section MoleculeSum
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- **The molecule factorization (3.53)–(3.58), closed form.**  If `J` is an innermost long edge
+of the layer `π = F_long(F₀, σ)`, then
+`Q(σ, π) = r_J · Q(σ_out, π ∖ {J}) · Q(σ_in, ∅)`: the inside of `J` is a single molecule. -/
+theorem Qlayer_cut (hn : 2 ≤ n) (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool)
+    {F₀ : Finset (Fin n × Fin n)} (hF₀ : F₀ ∈ TSP n) {π : Finset (Fin n × Fin n)}
+    (hπ : Flong F₀ σ = π) (hJπ : J ∈ π) (hinner : ∀ e ∈ π, ArcLe e J → e = J) :
+    Qlayer m t σ π = edgeR m t (σ J.1) (σ J.2) *
+      Qlayer m t (sigmaOut σ J) ((π.erase J).image (shiftOut J)) *
+        Qlayer m t (sigmaIn σ J) ∅ := by
+  have hF₀' := isTSP_of_mem_TSP hF₀
+  have hJF₀ : J ∈ F₀ := Flong_subset F₀ σ (hπ ▸ hJπ)
+  have hJd : IsDiag n J.1 J.2 := hF₀'.1 J hJF₀
+  set π' := (π.erase J).image (shiftOut J)
+  set f : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) →
+      Finset (Fin (wIn J + 1) × Fin (wIn J + 1)) → ℂ := fun G H =>
+    (if Flong G (sigmaOut σ J) = π' then
+      ∏ g ∈ G, edgeR m t (sigmaOut σ J g.1) (sigmaOut σ J g.2) else 0) *
+    (if Flong H (sigmaIn σ J) = ∅ then
+      ∏ h ∈ H, edgeR m t (sigmaIn σ J h.1) (sigmaIn σ J h.2) else 0)
+  have hlayer : TSPlong n σ π = ((TSP n).filter fun F => J ∈ F).filter fun F => Flong F σ = π := by
+    ext F
+    simp only [TSPlong, mem_filter]
+    constructor
+    · rintro ⟨hF, h⟩
+      exact ⟨⟨hF, Flong_subset F σ (h ▸ hJπ)⟩, h⟩
+    · rintro ⟨⟨hF, -⟩, h⟩
+      exact ⟨hF, h⟩
+  have hpt : ∀ F ∈ (TSP n).filter (fun F => J ∈ F),
+      (if Flong F σ = π then ∏ e ∈ F, edgeR m t (σ e.1) (σ e.2) else 0)
+        = edgeR m t (σ J.1) (σ J.2) * f (FOut F J) (FIn F J) := by
+    intro F hF
+    obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
+    have hF' := isTSP_of_mem_TSP hFT
+    have hiff := Flong_eq_iff_cut hF' hn hJF σ hF₀' hπ hJπ hinner
+    by_cases h : Flong F σ = π
+    · obtain ⟨h1, h2⟩ := hiff.1 h
+      have h1' : Flong (FOut F J) (sigmaOut σ J) = π' := h1
+      simp only [f, h, h1', h2, ↓reduceIte, prod_cut hF' hn hJF σ]
+      ring
+    · simp only [f, h, ↓reduceIte]
+      by_cases h1 : Flong (FOut F J) (sigmaOut σ J) = π'
+      · have h2 : ¬Flong (FIn F J) (sigmaIn σ J) = ∅ := fun h2 => h (hiff.2 ⟨h1, h2⟩)
+        simp [h2]
+      · simp [h1]
+  unfold Qlayer
+  rw [hlayer, sum_filter, sum_congr rfl hpt, ← mul_sum, sum_cut hJd hn f]
+  simp only [f, ← sum_mul_sum, ← sum_filter]
+  rw [mul_assoc]
+  rfl
+
+end MoleculeSum
+
 end RBM

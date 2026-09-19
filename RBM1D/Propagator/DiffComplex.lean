@@ -227,4 +227,84 @@ theorem norm_Theta_sub_shift_le_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : 
 
 end Assemble
 
+section SecondDiffComplex
+
+variable (L : ℕ) [NeZero L] {ξ : ℂ}
+
+theorem norm_one_sub_rho_le_sqrt (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) :
+    ‖1 - rho ξ‖ ≤ Real.sqrt 3 * Real.sqrt ‖1 - ξ‖ := by
+  have h2 := norm_one_sub_rho_sq_le_three hξ0 hξ
+  have h := Real.sqrt_le_sqrt h2
+  rw [Real.sqrt_sq (norm_nonneg _), Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 3)] at h
+  exact h
+
+/-- **Two lattice differences, complex `ξ`**: `‖A(1-ρ)²‖ ≤ 144/ℓ̂(ξ)`.
+The extra factor `‖1-ρ‖ ≤ √3‖1-ξ‖^{1/2}` cancels the `‖1-ξ‖^{1/2}` that
+`ellHat_mul_sqrt_le` leaves behind, so the `‖1-ξ‖` disappears entirely --- exactly as in
+the real case, and this is why (2.54) has no `|1-ξ|` on its right-hand side. -/
+theorem norm_AA_mul_one_sub_rho_sq_le_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) :
+    ‖AA L ξ * (1 - rho ξ) ^ 2‖ ≤ 144 / ellHat L ξ := by
+  have hL0 : L ≠ 0 := by omega
+  have hnr : ‖rho ξ‖ < 1 := norm_rho_lt_one hξ0 hξ
+  have hr0 : (0 : ℝ) ≤ ‖rho ξ‖ := norm_nonneg _
+  have hpowlt : ‖rho ξ‖ ^ L < 1 := pow_lt_one₀ hr0 hnr hL0
+  have hden : (0 : ℝ) < 1 - ‖rho ξ‖ ^ L := by linarith
+  have hxi1 : (1 : ℂ) - ξ ≠ 0 := by
+    intro h
+    have : ξ = 1 := by linear_combination -h
+    rw [this, norm_one] at hξ
+    exact absurd hξ (lt_irrefl 1)
+  have hD : 0 < ‖1 - ξ‖ := norm_pos_iff.mpr hxi1
+  have hs : 0 < Real.sqrt ‖1 - ξ‖ := Real.sqrt_pos.mpr hD
+  have hellpos : 0 < ellHat L ξ := by
+    have := half_le_ellHat L hL hξ
+    linarith
+  have h1 := norm_AA_mul_one_sub_rho_le_complex L hL0 hξ0 hξ
+  have h2 := norm_one_sub_rho_le_sqrt hξ0 hξ
+  have hkey := ellHat_mul_sqrt_le L hL hξ0 hξ
+  have hsplit : ‖AA L ξ * (1 - rho ξ) ^ 2‖ = ‖AA L ξ * (1 - rho ξ)‖ * ‖1 - rho ξ‖ := by
+    rw [← norm_mul]
+    congr 1
+    ring
+  have hsqrt3 : Real.sqrt 3 ≤ 2 := by
+    have h := Real.sqrt_le_sqrt (by norm_num : (3:ℝ) ≤ 4)
+    have h4 : Real.sqrt 4 = 2 := by
+      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+    linarith [h, h4.le, h4.ge]
+  rw [hsplit]
+  -- `‖A(1-ρ)‖ ‖1-ρ‖ ≤ (6/(1-‖ρ‖^L)) (2 √‖1-ξ‖)`
+  have hstep : ‖AA L ξ * (1 - rho ξ)‖ * ‖1 - rho ξ‖
+      ≤ 6 / (1 - ‖rho ξ‖ ^ L) * (2 * Real.sqrt ‖1 - ξ‖) := by
+    have hb : ‖1 - rho ξ‖ ≤ 2 * Real.sqrt ‖1 - ξ‖ := by
+      nlinarith [h2, hsqrt3, hs.le]
+    have hA0 : (0 : ℝ) ≤ ‖AA L ξ * (1 - rho ξ)‖ := norm_nonneg _
+    have hc0 : (0 : ℝ) ≤ 6 / (1 - ‖rho ξ‖ ^ L) := by positivity
+    exact mul_le_mul h1 hb (norm_nonneg _) hc0
+  refine hstep.trans ?_
+  rw [div_mul_eq_mul_div, div_le_div_iff₀ hden hellpos]
+  nlinarith [hkey, hs.le, hellpos, hden]
+
+/-- **(2.54) with the decay retained, complex `ξ`**:
+`‖2Θ_{x,y} - Θ_{x,y+1} - Θ_{x,y-1}‖ ≤ 288 ‖ρ‖^{‖x-y‖-1} / ℓ̂(ξ)`. -/
+theorem norm_Theta_second_diff_le_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L ξ x y - Theta L ξ x (y + 1) - Theta L ξ x (y - 1)‖
+      ≤ 288 * ‖rho ξ‖ ^ (zdist L (x - y) - 1) / ellHat L ξ := by
+  have hellpos : 0 < ellHat L ξ := by
+    have := half_le_ellHat L hL hξ
+    linarith
+  have h1 := norm_Theta_second_diff_le_pow L hL hξ0 hξ hxy
+  have h2 := norm_AA_mul_one_sub_rho_sq_le_complex L hL hξ0 hξ
+  have hp : (0 : ℝ) ≤ ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by positivity
+  refine h1.trans ?_
+  have : 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ ≤ 2 * (144 / ellHat L ξ) := by linarith
+  calc 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ * ‖rho ξ‖ ^ (zdist L (x - y) - 1)
+      ≤ 2 * (144 / ellHat L ξ) * ‖rho ξ‖ ^ (zdist L (x - y) - 1) :=
+        mul_le_mul_of_nonneg_right this hp
+    _ = 288 * ‖rho ξ‖ ^ (zdist L (x - y) - 1) / ellHat L ξ := by
+        field_simp
+        ring
+
+end SecondDiffComplex
+
 end RBM

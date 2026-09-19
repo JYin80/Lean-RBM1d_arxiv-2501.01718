@@ -68,6 +68,11 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 
 `docs/paper-deltas.md` 同理：偏离论文字面陈述的地方，谁发现谁记，不要只在对话里说。
 
+### 常设授权
+
+路由决策（某项工作该在 Claude Code 还是 Cowork 做）不必每次征求同意，按上表直接定。
+需要征求同意的只有：改变项目范围、公开/删除内容、以及任何不可逆操作。
+
 ### 论文 PDF
 
 `paper/250520-YinJun-v2.pdf` 放在本地供 Claude Code 读，已在 `.gitignore` 里排除，

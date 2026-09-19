@@ -110,7 +110,7 @@
 | T64 | 附录 A 的总装：(A.11)(A.12)(A.13)(A.14)(A.17)(A.20) ⟹ Lemma A.2 | `Loop/ChainBound.lean`（新建） | Claude Code | **完成** |
 | T65 | §7.2 的 GUE 相：(7.25)–(7.36) 的 Grönwall 自举、(7.39)–(7.46) | `Hierarchy/GUEPhase.lean`（新建） | 待认领 | 未开工 |
 | T66 | 维护：蓝图补上第二批的全部 `\lean{}` 节点 + `leanblueprint checkdecls`；linter 清理 | `blueprint/src/content.tex` 等 | Claude Code | **完成** |
-| T67 | **§5.1 Step 1**：(2.73)(2.74)、三情形分解、(5.2)(5.3)(5.4)(5.8)、(5.9) 的禁区论证 | `Hierarchy/Step1.lean`（新建） | Claude Code | 进行中 |
+| T67 | **§5.1 Step 1**：(2.73)(2.74)、三情形分解、(5.2)(5.3)(5.4)(5.8)、(5.9) 的禁区论证 | `Hierarchy/Step1.lean`（新建） | Claude Code | **完成** |
 | T68 | §2.3 + §7.2 的出口：**Theorem 2.5（QUE）与 Theorem 2.6（普适性）** | `Flow/Universality.lean`（新建） | Claude Code | 进行中 |
 
 ---

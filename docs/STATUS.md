@@ -1171,3 +1171,11 @@ T60 可 import 此文件替换其 (5.77) 占位。paper-deltas #42。
 (2.72)、(2.68)@s。Ward 恒等式对 L−K 已证（`wardP_holds`）。
 **剩余缺口**：`Lemma510`/`LKDecay` 与 T59（`Hierarchy/Decay.lean`）的确定性定理形状不同——需要 (i) 具体的 `E^{(G)}` 与 Def 5.4 的 `E⊗E` 粘合
 （T58 的表示桥），(ii) 把 `Decay.lemma59` 从「Lemma 4.1 事件上」提升为「对 u ∈ [s,t] 一致的 ≺」。paper-deltas #43。
+
+### `RBM1D/Hierarchy/Step1.lean` — §5.1 Step 1：(2.73)(2.74)（T67，Claude Code 并行 agent）
+
+**`Step1.step1`** 给出 `(apriori, weakLaw)`，形状与 `Steps.apriori`/`Steps.weakLaw` 逐字一致（已临时构造 `Steps` 验证）。
+(5.9) 的禁区论证抽成独立引理 **`forbidden_region`**，确定性核心 `lt_of_forall_ne_of_continuousOn`（介值定理），高概率版 `bootstrap`。
+(5.4) `eq54`、(5.5) `eq55`（起点 `max(s,1/2)`）、(5.8) `eq58`；(5.2) `norm_Lval_le_of_le_half`。
+假设（结构 `Hyp`）：(6.1) `LoopScaling`、`NetLift`（网 + (5.1)）、`Lemma41Flow`（Lemma 4.1 沿 `z_u`——现有 `entry_bound_stochDom` 只对固定谱参数）、`u ↦ ‖G_u−m‖_max` 连续。
+**额外假设** `∃ c>0, N^c ≤ Wℓ_tη_t`（尚未从 `t ≤ 1−N^{−1+τ}` 经 `flowScale_ge` 推出，需 W/N 换算）。paper-deltas #44。

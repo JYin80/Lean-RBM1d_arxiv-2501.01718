@@ -11,6 +11,7 @@ import RBM1D.Hierarchy.SumZero
 import RBM1D.Hierarchy.SumZeroDyn
 import RBM1D.Hierarchy.Dynamics
 import RBM1D.Hierarchy.Step3
+import RBM1D.Hierarchy.Step1
 import RBM1D.Hierarchy.Step45
 import RBM1D.Hierarchy.Step6
 import RBM1D.Defs.Dist

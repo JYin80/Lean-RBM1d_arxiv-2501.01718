@@ -1359,6 +1359,19 @@
   tensors; non-alternating $\sigma$ use (7.16) Case 1; the martingale by BDG.
 \end{proof}
 
+\begin{theorem}[Step 1 of Theorem 2.21: (5.2)--(5.9), (2.73), (2.74)]\label{thm:step1}
+  \lean{RBM.Step1.forbidden_region, RBM.Step1.lt_of_forall_ne_of_continuousOn, RBM.Step1.bootstrap, RBM.Step1.stochDom_of_highProb, RBM.Step1.stochDom_of_indicator, RBM.Step1.stochDom_of_forall_or, RBM.Step1.llMax, RBM.Step1.gEv, RBM.Step1.goodEv, RBM.Step1.goodEv_subset_gEv, RBM.Step1.norm_Lval_le_of_le_half, RBM.Step1.eq54, RBM.Step1.eq52_half, RBM.Step1.startTime, RBM.Step1.eq55, RBM.Step1.eq58_seq, RBM.Step1.eq58, RBM.Step1.NetLift, RBM.Step1.Lemma41Flow, RBM.Step1.Hyp, RBM.Step1.eventually_scale_facts, RBM.Step1.weakLaw_highProb, RBM.Step1.weakLaw, RBM.Step1.apriori, RBM.Step1.step1}
+  \leanok\uses{lem:5.1, lem:4.1, def:flow-hypotheses, lem:6.1}
+  Under (2.68)(2.70)@$s$, (2.72), $|E|\le2-\kappa$ and $W\ell_t\eta_t\ge N^{c}$, with (6.1), Lemma 4.1
+  along the flow, the $N^{-C}$-net lift and continuity of $u\mapsto\|G_u-m\|_{\max}$ as hypotheses:
+  the a priori loop bound (2.73) and the weak local law (2.74) hold uniformly in $u\in[s,t]$.
+\end{theorem}
+\begin{proof}\leanok
+  (5.4) from (2.68)+(2.59); (5.2) for $u\le1/2$; Lemma 5.1 from $\max(s,1/2)$ gives (5.8), the three
+  cases split per $N$; the forbidden-region lemma (5.9) plus the intermediate value theorem close the
+  continuity argument.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

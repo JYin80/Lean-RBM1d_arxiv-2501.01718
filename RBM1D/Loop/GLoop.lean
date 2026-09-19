@@ -140,6 +140,47 @@ theorem trace_green_sub_trace_green_conj' {H : Matrix n n ℂ} {z : ℂ}
   simpa [Matrix.sub_mul, Matrix.trace_sub, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul,
     Matrix.mul_assoc] using h
 
+/-- **The Ward identity in its most usable form**: for Hermitian `H` and `z = E + iη`,
+\[ \operatorname{Im} G_{qq} \;=\; \eta \sum_p |G_{pq}|^2 . \]
+The whole column of the Green's function is controlled by one diagonal entry, which is
+what makes `|ψ_k(x)|² ≤ η\,\operatorname{Im}G_{xx}` (equation (2.10)) useful. -/
+theorem im_green_apply_eq_mul_sum_normSq {H : Matrix n n ℂ} {z : ℂ} (hH : H.IsHermitian)
+    (hz : IsUnit (H - z • (1 : Matrix n n ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix n n ℂ))) (q : n) :
+    (green H z q q).im = z.im * ∑ p : n, Complex.normSq (green H z p q) := by
+  have hG : green H ((starRingEnd ℂ) z) = (green H z)ᴴ := (Gsig_conjTranspose hH z true).symm
+  have h := green_sub_green_conj' hz hz'
+  rw [hG] at h
+  have hqq : (green H z - (green H z)ᴴ) q q
+      = ((2 * Complex.I * (z.im : ℂ)) • ((green H z)ᴴ * green H z)) q q := by rw [h]
+  simp only [Matrix.sub_apply, Matrix.smul_apply, Matrix.mul_apply, Matrix.conjTranspose_apply,
+    smul_eq_mul, Complex.star_def] at hqq
+  have hterm : ∀ r : n, (starRingEnd ℂ) (green H z r q) * green H z r q
+      = (Complex.normSq (green H z r q) : ℂ) := by
+    intro r
+    rw [mul_comm]
+    exact Complex.mul_conj _
+  simp only [hterm] at hqq
+  rw [Complex.sub_conj] at hqq
+  have hcast : ((green H z q q).im : ℂ)
+      = ((z.im * ∑ p : n, Complex.normSq (green H z p q) : ℝ) : ℂ) := by
+    have h2I : (2 : ℂ) * Complex.I ≠ 0 := by
+      simp [Complex.I_ne_zero]
+    refine mul_left_cancel₀ h2I ?_
+    push_cast at hqq ⊢
+    linear_combination hqq
+  exact_mod_cast hcast
+
+/-- Each entry of a column is bounded by the diagonal entry: `η|G_{pq}|² ≤ Im G_{qq}`. -/
+theorem normSq_green_le_im_green {H : Matrix n n ℂ} {z : ℂ} (hH : H.IsHermitian)
+    (hz : IsUnit (H - z • (1 : Matrix n n ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix n n ℂ))) (hη : 0 < z.im) (p q : n) :
+    z.im * Complex.normSq (green H z p q) ≤ (green H z q q).im := by
+  rw [im_green_apply_eq_mul_sum_normSq hH hz hz' q]
+  exact mul_le_mul_of_nonneg_left
+    (Finset.single_le_sum (fun r _ => Complex.normSq_nonneg (green H z r q)) (Finset.mem_univ p))
+    hη.le
+
 end Gsig
 
 section Loop

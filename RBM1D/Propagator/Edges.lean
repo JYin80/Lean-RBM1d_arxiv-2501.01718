@@ -31,8 +31,7 @@ theorem normSq_one_sub_mul_sq_mE {E : ℝ} (hE : |E| ≤ 2) (t : ℝ) :
     Real.mul_self_sqrt h4
   have hre : ((mE E) ^ 2).re = (2 * E ^ 2 - 4) / 4 := by
     rw [pow_two, Complex.mul_re, mE_re, mE_im]
-    field_simp
-    linear_combination hss
+    linear_combination (-1/4 : ℝ) * hss
   have him : ((mE E) ^ 2).im = -(E * Real.sqrt (4 - E ^ 2)) / 2 := by
     rw [pow_two, Complex.mul_im, mE_re, mE_im]
     ring
@@ -62,7 +61,8 @@ theorem zt_im_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht : t ≤ 1) : (zt E t).
   have h4' : Real.sqrt 4 = 2 := by
     rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
   have hs : Real.sqrt (4 - E ^ 2) ≤ 2 := by
-    have hmono : Real.sqrt (4 - E ^ 2) ≤ Real.sqrt 4 := Real.sqrt_le_sqrt (by linarith)
+    have hmono : Real.sqrt (4 - E ^ 2) ≤ Real.sqrt 4 :=
+      Real.sqrt_le_sqrt (by nlinarith [sq_nonneg E])
     rw [h4'] at hmono
     exact hmono
   rw [zt_im, mE_im]

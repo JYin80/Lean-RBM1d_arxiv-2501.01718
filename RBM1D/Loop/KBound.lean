@@ -285,4 +285,138 @@ theorem norm_evenPart_le_split [NeZero L] (f : ZMod L → ℂ) (a : ZMod L) {Mof
 
 end Taylor
 
+section Center
+
+/-! ### Centring at the first point, and the weighted self-energy
+
+Write `d = c + s` with `c = d₀` and `s₀ = 0` (`sum_center`).  By translation invariance the
+self-energy only sees `s`, and (3.43) makes it summable against any polynomial weight
+(`sum_pinned_SigmaPi_le`). -/
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+variable (L n) in
+/-- The configurations pinned at the first point: `s₀ = 0`. -/
+def pinned : Finset (Fin n → ZMod L) := univ.filter fun s => s 0 = 0
+
+/-- `∑_d F(d) = ∑_c ∑_{s₀ = 0} F(s + c)`. -/
+theorem sum_center {M : Type*} [AddCommMonoid M] (F : (Fin n → ZMod L) → M) :
+    ∑ d, F d = ∑ c : ZMod L, ∑ s ∈ pinned L n, F (fun v => s v + c) := by
+  rw [← Finset.sum_fiberwise univ (fun d => d 0) F]
+  refine sum_congr rfl fun c _ => ?_
+  refine Finset.sum_nbij' (fun d v => d v - c) (fun s v => s v + c) ?_ ?_ ?_ ?_ ?_
+  · intro d hd
+    simp only [mem_filter, mem_univ, true_and] at hd
+    simp [pinned, hd]
+  · intro s hs
+    simp only [pinned, mem_filter, mem_univ, true_and] at hs
+    simp [hs]
+  · intro d _; funext v; simp
+  · intro s _; funext v; simp
+  · intro d _; congr 1; funext v; simp
+
+/-- `∑_x e^{-λ‖x‖} (1 + ‖x‖)^p`, bounded uniformly in `L`. -/
+noncomputable def polyExpSum (lam : ℝ) (p : ℕ) : ℝ :=
+  p.factorial * (2 / lam) ^ p * Real.exp (lam / 2) * (2 * ((1 + lam / 2) / (lam / 2)))
+
+theorem sum_exp_mul_pow_le {lam : ℝ} (hlam : 0 < lam) (p : ℕ) :
+    ∑ x : ZMod L, Real.exp (-(lam * zdist L x)) * ((1 : ℝ) + zdist L x) ^ p
+      ≤ polyExpSum lam p := by
+  set K := (p.factorial : ℝ) * (2 / lam) ^ p * Real.exp (lam / 2)
+  have hpt : ∀ x : ZMod L, Real.exp (-(lam * zdist L x)) * ((1 : ℝ) + zdist L x) ^ p
+      ≤ K * Real.exp (-(lam / 2 * zdist L x)) := by
+    intro x
+    set y : ℝ := (zdist L x : ℝ)
+    have hy : 0 ≤ y := Nat.cast_nonneg _
+    have h := Real.pow_div_factorial_le_exp (x := lam * (1 + y) / 2) (by positivity) p
+    have hf : (0 : ℝ) < p.factorial := by exact_mod_cast Nat.factorial_pos p
+    rw [div_le_iff₀ hf] at h
+    have h' : (1 + y) ^ p ≤ K * Real.exp (lam * y / 2) := by
+      have e1 : (lam * (1 + y) / 2) ^ p = (lam / 2) ^ p * (1 + y) ^ p := by rw [← mul_pow]; ring_nf
+      have e2 : Real.exp (lam * (1 + y) / 2) = Real.exp (lam / 2) * Real.exp (lam * y / 2) := by
+        rw [← Real.exp_add]; ring_nf
+      rw [e1, e2] at h
+      have hl : 0 < (lam / 2) ^ p := by positivity
+      have e3 : K = p.factorial * Real.exp (lam / 2) / (lam / 2) ^ p := by
+        simp only [K]; rw [div_pow, div_pow]; field_simp
+      rw [e3, div_mul_eq_mul_div, le_div_iff₀ hl]
+      linarith
+    calc Real.exp (-(lam * y)) * (1 + y) ^ p
+        ≤ Real.exp (-(lam * y)) * (K * Real.exp (lam * y / 2)) := by gcongr
+      _ = K * Real.exp (-(lam / 2 * y)) := by
+          rw [mul_left_comm, ← Real.exp_add]; congr 2; ring
+  calc ∑ x : ZMod L, Real.exp (-(lam * zdist L x)) * ((1 : ℝ) + zdist L x) ^ p
+      ≤ ∑ x : ZMod L, K * Real.exp (-(lam / 2 * zdist L x)) := sum_le_sum fun x _ => hpt x
+    _ = K * ∑ x : ZMod L, Real.exp (-(lam / 2 * zdist L x)) := by rw [mul_sum]
+    _ ≤ K * (2 * ((1 + lam / 2) / (lam / 2))) := by
+        gcongr
+        exact sum_exp_neg_zdist_le L (by positivity)
+    _ = polyExpSum lam p := by simp only [K, polyExpSum]
+
+/-- A pairwise decay with the first point gives a product decay:
+`min_i C e^{-c x_i} ≤ C ∏_i e^{-(c/n) x_i}`. -/
+theorem le_mul_prod_of_forall {c C : ℝ} (hc : 0 ≤ c) (hC : 0 ≤ C) (x : Fin n → ℝ) {B : ℝ}
+    (hB : ∀ i, B ≤ C * Real.exp (-(c * x i))) :
+    B ≤ C * ∏ i, Real.exp (-(c / n * x i)) := by
+  obtain ⟨i₀, -, hmax⟩ := exists_max_image univ x univ_nonempty
+  refine (hB i₀).trans (mul_le_mul_of_nonneg_left ?_ hC)
+  rw [← Real.exp_sum, Real.exp_le_exp, sum_neg_distrib, neg_le_neg_iff]
+  calc ∑ i, c / n * x i ≤ ∑ _i : Fin n, c / n * x i₀ :=
+        sum_le_sum fun i _ => by gcongr; exact hmax i (mem_univ _)
+    _ = c * x i₀ := by
+        have hn : (n : ℝ) ≠ 0 := by exact_mod_cast NeZero.ne n
+        rw [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]; field_simp
+
+variable (hL : 3 ≤ L) {E : ℝ} (hE : |E| < 2)
+include hL hE
+
+/-- The constant of the weighted bound on the self-energy. -/
+noncomputable def sigWeightConst (n : ℕ) (k : ℝ) (p : ℕ) : ℝ :=
+  cor35Const n (Real.sqrt k) * polyExpSum (cor35Rate (Real.sqrt k) / n) p ^ n
+
+/-- **(3.43), summed against a polynomial weight**: pinning `s₀ = 0`,
+`∑_s |Σ^(∅)(t,σ,s)| ∏_v (1 + ‖s_v‖)^p ≤ C(n,k,p)`, uniformly in `L` and `0 ≤ t < 1`. -/
+theorem sum_pinned_SigmaPi_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : Fin n → Bool) (hn : 2 ≤ n) (p : ℕ) :
+    ∑ s ∈ pinned L n, ‖SigmaPi L (mSigma E) t σ ∅ s‖ * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ p
+      ≤ sigWeightConst n k p := by
+  set C₃ := cor35Const n (Real.sqrt k)
+  set r := cor35Rate (Real.sqrt k)
+  have hδ : 0 < Real.sqrt k := Real.sqrt_pos.2 hk0
+  have hC₃ : 0 ≤ C₃ := cor35Const_nonneg n hδ
+  have hr : 0 < r / n := by
+    have := cZero_pos
+    have : (0 : ℝ) < n := by exact_mod_cast NeZero.pos n
+    have := Real.sqrt_pos.2 hδ
+    simp only [r, cor35Rate]
+    positivity
+  set h : ZMod L → ℝ := fun x => Real.exp (-(r / n * zdist L x)) * ((1 : ℝ) + zdist L x) ^ p
+  have hh0 : ∀ x, 0 ≤ h x := fun x => by positivity
+  have hpt : ∀ s ∈ pinned L n,
+      ‖SigmaPi L (mSigma E) t σ ∅ s‖ * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ p ≤ C₃ * ∏ v, h (s v) := by
+    intro s hs
+    simp only [pinned, mem_filter, mem_univ, true_and] at hs
+    have hg := le_mul_prod_of_forall (by simp only [r, cor35Rate]; have := cZero_pos; positivity) hC₃ (fun i => (zdist L (s i) : ℝ))
+      (B := ‖SigmaPi L (mSigma E) t σ ∅ s‖) (c := r) fun i => by
+        have := norm_SigmaPi_empty_le hL hE hk0 hk1 hEk ht0 ht1 σ hn s i 0
+        rwa [hs, sub_zero] at this
+    calc ‖SigmaPi L (mSigma E) t σ ∅ s‖ * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ p
+        ≤ (C₃ * ∏ i, Real.exp (-(r / n * zdist L (s i)))) * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ p := by
+          gcongr
+      _ = C₃ * ∏ v, h (s v) := by rw [mul_assoc, ← prod_mul_distrib]
+  calc ∑ s ∈ pinned L n, ‖SigmaPi L (mSigma E) t σ ∅ s‖ * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ p
+      ≤ ∑ s ∈ pinned L n, C₃ * ∏ v, h (s v) := sum_le_sum hpt
+    _ ≤ ∑ s : Fin n → ZMod L, C₃ * ∏ v, h (s v) :=
+        sum_le_sum_of_subset_of_nonneg (subset_univ _) fun s _ _ =>
+          mul_nonneg hC₃ (prod_nonneg fun v _ => hh0 _)
+    _ = C₃ * ∏ _v : Fin n, ∑ x : ZMod L, h x := by
+        rw [← mul_sum, Fintype.prod_sum]
+    _ ≤ C₃ * ∏ _v : Fin n, polyExpSum (r / n) p := by
+        gcongr with v
+        exact sum_exp_mul_pow_le hr p
+    _ = sigWeightConst n k p := by
+        rw [prod_const, card_univ, Fintype.card_fin]; rfl
+
+end Center
+
 end RBM

@@ -105,22 +105,30 @@ theorem le_one_sub_cos {x : ℝ} (hx : |x| ≤ π) : 2 / π ^ 2 * x ^ 2 ≤ 1 - 
   have : 2 / π ^ 2 * x ^ 2 = 2 * (x ^ 2 / π ^ 2) := by ring
   linarith
 
+/-- The real symbol `S = (1 + 2 cos x)/3` on `[-π, π]`: `S ∈ [-1/3, 1]` and
+`1 - S = (2/3)(1 - cos x)` is comparable to `x²`. -/
+theorem cos_symbol_bounds {x : ℝ} (hx : |x| ≤ π) :
+    -1 / 3 ≤ (1 + 2 * cos x) / 3 ∧ (1 + 2 * cos x) / 3 ≤ 1 ∧
+      4 / (3 * π ^ 2) * x ^ 2 ≤ 1 - (1 + 2 * cos x) / 3 ∧
+      1 - (1 + 2 * cos x) / 3 ≤ x ^ 2 / 3 := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · linarith [neg_one_le_cos x]
+  · linarith [cos_le_one x]
+  · have := le_one_sub_cos hx
+    have e : 4 / (3 * π ^ 2) * x ^ 2 = 2 / 3 * (2 / π ^ 2 * x ^ 2) := by
+      field_simp
+      ring
+    rw [e]
+    linarith
+  · linarith [one_sub_cos_le x]
+
 variable {L}
 
 /-- `s(p) = 1 - Ŝ(p)`, real and in `[0, 4/3]`, comparable to `θ(p)²`. -/
 theorem Shat_bounds (p : ZMod L) :
     ∃ S : ℝ, Shat L p = (S : ℂ) ∧ -1 / 3 ≤ S ∧ S ≤ 1 ∧
-      4 / (3 * π ^ 2) * theta L p ^ 2 ≤ 1 - S ∧ 1 - S ≤ theta L p ^ 2 / 3 := by
-  refine ⟨(1 + 2 * cos (theta L p)) / 3, Shat_eq_cos_theta L p, ?_, ?_, ?_, ?_⟩
-  · linarith [neg_one_le_cos (theta L p)]
-  · linarith [cos_le_one (theta L p)]
-  · have := le_one_sub_cos (abs_theta_le_pi L p)
-    have e : 4 / (3 * π ^ 2) * theta L p ^ 2 = 2 / 3 * (2 / π ^ 2 * theta L p ^ 2) := by
-      field_simp
-      ring
-    rw [e]
-    linarith
-  · linarith [one_sub_cos_le (theta L p)]
+      4 / (3 * π ^ 2) * theta L p ^ 2 ≤ 1 - S ∧ 1 - S ≤ theta L p ^ 2 / 3 :=
+  ⟨(1 + 2 * cos (theta L p)) / 3, Shat_eq_cos_theta L p, cos_symbol_bounds (abs_theta_le_pi L p)⟩
 
 /-- **(B.3), upper bound**: `|1 - ξ Ŝ(p)| ≤ |1 - ξ| + θ(p)²` for `‖ξ‖ ≤ 1`. -/
 theorem norm_one_sub_mul_Shat_le {ξ : ℂ} (hξ : ‖ξ‖ ≤ 1) (p : ZMod L) :
@@ -136,15 +144,17 @@ theorem norm_one_sub_mul_Shat_le {ξ : ℂ} (hξ : ‖ξ‖ ≤ 1) (p : ZMod L) 
     _ ≤ ‖1 - ξ‖ + 1 * (theta L p ^ 2 / 3) := by gcongr
     _ ≤ ‖1 - ξ‖ + theta L p ^ 2 := by nlinarith [sq_nonneg (theta L p)]
 
-/-- **(B.3), lower bound**: `(|1 - ξ| + θ(p)²) / (6π²) ≤ |1 - ξ Ŝ(p)|` for `‖ξ‖ < 1`. -/
-theorem le_norm_one_sub_mul_Shat {ξ : ℂ} (hξ : ‖ξ‖ < 1) (p : ZMod L) :
-    (‖1 - ξ‖ + theta L p ^ 2) / (6 * π ^ 2) ≤ ‖1 - ξ * Shat L p‖ := by
-  obtain ⟨S, hS, hS1, hS2, hlow, -⟩ := Shat_bounds p
+/-- **(B.3), lower bound, real form**: if `S ∈ [-1/3, 1]` and `1 - S ≥ 4x²/(3π²)` then
+`(|1 - ξ| + x²) / (6π²) ≤ |1 - ξ S|` for `‖ξ‖ < 1`.  Used both on the torus
+(`le_norm_one_sub_mul_Shat`) and on the real line (the contour integral (B.2)). -/
+theorem le_norm_one_sub_mul_real {ξ : ℂ} (hξ : ‖ξ‖ < 1) {S x : ℝ} (hS1 : -1 / 3 ≤ S)
+    (hS2 : S ≤ 1) (hlow : 4 / (3 * π ^ 2) * x ^ 2 ≤ 1 - S) :
+    (‖1 - ξ‖ + x ^ 2) / (6 * π ^ 2) ≤ ‖1 - ξ * (S : ℂ)‖ := by
   set s := 1 - S with hsdef
-  set X := 1 - ξ * Shat L p with hX
+  set X := 1 - ξ * (S : ℂ) with hX
   have hpi : 3 < π := pi_gt_three
   -- `θ² ≤ (3π²/4) s`, so it suffices to bound `‖1 - ξ‖ + s`
-  have hθ : theta L p ^ 2 ≤ 3 * π ^ 2 / 4 * s := by
+  have hθ : x ^ 2 ≤ 3 * π ^ 2 / 4 * s := by
     have h := hlow
     rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)] at h
     nlinarith
@@ -155,16 +165,16 @@ theorem le_norm_one_sub_mul_Shat {ξ : ℂ} (hξ : ‖ξ‖ < 1) (p : ZMod L) :
   have key : ‖1 - ξ‖ + s ≤ 7 * ‖X‖ := by
     rcases lt_or_ge S (1 / 2) with hsmall | hbig
     · -- `‖X‖ ≥ 1 - ‖ξ‖ |S| ≥ 1/2`
-      have h1 : 1 - ‖ξ * Shat L p‖ ≤ ‖X‖ := by
-        simpa using norm_sub_norm_le (1 : ℂ) (ξ * Shat L p)
-      have h2 : ‖ξ * Shat L p‖ ≤ 1 / 2 := by
-        rw [norm_mul, hS, Complex.norm_real, Real.norm_eq_abs]
+      have h1 : 1 - ‖ξ * (S : ℂ)‖ ≤ ‖X‖ := by
+        simpa using norm_sub_norm_le (1 : ℂ) (ξ * (S : ℂ))
+      have h2 : ‖ξ * (S : ℂ)‖ ≤ 1 / 2 := by
+        rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
         have : |S| ≤ 1 / 2 := abs_le.2 ⟨by linarith, hsmall.le⟩
         nlinarith [norm_nonneg ξ, abs_nonneg S]
       linarith
     · -- `X = s + S (1 - ξ)` and `Re (1 - ξ) ≥ 0`
       have e : X = (s : ℂ) + (S : ℂ) * (1 - ξ) := by
-        rw [hX, hS, hsdef]; push_cast; ring
+        rw [hX, hsdef]; push_cast; ring
       have hre : 0 ≤ (1 - ξ).re := by
         have := Complex.re_le_norm ξ
         simp only [Complex.sub_re, Complex.one_re]
@@ -188,10 +198,17 @@ theorem le_norm_one_sub_mul_Shat {ξ : ℂ} (hξ : ‖ξ‖ < 1) (p : ZMod L) :
   have hs0 : 0 ≤ s := by linarith
   have hπ1 : 1 ≤ 3 * π ^ 2 / 4 := by nlinarith
   rw [div_le_iff₀ (by positivity)]
-  calc ‖1 - ξ‖ + theta L p ^ 2 ≤ ‖1 - ξ‖ + 3 * π ^ 2 / 4 * s := by linarith
+  calc ‖1 - ξ‖ + x ^ 2 ≤ ‖1 - ξ‖ + 3 * π ^ 2 / 4 * s := by linarith
     _ ≤ 3 * π ^ 2 / 4 * (‖1 - ξ‖ + s) := by nlinarith [norm_nonneg (1 - ξ)]
     _ ≤ 3 * π ^ 2 / 4 * (7 * ‖X‖) := by gcongr
     _ ≤ ‖X‖ * (6 * π ^ 2) := by nlinarith [sq_nonneg π]
+
+/-- **(B.3), lower bound**: `(|1 - ξ| + θ(p)²) / (6π²) ≤ |1 - ξ Ŝ(p)|` for `‖ξ‖ < 1`. -/
+theorem le_norm_one_sub_mul_Shat {ξ : ℂ} (hξ : ‖ξ‖ < 1) (p : ZMod L) :
+    (‖1 - ξ‖ + theta L p ^ 2) / (6 * π ^ 2) ≤ ‖1 - ξ * Shat L p‖ := by
+  obtain ⟨S, hS, hS1, hS2, hlow, -⟩ := Shat_bounds p
+  rw [hS]
+  exact le_norm_one_sub_mul_real hξ hS1 hS2 hlow
 
 /-- **(B.3)**: `|1 - ξ Ŝ(p)| ≍ |1 - ξ| + |p|²`, uniformly in `L`, `‖ξ‖ < 1` and `p`. -/
 theorem norm_one_sub_mul_Shat_asymp :

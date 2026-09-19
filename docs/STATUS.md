@@ -871,3 +871,18 @@ gap 假设见 paper-deltas #17（`T₀ < 1` 时 `δ = 1 − T₀` 自动成立�
   `totalSum_ward` / `totalSum_rotate` / **`norm_totalSum_le`**（(3.15) 的代数部分，常数 `2ⁿ⁻¹`）、`partialSum_eq`（平移不变 ⇒ 对 `a₂…aₙ` 求和 = `L⁻¹` 总和）、
   **`cor37_reduction`**（(3.15)，对真正的 K 无条件）、**`cor37`**（(3.14)：`≤ 2ⁿ⁻¹ n C (Wη_t)^{-(n-1)}`，以 `L⁻¹P_m ≤ C W^{-(m-1)}`（m ≥ 2）为假设）。
 **待办**：T28（Cor 3.5）落地后，从其逐点指数界导出 `L⁻¹P_m ≤ C W^{-(m-1)}` 并去掉 `cor37` 的假设。paper-deltas #18。
+
+### `RBM1D/Loop/Layer.lean` — Definitions 3.8/3.9（T31，Claude Code #2）
+
+| Lean | 论文 |
+|---|---|
+| `RBM.Flong` | Def 3.8 I：长内部边 `F_long(Γ,σ) = {{i,j} ∈ F : σ_i ≠ σ_j}` |
+| `RBM.TSPlong` | Def 3.8 II：`T_SP(P_a,σ,π)` |
+| `RBM.disjoint_TSPlong` / `biUnion_TSPlong` / **`sum_TSPlong`** | 各层互不相交、并为 `T_SP`；按层求和 = 总和 |
+| `RBM.Kpi` | (3.40) `K^(π)`（不含 W） |
+| `RBM.Kn_eq_sum_Kpi` / **`K_eq_sum_Kpi`** | (3.41) `K = W^{-n+1} m_σ Σ_π K^(π)`（后者对任意满足 Def 2.12 的 K，n ≥ 3） |
+| `RBM.selfW` / `selfE` / `SigmaPi` | Def 3.9 II 自能 `Σ^(π)(t,σ,d)`：去掉边界边，`d_v = b(leafPar v)` 为 Kronecker δ，其余内部顶点求和 |
+| `RBM.treeValW_eq_sum_selfW` / **`Kpi_eq_sum_SigmaPi`** | (3.42) `K^(π) = Σ_d Σ^(π)(d) Π_i (Θ_{t m_i m_{i+1}})_{a_i d_i}` |
+| `RBM.selfW_empty` | 星图（单分子、无内部边）的自能 = `δ_{d_1⋯d_n}` |
+
+下游：T34（Lemma 3.10，对称性与 sum-zero）现可开工。

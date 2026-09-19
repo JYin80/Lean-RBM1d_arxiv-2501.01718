@@ -25,11 +25,11 @@ exactly `π` (`TSPlong`).  These sets partition `T_SP(P_a)` (`sum_TSPlong`).
   `d`'s to coincide (a Kronecker delta), and the remaining internal vertices are summed.  In the
   pivot-free encoding of `Loop/TreeRepGeneral.lean` this is `selfW`: the labelling `b` of all
   internal vertices is summed, with the constraint `d_v = b(leafPar v)` for every leaf `v`
-  (`selfE`, `SigmaPi`).  Then
+  (`selfE`, `SigmaPi`; for the star it is `δ_{d_1⋯d_n}`, `selfW_empty`).  Then
   `K^(π)_{t,σ,a} = ∑_d Σ^(π)(t,σ,d) ∏_i (Θ_{t m_i m_{i+1}})_{a_i d_i}` (`Kpi_eq_sum_SigmaPi`).
 
 As in Lemma 3.4, the tree of the `2`-gon is a single edge, not the star (paper-deltas #9), so
-(3.41) is stated for `n ≥ 3` (paper-deltas #18).
+(3.41) is stated for `n ≥ 3` (paper-deltas #19).
 -/
 
 namespace RBM
@@ -155,6 +155,23 @@ theorem treeValW_eq_sum_selfW (F : Finset (Fin n × Fin n)) (a : Fin n → ZMod 
   rw [this]
   refine prod_congr rfl fun v _ => ?_
   rw [Fintype.sum_ite_eq']
+
+variable {L} in
+/-- The star (`F = ∅`, a single molecule with no internal edge): all boundary edges end at the
+root, so the self-energy is the Kronecker delta `δ_{d_1 ⋯ d_n}` (the first term of the paper's
+`n = 4` example after (3.42)). -/
+theorem selfW_empty (E : ↥(∅ : Finset (Fin n × Fin n)) → Matrix (ZMod L) (ZMod L) ℂ)
+    (d : Fin n → ZMod L) :
+    selfW L ∅ E d = ∑ x : ZMod L, ∏ v, if d v = x then (1 : ℂ) else 0 := by
+  have hmem : ∀ y (hy : y ∈ nodes (∅ : Finset (Fin n × Fin n))), y = wholeP n := by
+    intro y hy; simpa [nodes] using hy
+  have : Unique ↥(nodes (∅ : Finset (Fin n × Fin n))) :=
+    { default := ⟨wholeP n, wholeP_mem_nodes _⟩
+      uniq := fun ⟨y, hy⟩ => Subtype.ext (hmem y hy) }
+  unfold selfW
+  rw [← (Equiv.funUnique ↥(nodes (∅ : Finset (Fin n × Fin n))) (ZMod L)).symm.sum_comp]
+  refine sum_congr rfl fun x _ => ?_
+  simp [Equiv.funUnique]
 
 /-- The self-energy of one tree (Definition 3.9 II): boundary edges removed, internal edges
 `Θ_{t m_i m_j} - 1`. -/

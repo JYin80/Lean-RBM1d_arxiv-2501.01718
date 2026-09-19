@@ -804,6 +804,28 @@
   $\bigl(\sum_x e^{-\lambda\|x\|}\bigr)^{\#\text{nodes}}$, uniformly bounded in $L$.
 \end{proof}
 
+\begin{definition}[Long edges and layers, Definition 3.8]\label{def:3.8}
+  \lean{RBM.Flong, RBM.TSPlong, RBM.Flong_subset_diagonals, RBM.TSPlong_eq_empty,
+    RBM.disjoint_TSPlong, RBM.biUnion_TSPlong, RBM.sum_TSPlong}\leanok
+  \uses{def:TSP}
+  For $F\in T_{SP}(n)$, $F_{\rm long}(F,\sigma)=\{\{i,j\}\in F:\sigma_i\ne\sigma_j\}$; for
+  $\pi\subset Z^{\rm off}_n$, $T_{SP}(P_a,\sigma,\pi)=\{F: F_{\rm long}(F,\sigma)=\pi\}$.  These
+  sets partition $T_{SP}(n)$.
+\end{definition}
+
+\begin{definition}[$K^{(\pi)}$ and $\Sigma^{(\pi)}$, Definition 3.9]\label{def:3.9}
+  \lean{RBM.Kpi, RBM.Kn_eq_sum_Kpi, RBM.K_eq_sum_Kpi, RBM.selfW, RBM.treeValW_eq_sum_selfW,
+    RBM.selfW_empty, RBM.selfE, RBM.SigmaPi, RBM.treeValG_eq_sum_selfE,
+    RBM.Kpi_eq_sum_SigmaPi}\leanok
+  \uses{def:3.8, def:tree-general, lem:3.4}
+  $K^{(\pi)}_{t,\sigma,a}=\sum_{\Gamma_a\in T_{SP}(P_a,\sigma,\pi)}\Gamma_a(t,\sigma)$ (3.40), so
+  $K_{t,\sigma,a}=W^{-n+1}m_\sigma\sum_\pi K^{(\pi)}_{t,\sigma,a}$ for $n\ge3$ (3.41).  The
+  self-energy $\Sigma^{(\pi)}(t,\sigma,d)$ removes the boundary edges: every internal vertex is
+  labelled, with $d_v$ equal to the label of the vertex the boundary edge at $a_v$ ends on.  Then
+  $K^{(\pi)}_{t,\sigma,a}=\sum_d\Sigma^{(\pi)}(t,\sigma,d)\prod_i(\Theta_{tm_im_{i+1}})_{a_id_i}$
+  (3.42).
+\end{definition}
+
 \begin{lemma}[Cyclic invariance of $\Kcal$]\label{lem:K-cyclic}
   \lean{RBM.LoopIdx.rot, RBM.primRhs_rot, RBM.primInit_rot, RBM.rot_eq_on_level,
     RBM.isPrimitive_rot, RBM.Kgen_rot}\leanok

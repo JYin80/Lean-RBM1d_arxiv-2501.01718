@@ -116,6 +116,18 @@ section Stochastic
 
 variable (L : ℕ) [NeZero L]
 
+/-- A sum over the three-point support, written out. -/
+theorem sum_over_sbSupport (hL : 3 ≤ L) (f : ZMod L → ℂ) :
+    ∑ v ∈ sbSupport L, f v = f 0 + f 1 + f (-1) := by
+  have h1 : (1 : ZMod L) ≠ 0 := one_ne_zero_zmod L hL
+  have h2 : (2 : ZMod L) ≠ 0 := two_ne_zero_zmod L hL
+  have hm1 : (1 : ZMod L) ≠ -1 := fun h => h2 (by linear_combination h)
+  have h0m1 : (0 : ZMod L) ≠ -1 := fun h => h1 (by linear_combination h)
+  have h01 : (0 : ZMod L) ≠ 1 := fun h => h1 h.symm
+  rw [sbSupport, Finset.sum_insert (by simp [h01, h0m1]),
+    Finset.sum_insert (by simp [hm1]), Finset.sum_singleton]
+  ring
+
 /-- Total mass of the generating kernel is `1`, for `3 ≤ L`. -/
 theorem sum_sbKernel (hL : 3 ≤ L) : ∑ u : ZMod L, sbKernel L u = 1 := by
   classical

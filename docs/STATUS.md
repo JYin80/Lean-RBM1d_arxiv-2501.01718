@@ -183,3 +183,37 @@ Pi 拓扑与范数拓扑的实例菱形（`HasDerivAt` 现在按一般拓扑向�
 **(2.52) 锐化衰减由 Cowork 侧接手**（2026-09-19）。原计划交给 Claude Code，
 但那边尚未开工，为避免闲置改由 Cowork 做。Claude Code 若要接手，先在此处改认领标记，
 避免两边重复劳动。
+
+
+---
+
+# 更新 2026-09-19：闭式解已证
+
+`RBM1D/Propagator/Root.lean` 和 `RBM1D/Propagator/Decay.lean`，全绿 0 sorry。
+
+| Lean | 内容 |
+|---|---|
+| `RBM.rho` / `norm_root_ne_one` / `norm_rho_lt_one` | 特征根 ρ(ξ)，模 < 1；两根都不在单位圆上 |
+| `RBM.kern` / `kern_rec` / `kern_zero_eq_kern_L` | 齐次三项递推；两端相等 |
+| `RBM.kern_defect` | n = 0 处的亏损，定出常数 A(ξ) |
+| `RBM.thetaKernel_rec` / `thetaKernel_eq` | 逐点恒等式 |
+| **`RBM.theta_eq_circulant`** | **闭式解 Θ_ξ = circulant(A(ρ^d + ρ^{L−d}))** |
+| `RBM.theta_apply_closed_form` | 逐元素形式 |
+| `RBM.norm_theta_apply_le_rho_pow` | `‖Θ_xy‖ ≤ 2‖A‖·‖ρ‖^{zdist(x−y)}` |
+
+## 关于工作单里的数值自洽检查
+
+原计划先写 `L = 5, 7` 的数值检查防止闭式抄错。**现在不需要了**：`kern_defect`
+（那条定出 A(ξ) 的等式）如果 A 抄错就根本证不出来，闭式已经是定理而非猜测。
+`sum_Theta_row` 的交叉验证同理——`theta_eq_circulant` 已证，它自动成立。
+
+## 下一步
+
+`norm_theta_apply_le_rho_pow` 的衰减率是 `‖ρ(ξ)‖`，论文 (2.52) 要的是
+`exp(−c·dist/ℓ̂(ξ))`，`ℓ̂(ξ) = min(|1−ξ|^{−1/2}, L)`。缺的是定量桥梁：
+
+    1 − ‖ρ(ξ)‖ ≍ |1 − ξ|^{1/2}
+
+（渐近推导见上面的工作单 §5：ξ = 1−ε、ρ = 1−δ 给出 δ² ≈ 3ε）。
+这是纯复分析的估计，与矩阵无关，可以独立做。
+还需要 `‖A(ξ)‖` 的上界，配合 (2.52) 分母上的 `|1−ξ|·ℓ̂(ξ)`。

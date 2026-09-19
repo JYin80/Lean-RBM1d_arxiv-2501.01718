@@ -644,3 +644,7 @@ Cowork 已用闭式证了实 ξ 的 (2.53)（`e118333`）；T11 是一般机器�
 4. **收尾**：`D(0) = 0` 与 Grönwall ⇒ `D ≡ 0`。
 
 我接着做第 1 块的列表引理（`Loop/Index.lean` 里，`rot` 与 `cutGlueL/R` 的交换关系），这部分自足、不碰别人的文件。
+
+T26 第 1 块进展：`Loop/Index.lean` 加了 `LoopIdx.rot` 与四条交换引理
+（`cutGlueL/R_rot_of_lt`：`rot I` 在 `(k,l)` 切 = `I` 在 `(k+1,l+1)` 切；`cutGlueL/R_rot_last`：`l = n` 时左右互换，
+对应 `I` 在 `(1,k+1)` 切）。下一步：`primRhs K (rot I)` 按这四条重排成 `I` 的项，再做逐层 Grönwall 得循环不变性。

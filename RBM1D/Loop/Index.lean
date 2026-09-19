@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import Mathlib.Data.List.Basic
+import Mathlib.Data.List.Rotate
 import Mathlib.Data.ZMod.Defs
 
 /-!
@@ -34,6 +35,9 @@ The operators of Definition 2.10 take the paper's `1`-based indices `k`, `l`:
   right loop at `k = 1, l = n`
 * `WF` is preserved by all three operators
 * the examples of Figures 1–3
+* `rot` (move the first edge to the end) and its interaction with cutting:
+  `cutGlueL_rot_of_lt`, `cutGlueR_rot_of_lt` (cut `(k, l)` of `rot I` is cut `(k + 1, l + 1)`
+  of `I`) and `cutGlueL_rot_last`, `cutGlueR_rot_last` (at `l = n` the chains swap roles)
 -/
 
 namespace RBM
@@ -192,6 +196,99 @@ theorem head?_cutGlueL_one : (x.cutGlueL 1 l b).a.head? = some b := by
   simp [cutGlueL]
 
 end Labels
+
+section Rotation
+
+/-!
+### Rotation
+
+`rot` moves the first edge to the end: the loop `G₁E₁G₂E₂⋯GₙEₙ` becomes `G₂E₂⋯GₙEₙG₁E₁`,
+which has the same trace.  Cutting the rotated loop at `(k, l)` is cutting the original at
+`(k + 1, l + 1)`, except when `l = n`: then the cut edges are the original `k + 1` and `1`,
+and the two chains swap roles (the chain through the new last label `a₁` is the original
+right chain).  These are the combinatorial input for the cyclic invariance of `K`.
+-/
+
+/-- Move the first edge to the end. -/
+def rot (x : LoopIdx α) : LoopIdx α := ⟨x.σ.rotate 1, x.a.rotate 1⟩
+
+theorem rot_mk_cons (s : Bool) (ss : List Bool) (c : α) (cs : List α) :
+    rot (⟨s :: ss, c :: cs⟩ : LoopIdx α) = ⟨ss ++ [s], cs ++ [c]⟩ := by
+  simp [rot, List.rotate_cons_succ]
+
+theorem length_rot (x : LoopIdx α) : (rot x).length = x.length := by
+  simp [rot, length, List.length_rotate]
+
+theorem WF.rot {x : LoopIdx α} (hx : x.WF) : x.rot.WF := by
+  simpa [WF, LoopIdx.rot, List.length_rotate] using hx
+
+variable (s : Bool) (ss : List Bool) (c : α) (cs : List α) (b : α) {k l : ℕ}
+
+/-- Cutting the rotated loop at `(k, l)`, `l < n`: the left chain. -/
+theorem cutGlueL_rot_of_lt (hss : ss.length = cs.length) (hk : 1 ≤ k) (hkl : k < l)
+    (hl : l ≤ cs.length) :
+    (rot (⟨s :: ss, c :: cs⟩ : LoopIdx α)).cutGlueL k l b
+      = rot ((⟨s :: ss, c :: cs⟩ : LoopIdx α).cutGlueL (k + 1) (l + 1) b) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  obtain ⟨l, rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+  rw [rot_mk_cons]
+  simp only [cutGlueL, Nat.add_sub_cancel, List.take_succ_cons, List.drop_succ_cons,
+    List.cons_append]
+  rw [rot_mk_cons]
+  congr 1
+  · rw [List.take_append_of_le_length (by omega), List.drop_append_of_le_length (by omega),
+      List.append_assoc]
+  · rw [List.take_append_of_le_length (by omega), List.drop_append_of_le_length (by omega)]
+    simp
+
+/-- Cutting the rotated loop at `(k, l)`, `l < n`: the right chain is unchanged. -/
+theorem cutGlueR_rot_of_lt (hss : ss.length = cs.length) (hk : 1 ≤ k) (hkl : k < l)
+    (hl : l ≤ cs.length) :
+    (rot (⟨s :: ss, c :: cs⟩ : LoopIdx α)).cutGlueR k l b
+      = (⟨s :: ss, c :: cs⟩ : LoopIdx α).cutGlueR (k + 1) (l + 1) b := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  rw [rot_mk_cons]
+  simp only [cutGlueR, Nat.add_sub_cancel, List.drop_succ_cons]
+  rw [show l + 1 - (k + 1 + 1) = l - (k + 1) by omega,
+    List.drop_append_of_le_length (by omega : k ≤ ss.length),
+    List.drop_append_of_le_length (by omega : k ≤ cs.length),
+    List.take_append_of_le_length (by simp; omega),
+    List.take_append_of_le_length (by simp; omega)]
+
+/-- Cutting the rotated loop at `(k, n)`: the left chain is the rotated right chain of the
+original cut at `(1, k + 1)`. -/
+theorem cutGlueL_rot_last (hss : ss.length = cs.length) (hk : 1 ≤ k) (hkn : k ≤ cs.length) :
+    (rot (⟨s :: ss, c :: cs⟩ : LoopIdx α)).cutGlueL k (cs.length + 1) b
+      = rot ((⟨s :: ss, c :: cs⟩ : LoopIdx α).cutGlueR 1 (k + 1) b) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  rw [rot_mk_cons]
+  simp only [cutGlueL, cutGlueR, Nat.add_sub_cancel, Nat.sub_self, List.drop_zero,
+    List.take_succ_cons, List.cons_append]
+  rw [rot_mk_cons,
+    List.take_append_of_le_length (by omega : k + 1 ≤ ss.length),
+    List.take_append_of_le_length (by omega : k ≤ cs.length),
+    List.drop_append_of_le_length (by omega : cs.length ≤ ss.length),
+    List.drop_eq_nil_of_le (by omega : ss.length ≤ cs.length), List.drop_left]
+  simp
+
+/-- Cutting the rotated loop at `(k, n)`: the right chain is the rotated left chain of the
+original cut at `(1, k + 1)`. -/
+theorem cutGlueR_rot_last (hss : ss.length = cs.length) (hk : 1 ≤ k) (hkn : k ≤ cs.length) :
+    (rot (⟨s :: ss, c :: cs⟩ : LoopIdx α)).cutGlueR k (cs.length + 1) b
+      = rot ((⟨s :: ss, c :: cs⟩ : LoopIdx α).cutGlueL 1 (k + 1) b) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  rw [rot_mk_cons]
+  simp only [cutGlueL, cutGlueR, Nat.add_sub_cancel, Nat.sub_self, List.take_zero,
+    List.drop_succ_cons, List.nil_append, List.take_succ_cons, List.take_zero,
+    List.singleton_append]
+  rw [rot_mk_cons,
+    List.drop_append_of_le_length (by omega : k ≤ ss.length),
+    List.drop_append_of_le_length (by omega : k ≤ cs.length),
+    List.take_of_length_le (by simp; omega),
+    List.take_append_of_le_length (by simp),
+    List.take_of_length_le (by simp)]
+
+end Rotation
 
 section Examples
 

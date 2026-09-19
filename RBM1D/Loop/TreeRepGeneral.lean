@@ -236,6 +236,102 @@ theorem arcLe_total_of_arcLe {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 
   · simp only [ArcLe, Fin.le_def, Fin.lt_def] at h1 h2 h hlt; omega
   · simp only [ArcLe, Fin.le_def, Fin.lt_def] at h1 h2 h hlt; omega
 
+/-- `leafPar` is the smallest container of a non-root vertex. -/
+theorem leafPar_spec {F : Finset (Fin n × Fin n)} (hF : IsTSP F) {v : Fin n}
+    (hv : v.val < n - 1) :
+    InArc (leafPar F v) v ∧ ∀ e ∈ nodes F, InArc e v → ArcLe (leafPar F v) e := by
+  have hW : wholeP n ∈ (nodes F).filter fun e => InArc e v := by
+    refine mem_filter.2 ⟨wholeP_mem_nodes F, Fin.zero_le _, ?_⟩
+    simp only [wholeP, Fin.lt_def]; exact hv
+  obtain ⟨h1, h2⟩ := minNode_le hW
+  have hm := mem_filter.1 h1
+  refine ⟨hm.2, fun e he hev => ?_⟩
+  rcases arcLe_total_of_inArc hF hm.1 he hm.2 hev with h | h
+  · exact h
+  · have hemem : e ∈ (nodes F).filter fun e => InArc e v := mem_filter.2 ⟨he, hev⟩
+    have := (minNode_le hemem).2
+    rw [eq_of_arcLe_of_width (le_of_lt (lt_of_le_of_lt hev.1 hev.2)) h this]
+    exact ⟨le_refl _, le_refl _⟩
+
+/-- `nodePar` is the smallest strict container of a node other than `whole`. -/
+theorem nodePar_spec {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n)
+    {d : Fin n × Fin n} (hd : d ∈ nodes F) (hdw : d ≠ wholeP n) :
+    nodePar F d ∈ nodes F ∧ ArcLe d (nodePar F d) ∧ nodePar F d ≠ d ∧
+      ∀ e ∈ nodes F, ArcLe d e → e ≠ d → ArcLe (nodePar F d) e := by
+  have hW : wholeP n ∈ (nodes F).filter fun e => ArcLe d e ∧ e ≠ d :=
+    mem_filter.2 ⟨wholeP_mem_nodes F, arcLe_wholeP d, fun h => hdw h.symm⟩
+  obtain ⟨h1, h2⟩ := minNode_le hW
+  have hm := mem_filter.1 h1
+  have hlt := lt_of_mem_nodes hF hn hd
+  refine ⟨hm.1, hm.2.1, hm.2.2, fun e he hde hne => ?_⟩
+  rcases arcLe_total_of_arcLe hF hn hd hm.1 he hm.2.1 hde with h | h
+  · exact h
+  · have hemem : e ∈ (nodes F).filter fun e => ArcLe d e ∧ e ≠ d := mem_filter.2 ⟨he, hde, hne⟩
+    have := (minNode_le hemem).2
+    have he12 : e.1 ≤ e.2 := le_trans hde.1 (le_trans (le_of_lt hlt) hde.2)
+    rw [eq_of_arcLe_of_width he12 h this]
+    exact ⟨le_refl _, le_refl _⟩
+
+theorem wholeP_not_mem {F : Finset (Fin n × Fin n)} (hF : IsTSP F) : wholeP n ∉ F := by
+  intro h
+  have := (hF.1 _ h).2.2
+  simp [wholeP] at this
+
+/-- A vertex in some arc is not the root. -/
+theorem lt_of_inArc {d : Fin n × Fin n} {v : Fin n} (hv : InArc d v) : v.val < n - 1 := by
+  have := (arcLe_wholeP d).2
+  simp only [InArc, wholeP, Fin.le_def, Fin.lt_def] at hv this
+  omega
+
+/-! ### Which side of a cut `J` the parents lie on -/
+
+section Side
+
+variable {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) {J : Fin n × Fin n}
+  (hJ : J ∈ F)
+include hF hJ
+
+theorem not_arcLe_wholeP : ¬ArcLe (wholeP n) J := by
+  intro h
+  have hJd := (hF.1 J hJ)
+  obtain ⟨-, -, hw⟩ := hJd
+  simp only [ArcLe, wholeP, Fin.le_def] at h
+  apply hw
+  have := J.2.isLt
+  constructor <;> simp only [Fin.val_zero] at h ⊢ <;> omega
+
+theorem ne_wholeP : J ≠ wholeP n := fun h => wholeP_not_mem hF (h ▸ hJ)
+
+theorem leafPar_arcLe_of_inArc {v : Fin n} (hv : InArc J v) : ArcLe (leafPar F v) J :=
+  (leafPar_spec hF (lt_of_inArc hv)).2 J (mem_nodes_of_mem hJ) hv
+
+theorem not_arcLe_leafPar {v : Fin n} (hv : ¬InArc J v) : ¬ArcLe (leafPar F v) J := by
+  intro h
+  by_cases hr : v.val < n - 1
+  · exact hv ((leafPar_spec hF hr).1.mono h)
+  · have hroot : v.val = n - 1 := by have := v.isLt; omega
+    rw [leafPar_root F hroot] at h
+    exact not_arcLe_wholeP hF hJ h
+
+include hn in
+theorem nodePar_arcLe {d : Fin n × Fin n} (hd : d ∈ F) (hdJ : ArcLe d J) (hne : d ≠ J) :
+    ArcLe (nodePar F d) J :=
+  (nodePar_spec hF hn (mem_nodes_of_mem hd) (ne_wholeP hF hd)).2.2.2 J (mem_nodes_of_mem hJ) hdJ
+    (Ne.symm hne)
+
+include hn in
+omit hJ in
+theorem not_arcLe_nodePar {d : Fin n × Fin n} (hd : d ∈ F) (hdJ : ¬ArcLe d J) :
+    ¬ArcLe (nodePar F d) J := fun h =>
+  hdJ ((nodePar_spec hF hn (mem_nodes_of_mem hd) (ne_wholeP hF hd)).2.1.trans h)
+
+include hn in
+theorem not_arcLe_nodePar_self : ¬ArcLe (nodePar F J) J := by
+  obtain ⟨-, h1, h2, -⟩ := nodePar_spec hF hn (mem_nodes_of_mem hJ) (ne_wholeP hF hJ)
+  exact fun h => h2 (h.antisymm h1)
+
+end Side
+
 end Laminar
 
 section Generic

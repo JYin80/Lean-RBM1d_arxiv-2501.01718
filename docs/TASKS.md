@@ -24,7 +24,7 @@
 | T17 | Lemma 3.2 的组合内容：无交叉对角线集合 = `TSP` | `Loop/Crossing.lean` | Claude Code #2 | **完成** |
 | T18 | Def 2.12 原始方程 + Example 2.15（n=2 闭式解） | `Loop/Primitive.lean` | Claude Code | **完成** |
 | T19 | Lemma 2.8：`m_sc`、`m^{(E)}`、`t` 的代数 | `Defs/Semicircle.lean` | Claude Code | **完成**（代数部分；(2.40) 推迟） |
-| T20 | Def 3.3：星图情形 + n=4 的三张图 | `Loop/Tree.lean`（新建） | 空闲 | **可开工**（T17 已完成） |
+| T20 | Def 3.3：星图情形 + n=4 的三张图 | `Loop/Tree.lean`（新建） | **Claude Code** | 进行中 |
 
 ---
 

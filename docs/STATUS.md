@@ -1157,3 +1157,9 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 **`lemma_5_1`**/`lemma_5_1'`（(5.7) 形式）：`c ≤ t₁ ≤ t₂ < 1`、(5.5) 在 t₁、(6.1) 作为假设 `LoopScaling` ⟹ `1_Ω max|L_{t₂}| ≺ (Wℓ₁η₂)^{-n+1}`。
 确定性部分：(6.10) `wmass_gchainMixed_le`（经 Lemma 6.1 与 `trace_gram_rpow_le`）、(6.11) `loopMax_two_mul_le_tilde`、(5.6) 基例 `loopMax_one_le`；
 随机部分：`StochDom.continuity_recursion`（(6.13) 递推）、`StochDom.of_le_add_sqrt_mul`。paper-deltas #41。
+
+### `RBM1D/Hierarchy/Decay.lean` — §5.4（T59，Claude Code 并行 agent）
+
+`LoopDecay`（Def 5.8，接 T51 的 `FastDecay`）；**(5.77)**：`norm_couplingLen_le`、`norm_primBil_sub_le`、`norm_eG_le`、`norm_eTens_le`（张量形式 `norm_loopTensor_*`），
+E 项的衰减 `fastDecay_*`；(5.14) 的右分级 `primBilLenR`、`couplingLen`；Lemma 5.11 `lemma511_assembly`；Lemma 5.9 `lemma59`（在 Lemma 4.1 事件上）。
+T60 可 import 此文件替换其 (5.77) 占位。paper-deltas #42。

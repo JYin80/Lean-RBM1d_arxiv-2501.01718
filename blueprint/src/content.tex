@@ -1334,6 +1334,18 @@
   (6.4), closed by $X\prec A+A^{1/2}X^{1/2}\Rightarrow X\prec A$; $p$ large absorbs $(W\ell\eta)^{1/p}$.
 \end{proof}
 
+\begin{lemma}[Decay property and power counting, \S5.4: Def 5.8, Lemmas 5.9--5.11]\label{lem:5.10}
+  \lean{RBM.Decay.LoopDecay, RBM.Decay.LoopDecay.fastDecay, RBM.Decay.norm_sum_SB_le_left, RBM.Decay.norm_sum_SB_le_right, RBM.Decay.primBilLenR, RBM.Decay.couplingLen, RBM.Decay.sum_couplingLen, RBM.Decay.norm_couplingLen_le, RBM.Decay.norm_primBil_sub_le, RBM.Decay.eG, RBM.Decay.norm_eG_le, RBM.Decay.eTens, RBM.Decay.norm_eTens_le, RBM.Decay.loopTensor, RBM.Decay.norm_loopTensor_couplingLen_le, RBM.Decay.norm_loopTensor_primBil_le, RBM.Decay.norm_loopTensor_eG_le, RBM.Decay.fastDecay_couplingLen, RBM.Decay.fastDecay_primBil, RBM.Decay.fastDecay_eG, RBM.Decay.pow_mul_norm_Uker_le_of_eq, RBM.Decay.pow_mul_norm_Uker_couplingLen_le, RBM.Decay.integral_inv_one_sub, RBM.Decay.lemma511_assembly, RBM.Decay.norm_Kgen_le_exp, RBM.Decay.loopDecay_Kgen, RBM.Decay.norm_sq_green_le_of_far, RBM.Decay.norm_gloop_le_of_far, RBM.Decay.loopDecay_gloop, RBM.Decay.lemma59}
+  \leanok\uses{lem:7.3, lem:4.1, lem:3.11, cor:3.5}
+  The decay property (5.74); Lemma 5.9 (on the event of Lemma 4.1, $K$, $L$ and $L-K$ decay);
+  Lemma 5.10 (5.77): the four $E$-terms of the hierarchy are $O(M_\star A^{-n})$ plus decay errors,
+  and decay themselves; Lemma 5.11 (5.83) for non-alternating $\sigma$ via (7.16) Case 1.
+\end{lemma}
+\begin{proof}\leanok
+  $|\sum_{a,b}S_{ab}F_{ab}|\le2e(\ell+1)M+L\delta$ for decaying $F$; $K$ decays by the tree bound with
+  gap $1-t$; entries of $G$ decay by (4.2).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

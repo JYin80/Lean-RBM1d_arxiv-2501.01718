@@ -487,3 +487,26 @@ T20 的边界约定 `Θ_{t mᵢ mᵢ₊₁}` 在这里被 ODE 独立验证了一
 | **`RBM.kTwo_eq_treeSum`** | **Lemma 3.4 在 n=2 成立**：`m_σ W⁻¹ Σ Γ = K`（Example 2.15） |
 
 推迟：主元无关性（换一条对角线展开给出同值）——在文件注释里记下了，后续需要时再证。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T22 完成 —— (2.48) 解的唯一性
+
+`RBM1D/Loop/Unique.lean`（提交 `c4698e1`），全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+
+**`RBM.isPrimitive_unique`**：`IsPrimitive L W m T K`、`IsPrimitive L W m T K'`、`Icc 0 T₀ ⊆ T`，
+且两者的 **2-loop** 在 `[0,T₀]` 上有界 `≤ R` ⟹ 对所有 WF、长度 ≥ 2 的 loop 相等。
+
+| Lean | 内容 |
+|---|---|
+| `LoopIdx.length_cutGlueR_eq_two` / `length_cutGlueL_eq_two` | **结构引理**：一条链满长 n ⟹ 另一条长 2 |
+| `eq_on_level` | 归纳一步：低阶相等 + 初值相等 ⟹ 长度 n 相等（Grönwall，`eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_right`） |
+| `isPrimitive_unique` | 对 n 强归纳 |
+
+**设计**：工单原本分 n=2（Riccati）和 n≥3（线性）两步；实际上一个估计就够——
+每项之差 `(X−X')sY + X's(Y−Y')`，差只在满长链上非零，此时另一因子是有界 2-loop，
+得 `‖D'‖ ≤ C‖D‖`。n=2 时「低阶相等」是空条件，这个估计就是 Riccati 右端的 Lipschitz 界。
+长度-n 的状态空间用 `List.Vector Bool n × List.Vector (ZMod L) n`（Mathlib 有 Fintype），sup 范数现成。
+
+**给 B2 的接口**：要得到「树和 = K」，只需 (a) 树和满足 `IsPrimitive`，(b) 两者 2-loop 有界。
+2-loop 就是 (2.57)，`‖t m₁m₂‖ < 1` 时 Θ 有界。T23 的 `kLoop3` 已满足 (a) 的 n ≤ 3 部分。

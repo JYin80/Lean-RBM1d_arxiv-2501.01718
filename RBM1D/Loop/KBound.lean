@@ -283,6 +283,68 @@ theorem norm_evenPart_le_split [NeZero L] (f : ZMod L → ℂ) (a : ZMod L) {Mof
   rw [h1, h2]
   ring
 
+/-- Translating the centre does not change a sum over the cycle. -/
+theorem sum_comp_add_const [NeZero L] (F : ZMod L → ℝ) (a : ZMod L) :
+    ∑ c : ZMod L, F (c + a) = ∑ c : ZMod L, F c :=
+  Fintype.sum_equiv (Equiv.addRight a) _ _ fun _ => rfl
+
+/-- `ℓ¹` in the centre of the odd part: `∑_c |o(c,s)| ≤ ‖s‖ ∑_u |∇f(u)|`. -/
+theorem sum_norm_oddPart_le [NeZero L] (f : ZMod L → ℂ) (s : ZMod L) :
+    ∑ c : ZMod L, ‖oddPart f c s‖ ≤ zdist L s * ∑ u : ZMod L, ‖f (u + 1) - f u‖ := by
+  set G := ∑ u : ZMod L, ‖f (u + 1) - f u‖
+  have key : ∀ k : ℕ, ∑ c : ZMod L, ‖oddPart f c (k : ZMod L)‖ ≤ k * G := by
+    intro k
+    calc ∑ c : ZMod L, ‖oddPart f c (k : ZMod L)‖
+        ≤ ∑ c : ZMod L, (∑ j ∈ range (2 * k), ‖f (c - k + j + 1) - f (c - k + j)‖) / 2 := by
+          refine sum_le_sum fun c _ => ?_
+          have h := apply_add_natCast_sub f (c - k) (2 * k)
+          rw [show c - (k : ZMod L) + ((2 * k : ℕ) : ZMod L) = c + k by push_cast; ring] at h
+          unfold oddPart
+          rw [h, norm_div, Complex.norm_ofNat]
+          gcongr
+          exact norm_sum_le _ _
+      _ = (∑ j ∈ range (2 * k), ∑ c : ZMod L, ‖f (c - k + j + 1) - f (c - k + j)‖) / 2 := by
+          rw [← sum_div, sum_comm]
+      _ = (∑ _j ∈ range (2 * k), G) / 2 := by
+          congr 1
+          refine sum_congr rfl fun j _ => ?_
+          refine (sum_congr rfl fun c _ => ?_).trans
+            (sum_comp_add_const (fun u => ‖f (u + 1) - f u‖) (-(k : ZMod L) + j))
+          show ‖f (c - k + j + 1) - f (c - k + j)‖ = ‖f (c + (-k + j) + 1) - f (c + (-k + j))‖
+          ring_nf
+      _ = k * G := by rw [sum_const, card_range, nsmul_eq_mul]; push_cast; ring
+  rcases eq_natCast_or_neg s with h | h
+  · calc ∑ c : ZMod L, ‖oddPart f c s‖ = ∑ c : ZMod L, ‖oddPart f c ((zdist L s : ℕ) : ZMod L)‖ := by
+          conv_lhs => rw [h]
+      _ ≤ _ := key _
+  · calc ∑ c : ZMod L, ‖oddPart f c s‖ = ∑ c : ZMod L, ‖oddPart f c ((zdist L s : ℕ) : ZMod L)‖ := by
+          conv_lhs => rw [h]
+          simp only [oddPart_neg, norm_neg]
+      _ ≤ _ := key _
+
+/-- `ℓ¹` in the centre of the even remainder: `∑_c |e(c,s)| ≤ ‖s‖²/2 ∑_u |Δf(u)|`. -/
+theorem sum_norm_evenPart_le [NeZero L] (f : ZMod L → ℂ) (s : ZMod L) :
+    ∑ c : ZMod L, ‖evenPart f c s‖ ≤ (zdist L s : ℝ) ^ 2 / 2 * ∑ u : ZMod L, ‖lap f u‖ := by
+  set G := ∑ u : ZMod L, ‖lap f u‖
+  calc ∑ c : ZMod L, ‖evenPart f c s‖
+      ≤ ∑ c : ZMod L, (1 / 2 : ℝ) *
+          ∑ j ∈ range (zdist L s), ∑ i ∈ range (2 * j + 1), ‖lap f (c - j + i)‖ :=
+        sum_le_sum fun c _ => norm_evenPart_le f (fun u => ‖lap f u‖) (fun u => le_rfl) c s
+    _ = (1 / 2 : ℝ) * ∑ j ∈ range (zdist L s), ∑ i ∈ range (2 * j + 1),
+          ∑ c : ZMod L, ‖lap f (c - j + i)‖ := by
+        rw [← mul_sum]; congr 1; rw [sum_comm]; refine sum_congr rfl fun j _ => ?_; rw [sum_comm]
+    _ = (1 / 2 : ℝ) * ∑ j ∈ range (zdist L s), ∑ _i ∈ range (2 * j + 1), G := by
+        congr 1
+        refine sum_congr rfl fun j _ => sum_congr rfl fun i _ => ?_
+        refine (sum_congr rfl fun c _ => ?_).trans
+          (sum_comp_add_const (fun u => ‖lap f u‖) (-(j : ZMod L) + i))
+        show ‖lap f (c - j + i)‖ = ‖lap f (c + (-j + i))‖
+        ring_nf
+    _ = (zdist L s : ℝ) ^ 2 / 2 * G := by
+        simp only [sum_const, card_range, nsmul_eq_mul]
+        rw [← sum_mul, sum_range_two_mul_add_one]
+        ring
+
 end Taylor
 
 section Center
@@ -908,6 +970,90 @@ theorem sum_prod_taylor_le_at (f : Fin n → ZMod L → ℂ) (a : Fin n → ZMod
           have := prod_nonneg fun v (_ : v ∈ univ) => hw0 v
           refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA0 _)) this
           nlinarith
+
+/-- **No value factor besides the identity root**: if the root `p` carries the constant `1`
+and every other factor is an odd or even piece, putting the `ℓ¹` sum on one of them gives
+`G (3/2)^{n-2} ∏_v (1+‖s_v‖)²`, where `G` bounds the `ℓ¹` norms of `∇f_v` and `Δf_v / 2`. -/
+theorem sum_prod_taylor_le_noval (f : Fin n → ZMod L → ℂ) {G : ℝ} (p : Fin n)
+    (hfp : ∀ y, f p y = 1) (hgrad : ∀ v u, ‖f v (u + 1) - f v u‖ ≤ 3 / 2)
+    (hlap : ∀ v u, ‖lap (f v) u‖ ≤ 3) (hG1 : ∀ v, ∑ u, ‖f v (u + 1) - f v u‖ ≤ G)
+    (hG2 : ∀ v, ∑ u, ‖lap (f v) u‖ ≤ 2 * G) (τ : Fin n → Fin 3) (hτp : τ p = 0)
+    (hτ : ∀ v, v ≠ p → τ v ≠ 0) (s : Fin n → ZMod L) (hn : 2 ≤ n) :
+    ∑ c, ∏ v, ‖taylorTerm (f v) (τ v) c (s v)‖ ≤
+      G * (3 / 2) ^ (n - 2) * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ 2 := by
+  set X : Fin n → ZMod L → ℝ := fun v c => ‖taylorTerm (f v) (τ v) c (s v)‖ with hXdef
+  set w : Fin n → ℝ := fun v => ((1 : ℝ) + zdist L (s v)) ^ 2 with hwdef
+  set k : Fin n → ℝ := fun v => (zdist L (s v) : ℝ) with hkdef
+  have hk0 : ∀ v, 0 ≤ k v := fun v => Nat.cast_nonneg _
+  have hw1 : ∀ v, 1 ≤ w v := fun v => by simp only [w]; nlinarith [hk0 v]
+  have hwk : ∀ v, k v ≤ w v := fun v => by simp only [w, k]; nlinarith [hk0 v]
+  have hwk2 : ∀ v, k v ^ 2 ≤ w v := fun v => by simp only [w, k]; nlinarith [hk0 v]
+  have hw0 : ∀ v, 0 ≤ w v := fun v => by linarith [hw1 v]
+  have hX0 : ∀ v c, 0 ≤ X v c := fun v c => norm_nonneg _
+  have hG : 0 ≤ G := le_trans (sum_nonneg fun u _ => norm_nonneg _) (hG1 p)
+  have : Nontrivial (Fin n) := Fin.nontrivial_iff_two_le.2 hn
+  obtain ⟨v₁, hv₁⟩ := exists_ne p
+  have hXp : ∀ c, X p c = 1 := fun c => by
+    show ‖taylorTerm (f p) (τ p) c (s p)‖ = 1
+    rw [hτp]; show ‖f p c‖ = 1; rw [hfp, norm_one]
+  -- the odd/even factors
+  have hsupT : ∀ v, v ≠ p → ∀ c, X v c ≤ 3 / 2 * w v := by
+    intro v hv c
+    have h := hτ v hv
+    show ‖taylorTerm (f v) (τ v) c (s v)‖ ≤ _
+    have : τ v = 1 ∨ τ v = 2 := by revert h; generalize τ v = j; decide +revert
+    rcases this with h1 | h2
+    · rw [h1]
+      show ‖oddPart (f v) c (s v)‖ ≤ _
+      calc _ ≤ k v * (3 / 2) := norm_oddPart_le (f v) (hgrad v) c (s v)
+        _ ≤ 3 / 2 * w v := by nlinarith [hwk v]
+    · rw [h2]
+      show ‖evenPart (f v) c (s v)‖ ≤ _
+      calc _ ≤ k v ^ 2 * 3 / 2 := norm_evenPart_le_const (f v) (hlap v) c (s v)
+        _ ≤ 3 / 2 * w v := by nlinarith [hwk2 v]
+  have hl1 : ∑ c, X v₁ c ≤ G * w v₁ := by
+    have h := hτ v₁ hv₁
+    have : τ v₁ = 1 ∨ τ v₁ = 2 := by revert h; generalize τ v₁ = j; decide +revert
+    rcases this with h1 | h2
+    · calc ∑ c, X v₁ c = ∑ c, ‖oddPart (f v₁) c (s v₁)‖ := by
+            refine sum_congr rfl fun c _ => ?_
+            show ‖taylorTerm (f v₁) (τ v₁) c (s v₁)‖ = _; rw [h1]; rfl
+        _ ≤ k v₁ * ∑ u, ‖f v₁ (u + 1) - f v₁ u‖ := sum_norm_oddPart_le (f v₁) (s v₁)
+        _ ≤ w v₁ * G := mul_le_mul (hwk v₁) (hG1 v₁) (sum_nonneg fun _ _ => norm_nonneg _)
+            (hw0 _)
+        _ = G * w v₁ := mul_comm _ _
+    · calc ∑ c, X v₁ c = ∑ c, ‖evenPart (f v₁) c (s v₁)‖ := by
+            refine sum_congr rfl fun c _ => ?_
+            show ‖taylorTerm (f v₁) (τ v₁) c (s v₁)‖ = _; rw [h2]; rfl
+        _ ≤ k v₁ ^ 2 / 2 * ∑ u, ‖lap (f v₁) u‖ := sum_norm_evenPart_le (f v₁) (s v₁)
+        _ ≤ k v₁ ^ 2 / 2 * (2 * G) := by
+            have := sq_nonneg (k v₁); gcongr; exact hG2 v₁
+        _ = k v₁ ^ 2 * G := by ring
+        _ ≤ w v₁ * G := by gcongr; exact hwk2 v₁
+        _ = G * w v₁ := mul_comm _ _
+  set T := (univ.erase p).erase v₁
+  have hT : T.card = n - 2 := by
+    rw [card_erase_of_mem (mem_erase.2 ⟨hv₁, mem_univ _⟩), card_erase_of_mem (mem_univ _),
+      card_univ, Fintype.card_fin]
+    omega
+  have hPT : 0 ≤ ∏ v ∈ T, w v := prod_nonneg fun v _ => hw0 v
+  calc ∑ c, ∏ v, X v c = ∑ c, X v₁ c * ∏ v ∈ T, X v c := by
+        refine sum_congr rfl fun c _ => ?_
+        rw [← mul_prod_erase _ (fun v => X v c) (mem_univ p), hXp, one_mul,
+          ← mul_prod_erase _ (fun v => X v c) (mem_erase.2 ⟨hv₁, mem_univ _⟩)]
+    _ ≤ (∑ c, X v₁ c) * ∏ v ∈ T, (3 / 2 * w v) :=
+        sum_mul_prod_le _ X T _ (fun c => hX0 _ _) hX0 fun v hv c =>
+          hsupT v (ne_of_mem_erase (mem_of_mem_erase hv)) c
+    _ ≤ (G * w v₁) * ((3 / 2) ^ (n - 2) * ∏ v ∈ T, w v) := by
+        rw [prod_mul_distrib, prod_const, hT]
+        gcongr
+    _ = G * (3 / 2) ^ (n - 2) * (w v₁ * ∏ v ∈ T, w v) := by ring
+    _ ≤ G * (3 / 2) ^ (n - 2) * (w p * (w v₁ * ∏ v ∈ T, w v)) := by
+        have : 0 ≤ G * (3 / 2) ^ (n - 2) := by positivity
+        refine mul_le_mul_of_nonneg_left ?_ this
+        nlinarith [hw1 p, mul_nonneg (hw0 v₁) hPT]
+    _ = G * (3 / 2) ^ (n - 2) * ∏ v, w v := by
+        rw [mul_prod_erase _ w (mem_erase.2 ⟨hv₁, mem_univ _⟩), mul_prod_erase _ w (mem_univ p)]
 
 end RTerms
 

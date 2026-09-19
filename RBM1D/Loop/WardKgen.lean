@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Loop.WardGeneral
 import RBM1D.Loop.TreeRepGeneral
+import RBM1D.Loop.Cor35
 
 /-!
 # Ward's identity and cyclic invariance for the primitive loop itself
@@ -496,5 +497,79 @@ theorem cor37 {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : List Bool) (hσ : 2 
         ring
 
 end Cor37
+
+section PureSum
+
+/-!
+### Summing a pure-loop bound over all labels
+
+If `|K_{σ,(a₀,rest)}| ≤ B ∏_{x ∈ rest} r^{‖x - a₀‖}`, then `|∑_a K_{σ,a}| ≤ L B (2/(1-r))^{m-1}`,
+uniformly in `L`.
+-/
+
+omit hL hE
+
+variable (L) in
+/-- The real-valued `allSum`. -/
+noncomputable def allSumR : ℕ → (List (ZMod L) → ℝ) → ℝ
+  | 0, h => h []
+  | n + 1, h => ∑ x : ZMod L, allSumR n (fun l => h (x :: l))
+
+theorem norm_allSum_le (n : ℕ) (g : List (ZMod L) → ℂ) (h : List (ZMod L) → ℝ)
+    (hgh : ∀ l : List (ZMod L), l.length = n → ‖g l‖ ≤ h l) :
+    ‖allSum L n g‖ ≤ allSumR L n h := by
+  induction n generalizing g h with
+  | zero => exact hgh [] rfl
+  | succ n ih =>
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun x _ => ?_)
+    exact ih _ _ fun l hl => hgh (x :: l) (by simp [hl])
+
+theorem allSumR_const_mul (n : ℕ) (c : ℝ) (h : List (ZMod L) → ℝ) :
+    allSumR L n (fun l => c * h l) = c * allSumR L n h := by
+  induction n generalizing h with
+  | zero => rfl
+  | succ n ih =>
+    simp only [allSumR, ih, Finset.mul_sum]
+
+theorem allSumR_prod (n : ℕ) (f : ZMod L → ℝ) :
+    allSumR L n (fun l => (l.map f).prod) = (∑ x : ZMod L, f x) ^ n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp only [allSumR, List.map_cons, List.prod_cons]
+    simp only [allSumR_const_mul, ih, ← Finset.sum_mul, pow_succ']
+
+/-- **Summing a pure-loop bound**: `‖∑_a K_{σ,a}‖ ≤ L B (2/(1-r))^{m-1}`. -/
+theorem norm_totalSum_le_of_prod (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool) (hσ : 1 ≤ σ.length)
+    {B r : ℝ} (hB : 0 ≤ B) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hK : ∀ (a₀ : ZMod L) (rest : List (ZMod L)), rest.length = σ.length - 1 →
+      ‖K ⟨σ, a₀ :: rest⟩‖ ≤ B * (rest.map fun x => r ^ zdist L (x - a₀)).prod) :
+    ‖totalSum L K σ‖ ≤ L * B * (2 / (1 - r)) ^ (σ.length - 1) := by
+  rw [totalSum, show σ.length = σ.length - 1 + 1 by omega, allSum]
+  simp only [show σ.length - 1 + 1 - 1 = σ.length - 1 by omega]
+  refine (norm_sum_le _ _).trans ?_
+  have hrow : ∀ a₀ : ZMod L, ∑ x : ZMod L, r ^ zdist L (x - a₀) ≤ 2 / (1 - r) := by
+    intro a₀
+    have h := (Equiv.subRight a₀).sum_comp (fun u => r ^ zdist L u)
+    simp only [Equiv.subRight_apply] at h
+    rw [h]
+    exact Cor35.sum_pow_zdist_le L hr0 hr1
+  have hterm : ∀ a₀ : ZMod L,
+      ‖allSum L (σ.length - 1) (fun rest => K ⟨σ, a₀ :: rest⟩)‖
+        ≤ B * (2 / (1 - r)) ^ (σ.length - 1) := by
+    intro a₀
+    refine (norm_allSum_le _ _ (fun rest => B * (rest.map fun x => r ^ zdist L (x - a₀)).prod)
+      fun rest hrest => hK a₀ rest hrest).trans ?_
+    rw [allSumR_const_mul, allSumR_prod]
+    exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀
+      (Finset.sum_nonneg fun x _ => pow_nonneg hr0 _) (hrow a₀) _) hB
+  calc ∑ a₀ : ZMod L, ‖allSum L (σ.length - 1) (fun rest => K ⟨σ, a₀ :: rest⟩)‖
+      ≤ ∑ _a₀ : ZMod L, B * (2 / (1 - r)) ^ (σ.length - 1) := Finset.sum_le_sum fun a₀ _ =>
+        hterm a₀
+    _ = L * B * (2 / (1 - r)) ^ (σ.length - 1) := by
+        rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
+        ring
+
+end PureSum
 
 end RBM

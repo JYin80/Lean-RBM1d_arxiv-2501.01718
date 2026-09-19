@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Defs.Domination
 import RBM1D.Defs.Model
+import RBM1D.Loop.Index
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
@@ -66,3 +67,8 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.Spaper_eq
 #print axioms RBM.Epaper_eq
 #print axioms RBM.split_bijective
+#print axioms RBM.LoopIdx.length_cutGlueL_add_length_cutGlueR
+#print axioms RBM.LoopIdx.length_cutGlueR_one
+#print axioms RBM.LoopIdx.WF.cutGlueR
+#print axioms RBM.LoopIdx.getLast?_cutGlueL
+#print axioms RBM.LoopIdx.head?_cutGlueL_of_two_le

@@ -266,10 +266,33 @@
 \chapter{The primitive equation and $\Kcal$}
 
 \begin{definition}[Loops and cut-and-glue operators, Definitions 2.9--2.10]\label{def:loops}
-  \emph{Not yet formalized.}  The operators
-  $\Gcal^{(a)}_k$, $\Gcal^{(a),L}_{k,l}$, $\Gcal^{(b),R}_{k,l}$ act on the index
-  data $(\boldsymbol\sigma,\mathbf a)$.
+  \lean{RBM.LoopIdx, RBM.LoopIdx.cutGlue, RBM.LoopIdx.cutGlueL, RBM.LoopIdx.cutGlueR}
+  \leanok
+  The operators $\Gcal^{(a)}_k$, $\Gcal^{(a),L}_{k,l}$, $\Gcal^{(a),R}_{k,l}$ act on the
+  index data $(\boldsymbol\sigma,\mathbf a)$ of $\langle\prod_i G(\sigma_i)E_{a_i}\rangle$:
+  \begin{align*}
+    \Gcal^{(a)}_k &: (\sigma_1,\dots,\sigma_k,\sigma_k,\dots,\sigma_n),\
+      (a_1,\dots,a_{k-1},a,a_k,\dots,a_n),\\
+    \Gcal^{(a),L}_{k,l} &: (\sigma_1,\dots,\sigma_k,\sigma_l,\dots,\sigma_n),\
+      (a_1,\dots,a_{k-1},a,a_l,\dots,a_n),\\
+    \Gcal^{(a),R}_{k,l} &: (\sigma_k,\dots,\sigma_l),\ (a_k,\dots,a_{l-1},a).
+  \end{align*}
+  Only the index data is formalized so far; the Green's functions are not.
 \end{definition}
+
+\begin{lemma}[Lengths under cut and glue]\label{lem:loops-length}
+  \lean{RBM.LoopIdx.length_cutGlue, RBM.LoopIdx.length_cutGlueL,
+    RBM.LoopIdx.length_cutGlueR, RBM.LoopIdx.length_cutGlueL_add_length_cutGlueR,
+    RBM.LoopIdx.length_cutGlueL_le, RBM.LoopIdx.length_cutGlueR_le,
+    RBM.LoopIdx.length_cutGlueR_one}
+  \leanok\uses{def:loops}
+  For $1\le k<l\le n$ the new lengths are $n+1$, $k+n-l+1$ and $l-k+1$.  The two
+  chains together have length $n+2$, and each has length at most $n$, with equality
+  for the right loop at $k=1$, $l=n$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:loops}
+  Count the entries of the lists.
+\end{proof}
 
 \begin{definition}[Primitive equation, Definition 2.12]\label{def:primitive}
   \uses{def:loops, def:Theta}

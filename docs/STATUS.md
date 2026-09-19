@@ -311,3 +311,21 @@ Mathlib 里应该有类似 `Complex.eq_conj_iff_re` / `Complex.normSq` 的工具
 | `RBM.Spaper` / **`Spaper_eq`** | 论文 §2.1 的 `S_ij` 原式 = `Svar` 在 `split` 下 |
 | `RBM.Epaper` / **`Epaper_eq`** | (2.5) 原式 = `Eblk` 在 `split` 下 |
 | `RBM.split_bijective` / `splitEquiv` | `ZMod (W*L) ≃ ZMod L × Fin W` |
+
+### `RBM1D/Loop/Index.lean` — Def 2.9/2.10 的指标层（T16，Claude Code）
+
+`LoopIdx α`：两条 list `σ : List Bool`（`true` = `+`）、`a : List α`（论文里 `α = ZMod L`），
+`WF` 是长度相等。算子取论文的 1 起下标 `k, l`，用 `take`/`drop` 实现。
+
+| Lean | 内容 |
+|---|---|
+| `cutGlue k b` / `cutGlueL k l b` / `cutGlueR k l b` | `G^{(b)}_k`、`G^{(b),L}_{k,l}`、`G^{(b),R}_{k,l}` |
+| `length_cutGlue` / `length_cutGlueL` / `length_cutGlueR` | `n+1`、`k+n−l+1`、`l−k+1` |
+| `length_cutGlueL_add_length_cutGlueR` | 两条链长度和 `= n+2` |
+| `length_cutGlueL_le` / `length_cutGlueR_le` / `length_cutGlueR_one` | 都 `≤ n`；`k=1, l=n` 时右 loop 等于 `n`，**长度不能直接当归纳量** |
+| `two_le_length_cutGlueL/R` | 都 `≥ 2` |
+| `WF.cutGlue` / `WF.cutGlueL` / `WF.cutGlueR` | 良构性保持 |
+| `getLast?_cutGlueL` / `head?_cutGlueL_of_two_le` / `head?_cutGlueL_one` | `a_n` 总在左 loop；`a_1` 只在 `k ≥ 2` 时在（见 paper-deltas #4） |
+| 三个 `example` | Figure 1、2、3，`rfl` 验证 |
+
+下一步（第 3 节）：`L_{t,σ,a}` 本身（需要 Green 函数，定义为 `Tr ∏ G(σ_i) E_{a_i}`，可以对任意矩阵族先定义）。

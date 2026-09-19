@@ -3,6 +3,7 @@ import RBM1D.Defs.Block
 import RBM1D.Defs.Dist
 import RBM1D.Defs.Domination
 import RBM1D.Defs.Model
+import RBM1D.Loop.Index
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Decay

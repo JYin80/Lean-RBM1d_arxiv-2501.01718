@@ -767,4 +767,73 @@ theorem norm_AA_mul_one_sub_rho_sq_le {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) (hL 
 
 end Differences
 
+section Differences2
+
+variable (L : ℕ) [NeZero L] {ξ : ℂ}
+
+/-- The closed form, read as the kernel evaluated at `(x - y).val`. -/
+theorem Theta_apply_eq_kern (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) (x y : ZMod L) :
+    Theta L ξ x y = kern L ξ ((x - y).val) :=
+  theta_apply_closed_form L hL hξ0 hξ x y
+
+/-- The first lattice difference costs exactly one factor `1 - ρ`.
+
+Both the interior case and the wrap-around at `x = y` are instances of
+`kern_succ_sub`: at `x = y` one uses `kern 0 = kern L`, which is precisely what
+the symmetric shape `ρ^d + ρ^{L-d}` was built for. -/
+theorem norm_Theta_sub_shift_le_two_mul (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) (x y : ZMod L) :
+    ‖Theta L ξ x y - Theta L ξ x (y + 1)‖ ≤ 2 * ‖AA L ξ * (1 - rho ξ)‖ := by
+  have hr1 : ‖rho ξ‖ ≤ 1 := (norm_rho_lt_one hξ0 hξ).le
+  have hr0 : (0 : ℝ) ≤ ‖rho ξ‖ := norm_nonneg _
+  have hbound : ∀ n j : ℕ,
+      ‖AA L ξ * (1 - rho ξ) * (rho ξ ^ j - rho ξ ^ n)‖ ≤ 2 * ‖AA L ξ * (1 - rho ξ)‖ := by
+    intro n j
+    have h1 : ‖rho ξ ^ j - rho ξ ^ n‖ ≤ 2 := by
+      calc ‖rho ξ ^ j - rho ξ ^ n‖ ≤ ‖rho ξ ^ j‖ + ‖rho ξ ^ n‖ := norm_sub_le _ _
+        _ = ‖rho ξ‖ ^ j + ‖rho ξ‖ ^ n := by rw [norm_pow, norm_pow]
+        _ ≤ 1 + 1 := add_le_add (pow_le_one₀ hr0 hr1) (pow_le_one₀ hr0 hr1)
+        _ = 2 := by norm_num
+    rw [norm_mul]
+    calc ‖AA L ξ * (1 - rho ξ)‖ * ‖rho ξ ^ j - rho ξ ^ n‖
+        ≤ ‖AA L ξ * (1 - rho ξ)‖ * 2 := mul_le_mul_of_nonneg_left h1 (norm_nonneg _)
+      _ = 2 * ‖AA L ξ * (1 - rho ξ)‖ := by ring
+  rw [Theta_apply_eq_kern L hL hξ0 hξ x y, Theta_apply_eq_kern L hL hξ0 hξ x (y + 1),
+    show x - (y + 1) = (x - y) - 1 from by ring]
+  rcases Nat.eq_zero_or_pos (x - y).val with h0 | hpos
+  · rw [val_sub_one_of_zero L hL h0, h0, kern_zero_eq_kern_L]
+    have e : L - 1 + 1 = L := by omega
+    have h := kern_succ_sub (L := L) (ξ := ξ) (L - 1) 0 (by omega)
+    rw [e] at h
+    rw [h]
+    exact hbound _ _
+  · have hlt : (x - y).val < L := ZMod.val_lt _
+    rw [val_sub_one_of_pos L hL hpos]
+    have e : (x - y).val - 1 + 1 = (x - y).val := by omega
+    have h := kern_succ_sub (L := L) (ξ := ξ) ((x - y).val - 1) (L - (x - y).val) (by omega)
+    rw [e] at h
+    rw [h]
+    exact hbound _ _
+
+/-- **Equation (2.53), for real `ξ = t ∈ (0,1)`.**
+
+`|(Θ_t)_{x,y} - (Θ_t)_{x,y+1}| ≤ 8√3 / (ℓ̂(t) · (1-t)^{1/2})`.
+
+The paper states this with `≺`; here it is an explicit constant, which is
+stronger.  One lattice difference costs one factor `1 - ρ ≍ (1-t)^{1/2}`, and
+`(1-t)^{1/2} / (1-t) = (1-t)^{-1/2}`, which is the `|1-ξ|^{-1/2}` of (2.53). -/
+theorem norm_Theta_sub_shift_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) (x y : ZMod L) :
+    ‖Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1)‖ ≤
+      8 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t)) := by
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast ne_of_gt ht0
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have h1 := norm_Theta_sub_shift_le_two_mul L hL htne hnorm x y
+  have h2 := norm_AA_mul_one_sub_rho_le (L := L) ht0 ht1 hL
+  calc ‖Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1)‖
+      ≤ 2 * ‖AA L (t : ℂ) * (1 - rho (t : ℂ))‖ := h1
+    _ ≤ 2 * (4 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t))) := by linarith
+    _ = 8 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t)) := by ring
+
+end Differences2
+
 end RBM

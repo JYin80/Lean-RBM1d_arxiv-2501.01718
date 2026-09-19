@@ -352,4 +352,84 @@ theorem isPrimitive_rot (hL : 3 ≤ L) (W : ℕ) (m : Bool → ℂ) {T : Set ℝ
   intro t ht I hI h2
   exact main _ t ht I hI h2 rfl
 
+section Translation
+
+/-!
+### Translation invariance
+
+Shifting every block label by `c` commutes with cut-and-glue (the glue labels shift too) and
+`S^(B)` is translation invariant, so `K ∘ shift c` solves (2.48) exactly, with the same
+initial value; uniqueness gives `K_{t,σ,a+c} = K_{t,σ,a}`.  The paper uses this ("by definition
+of `K`, `K` is translation invariant") in the proof of Corollary 3.7.
+-/
+
+/-- Shift every block label by `c`. -/
+def LoopIdx.shift (c : ZMod L) (I : LoopIdx (ZMod L)) : LoopIdx (ZMod L) :=
+  ⟨I.σ, I.a.map (· + c)⟩
+
+omit [NeZero L] in
+theorem LoopIdx.shift_WF {c : ZMod L} {I : LoopIdx (ZMod L)} (hI : I.WF) : (I.shift L c).WF := by
+  simpa [LoopIdx.WF, LoopIdx.shift] using hI
+
+omit [NeZero L] in
+theorem LoopIdx.length_shift (c : ZMod L) (I : LoopIdx (ZMod L)) :
+    (I.shift L c).length = I.length := by
+  simp [LoopIdx.length, LoopIdx.shift]
+
+omit [NeZero L] in
+theorem LoopIdx.cutGlueL_shift (c : ZMod L) (I : LoopIdx (ZMod L)) (k l : ℕ) (b : ZMod L) :
+    (I.shift L c).cutGlueL k l b = (I.cutGlueL k l (b - c)).shift L c := by
+  simp [LoopIdx.shift, LoopIdx.cutGlueL, List.map_take, List.map_drop]
+
+omit [NeZero L] in
+theorem LoopIdx.cutGlueR_shift (c : ZMod L) (I : LoopIdx (ZMod L)) (k l : ℕ) (b : ZMod L) :
+    (I.shift L c).cutGlueR k l b = (I.cutGlueR k l (b - c)).shift L c := by
+  simp [LoopIdx.shift, LoopIdx.cutGlueR, List.map_take, List.map_drop]
+
+/-- (2.48) at a shifted loop. -/
+theorem primRhs_shift (W : ℕ) (K : LoopIdx (ZMod L) → ℂ) (c : ZMod L) (I : LoopIdx (ZMod L)) :
+    primRhs L W K (I.shift L c) = primRhs L W (fun J => K (J.shift L c)) I := by
+  rw [primRhs, primRhs, LoopIdx.length_shift]
+  congr 1
+  refine sum_congr rfl fun k _ => sum_congr rfl fun l _ => ?_
+  simp only [LoopIdx.cutGlueL_shift, LoopIdx.cutGlueR_shift]
+  rw [← Equiv.sum_comp (Equiv.addRight c)]
+  refine sum_congr rfl fun a _ => ?_
+  rw [← Equiv.sum_comp (Equiv.addRight c)]
+  refine sum_congr rfl fun b _ => ?_
+  simp only [Equiv.coe_addRight, add_sub_cancel_right, SB_apply_add_right]
+
+/-- The initial value of Definition 2.12 is translation invariant. -/
+theorem primInit_shift (W : ℕ) (m : Bool → ℂ) (c : ZMod L) (I : LoopIdx (ZMod L)) :
+    primInit L W m (I.shift L c) = primInit L W m I := by
+  simp only [primInit, LoopIdx.length_shift]
+  congr 2
+  simp only [LoopIdx.shift, List.mem_map, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, add_left_inj]
+
+/-- **Translation invariance of `K`**: a solution of Definition 2.12 on `[0, T₀]` with bounded
+`2`-loops satisfies `K_{t,σ,a+c} = K_{t,σ,a}`. -/
+theorem isPrimitive_shift (hL : 3 ≤ L) (W : ℕ) (m : Bool → ℂ) {T : Set ℝ}
+    {K : ℝ → LoopIdx (ZMod L) → ℂ} (hK : IsPrimitive L W m T K) {T₀ R : ℝ}
+    (hT : Set.Icc 0 T₀ ⊆ T) (hR0 : 0 ≤ R)
+    (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 → ‖K t I‖ ≤ R)
+    (c : ZMod L) :
+    ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → 2 ≤ I.length →
+      K t (I.shift L c) = K t I := by
+  have hK' : IsPrimitive L W m T (fun t I => K t (I.shift L c)) := by
+    refine ⟨fun t ht I hI h2 => ?_, fun I hI h2 => ?_, fun t ht s a => ?_⟩
+    · have := hK.1 t ht (I.shift L c) (LoopIdx.shift_WF L hI)
+        (by rw [LoopIdx.length_shift]; exact h2)
+      rwa [primRhs_shift] at this
+    · show K 0 (I.shift L c) = primInit L W m I
+      rw [hK.2.1 _ (LoopIdx.shift_WF L hI) (by rw [LoopIdx.length_shift]; exact h2),
+        primInit_shift]
+    · exact hK.2.2 t ht s (a + c)
+  intro t ht I hI h2
+  exact (isPrimitive_unique L hL W m hK' hK hT hR0 (fun s hs J hJ hJ2 =>
+    ⟨hR s hs _ (LoopIdx.shift_WF L hJ) (by rw [LoopIdx.length_shift]; exact hJ2),
+      hR s hs J hJ hJ2⟩) t ht I hI h2)
+
+end Translation
+
 end RBM

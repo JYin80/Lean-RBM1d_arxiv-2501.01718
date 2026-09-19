@@ -302,7 +302,8 @@
 
 \begin{lemma}[Short versus long edge: the exact modulus]\label{lem:edges}
   \lean{RBM.normSq_one_sub_mul_sq_mE, RBM.two_mul_mul_le_normSq_one_sub,
-    RBM.zt_im_le, RBM.le_zt_im}
+    RBM.zt_im_le, RBM.le_zt_im, RBM.norm_short_edge, RBM.le_normSq_one_sub_short,
+    RBM.sqrt_le_norm_one_sub_short, RBM.half_le_ellHat, RBM.norm_Theta_short_edge_le}
   \leanok\uses{lem:2.8}
   For $m = m^{(E)}$ with $|E|\le 2$,
   \[ \bigl|1 - t m^2\bigr|^2 \;=\; (1-t)^2 + t\,(4 - E^2) , \]
@@ -318,6 +319,11 @@
   $\operatorname{Im}m^{(E)} = \sqrt{4-E^2}/2 \in (0,1]$, so
   $(1-t)\sqrt{2\kappa}/2 \le \eta_t \le 1-t$.  This needs only Definition 2.7 --- not the
   deferred quantitative half (2.40) of Lemma 2.8, as first supposed.
+
+  Feeding this into the complex-$\xi$ estimate (Lemma~\ref{lem:Theta-decay-complex}) gives
+  the first half of (3.35): $\bigl|(\Th_{tm^2})_{xy}\bigr| \le 2C/\sqrt\kappa$, uniformly in
+  $t\in[0,1)$, in $L$ and in $x,y$.  Note the bound holds for \emph{all} $t\in[0,1]$, not
+  only $t$ bounded away from $0$: the minimum of $(1-t)^2+2t\kappa$ is $2\kappa-\kappa^2\ge\kappa$.
 \end{lemma}
 
 \begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}

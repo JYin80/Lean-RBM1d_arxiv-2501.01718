@@ -1070,3 +1070,10 @@ T53（Step 3）现已解锁。
 
 **⚠ `RBM1D/Green/Minor.lean`（Cowork T40）的 HEAD 版本在本机 Lean 4.34 / Mathlib `5ed2965256` 下有 3 处编译错误；
 工作树里有一份未提交的修复（`subst h; simp [Matrix.one_apply_eq]`、`field_simp; ring` 等，非 Claude Code 所改），本机构建依赖它。请文件主人提交。**
+
+### `RBM1D/Hierarchy/Step3.lean` — Step 3（T53，Claude Code 并行 agent）
+
+**抽象形式（T55/T56 按此）**：`≺` 为 `StochDom P`，对时间参数 `U : ℕ → Type*` 一致；`X n` = Ξ^{(L−K)}_{·,n}、`Y n` = Ξ^{(L)}_{·,n}、
+尺度 `A N u`、`As N`、`R N`。`Psi`/`S`（(5.108)）、`Scales`（(2.72) 在 Step 3 中的全部作用）、`Lemma514`（(5.92) 的较弱形式，唯一随机输入）、`Hyp`；
+**`S_all`**（(5.109) 双重归纳）、`xiLK_le`、**`xiL_le_one`**（(2.77)）。流的实例：`hyp_flow`、**`flow_sharpLoop`**（(2.77)，所有 `n ≥ 1`，
+形状同 `Steps.sharpLoop`）。n = 2 的 (5.107) 由 T57 的 `Band.norm_Kval_le` 补上。paper-deltas #33。T55、T56 现已解锁。

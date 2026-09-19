@@ -6,6 +6,7 @@ import RBM1D.Green.EntryBound
 import RBM1D.Green.Minor
 import RBM1D.Hierarchy.Kernel
 import RBM1D.Hierarchy.SumZero
+import RBM1D.Hierarchy.Step3
 import RBM1D.Defs.Dist
 import RBM1D.Defs.Sums
 import RBM1D.Defs.Domination

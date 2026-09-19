@@ -420,3 +420,26 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
 
 下一步：一般 `F ∈ TSP n` 的树值（按 `F` 递归劈多边形），在 n=4 化归到 `gammaFour`，n=2 单列；
 然后 Lemma 3.4（需 (2.48) 解的唯一性 / Grönwall）。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T1c 完成 —— 复 ξ 的衰减率
+
+`RBM1D/Propagator/RateComplex.lean`，全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+没有动 `Decay.lean`（Cowork 的文件），新文件只 import 它。
+
+对**全部** `0 < ‖ξ‖ < 1`（不只实 ξ）：
+
+    ‖1 − ξ‖ / 8  ≤  (1 − ‖ρ(ξ)‖)²  ≤  3 ‖1 − ξ‖        `RBM.norm_one_sub_xi_le` / `RBM.sq_one_sub_norm_rho_le`
+    √(‖1−ξ‖/8) ≤ 1 − ‖ρ‖ ≤ √3 √‖1−ξ‖                  `RBM.rho_complex_bounds`
+
+这解决了上面「T1 进展」里写的**方向问题**：ρ 靠近单位圆但远离 1 的情形被 `‖ξ‖ < 1` 排除了。
+关键是一个精确多项式恒等式（`p = Re ρ`，`r = ‖ρ‖`，`(Im ρ)² = r² − p²`）：
+
+    |1+ρ+ρ²|² − 9r² = −4 (r − p − (1−r)²)(r + p) + (r² − 4r + 1)(r² + 1 − 2p)
+
+`r ≥ 1/2` 时第二项 ≤ 0，于是 `‖ξ‖ < 1` ⟹ `r − p ≤ (1−r)²`（ρ 在 1 附近的抛物区域里），
+即 `‖1−ρ‖² ≤ 3(1−r)²`。`RBM.sub_re_le_of_poly` 是这一步的纯实变量版本。
+
+**对 T2/T3 的意义**：`norm_AA_le_of_real` 与 (2.52) 目前只对实 ξ；衰减率这一环现在对复 ξ 也有了，
+short edge `ξ = t m²` 不需要另写一套论证。常数（8、3）比实情形差，但 (2.52) 只要 `∃ C c`。

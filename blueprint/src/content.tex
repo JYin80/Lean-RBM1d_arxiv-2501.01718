@@ -258,6 +258,23 @@
   $(1-\rho)^2 = (1-\xi)(1+\rho+\rho^2)$ and $1 \le 1+\rho+\rho^2 \le 3$.
 \end{proof}
 
+\begin{lemma}[Decay rate for complex spectral parameter]\label{lem:rho-rate-complex}
+  \lean{RBM.sub_re_le_of_poly, RBM.three_mul_norm_rho_lt, RBM.sq_one_sub_norm_rho_le,
+    RBM.norm_one_sub_xi_le, RBM.rho_complex_bounds}\leanok\uses{lem:rho}
+  For all $0<|\xi|<1$,
+  \[ \tfrac18\,|1-\xi| \;\le\; (1-|\rho(\xi)|)^2 \;\le\; 3\,|1-\xi| , \]
+  so the decay length is $|1-\xi|^{-1/2}$ for every admissible $\xi$, including the
+  short-edge case $\xi=tm^2$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:rho}
+  Upper bound: $1-|\rho|\le|1-\rho|$ and $|1-\rho|^2=|1-\xi|\,|1+\rho+\rho^2|\le3|1-\xi|$.
+  Lower bound: $|\xi|<1$ is $3|\rho|<|1+\rho+\rho^2|$.  With $p=\operatorname{Re}\rho$,
+  $r=|\rho|$ this reads $g>0$, where exactly
+  $g=-4(r-p-(1-r)^2)(r+p)+(r^2-4r+1)(r^2+1-2p)$.  For $r\ge\frac12$ the second term is
+  $\le0$, so $r-p\le(1-r)^2$, whence $|1-\rho|^2=(1-r)^2+2(r-p)\le3(1-r)^2$ and
+  $|1-\xi|=|1-\rho|^2/|1+\rho+\rho^2|\le2(1-r)^2$.  For $r<\frac12$, $|1-\xi|<2<8(1-r)^2$.
+\end{proof}
+
 \begin{lemma}[The prefactor of (2.52)]\label{lem:prefactor}
   \lean{RBM.AA_eq, RBM.pow_mul_one_add_le, RBM.le_one_sub_pow, RBM.ellHat,
     RBM.ellHat_mul_one_sub_le, RBM.norm_AA_le_of_real}

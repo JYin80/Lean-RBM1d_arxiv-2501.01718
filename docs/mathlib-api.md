@@ -82,6 +82,25 @@
 | `inv_le_iff_one_le_mul₀`、`inv_le_iff_one_le_mul₀'`、`inv_anti₀` | 倒数不等式 |
 | `Finset.single_le_sum`（`f` 常需 `(f := …)` 显式给出） | 非负和 ≥ 单项 |
 
+## 有限和、树求和（`Loop/Cor35.lean`、`Loop/Layer.lean`、`Loop/SumZero.lean`）
+
+| 名字 | 说明 |
+|---|---|
+| `Finset.prod_le_prod₀ (h0 : ∀ i ∈ s, 0 ≤ f i) (h1 : ∀ i ∈ s, f i ≤ g i)` | 非负乘积的单调性（**不是** `Finset.prod_le_prod`，后者在本工具链里是有序幺半群版、只收一个参数） |
+| `div_le_div₀ (hc : 0 ≤ c) (hac : a ≤ c) (hd : 0 < d) (hdb : d ≤ b) : a / b ≤ c / d` | |
+| `Finset.prod_univ_sum` + `Fintype.piFinset_univ` | `∏ i, ∑ j, f i j = ∑ x : ∀ i, _, ∏ i, f i (x i)`（标号和的 Fubini） |
+| `Equiv.piSplitAt i β : (∀ j, β j) ≃ β i × (∀ j : {j // j ≠ i}, β j)` | 把一个坐标单独拿出来求和（`sum_out`） |
+| `Fin.consEquiv α : α 0 × (∀ i, α i.succ) ≃ ∀ i, α i`、`List.ofFn_succ` | 列表和 `allSum` ↔ `Fin n → _` 上的和 |
+| `Equiv.sum_comp e f`（对 `Equiv.Perm` 要写全名 `Equiv.sum_comp e`，点记号会解析成要 `hs` 的 `Equiv.Perm.sum_comp`） | 换元 |
+| `Finset.sum_fiberwise_of_maps_to (h : ∀ i ∈ s, g i ∈ t) f` | 按纤维分组求和（分层 `sum_TSPlong`） |
+| `geom_sum_Ico_le_of_lt_one`（需 `Mathlib.Algebra.Order.Field.GeomSum`） | `∑_{Ico m n} x^i ≤ x^m/(1-x)` |
+| `Fin.prod_univ_castSucc`、`Fin.last_add_one`、`Fin.val_add_one_of_lt`、`Fin.castSucc_lt_last`、`Fin.prod_univ_eq_prod_range` | 循环乘积写成 `range` 上的积（`prod_cyc`） |
+| `Finset.prod_range_mul_prod_Ico`、`Finset.prod_Ico_consecutive`、`Finset.prod_Ico_eq_prod_range`、`Finset.prod_eq_prod_Ico_succ_bot` | 区间乘积的拼接与平移 |
+| `Complex.mul_conj' : z * conj z = ‖z‖ ^ 2` | `m(+) m(−) = \|m\|² = 1` |
+| `ZMod.neg_val : (-a).val = if a = 0 then 0 else n - a.val` | |
+| `Function.update_of_ne (h : a ≠ a') v f : update f a' v a = f a`、`Function.update_self` | |
+| `Finset.filter_image : (s.image f).filter p = (s.filter (p ∘ f)).image f` | |
+
 ## 本工具链里已弃用的名字
 
 | 旧 | 新 |
@@ -91,5 +110,7 @@
 | `ite_cond_eq_false`、`dite_cond_eq_true` | `ite_eq_right_of_eq_false`、`dite_eq_left_of_eq_true` |
 | `if_true` | `ite_true` |
 | `push_neg` | `push Not` |
+| `mul_le_one₀` | 无替代，用 `mul_le_mul … ` 等拆开 |
+| `Fin.coe_castSucc` | `Fin.val_castSucc` |
 | `List.getLast?_eq_getLast` | `List.getLast?_eq_some_getLast` |
 | `Mathlib.Data.Real.Sqrt` | `Mathlib.Analysis.Real.Sqrt` |

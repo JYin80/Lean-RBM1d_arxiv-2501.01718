@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Defs.Semicircle
+import RBM1D.Propagator.DecayComplex
 
 /-!
 # Short and long edges: the two spectral parameters of (3.35)--(3.36)
@@ -80,5 +81,106 @@ theorem le_zt_im {E k : ℝ} (hk0 : 0 < k) (hk2 : k ≤ 2) (hE : |E| ≤ 2 - k) 
   exact mul_le_mul_of_nonneg_left (by linarith) h1t
 
 end Dictionary
+
+section ShortEdgeBound
+
+variable (L : ℕ) [NeZero L]
+
+/-- The short-edge parameter has modulus `t`, since `|m^{(E)}| = 1`. -/
+theorem norm_short_edge {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht0 : 0 ≤ t) :
+    ‖(t : ℂ) * (mE E) ^ 2‖ = t := by
+  rw [norm_mul, norm_pow, norm_mE hE, one_pow, mul_one, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg ht0]
+
+/-- `|1 - t m^2|^2 >= k` for **every** `t` in `[0,1]`, not just `t` bounded away from `0`:
+the minimum of `(1-t)^2 + 2tk` over `t` is `2k - k^2 >= k` when `k <= 1`. -/
+theorem le_normSq_one_sub_short {E k t : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1)
+    (hE : |E| ≤ 2 - k) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
+    k ≤ Complex.normSq (1 - (t : ℂ) * (mE E) ^ 2) := by
+  have hE2 : |E| ≤ 2 := le_trans hE (by linarith)
+  have hb := abs_le.mp hE
+  have h4 : 2 * k ≤ 4 - E ^ 2 := by nlinarith [hb.1, hb.2]
+  rw [normSq_one_sub_mul_sq_mE hE2 t]
+  nlinarith [sq_nonneg (t - (1 - k)), ht0, h4]
+
+theorem sqrt_le_norm_one_sub_short {E k t : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1)
+    (hE : |E| ≤ 2 - k) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
+    Real.sqrt k ≤ ‖1 - (t : ℂ) * (mE E) ^ 2‖ := by
+  have h := le_normSq_one_sub_short hk0 hk1 hE ht0 ht1
+  rw [← Complex.sq_norm] at h
+  calc Real.sqrt k ≤ Real.sqrt (‖1 - (t : ℂ) * (mE E) ^ 2‖ ^ 2) := Real.sqrt_le_sqrt h
+    _ = ‖1 - (t : ℂ) * (mE E) ^ 2‖ := Real.sqrt_sq (norm_nonneg _)
+
+/-- `ℓ̂(ξ) ≥ 1/2` for every `‖ξ‖ < 1`: the decay length is never shorter than one block. -/
+theorem half_le_ellHat (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) : 1 / 2 ≤ ellHat L ξ := by
+  have hne : (1 : ℂ) - ξ ≠ 0 := by
+    intro h
+    have : ξ = 1 := by linear_combination -h
+    rw [this, norm_one] at hξ
+    exact absurd hξ (lt_irrefl 1)
+  have h0 : 0 < ‖1 - ξ‖ := norm_pos_iff.mpr hne
+  have h4 : ‖1 - ξ‖ ≤ 4 := by
+    calc ‖1 - ξ‖ ≤ ‖(1 : ℂ)‖ + ‖ξ‖ := norm_sub_le _ _
+      _ ≤ 1 + 1 := by rw [norm_one]; linarith
+      _ ≤ 4 := by norm_num
+  have hs : Real.sqrt ‖1 - ξ‖ ≤ 2 := by
+    have hmono : Real.sqrt ‖1 - ξ‖ ≤ Real.sqrt 4 := Real.sqrt_le_sqrt h4
+    have h4' : Real.sqrt 4 = 2 := by
+      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+    rw [h4'] at hmono
+    exact hmono
+  have hspos : 0 < Real.sqrt ‖1 - ξ‖ := Real.sqrt_pos.mpr h0
+  rw [ellHat]
+  refine le_min (one_div_le_one_div_of_le hspos hs) ?_
+  have : (3 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL
+  linarith
+
+/-- **(3.35) and (3.36), short edge: the `max` bound.**
+`|(Θ_{t m²})_{xy}| ≤ 2C/√κ` uniformly in `t ∈ [0,1)`, `L` and `x, y`, where `C` is the
+constant of (2.52).  The uniform bound `(1-‖ξ‖)^{-1}` cannot give this: it blows up as
+`t → 1`.  What saves the short edge is that `|1 - t m²|` stays bounded below, which is
+`le_normSq_one_sub_short`. -/
+theorem norm_Theta_short_edge_le (hL : 3 ≤ L) {E k t : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1)
+    (hE : |E| ≤ 2 - k) (ht0 : 0 ≤ t) (ht1 : t < 1) (x y : ZMod L) :
+    ‖Theta L ((t : ℂ) * (mE E) ^ 2) x y‖ ≤ 2 * cTwo52 / Real.sqrt k := by
+  have hE2 : |E| ≤ 2 := le_trans hE (by linarith)
+  have hξ : ‖(t : ℂ) * (mE E) ^ 2‖ < 1 := by
+    rw [norm_short_edge hE2 ht0]; exact ht1
+  have hmain := norm_Theta_apply_le_complex hL hξ x y
+  have hk : 0 < Real.sqrt k := Real.sqrt_pos.mpr hk0
+  have hden1 : Real.sqrt k ≤ ‖1 - (t : ℂ) * (mE E) ^ 2‖ :=
+    sqrt_le_norm_one_sub_short hk0 hk1 hE ht0 ht1.le
+  have hden2 : 1 / 2 ≤ ellHat L ((t : ℂ) * (mE E) ^ 2) := half_le_ellHat L hL hξ
+  have hexp : Real.exp (-(cZero * (zdist L (x - y) : ℝ)
+      / ellHat L ((t : ℂ) * (mE E) ^ 2))) ≤ 1 := by
+    rw [Real.exp_le_one_iff]
+    have hpos : 0 < ellHat L ((t : ℂ) * (mE E) ^ 2) := lt_of_lt_of_le (by norm_num) hden2
+    have : 0 ≤ cZero * (zdist L (x - y) : ℝ) / ellHat L ((t : ℂ) * (mE E) ^ 2) :=
+      div_nonneg (mul_nonneg cZero_pos.le (Nat.cast_nonneg _)) hpos.le
+    linarith
+  have hdenpos : 0 < ‖1 - (t : ℂ) * (mE E) ^ 2‖ * ellHat L ((t : ℂ) * (mE E) ^ 2) := by
+    have : 0 < ellHat L ((t : ℂ) * (mE E) ^ 2) := lt_of_lt_of_le (by norm_num) hden2
+    have h1 : 0 < ‖1 - (t : ℂ) * (mE E) ^ 2‖ := lt_of_lt_of_le hk hden1
+    positivity
+  have hC := cTwo52_pos
+  set ee := Real.exp (-(cZero * (zdist L (x - y) : ℝ)
+      / ellHat L ((t : ℂ) * (mE E) ^ 2))) with hee
+  have hee0 : 0 < ee := Real.exp_pos _
+  refine hmain.trans ?_
+  rw [div_le_div_iff₀ hdenpos hk]
+  have hprod : Real.sqrt k * (1 / 2)
+      ≤ ‖1 - (t : ℂ) * (mE E) ^ 2‖ * ellHat L ((t : ℂ) * (mE E) ^ 2) :=
+    mul_le_mul hden1 hden2 (by norm_num) (le_trans hk.le hden1)
+  have hleft : cTwo52 * ee * Real.sqrt k ≤ cTwo52 * Real.sqrt k := by
+    have h1 : cTwo52 * ee ≤ cTwo52 := by nlinarith [hexp, hC]
+    nlinarith [hk.le, h1]
+  have hright : cTwo52 * Real.sqrt k
+      ≤ 2 * cTwo52 * (‖1 - (t : ℂ) * (mE E) ^ 2‖ * ellHat L ((t : ℂ) * (mE E) ^ 2)) := by
+    have hcoef : (0 : ℝ) ≤ 2 * cTwo52 := by linarith
+    have := mul_le_mul_of_nonneg_left hprod hcoef
+    nlinarith [this]
+  linarith
+
+end ShortEdgeBound
 
 end RBM

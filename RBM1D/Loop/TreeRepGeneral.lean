@@ -383,6 +383,18 @@ theorem sum_perm4 {α β γ δ : Type*} [Fintype α] [Fintype β] [Fintype γ] [
         Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
     _ = ∑ d, ∑ c, ∑ a, ∑ b, f a b c d := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
 
+/-- Reordering a fourfold sum with two `Finset` ranges: `(a, b, c, d) ↦ (d, c, a, b)`. -/
+theorem sum_perm4' {α β γ δ : Type*} [Fintype γ] [Fintype δ] (s : Finset α) (t : Finset β)
+    (f : α → β → γ → δ → ℂ) :
+    ∑ a ∈ s, ∑ b ∈ t, ∑ c, ∑ d, f a b c d = ∑ d, ∑ c, ∑ a ∈ s, ∑ b ∈ t, f a b c d :=
+  calc ∑ a ∈ s, ∑ b ∈ t, ∑ c, ∑ d, f a b c d = ∑ a ∈ s, ∑ b ∈ t, ∑ d, ∑ c, f a b c d :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ a ∈ s, ∑ d, ∑ b ∈ t, ∑ c, f a b c d := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ d, ∑ a ∈ s, ∑ b ∈ t, ∑ c, f a b c d := Finset.sum_comm
+    _ = ∑ d, ∑ a ∈ s, ∑ c, ∑ b ∈ t, f a b c d :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ d, ∑ c, ∑ a ∈ s, ∑ b ∈ t, f a b c d := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+
 /-- **Splitting along an edge.**  A tree made of two parts `N₁`, `N₂` joined by one edge
 `c₀ — q₀` of weight `P S Q` is `∑_{u,w} part₂(u) S_{uw} part₁(w)`, where each part gets the
 cut edge back as an extra leaf: `(u, Pᵀ)` on `c₀ ∈ N₂` and `(w, Q)` on `q₀ ∈ N₁`. -/
@@ -1724,5 +1736,182 @@ theorem treeValW_internal_cut (σ : Fin n → Bool) (a : Fin n → ZMod L)
   rfl
 
 end Assembly
+
+section KN
+
+variable (L : ℕ) [NeZero L]
+
+/-- **(3.5) on an `n`-gon given by functions**: `m_σ W^{-(n-1)} ∑_{F ∈ T_SP(n)} Γ_F`. -/
+noncomputable def Kn (W : ℕ) (m : Bool → ℂ) (t : ℝ) (n : ℕ) [NeZero n] (σ : Fin n → Bool)
+    (a : Fin n → ZMod L) : ℂ :=
+  (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * ∑ F ∈ TSP n, treeValG L m t σ a F
+
+variable {L}
+
+/-- Linearity in one internal edge weight. -/
+theorem treeValW_edge_smul {n : ℕ} [NeZero n] (F : Finset (Fin n × Fin n)) (a : Fin n → ZMod L)
+    (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (d : ↥F)
+    (c : ℂ) (X : Matrix (ZMod L) (ZMod L) ℂ) :
+    treeValW L F a M (Function.update E d (c • X))
+      = c * treeValW L F a M (Function.update E d X) := by
+  simp only [treeValW, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  rw [prod_update_eq (fun e => E e (b ⟨e.1, mem_nodes_of_mem e.2⟩)
+      (b ⟨nodePar F e, nodePar_mem F e⟩)) _ d (fun e he => by rw [Function.update_of_ne he]),
+    prod_update_eq (fun e => E e (b ⟨e.1, mem_nodes_of_mem e.2⟩)
+      (b ⟨nodePar F e, nodePar_mem F e⟩)) _ d (fun e he => by rw [Function.update_of_ne he]),
+    Function.update_self, Function.update_self, Matrix.smul_apply, smul_eq_mul]
+  ring
+
+variable (hL : 3 ≤ L) (W : ℕ) [NeZero W] (m : Bool → ℂ) {t : ℝ}
+  (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hL hm
+
+/-- The derivative of an edge weight: `μ Θ S Θ`, written as `(μ • (Θ S)) Θ`. -/
+noncomputable abbrev dTheta (m : Bool → ℂ) (t : ℝ) (s s' : Bool) : Matrix (ZMod L) (ZMod L) ℂ :=
+  ((m s * m s') • (thetaEdge L m t s s' * SB L)) * thetaEdge L m t s s'
+
+omit hL hm in
+theorem dTheta_eq (s s' : Bool) :
+    dTheta m t s s' = (m s * m s') • (thetaEdge L m t s s' * SB L * thetaEdge L m t s s') := by
+  rw [dTheta, Matrix.smul_mul]
+
+omit [NeZero W] in
+/-- **The derivative of `Kn`**: one term per leaf and one per internal edge of every tree. -/
+theorem hasDerivAt_Kn {n : ℕ} [NeZero n] (σ : Fin n → Bool) (a : Fin n → ZMod L) :
+    HasDerivAt (fun r => Kn L W m r n σ a)
+      ((∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * ∑ F ∈ TSP n,
+        (∑ v : Fin n, treeValW L F a (Function.update
+            (fun v => thetaEdge L m t (σ v) (σ (v + 1))) v (dTheta m t (σ v) (σ (v + 1))))
+            (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1)
+          + ∑ d : ↥F, treeValW L F a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
+            (Function.update (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) d
+              (dTheta m t (σ d.1.1) (σ d.1.2))))) t := by
+  refine HasDerivAt.const_mul _ (HasDerivAt.fun_sum fun F _ => ?_)
+  refine hasDerivAt_treeValW L (fun v i j => ?_) (fun d i j => ?_)
+  · exact hasDerivAt_thetaEdge' hL m _ _ (hm _ _) i j
+  · have := (hasDerivAt_thetaEdge' hL m (σ d.1.1) (σ d.1.2) (hm _ _) i j).sub_const
+      ((1 : Matrix (ZMod L) (ZMod L) ℂ) i j)
+    simpa using this
+
+omit hL hm [NeZero W] in
+/-- **A leaf term**: differentiating the leaf `v` in every tree gives
+`∑_x (μ Θ S)_{a_v x} K(a with a_v := x)`. -/
+theorem leaf_term {n : ℕ} [NeZero n] (σ : Fin n → Bool) (a : Fin n → ZMod L) (v : Fin n) :
+    (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * ∑ F ∈ TSP n,
+        treeValW L F a (Function.update
+            (fun v => thetaEdge L m t (σ v) (σ (v + 1))) v (dTheta m t (σ v) (σ (v + 1))))
+          (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1)
+      = ∑ x : ZMod L, ((m (σ v) * m (σ (v + 1))) • (thetaEdge L m t (σ v) (σ (v + 1)) * SB L))
+          (a v) x * Kn L W m t n σ (Function.update a v x) := by
+  have hM : Function.update (fun v => thetaEdge L m t (σ v) (σ (v + 1))) v
+      (thetaEdge L m t (σ v) (σ (v + 1))) = fun v => thetaEdge L m t (σ v) (σ (v + 1)) :=
+    Function.update_eq_self _ _
+  simp only [dTheta, treeValW_leaf_mul, hM, Kn, treeValG, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun F _ => by ring
+
+omit hL hm [NeZero W] in
+/-- Exchanging `∑_F ∑_{J ∈ F}` for `∑_J ∑_{F ∋ J}`. -/
+theorem sum_edges_swap {n : ℕ} [NeZero n] (g : (F : Finset (Fin n × Fin n)) → ↥F → ℂ) :
+    ∑ F ∈ TSP n, ∑ d : ↥F, g F d
+      = ∑ J ∈ diagonals n, ∑ F ∈ (TSP n).filter (fun F => J ∈ F),
+          (if h : J ∈ F then g F ⟨J, h⟩ else 0) := by
+  have h1 : ∀ F ∈ TSP n, ∑ d : ↥F, g F d
+      = ∑ J ∈ diagonals n, (if h : J ∈ F then g F ⟨J, h⟩ else 0) := by
+    intro F hF
+    have e1 : ∑ d : ↥F, g F d = ∑ d : ↥F, (if h : d.1 ∈ F then g F ⟨d.1, h⟩ else 0) :=
+      Finset.sum_congr rfl fun d _ => by rw [dite_eq_left d.2]
+    rw [e1, Finset.sum_coe_sort F (fun J => if h : J ∈ F then g F ⟨J, h⟩ else 0)]
+    refine Finset.sum_subset (mem_TSP.1 hF).1 fun J _ hJ => ?_
+    rw [dite_eq_right hJ]
+  rw [Finset.sum_congr rfl h1, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun J _ => ?_
+  rw [Finset.sum_filter]
+  exact Finset.sum_congr rfl fun F _ => by split_ifs <;> rfl
+
+end KN
+
+section KNInternal
+
+variable {L : ℕ} [NeZero L] (hL : 3 ≤ L) (W : ℕ) [NeZero W] (m : Bool → ℂ) {t : ℝ}
+  (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hL hm
+
+/-- **An internal-edge term**: differentiating the edge `J` in every tree containing it gives
+`W ∑_{x,y} K(outside, glue x) S_{xy} K(inside, root y)`, the cut-and-glue term of `J`. -/
+theorem internal_term {n : ℕ} [NeZero n] (hn : 2 ≤ n) {J : Fin n × Fin n}
+    (hJd : IsDiag n J.1 J.2) (σ : Fin n → Bool) (a : Fin n → ZMod L)
+    (σi : Fin (wIn J + 1) → Bool) (ai : ZMod L → Fin (wIn J + 1) → ZMod L)
+    (σo : Fin (n - wIn J + 1) → Bool) (ao : ZMod L → Fin (n - wIn J + 1) → ZMod L)
+    (hσi : ∀ i : Fin (wIn J + 1), σi i = σ (unShift J (i, i)).1)
+    (hσo : ∀ i : Fin (n - wIn J + 1), σo i = σ (unColP J (i, i)).1)
+    (hai0 : ∀ u, ai u (Fin.last _) = u) (hai1 : ∀ u, ∀ v : LIn J, ai u (inV J v) = a v)
+    (hao0 : ∀ w, ao w (glueV J) = w) (hao1 : ∀ w, ∀ v : LOut J, ao w (outV J v) = a v)
+    (hprod : (∏ i, m (σi i)) * ∏ i, m (σo i) = (∏ i, m (σ i)) * (m (σ J.1) * m (σ J.2))) :
+    (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * ∑ F ∈ (TSP n).filter (fun F => J ∈ F),
+        (if h : J ∈ F then treeValW L F a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
+          (Function.update (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) ⟨J, h⟩
+            (dTheta m t (σ J.1) (σ J.2))) else 0)
+      = (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+          Kn L W m t (n - wIn J + 1) σo (ao x) * SB L x y * Kn L W m t (wIn J + 1) σi (ai y) := by
+  have hJw := width_of_isDiag hJd
+  have hJn := J.2.isLt
+  have hW : (W : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne W)
+  -- each tree containing `J`
+  have hterm : ∀ F ∈ (TSP n).filter (fun F => J ∈ F),
+      (if h : J ∈ F then treeValW L F a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
+          (Function.update (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) ⟨J, h⟩
+            (dTheta m t (σ J.1) (σ J.2))) else 0)
+        = (m (σ J.1) * m (σ J.2)) * ∑ u : ZMod L, ∑ w : ZMod L,
+            treeValG L m t σi (ai u) (FIn F J) * SB L u w * treeValG L m t σo (ao w) (FOut F J) := by
+    intro F hF
+    obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
+    rw [dite_eq_left hJF, dTheta_eq, treeValW_edge_smul,
+      treeValW_internal_cut hL (isTSP_of_mem_TSP hFT) hn hJF m t hm σ a σi ai σo ao hσi hσo
+        hai0 hai1 hao0 hao1]
+  rw [Finset.sum_congr rfl hterm, ← Finset.mul_sum]
+  -- the cut bijection
+  have hbij := sum_cut hJd hn (fun G H => ∑ u : ZMod L, ∑ w : ZMod L,
+    treeValG L m t σi (ai u) H * SB L u w * treeValG L m t σo (ao w) G)
+  rw [hbij]
+  -- regroup into the two `Kn`
+  have hwn : wIn J ≤ n := by simp only [wIn]; omega
+  have hconst : (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * (m (σ J.1) * m (σ J.2))
+      = (W : ℂ) * ((∏ i, m (σo i)) * (W : ℂ)⁻¹ ^ (n - wIn J + 1 - 1))
+          * ((∏ i, m (σi i)) * (W : ℂ)⁻¹ ^ (wIn J + 1 - 1)) := by
+    have hpow : (W : ℂ) * (W : ℂ)⁻¹ ^ (n - wIn J + 1 - 1) * (W : ℂ)⁻¹ ^ (wIn J + 1 - 1)
+        = (W : ℂ)⁻¹ ^ (n - 1) := by
+      rw [Nat.add_sub_cancel, Nat.add_sub_cancel, mul_assoc, ← pow_add, Nat.sub_add_cancel hwn]
+      obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+      rw [pow_succ, Nat.add_sub_cancel, ← mul_assoc, mul_comm (W : ℂ), mul_assoc,
+        mul_inv_cancel₀ hW, mul_one]
+    calc (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * (m (σ J.1) * m (σ J.2))
+        = ((∏ i, m (σi i)) * ∏ i, m (σo i)) * (W : ℂ)⁻¹ ^ (n - 1) := by rw [hprod]; ring
+      _ = _ := by rw [← hpow]; ring
+  calc (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * ((m (σ J.1) * m (σ J.2)) *
+        ∑ G ∈ TSP (n - wIn J + 1), ∑ H ∈ TSP (wIn J + 1), ∑ u : ZMod L, ∑ w : ZMod L,
+          treeValG L m t σi (ai u) H * SB L u w * treeValG L m t σo (ao w) G)
+      = ∑ x : ZMod L, ∑ y : ZMod L, ∑ G ∈ TSP (n - wIn J + 1), ∑ H ∈ TSP (wIn J + 1),
+          ((∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * (m (σ J.1) * m (σ J.2))) *
+            (treeValG L m t σo (ao x) G * SB L x y * treeValG L m t σi (ai y) H) := by
+        rw [← mul_assoc, Finset.mul_sum]
+        simp only [Finset.mul_sum]
+        rw [sum_perm4' (TSP (n - wIn J + 1)) (TSP (wIn J + 1)) (fun G H u w =>
+          (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) * (m (σ J.1) * m (σ J.2)) *
+            (treeValG L m t σi (ai u) H * SB L u w * treeValG L m t σo (ao w) G))]
+        exact Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ =>
+          Finset.sum_congr rfl fun G _ => Finset.sum_congr rfl fun H _ => by
+            rw [SB_apply_comm L y x]; ring
+    _ = (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+          Kn L W m t (n - wIn J + 1) σo (ao x) * SB L x y * Kn L W m t (wIn J + 1) σi (ai y) := by
+        rw [hconst]
+        simp only [Kn, Finset.mul_sum, Finset.sum_mul]
+        refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
+        rw [Finset.sum_comm (s := TSP (wIn J + 1))]
+        exact Finset.sum_congr rfl fun G _ => Finset.sum_congr rfl fun H _ => by ring
+
+end KNInternal
+
 
 end RBM

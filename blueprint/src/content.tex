@@ -735,13 +735,50 @@
   Then compare level by level with Lemma~\ref{lem:unique}.
 \end{proof}
 
-\begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
-  \uses{def:TSP, def:primitive, lem:Theta-deriv, ex:2.16, lem:unique, lem:3.4-small}
-  \emph{Formalized for $n\le4$ (Lemma~\ref{lem:3.4-small}); general $n$ not yet.}  The missing
-  piece is that the recursive tree value factors along \emph{every} diagonal of $F$, not only
-  the lexicographically first one (pivot independence); with it, each internal edge cut gives
-  the $(k,l)$ term of its diagonal exactly as at $n=4$.
+\begin{definition}[Pivot-free tree value]\label{def:tree-general}
+  \lean{RBM.wholeP, RBM.InArc, RBM.ArcLe, RBM.nodes, RBM.leafPar, RBM.nodePar, RBM.treeValW,
+    RBM.treeValG, RBM.gval, RBM.Kn, RBM.Kgen}\leanok
+  \uses{def:TSP, def:3.3}
+  A crossing-free set $F$ of diagonals is a laminar family of vertex arcs ($(i,j)\mapsto
+  \{i,\dots,j-1\}$), rooted at the last vertex; the internal vertices of the tree are
+  $F\cup\{\text{whole}\}$, each hanging on its smallest strict container.  The tree value sums
+  over labels of all internal vertices at once, with leaf edges $\Th_{tm_vm_{v+1}}$ and
+  internal edges $\Th_{tm_im_j}-1$.
+\end{definition}
+
+\begin{lemma}[Cutting a tree along an edge]\label{lem:tree-cut}
+  \lean{RBM.gval_congr, RBM.gval_split, RBM.nodes_laminar, RBM.leafPar_spec, RBM.nodePar_spec,
+    RBM.treeValW_cut, RBM.gval_in_eq, RBM.gval_out_eq, RBM.sum_cut, RBM.treeValW_internal_cut}
+  \leanok
+  \uses{def:tree-general}
+  Putting $\Th_J\SB\Th_J$ on the internal edge $J$ factors the tree into a tree on the inside
+  polygon (root label $u$) and one on the outside polygon ($J$ collapsed to a glue vertex,
+  label $w$), joined by $\SB_{uw}$; and $F\mapsto(F_{\rm out},F_{\rm in})$ is a bijection from
+  $\{F\in T_{SP}(n):J\in F\}$ onto $T_{SP}(\text{outside})\times T_{SP}(\text{inside})$.
 \end{lemma}
+\begin{proof}\leanok\uses{def:tree-general}
+  Laminarity puts every node and leaf on one side of $J$; split the label sum (Fubini) and
+  transport each side by explicit bijections that preserve arc containment, hence parents.
+\end{proof}
+
+\begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
+  \lean{RBM.hasDerivAt_Kn, RBM.leaf_term, RBM.internal_term, RBM.sum_pairs, RBM.leaf_pair_term,
+    RBM.root_pair_term, RBM.diag_pair_term, RBM.hasDerivAt_Kgen, RBM.hasDerivAt_Kgen_all,
+    RBM.Kgen_zero, RBM.isPrimitive_Kgen, RBM.eq_Kgen_of_isPrimitive, RBM.treeRep_general}\leanok
+  \uses{def:TSP, def:primitive, lem:Theta-deriv, lem:unique, lem:tree-cut, lem:3.4-small}
+  If $K$ solves Definition 2.12 on $[0,T_0]$, $T_0<1$, $|m|\le1$, with bounded $2$-loops, then
+  for every $n\ge3$,
+  $K_{t,\sigma,a}=m_\sigma W^{-n+1}\sum_{\Gamma\in T_{SP}(P_a)}\Gamma_a(t,\sigma)$ (3.5).
+\end{lemma}
+\begin{proof}\leanok\uses{def:TSP, def:primitive, lem:Theta-deriv, lem:unique, lem:tree-cut}
+  Root the tree at the last vertex.  Then every edge $e$ of a tree $\Gamma$ corresponds to
+  exactly one pair $(k,l)$: cutting at $e$ leaves the part containing the root on the left
+  chain and the cut-off subtree on the right chain, rooted at the glue vertex.  Leaf edges give
+  the pairs $(k,k+1)$, the root edge $(1,n)$, internal edges their diagonals.  Differentiating
+  the tree sum edge by edge therefore reproduces (2.48) term by term; at $t=0$ only the star
+  survives.  So the tree sum solves Definition 2.12, and Lemma~\ref{lem:unique} identifies it
+  with $K$.
+\end{proof}
 
 \begin{lemma}[Cyclic invariance of $\Kcal$]\label{lem:K-cyclic}
   \lean{RBM.LoopIdx.rot, RBM.primRhs_rot, RBM.primInit_rot, RBM.rot_eq_on_level,

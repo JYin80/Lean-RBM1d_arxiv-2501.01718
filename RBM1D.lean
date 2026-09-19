@@ -18,6 +18,7 @@ import RBM1D.Loop.WardStep
 import RBM1D.Loop.WardGeneral
 import RBM1D.Loop.Tree
 import RBM1D.Loop.TreeRep
+import RBM1D.Loop.TreeRepGeneral
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds

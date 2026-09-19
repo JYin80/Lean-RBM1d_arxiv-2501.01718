@@ -817,3 +817,25 @@ Cowork 在 `7472752` 先认领了 T29，Claude Code 的认领脚本随后（`9fc
   论文 (2.59) 的 `ℓ_t` 就是 `ellHat L t`，且 `(1−t)ℓ̂(t) ≥ η_t ℓ_t`。
 
 **教训（已记给自己）**：改共享表格前重新读最新版本并确认那一格仍是「空闲」；新建文件前先确认路径不存在。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T25b 完成 —— **Lemma 3.4 对一般 n 成立**
+
+`RBM1D/Loop/TreeRepGeneral.lean`（主结果提交 `b90336d`），全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+
+**`RBM.treeRep_general`**：若 `K` 在 `[0,T₀]`（`T₀ < 1`，`|m| ≤ 1`）满足 Def 2.12 且 2-loop 有界，则对每个 WF、长度 `n ≥ 3` 的 loop
+
+    K_{t,σ,a} = (σ.map m).prod · W^{−(n−1)} · Σ_{F ∈ TSP n} treeValG L m t σ a F        （论文 (3.5)）
+
+`eq_Kgen_of_isPrimitive` 对 `n ≥ 2` 给出 `K = Kgen`；`isPrimitive_Kgen` 说树表示本身就是 Def 2.12 的解（存在性）。
+
+**证明结构**（设计见上面「T25b 设计」节）：
+1. 无轴树值 `treeValW`（层状区间族，对全部内部顶点标号求和）；`hasDerivAt_treeValW`：导数 = 逐边求导之和。
+2. 层状性与父亲刻画（`nodes_laminar`、`leafPar_spec`、`nodePar_spec`）。
+3. 剪切：`treeValW_cut`（沿内部边 J 分解）、`gval_in_eq`/`gval_out_eq`（两侧搬到小多边形）、`sum_cut`（剪切双射）。
+4. 逐项：`leaf_term`、`internal_term`；`sum_pairs`（`(k,l)` = 叶对 ⊔ 根对 ⊔ 对角线）；`leaf_pair_term`/`root_pair_term`/`diag_pair_term` 对上 `cutGlueL/R` 的列表。
+5. 总装 `hasDerivAt_Kgen`；初值 `Kgen_zero`（`t=0` 时内部边 `Θ₀−1 = 0`，只剩星图 → δ）；唯一性收口。
+
+**与 T21 `treeSum` 的关系**：一般 n 用的是新的无轴编码（paper-deltas #16）；两者在 n ≤ 4 相等已证，一般 n 的等价未证、也不需要。
+**解锁**：T28（Cor 3.5）现在可开工；T26（Ward，一般 n）也可直接用 `eq_Kgen_of_isPrimitive`。

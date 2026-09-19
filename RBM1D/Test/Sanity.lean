@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Defs.Domination
+import RBM1D.Delocalization
 import RBM1D.Defs.Model
 import RBM1D.Loop.Index
 import RBM1D.Propagator.Basic
@@ -72,3 +73,7 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.LoopIdx.WF.cutGlueR
 #print axioms RBM.LoopIdx.getLast?_cutGlueL
 #print axioms RBM.LoopIdx.head?_cutGlueL_of_two_le
+#print axioms RBM.green_eq_spectral
+#print axioms RBM.im_green_apply_self
+#print axioms RBM.sq_norm_eigenvector_le_im_green
+#print axioms RBM.sq_norm_eigenvector_le_of_norm_green_le

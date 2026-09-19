@@ -329,3 +329,15 @@ Mathlib 里应该有类似 `Complex.eq_conj_iff_re` / `Complex.normSq` 的工具
 | 三个 `example` | Figure 1、2、3，`rfl` 验证 |
 
 下一步（第 3 节）：`L_{t,σ,a}` 本身（需要 Green 函数，定义为 `Tr ∏ G(σ_i) E_{a_i}`，可以对任意矩阵族先定义）。
+
+### `RBM1D/Delocalization.lean` — Thm 2.2 的谱论部分 (2.10)（T13，Claude Code）
+
+| Lean | 内容 |
+|---|---|
+| `RBM.green` | `G(z) = (H − z)⁻¹` |
+| `RBM.green_eq_spectral` / `green_apply_self` | `G = U diag((λ−z)⁻¹) U*`，`G_xx = Σ_l |ψ_l(x)|²/(λ_l − z)` |
+| `RBM.im_green_apply_self` | `Im G_xx(E+iη) = Σ_l η|ψ_l(x)|²/((λ_l−E)²+η²)` |
+| `RBM.sq_norm_eigenvector_le_sum` / `sum_eq_mul_im_green` / **`sq_norm_eigenvector_le_im_green`** | **(2.10)** 两步 |
+| **`RBM.sq_norm_eigenvector_le_of_norm_green_le`** | `‖G_xx(λ_k+iη)‖ ≤ C ⇒ |ψ_k(x)|² ≤ Cη`（Thm 2.2 的确定性内核） |
+
+local law 作为假设，概率部分待随机层（paper-deltas #5）。

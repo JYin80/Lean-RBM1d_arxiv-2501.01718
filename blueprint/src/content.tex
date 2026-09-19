@@ -328,6 +328,32 @@
   \emph{Not yet formalized.}
 \end{lemma}
 
+\chapter{Delocalization from the local law}
+
+\begin{lemma}[Eigenvector bound (2.10), proof of Theorem 2.2]\label{eq:2.10}
+  \lean{RBM.green, RBM.green_eq_spectral, RBM.im_green_apply_self,
+    RBM.sq_norm_eigenvector_le_sum, RBM.sum_eq_mul_im_green,
+    RBM.sq_norm_eigenvector_le_im_green, RBM.sq_norm_eigenvector_le_of_norm_green_le}
+  \leanok
+  Let $H$ be Hermitian with eigenpairs $(\lambda_l,\psi_l)$ and $G(z)=(H-z)^{-1}$.
+  For $\eta>0$,
+  \[ |\psi_k(x)|^2 \le \sum_l \frac{\eta^2|\psi_l(x)|^2}{(\lambda_k-\lambda_l)^2+\eta^2}
+     = \eta\,\operatorname{Im} G_{xx}(\lambda_k+i\eta). \]
+  Hence $|G_{xx}(\lambda_k+i\eta)|\le C$ implies $|\psi_k(x)|^2\le C\eta$.
+\end{lemma}
+\begin{proof}\leanok
+  $G = U\operatorname{diag}((\lambda-z)^{-1})U^*$ gives
+  $\operatorname{Im}G_{xx}(E+i\eta)=\sum_l \eta|\psi_l(x)|^2/((\lambda_l-E)^2+\eta^2)$;
+  at $E=\lambda_k$ the $l=k$ term alone is $|\psi_k(x)|^2/\eta$.
+\end{proof}
+
+\begin{remark}\label{rem:2.2}
+  Theorem 2.2 itself follows by feeding in the local law (Theorem 2.3) at
+  $\eta=N^{-1+\tau}$, which gives $|G_{xx}|=O(1)$ with high probability.  That input
+  is probabilistic and belongs to the stochastic layer; the deterministic step above
+  is what is formalized.
+\end{remark}
+
 \chapter{The stochastic layer (out of scope for now)}
 
 \begin{remark}\label{rem:stochastic}

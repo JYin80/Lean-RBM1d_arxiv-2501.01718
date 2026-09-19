@@ -18,7 +18,7 @@
 | T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | 同上 | 空闲 | 排在第 3 节之后 |
 | T11 | dyadic 分解 → (2.53)(2.54) 的一般证明 | 同上 | 空闲 | 排在第 3 节之后 |
 | T12 | 数值回归测试 | `Test/Numeric.lean` | Claude Code | **完成** |
-| T13 | Thm 2.2：由 local law 推 delocalization | `Delocalization.lean`（新建） | **Claude Code** | 进行中 |
+| T13 | Thm 2.2：由 local law 推 delocalization | `Delocalization.lean` | Claude Code | **完成**（确定性部分） |
 | T15 | §2.1 模型层：S_W、S = S^(B)⊗S_W、E_a、N = WL | `Defs/Model.lean` | Claude Code | **完成** |
 | T16 | Def 2.9/2.10：loop 的指标数据与 cut-and-glue 算子 | `Loop/Index.lean` | Claude Code | **完成** |
 

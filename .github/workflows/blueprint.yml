@@ -1,5 +1,9 @@
 name: Compile blueprint
 
+# NOTE: docgen-action only uploads and deploys to Pages when
+# github.event_name == 'push'.  A manual "Run workflow" (workflow_dispatch)
+# builds everything and reports success, but publishes nothing.  To refresh the
+# site, push a commit.
 on:
   push:
     branches:

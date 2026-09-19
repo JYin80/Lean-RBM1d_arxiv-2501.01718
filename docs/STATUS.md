@@ -164,3 +164,22 @@ Pi 拓扑与范数拓扑的实例菱形（`HasDerivAt` 现在按一般拓扑向�
 - `ρ^d + ρ^{L-d}` 对 `d` 和 `L-d` 对称，这既给出 `Θ` 的对称性（已独立证明，可交叉验证），
   也是 `d = L-1` 那个 wrap 情况成立的原因。
 - 不要动附录 B 的 Fourier 路线，那是 `Propagator/Symbol.lean` 的独立任务，(3.48) 才用得到。
+
+
+---
+
+# CI / 站点
+
+- 仓库：https://github.com/JYin80/Lean-RBM1d_arxiv-2501.01718
+- 站点：https://jyin80.github.io/Lean-RBM1d_arxiv-2501.01718/
+- **只有 push 才会发布。** `docgen-action` 的上传与部署步骤条件是
+  `github.event_name == 'push'`，手动 Run workflow 会「成功」但什么都不发布。
+- Mathlib 不会被重新编译：`lake exe cache get` 拉的是预编译 olean，
+  本机 `.lake/packages/mathlib/.lake/build` 约 6.6 GB 已就位。
+  只有 `lake update` 换 rev 或改 `lean-toolchain` 才会触发重编译，而两者都锁死了。
+
+# 任务认领
+
+**(2.52) 锐化衰减由 Cowork 侧接手**（2026-09-19）。原计划交给 Claude Code，
+但那边尚未开工，为避免闲置改由 Cowork 做。Claude Code 若要接手，先在此处改认领标记，
+避免两边重复劳动。

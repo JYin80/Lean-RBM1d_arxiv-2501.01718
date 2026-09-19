@@ -470,4 +470,262 @@ theorem Kpi_empty_expand {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : Fin n →
 
 end Expand
 
+section RTerms
+
+/-! ### The remainder terms
+
+Abstract kernels `f_v` with `|f_v| ≤ A`, `∑|f_v| ≤ Λ`, `|∇f_v| ≤ 3/2`, `|Δf_v| ≤ 3` and
+`|Δf_v| ≤ M_off` away from one point `a_v`.  If `Λ M_off ≤ C₁ A` and `Λ ≤ C₂ A²`, then every
+choice `τ` containing an even piece or two odd pieces costs at most `C A^{n-1} ∏_v (1+‖s_v‖)²`
+after summing over the centre. -/
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+omit [NeZero n] in
+/-- The pointwise bound on any Taylor piece. -/
+theorem norm_taylorTerm_le (f : ZMod L → ℂ) {A : ℝ} (hA : 3 / 2 ≤ A) (hsup : ∀ y, ‖f y‖ ≤ A)
+    (hgrad : ∀ u, ‖f (u + 1) - f u‖ ≤ 3 / 2) (hlap : ∀ u, ‖lap f u‖ ≤ 3) (j : Fin 3)
+    (c x : ZMod L) : ‖taylorTerm f j c x‖ ≤ A * ((1 : ℝ) + zdist L x) ^ 2 := by
+  have hk : (0 : ℝ) ≤ zdist L x := Nat.cast_nonneg _
+  have h1 : (1 : ℝ) ≤ (1 + zdist L x) ^ 2 := by nlinarith
+  have h2 : (zdist L x : ℝ) ≤ (1 + zdist L x) ^ 2 := by nlinarith
+  have h3 : (zdist L x : ℝ) ^ 2 ≤ (1 + zdist L x) ^ 2 := by nlinarith
+  have hA0 : 0 ≤ A := by linarith
+  fin_cases j
+  · calc ‖taylorTerm f 0 c x‖ = ‖f c‖ := rfl
+      _ ≤ A := hsup c
+      _ ≤ A * ((1 : ℝ) + zdist L x) ^ 2 := le_mul_of_one_le_right hA0 h1
+  · calc ‖taylorTerm f 1 c x‖ = ‖oddPart f c x‖ := rfl
+      _ ≤ zdist L x * (3 / 2) := norm_oddPart_le f hgrad c x
+      _ ≤ ((1 : ℝ) + zdist L x) ^ 2 * A := by gcongr
+      _ = _ := mul_comm _ _
+  · calc ‖taylorTerm f 2 c x‖ = ‖evenPart f c x‖ := rfl
+      _ ≤ (zdist L x : ℝ) ^ 2 * 3 / 2 := norm_evenPart_le_const f hlap c x
+      _ = (zdist L x : ℝ) ^ 2 * (3 / 2) := by ring
+      _ ≤ ((1 : ℝ) + zdist L x) ^ 2 * A := by gcongr
+      _ = _ := mul_comm _ _
+
+omit [NeZero L] [NeZero n] in
+/-- At the pinned point the shift is `0`, so only the value survives. -/
+theorem norm_taylorTerm_zero_le (f : ZMod L → ℂ) (j : Fin 3) (c : ZMod L) :
+    ‖taylorTerm f j c 0‖ ≤ ‖f c‖ := by
+  fin_cases j
+  · exact le_rfl
+  · show ‖oddPart f c 0‖ ≤ _; rw [oddPart_zero, norm_zero]; exact norm_nonneg _
+  · show ‖evenPart f c 0‖ ≤ _; rw [evenPart_zero, norm_zero]; exact norm_nonneg _
+
+omit [NeZero n] in
+/-- Pulling out a sup bound: `∑_c F(c) ∏_{v∈T} G_v(c) ≤ (∑_c F) ∏_{v∈T} S_v`. -/
+theorem sum_mul_prod_le (F : ZMod L → ℝ) (G : Fin n → ZMod L → ℝ) (T : Finset (Fin n))
+    (S : Fin n → ℝ) (hF : ∀ c, 0 ≤ F c) (hG0 : ∀ v c, 0 ≤ G v c) (hGS : ∀ v ∈ T, ∀ c, G v c ≤ S v) :
+    ∑ c, F c * ∏ v ∈ T, G v c ≤ (∑ c, F c) * ∏ v ∈ T, S v := by
+  rw [Finset.sum_mul]
+  refine sum_le_sum fun c _ => mul_le_mul_of_nonneg_left ?_ (hF c)
+  exact Finset.prod_le_prod₀ (fun v _ => hG0 v c) fun v hv => hGS v hv c
+
+/-- **The remainder terms**: a choice `τ` with an even piece, or with two odd pieces, costs at
+most `(C₁/2 + 3/2 + 9C₂/4) A^{n-1} ∏_v (1+‖s_v‖)²` after summing over the centre. -/
+theorem sum_prod_taylor_le (f : Fin n → ZMod L → ℂ) (a : Fin n → ZMod L) {A Λ Moff C₁ C₂ : ℝ}
+    (hA : 3 / 2 ≤ A) (hsup : ∀ v y, ‖f v y‖ ≤ A) (hl1 : ∀ v, ∑ y, ‖f v y‖ ≤ Λ)
+    (hgrad : ∀ v u, ‖f v (u + 1) - f v u‖ ≤ 3 / 2) (hlap : ∀ v u, ‖lap (f v) u‖ ≤ 3)
+    (hoff : ∀ v u, u ≠ a v → ‖lap (f v) u‖ ≤ Moff) (hMoff : 0 ≤ Moff)
+    (h₁ : Λ * Moff ≤ C₁ * A) (h₂ : Λ ≤ C₂ * A ^ 2) (hC₁ : 0 ≤ C₁) (hC₂ : 0 ≤ C₂)
+    (τ : Fin n → Fin 3) (hτ : (∃ v, τ v = 2) ∨ ∃ v₁ v₂, v₁ ≠ v₂ ∧ τ v₁ = 1 ∧ τ v₂ = 1)
+    (s : Fin n → ZMod L) (hs : s 0 = 0) :
+    ∑ c, ∏ v, ‖taylorTerm (f v) (τ v) c (s v)‖ ≤
+      (C₁ / 2 + 3 / 2 + 9 / 4 * C₂) * A ^ (n - 1) * ∏ v, ((1 : ℝ) + zdist L (s v)) ^ 2 := by
+  set X : Fin n → ZMod L → ℝ := fun v c => ‖taylorTerm (f v) (τ v) c (s v)‖ with hXdef
+  set w : Fin n → ℝ := fun v => ((1 : ℝ) + zdist L (s v)) ^ 2 with hwdef
+  set k : Fin n → ℝ := fun v => (zdist L (s v) : ℝ) with hkdef
+  have hk0 : ∀ v, 0 ≤ k v := fun v => Nat.cast_nonneg _
+  have hw1 : ∀ v, 1 ≤ w v := fun v => by simp only [w]; nlinarith [hk0 v]
+  have hwk : ∀ v, k v ≤ w v := fun v => by simp only [w, k]; nlinarith [hk0 v]
+  have hwk2 : ∀ v, k v ^ 2 ≤ w v := fun v => by simp only [w, k]; nlinarith [hk0 v]
+  have hw0 : ∀ v, 0 ≤ w v := fun v => by linarith [hw1 v]
+  have hA0 : 0 ≤ A := by linarith
+  have hX0 : ∀ v c, 0 ≤ X v c := fun v c => norm_nonneg _
+  have hXA : ∀ v c, X v c ≤ A * w v := fun v c =>
+    norm_taylorTerm_le (f v) hA (hsup v) (hgrad v) (hlap v) (τ v) c (s v)
+  have hXz : ∀ c, X 0 c ≤ ‖f 0 c‖ := fun c => by
+    show ‖taylorTerm (f 0) (τ 0) c (s 0)‖ ≤ _
+    rw [hs]; exact norm_taylorTerm_zero_le (f 0) (τ 0) c
+  have hl1' : ∑ c, ‖f 0 c‖ ≤ Λ := hl1 0
+  have hRHS : 0 ≤ (C₁ / 2 + 3 / 2 + 9 / 4 * C₂) * A ^ (n - 1) * ∏ v, w v := by
+    have := prod_nonneg fun v (_ : v ∈ univ) => hw0 v
+    positivity
+  have hW : ∀ v₁, v₁ ≠ 0 → ∏ v, w v = w 0 * (w v₁ * ∏ v ∈ (univ.erase 0).erase v₁, w v) := by
+    intro v₁ h
+    rw [mul_prod_erase _ _ (mem_erase.2 ⟨h, mem_univ _⟩), mul_prod_erase _ _ (mem_univ _)]
+  have hP : ∀ c v₁, v₁ ≠ 0 →
+      ∏ v, X v c = X 0 c * (X v₁ c * ∏ v ∈ (univ.erase 0).erase v₁, X v c) := by
+    intro c v₁ h
+    rw [mul_prod_erase _ (fun v => X v c) (mem_erase.2 ⟨h, mem_univ _⟩),
+      mul_prod_erase _ (fun v => X v c) (mem_univ _)]
+  rcases hτ with ⟨v₁, h2⟩ | ⟨v₁, v₂, h12, h1, h2⟩
+  · -- an even piece at `v₁`
+    by_cases h01 : v₁ = 0
+    · subst h01
+      have hz : ∀ c, X 0 c = 0 := fun c => by
+        show ‖taylorTerm (f 0) (τ 0) c (s 0)‖ = 0
+        rw [h2, hs]; show ‖evenPart (f 0) c 0‖ = 0; rw [evenPart_zero, norm_zero]
+      calc ∑ c, ∏ v, X v c = ∑ c : ZMod L, (0 : ℝ) := by
+            refine sum_congr rfl fun c _ => ?_
+            exact prod_eq_zero (mem_univ 0) (hz c)
+        _ ≤ _ := by rw [sum_const_zero]; exact hRHS
+    set T := (univ.erase (0 : Fin n)).erase v₁
+    have hT : T.card = n - 2 := by
+      rw [card_erase_of_mem (mem_erase.2 ⟨h01, mem_univ _⟩), card_erase_of_mem (mem_univ _),
+        card_univ, Fintype.card_fin]
+      omega
+    set F : ZMod L → ℝ := fun c =>
+      ‖f 0 c‖ * ((k v₁) ^ 2 * Moff / 2 + 3 / 2 * hitCount (a v₁) (zdist L (s v₁)) c)
+    have hF0 : ∀ c, 0 ≤ F c := fun c => by
+      have : 0 ≤ hitCount (a v₁) (zdist L (s v₁)) c := by
+        unfold hitCount; positivity
+      have := hk0 v₁
+      positivity
+    have hev : ∀ c, X v₁ c ≤ (k v₁) ^ 2 * Moff / 2 + 3 / 2 * hitCount (a v₁) (zdist L (s v₁)) c := by
+      intro c
+      have := norm_evenPart_le_split (f v₁) (a v₁) (hoff v₁) (hlap v₁ (a v₁)) hMoff c (s v₁)
+      show ‖taylorTerm (f v₁) (τ v₁) c (s v₁)‖ ≤ _
+      rw [h2]
+      show ‖evenPart (f v₁) c (s v₁)‖ ≤ _
+      linarith
+    have hstep : ∀ c, ∏ v, X v c ≤ F c * ∏ v ∈ T, X v c := by
+      intro c
+      rw [hP c v₁ h01, ← mul_assoc]
+      exact mul_le_mul_of_nonneg_right (mul_le_mul (hXz c) (hev c) (hX0 _ _) (norm_nonneg _))
+        (prod_nonneg fun v _ => hX0 v c)
+    have hsumF : ∑ c, F c ≤ (C₁ / 2 + 3 / 2) * A * (k v₁) ^ 2 := by
+      have hh : ∑ c, ‖f 0 c‖ * hitCount (a v₁) (zdist L (s v₁)) c ≤ A * (k v₁) ^ 2 := by
+        calc ∑ c, ‖f 0 c‖ * hitCount (a v₁) (zdist L (s v₁)) c
+            ≤ ∑ c, A * hitCount (a v₁) (zdist L (s v₁)) c := by
+              refine sum_le_sum fun c _ => ?_
+              have : 0 ≤ hitCount (a v₁) (zdist L (s v₁)) c := by unfold hitCount; positivity
+              exact mul_le_mul_of_nonneg_right (hsup 0 c) this
+          _ = A * (k v₁) ^ 2 := by rw [← mul_sum, sum_hitCount]
+      have e : ∑ c, F c = (k v₁) ^ 2 * Moff / 2 * ∑ c, ‖f 0 c‖
+          + 3 / 2 * ∑ c, ‖f 0 c‖ * hitCount (a v₁) (zdist L (s v₁)) c := by
+        simp only [F, mul_add, sum_add_distrib, mul_sum]
+        congr 1 <;> refine sum_congr rfl fun c _ => by ring
+      rw [e]
+      have hk2 := sq_nonneg (k v₁)
+      calc (k v₁) ^ 2 * Moff / 2 * ∑ c, ‖f 0 c‖
+            + 3 / 2 * ∑ c, ‖f 0 c‖ * hitCount (a v₁) (zdist L (s v₁)) c
+          ≤ (k v₁) ^ 2 / 2 * (Λ * Moff) + 3 / 2 * (A * (k v₁) ^ 2) := by
+            have : (k v₁) ^ 2 * Moff / 2 * ∑ c, ‖f 0 c‖ ≤ (k v₁) ^ 2 * Moff / 2 * Λ := by
+              gcongr
+            nlinarith
+        _ ≤ (k v₁) ^ 2 / 2 * (C₁ * A) + 3 / 2 * (A * (k v₁) ^ 2) := by gcongr
+        _ = (C₁ / 2 + 3 / 2) * A * (k v₁) ^ 2 := by ring
+    calc ∑ c, ∏ v, X v c ≤ ∑ c, F c * ∏ v ∈ T, X v c := sum_le_sum fun c _ => hstep c
+      _ ≤ (∑ c, F c) * ∏ v ∈ T, (A * w v) :=
+          sum_mul_prod_le F X T _ hF0 hX0 fun v _ c => hXA v c
+      _ ≤ ((C₁ / 2 + 3 / 2) * A * (k v₁) ^ 2) * (A ^ (n - 2) * ∏ v ∈ T, w v) := by
+          rw [prod_mul_distrib, prod_const, hT]
+          gcongr
+      _ = (C₁ / 2 + 3 / 2) * (A * A ^ (n - 2)) * ((k v₁) ^ 2 * ∏ v ∈ T, w v) := by ring
+      _ ≤ (C₁ / 2 + 3 / 2) * A ^ (n - 1) * (w 0 * (w v₁ * ∏ v ∈ T, w v)) := by
+          have hn2 : A * A ^ (n - 2) = A ^ (n - 1) := by
+            rw [← pow_succ']; congr 1
+            have : 2 ≤ n := by
+              have := Fin.pos_iff_ne_zero.2 h01
+              have := v₁.isLt
+              omega
+            omega
+          rw [hn2]
+          have hPT : 0 ≤ ∏ v ∈ T, w v := prod_nonneg fun v _ => hw0 v
+          have hkey : (k v₁) ^ 2 * ∏ v ∈ T, w v ≤ w 0 * (w v₁ * ∏ v ∈ T, w v) :=
+            calc (k v₁) ^ 2 * ∏ v ∈ T, w v ≤ w v₁ * ∏ v ∈ T, w v :=
+                  mul_le_mul_of_nonneg_right (hwk2 v₁) hPT
+              _ = 1 * (w v₁ * ∏ v ∈ T, w v) := by ring
+              _ ≤ w 0 * (w v₁ * ∏ v ∈ T, w v) :=
+                  mul_le_mul_of_nonneg_right (hw1 0) (mul_nonneg (hw0 _) hPT)
+          have hc : 0 ≤ (C₁ / 2 + 3 / 2) * A ^ (n - 1) := by positivity
+          exact mul_le_mul_of_nonneg_left hkey hc
+      _ = (C₁ / 2 + 3 / 2) * A ^ (n - 1) * ∏ v, w v := by rw [hW v₁ h01]
+      _ ≤ _ := by
+          have := prod_nonneg fun v (_ : v ∈ univ) => hw0 v
+          refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA0 _)) this
+          nlinarith
+  · -- two odd pieces
+    by_cases h0 : v₁ = 0 ∨ v₂ = 0
+    · have hτ0 : τ 0 = 1 := by rcases h0 with h | h <;> [rw [← h]; rw [← h]] <;> assumption
+      have hz : ∀ c, X 0 c = 0 := fun c => by
+        show ‖taylorTerm (f 0) (τ 0) c (s 0)‖ = 0
+        rw [hτ0, hs]; show ‖oddPart (f 0) c 0‖ = 0; rw [oddPart_zero, norm_zero]
+      calc ∑ c, ∏ v, X v c = ∑ c : ZMod L, (0 : ℝ) := by
+            refine sum_congr rfl fun c _ => ?_
+            exact prod_eq_zero (mem_univ 0) (hz c)
+        _ ≤ _ := by rw [sum_const_zero]; exact hRHS
+    push Not at h0
+    obtain ⟨h01, h02⟩ := h0
+    have hn3 : 3 ≤ n := by
+      have := v₁.isLt; have := v₂.isLt
+      have : (v₁ : ℕ) ≠ 0 := fun h => h01 (Fin.ext h)
+      have : (v₂ : ℕ) ≠ 0 := fun h => h02 (Fin.ext h)
+      have : (v₁ : ℕ) ≠ v₂ := fun h => h12 (Fin.ext h)
+      omega
+    have hm2 : v₂ ∈ (univ.erase (0 : Fin n)).erase v₁ :=
+      mem_erase.2 ⟨h12.symm, mem_erase.2 ⟨h02, mem_univ _⟩⟩
+    set T := ((univ.erase (0 : Fin n)).erase v₁).erase v₂
+    have hT : T.card = n - 3 := by
+      rw [card_erase_of_mem hm2, card_erase_of_mem (mem_erase.2 ⟨h01, mem_univ _⟩),
+        card_erase_of_mem (mem_univ _), card_univ, Fintype.card_fin]
+      omega
+    have hodd : ∀ v, τ v = 1 → ∀ c, X v c ≤ k v * (3 / 2) := by
+      intro v hv c
+      show ‖taylorTerm (f v) (τ v) c (s v)‖ ≤ _
+      rw [hv]
+      exact norm_oddPart_le (f v) (hgrad v) c (s v)
+    have hstep : ∀ c, ∏ v, X v c ≤
+        (‖f 0 c‖ * ((k v₁ * (3 / 2)) * (k v₂ * (3 / 2)))) * ∏ v ∈ T, X v c := by
+      intro c
+      rw [hP c v₁ h01, ← mul_prod_erase _ (fun v => X v c) hm2]
+      have hPT : 0 ≤ ∏ v ∈ T, X v c := prod_nonneg fun v _ => hX0 v c
+      have h1' := hodd v₁ h1 c
+      have h2' := hodd v₂ h2 c
+      calc X 0 c * (X v₁ c * (X v₂ c * ∏ v ∈ T, X v c))
+          = (X 0 c * (X v₁ c * X v₂ c)) * ∏ v ∈ T, X v c := by ring
+        _ ≤ (‖f 0 c‖ * ((k v₁ * (3 / 2)) * (k v₂ * (3 / 2)))) * ∏ v ∈ T, X v c := by
+            refine mul_le_mul_of_nonneg_right ?_ hPT
+            refine mul_le_mul (hXz c) (mul_le_mul h1' h2' (hX0 _ _) ?_) ?_ (norm_nonneg _)
+            · have := hk0 v₁; positivity
+            · exact mul_nonneg (hX0 _ _) (hX0 _ _)
+    have hK : 0 ≤ (k v₁ * (3 / 2)) * (k v₂ * (3 / 2)) := by
+      have := hk0 v₁; have := hk0 v₂; positivity
+    have hPTw : 0 ≤ ∏ v ∈ T, w v := prod_nonneg fun v _ => hw0 v
+    calc ∑ c, ∏ v, X v c
+        ≤ ∑ c, (‖f 0 c‖ * ((k v₁ * (3 / 2)) * (k v₂ * (3 / 2)))) * ∏ v ∈ T, X v c :=
+          sum_le_sum fun c _ => hstep c
+      _ ≤ (∑ c, ‖f 0 c‖ * ((k v₁ * (3 / 2)) * (k v₂ * (3 / 2)))) * ∏ v ∈ T, (A * w v) :=
+          sum_mul_prod_le _ X T _ (fun c => mul_nonneg (norm_nonneg _) hK) hX0
+            fun v _ c => hXA v c
+      _ = (∑ c, ‖f 0 c‖) * ((k v₁ * (3 / 2)) * (k v₂ * (3 / 2))) * (A ^ (n - 3) * ∏ v ∈ T, w v) := by
+          rw [← sum_mul, prod_mul_distrib, prod_const, hT]
+      _ ≤ (C₂ * A ^ 2) * ((k v₁ * (3 / 2)) * (k v₂ * (3 / 2))) * (A ^ (n - 3) * ∏ v ∈ T, w v) := by
+          gcongr
+          exact hl1'.trans h₂
+      _ = 9 / 4 * C₂ * (A ^ 2 * A ^ (n - 3)) * (k v₁ * (k v₂ * ∏ v ∈ T, w v)) := by ring
+      _ ≤ 9 / 4 * C₂ * A ^ (n - 1) * (w 0 * (w v₁ * (w v₂ * ∏ v ∈ T, w v))) := by
+          rw [← pow_add, show 2 + (n - 3) = n - 1 by omega]
+          have hc : 0 ≤ 9 / 4 * C₂ * A ^ (n - 1) := by positivity
+          refine mul_le_mul_of_nonneg_left ?_ hc
+          calc k v₁ * (k v₂ * ∏ v ∈ T, w v) ≤ w v₁ * (w v₂ * ∏ v ∈ T, w v) := by
+                have := hk0 v₂
+                gcongr
+                · exact hwk v₁
+                · exact hwk v₂
+            _ = 1 * (w v₁ * (w v₂ * ∏ v ∈ T, w v)) := by ring
+            _ ≤ w 0 * (w v₁ * (w v₂ * ∏ v ∈ T, w v)) :=
+                mul_le_mul_of_nonneg_right (hw1 0) (by have := hw0 v₁; have := hw0 v₂; positivity)
+      _ = 9 / 4 * C₂ * A ^ (n - 1) * ∏ v, w v := by
+          rw [hW v₁ h01, ← mul_prod_erase _ w hm2]
+      _ ≤ _ := by
+          have := prod_nonneg fun v (_ : v ∈ univ) => hw0 v
+          refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA0 _)) this
+          nlinarith
+
+end RTerms
+
 end RBM

@@ -321,4 +321,114 @@ theorem SumZero_commQT (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : 
     SumZero_ThetaOp L hL ht (SumZero_Qop L hL htt A) x
   simp [h1, h2]
 
+/-! ### The two-slot version, (5.104)
+
+`E (x) E` of Definition 5.4 carries two loop index tuples, so the martingale estimate of
+§5.5 needs `Q_t` applied in each slot separately.  Nothing below depends on Definition 5.4
+itself: these are statements about an arbitrary two-tensor, so they are available before
+the `E (x) E` layer exists. -/
+
+section TwoSlot
+
+variable {n m : ℕ}
+
+/-- `P` applied in the first slot. -/
+def Psum₁ (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) :
+    ZMod L → LoopArg L (m + 1) → ℂ :=
+  fun x b => Psum L (fun a => A a b) x
+
+/-- `P` applied in the second slot. -/
+def Psum₂ (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) :
+    LoopArg L (n + 1) → ZMod L → ℂ :=
+  fun a y => Psum L (fun b => A a b) y
+
+/-- `P` applied in both slots. -/
+def Psum₁₂ (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) : ZMod L → ZMod L → ℂ :=
+  fun x y => Psum L (fun a => Psum L (fun b => A a b) y) x
+
+/-- `Q_t` applied in the first slot. -/
+noncomputable def Qop₁ (t : ℂ) (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) :
+    LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ :=
+  fun a b => Qop L t (fun a' => A a' b) a
+
+/-- `Q_t` applied in the second slot. -/
+noncomputable def Qop₂ (t : ℂ) (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) :
+    LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ :=
+  fun a b => Qop L t (fun b' => A a b') b
+
+/-- The two slot sums commute, by `Finset.sum_comm`. -/
+theorem Psum_Psum₁ (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) (x y : ZMod L) :
+    Psum L (fun b => Psum₁ L A x b) y = Psum₁₂ L A x y := by
+  show (∑ s : LoopArg L m, ∑ r : LoopArg L n, A (Fin.cons x r) (Fin.cons y s))
+      = ∑ r : LoopArg L n, ∑ s : LoopArg L m, A (Fin.cons x r) (Fin.cons y s)
+  exact Finset.sum_comm
+
+theorem Psum₁_Qop₂ {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ)
+    (x : ZMod L) (b : LoopArg L (m + 1)) :
+    Psum₁ L (Qop₂ L t A) x b
+      = Psum₁ L A x b - Psum₁₂ L A x (b 0) * vartheta L t b := by
+  show (∑ r : LoopArg L n, Qop L t (fun b' => A (Fin.cons x r) b') b)
+      = (∑ r : LoopArg L n, A (Fin.cons x r) b)
+        - (∑ r : LoopArg L n, Psum L (fun b' => A (Fin.cons x r) b') (b 0)) * vartheta L t b
+  rw [← Finset.sum_mul, ← Finset.sum_sub_distrib]
+  exact Finset.sum_congr rfl fun r _ => rfl
+
+theorem Psum₂_Qop₁ {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ)
+    (a : LoopArg L (n + 1)) (y : ZMod L) :
+    Psum₂ L (Qop₁ L t A) a y
+      = Psum₂ L A a y - Psum L (fun b => Psum₁ L A (a 0) b) y * vartheta L t a := by
+  show (∑ s : LoopArg L m, Qop L t (fun a' => A a' (Fin.cons y s)) a)
+      = (∑ s : LoopArg L m, A a (Fin.cons y s))
+        - (∑ s : LoopArg L m, Psum₁ L A (a 0) (Fin.cons y s)) * vartheta L t a
+  rw [← Finset.sum_mul, ← Finset.sum_sub_distrib]
+  exact Finset.sum_congr rfl fun s _ => rfl
+
+/-- **(5.104)**, first form: `Q (x) Q = I (x) I - (vartheta P) (x) I - I (x) (vartheta P)
++ (vartheta P) (x) (vartheta P)`. -/
+theorem Qop₁_Qop₂_apply {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ)
+    (a : LoopArg L (n + 1)) (b : LoopArg L (m + 1)) :
+    Qop₁ L t (Qop₂ L t A) a b
+      = A a b - Psum₁ L A (a 0) b * vartheta L t a
+        - Psum₂ L A a (b 0) * vartheta L t b
+        + Psum₁₂ L A (a 0) (b 0) * (vartheta L t a * vartheta L t b) := by
+  have h1 : Qop₁ L t (Qop₂ L t A) a b
+      = Qop₂ L t A a b - Psum₁ L (Qop₂ L t A) (a 0) b * vartheta L t a := rfl
+  have h2 : Qop₂ L t A a b = A a b - Psum₂ L A a (b 0) * vartheta L t b := rfl
+  rw [h1, Psum₁_Qop₂ L A (a 0) b, h2]
+  ring
+
+/-- The mirror computation, applying `Q_t` in the other order. -/
+theorem Qop₂_Qop₁_apply {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ)
+    (a : LoopArg L (n + 1)) (b : LoopArg L (m + 1)) :
+    Qop₂ L t (Qop₁ L t A) a b
+      = A a b - Psum₁ L A (a 0) b * vartheta L t a
+        - Psum₂ L A a (b 0) * vartheta L t b
+        + Psum₁₂ L A (a 0) (b 0) * (vartheta L t a * vartheta L t b) := by
+  have h1 : Qop₂ L t (Qop₁ L t A) a b
+      = Qop₁ L t A a b - Psum₂ L (Qop₁ L t A) a (b 0) * vartheta L t b := rfl
+  have h2 : Qop₁ L t A a b = A a b - Psum₁ L A (a 0) b * vartheta L t a := rfl
+  rw [h1, Psum₂_Qop₁ L A a (b 0), Psum_Psum₁ L A (a 0) (b 0), h2]
+  ring
+
+/-- The two slot-wise `Q_t` commute: `Q (x) Q` is unambiguous. -/
+theorem Qop₁_Qop₂_comm {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) :
+    Qop₁ L t (Qop₂ L t A) = Qop₂ L t (Qop₁ L t A) := by
+  funext a b
+  rw [Qop₁_Qop₂_apply L A a b, Qop₂_Qop₁_apply L A a b]
+
+/-- `(P (x) I) . (Q (x) Q) . A = 0`, the first half of (5.104)'s conclusion. -/
+theorem Psum₁_Qop₁_Qop₂ (hL : 3 ≤ L) {t : ℂ} (ht : ‖t‖ < 1)
+    (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) (x : ZMod L) (b : LoopArg L (m + 1)) :
+    Psum₁ L (Qop₁ L t (Qop₂ L t A)) x b = 0 :=
+  SumZero_Qop L hL ht (fun a' => Qop₂ L t A a' b) x
+
+/-- `(I (x) P) . (Q (x) Q) . A = 0`, the second half. -/
+theorem Psum₂_Qop₁_Qop₂ (hL : 3 ≤ L) {t : ℂ} (ht : ‖t‖ < 1)
+    (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ) (a : LoopArg L (n + 1)) (y : ZMod L) :
+    Psum₂ L (Qop₁ L t (Qop₂ L t A)) a y = 0 := by
+  rw [Qop₁_Qop₂_comm L A]
+  exact SumZero_Qop L hL ht (fun b' => Qop₁ L t A a b') y
+
+end TwoSlot
+
 end RBM

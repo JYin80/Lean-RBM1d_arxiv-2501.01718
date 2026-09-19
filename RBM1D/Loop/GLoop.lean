@@ -97,6 +97,22 @@ theorem green_sub_green_conj {H : Matrix n n ℂ} {z : ℂ}
   push_cast
   ring
 
+/-- **The Ward identity, traced against an observable.**  For `z = E + iη`,
+\[ \operatorname{Tr}(G(z)A) - \operatorname{Tr}(G(\bar z)A) = 2i\eta\,
+   \operatorname{Tr}(G(z)G(\bar z)A) , \]
+which is the self-improving identity behind the local law: the left-hand side is
+`2i` times the imaginary part of a single resolvent, while the right-hand side is a
+positive quadratic form. -/
+theorem trace_green_sub_trace_green_conj {H : Matrix n n ℂ} {z : ℂ}
+    (hz : IsUnit (H - z • (1 : Matrix n n ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix n n ℂ))) (A : Matrix n n ℂ) :
+    Matrix.trace (green H z * A) - Matrix.trace (green H ((starRingEnd ℂ) z) * A)
+      = (2 * Complex.I * (z.im : ℂ))
+          * Matrix.trace (green H z * green H ((starRingEnd ℂ) z) * A) := by
+  have h := congrArg (fun M : Matrix n n ℂ => Matrix.trace (M * A)) (green_sub_green_conj hz hz')
+  simpa [Matrix.sub_mul, Matrix.trace_sub, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul,
+    Matrix.mul_assoc] using h
+
 end Gsig
 
 section Loop
@@ -159,6 +175,13 @@ theorem sum_gloop_head (s : Bool) (σ : List Bool) (a : List (ZMod L)) :
   simp_rw [hterm]
   rw [← Matrix.trace_sum, ← Finset.sum_mul, ← Finset.mul_sum, sum_Eblk L W]
   rw [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
+
+/-- The `2`-loop, unfolded.  This is the quantity `Tr(G(z)E_a G^†(z)E_b)` of
+Theorem 2.4, which the paper writes as `L_{(+,-),(a,b)}`. -/
+theorem gloop_two (s₁ s₂ : Bool) (b₁ b₂ : ZMod L) :
+    gloop L W H z ⟨[s₁, s₂], [b₁, b₂]⟩
+      = Matrix.trace (Gsig H z s₁ * Eblk L W b₁ * (Gsig H z s₂ * Eblk L W b₂)) := by
+  simp [gloop, gloopProd_cons, gloopProd_nil, Matrix.mul_one]
 
 end Loop
 

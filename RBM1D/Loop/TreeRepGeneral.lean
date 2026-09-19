@@ -2212,6 +2212,123 @@ theorem prod_chains (g : ℕ → ℂ) {n p q : ℕ} (hpq : p + 2 ≤ q) (hq : q 
   simp only [Nat.Ico_succ_singleton, Finset.prod_singleton]
   ring
 
+include hL hm in
+/-- **A diagonal pair** `(J.1+1, J.2+1)` of (2.48) is the internal-edge term of `J`. -/
+theorem diag_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hlen : I.length = n) {J : Fin n × Fin n} (hJd : IsDiag n J.1 J.2) :
+    (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        Kgen L W m t (I.cutGlueL (J.1.val + 1) (J.2.val + 1) x) * SB L x y *
+          Kgen L W m t (I.cutGlueR (J.1.val + 1) (J.2.val + 1) y)
+      = (∏ i, m (I.σ.getD (i : Fin n) false)) * (W : ℂ)⁻¹ ^ (n - 1) *
+          ∑ F ∈ (TSP n).filter (fun F => J ∈ F),
+            (if h : J ∈ F then treeValW L F (fun i : Fin n => I.a.getD i 0)
+              (fun v => thetaEdge L m t (I.σ.getD (v : Fin n) false) (I.σ.getD (v + 1 : Fin n) false))
+              (Function.update (fun d : ↥F => thetaEdge L m t (I.σ.getD d.1.1 false)
+                (I.σ.getD d.1.2 false) - 1) ⟨J, h⟩
+                (dTheta m t (I.σ.getD J.1 false) (I.σ.getD J.2 false))) else 0) := by
+  have hσl : I.σ.length = n := by rw [hI]; exact hlen
+  have hal : I.a.length = n := hlen
+  have hJw := width_of_isDiag hJd
+  have hJ2 : J.1.val < J.2.val := by omega
+  have hJn := J.2.isLt
+  have hw : wIn J = J.2.val - J.1.val := rfl
+  have hwn : wIn J + 2 ≤ n := by
+    obtain ⟨-, -, h3⟩ := hJd
+    simp only [wIn]; by_contra h; apply h3; omega
+  -- the chains
+  let σi : Fin (wIn J + 1) → Bool := fun i => ((I.σ.drop J.1.val).take (wIn J + 1)).getD i false
+  let ai : ZMod L → Fin (wIn J + 1) → ZMod L := fun y i =>
+    ((I.a.drop J.1.val).take (wIn J) ++ [y]).getD i 0
+  let σo : Fin (n - wIn J + 1) → Bool := fun i =>
+    (I.σ.take (J.1.val + 1) ++ I.σ.drop J.2.val).getD i false
+  let ao : ZMod L → Fin (n - wIn J + 1) → ZMod L := fun x i =>
+    (I.a.take J.1.val ++ x :: I.a.drop J.2.val).getD i 0
+  have hKR : ∀ y, Kgen L W m t (I.cutGlueR (J.1.val + 1) (J.2.val + 1) y)
+      = Kn L W m t (wIn J + 1) σi (ai y) := by
+    intro y
+    have hlenR : (I.cutGlueR (J.1.val + 1) (J.2.val + 1) y).length = wIn J + 1 := by
+      rw [LoopIdx.length_cutGlueR I y (by omega) (by omega) (by omega)]; simp only [wIn]; omega
+    rw [Kgen_eq W m t (by omega) _ hlenR]
+    simp only [LoopIdx.cutGlueR, show J.1.val + 1 - 1 = J.1.val by omega,
+      show J.2.val + 1 - (J.1.val + 1) = wIn J by simp only [wIn]; omega]
+    rfl
+  have hKL : ∀ x, Kgen L W m t (I.cutGlueL (J.1.val + 1) (J.2.val + 1) x)
+      = Kn L W m t (n - wIn J + 1) σo (ao x) := by
+    intro x
+    have hlenL : (I.cutGlueL (J.1.val + 1) (J.2.val + 1) x).length = n - wIn J + 1 := by
+      rw [LoopIdx.length_cutGlueL I x (by omega) (by omega) (by omega)]; simp only [wIn]; omega
+    rw [Kgen_eq W m t (by omega) _ hlenL]
+    simp only [LoopIdx.cutGlueL, show J.1.val + 1 - 1 = J.1.val by omega,
+      show J.2.val + 1 - 1 = J.2.val by omega]
+    rfl
+  -- the hypotheses of `internal_term`
+  have hσi : ∀ i : Fin (wIn J + 1), σi i = I.σ.getD ((unShift J (i, i)).1 : Fin n) false := by
+    intro i
+    simp only [σi]
+    rw [getD_drop_take i.isLt, (unShift_val (i, i)).1, add_comm]
+  have hσo : ∀ i : Fin (n - wIn J + 1), σo i = I.σ.getD ((unColP J (i, i)).1 : Fin n) false := by
+    intro i
+    simp only [σo]
+    rw [(unColP_val (i, i) hJ2).1]
+    dsimp only
+    have hi := i.isLt
+    by_cases h : i.val ≤ J.1.val
+    · rw [getD_take_append_of_lt (by omega) (by omega), unCol_of_le h]
+    · rw [getD_take_append_of_ge (by omega) (by omega), getD_drop', unCol_of_gt (by omega)]
+      congr 1; simp only [wIn]; omega
+  have hai0 : ∀ u, ai u (Fin.last _) = u := by
+    intro u
+    simp only [ai, Fin.val_last]
+    rw [getD_take_append_of_ge le_rfl (by simp; omega), Nat.sub_self]
+    rfl
+  have hai1 : ∀ u, ∀ v : LIn J, ai u (inV J v) = I.a.getD (v.1 : Fin n) 0 := by
+    intro u v
+    have hv := v.2
+    simp only [InArc, Fin.le_def, Fin.lt_def] at hv
+    have h1 := inV_val v.2
+    simp only [ai]
+    rw [h1, getD_take_append_of_lt (by simp only [wIn]; omega) (by simp; omega), getD_drop']
+    congr 1; omega
+  have hg : (glueV J).val = J.1.val := by simp only [glueV, wIn]; omega
+  have hao0 : ∀ x, ao x (glueV J) = x := by
+    intro x
+    simp only [ao]
+    rw [hg, getD_take_append_of_ge le_rfl (by omega), Nat.sub_self]
+    rfl
+  have hao1 : ∀ x, ∀ v : LOut J, ao x (outV J v) = I.a.getD (v.1 : Fin n) 0 := by
+    intro x v
+    have hvs : v.1.val < J.1.val ∨ J.2.val ≤ v.1.val := by
+      have := v.2; simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt] at this; omega
+    simp only [ao]
+    rw [outV_val v.1 hJ2]
+    rcases hvs with h | h
+    · rw [col_of_le (by omega), getD_take_append_of_lt h (by omega)]
+    · rw [col_of_gt (by omega), getD_take_append_of_ge (by simp only [wIn]; omega) (by omega),
+        show v.1.val - (wIn J - 1) - J.1.val = (v.1.val - J.2.val) + 1 by simp only [wIn]; omega,
+        getD_cons_succ', getD_drop']
+      congr 1; omega
+  have hprod : (∏ i, m (σi i)) * ∏ i, m (σo i)
+      = (∏ i, m (I.σ.getD (i : Fin n) false)) * (m (I.σ.getD J.1 false) * m (I.σ.getD J.2 false)) := by
+    set g : ℕ → ℂ := fun j => m (I.σ.getD j false) with hgdef
+    have e1 : ∏ i, m (σi i) = ∏ i ∈ Finset.range (J.2.val - J.1.val + 1), g (J.1.val + i) := by
+      rw [← Fin.prod_univ_eq_prod_range (fun j => g (J.1.val + j))]
+      refine Finset.prod_congr rfl fun i _ => ?_
+      simp only [σi, g]; rw [getD_drop_take i.isLt]
+    have e2 : ∏ i, m (σo i) = ∏ i ∈ Finset.range (n - (J.2.val - J.1.val) + 1),
+        g (if i ≤ J.1.val then i else i + (J.2.val - J.1.val - 1)) := by
+      rw [← Fin.prod_univ_eq_prod_range
+        (fun j => g (if j ≤ J.1.val then j else j + (J.2.val - J.1.val - 1)))]
+      refine Finset.prod_congr rfl fun i _ => ?_
+      rw [hσo i, (unColP_val (i, i) hJ2).1]
+      simp only [g, unCol, wIn]
+    have e3 : ∏ i, m (I.σ.getD (i : Fin n) false) = ∏ i ∈ Finset.range n, g i :=
+      Fin.prod_univ_eq_prod_range g n
+    rw [e1, e2, e3, prod_chains g hJw hJn]
+  rw [internal_term hL W m hm (by omega) hJd _ _ σi ai σo ao hσi hσo hai0 hai1 hao0 hao1 hprod]
+  congr 1
+  refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
+  rw [hKL, hKR]
+
 end Lists
 
 end RBM

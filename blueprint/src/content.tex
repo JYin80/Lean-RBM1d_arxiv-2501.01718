@@ -980,6 +980,18 @@
   alternating $\sigma$, $Q=(1-t)^nA=O(\eta_t)$.
 \end{proof}
 
+\begin{lemma}[Short range of the self-energy, (3.43)]\label{eq:3.43}
+  \lean{RBM.selfW_eq_treeValW_one, RBM.norm_selfEdge_le, RBM.norm_SigmaPi_empty_le}
+  \leanok\uses{def:3.8, cor:3.5}
+  For $|E|\le2-k$ and $0\le t<1$: $|\Sigma^{(\emptyset)}(t,\sigma,d)|\le C e^{-c\|d_i-d_j\|}$ for
+  every pair $i,j$, with $C,c$ depending only on $n$ and $k$.
+\end{lemma}
+\begin{proof}\leanok\uses{cor:3.5}
+  For $\pi=\emptyset$ every internal edge joins equal charges, so it is $\Theta_{tm^2}-1$, which
+  decays on the scale of the bulk gap $|1-tm^2|\ge\sqrt k$.  The self-energy is the tree value
+  with identity boundary edges, and the tree bound of Corollary 3.5 applies.
+\end{proof}
+
 \begin{lemma}[Bound on $\Kcal$, Lemma 3.11]\label{lem:3.11}
   \uses{lem:3.10}
   \emph{Not yet formalized.}

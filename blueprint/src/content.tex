@@ -186,8 +186,39 @@
   exactly what fails for $|\xi| \ge 1$.
 \end{proof}
 
+\begin{lemma}[Closed form of the propagator]\label{lem:closed-form}
+  \lean{RBM.theta_eq_circulant, RBM.theta_apply_closed_form}\leanok
+  \uses{lem:rho, lem:Theta-inv}
+  For $0 < |\xi| < 1$,
+  \[ (\Th_\xi)_{xy} = A(\xi)\bigl(\rho^{\,d} + \rho^{\,L-d}\bigr),\qquad
+     d = \overline{(x-y)} \in [0,L),\qquad
+     A(\xi) = \frac{3\rho}{\xi\,(\rho^L-1)(\rho^2-1)} . \]
+\end{lemma}
+\begin{proof}\leanok\uses{lem:rho, lem:Theta-inv}
+  The kernel satisfies $k(u-1) + k(u+1) - c\,k(u) = -(3/\xi)\delta_{u,0}$.  The
+  symmetric shape makes the value at $n=L$ agree with the value at $n=0$, so the
+  wrap-around at $d = L-1$ falls under the generic case and $d = 0$ is the only
+  special one; the defect there is what fixes $A(\xi)$.  Conclude by uniqueness
+  of the inverse.
+\end{proof}
+
+\begin{lemma}[Decay rate for real spectral parameter]\label{lem:rho-rate}
+  \lean{RBM.rho_real_bounds}\leanok\uses{lem:rho}
+  For $0 < t < 1$, $\rho(t)$ is real, lies in $(0,1)$, and
+  \[ \sqrt{1-t} \;\le\; 1 - \rho(t) \;\le\; \sqrt3\,\sqrt{1-t} . \]
+  So the decay length $1/(1-\rho)$ is of order $(1-t)^{-1/2}$.  This is the
+  long-edge case $\xi = t|m|^2$, where $|m| = 1$ makes $\xi$ real; it is the case
+  that needs the sharp length.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:rho}
+  The discriminant $(3/t-1)^2 - 4$ is a positive real, so both roots are real and
+  $\rho \in (0,1)$; then $1 - \|\rho\| = 1 - \rho$, which is the direction the
+  decay estimate needs.  Combine with the exact identity
+  $(1-\rho)^2 = (1-\xi)(1+\rho+\rho^2)$ and $1 \le 1+\rho+\rho^2 \le 3$.
+\end{proof}
+
 \begin{lemma}[Lemma 2.14 (4): exponential decay, (2.52)]\label{lem:Theta-decay}
-  \uses{lem:Theta-band, lem:rho}
+  \uses{lem:Theta-band, lem:closed-form, lem:rho-rate}
   With $\hat\ell(\xi):=\min(|1-\xi|^{-1/2},L)$,
   \[ \bigl|(\Th_\xi)_{xy}\bigr| \;\le\;
      \frac{C\,e^{-c|x-y|/\hat\ell(\xi)}}{|1-\xi|\cdot\hat\ell(\xi)} . \]

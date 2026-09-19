@@ -525,8 +525,8 @@ T20 的边界约定 `Θ_{t mᵢ mᵢ₊₁}` 在这里被 ODE 独立验证了一
 动量 `θ(p) = 2π·valMinAbs(p)/L ∈ [−π,π]`（`RBM.theta`，`abs_theta_le_pi`），`Ŝ(p) = (1+2cos θ(p))/3`（`Shat_eq_cos_theta`）。
 零件：`le_one_sub_cos`（`1 − cos x ≥ 2x²/π²`，|x| ≤ π，Jordan）、`one_sub_cos_le`、`Shat_bounds`。
 
-**注意**：本机没有 pdftoppm / PDF 库，读不了 `paper/` 里的 PDF；陈述按 `TASKS.md` 里 T8 的写法，
-常数不求最优（`CLAUDE.md` 规则 7）。若论文 (B.3) 对 `p` 的范围或形式有别的约定，请核对后告诉我。
+（已对照论文 p.90 核对：(B.3) 为 `|1−ξŜ(p)| ≍ κ² + |p|_*²`，`κ = |1−ξ|^{1/2}`，与此一致。
+本机现在可用 `pypdf`（用户同意后 `pip3 install --user pypdf`）抽取 PDF 文字。）
 
 **下一步（T9）**：无穷体积核 + 围道平移 (B.4)(B.5)，同一文件或新文件。T8 给的下界正是
 `1/(1−ξŜ)` 的 Fourier 求和可控的依据。
@@ -552,3 +552,25 @@ API 文档（同一脚本、同一 Mathlib 文档缓存）、Jekyll、上传、�
 
 本地：`python3 scripts/blueprint_preview.py` 检查所有 `\lean{}` 名字存在（即 CI 的 checkdecls）与 `\uses{}` 标签，
 并生成 `blueprint/preview.html`（依赖图 + 各章节点表；不需要 leanblueprint/graphviz）。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T9 完成 —— 无穷体积核与围道平移 (B.2)(B.4)(B.5)
+
+`RBM1D/Propagator/Contour.lean`（提交 `cf1d231`），全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+另：`SymbolBound.lean` 加了实变量版 `le_norm_one_sub_mul_real`、`cos_symbol_bounds`（提交 `51d81d7`）。
+
+| Lean | 论文 | 内容 |
+|---|---|---|
+| `Kinf` | (B.2) | `K_{ξ,∞}(u) = (2π)⁻¹ ∫_{−π}^{π} e^{ipu}/D_ξ(p) dp` |
+| `norm_cos_add_mul_I_sub_le` | — | `|cos(x+iy) − cos x| ≤ y² + 2|x||y|`（`|y| ≤ 1`） |
+| `le_norm_Dxi` | (B.4) | `|p| ≤ π`、`|η| ≤ c₀κ` ⟹ `|D_ξ(p+iη)| ≥ (κ²+p²)/(12π²)`，`c₀ = 1/(16π²)` |
+| `integral_kernelFun_shift` | (B.5) 前半 | 围道平移：矩形 Cauchy 定理，竖边因 `2π` 周期相消 |
+| **`norm_Kinf_le`** | **(B.5)** | **`|K_{ξ,∞}(u)| ≤ (6π²/κ) e^{−c₀κ|u|}`** |
+
+Mathlib 关键 API：`Complex.integral_boundary_rect_eq_zero_of_differentiableOn`、
+`intervalIntegral.norm_integral_le_of_norm_le`（被积函数无需先证可积）、`integral_inv_one_add_sq`、
+`Real.cosh_le_exp_half_sq`、`Real.abs_exp_sub_one_le`。
+
+**下一步（T10）**：Poisson 求和 `K_{ξ,L}(u) = Σ_n K_{ξ,∞}(u + nL)`（论文 p.89 (B.2) 下一行），
+再由 (B.5) 得环上的 (2.52)。`Symbol.lean` 的 `Theta_apply_fourier` 给出 `K_{ξ,L}` 的有限 Fourier 和。

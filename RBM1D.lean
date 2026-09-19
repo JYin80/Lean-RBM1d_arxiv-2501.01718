@@ -12,6 +12,7 @@ import RBM1D.Loop.Primitive
 import RBM1D.Loop.Unique
 import RBM1D.Loop.Tree
 import RBM1D.Propagator.Basic
+import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Decay
 import RBM1D.Propagator.Deriv

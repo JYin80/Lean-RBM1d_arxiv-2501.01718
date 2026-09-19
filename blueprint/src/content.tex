@@ -231,6 +231,36 @@
   $\ge\widehat S|1-\xi|-s$; if $\widehat S<\frac12$, $|1-\xi\widehat S|>\frac12$.
 \end{proof}
 
+\begin{definition}[Infinite-volume kernel, (B.2)]\label{eq:B.2}
+  \lean{RBM.Dxi, RBM.kernelFun, RBM.Kinf}\leanok
+  $K_{\xi,\infty}(u)=\frac1{2\pi}\int_{-\pi}^{\pi}\frac{e^{ipu}}{1-\xi\widehat S(p)}\,dp$,
+  $u\in\mathbb Z$, with $D_\xi(z)=1-\xi(1+2\cos z)/3$ for complex $z$.
+\end{definition}
+
+\begin{lemma}[Shifted symbol, (B.4)]\label{eq:B.4}
+  \lean{RBM.norm_cos_add_mul_I_sub_le, RBM.cZero, RBM.le_norm_Dxi, RBM.Dxi_ne_zero}\leanok
+  \uses{eq:B.3, eq:B.2}
+  With $\kappa=|1-\xi|^{1/2}$ and $c_0=1/(16\pi^2)$: for $|p|\le\pi$ and $|\eta|\le c_0\kappa$,
+  $|D_\xi(p+i\eta)|\ge(\kappa^2+p^2)/(12\pi^2)$.
+\end{lemma}
+\begin{proof}\leanok\uses{eq:B.3, eq:B.2}
+  $|\cos(p+i\eta)-\cos p|\le(\cosh\eta-1)+|\sin p||\sinh\eta|\le\eta^2+2|p||\eta|
+  \le2c_0(\kappa^2+p^2)$, absorbed by the lower bound $(\kappa^2+p^2)/(6\pi^2)$ of (B.3).
+\end{proof}
+
+\begin{lemma}[Contour shift and decay of $K_{\xi,\infty}$, (B.5)]\label{eq:B.5}
+  \lean{RBM.kernelFun_add_two_pi, RBM.integral_kernelFun_shift, RBM.norm_kernelFun_shift_le,
+    RBM.integral_inv_sq_add_sq_le, RBM.norm_Kinf_le, RBM.norm_Kinf_le_exists}\leanok
+  \uses{eq:B.4}
+  $|K_{\xi,\infty}(u)|\le\frac{6\pi^2}{\kappa}\,e^{-c_0\kappa|u|}$.
+\end{lemma}
+\begin{proof}\leanok\uses{eq:B.4}
+  The integrand is $2\pi$-periodic and holomorphic on $[-\pi,\pi]\times[0,\eta]$ by (B.4),
+  so Cauchy's theorem on the rectangle (vertical sides cancel) moves the contour to
+  $\mathbb R+i\eta$, $\eta=c_0\kappa\operatorname{sgn}u$.  There $|e^{i(p+i\eta)u}|=e^{-c_0\kappa|u|}$
+  and $\int_{-\pi}^{\pi}dp/(\kappa^2+p^2)\le\pi/\kappa$.
+\end{proof}
+
 \begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}
   \lean{RBM.rho, RBM.norm_root_ne_one, RBM.norm_rho_lt_one}\leanok\uses{def:Theta}
   Write $c = 3/\xi - 1$.  The characteristic equation of the three-term recursion

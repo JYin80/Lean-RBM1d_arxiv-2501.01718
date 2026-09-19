@@ -728,4 +728,99 @@ theorem sum_prod_taylor_le (f : Fin n → ZMod L → ℂ) (a : Fin n → ZMod L)
 
 end RTerms
 
+section Cancel
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- **The first-order terms cancel**: for a self-energy that is even, `g(-s) = g(s)`, the odd part
+of any kernel averages to zero. -/
+theorem sum_pinned_odd_eq_zero (g : (Fin n → ZMod L) → ℂ) (hg : ∀ s, g (fun v => -s v) = g s)
+    (f : ZMod L → ℂ) (c : ZMod L) (v₁ : Fin n) :
+    ∑ s ∈ pinned L n, g s * oddPart f c (s v₁) = 0 := by
+  set S := ∑ s ∈ pinned L n, g s * oddPart f c (s v₁)
+  have h : S = -S := by
+    have e : S = ∑ s ∈ pinned L n, g (fun v => -s v) * oddPart f c ((fun v => -s v) v₁) := by
+      refine Finset.sum_nbij' (fun s v => -s v) (fun s v => -s v) ?_ ?_ ?_ ?_ ?_
+      · intro s hs; simp only [pinned, mem_filter, mem_univ, true_and] at hs ⊢; rw [hs, neg_zero]
+      · intro s hs; simp only [pinned, mem_filter, mem_univ, true_and] at hs ⊢; rw [hs, neg_zero]
+      · intro s _; funext v; simp
+      · intro s _; funext v; simp
+      · intro s _; simp
+    calc S = _ := e
+      _ = ∑ s ∈ pinned L n, -(g s * oddPart f c (s v₁)) := by
+          refine sum_congr rfl fun s _ => ?_
+          rw [hg, oddPart_neg]; ring
+      _ = -S := by rw [sum_neg_distrib]
+  have h2 : (2 : ℂ) * S = 0 := by linear_combination h
+  simpa using h2
+
+/-- Translation invariance: `∑_d g(d) = L ∑_{s₀=0} g(s)`. -/
+theorem sum_eq_mul_sum_pinned (g : (Fin n → ZMod L) → ℂ)
+    (hg : ∀ s c, g (fun v => s v + c) = g s) :
+    ∑ d, g d = L * ∑ s ∈ pinned L n, g s := by
+  rw [sum_center (M := ℂ)]
+  simp only [hg, sum_const, card_univ, ZMod.card, nsmul_eq_mul]
+
+/-- The choice with a single odd piece at `v₁` contributes nothing. -/
+theorem sum_taylor_single_eq_zero (g : (Fin n → ZMod L) → ℂ) (hg : ∀ s, g (fun v => -s v) = g s)
+    (f : Fin n → ZMod L → ℂ) (τ : Fin n → Fin 3) (v₁ : Fin n) (h1 : τ v₁ = 1)
+    (h0 : ∀ v, v ≠ v₁ → τ v = 0) :
+    ∑ c : ZMod L, ∑ s ∈ pinned L n, g s * ∏ v, taylorTerm (f v) (τ v) c (s v) = 0 := by
+  refine sum_eq_zero fun c _ => ?_
+  have e : ∀ s : Fin n → ZMod L, ∏ v, taylorTerm (f v) (τ v) c (s v)
+      = oddPart (f v₁) c (s v₁) * ∏ v ∈ univ.erase v₁, f v c := by
+    intro s
+    rw [← mul_prod_erase _ _ (mem_univ v₁)]
+    congr 1
+    · show taylorTerm (f v₁) (τ v₁) c (s v₁) = _; rw [h1]; rfl
+    · refine prod_congr rfl fun v hv => ?_
+      rw [h0 v (ne_of_mem_erase hv)]; rfl
+  simp_rw [e, ← mul_assoc]
+  rw [← sum_mul, sum_pinned_odd_eq_zero g hg, zero_mul]
+
+/-- The choice with no odd or even piece factorises: `(∑_c ∏_v f_v(c)) (∑_{s₀=0} g(s))`. -/
+theorem sum_taylor_zero_eq (g : (Fin n → ZMod L) → ℂ) (f : Fin n → ZMod L → ℂ)
+    (τ : Fin n → Fin 3) (h0 : ∀ v, τ v = 0) :
+    ∑ c : ZMod L, ∑ s ∈ pinned L n, g s * ∏ v, taylorTerm (f v) (τ v) c (s v)
+      = (∑ c : ZMod L, ∏ v, f v c) * ∑ s ∈ pinned L n, g s := by
+  rw [sum_mul]
+  refine sum_congr rfl fun c _ => ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun s _ => ?_
+  have : ∏ v, taylorTerm (f v) (τ v) c (s v) = ∏ v, f v c :=
+    prod_congr rfl fun v _ => by rw [h0 v]; rfl
+  rw [this, mul_comm]
+
+end Cancel
+
+section LongFacts
+
+variable {L : ℕ} [NeZero L] (hL : 3 ≤ L)
+include hL
+
+omit [NeZero L] hL in
+/-- `η_t ℓ̂(t)² ≤ 1`, hence also `η_t ℓ̂(t) ≤ 1`. -/
+theorem etaT_mul_ellHat_sq_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht1 : t < 1) :
+    etaT E t * ellHat L (t : ℂ) ^ 2 ≤ 1 := by
+  have h1t : 0 < 1 - t := by linarith
+  have hη : etaT E t ≤ 1 - t := by rw [etaT_eq_zt_im]; exact zt_im_le hE ht1.le
+  have hℓ : ellHat L (t : ℂ) ≤ 1 / Real.sqrt (1 - t) := by
+    rw [ellHat_ofReal L ht1]; exact min_le_left _ _
+  have hℓ0 : 0 ≤ ellHat L (t : ℂ) := by
+    rw [ellHat_ofReal L ht1]
+    exact le_min (by positivity) (Nat.cast_nonneg _)
+  have hs : Real.sqrt (1 - t) ^ 2 = 1 - t := Real.sq_sqrt h1t.le
+  have hs0 : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.2 h1t
+  calc etaT E t * ellHat L (t : ℂ) ^ 2 ≤ (1 - t) * (1 / Real.sqrt (1 - t)) ^ 2 := by gcongr
+    _ = 1 := by rw [div_pow, hs]; field_simp
+
+theorem etaT_mul_ellHat_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+    etaT E t * ellHat L (t : ℂ) ≤ 1 := by
+  have h := etaT_mul_ellHat_sq_le (L := L) hE ht1
+  have hℓ1 : 1 ≤ ellHat L (t : ℂ) := one_le_ellHat L hL ht0 ht1
+  have hη0 : 0 ≤ etaT E t := mul_nonneg (by linarith) (by rw [mE_im]; positivity)
+  nlinarith
+
+end LongFacts
+
 end RBM

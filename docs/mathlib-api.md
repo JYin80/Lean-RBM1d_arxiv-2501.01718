@@ -76,6 +76,11 @@
 | `Finset.sum_ite_eq`、`Finset.sum_ite_eq'`、`Finset.sum_comm`、`Finset.sum_pair` | |
 | `Fin.prod_univ_two`、`Fin.prod_univ_four` | |
 | `Lean.collectAxioms` | `#print axioms` 的底层；`Test/Axioms.lean` 用它做硬性审计 |
+| `Real.exp_lt_one_iff`（**不是** `Real.exp_lt_one`，后者不存在）、`Real.exp_le_one_iff` | `exp x < 1 ↔ x < 0` |
+| `Complex.norm_le_abs_re_add_abs_im` | `‖z‖ ≤ \|re z\| + \|im z\|` |
+| `List.getD_replicate` | 首个参数 `a` 显式：`List.getD_replicate _ (h : i < n)` |
+| `inv_le_iff_one_le_mul₀`、`inv_le_iff_one_le_mul₀'`、`inv_anti₀` | 倒数不等式 |
+| `Finset.single_le_sum`（`f` 常需 `(f := …)` 显式给出） | 非负和 ≥ 单项 |
 
 ## 本工具链里已弃用的名字
 

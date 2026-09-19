@@ -2329,6 +2329,38 @@ theorem diag_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)
   refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
   rw [hKL, hKR]
 
+include hL hm in
+/-- **Lemma 3.4, the ODE**: for every loop of length `n ≥ 3` the tree representation `Kgen`
+satisfies the primitive equation (2.48). -/
+theorem hasDerivAt_Kgen (I : LoopIdx (ZMod L)) (hI : I.WF) (h3 : 3 ≤ I.length) :
+    HasDerivAt (fun r => Kgen L W m r I) (primRhs L W (Kgen L W m t) I) t := by
+  set n := I.length with hn
+  have : NeZero n := ⟨by omega⟩
+  set σF : Fin n → Bool := fun i => I.σ.getD i false with hσF
+  set aF : Fin n → ZMod L := fun i => I.a.getD i 0 with haF
+  have hfun : (fun r => Kgen L W m r I) = fun r => Kn L W m r n σF aF :=
+    funext fun r => Kgen_eq W m r h3 I rfl
+  rw [hfun]
+  refine (hasDerivAt_Kn hL W m hm σF aF).congr_deriv ?_
+  -- the derivative: leaf terms and edge terms
+  rw [Finset.sum_add_distrib, mul_add, Finset.sum_comm, Finset.mul_sum,
+    sum_edges_swap (fun F d => treeValW L F aF (fun v => thetaEdge L m t (σF v) (σF (v + 1)))
+      (Function.update (fun d : ↥F => thetaEdge L m t (σF d.1.1) (σF d.1.2) - 1) d
+        (dTheta m t (σF d.1.1) (σF d.1.2)))), Finset.mul_sum]
+  -- (2.48): leaf pairs, the root pair and the diagonals
+  rw [primRhs, ← hn, sum_pairs h3 (fun k l => ∑ x : ZMod L, ∑ y : ZMod L,
+      Kgen L W m t (I.cutGlueL k l x) * SB L x y * Kgen L W m t (I.cutGlueR k l y)),
+    mul_add, Finset.mul_sum, Finset.mul_sum]
+  congr 1
+  · refine Finset.sum_congr rfl fun v _ => ?_
+    rw [leaf_term W m σF aF v]
+    simp only [leafPair]
+    split_ifs with hv
+    · exact (leaf_pair_term W m (t := t) h3 I hI rfl v hv).symm
+    · exact (root_pair_term hL W m hm h3 I hI rfl v (by have := v.isLt; omega)).symm
+  · refine Finset.sum_congr rfl fun J hJ => ?_
+    exact (diag_pair_term hL W m hm h3 I hI rfl (mem_diagonals_iff.1 hJ)).symm
+
 end Lists
 
 end RBM

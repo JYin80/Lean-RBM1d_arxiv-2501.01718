@@ -129,7 +129,7 @@ theorem star4_slot2 : star4 B₀ B₁ (M * N) B₃ a₀ a₁ a₂ a₃
 
 theorem star4_slot3 : star4 B₀ B₁ B₂ (M * N) a₀ a₁ a₂ a₃
     = ∑ z : ZMod L, M a₃ z * star4 B₀ B₁ B₂ N a₀ a₁ a₂ z := by
-  simp only [star4, Matrix.mul_apply, Finset.sum_mul, Finset.mul_sum]
+  simp only [star4, Matrix.mul_apply, Finset.mul_sum]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
 
@@ -335,5 +335,229 @@ theorem thetaEdge_apply_comm (hL : 3 ≤ L) (m : Bool → ℂ) {t : ℝ} (s s' :
   rw [thetaEdge, this]
 
 end KFour
+
+section Assembly
+
+variable {L} (W : ℕ) [NeZero W] (m : Bool → ℂ) (t : ℝ) (s₀ s₁ s₂ s₃ : Bool)
+  (a₀ a₁ a₂ a₃ : ZMod L)
+
+/-- The prefactor `m₀m₁m₂m₃ W⁻³` of (3.5) at `n = 4`. -/
+local notation "c₄" => (W : ℂ)⁻¹ ^ 3 * (m s₀ * m s₁ * m s₂ * m s₃)
+
+/-- `Θ` edges at time `t`. -/
+local notation "Θe" => thetaEdge L m t
+
+omit [NeZero W] in
+theorem sum_mul_kFour_slot0 (M : Matrix (ZMod L) (ZMod L) ℂ) :
+    ∑ x : ZMod L, M a₀ x * kFour W m t s₀ s₁ s₂ s₃ x a₁ a₂ a₃
+      = c₄ * trees4 (M * Θe s₀ s₁) (Θe s₁ s₂) (Θe s₂ s₃) (Θe s₃ s₀) (Θe s₀ s₂) (Θe s₁ s₃)
+          a₀ a₁ a₂ a₃ := by
+  rw [← trees4_slot0, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => by rw [kFour]; ring
+
+omit [NeZero W] in
+theorem sum_mul_kFour_slot1 (M : Matrix (ZMod L) (ZMod L) ℂ) :
+    ∑ x : ZMod L, M a₁ x * kFour W m t s₀ s₁ s₂ s₃ a₀ x a₂ a₃
+      = c₄ * trees4 (Θe s₀ s₁) (M * Θe s₁ s₂) (Θe s₂ s₃) (Θe s₃ s₀) (Θe s₀ s₂) (Θe s₁ s₃)
+          a₀ a₁ a₂ a₃ := by
+  rw [← trees4_slot1, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => by rw [kFour]; ring
+
+omit [NeZero W] in
+theorem sum_mul_kFour_slot2 (M : Matrix (ZMod L) (ZMod L) ℂ) :
+    ∑ x : ZMod L, M a₂ x * kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ x a₃
+      = c₄ * trees4 (Θe s₀ s₁) (Θe s₁ s₂) (M * Θe s₂ s₃) (Θe s₃ s₀) (Θe s₀ s₂) (Θe s₁ s₃)
+          a₀ a₁ a₂ a₃ := by
+  rw [← trees4_slot2, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => by rw [kFour]; ring
+
+omit [NeZero W] in
+theorem sum_mul_kFour_slot3 (M : Matrix (ZMod L) (ZMod L) ℂ) :
+    ∑ x : ZMod L, M a₃ x * kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ x
+      = c₄ * trees4 (Θe s₀ s₁) (Θe s₁ s₂) (Θe s₂ s₃) (M * Θe s₃ s₀) (Θe s₀ s₂) (Θe s₁ s₃)
+          a₀ a₁ a₂ a₃ := by
+  rw [← trees4_slot3, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => by rw [kFour]; ring
+
+theorem thetaEdge_apply_symm (hL : 3 ≤ L) {s s' : Bool} (ht : ‖(t : ℂ) * (m s * m s')‖ < 1)
+    (i j : ZMod L) : Θe s s' i j = Θe s s' j i := by
+  rw [thetaEdge_apply_comm hL m s s' ht, thetaEdge_comm]
+
+/-- **Internal edge `(0, 2)` ↔ the term `(k, l) = (1, 3)`.** -/
+theorem term13_eq (hL : 3 ≤ L) (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) :
+    (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        kThree W m t s₀ s₂ s₃ x a₂ a₃ * SB L x y * kThree W m t s₀ s₁ s₂ a₀ a₁ y
+      = c₄ * spl02 (Θe s₀ s₁) (Θe s₁ s₂) (Θe s₂ s₃) (Θe s₃ s₀)
+          (((m s₀ * m s₂) • (Θe s₀ s₂ * SB L)) * Θe s₀ s₂) a₀ a₁ a₂ a₃ := by
+  have hW : (W : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne W)
+  set F : ZMod L → ℂ := fun u => ∑ x : ZMod L, Θe s₀ s₁ a₀ x * Θe s₁ s₂ a₁ x * Θe s₀ s₂ x u
+  set G : ZMod L → ℂ := fun v => ∑ y : ZMod L, Θe s₀ s₂ v y * (Θe s₂ s₃ a₂ y * Θe s₃ s₀ a₃ y)
+  have k1 : ∀ u, kThree W m t s₀ s₁ s₂ a₀ a₁ u = (W : ℂ)⁻¹ ^ 2 * (m s₀ * m s₁ * m s₂) * F u := by
+    intro u
+    simp only [kThree, F]
+    congr 1
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [thetaEdge_apply_comm hL m s₂ s₀ (hm _ _) u b]
+  have k2 : ∀ v, kThree W m t s₀ s₂ s₃ v a₂ a₃ = (W : ℂ)⁻¹ ^ 2 * (m s₀ * m s₂ * m s₃) * G v := by
+    intro v
+    simp only [kThree, G]
+    congr 1
+    exact Finset.sum_congr rfl fun b _ => by ring
+  have key : spl02 (Θe s₀ s₁) (Θe s₁ s₂) (Θe s₂ s₃) (Θe s₃ s₀)
+      (((m s₀ * m s₂) • (Θe s₀ s₂ * SB L)) * Θe s₀ s₂) a₀ a₁ a₂ a₃
+      = (m s₀ * m s₂) * ∑ u : ZMod L, ∑ v : ZMod L, F u * SB L u v * G v := by
+    simp only [F, G]
+    rw [← sum_bilin (Θe s₀ s₂) (SB L) (fun x => Θe s₀ s₁ a₀ x * Θe s₁ s₂ a₁ x)
+      (fun y => Θe s₂ s₃ a₂ y * Θe s₃ s₀ a₃ y), Finset.mul_sum]
+    simp only [spl02, Matrix.smul_mul, Matrix.smul_apply, smul_eq_mul]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun y _ => ?_
+    ring
+  rw [key]
+  calc (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        kThree W m t s₀ s₂ s₃ x a₂ a₃ * SB L x y * kThree W m t s₀ s₁ s₂ a₀ a₁ y
+      = (W : ℂ) * ∑ u : ZMod L, ∑ v : ZMod L,
+          ((W : ℂ)⁻¹ ^ 2 * (m s₀ * m s₁ * m s₂) * ((W : ℂ)⁻¹ ^ 2 * (m s₀ * m s₂ * m s₃)))
+            * (F u * SB L u v * G v) := by
+        congr 1
+        rw [Finset.sum_comm]
+        exact Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => by
+          rw [k1, k2, SB_apply_comm L v u]; ring
+    _ = c₄ * ((m s₀ * m s₂) * ∑ u : ZMod L, ∑ v : ZMod L, F u * SB L u v * G v) := by
+        simp only [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => by
+          field_simp
+
+/-- **Internal edge `(1, 3)` ↔ the term `(k, l) = (2, 4)`.** -/
+theorem term24_eq (hL : 3 ≤ L) (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) :
+    (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        kThree W m t s₀ s₁ s₃ a₀ x a₃ * SB L x y * kThree W m t s₁ s₂ s₃ a₁ a₂ y
+      = c₄ * spl13 (Θe s₀ s₁) (Θe s₁ s₂) (Θe s₂ s₃) (Θe s₃ s₀)
+          (((m s₁ * m s₃) • (Θe s₁ s₃ * SB L)) * Θe s₁ s₃) a₀ a₁ a₂ a₃ := by
+  have hW : (W : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne W)
+  set F : ZMod L → ℂ := fun u => ∑ x : ZMod L, Θe s₀ s₁ a₀ x * Θe s₃ s₀ a₃ x * Θe s₁ s₃ x u
+  set G : ZMod L → ℂ := fun v => ∑ y : ZMod L, Θe s₁ s₃ v y * (Θe s₁ s₂ a₁ y * Θe s₂ s₃ a₂ y)
+  have k1 : ∀ u, kThree W m t s₀ s₁ s₃ a₀ u a₃ = (W : ℂ)⁻¹ ^ 2 * (m s₀ * m s₁ * m s₃) * F u := by
+    intro u
+    simp only [kThree, F]
+    congr 1
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [thetaEdge_apply_symm m t hL (hm s₁ s₃) u b]; ring
+  have k2 : ∀ v, kThree W m t s₁ s₂ s₃ a₁ a₂ v = (W : ℂ)⁻¹ ^ 2 * (m s₁ * m s₂ * m s₃) * G v := by
+    intro v
+    simp only [kThree, G]
+    congr 1
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [thetaEdge_comm L m t s₃ s₁]; ring
+  have key : spl13 (Θe s₀ s₁) (Θe s₁ s₂) (Θe s₂ s₃) (Θe s₃ s₀)
+      (((m s₁ * m s₃) • (Θe s₁ s₃ * SB L)) * Θe s₁ s₃) a₀ a₁ a₂ a₃
+      = (m s₁ * m s₃) * ∑ u : ZMod L, ∑ v : ZMod L, F u * SB L u v * G v := by
+    simp only [F, G]
+    rw [← sum_bilin (Θe s₁ s₃) (SB L) (fun x => Θe s₀ s₁ a₀ x * Θe s₃ s₀ a₃ x)
+      (fun y => Θe s₁ s₂ a₁ y * Θe s₂ s₃ a₂ y), Finset.mul_sum]
+    simp only [spl13, Matrix.smul_mul, Matrix.smul_apply, smul_eq_mul]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun y _ => ?_
+    ring
+  rw [key]
+  calc (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        kThree W m t s₀ s₁ s₃ a₀ x a₃ * SB L x y * kThree W m t s₁ s₂ s₃ a₁ a₂ y
+      = (W : ℂ) * ∑ u : ZMod L, ∑ v : ZMod L,
+          ((W : ℂ)⁻¹ ^ 2 * (m s₀ * m s₁ * m s₃) * ((W : ℂ)⁻¹ ^ 2 * (m s₁ * m s₂ * m s₃)))
+            * (F u * SB L u v * G v) := by
+        congr 1
+        exact Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => by
+          rw [k1, k2]; ring
+    _ = c₄ * ((m s₁ * m s₃) * ∑ u : ZMod L, ∑ v : ZMod L, F u * SB L u v * G v) := by
+        simp only [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => by
+          field_simp
+
+/-- **Lemma 3.4 at `n = 4`**: the tree representation solves (2.48).  The six terms are
+the four boundary edges (`2`-chains) and the two internal edges (pairs of `3`-chains). -/
+theorem hasDerivAt_kFour (hL : 3 ≤ L) (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) :
+    HasDerivAt (fun r => kFour W m r s₀ s₁ s₂ s₃ a₀ a₁ a₂ a₃)
+      ((W : ℂ) * ((∑ x : ZMod L, ∑ y : ZMod L,
+            kFour W m t s₀ s₁ s₂ s₃ x a₁ a₂ a₃ * SB L x y * kTwo L W m t s₀ s₁ a₀ y)
+          + (∑ x : ZMod L, ∑ y : ZMod L,
+            kThree W m t s₀ s₂ s₃ x a₂ a₃ * SB L x y * kThree W m t s₀ s₁ s₂ a₀ a₁ y)
+          + (∑ x : ZMod L, ∑ y : ZMod L,
+            kTwo L W m t s₀ s₃ x a₃ * SB L x y * kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ y)
+          + (∑ x : ZMod L, ∑ y : ZMod L,
+            kFour W m t s₀ s₁ s₂ s₃ a₀ x a₂ a₃ * SB L x y * kTwo L W m t s₁ s₂ a₁ y)
+          + (∑ x : ZMod L, ∑ y : ZMod L,
+            kThree W m t s₀ s₁ s₃ a₀ x a₃ * SB L x y * kThree W m t s₁ s₂ s₃ a₁ a₂ y)
+          + (∑ x : ZMod L, ∑ y : ZMod L,
+            kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ x a₃ * SB L x y * kTwo L W m t s₂ s₃ a₂ y))) t := by
+  have hB : ∀ (s s' : Bool) (i j : ZMod L), HasDerivAt (fun r : ℝ => thetaEdge L m r s s' i j)
+      ((((m s * m s') • (Θe s s' * SB L)) * Θe s s') i j) t :=
+    fun s s' => hasDerivAt_thetaEdge' hL m s s' (hm s s')
+  have hE : ∀ (s s' : Bool) (i j : ZMod L),
+      HasDerivAt (fun r : ℝ => (thetaEdge L m r s s' - 1) i j)
+        ((((m s * m s') • (Θe s s' * SB L)) * Θe s s') i j) t :=
+    fun s s' i j => by simpa using (hB s s' i j).sub_const ((1 : Matrix (ZMod L) (ZMod L) ℂ) i j)
+  have hd := (((hasDerivAt_star4 a₀ a₁ a₂ a₃ (hB s₀ s₁) (hB s₁ s₂) (hB s₂ s₃) (hB s₃ s₀)).add
+    (hasDerivAt_spl02 a₀ a₁ a₂ a₃ (hB s₀ s₁) (hB s₁ s₂) (hB s₂ s₃) (hB s₃ s₀) (hE s₀ s₂))).add
+    (hasDerivAt_spl13 a₀ a₁ a₂ a₃ (hB s₀ s₁) (hB s₁ s₂) (hB s₂ s₃) (hB s₃ s₀)
+      (hE s₁ s₃))).const_mul c₄
+  refine hd.congr_deriv ?_
+  -- rewrite the six terms of (2.48)
+  have h14 : (m s₀ * m s₃) • (Θe s₃ s₀ * SB L) = (m s₃ * m s₀) • (Θe s₃ s₀ * SB L) := by
+    rw [mul_comm]
+  simp only [mul_add]
+  rw [rhs_kTwo_left W m t s₀ s₁ a₀ (fun x => kFour W m t s₀ s₁ s₂ s₃ x a₁ a₂ a₃),
+    rhs_kTwo_left W m t s₁ s₂ a₁ (fun x => kFour W m t s₀ s₁ s₂ s₃ a₀ x a₂ a₃),
+    rhs_kTwo_left W m t s₂ s₃ a₂ (fun x => kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ x a₃),
+    rhs_kTwo_right W m t hL s₀ s₃ (hm _ _) a₃ (fun y => kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ y),
+    h14, sum_mul_kFour_slot0, sum_mul_kFour_slot1, sum_mul_kFour_slot2, sum_mul_kFour_slot3,
+    term13_eq W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ a₃ hL hm, term24_eq W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ a₃ hL hm]
+  simp only [trees4]
+  ring
+
+omit [NeZero W] in
+/-- At `t = 0`, `kFour` is the initial value of Definition 2.12 for `n = 4`. -/
+theorem kFour_zero :
+    kFour W m 0 s₀ s₁ s₂ s₃ a₀ a₁ a₂ a₃ = primInit L W m ⟨[s₀, s₁, s₂, s₃], [a₀, a₁, a₂, a₃]⟩ := by
+  have hΘ : ∀ s s' : Bool, thetaEdge L m 0 s s' = 1 := by
+    intro s s'; simp [thetaEdge, Theta_zero]
+  have hstar : star4 (1 : Matrix (ZMod L) (ZMod L) ℂ) 1 1 1 a₀ a₁ a₂ a₃
+      = if a₁ = a₀ ∧ a₂ = a₀ ∧ a₃ = a₀ then 1 else 0 := by
+    simp only [star4, Matrix.one_apply, ite_mul, one_mul, zero_mul]
+    rw [Finset.sum_ite_eq]
+    simp only [Finset.mem_univ, ite_true]
+    by_cases h1 : a₁ = a₀ <;> by_cases h2 : a₂ = a₀ <;> by_cases h3 : a₃ = a₀ <;> simp [h1, h2, h3]
+  have hall : (∀ x ∈ [a₀, a₁, a₂, a₃], ∀ y ∈ [a₀, a₁, a₂, a₃], x = y)
+      ↔ (a₁ = a₀ ∧ a₂ = a₀ ∧ a₃ = a₀) := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    constructor
+    · rintro ⟨⟨-, h1, h2, h3⟩, -⟩
+      exact ⟨h1.symm, h2.symm, h3.symm⟩
+    · rintro ⟨rfl, rfl, rfl⟩
+      simp
+  rw [kFour, hΘ, hΘ, hΘ, hΘ, hΘ, hΘ, trees4, hstar, sub_self]
+  simp only [spl02, spl13, Matrix.zero_apply, mul_zero, Finset.sum_const_zero, add_zero,
+    primInit, LoopIdx.length, List.length_cons, List.length_nil, List.map_cons, List.map_nil,
+    List.prod_cons, List.prod_nil, hall]
+  split_ifs <;> ring
+
+/-- Examples 2.15, 2.16 and the `n = 4` tree representation as one function of the loop. -/
+noncomputable def kLoop4 (W : ℕ) (m : Bool → ℂ) (t : ℝ) (I : LoopIdx (ZMod L)) : ℂ :=
+  match I.σ, I.a with
+  | [σ₁, σ₂], [x₁, x₂] => kTwo L W m t σ₁ σ₂ x₁ x₂
+  | [σ₁, σ₂, σ₃], [x₁, x₂, x₃] => kThree W m t σ₁ σ₂ σ₃ x₁ x₂ x₃
+  | [σ₀, σ₁, σ₂, σ₃], [x₀, x₁, x₂, x₃] => kFour W m t σ₀ σ₁ σ₂ σ₃ x₀ x₁ x₂ x₃
+  | _, _ => 0
+
+/-- **Lemma 3.4 at `n = 4`, general form**: `kLoop4` satisfies (2.48) on loops of length `4`,
+with the right-hand side built from the cut-and-glue operators. -/
+theorem hasDerivAt_kLoop4 (hL : 3 ≤ L) (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) :
+    HasDerivAt (fun r => kLoop4 W m r ⟨[s₀, s₁, s₂, s₃], [a₀, a₁, a₂, a₃]⟩)
+      (primRhs L W (kLoop4 W m t) ⟨[s₀, s₁, s₂, s₃], [a₀, a₁, a₂, a₃]⟩) t := by
+  rw [primRhs_four]
+  exact hasDerivAt_kFour W m t s₀ s₁ s₂ s₃ a₀ a₁ a₂ a₃ hL hm
+
+end Assembly
 
 end RBM

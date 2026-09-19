@@ -8,6 +8,7 @@ import RBM1D.Hierarchy.Decay
 import RBM1D.Hierarchy.Kernel
 import RBM1D.Hierarchy.KernelDecay
 import RBM1D.Hierarchy.SumZero
+import RBM1D.Hierarchy.SumZeroDyn
 import RBM1D.Hierarchy.Dynamics
 import RBM1D.Hierarchy.Step3
 import RBM1D.Hierarchy.Step45

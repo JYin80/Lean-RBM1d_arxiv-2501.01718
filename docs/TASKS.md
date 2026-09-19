@@ -17,7 +17,7 @@
 | T9 | 无穷体积核 + 围道平移 (B.4)(B.5) | 同上 | 空闲 | 排在第 3 节之后 |
 | T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | 同上 | 空闲 | 排在第 3 节之后 |
 | T11 | dyadic 分解 → (2.53)(2.54) 的一般证明 | 同上 | 空闲 | 排在第 3 节之后 |
-| **T12** | 数值回归测试 | **`Test/Numeric.lean`（新建）** | 空闲 | **可开工** |
+| T12 | 数值回归测试 | `Test/Numeric.lean`（新建） | **Claude Code** | 进行中 |
 | **T13** | Thm 2.2：由 local law 推 delocalization | **`Delocalization.lean`（新建）** | 空闲 | **可开工** |
 | **T15** | §2.1 模型层：S_W、S = S^(B)⊗S_W、E_a、N = WL | **`Defs/Model.lean`（新建）** | 空闲 | **可开工** |
 | **T16** | Def 2.9/2.10：loop 的指标数据与 cut-and-glue 算子 | **`Loop/Index.lean`（新建）** | 空闲 | **可开工，第 3 节的地基** |

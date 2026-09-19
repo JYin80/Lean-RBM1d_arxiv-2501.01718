@@ -496,7 +496,8 @@
     RBM.trace_green_sub_trace_green_conj, RBM.gloopProd, RBM.gloop,
     RBM.gloopProd_append, RBM.gloop_rotate, RBM.sum_gloop_head, RBM.gloop_two,
     RBM.green_sub_green_conj', RBM.trace_green_sub_trace_green_conj',
-    RBM.sum_gloop_two_ward}
+    RBM.sum_gloop_two_ward, RBM.sum_block_ite, RBM.gloop_two_plus_minus,
+    RBM.gloop_two_plus_minus_blocks, RBM.gloop_two_plus_minus_nonneg}
   \leanok\uses{def:model, def:loops, eq:2.10}
   For a fixed deterministic Hermitian $H$, $G(+) = (H-z)^{-1}$, $G(-) = (H-\bar z)^{-1}$ and
   \[ \mathcal L_{\sigma,\mathbf a} = \Bigl\langle \prod_i G(\sigma_i) E_{a_i} \Bigr\rangle ,
@@ -516,6 +517,12 @@
      = W^{-1}\bigl(\operatorname{Tr}(G(z)E_a)-\operatorname{Tr}(G(\bar z)E_a)\bigr) , \]
   a quadratic quantity on the left and a linear one on the right --- the identity that
   makes the local law self-improving.
+
+  Finally, the $(+,-)$ $2$-loop is computed in closed form,
+  \[ \mathcal L_{(+,-),(a,b)} = W^{-2}\sum_{\beta,\alpha}
+     \bigl|G_{(b,\beta),(a,\alpha)}\bigr|^2 \ \ge 0 , \]
+  which is the bridge to delocalization: the loop hierarchy evolves exactly the mass of
+  the Green's function between two blocks.
 \end{definition}
 
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}

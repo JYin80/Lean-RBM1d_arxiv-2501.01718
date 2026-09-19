@@ -853,7 +853,7 @@ Cowork 在 `7472752` 先认领了 T29，Claude Code 的认领脚本随后（`9fc
 
 | Lean | 论文 |
 |---|---|
-| `RBM.Cor35.sum_pow_zdist_le` / `sum_exp_zdist_le` | `Σ_u r^{‖u‖} ≤ 2/(1−r)`，对 `L` 一致 |
+| `RBM.sum_pow_zdist_le` / `sum_exp_zdist_le`（T38 起在 `Defs/Sums.lean`） | `Σ_u r^{‖u‖} ≤ 2/(1−r)`，对 `L` 一致 |
 | `RBM.Cor35.chain` / `chain'` | 树中任一内部顶点到根的距离 ≤ 内部边总长（沿父链归纳） |
 | `RBM.Cor35.dist_bounds` | 任两叶距离 ≤ 2D；任一顶点到末叶距离 ≤ D（D = 全部边长之和） |
 | `RBM.Cor35.norm_treeValW_le` | 各边 `≤ B e^{−κ‖x−y‖}` 的树值 `≤ B^{n+n²}(2/(1−e^{−κ/(2n²)}))^{n²} e^{−κ‖a_i−a_j‖/4}` |
@@ -984,3 +984,11 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 
 **观察**：两次有效发现都出在 Cowork 这边（放缩丢信息、节点标题过度声称），
 而不在 Claude Code 的数学里。审计的价值在于**换一双眼睛**，不在于谁更可靠。
+
+### `RBM1D/Defs/Sums.lean` — 共用求和工具下沉（T38，Claude Code #2）✔
+
+`sum_zmod_val`、`sum_pow_val_le`（用 `geom_sum_Ico_le_of_lt_one` 的短证明）、`sum_pow_sub_val_le`、`pow_zdist_le_add`、
+`sum_pow_zdist_le`、`zdist_neg`、`one_sub_exp_neg_ge`、`sum_exp_neg_zdist_le`、`sum_exp_zdist_le` 各只证一次；
+`Propagator/Edges.lean` 与 `Loop/Cor35.lean` 的副本已删，`WardKgen` 的一处调用改指新文件。只依赖 `Defs/Dist.lean`。
+**未移动**：`mul_exp_neg_le_exp_neg_one`、`two_mul_zdist_le` 仍在 `Propagator/Decay.lean`——该文件由 Cowork 认领（T1–T4 进行中），
+不碰；等那边收工后可顺手下沉。受影响模块（Sums、Edges、Cor35、WardKgen、DiffComplex、SumZero、KBound）全部编译通过。

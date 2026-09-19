@@ -553,8 +553,8 @@ theorem norm_totalSum_le_of_prod (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool)
     intro a₀
     have h := (Equiv.subRight a₀).sum_comp (fun u => r ^ zdist L u)
     simp only [Equiv.subRight_apply] at h
-    rw [h]
-    exact Cor35.sum_pow_zdist_le L hr0 hr1
+    rw [h, div_eq_mul_inv]
+    exact sum_pow_zdist_le L hr0 hr1
   have hterm : ∀ a₀ : ZMod L,
       ‖allSum L (σ.length - 1) (fun rest => K ⟨σ, a₀ :: rest⟩)‖
         ≤ B * (2 / (1 - r)) ^ (σ.length - 1) := by

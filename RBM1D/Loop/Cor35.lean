@@ -5,8 +5,8 @@ Authors: Jun Yin
 -/
 import RBM1D.Loop.TreeRepGeneral
 import RBM1D.Propagator.DecayComplex
+import RBM1D.Defs.Sums
 import Mathlib.Data.List.GetD
-import Mathlib.Algebra.Order.Field.GeomSum
 
 /-!
 # Corollary 3.5: the pure loop decays
@@ -31,7 +31,7 @@ explicit hypothesis `δ ≤ ‖1 - t m(+)²‖` (for `t ≤ T₀ < 1` it holds w
 
 ## Main statements
 
-* `RBM.Cor35.sum_pow_zdist_le` : `∑_u r^{‖u‖} ≤ 2/(1-r)` on the cycle, uniformly in `L`
+* `RBM.sum_exp_zdist_le` (`Defs/Sums.lean`) : `∑_x e^{-λ‖x-c‖} ≤ 2/(1-e^{-λ})`, uniformly in `L`
 * `RBM.Cor35.chain` : in the tree of `F`, the distance from a node to the root is at most
   the total length of the internal edges
 * `RBM.Cor35.norm_treeValW_le` : a tree with exponentially decaying edges decays in the
@@ -49,52 +49,6 @@ namespace Cor35
 section Sum
 
 variable (L : ℕ) [NeZero L]
-
-theorem zdist_neg (u : ZMod L) : zdist L (-u) = zdist L u := by
-  have hu := ZMod.val_lt u
-  rw [zdist, zdist, ZMod.neg_val]
-  split_ifs with h
-  · subst h; simp
-  · omega
-
-theorem sum_pow_val_le {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
-    ∑ u : ZMod L, r ^ u.val ≤ 1 / (1 - r) := by
-  obtain ⟨k, rfl⟩ : ∃ k, L = k + 1 := ⟨L - 1, by have := NeZero.pos L; omega⟩
-  have h : ∑ u : ZMod (k + 1), r ^ u.val = ∑ i ∈ range (k + 1), r ^ i := by
-    rw [← Fin.sum_univ_eq_sum_range]; rfl
-  rw [h, range_eq_Ico]
-  simpa using geom_sum_Ico_le_of_lt_one hr0 hr1 (m := 0) (n := k + 1)
-
-/-- `∑_u r^{‖u‖} ≤ 2/(1-r)` on the cycle `ZMod L`, uniformly in `L`. -/
-theorem sum_pow_zdist_le {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
-    ∑ u : ZMod L, r ^ zdist L u ≤ 2 / (1 - r) := by
-  have h1 : ∀ u : ZMod L, r ^ zdist L u ≤ r ^ u.val + r ^ (-u).val := by
-    intro u
-    by_cases hu : u = 0
-    · subst hu; simp [zdist]
-    · simp only [ZMod.neg_val, hu, ↓reduceIte, zdist]
-      rcases min_choice u.val (L - u.val) with h | h <;> rw [h]
-      · linarith [pow_nonneg hr0 (L - u.val)]
-      · linarith [pow_nonneg hr0 u.val]
-  have h2 : ∑ u : ZMod L, r ^ (-u).val = ∑ u : ZMod L, r ^ u.val :=
-    Equiv.sum_comp (Equiv.neg (ZMod L)) (fun u => r ^ u.val)
-  calc ∑ u : ZMod L, r ^ zdist L u ≤ ∑ u : ZMod L, (r ^ u.val + r ^ (-u).val) :=
-        sum_le_sum fun u _ => h1 u
-    _ = 2 * ∑ u : ZMod L, r ^ u.val := by rw [sum_add_distrib, h2]; ring
-    _ ≤ 2 * (1 / (1 - r)) := by gcongr; exact sum_pow_val_le L hr0 hr1
-    _ = 2 / (1 - r) := by ring
-
-/-- `∑_x e^{-λ‖x - c‖} ≤ 2/(1 - e^{-λ})`, uniformly in `L` and `c`. -/
-theorem sum_exp_zdist_le {lam : ℝ} (hlam : 0 < lam) (c : ZMod L) :
-    ∑ x : ZMod L, exp (-(lam * zdist L (x - c))) ≤ 2 / (1 - exp (-lam)) := by
-  have hr1 : exp (-lam) < 1 := exp_lt_one_iff.2 (by linarith)
-  have e : ∀ x : ZMod L, exp (-(lam * zdist L (x - c))) = exp (-lam) ^ zdist L (x - c) := by
-    intro x; rw [← exp_nat_mul]; congr 1; ring
-  simp_rw [e]
-  have h := (Equiv.subRight c).sum_comp (fun u => exp (-lam) ^ zdist L u)
-  simp only [Equiv.subRight_apply] at h
-  rw [h]
-  exact sum_pow_zdist_le L (exp_pos _).le hr1
 
 theorem one_le_two_div {lam : ℝ} (hlam : 0 < lam) : 1 ≤ 2 / (1 - exp (-lam)) := by
   have h1 : exp (-lam) < 1 := exp_lt_one_iff.2 (by linarith)

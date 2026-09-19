@@ -937,6 +937,70 @@ theorem norm_Theta_second_diff_diag_le (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : �
         gcongr
     _ = 4 * ‖AA L ξ * (1 - rho ξ)‖ := by ring
 
+/-- **The second difference, keeping the decay.**  The bound
+`2‖A(1-ρ)²‖·‖ρ‖^{‖x-y‖-1}` retains the exponential factor that
+`norm_Theta_second_diff_le_two_mul` throws away.  It is needed: the paper's (2.54)
+has `1/(‖x-y‖+1)` on the right, and a bound of size `1/ℓ̂` with no decay does **not**
+imply that once `‖x-y‖ ≫ ℓ̂`. -/
+theorem norm_Theta_second_diff_le_pow (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L ξ x y - Theta L ξ x (y + 1) - Theta L ξ x (y - 1)‖
+      ≤ 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ * ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by
+  have hr1 : ‖rho ξ‖ ≤ 1 := (norm_rho_lt_one hξ0 hξ).le
+  have hr0 : (0 : ℝ) ≤ ‖rho ξ‖ := norm_nonneg _
+  have hz1 : zdist L (x - y) ≤ (x - y).val := by rw [zdist]; exact min_le_left _ _
+  have hz2 : zdist L (x - y) ≤ L - (x - y).val := by rw [zdist]; exact min_le_right _ _
+  have hbound : ∀ m j : ℕ, zdist L (x - y) - 1 ≤ m → zdist L (x - y) - 1 ≤ j →
+      ‖AA L ξ * (1 - rho ξ) ^ 2 * (rho ξ ^ m + rho ξ ^ j)‖
+        ≤ 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ * ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by
+    intro m j hm hj
+    have h1 : ‖rho ξ ^ m + rho ξ ^ j‖ ≤ 2 * ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by
+      calc ‖rho ξ ^ m + rho ξ ^ j‖ ≤ ‖rho ξ ^ m‖ + ‖rho ξ ^ j‖ := norm_add_le _ _
+        _ = ‖rho ξ‖ ^ m + ‖rho ξ‖ ^ j := by rw [norm_pow, norm_pow]
+        _ ≤ ‖rho ξ‖ ^ (zdist L (x - y) - 1) + ‖rho ξ‖ ^ (zdist L (x - y) - 1) :=
+            add_le_add (pow_le_pow_of_le_one hr0 hr1 hm) (pow_le_pow_of_le_one hr0 hr1 hj)
+        _ = 2 * ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by ring
+    rw [norm_mul]
+    calc ‖AA L ξ * (1 - rho ξ) ^ 2‖ * ‖rho ξ ^ m + rho ξ ^ j‖
+        ≤ ‖AA L ξ * (1 - rho ξ) ^ 2‖ * (2 * ‖rho ξ‖ ^ (zdist L (x - y) - 1)) :=
+          mul_le_mul_of_nonneg_left h1 (norm_nonneg _)
+      _ = 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ * ‖rho ξ‖ ^ (zdist L (x - y) - 1) := by ring
+  have hd0 : (x - y).val ≠ 0 := by
+    intro h
+    exact hxy (sub_eq_zero.mp ((ZMod.val_eq_zero _).mp h))
+  have hpos : 0 < (x - y).val := Nat.pos_of_ne_zero hd0
+  have hlt : (x - y).val < L := ZMod.val_lt _
+  rw [Theta_apply_eq_kern L hL hξ0 hξ x y, Theta_apply_eq_kern L hL hξ0 hξ x (y + 1),
+    Theta_apply_eq_kern L hL hξ0 hξ x (y - 1),
+    show x - (y + 1) = (x - y) - 1 from by ring,
+    show x - (y - 1) = (x - y) + 1 from by ring,
+    val_sub_one_of_pos L hL hpos]
+  by_cases hcase : (x - y).val + 1 = L
+  · rw [val_add_one_of_top L hL hcase, kern_zero_eq_kern_L]
+    have h := kern_second_diff (L := L) (ξ := ξ) ((x - y).val - 1) 0 (by omega)
+    have e1 : (x - y).val - 1 + 2 = L := by omega
+    have e2 : (x - y).val - 1 + 1 = (x - y).val := by omega
+    rw [e1, e2] at h
+    have hrw : 2 * kern L ξ ((x - y).val) - kern L ξ ((x - y).val - 1) - kern L ξ L
+        = -(AA L ξ * (1 - rho ξ) ^ 2 * (rho ξ ^ ((x - y).val - 1) + rho ξ ^ 0)) := by
+      linear_combination -h
+    rw [hrw, norm_neg]
+    exact hbound _ _ (by omega) (by omega)
+  · have hcase' : (x - y).val + 1 < L := by omega
+    rw [val_add_one_of_lt L hL hcase']
+    have h := kern_second_diff (L := L) (ξ := ξ) ((x - y).val - 1) (L - (x - y).val - 1)
+      (by omega)
+    have e1 : (x - y).val - 1 + 2 = (x - y).val + 1 := by omega
+    have e2 : (x - y).val - 1 + 1 = (x - y).val := by omega
+    rw [e1, e2] at h
+    have hrw : 2 * kern L ξ ((x - y).val) - kern L ξ ((x - y).val - 1)
+          - kern L ξ ((x - y).val + 1)
+        = -(AA L ξ * (1 - rho ξ) ^ 2
+            * (rho ξ ^ ((x - y).val - 1) + rho ξ ^ (L - (x - y).val - 1))) := by
+      linear_combination -h
+    rw [hrw, norm_neg]
+    exact hbound _ _ (by omega) (by omega)
+
 /-- **Equation (2.54), for real `ξ = t ∈ (0,1)`, off the diagonal.**
 `|2Θ_{x,y} - Θ_{x,y+1} - Θ_{x,y-1}| ≤ 24 / ℓ̂(t)`: the factor `(1-t)` of the
 prefactor is cancelled exactly by the two lattice differences. -/
@@ -955,6 +1019,150 @@ theorem norm_Theta_second_diff_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : 
     _ = 24 / ellHat L (t : ℂ) := by ring
 
 end SecondDiff
+
+section InvDist
+
+variable (L : ℕ) [NeZero L] {ξ : ℂ}
+
+theorem mul_exp_neg_le_exp_neg_one {x : ℝ} (hx : 0 ≤ x) :
+    x * Real.exp (-x) ≤ Real.exp (-1) := by
+  have h := Real.add_one_le_exp (x - 1)
+  have hx' : x ≤ Real.exp (-1) / Real.exp (-x) := by
+    rw [← Real.exp_sub]
+    have : -1 - -x = x - 1 := by ring
+    rw [this]
+    linarith
+  have hpos : 0 < Real.exp (-x) := Real.exp_pos _
+  calc x * Real.exp (-x) ≤ (Real.exp (-1) / Real.exp (-x)) * Real.exp (-x) :=
+        mul_le_mul_of_nonneg_right hx' hpos.le
+    _ = Real.exp (-1) := div_mul_cancel₀ _ (ne_of_gt hpos)
+
+theorem exp_neg_one_le_half : Real.exp (-1) ≤ 1 / 2 := by
+  have h1 : (2 : ℝ) ≤ Real.exp 1 := by
+    have := Real.add_one_le_exp (1 : ℝ); linarith
+  have h2 : Real.exp (-1) = (Real.exp 1)⁻¹ := by
+    rw [Real.exp_neg]
+  rw [h2]
+  rw [inv_le_comm₀ (Real.exp_pos 1) (by norm_num)]
+  linarith
+
+theorem two_mul_zdist_le (u : ZMod L) : 2 * zdist L u ≤ L := by
+  have h := ZMod.val_lt u
+  rw [zdist]
+  rcases le_total u.val (L - u.val) with h' | h'
+  · rw [min_eq_left h']; omega
+  · rw [min_eq_right h']; omega
+
+theorem one_le_ellHat (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+    1 ≤ ellHat L (t : ℂ) := by
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
+  have hsle : Real.sqrt (1 - t) ≤ 1 := by
+    have : Real.sqrt (1 - t) ≤ Real.sqrt 1 := Real.sqrt_le_sqrt (by linarith)
+    simpa using this
+  rw [ellHat_ofReal L ht1]
+  refine le_min ((one_le_div hs).mpr hsle) ?_
+  have : (3 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL
+  linarith
+
+/-- **Equation (2.54) in the paper's form.**  For real `ξ = t ∈ (0,1)` and `x ≠ y`,
+\[ \bigl|2(\Theta_t)_{x,y}-(\Theta_t)_{x,y+1}-(\Theta_t)_{x,y-1}\bigr|
+   \;\le\; \frac{60}{\|x-y\|+1} . \]
+The point is that the bound `24/\hat\ell` of `norm_Theta_second_diff_le` does **not**
+imply this once `\|x-y\| \gg \hat\ell`; the exponential factor retained by
+`norm_Theta_second_diff_le_pow` is what closes the gap.  Two regimes again:
+`\hat\ell = L` uses `\|x-y\| \le L/2`, and `\hat\ell = (1-t)^{-1/2}` uses
+`u e^{-u} \le e^{-1} \le 1/2`. -/
+theorem norm_Theta_second_diff_le_inv_dist (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖
+      ≤ 60 / ((zdist L (x - y) : ℝ) + 1) := by
+  obtain ⟨r, hrho, hr0, hr1, hlow, hhigh⟩ := rho_real_bounds ht0 ht1
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast ne_of_gt ht0
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
+  have hnr : ‖rho (t : ℂ)‖ = r := by
+    rw [hrho, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hr0]
+  have hell1 : 1 ≤ ellHat L (t : ℂ) := one_le_ellHat L hL ht0 ht1
+  have hellpos : (0 : ℝ) < ellHat L (t : ℂ) := lt_of_lt_of_le one_pos hell1
+  have hdnn : (0 : ℝ) ≤ (zdist L (x - y) : ℝ) := Nat.cast_nonneg _
+  have hrd : (0 : ℝ) ≤ r ^ (zdist L (x - y) - 1) := pow_nonneg hr0.le _
+  -- the bound with the decay factor
+  have hstep1 := norm_Theta_second_diff_le_pow L hL htne hnorm hxy
+  rw [hnr] at hstep1
+  have hstep2 := norm_AA_mul_one_sub_rho_sq_le (L := L) ht0 ht1 hL
+  have hA0 : (0 : ℝ) ≤ ‖AA L (t : ℂ) * (1 - rho (t : ℂ)) ^ 2‖ := norm_nonneg _
+  have hchain : ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖
+      ≤ 24 / ellHat L (t : ℂ) * r ^ (zdist L (x - y) - 1) := by
+    refine hstep1.trans ?_
+    have h24 : (24 : ℝ) / ellHat L (t : ℂ) = 2 * (12 / ellHat L (t : ℂ)) := by ring
+    have : 2 * ‖AA L (t : ℂ) * (1 - rho (t : ℂ)) ^ 2‖ ≤ 24 / ellHat L (t : ℂ) := by
+      rw [h24]; linarith
+    exact mul_le_mul_of_nonneg_right this hrd
+  -- the key numerical inequality
+  have hkey : 24 * ((zdist L (x - y) : ℝ) + 1) * r ^ (zdist L (x - y) - 1)
+      ≤ 60 * ellHat L (t : ℂ) := by
+    rcases le_total (1 / Real.sqrt (1 - t)) ((L : ℝ)) with hcase | hcase
+    · -- `ℓ̂ = (1-t)^{-1/2}`, the exponential does the work
+      have hellval : ellHat L (t : ℂ) = 1 / Real.sqrt (1 - t) := by
+        rw [ellHat_ofReal L ht1, min_eq_left hcase]
+      have hinv : 1 / ellHat L (t : ℂ) = Real.sqrt (1 - t) := by
+        rw [hellval, one_div_one_div]
+      set k : ℕ := zdist L (x - y) - 1 with hk
+      have hexp : r ^ k ≤ Real.exp (-((k : ℝ) / ellHat L (t : ℂ))) := by
+        have hre : r ≤ Real.exp (-(1 - r)) := by
+          have := Real.add_one_le_exp (-(1 - r)); linarith
+        have h1 : r ^ k ≤ Real.exp (-(1 - r)) ^ k := pow_le_pow_left₀ hr0.le hre k
+        have h2 : Real.exp (-(1 - r)) ^ k = Real.exp (-((k : ℝ) * (1 - r))) := by
+          rw [← Real.exp_nat_mul]; congr 1; ring
+        have h3 : (k : ℝ) / ellHat L (t : ℂ) ≤ (k : ℝ) * (1 - r) := by
+          rw [div_eq_mul_inv, ← one_div]
+          rw [hinv]
+          exact mul_le_mul_of_nonneg_left hlow (Nat.cast_nonneg k)
+        calc r ^ k ≤ Real.exp (-((k : ℝ) * (1 - r))) := by rw [← h2]; exact h1
+          _ ≤ Real.exp (-((k : ℝ) / ellHat L (t : ℂ))) :=
+              Real.exp_le_exp.mpr (by linarith)
+      set u : ℝ := (k : ℝ) / ellHat L (t : ℂ) with hu
+      have hu0 : 0 ≤ u := by positivity
+      have hku : (k : ℝ) = u * ellHat L (t : ℂ) := by
+        rw [hu]; field_simp
+      have hdk : ((zdist L (x - y) : ℝ) + 1) ≤ (k : ℝ) + 2 := by
+        have : (zdist L (x - y) : ℝ) ≤ (k : ℝ) + 1 := by
+          have hz : zdist L (x - y) ≤ k + 1 := by omega
+          exact_mod_cast hz
+        linarith
+      have hue : u * Real.exp (-u) ≤ Real.exp (-1) := mul_exp_neg_le_exp_neg_one hu0
+      have he1 : Real.exp (-1) ≤ 1 / 2 := exp_neg_one_le_half
+      have heu1 : Real.exp (-u) ≤ 1 := by
+        have : Real.exp (-u) ≤ Real.exp 0 := Real.exp_le_exp.mpr (by linarith)
+        simpa using this
+      have hexp0 : (0 : ℝ) < Real.exp (-u) := Real.exp_pos _
+      calc 24 * ((zdist L (x - y) : ℝ) + 1) * r ^ k
+          ≤ 24 * ((k : ℝ) + 2) * Real.exp (-u) := by
+            have h24 : (0:ℝ) ≤ 24 := by norm_num
+            nlinarith [hexp, hrd, hdk, hexp0.le]
+        _ = 24 * (u * ellHat L (t : ℂ)) * Real.exp (-u) + 48 * Real.exp (-u) := by
+            rw [hku]; ring
+        _ ≤ 24 * ellHat L (t : ℂ) * (1/2) + 48 * ellHat L (t : ℂ) := by
+            nlinarith [hue, he1, heu1, hell1, hellpos]
+        _ = 60 * ellHat L (t : ℂ) := by ring
+    · -- `ℓ̂ = L`, the prefactor alone suffices
+      have hellval : ellHat L (t : ℂ) = (L : ℝ) := by
+        rw [ellHat_ofReal L ht1, min_eq_right hcase]
+      have hhalf : 2 * zdist L (x - y) ≤ L := two_mul_zdist_le L (x - y)
+      have hhalf' : 2 * (zdist L (x - y) : ℝ) ≤ (L : ℝ) := by exact_mod_cast hhalf
+      have hL3 : (3 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL
+      have hrle : r ^ (zdist L (x - y) - 1) ≤ 1 := pow_le_one₀ hr0.le hr1.le
+      rw [hellval]
+      nlinarith [hrd, hrle, hhalf', hL3]
+  -- combine
+  refine hchain.trans ?_
+  rw [div_mul_eq_mul_div, div_le_div_iff₀ hellpos (by positivity)]
+  nlinarith [hkey]
+
+end InvDist
 
 section L1Norm
 

@@ -687,11 +687,13 @@
 \end{proof}
 
 \begin{lemma}[Ward identity for $\Kcal$ at $n=2,3$, Lemma 3.6 Step 1]\label{lem:3.6-small}
-  \lean{RBM.etaT, RBM.ward_two, RBM.mul_Theta_sub_mul_Theta, RBM.ward_three}\leanok
+  \lean{RBM.etaT, RBM.ward_two, RBM.mul_Theta_sub_mul_Theta, RBM.ward_three,
+    RBM.wardC, RBM.ward_two_of_isPrimitive}\leanok
   \uses{ex:2.15, lem:Theta-rowsum, lem:2.8}
   With $m=m^{(E)}$, $\eta_t=(1-t)\operatorname{Im}m$ and $\sigma_1=+$, $\sigma_n=-$:
   $\sum_{a_n}K_{t,\sigma,a}=(K_{t,\sigma^+,a/a_n}-K_{t,\sigma^-,a/a_n})/(2Wi\eta_t)$ for the
-  explicit loops at $n=2$ ((3.16)) and $n=3$.
+  explicit loops at $n=2$ ((3.16)) and $n=3$.  At $n=2$ it holds for every solution of
+  Definition 2.12 with bounded $2$-loops.
 \end{lemma}
 \begin{proof}\leanok\uses{ex:2.15, lem:Theta-rowsum, lem:2.8}
   $n=2$: $|m|=1$ and the row sums of $\Th$ give $W^{-1}(1-t)^{-1}$ on both sides.

@@ -711,3 +711,7 @@ n = 2 特判为单边（与 T20/T21 一致）。
 **步骤**：(1) 抽象层：带权树的值、对一条边求导、沿边分解；(2) 层状区间族与剪切双射 `{F : J ∈ 𝓘(F)} ≃ TSP(左) × TSP(右)`；
 (3) 求导用 `HasDerivAt.finset_prod`，初值 `t=0` 时只剩 `F = ∅`；(4) 与 `primRhs` 的列表下标对接；
 (5)（可选）与 T21 的 `treeSum` 对接——至少在 n ≤ 4 上用 `kLoop4` 交叉验证。文件：`Loop/TreeRepGeneral.lean`。
+
+T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 Def 2.12 且 2-圈有界的 `K` 成立（不只是显式的 `kTwo`）。
+证法即论文 Step 2 的 Grönwall：`D = Σ_{a₂}K − c_t`，`c_t = (W(1−t))⁻¹`，`∂_t D = W Σ K S D + W c_t D`（因 `∂_t c_t = W c_t²`），`D₀ = 0`。
+这验证了一般 n 收尾所需的 Grönwall 骨架。下一步：n ≥ 3 的 (3.19)(3.20) 与四类切口。

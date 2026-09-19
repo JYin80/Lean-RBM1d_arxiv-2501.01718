@@ -787,4 +787,151 @@ theorem norm_sum_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| �
 
 end Bound349
 
+section Induction350
+
+variable {E : ℝ}
+
+/-- A long edge has `m_i m_j = m \bar m = |m|² = 1`, so `ξ = t`. -/
+theorem mSigma_mul_of_ne (hE : |E| ≤ 2) {s s' : Bool} (h : s ≠ s') :
+    mSigma E s * mSigma E s' = 1 := by
+  have h1 : mE E * (starRingEnd ℂ) (mE E) = 1 := by
+    rw [Complex.mul_conj', norm_mE hE]; simp
+  cases s <;> cases s' <;> simp_all [mSigma, mul_comm]
+
+/-- An innermost long edge: a long edge of `π` of smallest arc has no other long edge inside. -/
+theorem exists_innermost {n : ℕ} [NeZero n] {F₀ : Finset (Fin n × Fin n)} (hF₀ : IsTSP F₀)
+    {σ : Fin n → Bool} (hne : (Flong F₀ σ).Nonempty) :
+    ∃ J ∈ Flong F₀ σ, ∀ e ∈ Flong F₀ σ, ArcLe e J → e = J := by
+  obtain ⟨J, hJ, hmin⟩ := (Flong F₀ σ).exists_min_image arcWidth hne
+  refine ⟨J, hJ, fun e he heJ => ?_⟩
+  by_contra hne'
+  have he12 : e.1 ≤ e.2 := le_of_lt (hF₀.1 e (Flong_subset F₀ σ he)).1
+  exact absurd (hmin e he) (not_le.2 (arcWidth_lt heJ hne' he12))
+
+theorem Alayer_eq_zero_of_empty {n : ℕ} [NeZero n] (m : Bool → ℂ) (t : ℝ) {σ : Fin n → Bool}
+    {π : Finset (Fin n × Fin n)} (h : TSPlong n σ π = ∅) : Alayer m t σ π = 0 := by
+  simp [Alayer, Qlayer, h]
+
+theorem cor37Const_nonneg' {n : ℕ} {k : ℝ} (hk0 : 0 < k) : 0 ≤ cor37Const n k := by
+  unfold cor37Const
+  have : 0 ≤ ∑ m ∈ Finset.Icc 2 n, 2 * pureConst m k :=
+    sum_nonneg fun m hm => mul_nonneg zero_le_two (pureConst_nonneg (mem_Icc.1 hm).1 hk0)
+  positivity
+
+/-- **(3.50)**: `|A(σ, π)| = |L^{-1} ∑_a K^(π)(t,σ,a)| ≤ C_n η_t^{-(n-1)}` for every `σ` and `π`,
+in the bulk, by induction on `n`.  For `π ≠ ∅` cut at an innermost long edge
+(`Alayer_cut`, the paper's (3.52)–(3.64)); for `π = ∅` subtract the other layers from (3.49)
+(the paper's (3.65)).  One constant serves all sizes `3 ≤ n ≤ N`. -/
+theorem norm_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) (N : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (n : ℕ) [NeZero n], 3 ≤ n → n ≤ N →
+      ∀ (σ : Fin n → Bool) (π : Finset (Fin n × Fin n)) (t : ℝ), 0 ≤ t → t < 1 →
+        ‖Alayer (mSigma E) t σ π‖ ≤ C * (etaT E t)⁻¹ ^ (n - 1) := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  set ι := (mE E).im with hι
+  have hι0 : 0 < ι := mE_im_pos hE
+  induction N with
+  | zero => exact ⟨0, le_rfl, fun n _ h3 hN => by omega⟩
+  | succ N ih =>
+  obtain ⟨C, hC0, hC⟩ := ih
+  have hcor0 : 0 ≤ cor37Const (N + 1) k := cor37Const_nonneg' hk0
+  refine ⟨C + cor37Const (N + 1) k + (2 ^ ((N + 1) * (N + 1)) + 1) * (C * C * ι⁻¹),
+    by positivity, fun n _ h3 hN σ π t ht0 ht1 => ?_⟩
+  have hη : 0 < etaT E t := etaT_pos hE ht1
+  set η := etaT E t with hηdef
+  have hη' : η = (1 - t) * ι := rfl
+  have hpow0 : 0 ≤ η⁻¹ ^ (n - 1) := by positivity
+  have hCC : 0 ≤ C * C * ι⁻¹ := by positivity
+  rcases Nat.lt_or_ge n (N + 1) with hlt | hge
+  · refine (hC n h3 (by omega) σ π t ht0 ht1).trans ?_
+    gcongr
+    have := mul_nonneg (by positivity : (0 : ℝ) ≤ 2 ^ ((N + 1) * (N + 1)) + 1) hCC
+    linarith
+  have hn : n = N + 1 := by omega
+  -- the layers with a long edge
+  have hne_bound : ∀ π : Finset (Fin n × Fin n), π.Nonempty →
+      ‖Alayer (mSigma E) t σ π‖ ≤ C * C * ι⁻¹ * η⁻¹ ^ (n - 1) := by
+    intro π hπne
+    rcases (TSPlong n σ π).eq_empty_or_nonempty with hemp | ⟨F₀, hF₀⟩
+    · rw [Alayer_eq_zero_of_empty _ _ hemp, norm_zero]; positivity
+    obtain ⟨hF₀T, hπ⟩ := mem_TSPlong.1 hF₀
+    have hF₀' := isTSP_of_mem_TSP hF₀T
+    obtain ⟨J, hJ, hinner⟩ := exists_innermost hF₀' (σ := σ) (hπ ▸ hπne)
+    rw [hπ] at hJ hinner
+    have hm := norm_mul_mSigma_lt_one hE2 ht0 ht1
+    have hJd : IsDiag n J.1 J.2 := hF₀'.1 J (Flong_subset F₀ σ (hπ ▸ hJ))
+    have hJlong : σ J.1 ≠ σ J.2 := (mem_Flong.1 (hπ ▸ hJ)).2
+    rw [Alayer_cut (by omega) (mSigma E) hm σ hF₀T hπ hJ hinner,
+      mSigma_mul_of_ne hE2 hJlong, mul_one]
+    have hw := width_of_isDiag hJd
+    have hw' : wIn J + 1 < n := by
+      obtain ⟨-, -, hnot⟩ := hJd
+      have := J.2.isLt
+      simp only [wIn]
+      omega
+    have hwv : wIn J = J.2.val - J.1.val := rfl
+    have hin := hC (wIn J + 1) (by omega) (by omega) (sigmaIn σ J) ∅ t ht0 ht1
+    have hout := hC (n - wIn J + 1) (by omega) (by omega) (sigmaOut σ J)
+      ((π.erase J).image (shiftOut J)) t ht0 ht1
+    simp only [Nat.add_sub_cancel] at hin hout
+    have ht : ‖(t : ℂ)‖ = t := Complex.norm_of_nonneg ht0
+    have h1t : ‖(1 : ℂ) - t‖ = 1 - t := by
+      rw [show (1 : ℂ) - t = ((1 - t : ℝ) : ℂ) by push_cast; ring]
+      exact Complex.norm_of_nonneg (by linarith)
+    rw [norm_mul, norm_mul, norm_mul, ht, h1t]
+    have hkey : (1 - t) * (η⁻¹ ^ wIn J * η⁻¹ ^ (n - wIn J)) = ι⁻¹ * η⁻¹ ^ (n - 1) := by
+      have h1t0 : 1 - t ≠ 0 := (by linarith : (0 : ℝ) < 1 - t).ne'
+      have hι0' : ι ≠ 0 := hι0.ne'
+      rw [← pow_add, show wIn J + (n - wIn J) = n - 1 + 1 by omega, pow_succ, hη']
+      field_simp
+    calc t * (1 - t) * ‖Alayer (mSigma E) t (sigmaIn σ J) ∅‖ *
+          ‖Alayer (mSigma E) t (sigmaOut σ J) ((π.erase J).image (shiftOut J))‖
+        ≤ (1 - t) * (C * η⁻¹ ^ wIn J) * (C * η⁻¹ ^ (n - wIn J)) := by
+          gcongr
+          all_goals nlinarith
+        _ = C * C * ((1 - t) * (η⁻¹ ^ wIn J * η⁻¹ ^ (n - wIn J))) := by ring
+        _ = C * C * ι⁻¹ * η⁻¹ ^ (n - 1) := by rw [hkey]; ring
+  rcases π.eq_empty_or_nonempty with rfl | hπne
+  · -- the layer without long edges: (3.49) minus the others
+    have hsum := norm_sum_Alayer_le hk0 hk1 hEk ht0 ht1 h3 σ
+    have hmem : (∅ : Finset (Fin n × Fin n)) ∈ (diagonals n).powerset := empty_mem_powerset _
+    rw [← add_sum_erase _ _ hmem] at hsum
+    have hrest : ‖∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖
+        ≤ 2 ^ ((N + 1) * (N + 1)) * (C * C * ι⁻¹ * η⁻¹ ^ (n - 1)) := by
+      refine (norm_sum_le _ _).trans ?_
+      refine (sum_le_sum fun π hπ => hne_bound π
+        (nonempty_iff_ne_empty.2 (mem_erase.1 hπ).1)).trans ?_
+      rw [sum_const, nsmul_eq_mul]
+      gcongr
+      have hc : ((diagonals n).powerset.erase ∅).card ≤ 2 ^ (n * n) := by
+        refine (card_erase_le).trans ?_
+        rw [card_powerset]
+        refine Nat.pow_le_pow_right (by norm_num) ?_
+        have := card_le_univ (diagonals n)
+        simpa using this
+      rw [← hn]
+      exact_mod_cast hc
+    have htri : ‖Alayer (mSigma E) t σ ∅‖ ≤
+        ‖Alayer (mSigma E) t σ ∅ + ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ +
+          ‖∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ := by
+      have := norm_sub_le (Alayer (mSigma E) t σ ∅ +
+        ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π)
+        (∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π)
+      rwa [add_sub_cancel_right] at this
+    have hcor : cor37Const n k = cor37Const (N + 1) k := by rw [hn]
+    rw [hcor] at hsum
+    calc ‖Alayer (mSigma E) t σ ∅‖
+        ≤ cor37Const (N + 1) k * η⁻¹ ^ (n - 1) +
+            2 ^ ((N + 1) * (N + 1)) * (C * C * ι⁻¹ * η⁻¹ ^ (n - 1)) := by
+          linarith
+      _ ≤ _ := by
+          have h2 : (0 : ℝ) ≤ 2 ^ ((N + 1) * (N + 1)) := by positivity
+          nlinarith [mul_nonneg hC0 hpow0, mul_nonneg hCC hpow0]
+  · refine (hne_bound π hπne).trans ?_
+    gcongr
+    have := mul_nonneg (by positivity : (0 : ℝ) ≤ 2 ^ ((N + 1) * (N + 1))) hCC
+    linarith
+
+end Induction350
+
 end RBM

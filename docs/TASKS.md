@@ -817,3 +817,87 @@ L_{t,σ,a} = ⟨ Π_i G(σ_i) E_{a_i} ⟩       G(+) = G(z), G(−) = conj
 
 **这条工单的意义**：它是自查对账逮出来的，不是新数学。做之前先读
 `docs/STATUS.md` 里「一次自查发现的缺口」那两节，理解为什么"看起来同量级"不够。
+
+---
+
+# 第五批工单（2026-09-19，Lemma 3.4 与 3.6 拿下后开出）
+
+**Lemma 3.4（树表示，一般 n）与 Lemma 3.6（Ward 恒等式）都完成了**——第 3 节的两块地基到位。
+这一批把战线推到 §3.3：sum-zero 性质。那是论文自己说的"key input"，也是整篇文章
+最原创的部分之一。
+
+**建议顺序：T31 → T32 → T33 → T34。** T31 是纯定义层，必须先做对，T34 全建在它上面。
+
+---
+
+## T31 — Def 3.8/3.9：按长边分层（**优先**）
+
+新建 `RBM1D/Loop/Layer.lean`。论文 p.38（Definition 3.8）与紧接的 Definition 3.9。
+
+**Definition 3.8**（论文原文照抄）：
+
+* `F(Γ_a)` 已经有了——就是 `Loop/Crossing.lean` 里 `TSP n` 的元素本身
+  （我们把 Lemma 3.2 当定义用，所以一个"树"就是一个无交叉对角线集合）。
+* **长内部边**：`F_long(Γ_a, σ) := { {i,j} ∈ F(Γ_a) : {σ_i, σ_j} = {+,−} }`。
+  即两端电荷相反的内部边。注意 `{σ_i,σ_j} = {+,−}` 就是 `σ_i ≠ σ_j`（Bool 上直接写 `σ i ≠ σ j`）。
+* **按 π 分层**：对 `π ⊆ Z_n^off`（`Z_n^off` 就是我们的 `diagonals n`），
+  `T_SP(P_a, σ, π) := { Γ_a ∈ T_SP(P_a) : F_long(Γ_a, σ) = π }`。
+  显然这给出 `TSP n` 的一个**划分**（按 `F_long` 的取值分类）——把这条证出来
+  （`Finset` 上就是"按 `F_long` 分组"，`Finset.filter` + 互不相交 + 并集是全体）。
+
+**Definition 3.9** 在紧接着的一页，定义 `K^(π)`（把树和限制在 `T_SP(P_a,σ,π)` 上）
+与它的自能 `Σ^(π)`。**照抄要非常小心**，尤其是 `Σ^(π)` 的归一化因子和指标。
+`K^(π)` 的定义应当复用 `Loop/TreeRepGeneral.lean` 里已有的树和（`treeSum` 一族），
+只是把求和范围从整个 `TSP n` 换成 `filter (F_long · σ = π)`。
+
+**验收**：`∑_{π} K^(π) = K`（分层求和等于总和）——这条既是正确性检查，
+也是后面所有估计的起点。`Finset.sum_fiberwise` 之类应该直接可用。
+
+---
+
+## T32 — Corollary 3.7
+
+论文 p.~（Lemma 3.6 之后）。既然 Lemma 3.6 已经证完，这条应当是它的直接推论。
+放进现有的 `Loop/Ward*.lean` 里合适的那个文件，不要新建。
+**先把论文的陈述逐字抄下来再证**，别凭印象。
+
+---
+
+## T33 — (2.53)(2.54) 推到复 ξ（原 T11）
+
+新建 `RBM1D/Propagator/DiffComplex.lean`。
+
+实 ξ 的版本我（Cowork）已经做完并补强到论文形式
+（`norm_Theta_sub_shift_le`、`norm_Theta_second_diff_le_inv_dist`，
+见 `Propagator/Decay.lean` 的 `Differences2`/`SecondDiff`/`InvDist` 三节）。
+复 ξ 的 (2.52) 你们也做完了（`norm_Theta_apply_le_complex`）。
+现在把差分估计也推到复 ξ：
+
+* 路线 A（推荐）：沿用 Fourier 表示。`(Θ_ξ)_{x,y} − (Θ_ξ)_{x,y+1}` 在 Fourier 侧是
+  乘以 `(1 − ζ^{-p})`，模长 `≍ |p|`；配合 `SymbolBound.lean` 的 `|1 − ξŜ(p)| ≍ |1−ξ| + |p|²`
+  就能出 `(2.53)`。二阶差分同理乘 `|1 − ζ^{-p}|² ≍ |p|²`。
+* 路线 B：闭式解对复 ξ 也成立（`theta_apply_closed_form` 没有实性假设），
+  `kern_succ_sub`/`kern_second_diff` 也都是对一般 ξ 的。缺的只是
+  `‖A(1−ρ)‖`、`‖A(1−ρ)²‖` 在复 ξ 下的界——而 `RateComplex.lean` 的
+  `rho_complex_bounds` 也许正好给得出。**先花十分钟看看路线 B 是不是几行就完了**，
+  是的话别走 A。
+
+**注意**：像我在 (2.54) 上踩过的那样，**别把衰减因子放缩掉**——
+最终陈述必须真的蕴含论文的 `≺ 1/(‖x−y‖+1)`。见 `docs/STATUS.md` 的两节自查记录。
+
+---
+
+## T34 — Lemma 3.10：对称性与 sum-zero（待 T31）
+
+新建 `RBM1D/Loop/SumZero.lean`。论文 p.40。
+
+对 **偶数 `n ≥ 4`** 与**交替电荷** `σ^(alt)`（奇数位 `+`、偶数位 `−`），单分子树图（`π = ∅`）：
+
+1. **平移不变 + 对称**：`Σ^(∅)(t, σ^(alt), d) = Σ^(∅)(t, σ^(alt), −d)`；
+2. **sum zero**：`L^{-1} Σ_{d ∈ Z_L^n} Σ^(∅)(t, σ^(alt), d) = O(1−t) = O(η_t)`。
+
+第 1 条应该是纯对称性（`Θ` 的对称与平移不变已有：`Theta_transpose`、`Theta_apply_add_right`），
+先做它。第 2 条是真正的内容，论文 §3.4 有完整证明（p.41 起），**照着做，别自己发明**。
+
+`O(1−t)` 与 `O(η_t)` 的互换由我做的字典保证
+（`Propagator/Edges.lean` 的 `zt_im_le` / `le_zt_im`：`(1−t)√(2κ)/2 ≤ η_t ≤ 1−t`）。

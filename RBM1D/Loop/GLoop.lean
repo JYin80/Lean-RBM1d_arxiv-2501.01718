@@ -276,6 +276,56 @@ theorem gloop_two_plus_minus {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ
   rw [Matrix.trace]
   simp only [hdiag, hterm, ← Finset.mul_sum]
 
+/-- Collapsing the two block indicators: a double sum over `Z_L × Fin W` restricted to
+the blocks `I_b` and `I_a` is a double sum over `Fin W`. -/
+theorem sum_block_ite (f : ZMod L × Fin W → ZMod L × Fin W → ℂ) (a b : ZMod L) :
+    (∑ p : ZMod L × Fin W, ∑ q : ZMod L × Fin W,
+        (if p.1 = b then if q.1 = a then f p q else 0 else 0))
+      = ∑ β : Fin W, ∑ α : Fin W, f (b, β) (a, α) := by
+  have hq : ∀ p : ZMod L × Fin W,
+      (∑ q : ZMod L × Fin W, (if p.1 = b then if q.1 = a then f p q else 0 else 0))
+        = if p.1 = b then ∑ α : Fin W, f p (a, α) else 0 := by
+    intro p
+    by_cases hp : p.1 = b
+    · simp only [if_pos hp, Fintype.sum_prod_type]
+      refine (Finset.sum_eq_single a ?_ ?_).trans ?_
+      · intro q₁ _ hne
+        simp [hne]
+      · intro h; exact absurd (Finset.mem_univ a) h
+      · simp
+    · simp [hp]
+  simp_rw [hq]
+  rw [Fintype.sum_prod_type]
+  refine (Finset.sum_eq_single b ?_ ?_).trans ?_
+  · intro p₁ _ hne
+    simp [hne]
+  · intro h; exact absurd (Finset.mem_univ b) h
+  · simp
+
+/-- `L_{(+,-),(a,b)} = W^{-2} ∑_{β,α} |G_{(b,β),(a,α)}|²`, with the sums over the two
+blocks written out. -/
+theorem gloop_two_plus_minus_blocks {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
+    (hH : H.IsHermitian) (a b : ZMod L) :
+    gloop L W H z ⟨[true, false], [a, b]⟩
+      = ((W : ℂ)⁻¹) ^ 2 * ∑ β : Fin W, ∑ α : Fin W,
+          (Complex.normSq (green H z (b, β) (a, α)) : ℂ) := by
+  rw [gloop_two_plus_minus hH a b, sum_block_ite]
+
+/-- **The `(+,-)` `2`-loop is a nonnegative real.**  It is `W^{-2}` times the mass of
+the Green's function between the blocks `I_b` and `I_a`. -/
+theorem gloop_two_plus_minus_nonneg {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
+    (hH : H.IsHermitian) (a b : ZMod L) :
+    ∃ r : ℝ, 0 ≤ r ∧ gloop L W H z ⟨[true, false], [a, b]⟩ = (r : ℂ) := by
+  refine ⟨((W : ℝ)⁻¹) ^ 2 * ∑ β : Fin W, ∑ α : Fin W,
+      Complex.normSq (green H z (b, β) (a, α)), ?_, ?_⟩
+  · have : (0 : ℝ) ≤ ∑ β : Fin W, ∑ α : Fin W,
+        Complex.normSq (green H z (b, β) (a, α)) :=
+      Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => Complex.normSq_nonneg _
+    positivity
+  · rw [gloop_two_plus_minus_blocks hH a b]
+    push_cast
+    ring
+
 end Loop
 
 end RBM

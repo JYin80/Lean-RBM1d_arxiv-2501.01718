@@ -1077,3 +1077,10 @@ T53（Step 3）现已解锁。
 尺度 `A N u`、`As N`、`R N`。`Psi`/`S`（(5.108)）、`Scales`（(2.72) 在 Step 3 中的全部作用）、`Lemma514`（(5.92) 的较弱形式，唯一随机输入）、`Hyp`；
 **`S_all`**（(5.109) 双重归纳）、`xiLK_le`、**`xiL_le_one`**（(2.77)）。流的实例：`hyp_flow`、**`flow_sharpLoop`**（(2.77)，所有 `n ≥ 1`，
 形状同 `Steps.sharpLoop`）。n = 2 的 (5.107) 由 T57 的 `Band.norm_Kval_le` 补上。paper-deltas #33。T55、T56 现已解锁。
+
+### `RBM1D/Loop/ChainExpand.lean` — 附录 A 的确定性核心（T49，Claude Code 并行 agent）
+
+`minorExt`（`G^(i)`，(4.6)）、`gchainMinor`/`gchainMinorTail`（(A.9)(A.10)）、`XiDiag`/`XiOff`（(A.5)(A.6)）、`compSum`（(A.24) 的指示函数和）；
+(A.18) `gchainMinorTail_apply_eq`、望远镜展开 `gchainMinor_apply_expand`/`gchainMinorTail_apply_expand`、(A.24) `norm_gchainMinorTail_sub_gchain_le_A24`、
+(A.26)+(A.27) ⟹ (A.13) `norm_gchainMinor_sub_gchain_diag_le_trichotomy`、(A.15) `quad_Eblk_apply_self_split`、梯子 `XiDiag_add_le`、`xi_trichotomy`。
+`1/G_ii = O(1)` 与 [39] Lemma 3.3 为显式假设。未做：(A.25) 的界形式、(A.20) 最后一步。依赖 `Green/Minor.lean`（见上方 ⚠）。paper-deltas #34。

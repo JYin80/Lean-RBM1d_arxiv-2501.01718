@@ -1221,6 +1221,19 @@
   come from (2.72); (5.107) uses $|K|\le C(W\ell\eta)^{-n+1}$.
 \end{proof}
 
+\begin{lemma}[Appendix A, deterministic core: (A.5)--(A.27)]\label{lem:A}
+  \lean{RBM.minorExt, RBM.minorExt_resolvent, RBM.fchain, RBM.gchainMinor, RBM.gchainMinorTail, RBM.XiDiag, RBM.XiOff, RBM.compTerm, RBM.compSum, RBM.trace_Eblk_gchain_Eblk_conjTranspose, RBM.norm_gchain_diag_le_XiDiag, RBM.norm_gchain_off_le_XiOff, RBM.gchainMinor_mul_Eblk_mul_conjTranspose, RBM.gchainMinorTail_apply_eq, RBM.gchainMinorTail_row_eq, RBM.norm_gchainMinorTail_quad_sub_le, RBM.sum_Svar_normSq_eq, RBM.normSq_gchainMinorTail_le, RBM.gchainMinor_apply_eq_tail, RBM.gchainMinor_apply_expand, RBM.gchainMinorTail_apply_expand, RBM.gchainMinorTail_two, RBM.gchainMinorTail_three, RBM.trace_gchainMinor_sub_mul_Eblk, RBM.norm_gchainMinorTail_sub_gchain_le_A24, RBM.norm_gchainMinorTail_sub_gchain_le, RBM.norm_gchainMinor_sub_gchain_diag_le, RBM.norm_gchainMinor_sub_gchain_diag_le_trichotomy, RBM.quad_Eblk_apply_self_split, RBM.norm_quad_Eblk_sub_le, RBM.normSq_mul_Eblk_mul_le, RBM.XiDiag_two_le, RBM.XiDiag_add_le, RBM.XiDiag_two_mul_add_one_le, RBM.XiOff_add_le, RBM.XiOff_le_sqrt, RBM.xi_trichotomy}
+  \leanok\uses{def:gchain, def:gloop}
+  For a fixed Hermitian $H$: two-sided chains close into loops; the minor chains
+  $C^{(i)}_n,C^{(ii)}_n$ (A.8)--(A.10), the identity (A.18), the exact telescoping expansions
+  (A.21)--(A.26) with the indicator $\mathbf 1(\ell+\sum n_i=n+k)$, the diagonal split (A.15),
+  and the Cauchy--Schwarz ladder and trichotomy (A.27).  $1/G_{ii}=O(1)$ and [39, Lemma 3.3]
+  enter as hypotheses; $\prec$ is replaced by explicit constants.
+\end{lemma}
+\begin{proof}\leanok
+  (4.8) and (4.9) along the chain; Cauchy--Schwarz for $\operatorname{Tr}(XE_bYE_a)$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

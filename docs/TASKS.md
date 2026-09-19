@@ -74,7 +74,7 @@
 | T46 | §7.2 末尾的零模去除：`S̃^(B) = (1−ζ)S^(B) + (ζ/L)J` | `Propagator/ZeroMode.lean`（新建） | Claude Code | **完成** |
 | T47 | (2.67)：`G_0(σ) = m(σ)·I` 与 `L_0 = K_0`（无条件，§2.7 归纳的基例） | `Flow/Initial.lean`（新建） | Claude Code | **完成** |
 | T48 | 流的尺度层：`η_t`、`ℓ_t`、`A_t = Wℓ_tη_t` 的单调性、几何时间网格与 (2.72) | `Flow/Scales.lean`（新建） | Claude Code | **完成** |
-| T49 | 附录 A 的确定性核心：双边 chain→loop、(A.8)–(A.10)、(A.18)、(A.21)–(A.27)、(A.15) | `Loop/ChainExpand.lean`（新建） | Claude Code | 进行中 |
+| T49 | 附录 A 的确定性核心：双边 chain→loop、(A.8)–(A.10)、(A.18)、(A.21)–(A.27)、(A.15) | `Loop/ChainExpand.lean`（新建） | Claude Code | **完成**（(A.25) 界形式与 (A.20) 末步未做，见 STATUS） |
 | T50 | §6 的确定性骨架：(6.3)(6.5)(6.7)(6.8)(6.9)(6.12) + `z̃` 的算术 | `Loop/Continuity.lean`（新建） | Claude Code | **完成** |
 | T51 | Lemma 7.2 (7.2) 与 Lemma 7.3 (7.13)–(7.24)（核的快衰减/sum-zero 增益） | `Hierarchy/KernelDecay.lean`（新建） | Claude Code | 进行中 |
 | T52 | Def 5.12 的 `P`、`ϑ_t`、`Q_t`；Lemma 5.13 (5.87)、(5.90)(5.99)(5.104) | `Hierarchy/SumZero.lean` | **Cowork** | 进行中（定义层、`P∘ϑ=1`、`P∘Q=0`、行和恒等式、**`P∘A=0 ⟹ P∘Θ_{t,σ}∘A=0`**、**(5.90)** 全部落地；剩 (5.99) 的定量界与 (5.104) 的 `Q⊗Q`，后者要等 Def 5.4 的 `E⊗E` 层） |

@@ -255,3 +255,37 @@ Pi 拓扑与范数拓扑的实例菱形（`HasDerivAt` 现在按一般拓扑向�
 Mathlib 里应该有类似 `Complex.eq_conj_iff_re` / `Complex.normSq` 的工具可用。
 
 做完之后 (2.52) 的 long edge 情形就完整了。
+
+---
+
+# 更新 2026-09-18（Claude Code）：T5、T6 完成
+
+全量 `./check.sh` exit=0、errors: 0，0 sorry，新声明公理审计只含 propext / Classical.choice / Quot.sound。
+
+### `RBM1D/Defs/Domination.lean` — Def 2.1 (ii)（T6）
+
+| Lean | 内容 |
+|---|---|
+| `RBM.UnifDetDom` | 确定性 `≺`，对参数 `u ∈ U(N)` 一致（`N₀` 与 `u` 无关） |
+| `RBM.DetDom` / `detDom_iff` | 标量版本，逐字对应 Def 2.1 (ii)；scoped 记号 `f ≺ g` |
+| `refl` `trans` `add` `mul` `add_left` | 闭包性质（`mul` 等需非负假设） |
+| `const_mul` `const_mul_left` `const_mul_right` `DetDom.smul_left` | 常数吸收 |
+| `of_eventually_le_const_mul` `of_le` `mono_left` `mono_right` | `f ≤ C g ⇒ f ≺ g` 及单调性 |
+
+偏差见 `paper-deltas.md` #2（一致性显式化、定义不要求非负）。
+
+### `RBM1D/Propagator/Symbol.lean` — 附录 B (B.1)（T5）
+
+频率 `p : ZMod L` 代表 `2πp/L`，平面波 `e_p(x) = ZMod.stdAddChar (p * x)`。不依赖闭式解。
+
+| Lean | 内容 |
+|---|---|
+| `RBM.Shat` / `Shat_eq_cos` | `Ŝ(p) = (1 + 2cos(2πp/L))/3`，论文原式 |
+| `RBM.norm_Shat_le_one` / `one_sub_mul_Shat_ne_zero` | `‖ξ‖ < 1 ⇒ 1 − ξŜ(p) ≠ 0` |
+| `RBM.SB_mulVec_apply` | `(S v)(x) = (v x + v(x−1) + v(x+1))/3` |
+| `RBM.SB_mulVec_char` | `S e_p = Ŝ(p) e_p` |
+| `RBM.inv_mul_sum_stdAddChar` | 特征标正交性 `(1/L)Σ_p e_p(u) = δ_{u0}` |
+| `RBM.fourierKernel` / `fourierKernel_sub_SB_mulVec` | `K − ξ S K = δ_0` |
+| **`RBM.Theta_eq_circulant_fourierKernel` / `Theta_apply_fourier`** | **(B.1)** |
+
+下游 (3.48) 直接用 `Theta_apply_fourier`。

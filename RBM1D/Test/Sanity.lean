@@ -10,6 +10,7 @@ import RBM1D.Propagator.Deriv
 import RBM1D.Propagator.Support
 import RBM1D.Propagator.Root
 import RBM1D.Propagator.Decay
+import RBM1D.Propagator.Symbol
 
 /-!
 # Axiom audit
@@ -46,3 +47,8 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.UnifDetDom.const_mul_right
 #print axioms RBM.DetDom.add_left
 #print axioms RBM.DetDom.smul_left
+#print axioms RBM.Shat_eq_cos
+#print axioms RBM.SB_mulVec_char
+#print axioms RBM.one_sub_mul_Shat_ne_zero
+#print axioms RBM.Theta_eq_circulant_fourierKernel
+#print axioms RBM.Theta_apply_fourier

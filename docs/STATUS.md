@@ -373,3 +373,25 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
 
 `Loop/Primitive.lean` 新增 `hasDerivAt_kTwo_mSigma`：取 `m := mSigma E`，Example 2.15 对 `0 ≤ t < 1` 无条件成立。
 (2.40) 与 κ 相关的界推迟（文件末尾注释说明）。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T17 完成
+
+`RBM1D/Loop/Crossing.lean`，全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+
+| Lean | 内容 |
+|---|---|
+| `RBM.IsDiag` / `RBM.diagonals` | n 边形的对角线 `(i,j)`，`i<j`，模 n 不相邻（`(0,n−1)` 是边） |
+| `RBM.Crossing` / `RBM.CrossingFree` | 论文 Lemma 3.2 的交叉条件，严格不等号，共端点不算交叉 |
+| `RBM.TSP n` | **定义**为 `diagonals n` 的无交叉子集（Lemma 3.2 引用而非证明，见 paper-deltas #8） |
+| `crossing_comm` / `not_crossing_self` / `mem_TSP` / `empty_mem_TSP` | 基本性质 |
+| `TSP_three` / `TSP_four` | `{∅}`；`{∅, {(0,2)}, {(1,3)}}` = Figure 6 |
+| `card_TSP_five` / `card_TSP_six` | 11、45（小 Schröder 数），纯 `decide`，n=6 需 `maxRecDepth 10000`，约 8 s |
+
+未做：可选的 `F.card ≤ n − 3`。T20 现在可开工。
+
+**git 注记**：T17 的代码与蓝图节点 `def:TSP`、`lem:TSP-small` 被 T19 的提交 `4b108f0`
+一并带走（共享 index：我暂存了自己的 hunk，对方的 `git commit` 把整个 index 提交了）。
+内容无误，只是提交信息不对应。**教训：共享工作树里不要把东西留在 index 上等待；
+用 `git commit -- <文件名>` 一步提交，或者暂存后立刻提交。**

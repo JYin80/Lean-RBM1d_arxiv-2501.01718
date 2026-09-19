@@ -671,6 +671,21 @@
   the $(k,l)$ term of its diagonal exactly as at $n=4$.
 \end{lemma}
 
+\begin{lemma}[Cyclic invariance of $\Kcal$]\label{lem:K-cyclic}
+  \lean{LoopIdx.rot, RBM.primRhs_rot, RBM.primInit_rot, RBM.rot_eq_on_level,
+    RBM.isPrimitive_rot}\leanok
+  \uses{def:primitive, def:loops}
+  A solution of Definition 2.12 on $[0,T_0]$ with bounded $2$-loops satisfies
+  $K_{t,(\sigma_2,\dots,\sigma_n,\sigma_1),(a_2,\dots,a_n,a_1)}=K_{t,\sigma,a}$.
+  The proof of Lemma 3.6 (Step 4) uses this (``cyclicity'') without proof.
+\end{lemma}
+\begin{proof}\leanok\uses{def:primitive, def:loops}
+  The cut $(k,l)$ of the rotated loop is the cut $(k+1,l+1)$ of the original, or for $l=n$
+  the cut $(1,k+1)$ with the chains swapped.  So on loops of length $n$, $K\circ\mathrm{rot}-K$
+  satisfies a linear equation with $2$-loop coefficients and zero initial value; Gr\"onwall
+  and induction on $n$.
+\end{proof}
+
 \begin{lemma}[Ward identity for $\Kcal$ at $n=2,3$, Lemma 3.6 Step 1]\label{lem:3.6-small}
   \lean{RBM.etaT, RBM.ward_two, RBM.mul_Theta_sub_mul_Theta, RBM.ward_three}\leanok
   \uses{ex:2.15, lem:Theta-rowsum, lem:2.8}
@@ -685,7 +700,7 @@
 \end{proof}
 
 \begin{lemma}[Ward identity for $\Kcal$, Lemma 3.6]\label{lem:3.6}
-  \uses{lem:3.4, lem:Theta-rowsum, lem:3.6-small}
+  \uses{lem:3.4, lem:Theta-rowsum, lem:3.6-small, lem:K-cyclic}
   \emph{Not yet formalized for general $n$.}  The difference $D$ of the two sides satisfies a
   homogeneous linear ODE with zero initial value.
 \end{lemma}

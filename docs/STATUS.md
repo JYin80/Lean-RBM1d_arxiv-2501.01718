@@ -685,3 +685,7 @@ T26 第 1 块进展：`Loop/Index.lean` 加了 `LoopIdx.rot` 与四条交换引�
 3. 有了 2，一般 (2.48) 就是把上面的双射写成 `Finset` 上的 `sum_bij`，外加 n=4 已用过的 `sum_bilin`。
 
 T28（Cor 3.5）依赖一般 n，仍然「待 T25b」。
+
+T26 第 1 块完成：**`RBM.isPrimitive_rot`**（`Loop/Cyclic.lean`）——满足 Def 2.12、2-圈有界的 `K` 在循环轮换下不变。
+配套 `primRhs_rot`（(2.48) 在轮换圈上按原圈切口重排）、`primInit_rot`、`rot_eq_on_level`。论文未证此事，记入 paper-deltas #14。
+下一步：第 2 块 (3.19)(3.20)。

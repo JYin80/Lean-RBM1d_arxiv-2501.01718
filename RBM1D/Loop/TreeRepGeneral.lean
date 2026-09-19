@@ -853,4 +853,328 @@ theorem gval_in_eq (L : ℕ) [NeZero L] (a : Fin n → ZMod L) (M : Fin n → Ma
 
 end CutIn
 
+section CutOut
+
+variable {n : ℕ} [NeZero n]
+
+/-- Collapse the arc of `J = (i, j)` to the single point `i`: `r ↦ r` for `r ≤ i`,
+`r ↦ r - (j - i - 1)` beyond. -/
+def col (J : Fin n × Fin n) (r : ℕ) : ℕ := if r ≤ J.1.val then r else r - (wIn J - 1)
+
+/-- The outside polygon has `n - wIn J + 1` vertices. -/
+def shiftOut (J : Fin n × Fin n) (d : Fin n × Fin n) :
+    Fin (n - wIn J + 1) × Fin (n - wIn J + 1) :=
+  (⟨min (col J d.1.val) (n - wIn J), by omega⟩, ⟨min (col J d.2.val) (n - wIn J), by omega⟩)
+
+/-- The family of the outside polygon: the edges not inside `J`, collapsed. -/
+def FOut (F : Finset (Fin n × Fin n)) (J : Fin n × Fin n) :
+    Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) :=
+  (F.filter fun d => ¬ArcLe d J).image (shiftOut J)
+
+/-- An outside vertex in the outside polygon. -/
+def outV (J : Fin n × Fin n) (v : Fin n) : Fin (n - wIn J + 1) :=
+  ⟨min (col J v.val) (n - wIn J), by omega⟩
+
+/-- The glue vertex of the outside polygon: `J` collapsed to the point `i`. -/
+def glueV (J : Fin n × Fin n) : Fin (n - wIn J + 1) := ⟨min J.1.val (n - wIn J), by omega⟩
+
+variable {J : Fin n × Fin n}
+
+/-- The endpoint condition of an outside node: no endpoint strictly inside `J`. -/
+def OutEnds (J : Fin n × Fin n) (x : Fin n × Fin n) : Prop :=
+  (x.1.val ≤ J.1.val ∨ J.2.val ≤ x.1.val) ∧ (x.2.val ≤ J.1.val ∨ J.2.val ≤ x.2.val) ∧
+    x.1.val < x.2.val
+
+omit [NeZero n] in
+theorem col_of_le {r : ℕ} (h : r ≤ J.1.val) : col J r = r := by simp [col, h]
+
+omit [NeZero n] in
+theorem col_of_gt {r : ℕ} (h : J.1.val < r) : col J r = r - (wIn J - 1) := by
+  simp [col, not_le.2 h]
+
+omit [NeZero n] in
+theorem col_val {r : ℕ} (hr' : r < n) (hJ2 : J.1.val < J.2.val) :
+    min (col J r) (n - wIn J) = col J r := by
+  have := J.2.isLt
+  simp only [col, wIn] at *
+  split_ifs <;> omega
+
+omit [NeZero n] in
+theorem shiftOut_val (x : Fin n × Fin n) (hJ2 : J.1.val < J.2.val) :
+    (shiftOut J x).1.val = col J x.1.val ∧ (shiftOut J x).2.val = col J x.2.val :=
+  ⟨col_val x.1.isLt hJ2, col_val x.2.isLt hJ2⟩
+
+omit [NeZero n] in
+theorem outV_val (v : Fin n) (hJ2 : J.1.val < J.2.val) :
+    (outV J v).val = col J v.val := by
+  exact col_val v.isLt hJ2
+
+omit [NeZero n] in
+/-- `col` is strictly monotone on points outside the open arc of `J`. -/
+theorem col_le_iff {r s : ℕ} (hr : r ≤ J.1.val ∨ J.2.val ≤ r) (hs : s ≤ J.1.val ∨ J.2.val ≤ s)
+    (hJ : J.1.val + 2 ≤ J.2.val) : col J r ≤ col J s ↔ r ≤ s := by
+  simp only [col, wIn]
+  split_ifs <;> omega
+
+omit [NeZero n] in
+theorem col_lt_of_vertex {r v : ℕ} (hr : r ≤ J.1.val ∨ J.2.val ≤ r)
+    (hv : v < J.1.val ∨ J.2.val ≤ v) (hJ : J.1.val + 2 ≤ J.2.val) :
+    (col J v < col J r ↔ v < r) ∧ (col J r ≤ col J v ↔ r ≤ v) := by
+  simp only [col, wIn]
+  constructor <;> split_ifs <;> omega
+
+omit [NeZero n] in
+theorem shiftOut_injOn {d e : Fin n × Fin n} (hd : OutEnds J d) (he : OutEnds J e)
+    (hJ : J.1.val + 2 ≤ J.2.val) (h : shiftOut J d = shiftOut J e) : d = e := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have h1 := shiftOut_val d hJ2
+  have h2 := shiftOut_val e hJ2
+  have h3 := congrArg (fun x => x.1.val) h
+  have h4 := congrArg (fun x => x.2.val) h
+  have a1 := (col_le_iff hd.1 he.1 hJ).1 (by omega)
+  have a2 := (col_le_iff he.1 hd.1 hJ).1 (by omega)
+  have a3 := (col_le_iff hd.2.1 he.2.1 hJ).1 (by omega)
+  have a4 := (col_le_iff he.2.1 hd.2.1 hJ).1 (by omega)
+  exact Prod.ext (Fin.ext (by omega)) (Fin.ext (by omega))
+
+omit [NeZero n] in
+theorem arcLe_shiftOut_iff {d e : Fin n × Fin n} (hd : OutEnds J d) (he : OutEnds J e)
+    (hJ : J.1.val + 2 ≤ J.2.val) : ArcLe (shiftOut J d) (shiftOut J e) ↔ ArcLe d e := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have h1 := shiftOut_val d hJ2
+  have h2 := shiftOut_val e hJ2
+  simp only [ArcLe, Fin.le_def, h1, h2, col_le_iff he.1 hd.1 hJ, col_le_iff hd.2.1 he.2.1 hJ]
+
+omit [NeZero n] in
+theorem inArc_shiftOut_iff {d : Fin n × Fin n} (hd : OutEnds J d) {v : Fin n}
+    (hv : ¬InArc J v) (hJ : J.1.val + 2 ≤ J.2.val) :
+    InArc (shiftOut J d) (outV J v) ↔ InArc d v := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have h1 := shiftOut_val d hJ2
+  have h2 := outV_val v hJ2
+  have hv' : v.val < J.1.val ∨ J.2.val ≤ v.val := by
+    simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt] at hv; omega
+  simp only [InArc, Fin.le_def, Fin.lt_def, h1, h2, (col_lt_of_vertex hd.1 hv' hJ).2,
+    (col_lt_of_vertex hd.2.1 hv' hJ).1]
+
+omit [NeZero n] in
+/-- An outside node contains the glue vertex iff it contains `J`. -/
+theorem inArc_glue_iff {d : Fin n × Fin n} (hd : OutEnds J d) (hJ : J.1.val + 2 ≤ J.2.val) :
+    InArc (shiftOut J d) (glueV J) ↔ ArcLe J d := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have h1 := shiftOut_val d hJ2
+  have hg : (glueV J).val = J.1.val := by
+    have := J.2.isLt; simp only [glueV, wIn]; omega
+  obtain ⟨e1, e2, e3⟩ := hd
+  simp only [InArc, ArcLe, Fin.le_def, Fin.lt_def, h1, hg]
+  simp only [col, wIn]
+  split_ifs <;> omega
+
+variable {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) (hJ : J ∈ F)
+include hF hJ
+
+omit [NeZero n] in
+theorem diag_width : J.1.val + 2 ≤ J.2.val := by
+  obtain ⟨h1, h2, -⟩ := hF.1 J hJ
+  rw [Fin.lt_def] at h1
+  omega
+
+include hn in
+theorem outEnds_of {x : Fin n × Fin n} (hx : x ∈ nodes F) (hxJ : ¬ArcLe x J) : OutEnds J x := by
+  have hlt := lt_of_mem_nodes hF hn hx
+  have hJw := diag_width hF hJ
+  rcases nodes_laminar hF hx (mem_nodes_of_mem hJ) with h | h | h | h
+  · exact absurd h hxJ
+  all_goals simp only [ArcLe, Fin.le_def, Fin.lt_def] at h hlt ⊢
+  all_goals exact ⟨by omega, by omega, hlt⟩
+
+theorem shiftOut_whole : shiftOut J (wholeP n) = wholeP (n - wIn J + 1) := by
+  have hJw := diag_width hF hJ
+  have := J.2.isLt
+  have hc : col J (n - 1) = n - wIn J := by
+    rw [col_of_gt (by omega)]; simp only [wIn]; omega
+  refine Prod.ext (Fin.ext ?_) (Fin.ext ?_)
+  · simp [shiftOut, wholeP, col]
+  · simp only [shiftOut, wholeP, hc]; simp
+
+theorem shiftOut_mem_nodes {x : Fin n × Fin n} (hx : x ∈ nodes F) (hxJ : ¬ArcLe x J) :
+    shiftOut J x ∈ nodes (FOut F J) := by
+  rcases mem_insert.1 hx with rfl | hx
+  · rw [shiftOut_whole hF hJ]; exact wholeP_mem_nodes _
+  · exact mem_nodes_of_mem (mem_image_of_mem _ (mem_filter.2 ⟨hx, hxJ⟩))
+
+theorem exists_of_mem_nodes_FOut {y : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)}
+    (hy : y ∈ nodes (FOut F J)) : ∃ x ∈ nodes F, ¬ArcLe x J ∧ shiftOut J x = y := by
+  rcases mem_insert.1 hy with rfl | hy
+  · exact ⟨wholeP n, wholeP_mem_nodes F, not_arcLe_wholeP hF hJ, shiftOut_whole hF hJ⟩
+  · obtain ⟨x, hx, rfl⟩ := mem_image.1 hy
+    have hx' := mem_filter.1 hx
+    exact ⟨x, mem_nodes_of_mem hx'.1, hx'.2, rfl⟩
+
+include hn
+
+/-- **The outside part of a cut is a tree value on the outside polygon**
+`Fin (n - wIn J + 1)`: `J` collapses to the glue vertex, which hangs on the parent of `J`. -/
+theorem gval_out_eq (L : ℕ) [NeZero L] (a : Fin n → ZMod L)
+    (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (x : ZMod L)
+    (Q : Matrix (ZMod L) (ZMod L) ℂ) (a' : Fin (n - wIn J + 1) → ZMod L)
+    (M' : Fin (n - wIn J + 1) → Matrix (ZMod L) (ZMod L) ℂ)
+    (E' : ↥(FOut F J) → Matrix (ZMod L) (ZMod L) ℂ)
+    (ha0 : a' (glueV J) = x) (ha1 : ∀ v : LOut J, a' (outV J v) = a v)
+    (hM0 : M' (glueV J) = Q) (hM1 : ∀ v : LOut J, M' (outV J v) = M v)
+    (hE : ∀ d : EOut F J, E' ⟨shiftOut J d.1.1, mem_image_of_mem _ (mem_filter.2 ⟨d.1.2, d.2⟩)⟩
+      = E d.1) :
+    gval L (fun o : Option (LOut J) => o.elim x (fun v => a v.1))
+        (fun o => o.elim Q (fun v => M v.1))
+        (fun o => o.elim (cutOut hF hn hJ) (outLeafPar hF hJ)) (fun d : EOut F J => E d.1)
+        outChild (outPar hF hn)
+      = treeValW L (FOut F J) a' M' E' := by
+  have hJw := diag_width hF hJ
+  have hJ2 : J.1.val < J.2.val := by omega
+  have hends : ∀ y ∈ nodes F, ¬ArcLe y J → OutEnds J y := fun y hy hyJ => outEnds_of hF hn hJ hy hyJ
+  have hg : (glueV J).val = J.1.val := by
+    have := J.2.isLt; simp only [glueV, wIn]; omega
+  have hvside : ∀ v : LOut J, v.1.val < J.1.val ∨ J.2.val ≤ v.1.val := by
+    intro v; have := v.2; simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt] at this; omega
+  -- nodes
+  let fN : NOut F J → ↥(nodes (FOut F J)) := fun y =>
+    ⟨shiftOut J y.1.1, shiftOut_mem_nodes hF hJ y.1.2 y.2⟩
+  have hfN : Function.Bijective fN := by
+    constructor
+    · intro y z h
+      have := congrArg Subtype.val h
+      exact Subtype.ext (Subtype.ext (shiftOut_injOn (hends _ y.1.2 y.2) (hends _ z.1.2 z.2) hJw this))
+    · intro y
+      obtain ⟨z, hz, hzJ, hzy⟩ := exists_of_mem_nodes_FOut hF hJ y.2
+      exact ⟨⟨⟨z, hz⟩, hzJ⟩, Subtype.ext hzy⟩
+  -- leaves
+  let fL : Option (LOut J) → Fin (n - wIn J + 1) := fun o => o.elim (glueV J) (fun v => outV J v.1)
+  have hfL : Function.Bijective fL := by
+    constructor
+    · have hcol : ∀ v : LOut J, (col J v.1.val < J.1.val ∧ col J v.1.val = v.1.val) ∨
+          (J.1.val < col J v.1.val ∧ col J v.1.val = v.1.val - (wIn J - 1)) := by
+        intro v
+        rcases hvside v with h | h
+        · exact Or.inl (by rw [col_of_le (le_of_lt h)]; exact ⟨h, rfl⟩)
+        · refine Or.inr ?_
+          rw [col_of_gt (lt_of_lt_of_le hJ2 h)]
+          refine ⟨?_, rfl⟩
+          simp only [wIn]; omega
+      rintro (_ | v) (_ | v') h
+      · rfl
+      · have h1 := outV_val v'.1 hJ2
+        simp only [fL, Option.elim, Fin.ext_iff, hg, h1] at h
+        rcases hcol v' with h2 | h2 <;> omega
+      · have h1 := outV_val v.1 hJ2
+        simp only [fL, Option.elim, Fin.ext_iff, hg, h1] at h
+        rcases hcol v with h2 | h2 <;> omega
+      · have h1 := outV_val v.1 hJ2; have h2 := outV_val v'.1 hJ2
+        simp only [fL, Option.elim, Fin.ext_iff, h1, h2] at h
+        refine congrArg some (Subtype.ext (Fin.ext ?_))
+        have h3 := hvside v; have h4 := hvside v'
+        rcases hcol v with h5 | h5 <;> rcases hcol v' with h6 | h6 <;> simp only [wIn] at * <;>
+          omega
+    · intro i
+      have hi := i.isLt
+      have := J.2.isLt
+      by_cases h1 : i.val = J.1.val
+      · exact ⟨none, Fin.ext (by simp [fL, hg, h1])⟩
+      by_cases h2 : i.val < J.1.val
+      · have hv : ¬InArc J ⟨i.val, by omega⟩ := by
+          simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt]; omega
+        refine ⟨some ⟨⟨i.val, by omega⟩, hv⟩, Fin.ext ?_⟩
+        simp only [fL, Option.elim, outV_val _ hJ2]
+        rw [col_of_le (by omega)]
+      · have hin : i.val + (wIn J - 1) < n := by simp only [wIn] at hi ⊢; omega
+        have hv : ¬InArc J ⟨i.val + (wIn J - 1), hin⟩ := by
+          simp only [InArc, Fin.le_def, Fin.lt_def, not_and, not_lt, wIn]; omega
+        refine ⟨some ⟨⟨i.val + (wIn J - 1), hin⟩, hv⟩, Fin.ext ?_⟩
+        simp only [fL, Option.elim, outV_val _ hJ2]
+        rw [col_of_gt (by simp only [wIn]; omega)]
+        simp only [wIn]; omega
+  -- edges
+  let fE : EOut F J → ↥(FOut F J) := fun d =>
+    ⟨shiftOut J d.1.1, mem_image_of_mem _ (mem_filter.2 ⟨d.1.2, d.2⟩)⟩
+  have hfE : Function.Bijective fE := by
+    constructor
+    · intro d e h
+      have := congrArg Subtype.val h
+      exact Subtype.ext (Subtype.ext (shiftOut_injOn (hends _ (mem_nodes_of_mem d.1.2) d.2)
+        (hends _ (mem_nodes_of_mem e.1.2) e.2) hJw this))
+    · intro y
+      obtain ⟨z, hz, hzy⟩ := mem_image.1 y.2
+      have hz' := mem_filter.1 hz
+      exact ⟨⟨⟨z, hz'.1⟩, hz'.2⟩, Subtype.ext hzy⟩
+  rw [treeValW_eq_gval]
+  refine gval_congr (Equiv.ofBijective fN hfN) (Equiv.ofBijective fL hfL)
+    (Equiv.ofBijective fE hfE) ?_ ?_ ?_ ?_ ?_ ?_
+  · rintro (_ | v)
+    · simpa [fL] using ha0
+    · simpa [fL] using ha1 v
+  · rintro (_ | v)
+    · simpa [fL] using hM0
+    · simpa [fL] using hM1 v
+  · rintro (_ | v)
+    · -- the glue leaf hangs on the parent of `J`
+      refine Subtype.ext ?_
+      simp only [Equiv.ofBijective_apply, fL, fN, Option.elim, cutOut]
+      have hJn := mem_nodes_of_mem hJ
+      have hspec := nodePar_spec hF hn hJn (ne_wholeP hF hJ)
+      have hout := not_arcLe_nodePar_self hF hn hJ
+      have hpm := nodePar_mem F J
+      refine leafPar_eq (shiftOut_mem_nodes hF hJ hpm hout)
+        ((inArc_glue_iff (hends _ hpm hout) hJw).2 hspec.2.1) ?_
+      intro e' he' hge'
+      obtain ⟨z, hz, hzJ, rfl⟩ := exists_of_mem_nodes_FOut hF hJ he'
+      have hJz := (inArc_glue_iff (hends _ hz hzJ) hJw).1 hge'
+      have hzne : z ≠ J := fun h => hzJ (h ▸ ⟨le_refl _, le_refl _⟩)
+      exact (arcLe_shiftOut_iff (hends _ hpm hout) (hends _ hz hzJ) hJw).2
+        (hspec.2.2.2 z hz hJz hzne)
+    · refine Subtype.ext ?_
+      simp only [Equiv.ofBijective_apply, fL, fN, Option.elim, outLeafPar]
+      by_cases hr : v.1.val < n - 1
+      · have hspec := leafPar_spec hF hr
+        have hout := not_arcLe_leafPar hF hJ v.2
+        have hpm := leafPar_mem F v.1
+        refine leafPar_eq (shiftOut_mem_nodes hF hJ hpm hout)
+          ((inArc_shiftOut_iff (hends _ hpm hout) v.2 hJw).2 hspec.1) ?_
+        intro e' he' hve'
+        obtain ⟨z, hz, hzJ, rfl⟩ := exists_of_mem_nodes_FOut hF hJ he'
+        have hzv := (inArc_shiftOut_iff (hends _ hz hzJ) v.2 hJw).1 hve'
+        exact (arcLe_shiftOut_iff (hends _ hpm hout) (hends _ hz hzJ) hJw).2 (hspec.2 z hz hzv)
+      · have hroot : v.1.val = n - 1 := by have := v.1.isLt; omega
+        rw [leafPar_root F hroot, shiftOut_whole hF hJ, leafPar_root]
+        rw [outV_val _ hJ2, hroot]
+        have := J.2.isLt
+        rw [col_of_gt (by omega)]
+        simp only [wIn]; omega
+  · intro d
+    simpa [fE] using hE d
+  · intro d
+    rfl
+  · intro d
+    refine Subtype.ext ?_
+    simp only [Equiv.ofBijective_apply, fE, fN, outPar]
+    have hd := mem_nodes_of_mem d.1.2
+    have hspec := nodePar_spec hF hn hd (ne_wholeP hF d.1.2)
+    have hout := not_arcLe_nodePar hF hn d.1.2 d.2
+    have hpm := nodePar_mem F d.1.1
+    have hdE := hends _ hd d.2
+    have hdd := shiftOut_val d.1.1 hJ2
+    have hlt' := lt_of_mem_nodes hF hn hd
+    refine nodePar_eq ?_ (shiftOut_mem_nodes hF hJ hpm hout)
+      ((arcLe_shiftOut_iff hdE (hends _ hpm hout) hJw).2 hspec.2.1) ?_ ?_
+    · rw [Fin.le_def, hdd.1, hdd.2]
+      exact (col_le_iff hdE.1 hdE.2.1 hJw).2 (le_of_lt hdE.2.2)
+    · intro h
+      exact hspec.2.2.1 (shiftOut_injOn (hends _ hpm hout) hdE hJw h)
+    · intro e' he' hde' hne'
+      obtain ⟨z, hz, hzJ, rfl⟩ := exists_of_mem_nodes_FOut hF hJ he'
+      have hdz := (arcLe_shiftOut_iff hdE (hends _ hz hzJ) hJw).1 hde'
+      have hzd : z ≠ d.1.1 := fun h => hne' (by rw [h])
+      exact (arcLe_shiftOut_iff (hends _ hpm hout) (hends _ hz hzJ) hJw).2
+        (hspec.2.2.2 z hz hdz hzd)
+
+end CutOut
+
 end RBM

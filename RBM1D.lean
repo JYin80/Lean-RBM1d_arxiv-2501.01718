@@ -2,6 +2,7 @@ import RBM1D.Basic
 import RBM1D.Analysis.StretchedExp
 import RBM1D.Defs.Block
 import RBM1D.Delocalization
+import RBM1D.Green.EntryBound
 import RBM1D.Green.Minor
 import RBM1D.Hierarchy.Kernel
 import RBM1D.Hierarchy.SumZero

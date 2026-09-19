@@ -1060,3 +1060,13 @@ T53（Step 3）现已解锁。
 **`Bounds_of_Thm221`**：`Thm221 X κ`、`|E| ≤ 2−κ`、`0 ≤ t N`、最终 `N^{−1+τ} ≤ 1 − t N` ⟹ `Bounds X E t`（(2.60)(2.62)(2.63)(2.64)），
 **无额外假设**；基例 `Bounds_zero`（(2.67)，零误差）；网格 `Band.eventually_flow_grid`。**`stochDom_norm_Lval_of_Thm221`**：(2.61) 对所有 `n ≥ 1`
 （`Band.norm_Kval_le`：n ≥ 3 用 (2.59) `norm_Kgen_le`，n = 1 用 `Kgen_one`，n = 2 用新证的 `norm_Kval_two_le`）。paper-deltas #31。
+
+### `RBM1D/Green/EntryBound.lean` — Lemma 4.1（T45，Claude Code 并行 agent）
+
+两层：确定性核（固定 `H`、显式因子 `Φ` 代 `≺`、`GoodEvent G m δ` 即 Ω(t,c)、LDE 以具体向量的结论 `LDERow/LDECol/LDEQuad` 入参、
+稳定性 `Stable S ξ K` 对块模型**已证** `stable_Sblk_short_edge`）+ `≺` 层（`StochDom.of_det` 把确定性蕴含变成 `≺`）。
+(4.2) `norm_sq_green_le_blk`/`entry_bound_stochDom`、(4.3) `norm_sq_green_diag_sub_le_blk`/`diag_bound_stochDom`、(4.5) `avg_bound_stochDom`，
+以及去掉 `1_Ω` 的 `_of_highProb` 版。paper-deltas #32。
+
+**⚠ `RBM1D/Green/Minor.lean`（Cowork T40）的 HEAD 版本在本机 Lean 4.34 / Mathlib `5ed2965256` 下有 3 处编译错误；
+工作树里有一份未提交的修复（`subst h; simp [Matrix.one_apply_eq]`、`field_simp; ring` 等，非 Claude Code 所改），本机构建依赖它。请文件主人提交。**

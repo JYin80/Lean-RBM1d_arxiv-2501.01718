@@ -1110,3 +1110,33 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 蓝图补齐第二批 Cowork 部分的节点：`lem:4.2`（Minor，T40）、`def:5.2`（Kernel，T42）、`def:5.12`（SumZero，T52）；`\lean{}` 全部解析（989 个，
 `scripts/blueprint_preview.py` 校验；本机无 `leanblueprint`）。`Green/Minor.lean`：提交工作树中已存在的编译修复（HEAD 版在本机 3 处报错）
 并清掉全部 12 条警告（`omit … in`、`if_pos/if_neg → ite_eq_left/ite_eq_right`）；`Hierarchy/Kernel.lean` 已无警告。
+
+## 一条需要先定下来的表示桥（2026-09-19，T58 发现）
+
+`Hierarchy/Kernel.lean`（T42）里的张量算子 `Uker`、`ThetaOp` 作用在
+
+    A : (Fin n → ZMod L) → ℂ
+
+而 loop 层（`Loop/Index.lean` 起）用的是 `LoopIdx`，即两条 `List`：`σ : List Bool`、`a : List (ZMod L)`。
+`primRhs` / `primBil` 都建在 `LoopIdx` 上。
+
+**这两种表示目前没有桥。** T58 的 (5.12)–(5.15) 全部在 `LoopIdx` 一侧完成，不受影响；
+但下面三件事必须跨过去：
+
+* **(5.19)** `Θ_{t,σ} ∘ (L−K) = [K∼(L−K)]^{l_K=2}` —— 左边是 `ThetaOp`（`Fin n` 表示），
+  右边是 `primBilLen 2`（`LoopIdx` 表示）。
+* **(5.20)(5.21)** 的积分形式用 `Uker`，同样是 `Fin n` 表示。
+* **§5.5 的 `Q_t`**（T52）也建在 `Fin (n+1) → ZMod L` 上。
+
+**建议的桥**（谁先做 (5.19) 谁定，定完写回这里）：固定 `σ : List Bool`，
+对每个 `n = σ.length` 给一个
+
+    toTensor : (LoopIdx (ZMod L) → ℂ) → (Fin n → ZMod L) → ℂ
+    toTensor F v = F ⟨σ, List.ofFn v⟩
+
+并证 `List.ofFn` 与 `List.get` 互逆的那两条，剩下的就是把 `cutGlueL k l a` 在 `l = k+1`
+（即 `l_K = 2`）时的显式形状翻译成 `Function.update`。
+
+**不建议**把 loop 层改成 `Fin n` 表示：`LoopIdx` 的 `List` 形态是 `cutGlue*` 三个算子
+（取前缀、丢后缀、拼接）能写得干净的原因，第 3 节整套树表示都压在上面。
+

@@ -134,18 +134,38 @@
   vanishing $(x,y)$ entry.
 \end{proof}
 
+\begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}
+  \lean{RBM.rho, RBM.norm_root_ne_one, RBM.norm_rho_lt_one}\leanok\uses{def:Theta}
+  Write $c = 3/\xi - 1$.  The characteristic equation of the three-term recursion
+  behind $(1-\xi\SB)\Th_\xi = 1$ is $\rho^2 - c\rho + 1 = 0$, whose two roots
+  multiply to $1$.  For $0 < |\xi| < 1$ neither root lies on the unit circle, so
+  exactly one has modulus $< 1$; call it $\rho(\xi)$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:Theta}
+  If $|\rho| = 1$ then $|c| = |\rho + \rho^{-1}| \le |\rho| + |\rho^{-1}| = 2$,
+  hence $3/|\xi| = |c+1| \le 3$, i.e.\ $|\xi| \ge 1$.  This is the same statement
+  as $1 - \xi\widehat S(p) \ne 0$ in the Fourier picture of Appendix B, and it is
+  exactly what fails for $|\xi| \ge 1$.
+\end{proof}
+
 \begin{lemma}[Lemma 2.14 (4): exponential decay, (2.52)]\label{lem:Theta-decay}
-  \uses{lem:Theta-band}
+  \uses{lem:Theta-band, lem:rho}
   With $\hat\ell(\xi):=\min(|1-\xi|^{-1/2},L)$,
   \[ \bigl|(\Th_\xi)_{xy}\bigr| \;\le\;
      \frac{C\,e^{-c|x-y|/\hat\ell(\xi)}}{|1-\xi|\cdot\hat\ell(\xi)} . \]
-  \emph{Not yet formalized.}  The plan is to bypass the contour-shift and Poisson
-  summation argument of Appendix B: for the nearest-neighbour $\SB$ in $d=1$ the
-  inverse has a closed form.  Writing $\rho=\rho(\xi)$ for the root of
-  $\rho^2-(3/\xi-1)\rho+1=0$ of modulus $<1$, one has
-  $(\Th_\xi)_{xy}=c(\xi)\bigl(\rho^{\,d}+\rho^{\,L-d}\bigr)$ with $d$ the
-  representative of $x-y$ in $[0,L)$, and (2.52)--(2.54) follow by elementary
-  estimates on $\rho^d$.
+  \emph{In progress.}  The root $\rho(\xi)$ is constructed
+  (Lemma~\ref{lem:rho}); what remains is the closed form
+  \[ (\Th_\xi)_{xy} \;=\; A(\xi)\bigl(\rho^{\,d}+\rho^{\,L-d}\bigr),
+     \qquad d = \overline{(x-y)} \in [0,L), \qquad
+     A(\xi) = \frac{3\rho}{\xi\,(\rho^L-1)(\rho^2-1)} , \]
+  verified by substitution into $(1-\xi\SB)\Th_\xi=1$ and closed by uniqueness of
+  the inverse (Lemma~\ref{lem:Theta-inv}).  Summing it over $d$ gives
+  $3\rho/[\xi(\rho-1)^2]$, which the characteristic equation turns into exactly
+  $(1-\xi)^{-1}$, matching the independently proved Lemma~\ref{lem:Theta-rowsum};
+  this cross-check confirms the constant.  Setting $\xi = 1-\varepsilon$ and
+  $\rho = 1-\delta$ gives $\delta \approx \sqrt{3}\,|1-\xi|^{1/2}$, which is the
+  paper's decay length.  This route avoids the contour shift and Poisson
+  summation of Appendix B entirely.
 \end{lemma}
 
 \begin{lemma}[Difference estimates (2.53)--(2.54)]\label{lem:Theta-diff}

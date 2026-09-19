@@ -3,6 +3,7 @@ import RBM1D.Defs.Block
 import RBM1D.Defs.Dist
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
+import RBM1D.Propagator.Decay
 import RBM1D.Propagator.Deriv
 import RBM1D.Propagator.Root
 import RBM1D.Propagator.Support

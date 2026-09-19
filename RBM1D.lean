@@ -4,6 +4,7 @@ import RBM1D.Defs.Dist
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
+import RBM1D.Propagator.Root
 import RBM1D.Propagator.Support
 import RBM1D.Test.Sanity
 import RBM1D.Probe

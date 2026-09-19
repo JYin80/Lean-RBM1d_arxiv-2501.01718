@@ -7,6 +7,7 @@ import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
 import RBM1D.Propagator.Support
+import RBM1D.Propagator.Root
 
 /-!
 # Axiom audit
@@ -33,3 +34,5 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.norm_Theta_apply_le
 #print axioms RBM.SB_pow_apply_eq_zero
 #print axioms RBM.norm_Theta_apply_le_pow
+#print axioms RBM.norm_root_ne_one
+#print axioms RBM.norm_rho_lt_one

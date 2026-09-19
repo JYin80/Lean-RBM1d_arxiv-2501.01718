@@ -173,11 +173,14 @@
   together with continuity of $\xi\mapsto\Th_\xi$.
 \end{proof}
 
-\begin{lemma}[$\ell^1$ and $\ell^\infty$ bounds, (3.35)--(3.36)]\label{lem:Theta-bounds}
-  \lean{RBM.norm_Theta_le, RBM.sum_norm_Theta_row_le, RBM.norm_Theta_apply_le}\leanok
+\begin{lemma}[Uniform $\ell^1$ and $\ell^\infty$ bound]\label{lem:Theta-bounds}
+  \lean{RBM.norm_Theta_le, RBM.sum_norm_Theta_row_le, RBM.norm_Theta_apply_le,
+    RBM.sum_norm_Theta_row_of_real}\leanok
   \uses{lem:Theta-series, lem:norm-SB}
   $\max_a\sum_b |(\Th_\xi)_{ab}| \le (1-|\xi|)^{-1}$, and in particular
-  $|(\Th_\xi)_{ab}| \le (1-|\xi|)^{-1}$.
+  $|(\Th_\xi)_{ab}| \le (1-|\xi|)^{-1}$.  For real $\xi = t$ the entries are positive and
+  the $\ell^1$ norm is \emph{exactly} $(1-t)^{-1}$.
+  \emph{This is not yet (3.35)--(3.36)}: see Lemma~\ref{lem:3.35}.
 \end{lemma}
 \begin{proof}\leanok\uses{lem:Theta-series}
   Sum the Neumann series in operator norm.
@@ -273,6 +276,27 @@
   $K_\infty-\xi\SB K_\infty=\delta_0$ on $\mathbb Z$; by (B.5) the periodization converges
   absolutely and solves the same equation on $\ZL$, so its circulant inverts $1-\xi\SB$.
 \end{proof}
+
+\begin{lemma}[(3.35)--(3.36): short and long edges]\label{lem:3.35}
+  \uses{lem:Theta-bounds, lem:Theta-decay, lem:2.8}
+  The paper states, with $\ell_t$ the decay length and $\eta_t = \operatorname{Im} z_t$,
+  \[ \|\Th_{tm^2}\|_{\max} \prec 1, \quad \|\Th_{t|m|^2}\|_{\max} \prec \frac1{\ell_t\eta_t};
+     \qquad
+     \|\Th_{tm^2}\|_{1} \prec 1, \quad \|\Th_{t|m|^2}\|_{1} \prec \frac1{\eta_t} . \]
+  \emph{Not yet formalized as stated}, and it is worth being precise about what is missing.
+  \begin{itemize}
+    \item \textbf{Long edge} ($\xi = t|m|^2 = t$, real).  The $\max$ bound follows from
+      (2.52) (Lemma~\ref{lem:Theta-decay}) and the $\ell^1$ bound is the identity
+      $(1-t)^{-1}$ of Lemma~\ref{lem:Theta-bounds} --- \emph{provided} the dictionary
+      $1-t \asymp \eta_t$, which is part of the quantitative half (2.40) of Lemma 2.8
+      that is currently deferred.
+    \item \textbf{Short edge} ($\xi = tm^2$ with $m$ non-real, $|m| = 1$).  Here
+      $|\xi| = t \to 1$, so the uniform bound $(1-|\xi|)^{-1}$ of
+      Lemma~\ref{lem:Theta-bounds} \textbf{blows up} and does not give $\prec 1$.  What is
+      needed is a lower bound on $|1-tm^2|$, which is where the complex-$\xi$ estimate
+      (Lemma~\ref{lem:Theta-decay-complex}) enters.
+  \end{itemize}
+\end{lemma}
 
 \begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}
   \lean{RBM.rho, RBM.norm_root_ne_one, RBM.norm_rho_lt_one}\leanok\uses{def:Theta}

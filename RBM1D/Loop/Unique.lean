@@ -84,7 +84,7 @@ def LoopVec.toLoop {n : ℕ} (p : LoopVec L n) : LoopIdx (ZMod L) := ⟨p.1.1, p
 
 omit [NeZero L] in
 theorem LoopVec.wf {n : ℕ} (p : LoopVec L n) : (p.toLoop L).WF := by
-  show p.1.1.length = p.2.1.length
+  change p.1.1.length = p.2.1.length
   rw [p.1.2, p.2.2]
 
 omit [NeZero L] in

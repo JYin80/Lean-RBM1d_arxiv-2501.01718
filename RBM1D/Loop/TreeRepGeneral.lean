@@ -1056,7 +1056,8 @@ theorem gval_out_eq (L : ℕ) [NeZero L] (a : Fin n → ZMod L)
     constructor
     · intro y z h
       have := congrArg Subtype.val h
-      exact Subtype.ext (Subtype.ext (shiftOut_injOn (hends _ y.1.2 y.2) (hends _ z.1.2 z.2) hJw this))
+      exact Subtype.ext (Subtype.ext (shiftOut_injOn (hends _ y.1.2 y.2)
+        (hends _ z.1.2 z.2) hJw this))
     · intro y
       obtain ⟨z, hz, hzJ, hzy⟩ := exists_of_mem_nodes_FOut hF hJ y.2
       exact ⟨⟨⟨z, hz⟩, hzJ⟩, Subtype.ext hzy⟩
@@ -1597,7 +1598,8 @@ theorem treeValW_leaf_mul (F : Finset (Fin n × Fin n)) (a : Fin n → ZMod L)
     (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (v : Fin n)
     (A B : Matrix (ZMod L) (ZMod L) ℂ) :
     treeValW L F a (Function.update M v (A * B)) E
-      = ∑ z : ZMod L, A (a v) z * treeValW L F (Function.update a v z) (Function.update M v B) E := by
+      = ∑ z : ZMod L, A (a v) z * treeValW L F (Function.update a v z)
+        (Function.update M v B) E := by
   simp only [treeValW, Finset.mul_sum]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun b _ => ?_
@@ -1729,10 +1731,12 @@ theorem treeValW_internal_cut (σ : Fin n → Bool) (a : Fin n → ZMod L)
     (thetaEdge L m t (σ J.1) (σ J.2))]
   refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun w _ => ?_
   rw [gval_in_eq hF hn hJ L a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
-      (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) u _ (ai u) (fun v => thetaEdge L m t (σi v) (σi (v + 1)))
+      (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) u _ (ai u)
+        (fun v => thetaEdge L m t (σi v) (σi (v + 1)))
       (fun d => thetaEdge L m t (σi d.1.1) (σi d.1.2) - 1) (hai0 u) (hai1 u) hM0i hM1i hEi,
     gval_out_eq hF hn hJ L a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
-      (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) w _ (ao w) (fun v => thetaEdge L m t (σo v) (σo (v + 1)))
+      (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) w _ (ao w)
+        (fun v => thetaEdge L m t (σo v) (σo (v + 1)))
       (fun d => thetaEdge L m t (σo d.1.1) (σo d.1.2) - 1) (hao0 w) (hao1 w) hM0o hM1o hEo]
   rfl
 
@@ -1865,7 +1869,8 @@ theorem internal_term {n : ℕ} [NeZero n] (hn : 2 ≤ n) {J : Fin n × Fin n}
           (Function.update (fun d : ↥F => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1) ⟨J, h⟩
             (dTheta m t (σ J.1) (σ J.2))) else 0)
         = (m (σ J.1) * m (σ J.2)) * ∑ u : ZMod L, ∑ w : ZMod L,
-            treeValG L m t σi (ai u) (FIn F J) * SB L u w * treeValG L m t σo (ao w) (FOut F J) := by
+            treeValG L m t σi (ai u) (FIn F J) * SB L u w *
+              treeValG L m t σo (ao w) (FOut F J) := by
     intro F hF
     obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
     rw [dite_eq_left hJF, dTheta_eq, treeValW_edge_smul,
@@ -2223,7 +2228,8 @@ theorem diag_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)
       = (∏ i, m (I.σ.getD (i : Fin n) false)) * (W : ℂ)⁻¹ ^ (n - 1) *
           ∑ F ∈ (TSP n).filter (fun F => J ∈ F),
             (if h : J ∈ F then treeValW L F (fun i : Fin n => I.a.getD i 0)
-              (fun v => thetaEdge L m t (I.σ.getD (v : Fin n) false) (I.σ.getD (v + 1 : Fin n) false))
+              (fun v => thetaEdge L m t (I.σ.getD (v : Fin n) false)
+                (I.σ.getD (v + 1 : Fin n) false))
               (Function.update (fun d : ↥F => thetaEdge L m t (I.σ.getD d.1.1 false)
                 (I.σ.getD d.1.2 false) - 1) ⟨J, h⟩
                 (dTheta m t (I.σ.getD J.1 false) (I.σ.getD J.2 false))) else 0) := by
@@ -2309,7 +2315,8 @@ theorem diag_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)
         getD_cons_succ', getD_drop']
       congr 1; omega
   have hprod : (∏ i, m (σi i)) * ∏ i, m (σo i)
-      = (∏ i, m (I.σ.getD (i : Fin n) false)) * (m (I.σ.getD J.1 false) * m (I.σ.getD J.2 false)) := by
+      = (∏ i, m (I.σ.getD (i : Fin n) false)) *
+        (m (I.σ.getD J.1 false) * m (I.σ.getD J.2 false)) := by
     set g : ℕ → ℂ := fun j => m (I.σ.getD j false) with hgdef
     have e1 : ∏ i, m (σi i) = ∏ i ∈ Finset.range (J.2.val - J.1.val + 1), g (J.1.val + i) := by
       rw [← Fin.prod_univ_eq_prod_range (fun j => g (J.1.val + j))]

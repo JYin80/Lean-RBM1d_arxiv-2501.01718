@@ -14,7 +14,7 @@
 | T5 | 附录 B (B.1) 的 Fourier 表示 | `Propagator/Symbol.lean` | Claude Code | **完成** |
 | T6 | Def 2.1(ii) 的确定性 ≺ | `Defs/Domination.lean` | Claude Code | **完成** |
 | T7 | 删掉 `RBM1D/Probe.lean` | — | **Claude Code** | 进行中 |
-| T8 | (B.3) 符号的双边界 `\|1−ξŜ(p)\| ≍ \|1−ξ\| + \|p\|²` | `Propagator/SymbolBound.lean`（新建） | **Claude Code #2** | 进行中（队列空，按永不停工规则） |
+| T8 | (B.3) 符号的双边界 `\|1−ξŜ(p)\| ≍ \|1−ξ\| + \|p\|²` | `Propagator/SymbolBound.lean` | Claude Code #2 | **完成** |
 | T9 | 无穷体积核 + 围道平移 (B.4)(B.5) | 同上 | 空闲 | 排在第 3 节之后 |
 | T10 | Poisson 求和 / 周期化 → 环上的 (2.52) | 同上 | 空闲 | 排在第 3 节之后 |
 | T11 | dyadic 分解 → (2.53)(2.54) 的一般证明 | 同上 | 空闲 | 排在第 3 节之后 |

@@ -510,3 +510,23 @@ T20 的边界约定 `Θ_{t mᵢ mᵢ₊₁}` 在这里被 ODE 独立验证了一
 
 **给 B2 的接口**：要得到「树和 = K」，只需 (a) 树和满足 `IsPrimitive`，(b) 两者 2-loop 有界。
 2-loop 就是 (2.57)，`‖t m₁m₂‖ < 1` 时 Θ 有界。T23 的 `kLoop3` 已满足 (a) 的 n ≤ 3 部分。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T8 完成 —— (B.3) 符号的双边界
+
+`RBM1D/Propagator/SymbolBound.lean`（提交 `cc4681c`），全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+队列空时按「永不停工规则」接的第一条。
+
+**`RBM.norm_one_sub_mul_Shat_asymp`**：对所有 `L`、`‖ξ‖ < 1`、`p : ZMod L` 一致，
+
+    (‖1−ξ‖ + θ(p)²) / (6π²)  ≤  ‖1 − ξ Ŝ(p)‖  ≤  ‖1−ξ‖ + θ(p)²
+
+动量 `θ(p) = 2π·valMinAbs(p)/L ∈ [−π,π]`（`RBM.theta`，`abs_theta_le_pi`），`Ŝ(p) = (1+2cos θ(p))/3`（`Shat_eq_cos_theta`）。
+零件：`le_one_sub_cos`（`1 − cos x ≥ 2x²/π²`，|x| ≤ π，Jordan）、`one_sub_cos_le`、`Shat_bounds`。
+
+**注意**：本机没有 pdftoppm / PDF 库，读不了 `paper/` 里的 PDF；陈述按 `TASKS.md` 里 T8 的写法，
+常数不求最优（`CLAUDE.md` 规则 7）。若论文 (B.3) 对 `p` 的范围或形式有别的约定，请核对后告诉我。
+
+**下一步（T9）**：无穷体积核 + 围道平移 (B.4)(B.5)，同一文件或新文件。T8 给的下界正是
+`1/(1−ξŜ)` 的 Fourier 求和可控的依据。

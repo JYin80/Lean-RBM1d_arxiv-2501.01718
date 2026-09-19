@@ -213,6 +213,24 @@
   therefore a left inverse of $1-\xi\SB$, and uniqueness of the inverse closes it.
 \end{proof}
 
+\begin{lemma}[Two-sided bound on the symbol, Appendix B (B.3)]\label{eq:B.3}
+  \lean{RBM.theta, RBM.abs_theta_le_pi, RBM.Shat_eq_cos_theta, RBM.le_one_sub_cos,
+    RBM.norm_one_sub_mul_Shat_le, RBM.le_norm_one_sub_mul_Shat,
+    RBM.norm_one_sub_mul_Shat_asymp}\leanok
+  \uses{eq:B.1}
+  With $\theta(p)=2\pi\,\tilde p/L\in[-\pi,\pi]$, $\tilde p$ the representative of $p$ closest
+  to $0$: uniformly in $L$, $|\xi|<1$ and $p$,
+  \[ \frac{|1-\xi|+\theta(p)^2}{6\pi^2} \;\le\; |1-\xi\widehat S(p)| \;\le\;
+     |1-\xi|+\theta(p)^2 . \]
+\end{lemma}
+\begin{proof}\leanok\uses{eq:B.1}
+  $s=1-\widehat S=\frac23(1-\cos\theta)$ and $\frac{2}{\pi^2}\theta^2\le1-\cos\theta\le
+  \frac12\theta^2$ (Jordan at $\theta/2$).  Upper bound: $1-\xi\widehat S=(1-\xi)+\xi s$.
+  Lower bound: if $\widehat S\ge\frac12$, $1-\xi\widehat S=s+\widehat S(1-\xi)$ with
+  $\operatorname{Re}(1-\xi)>0$ gives $|1-\xi\widehat S|\ge s$ and
+  $\ge\widehat S|1-\xi|-s$; if $\widehat S<\frac12$, $|1-\xi\widehat S|>\frac12$.
+\end{proof}
+
 \begin{lemma}[The characteristic root $\rho(\xi)$]\label{lem:rho}
   \lean{RBM.rho, RBM.norm_root_ne_one, RBM.norm_rho_lt_one}\leanok\uses{def:Theta}
   Write $c = 3/\xi - 1$.  The characteristic equation of the three-term recursion

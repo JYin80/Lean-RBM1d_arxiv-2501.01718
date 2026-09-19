@@ -95,7 +95,7 @@ theorem length_cutGlueL_lt (I : LoopIdx (ZMod L)) {k l : ℕ} (hk : k ∈ Icc 1 
     (I.cutGlueL k l a).length < I.length + 2 := by
   rw [Finset.mem_Icc] at hk
   rw [Finset.mem_Ioc] at hl
-  rw [LoopIdx.length_cutGlueL hk.1 hl.1 hl.2]
+  rw [LoopIdx.length_cutGlueL I a hk.1 hl.1 hl.2]
   omega
 
 /-- Summing the graded pieces over every possible `l_K` recovers the whole coupling. -/

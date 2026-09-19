@@ -638,11 +638,30 @@
   right-hand side; for $n\ge3$ the equation is linear.
 \end{proof}
 
+\begin{lemma}[Lemma 3.4 for $n\le4$]\label{lem:3.4-small}
+  \lean{RBM.primRhs_four, RBM.star4, RBM.spl02, RBM.spl13, RBM.trees4, RBM.sum_bilin,
+    RBM.kFour, RBM.kFour_eq_treeSum, RBM.hasDerivAt_kFour, RBM.term13_eq, RBM.term24_eq,
+    RBM.kFour_zero, RBM.kLoop4, RBM.hasDerivAt_kLoop4, RBM.kThree_eq_treeSum,
+    RBM.eq_kLoop4_of_isPrimitive, RBM.treeRep_of_isPrimitive}\leanok
+  \uses{ex:2.16, lem:tree-accept, lem:unique, lem:Theta-deriv, lem:Theta-bounds}
+  If $K$ solves Definition 2.12 on $[0,T_0]$, $T_0<1$, with bounded $2$-loops and $|m|\le1$,
+  then (3.5) holds for every loop of length $n\in\{2,3,4\}$.
+\end{lemma}
+\begin{proof}\leanok\uses{ex:2.16, lem:tree-accept, lem:unique, lem:Theta-deriv, lem:Theta-bounds}
+  At $n=4$ the six terms of (2.48) match the six edges of the trees of $T_{SP}(4)$: each of
+  the four boundary rows occurs in all three trees, and differentiating it gives
+  $\sum_x(m_im_{i+1}\Th\SB)_{a_ix}K(\dots x\dots)$, the term with the $2$-chain
+  $(\sigma_i,\sigma_{i+1})$; the internal edge $\Th-1$ of each split tree differentiates to
+  $m\,m'\,\Th\SB\Th$, which factors the tree into $K_3\,\SB\,K_3$, the term with two $3$-chains.
+  Then compare level by level with Lemma~\ref{lem:unique}.
+\end{proof}
+
 \begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
-  \uses{def:TSP, def:primitive, lem:Theta-deriv, ex:2.16, lem:unique}
-  \emph{Not yet formalized.}  Formalization strategy: take the tree sum as the
-  \emph{definition}, prove it satisfies (2.48), and invoke Gr\"onwall uniqueness,
-  rather than developing existence theory for the ODE.
+  \uses{def:TSP, def:primitive, lem:Theta-deriv, ex:2.16, lem:unique, lem:3.4-small}
+  \emph{Formalized for $n\le4$ (Lemma~\ref{lem:3.4-small}); general $n$ not yet.}  The missing
+  piece is that the recursive tree value factors along \emph{every} diagonal of $F$, not only
+  the lexicographically first one (pivot independence); with it, each internal edge cut gives
+  the $(k,l)$ term of its diagonal exactly as at $n=4$.
 \end{lemma}
 
 \begin{lemma}[Ward identity for $\Kcal$ at $n=2,3$, Lemma 3.6 Step 1]\label{lem:3.6-small}

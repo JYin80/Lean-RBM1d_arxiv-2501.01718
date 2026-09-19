@@ -4,6 +4,7 @@ import RBM1D.Defs.Block
 import RBM1D.Delocalization
 import RBM1D.Green.Minor
 import RBM1D.Hierarchy.Kernel
+import RBM1D.Hierarchy.SumZero
 import RBM1D.Defs.Dist
 import RBM1D.Defs.Sums
 import RBM1D.Defs.Domination
@@ -31,6 +32,7 @@ import RBM1D.Loop.Layer
 import RBM1D.Loop.SumZero
 import RBM1D.Loop.KBound
 import RBM1D.Loop.Continuity
+import RBM1D.Flow.Hypotheses
 import RBM1D.Flow.Initial
 import RBM1D.Flow.Scales
 import RBM1D.Propagator.Basic

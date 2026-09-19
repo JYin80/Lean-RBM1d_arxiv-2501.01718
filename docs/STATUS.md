@@ -729,7 +729,10 @@ T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 
   **至此：一棵树在任一内部边 J 处剪开 = 两棵小多边形上的树值，经 `S` 相连。**
 * 步骤 4 ✔（`3a629a4`、`69f1a19`、`66702f1`）：`unShift`/`unColP` 回拉；`FIn_mem_TSP`/`FOut_mem_TSP`/`glueF_mem_TSP`；
   `FIn_glueF`/`FOut_glueF`/`glueF_cut` 互逆；**`sum_cut`：`Σ_{F∈TSP n, J∈F} f(FOut F J, FIn F J) = Σ_{G∈TSP(外)} Σ_{H∈TSP(内)} f G H`**。
-* 下一步：步骤 5，组装——(i) 叶边/根边两种退化剪切（同一族 F、另一侧为 2-loop 单边）；(ii) 树值的时间导数按边求和后交换求和
+* 步骤 5a ✔（`4b99515`）：`treeValW_leaf_mul`（叶的行线性，处理叶边/根边项）；**`treeValW_internal_cut`**：
+  带 Θ 权时把 `Θ_J S Θ_J` 放在边 J 上 = `Σ_{u,w} treeValG(内侧, 根 u) S_{uw} treeValG(外侧, 胶 w)`，小多边形的 σ、a 只通过简单的重标号假设进入。
+* 下一步：步骤 5b——定义列表上的 `K`（n=1 取 m，n=2 取 `kTwo`，n≥3 取 `m_σ W^{-(n-1)} Σ_F treeValG`），
+  把 `cutGlueL/R` 列表的 `getD` 对到 5a 的重标号假设上；然后导数、初值、唯一性。原步骤 5 说明：(i) 叶边/根边两种退化剪切（同一族 F、另一侧为 2-loop 单边）；(ii) 树值的时间导数按边求和后交换求和
   `Σ_F Σ_{J∈F} = Σ_J Σ_{F∋J}`，套 `treeValW_cut`+`gval_in_eq`/`gval_out_eq`+`sum_cut`；(iii) 与 `primRhs` 的 `(k,l)` 及 `cutGlueL/R` 列表对接；
   (iv) 初值；(v) 唯一性收口。原计划（剪切双射）： `{F ∈ TSP n : J ∈ F} ≃ TSP(外) × TSP(内)`（`F ↦ (FOut, FIn)`，需证 FOut/FIn 是 TSP、反向拼接），
   以及叶边、根边两种退化剪切（右链或左链为 2-loop）。原计划： `Fin (w+1)`（内侧，J 平移到 0，根为胶点）与 `Fin (n−w+1)`（外侧，J 塌缩为胶点）上的 `treeValW`；

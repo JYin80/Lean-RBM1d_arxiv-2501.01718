@@ -735,7 +735,11 @@ T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 
   `leaf_term`（叶 v ⟹ `Σ_x (μΘS)_{a_v x} Kn(a_v := x)`）、`sum_edges_swap`、
   **`internal_term`**（边 J 对所有含 J 的树求和 ⟹ `W Σ_{x,y} Kn(外, 胶 x) S_{xy} Kn(内, 根 y)`，正是 J 的剪接项）。
   **函数层面的 (2.48) 已全部到位**，只差列表层对接。
-* 步骤 5c 进行中：`Kgen`（列表上的 K）、`sum_pairs`（`(k,l)` = 叶对 ⊔ 根对 ⊔ 对角线，各一次）（`400021d`）；
+* **步骤 5c ✔（`cb8fd03`）：`hasDerivAt_Kgen`——对每个长度 n ≥ 3 的 WF loop，树表示 `Kgen` 满足 (2.48)。**
+  （`root_pair_term` `e186cb2`、`prod_chains` `af340ee`、`diag_pair_term` `167e9a4`。）
+* 下一步：步骤 6——n = 2 的方程（`kTwo`）、n = 1 的值、`t = 0` 初值（只剩 F = ∅ 的星图 → δ）、2-loop 有界，
+  然后 `IsPrimitive Kgen` 并用 T22 唯一性得 **一般 n 的 Lemma 3.4**。
+* 步骤 5c 旧记录：`Kgen`（列表上的 K）、`sum_pairs`（`(k,l)` = 叶对 ⊔ 根对 ⊔ 对角线，各一次）（`400021d`）；
   `getD` 引理与 **`leaf_pair_term`**（叶对 `(v+1,v+2)` = 叶 v 的项）（`0e6aa07`）。剩：`root_pair_term`、对角线对的列表对接（含 `hprod`）、总装、初值、唯一性。
 * 原步骤 5c 计划：列表层：`Kgen`（n=1: m；n=2: `kTwo`；n≥3: `Kn`），`primRhs` 的 `(k,l)` 按「叶/根/对角线」三类拆分，
   `cutGlueL/R` 列表的 `getD` 对到 `leaf_term`/`internal_term` 的假设上；再初值、唯一性。原步骤 5b 说明：（n=1 取 m，n=2 取 `kTwo`，n≥3 取 `m_σ W^{-(n-1)} Σ_F treeValG`），

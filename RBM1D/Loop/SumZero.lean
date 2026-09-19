@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Loop.Layer
+import RBM1D.Loop.WardKgen
 
 /-!
 # Lemma 3.10: symmetry and the sum-zero property of the self-energy
@@ -716,5 +717,74 @@ theorem Alayer_cut (hn : 2 ≤ n) (m : Bool → ℂ) {t : ℝ}
   ring
 
 end MoleculeA
+
+section Bound349
+
+theorem allSum_eq_sum_ofFn {L : ℕ} [NeZero L] : ∀ (n : ℕ) (g : List (ZMod L) → ℂ),
+    allSum L n g = ∑ a : Fin n → ZMod L, g (List.ofFn a)
+  | 0, g => by simp [allSum]
+  | n + 1, g => by
+    rw [allSum]
+    simp_rw [allSum_eq_sum_ofFn n]
+    rw [← (Fin.consEquiv (fun _ : Fin (n + 1) => ZMod L)).sum_comp, Fintype.sum_prod_type]
+    refine sum_congr rfl fun x _ => sum_congr rfl fun a _ => ?_
+    simp [Fin.consEquiv, List.ofFn_succ]
+
+variable {E : ℝ}
+
+/-- **(3.49)** in closed form: `|∑_π A(σ, π)| ≤ C_n(k) η_t^{-(n-1)}` in the bulk `|E| ≤ 2 - k`.
+This is Corollary 3.7 (`cor37_bulk`, with `W = 1`) combined with (3.41) and the closed form
+`L^{-1} ∑_a K^(π) = A(σ, π)`; `A` depends neither on `L` nor on `W`. -/
+theorem norm_sum_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) {n : ℕ} [NeZero n] (hn : 3 ≤ n) (σ : Fin n → Bool) :
+    ‖∑ π ∈ (diagonals n).powerset, Alayer (mSigma E) t σ π‖ ≤
+      cor37Const n k * (etaT E t)⁻¹ ^ (n - 1) := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  have hm := norm_mul_mSigma_lt_one hE2 ht0 ht1
+  set σL : List Bool := List.ofFn σ with hσL_def
+  have hσL : σL.length = n := List.length_ofFn
+  have hprod : ‖∏ i, mSigma E (σ i)‖ = 1 := by
+    rw [norm_prod]; exact prod_eq_one fun i _ => norm_mSigma hE2 (σ i)
+  have hprod0 : ∏ i, mSigma E (σ i) ≠ 0 := by
+    intro h; rw [h, norm_zero] at hprod; exact zero_ne_one hprod
+  -- `∑_π A = 3⁻¹ ∑_a ∑_π K^(π)`
+  have h1 : ∑ π ∈ (diagonals n).powerset, Alayer (mSigma E) t σ π
+      = (3 : ℂ)⁻¹ * ∑ a : Fin n → ZMod 3,
+          ∑ π ∈ (diagonals n).powerset, Kpi 3 (mSigma E) t σ a π := by
+    rw [sum_comm, mul_sum]
+    refine sum_congr rfl fun π _ => ?_
+    rw [sum_Kpi_closed (mSigma E) hm (by norm_num) (by omega)]
+    push_cast
+    field_simp
+  -- `∑_π K^(π) = m_σ⁻¹ K` (3.41), with `W = 1`
+  have h2 : ∀ a : Fin n → ZMod 3, ∑ π ∈ (diagonals n).powerset, Kpi 3 (mSigma E) t σ a π
+      = (∏ i, mSigma E (σ i))⁻¹ * Kgen 3 1 (mSigma E) t ⟨σL, List.ofFn a⟩ := by
+    intro a
+    rw [Kgen_eq 1 (mSigma E) t hn _ (by simp [LoopIdx.length])]
+    have hσ' : (fun i : Fin n => σL.getD i false) = σ := by
+      funext i; simp [σL]
+    have ha' : (fun i : Fin n => (List.ofFn a).getD i 0) = a := by
+      funext i; simp
+    rw [hσ', ha', Kn_eq_sum_Kpi]
+    field_simp
+    simp
+  -- the total sum and the partial sum of Corollary 3.7
+  have h3 : ∑ a : Fin n → ZMod 3, Kgen 3 1 (mSigma E) t ⟨σL, List.ofFn a⟩
+      = totalSum 3 (Kgen 3 1 (mSigma E) t) σL := by
+    rw [totalSum, hσL, allSum_eq_sum_ofFn]
+  have h4 := partialSum_eq (Kgen 3 1 (mSigma E) t) σL (by omega)
+    (fun c I hI h2 => Kgen_shift (le_refl 3) 1 hE ht0 ht1 c I hI h2) 0
+  have h5 := cor37_bulk (le_refl 3) 1 hk0 hk1 hEk ht0 ht1 σL (by omega) 0
+  rw [hσL] at h5 h4
+  push_cast at h4
+  simp_rw [h2] at h1
+  rw [← mul_sum, h3, mul_left_comm, ← h4] at h1
+  rw [h1, norm_mul, norm_inv, hprod, inv_one, one_mul]
+  refine h5.trans (le_of_eq ?_)
+  push_cast
+  rw [one_mul]
+
+end Bound349
 
 end RBM

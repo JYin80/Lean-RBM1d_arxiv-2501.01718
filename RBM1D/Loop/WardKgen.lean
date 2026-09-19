@@ -837,6 +837,41 @@ theorem norm_totalSum_pure_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E|
           gcongr
           exact le_add_of_nonneg_left (inv_nonneg.2 hδ.le)
 
+/-- The constant of Corollary 3.7 in the bulk `|E| ≤ 2 - k`: it depends on `n` and `k` only. -/
+noncomputable def cor37Const (n : ℕ) (k : ℝ) : ℝ :=
+  2 ^ (n - 1) * n * (2 + ∑ m ∈ Finset.Icc 2 n, 2 * pureConst m k)
+
+omit hE in
+/-- **Corollary 3.7, (3.14)**, unconditionally in the bulk: for `|E| ≤ 2 - k`, `0 ≤ t < 1` and a
+loop of length `n ≥ 2`, `|∑_{a₂,…,aₙ} K_{t,σ,a}| ≤ C_n(k) (W η_t)^{-(n-1)}`, uniformly in `L`. -/
+theorem cor37_bulk {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) (σ : List Bool) (hσ : 2 ≤ σ.length) (a₁ : ZMod L) :
+    ‖allSum L (σ.length - 1) (fun rest => Kgen L W (mSigma E) t ⟨σ, a₁ :: rest⟩)‖
+      ≤ cor37Const σ.length k * ((W * etaT E t : ℝ))⁻¹ ^ (σ.length - 1) := by
+  have hE : |E| < 2 := by linarith
+  have hL0 : (0 : ℝ) < L := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne L)
+  have hS : 0 ≤ ∑ m ∈ Finset.Icc 2 σ.length, 2 * pureConst m k :=
+    Finset.sum_nonneg fun m hm =>
+      mul_nonneg zero_le_two (pureConst_nonneg (Finset.mem_Icc.1 hm).1 hk0)
+  have h := cor37 hL W hE ht0 ht1 σ hσ a₁ (C := 2 + ∑ m ∈ Finset.Icc 2 σ.length, 2 * pureConst m k)
+    (le_add_of_nonneg_right hS) (fun m hm2 hmn => ?_)
+  · rw [cor37Const]
+    exact h
+  have hsingle : 2 * pureConst m k ≤ 2 + ∑ m ∈ Finset.Icc 2 σ.length, 2 * pureConst m k :=
+    (Finset.single_le_sum (f := fun m => 2 * pureConst m k)
+      (fun m hm => mul_nonneg zero_le_two (pureConst_nonneg (Finset.mem_Icc.1 hm).1 hk0))
+      (Finset.mem_Icc.2 ⟨hm2, hmn⟩)).trans (le_add_of_nonneg_left zero_le_two)
+  have hT := fun b => norm_totalSum_pure_le hL W hE hk0 hk1 hEk ht0 ht1 b hm2
+  have hW0 : 0 ≤ ((W : ℝ)⁻¹) ^ (m - 1) := by positivity
+  calc (L : ℝ)⁻¹ * pureNorm (Kgen L W (mSigma E) t) m
+      ≤ (L : ℝ)⁻¹ * (L * (((W : ℝ)⁻¹) ^ (m - 1) * pureConst m k) +
+          L * (((W : ℝ)⁻¹) ^ (m - 1) * pureConst m k)) := by
+        rw [pureNorm]
+        gcongr
+        exacts [hT true, hT false]
+    _ = 2 * pureConst m k * ((W : ℝ)⁻¹) ^ (m - 1) := by field_simp; ring
+    _ ≤ _ := by gcongr
+
 end PurePointwise
 
 end RBM

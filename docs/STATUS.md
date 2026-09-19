@@ -870,7 +870,9 @@ gap 假设见 paper-deltas #17（`T₀ < 1` 时 `δ = 1 − T₀` 自动成立�
 * `Loop/WardKgen.lean`：`allSum`（对所有标号列表求和）、`exists_rotate_true_false`（混合电荷列必有一个轮换形如 `(+,μ,−)`）、
   `totalSum_ward` / `totalSum_rotate` / **`norm_totalSum_le`**（(3.15) 的代数部分，常数 `2ⁿ⁻¹`）、`partialSum_eq`（平移不变 ⇒ 对 `a₂…aₙ` 求和 = `L⁻¹` 总和）、
   **`cor37_reduction`**（(3.15)，对真正的 K 无条件）、**`cor37`**（(3.14)：`≤ 2ⁿ⁻¹ n C (Wη_t)^{-(n-1)}`，以 `L⁻¹P_m ≤ C W^{-(m-1)}`（m ≥ 2）为假设）。
-**待办**：T28（Cor 3.5）落地后，从其逐点指数界导出 `L⁻¹P_m ≤ C W^{-(m-1)}` 并去掉 `cor37` 的假设。paper-deltas #18。
+**已完成**（去掉假设）：`gap_mSigma`（两种电荷的 bulk gap `√k ≤ |1−t m(b)²|`，用 Cowork 的 `sqrt_le_norm_one_sub_short`）、
+**`norm_Kgen_pure_le`**（纯 n-圈 n ≥ 3 逐点：`W^{-(n-1)} C_n e^{-c‖a_i−a_j‖}`）、`norm_totalSum_pure_two`（n = 2 精确求和）、
+**`norm_totalSum_pure_le`**（`‖Σ_a K_{(b…b),a}‖ ≤ L W^{-(m-1)} pureConst m k`）、**`cor37_bulk`**（(3.14) 无条件：`|E| ≤ 2−k`、`0 ≤ t < 1` ⇒ `≤ cor37Const n k · (Wη_t)^{-(n-1)}`）。paper-deltas #18。
 
 ### `RBM1D/Loop/Layer.lean` — Definitions 3.8/3.9（T31，Claude Code #2）
 

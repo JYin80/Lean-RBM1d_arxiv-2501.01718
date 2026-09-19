@@ -904,18 +904,22 @@
 \begin{corollary}[Corollary 3.7, (3.14)--(3.15)]\label{cor:3.7}
   \lean{RBM.allSum, RBM.totalSum, RBM.pureNorm, RBM.totalSum_ward, RBM.totalSum_rotate,
     RBM.exists_rotate_true_false, RBM.norm_totalSum_le, RBM.partialSum_eq,
-    RBM.cor37_reduction, RBM.cor37}\leanok
-  \uses{lem:3.6, lem:K-cyclic, lem:K-shift}
+    RBM.cor37_reduction, RBM.cor37, RBM.norm_Kgen_pure_le, RBM.norm_totalSum_pure_two,
+    RBM.norm_totalSum_pure_le, RBM.cor37_bulk}\leanok
+  \uses{lem:3.6, lem:K-cyclic, lem:K-shift, cor:3.5}
   (3.15): $\bigl|\sum_{a_2,\dots,a_n}K_{t,\sigma,a}\bigr|\le L^{-1}2^{n-1}
   \sum_{m=1}^n(2W\eta_t)^{-(n-m)}P_m$, with $P_m$ the pure loops of length $m$.
-  Given the pure-loop bound $L^{-1}P_m\le CW^{-(m-1)}$ (Corollary 3.5), (3.14):
-  $\sum_{a_2,\dots,a_n}K_{t,\sigma,a}=O((W\eta_t)^{-n+1})$.
+  For $|E|\le 2-k$ the pure loops satisfy $L^{-1}P_m\le C_m(k)W^{-(m-1)}$ (Corollary 3.5 with the
+  $W$-power kept, uniformly in $t$), hence (3.14):
+  $\bigl|\sum_{a_2,\dots,a_n}K_{t,\sigma,a}\bigr|\le C_n(k)(W\eta_t)^{-n+1}$ for all $0\le t<1$.
 \end{corollary}
 \begin{proof}\leanok\uses{lem:3.6, lem:K-cyclic, lem:K-shift}
   By translation invariance the sum over $a_2,\dots,a_n$ is $L^{-1}$ times the sum over all
   labels.  A mixed charge list has a cyclic pair $(-,+)$; rotating it to the seam, (3.13)
   sums out the last label at the cost $(2W\eta_t)^{-1}$ and two loops one shorter.  Iterate
-  down to pure loops.
+  down to pure loops.  These are bounded by the tree representation: pairwise decay
+  $e^{-c\|a_i-a_j\|}$ with gap $|1-tm^2|\ge\sqrt k$ gives a product bound over the labels, whose
+  sum is $O(L)$; for $m=2$ the sum is exactly $LW^{-1}m^2(1-tm^2)^{-1}$.
 \end{proof}
 
 \begin{lemma}[Sum-zero property, Lemma 3.10]\label{lem:3.10}

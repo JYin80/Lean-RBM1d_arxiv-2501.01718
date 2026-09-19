@@ -1177,4 +1177,99 @@ theorem gval_out_eq (L : ℕ) [NeZero L] (a : Fin n → ZMod L)
 
 end CutOut
 
+section CutBij
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- Lift a region pair of the inside polygon back: `(i', j') ↦ (i' + J.1, j' + J.1)`. -/
+def unShift (J : Fin n × Fin n) (h : Fin (wIn J + 1) × Fin (wIn J + 1)) : Fin n × Fin n :=
+  (⟨min (h.1.val + J.1.val) (n - 1), by have := NeZero.pos n; omega⟩,
+    ⟨min (h.2.val + J.1.val) (n - 1), by have := NeZero.pos n; omega⟩)
+
+/-- Undo the collapse: `r ↦ r` for `r ≤ i`, `r ↦ r + (w - 1)` beyond. -/
+def unCol (J : Fin n × Fin n) (r : ℕ) : ℕ := if r ≤ J.1.val then r else r + (wIn J - 1)
+
+/-- Lift a region pair of the outside polygon back. -/
+def unColP (J : Fin n × Fin n) (g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) :
+    Fin n × Fin n :=
+  (⟨min (unCol J g.1.val) (n - 1), by have := NeZero.pos n; omega⟩,
+    ⟨min (unCol J g.2.val) (n - 1), by have := NeZero.pos n; omega⟩)
+
+theorem unShift_val (h : Fin (wIn J + 1) × Fin (wIn J + 1)) :
+    (unShift J h).1.val = h.1.val + J.1.val ∧ (unShift J h).2.val = h.2.val + J.1.val := by
+  have h1 := h.1.isLt; have h2 := h.2.isLt; have := J.2.isLt
+  simp only [unShift, wIn] at *
+  constructor <;> omega
+
+omit [NeZero n] in
+theorem unCol_lt {r : ℕ} (hr : r < n - wIn J + 1) (hJ : J.1.val < J.2.val) : unCol J r < n := by
+  have := J.2.isLt
+  simp only [unCol, wIn] at *
+  split_ifs <;> omega
+
+theorem unColP_val (g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) (hJ : J.1.val < J.2.val) :
+    (unColP J g).1.val = unCol J g.1.val ∧ (unColP J g).2.val = unCol J g.2.val := by
+  have h1 := unCol_lt g.1.isLt hJ; have h2 := unCol_lt g.2.isLt hJ
+  simp only [unColP]
+  constructor <;> omega
+
+omit [NeZero n] in
+theorem col_unCol {r : ℕ} : col J (unCol J r) = r := by
+  simp only [col, unCol, wIn]
+  split_ifs <;> omega
+
+omit [NeZero n] in
+theorem unCol_col {r : ℕ} (hr : r ≤ J.1.val ∨ J.2.val ≤ r) (hJ : J.1.val + 2 ≤ J.2.val) :
+    unCol J (col J r) = r := by
+  simp only [col, unCol, wIn]
+  split_ifs <;> omega
+
+omit [NeZero n] in
+theorem unCol_ends {r : ℕ} (hJ : J.1.val + 2 ≤ J.2.val) :
+    unCol J r ≤ J.1.val ∨ J.2.val ≤ unCol J r := by
+  simp only [unCol, wIn]
+  split_ifs <;> omega
+
+theorem shiftIn_unShift (h : Fin (wIn J + 1) × Fin (wIn J + 1)) : shiftIn J (unShift J h) = h := by
+  have hv := unShift_val h
+  have h1 := h.1.isLt; have h2 := h.2.isLt
+  refine Prod.ext (Fin.ext ?_) (Fin.ext ?_) <;> simp only [shiftIn, hv] <;> omega
+
+theorem unShift_shiftIn {d : Fin n × Fin n} (hd : ArcLe d J) (h12 : d.1 ≤ d.2) :
+    unShift J (shiftIn J d) = d := by
+  have hv := shiftIn_val hd h12
+  simp only [ArcLe, Fin.le_def] at hd h12
+  refine Prod.ext (Fin.ext ?_) (Fin.ext ?_) <;> simp only [unShift, hv] <;>
+    have := d.2.isLt <;> omega
+
+theorem shiftOut_unColP (g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1))
+    (hJ : J.1.val + 2 ≤ J.2.val) : shiftOut J (unColP J g) = g := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have hv := unColP_val g hJ2
+  have h1 := shiftOut_val (unColP J g) hJ2
+  refine Prod.ext (Fin.ext ?_) (Fin.ext ?_)
+  · rw [h1.1, hv.1, col_unCol]
+  · rw [h1.2, hv.2, col_unCol]
+
+theorem unColP_shiftOut {d : Fin n × Fin n} (hd : OutEnds J d) (hJ : J.1.val + 2 ≤ J.2.val) :
+    unColP J (shiftOut J d) = d := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have h1 := shiftOut_val d hJ2
+  have hv := unColP_val (shiftOut J d) hJ2
+  refine Prod.ext (Fin.ext ?_) (Fin.ext ?_)
+  · rw [hv.1, h1.1, unCol_col hd.1 hJ]
+  · rw [hv.2, h1.2, unCol_col hd.2.1 hJ]
+
+/-- A lifted outside pair has no endpoint strictly inside `J`. -/
+theorem outEnds_unColP (g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) (hg : g.1 < g.2)
+    (hJ : J.1.val + 2 ≤ J.2.val) : OutEnds J (unColP J g) := by
+  have hJ2 : J.1.val < J.2.val := by omega
+  have hv := unColP_val g hJ2
+  rw [Fin.lt_def] at hg
+  refine ⟨hv.1 ▸ unCol_ends hJ, hv.2 ▸ unCol_ends hJ, ?_⟩
+  rw [hv.1, hv.2]
+  simp only [unCol, wIn]; split_ifs <;> omega
+
+end CutBij
+
 end RBM

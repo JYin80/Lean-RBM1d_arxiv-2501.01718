@@ -724,7 +724,8 @@ T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 
   `gval_congr`（同构不变）、`gval_split`（两块经一条权为 `PSQ` 的边相连 ⟹ `Σ_{u,w} 块₂(u) S_{uw} 块₁(w)`，剪口作为额外叶还给两块）。
 * 步骤 3b ✔（`1155ff2`、`36cd7f7`）：`leafPar_spec`/`nodePar_spec`；剪口两侧的父亲归属；
   **`treeValW_cut`**：J 边权为 `PSQ` 时，树值 = `Σ_{u,w} (内侧树 + 根叶 (u,Pᵀ)) S_{uw} (外侧树 + 叶 (w,Q))`，两侧为子类型上的 `gval`。
-* 下一步：步骤 3c，把两侧的 `gval` 搬到小多边形 `Fin (w+1)`（内侧，J 平移到 0，根为胶点）与 `Fin (n−w+1)`（外侧，J 塌缩为胶点）上的 `treeValW`；
+* 步骤 3c（内侧）✔（`3eaf881`）：`gval_in_eq`——内侧部分 = 内侧多边形 `Fin (wIn J + 1)` 上的 `treeValW`（J → 根节点，叶平移 −J.1）。
+* 下一步：步骤 3c（外侧，J 塌缩为胶点 `J.1`，右侧顶点/区域平移 −(w−1)），然后步骤 4。原计划： `Fin (w+1)`（内侧，J 平移到 0，根为胶点）与 `Fin (n−w+1)`（外侧，J 塌缩为胶点）上的 `treeValW`；
   原步骤 3b 的余下说明：：`N(F) = N_out ⊔ N_in`，叶与边的归属，标号和按 Fubini 分解；然后把两块搬运到
   `cutGlueL`/`cutGlueR` 的列表坐标上（左链：J 塌缩成胶点；右链：J 平移到 0 且胶点为根）。
 

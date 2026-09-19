@@ -1005,9 +1005,48 @@
   with identity boundary edges, and the tree bound of Corollary 3.5 applies.
 \end{proof}
 
+\begin{lemma}[Discrete Taylor split on the cycle]\label{lem:taylor}
+  \lean{RBM.oddPart, RBM.evenPart, RBM.lap, RBM.apply_add_eq, RBM.oddPart_neg,
+    RBM.evenPart_neg, RBM.eq_natCast_or_neg, RBM.norm_oddPart_le, RBM.evenPart_natCast_eq,
+    RBM.norm_evenPart_le, RBM.norm_evenPart_le_const, RBM.hitCount, RBM.sum_hitCount,
+    RBM.norm_evenPart_le_split}
+  \leanok
+  $f(c+s) = f(c) + o(c,s) + e(c,s)$ with $o$ odd in $s$, $|o|\le\|s\|\sup|\nabla f|$, and
+  $e = \tfrac12\sum_{j<\|s\|}\sum_{i<2j+1}\Delta f(c-j+i)$.
+\end{lemma}
+\begin{proof}\leanok
+  Telescoping along the cycle, twice.
+\end{proof}
+
+\begin{lemma}[Lemma 3.11, (3.45), for $\pi=\emptyset$]\label{lem:3.11-empty}
+  \lean{RBM.pinned, RBM.sum_center, RBM.polyExpSum, RBM.sum_exp_mul_pow_le,
+    RBM.le_mul_prod_of_forall, RBM.sigWeightConst, RBM.sum_pinned_SigmaPi_le, RBM.taylorTerm,
+    RBM.sum_taylorTerm, RBM.thetaEdge_of_ne, RBM.Kpi_empty_expand, RBM.norm_taylorTerm_le,
+    RBM.norm_taylorTerm_zero_le, RBM.sum_mul_prod_le, RBM.sum_prod_taylor_le,
+    RBM.sum_pinned_odd_eq_zero, RBM.sum_eq_mul_sum_pinned, RBM.sum_taylor_single_eq_zero,
+    RBM.sum_taylor_zero_eq, RBM.etaT_mul_ellHat_sq_le, RBM.etaT_mul_ellHat_le,
+    RBM.sigWeightConst_nonneg, RBM.norm_Kpi_empty_alt_le, RBM.norm_thetaEdge_same_le,
+    RBM.norm_Kpi_empty_short_le, RBM.norm_Kpi_empty_le}
+  \leanok\uses{lem:3.10, eq:3.43, lem:long-diff, lem:taylor, lem:3.35}
+  For $|E|\le2-k$ there is $C=C(n,k)$ with
+  $|K^{(\emptyset)}_{t,\sigma,a}|\le C(\eta_t\hat\ell(t))^{-n+1}$ for all $\sigma$, $a$,
+  $0<t<1$, $L\ge3$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:3.10, eq:3.43, lem:long-diff, lem:taylor}
+  Centre at $d_1$: $K^{(\emptyset)}_a=\sum_c\sum_{s_1=0}\Sigma^{(\emptyset)}(s)\prod_v f_v(c+s_v)$.
+  If some boundary edge is short, sum the centre with it ($\ell^1=O(1)$) and bound the others by
+  their sup.  If $\sigma$ alternates, every edge is $\Theta_t$; split each factor as
+  $f(c)+o+e$ and multiply out.  The leading term is $O(\eta_t)$ by the sum-zero property; the
+  terms with one $o$ vanish because $\Sigma^{(\emptyset)}(-s)=\Sigma^{(\emptyset)}(s)$; every other
+  term gains $\eta_t$ from $|\nabla\Theta_t|\le 3/2$, $|\Delta\Theta_t|\le 24/\hat\ell$ off the
+  diagonal and $\eta_t\hat\ell^2\le1$.  This replaces the paper's (3.66), whose min factor is
+  not justified (paper-deltas \#22).
+\end{proof}
+
 \begin{lemma}[Bound on $\Kcal$, Lemma 3.11]\label{lem:3.11}
-  \uses{lem:3.10}
-  \emph{Not yet formalized.}
+  \uses{lem:3.10, lem:3.11-empty}
+  \emph{The case $\pi=\emptyset$ is Lemma~\ref{lem:3.11-empty}; $\pi\neq\emptyset$ is not yet
+  formalized.}
 \end{lemma}
 
 \chapter{Delocalization from the local law}

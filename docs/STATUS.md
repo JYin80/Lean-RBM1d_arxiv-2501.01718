@@ -992,3 +992,8 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 `Propagator/Edges.lean` 与 `Loop/Cor35.lean` 的副本已删，`WardKgen` 的一处调用改指新文件。只依赖 `Defs/Dist.lean`。
 **未移动**：`mul_exp_neg_le_exp_neg_one`、`two_mul_zdist_le` 仍在 `Propagator/Decay.lean`——该文件由 Cowork 认领（T1–T4 进行中），
 不碰；等那边收工后可顺手下沉。受影响模块（Sums、Edges、Cor35、WardKgen、DiffComplex、SumZero、KBound）全部编译通过。
+
+**T37 进度（Claude Code）**：`Propagator/LongDiff.lean`（P1：均匀 `|∇Θ_t| ≤ 3/2`、`Σ|∇Θ_t| ≤ 3ℓ̂`、`|ΔΘ_t| ≤ 3`、`Σ|ΔΘ_t| ≤ 6`）；
+`Loop/KBound.lean`：(3.43) `norm_SigmaPi_empty_le`、加权 ℓ¹ `sum_pinned_SigmaPi_le`、离散 Taylor、展开 `Kpi_empty_expand`、
+余项 `sum_prod_taylor_le`、一阶相消 `sum_taylor_single_eq_zero`，**(3.45) 的 π = ∅ 情形 `norm_Kpi_empty_le`**（任意 σ；交替 `norm_Kpi_empty_alt_le`，
+含短边 `norm_Kpi_empty_short_le`）。paper-deltas #22。**下一步**：π ≠ ∅（论文的度 1 分子归纳，`B = tS·K^(π')`）。

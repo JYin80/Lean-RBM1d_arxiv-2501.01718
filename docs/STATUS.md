@@ -405,7 +405,7 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
    Figure 6 下的显示式写成 `Θ_{t m_{i−1} m_i}`，工单里的星图公式抄的是后者。
    用 Python 有限差分在 `L = 5` 直接核对 (2.48)（用我们的 `cutGlueL/R`，n=2 用 `kTwo`）：
    `Θ_{t m_i m_{i+1}}` 在 n=3、4 误差 `~1e−11`；`Θ_{t m_{i−1} m_i}` 误差 `~1e−2`。内部边两项无误。
-   Lean 采用更正后的下标（paper-deltas #8）。
+   Lean 采用更正后的下标（paper-deltas #8′）。
 2. **n = 2 必须特判（工单的猜测正确）。** 星图值是 `Θ²`，`not_hasDerivAt_starK_two` **严格证明**它不满足 (2.55)
    （t=0 处导数是右端的 2 倍）。二角形的树是单条边 `a₁—a₂`，`kTwo_eq_edge`：此时 (3.5) = Example 2.15（paper-deltas #9）。
 3. 设计上按工单建议，**不构造图**：树值直接写成求和式；n=4 的三棵树 `starGamma`、`splitGamma₀₂`、`splitGamma₁₃`
@@ -1150,10 +1150,10 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 
 **`lemma_A2`**（(A.3)(A.4)，显式常数，`Φ ≥ chainScaleUpTo … n`）、**`XiDiag_XiOff_step`**（(A.7) 一步，含 (A.14)(A.17)）、`XiDiag_XiOff_le_chainBound`（迭代）；
 `sum_Sblk_mul_eq`（补上 T49 的 (A.20) 末步）。输入 `1/G_ii`、loop 界 `LoopBound`、[39] `ChainLDE16`/`ChainLDE19` 为假设。
-(A.12)(A.13) 以单边比较绕过，T49 的 (A.25) 缺口不再需要。paper-deltas #39。
+(A.12)(A.13) 以单边比较绕过，T49 的 (A.25) 缺口不再需要。paper-deltas #40。
 
 ### `RBM1D/Loop/ContinuityAssembly.lean` — Lemma 5.1（T62，Claude Code 并行 agent）
 
 **`lemma_5_1`**/`lemma_5_1'`（(5.7) 形式）：`c ≤ t₁ ≤ t₂ < 1`、(5.5) 在 t₁、(6.1) 作为假设 `LoopScaling` ⟹ `1_Ω max|L_{t₂}| ≺ (Wℓ₁η₂)^{-n+1}`。
 确定性部分：(6.10) `wmass_gchainMixed_le`（经 Lemma 6.1 与 `trace_gram_rpow_le`）、(6.11) `loopMax_two_mul_le_tilde`、(5.6) 基例 `loopMax_one_le`；
-随机部分：`StochDom.continuity_recursion`（(6.13) 递推）、`StochDom.of_le_add_sqrt_mul`。paper-deltas #40。
+随机部分：`StochDom.continuity_recursion`（(6.13) 递推）、`StochDom.of_le_add_sqrt_mul`。paper-deltas #41。

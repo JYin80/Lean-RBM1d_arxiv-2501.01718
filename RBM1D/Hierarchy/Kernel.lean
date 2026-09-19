@@ -14,7 +14,8 @@ Band Matrices*, Definition 5.2 (p. 53) and Lemma 7.1 (p. 76).
 For an `n`-loop the paper introduces two linear operators on tensors
 `A : (Z_L)^n -> C`:
 
-* (5.16) the generator   `(Theta_{t,sigma} . A)_a = sum_i sum_c (xi_i * Theta_{t xi_i})_{a_i c} A_{a^(i)}`
+* (5.16) the generator
+  `(Theta_{t,sigma} . A)_a = sum_i sum_c (xi_i * Theta_{t xi_i})_{a_i c} A_{a^(i)}`
 * (5.17) the propagator  `(U_{s,t,sigma} . A)_a = sum_b prod_i K_i(a_i, b_i) A_b`,
   where `K_i = (1 - s xi_i S^(B)) (1 - t xi_i S^(B))^{-1}`
   and `xi_i = m(sigma_i) m(sigma_{i+1})`.
@@ -121,6 +122,37 @@ theorem sum_norm_edgeKer_row_le (hL : 3 ≤ L) {ξ s t : ℂ} (ht : ‖t * ξ‖
     ∑ b : ZMod L, ‖edgeKer L ξ s t a b‖ ≤ 1 + ‖(s - t) * ξ‖ * (1 - ‖t * ξ‖)⁻¹ :=
   (sum_norm_row_le L _ a).trans (norm_edgeKer_le L hL ht)
 
+/-- The edge factors compose.  This is the `n = 1` case of the semigroup law. -/
+theorem edgeKer_mul (hL : 3 ≤ L) {ξ s u t : ℂ} (hu : ‖u * ξ‖ < 1) (ht : ‖t * ξ‖ < 1) :
+    edgeKer L ξ u t * edgeKer L ξ s u = edgeKer L ξ s t := by
+  set P : Matrix (ZMod L) (ZMod L) ℂ := 1 - (s * ξ) • SB L with hP
+  set Q : Matrix (ZMod L) (ZMod L) ℂ := 1 - (u * ξ) • SB L with hQ
+  set Tt : Matrix (ZMod L) (ZMod L) ℂ := Theta L (t * ξ) with hTt
+  set Tu : Matrix (ZMod L) (ZMod L) ℂ := Theta L (u * ξ) with hTu
+  have h1 : Commute Tt P :=
+    (Commute.one_right Tt).sub_right ((Theta_commute_SB L hL ht).smul_right (s * ξ))
+  have h2 : Commute Q P :=
+    (Commute.one_left P).sub_left
+      ((Commute.one_right ((u * ξ) • SB L)).sub_right
+        (((Commute.refl (SB L)).smul_left (u * ξ)).smul_right (s * ξ)))
+  have h3 : Commute Tt Tu := Theta_commute L hL ht hu
+  have h4 : Q * Tu = 1 := mul_Theta L hL hu
+  calc edgeKer L ξ u t * edgeKer L ξ s u = Q * Tt * (P * Tu) := rfl
+    _ = Q * (Tt * P) * Tu := by noncomm_ring
+    _ = Q * (P * Tt) * Tu := by rw [h1.eq]
+    _ = (Q * P) * (Tt * Tu) := by noncomm_ring
+    _ = (P * Q) * (Tu * Tt) := by rw [h2.eq, h3.eq]
+    _ = P * (Q * Tu) * Tt := by noncomm_ring
+    _ = P * Tt := by rw [h4, Matrix.mul_one]
+
+theorem sum_edgeKer_mul (hL : 3 ≤ L) {ξ s u t : ℂ} (hu : ‖u * ξ‖ < 1) (ht : ‖t * ξ‖ < 1)
+    (x y : ZMod L) :
+    ∑ c : ZMod L, edgeKer L ξ u t x c * edgeKer L ξ s u c y = edgeKer L ξ s t x y := by
+  have h : (edgeKer L ξ u t * edgeKer L ξ s u) x y = edgeKer L ξ s t x y := by
+    rw [edgeKer_mul L hL hu ht]
+  rw [Matrix.mul_apply] at h
+  exact h
+
 end Edge
 
 section Operators
@@ -188,6 +220,56 @@ theorem norm_Uker_apply_le (hL : 3 ≤ L) {n : ℕ} {ξ : Fin n → ℂ} {s t : 
     _ = (∑ b : LoopArg L n, ∏ i, ‖edgeKer L (ξ i) s t (a i) (b i)‖) * M := by
         rw [← Finset.sum_mul]
     _ ≤ C ^ n * M := mul_le_mul_of_nonneg_right hstep hM0
+
+/-- At `s = t` the evolution kernel is the identity. -/
+theorem Uker_self (hL : 3 ≤ L) {n : ℕ} {ξ : Fin n → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) (A : LoopArg L n → ℂ) :
+    Uker L ξ t t A = A := by
+  funext a
+  have hprod : ∀ b : LoopArg L n,
+      (∏ i, edgeKer L (ξ i) t t (a i) (b i)) = if a = b then (1 : ℂ) else 0 := by
+    intro b
+    have hone : ∀ i : Fin n,
+        edgeKer L (ξ i) t t (a i) (b i) = if a i = b i then (1 : ℂ) else 0 := by
+      intro i
+      rw [edgeKer_self L hL (ht i), Matrix.one_apply]
+    rw [Finset.prod_congr rfl fun i _ => hone i, Fintype.prod_boole]
+    congr 1
+    simp [funext_iff]
+  calc Uker L ξ t t A a
+      = ∑ b : LoopArg L n, (∏ i, edgeKer L (ξ i) t t (a i) (b i)) * A b := rfl
+    _ = ∑ b : LoopArg L n, (if a = b then A b else 0) := by
+        refine Finset.sum_congr rfl fun b _ => ?_
+        rw [hprod b]
+        split <;> simp
+    _ = A a := by simp
+
+/-- **The semigroup law** `U_{u,t} . U_{s,u} = U_{s,t}`, the `n`-fold version of
+`edgeKer_mul`.  Together with `Uker_self` this is what makes `U` an evolution kernel. -/
+theorem Uker_comp (hL : 3 ≤ L) {n : ℕ} {ξ : Fin n → ℂ} {s u t : ℂ}
+    (hu : ∀ i, ‖u * ξ i‖ < 1) (ht : ∀ i, ‖t * ξ i‖ < 1) (A : LoopArg L n → ℂ) :
+    Uker L ξ u t (Uker L ξ s u A) = Uker L ξ s t A := by
+  funext a
+  calc Uker L ξ u t (Uker L ξ s u A) a
+      = ∑ c : LoopArg L n, (∏ i, edgeKer L (ξ i) u t (a i) (c i))
+          * ∑ b : LoopArg L n, (∏ i, edgeKer L (ξ i) s u (c i) (b i)) * A b := rfl
+    _ = ∑ c : LoopArg L n, ∑ b : LoopArg L n,
+          (∏ i, edgeKer L (ξ i) u t (a i) (c i) * edgeKer L (ξ i) s u (c i) (b i)) * A b := by
+        refine Finset.sum_congr rfl fun c _ => ?_
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun b _ => ?_
+        rw [Finset.prod_mul_distrib]
+        ring
+    _ = ∑ b : LoopArg L n, ∑ c : LoopArg L n,
+          (∏ i, edgeKer L (ξ i) u t (a i) (c i) * edgeKer L (ξ i) s u (c i) (b i)) * A b :=
+        Finset.sum_comm
+    _ = ∑ b : LoopArg L n, (∏ i, edgeKer L (ξ i) s t (a i) (b i)) * A b := by
+        refine Finset.sum_congr rfl fun b _ => ?_
+        rw [← Finset.sum_mul,
+          sum_prod_pi L (fun i x => edgeKer L (ξ i) u t (a i) x * edgeKer L (ξ i) s u x (b i))]
+        congr 1
+        exact Finset.prod_congr rfl fun i _ => sum_edgeKer_mul L hL (hu i) (ht i) (a i) (b i)
+    _ = Uker L ξ s t A a := rfl
 
 end Operators
 

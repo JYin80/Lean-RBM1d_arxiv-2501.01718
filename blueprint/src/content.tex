@@ -495,6 +495,20 @@
 
 \chapter{The primitive equation and $\Kcal$}
 
+\begin{lemma}[(2.53) for complex $\xi$]\label{lem:Theta-diff-complex}
+  \lean{RBM.one_add_rho_sq_mul, RBM.half_le_norm_one_add_rho,
+    RBM.norm_one_sub_rho_sq_le_three, RBM.norm_AA_mul_one_sub_rho_le_complex,
+    RBM.ellHat_mul_sqrt_le, RBM.norm_Theta_sub_shift_le_complex}
+  \leanok\uses{lem:Theta-diff, lem:closed-form, lem:rho}
+  \[ \bigl|(\Th_\xi)_{x,y}-(\Th_\xi)_{x,y+1}\bigr| \;\le\;
+     \frac{144}{\hat\ell(\xi)\,\|1-\xi\|^{1/2}} \qquad (\|\xi\| < 1). \]
+  The identities behind the real case hold for every $\xi$; only the bounds on $A(1-\rho)$
+  had to be redone.  Two new ingredients: the exact
+  $\|1-\rho\|^2 = \|1-\xi\|\,\|1+\rho+\rho^2\|$ with $\|1+\rho+\rho^2\|\le 3$, and
+  $\|1+\rho\| \ge 1/2$ --- the root never approaches $-1$ on the disc, since
+  $(1+\rho)^2\xi = \rho(3+\xi)$ would force $\xi$ towards $-3$.
+\end{lemma}
+
 \begin{definition}[Loops and cut-and-glue operators, Definitions 2.9--2.10]\label{def:loops}
   \lean{RBM.LoopIdx, RBM.LoopIdx.cutGlue, RBM.LoopIdx.cutGlueL, RBM.LoopIdx.cutGlueR}
   \leanok

@@ -165,3 +165,15 @@ grep -rn "sum_pow\|zdist\|geom_sum\|exp_neg" RBM1D/ --include=*.lean
 * build 红着的时候，另一边判断自己那个文件是否编译通过，看
   `build.log` 里 `Built/Replayed RBM1D.<你的文件>` 那一行和它后面 warning 的行号，
   而不是末尾的 `errors:`。
+
+
+## `watch.sh` 的一个竞态（实际踩过）
+
+`watch.sh` 靠 `find ... -newer build.log` 决定要不要重编。如果你的改动**正好落在
+一次编译进行中**，那次编译结束时写出的 `build.log` 会比你的文件更新，
+于是 `find` 什么也找不到，**你的改动就一直不会被编译**——看上去像"编译很慢"，
+其实是根本没排上。
+
+症状：文件改了两分钟，`build.log` 的时间戳在动，但你那个文件的 olean 一直不变。
+
+处理：`touch` 一下你改的文件（让它比 `build.log` 新），下一轮轮询就会捡起来。

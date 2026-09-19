@@ -1270,6 +1270,203 @@ theorem outEnds_unColP (g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) (hg : g.
   rw [hv.1, hv.2]
   simp only [unCol, wIn]; split_ifs <;> omega
 
+/-- Glue an outside and an inside family back along `J`. -/
+def glueF (J : Fin n × Fin n) (G : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)))
+    (H : Finset (Fin (wIn J + 1) × Fin (wIn J + 1))) : Finset (Fin n × Fin n) :=
+  insert J (G.image (unColP J) ∪ H.image (unShift J))
+
+theorem mem_diagonals_iff {m : ℕ} {d : Fin m × Fin m} : d ∈ diagonals m ↔ IsDiag m d.1 d.2 := by
+  simp [diagonals]
+
+variable (hJd : IsDiag n J.1 J.2)
+include hJd
+
+omit [NeZero n] in
+theorem width_of_isDiag : J.1.val + 2 ≤ J.2.val := by
+  obtain ⟨h1, h2, -⟩ := hJd; rw [Fin.lt_def] at h1; omega
+
+omit [NeZero n] hJd in
+/-- The inside family is a crossing-free family of diagonals. -/
+theorem FIn_mem_TSP {F : Finset (Fin n × Fin n)} (hF : IsTSP F) : FIn F J ∈ TSP (wIn J + 1) := by
+  rw [mem_TSP]
+  constructor
+  · intro y hy
+    obtain ⟨d, hd, rfl⟩ := mem_image.1 hy
+    obtain ⟨hdF, hdJ, hne⟩ := mem_filter.1 hd
+    obtain ⟨d1, d2, d3⟩ := hF.1 d hdF
+    have hv := shiftIn_val hdJ (le_of_lt d1)
+    rw [mem_diagonals_iff]
+    have hJ' := hdJ
+    simp only [ArcLe, Fin.le_def] at hJ'
+    have hne' : ¬(d.1.val = J.1.val ∧ d.2.val = J.2.val) := fun h =>
+      hne (Prod.ext (Fin.ext h.1) (Fin.ext h.2))
+    rw [Fin.lt_def] at d1
+    refine ⟨by rw [Fin.lt_def, hv.1, hv.2]; omega, by rw [hv.1, hv.2]; omega, ?_⟩
+    rw [hv.1, hv.2]; simp only [wIn]; omega
+  · intro y hy z hz hc
+    obtain ⟨d, hd, rfl⟩ := mem_image.1 hy
+    obtain ⟨e, he, rfl⟩ := mem_image.1 hz
+    obtain ⟨hdF, hdJ, -⟩ := mem_filter.1 hd
+    obtain ⟨heF, heJ, -⟩ := mem_filter.1 he
+    have hd1 := (hF.1 d hdF).1
+    have he1 := (hF.1 e heF).1
+    have hv := shiftIn_val hdJ (le_of_lt hd1)
+    have hw := shiftIn_val heJ (le_of_lt he1)
+    apply hF.2 d hdF e heF
+    simp only [Crossing, Fin.lt_def, hv.1, hv.2, hw.1, hw.2] at hc ⊢
+    simp only [ArcLe, Fin.le_def] at hdJ heJ
+    omega
+
+/-- The outside family is a crossing-free family of diagonals. -/
+theorem FOut_mem_TSP {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) (hJ : J ∈ F) :
+    FOut F J ∈ TSP (n - wIn J + 1) := by
+  have hJw := width_of_isDiag hJd
+  have hJ2 : J.1.val < J.2.val := by omega
+  rw [mem_TSP]
+  constructor
+  · intro y hy
+    obtain ⟨d, hd, rfl⟩ := mem_image.1 hy
+    obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+    have hE := outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ
+    obtain ⟨d1, d2, d3⟩ := hF.1 d hdF
+    have hv := shiftOut_val d hJ2
+    have hne : ¬(d.1.val = J.1.val ∧ d.2.val = J.2.val) := fun h =>
+      hdJ (by simp only [ArcLe, Fin.le_def]; omega)
+    have hn2 := J.2.isLt
+    have hd2 := d.2.isLt
+    rw [mem_diagonals_iff]
+    obtain ⟨e1, e2, e3⟩ := hE
+    refine ⟨?_, ?_, ?_⟩
+    · rw [Fin.lt_def, hv.1, hv.2]; simp only [col, wIn]; split_ifs <;> omega
+    · rw [hv.1, hv.2]; simp only [col, wIn]; split_ifs <;> omega
+    · rw [hv.1, hv.2]; simp only [col, wIn]; split_ifs <;> omega
+  · intro y hy z hz hc
+    obtain ⟨d, hd, rfl⟩ := mem_image.1 hy
+    obtain ⟨e, he, rfl⟩ := mem_image.1 hz
+    obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+    obtain ⟨heF, heJ⟩ := mem_filter.1 he
+    have hdE := outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ
+    have heE := outEnds_of hF hn hJ (mem_nodes_of_mem heF) heJ
+    have hv := shiftOut_val d hJ2
+    have hw := shiftOut_val e hJ2
+    apply hF.2 d hdF e heF
+    obtain ⟨a1, a2, a3⟩ := hdE
+    obtain ⟨b1, b2, b3⟩ := heE
+    simp only [Crossing, Fin.lt_def, hv.1, hv.2, hw.1, hw.2] at hc ⊢
+    simp only [col, wIn] at hc
+    split_ifs at hc <;> omega
+
+theorem arcLe_unShift (h : Fin (wIn J + 1) × Fin (wIn J + 1)) : ArcLe (unShift J h) J := by
+  have hv := unShift_val h
+  have hJw := width_of_isDiag hJd
+  have h2 := h.2.isLt
+  have hw : wIn J = J.2.val - J.1.val := rfl
+  constructor
+  · rw [Fin.le_def, hv.1]; omega
+  · rw [Fin.le_def, hv.2]; omega
+
+omit hJd in
+theorem unShift_ne {h : Fin (wIn J + 1) × Fin (wIn J + 1)} (hh : IsDiag (wIn J + 1) h.1 h.2) :
+    unShift J h ≠ J := by
+  intro he
+  have hv := unShift_val h
+  obtain ⟨-, -, h3⟩ := hh
+  apply h3
+  have e1 := congrArg (fun x => x.1.val) he
+  have e2 := congrArg (fun x => x.2.val) he
+  simp only [hv.1, hv.2] at e1 e2
+  simp only [wIn]; omega
+
+theorem not_arcLe_unColP {g : Fin (n - wIn J + 1) × Fin (n - wIn J + 1)}
+    (hg : IsDiag (n - wIn J + 1) g.1 g.2) : ¬ArcLe (unColP J g) J := by
+  have hJw := width_of_isDiag hJd
+  have hv := unColP_val g (by omega)
+  obtain ⟨g1, g2, -⟩ := hg
+  rw [Fin.lt_def] at g1
+  simp only [ArcLe, Fin.le_def, hv.1, hv.2, unCol, wIn]
+  split_ifs <;> omega
+
+/-- The glued family is a crossing-free family of diagonals. -/
+theorem glueF_mem_TSP {G : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1))}
+    {H : Finset (Fin (wIn J + 1) × Fin (wIn J + 1))} (hG : G ∈ TSP (n - wIn J + 1))
+    (hH : H ∈ TSP (wIn J + 1)) : glueF J G H ∈ TSP n := by
+  have hJw := width_of_isDiag hJd
+  have hJ2 : J.1.val < J.2.val := by omega
+  rw [mem_TSP] at hG hH ⊢
+  have hGd : ∀ g ∈ G, IsDiag _ g.1 g.2 := fun g hg => mem_diagonals_iff.1 (hG.1 hg)
+  have hHd : ∀ h ∈ H, IsDiag _ h.1 h.2 := fun h hh => mem_diagonals_iff.1 (hH.1 hh)
+  have hn2 := J.2.isLt
+  -- the three kinds of elements
+  have kinds : ∀ x ∈ glueF J G H, x = J ∨ (∃ g ∈ G, unColP J g = x) ∨
+      (∃ h ∈ H, unShift J h = x) := by
+    intro x hx
+    rcases mem_insert.1 hx with rfl | hx
+    · exact Or.inl rfl
+    rcases mem_union.1 hx with hx | hx
+    · exact Or.inr (Or.inl (mem_image.1 hx))
+    · exact Or.inr (Or.inr (mem_image.1 hx))
+  constructor
+  · intro x hx
+    rw [mem_diagonals_iff]
+    rcases kinds x hx with rfl | ⟨g, hg, rfl⟩ | ⟨h, hh, rfl⟩
+    · exact hJd
+    · have hv := unColP_val g hJ2
+      obtain ⟨g1, g2, g3⟩ := hGd g hg
+      rw [Fin.lt_def] at g1
+      refine ⟨?_, ?_, ?_⟩
+      · rw [Fin.lt_def, hv.1, hv.2]; simp only [unCol, wIn]; split_ifs <;> omega
+      · rw [hv.1, hv.2]; simp only [unCol, wIn]; split_ifs <;> omega
+      · rw [hv.1, hv.2]; simp only [unCol, wIn] at g3 ⊢; split_ifs <;> omega
+    · have hv := unShift_val h
+      obtain ⟨h1, h2, h3⟩ := hHd h hh
+      rw [Fin.lt_def] at h1
+      have hb := h.2.isLt
+      refine ⟨by rw [Fin.lt_def, hv.1, hv.2]; omega, by rw [hv.1, hv.2]; omega, ?_⟩
+      rw [hv.1, hv.2]; simp only [wIn] at h3 hb ⊢; omega
+  · -- crossing-freeness
+    have outE : ∀ g ∈ G, OutEnds J (unColP J g) := fun g hg =>
+      outEnds_unColP g (hGd g hg).1 hJw
+    have crossJ : ∀ x, OutEnds J x → ¬Crossing J x ∧ ¬Crossing x J := by
+      intro x ⟨a1, a2, a3⟩
+      simp only [Crossing, Fin.lt_def]; constructor <;> omega
+    have crossIn : ∀ h, ¬Crossing J (unShift J h) ∧ ¬Crossing (unShift J h) J := by
+      intro h
+      have := arcLe_unShift hJd h
+      simp only [ArcLe, Fin.le_def] at this
+      simp only [Crossing, Fin.lt_def]; constructor <;> omega
+    have crossGH : ∀ g h, OutEnds J (unColP J g) →
+        ¬Crossing (unColP J g) (unShift J h) ∧ ¬Crossing (unShift J h) (unColP J g) := by
+      intro g h ⟨a1, a2, a3⟩
+      have := arcLe_unShift hJd h
+      simp only [ArcLe, Fin.le_def] at this
+      simp only [Crossing, Fin.lt_def]; constructor <;> omega
+    have crossGG : ∀ g ∈ G, ∀ g' ∈ G, ¬Crossing (unColP J g) (unColP J g') := by
+      intro g hg g' hg' hc
+      apply hG.2 g hg g' hg'
+      have hv := unColP_val g hJ2
+      have hw := unColP_val g' hJ2
+      simp only [Crossing, Fin.lt_def, hv.1, hv.2, hw.1, hw.2, unCol, wIn] at hc ⊢
+      split_ifs at hc <;> omega
+    have crossHH : ∀ h ∈ H, ∀ h' ∈ H, ¬Crossing (unShift J h) (unShift J h') := by
+      intro h hh h' hh' hc
+      apply hH.2 h hh h' hh'
+      have hv := unShift_val h
+      have hw := unShift_val h'
+      simp only [Crossing, Fin.lt_def, hv.1, hv.2, hw.1, hw.2] at hc ⊢
+      omega
+    intro x hx y hy
+    rcases kinds x hx with rfl | ⟨g, hg, rfl⟩ | ⟨h, hh, rfl⟩ <;>
+      rcases kinds y hy with rfl | ⟨g', hg', rfl⟩ | ⟨h', hh', rfl⟩
+    · exact not_crossing_self _
+    · exact (crossJ _ (outE g' hg')).1
+    · exact (crossIn h').1
+    · exact (crossJ _ (outE g hg)).2
+    · exact crossGG g hg g' hg'
+    · exact (crossGH g h' (outE g hg)).1
+    · exact (crossIn h).2
+    · exact (crossGH g' h (outE g' hg')).2
+    · exact crossHH h hh h' hh'
+
 end CutBij
 
 end RBM

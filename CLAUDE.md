@@ -150,3 +150,18 @@ grep -rn "sum_pow\|zdist\|geom_sum\|exp_neg" RBM1D/ --include=*.lean
 需要别的文件里已有的工具时：能 import 就 import；
 若会造成不该有的依赖方向（比如 `Propagator/` 依赖 `Loop/`），
 就把它下沉到 `RBM1D/Defs/` 里的共享文件。
+
+
+## 关于 `sorry` 与红色的 build
+
+硬性规则是**不提交 `sorry`**。在工作树里临时留一个 `sorry` 当脚手架、边填边编译，
+是可以的——但它会让**共享的 build 变红**，另一边就没法用全局的 `errors:` 计数
+判断自己的改动是否通过了。
+
+所以：
+
+* 留着 `sorry` 的时候，**提交前一定要清掉**；`RBM1D.lean` 末尾的 `#assert_rbm_axioms`
+  会拦下漏网的（已经实际拦下过一次）。
+* build 红着的时候，另一边判断自己那个文件是否编译通过，看
+  `build.log` 里 `Built/Replayed RBM1D.<你的文件>` 那一行和它后面 warning 的行号，
+  而不是末尾的 `errors:`。

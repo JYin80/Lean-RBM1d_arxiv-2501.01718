@@ -10,9 +10,12 @@ on:
       - main
   workflow_dispatch:
 
+# Do NOT cancel in progress: a deploy that is most of the way through a
+# doc-gen4 build should be allowed to finish rather than be killed by the next
+# push.  Queue instead.
 concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read

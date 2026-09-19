@@ -1259,6 +1259,18 @@
   $\Xi^{(L-K)}_n\prec W\ell_u\eta_u$ from Step 3.
 \end{proof}
 
+\begin{theorem}[Step 6 of Theorem 2.21: (5.126)--(5.136), (2.80)]\label{thm:step6}
+  \lean{RBM.Step6.ellHat_sq_mul_one_sub_anti, RBM.Step6.ellHat_mul_one_sub_le_sqrt, RBM.Step6.kernel_ratio_le, RBM.Step6.norm_integral_le_log, RBM.Step6.Est714At, RBM.Step6.est714At_cKer, RBM.Step6.core_bound, RBM.Step6.final_arith, RBM.Step6.eq_Theta_of_selfConsistent, RBM.Step6.norm_selfConsistent_le, RBM.Step6.norm_quadTerm_le, RBM.Step6.DriftTensor, RBM.Step6.Hierarchy, RBM.Step6.FastDecayHyp, RBM.Step6.DriftBound, RBM.Step6.sharpExpect_of_hierarchy, RBM.Step6.Eq527, RBM.Step6.lemma515, RBM.Step6.driftBound_of_5133, RBM.Step6.mix13_eq, RBM.Step6.driftBound_of_5134, RBM.Step6.sharpExpect_step6}
+  \leanok\uses{lem:7.3, thm:step45, def:flow-hypotheses, lem:flow-scales}
+  With the expected hierarchy (5.129)--(5.131), Lemma 5.15 (5.126) and the fast-decay claim as
+  hypotheses: the self-consistent equation (5.128) is solved by $\Theta^{(B)}_{um^2}$, the drift
+  terms satisfy (5.133)--(5.135), and the time integral (5.136) with (7.14) gives
+  $|\mathbb E\,(L-K)_{u,(+,-)}|\prec(W\ell_t\eta_t)^{-3}$ uniformly in $u\in[s,t]$, i.e.\ (2.80).
+\end{theorem}
+\begin{proof}\leanok
+  $\ell_u^2(1-u)$ is non-increasing; $\int_s^u\eta_v^{-1}dv\le2\log W$ by (2.72).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

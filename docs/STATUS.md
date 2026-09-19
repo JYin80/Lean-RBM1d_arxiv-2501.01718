@@ -1095,3 +1095,13 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 
 `Eq5125`（(5.125)，界传递形式）、`eq5125_of_lemma514`、**`xiLK_le_one`**（对 n 归纳，Ξ^{(L−K)} ≺ 1）、**`flow_sharpLmK`**（(2.78)，形状同 `Steps.sharpLmK`）；
 `Eq548`/`FlowEq548`（(5.48)）、`decay_of_split`、**`flow_sharpDecay`**（(2.79)，形状同 `Steps.sharpDecay`）、`flow_steps45`。paper-deltas #36。
+
+### `RBM1D/Hierarchy/Step6.lean` — Step 6（T56，Claude Code 并行 agent）
+
+(5.128) `eq_Theta_of_selfConsistent`、Lemma 5.15 `lemma515`、(5.133)–(5.135) `driftBound_of_5133`/`driftBound_of_5134`、
+(5.136) `core_bound`/`sharpExpect_of_hierarchy`，**`sharpExpect_step6`**（(2.80)，形状同 `Steps.sharpExpect`，u ∈ [s,t] 一致）。
+(7.14) **已由 T51 的 `norm_Uker_fastDecay_le` 证出**（`est714At_cKer`），不是假设。随机层输入（期望后的 hierarchy、快衰减、(5.132)(5.133)、
+`Eq527`、两条来自 (2.78) 的期望界、可积性、(2.72)）均为显式假设。paper-deltas #37。
+
+**第二批（T42–T57）Claude Code 部分全部完成**：T43–T51、T53–T57（T42、T52 为 Cowork）。Steps 1–6 中 (2.77)(2.78)(2.79)(2.80) 均已有形状匹配
+`Steps` 字段的定理；Lemma 2.18–2.20 由 Thm 2.21 推出（T57）。

@@ -1145,3 +1145,9 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 **`localSemicircleLaw_of_Thm221`**（(2.3)(2.4) 与迹律）、**`quantumDiffusion_of_Thm221`**（(2.6)–(2.9)）；逐式版 `*_of_bounds` 与 `W^τ` 概率版。
 缺口（接口所致）：只在固定能量切片 `SpecSeq`（`lemE (z N) = E`）上成立——全域一致需 `Bounds`/`Thm221` 允许 N 相关能量；
 (2.4) 需新假设 `TransferLoop1`（1-loop 版 (2.39)）。paper-deltas #38。
+
+### `RBM1D/Loop/ChainBound.lean` — Lemma A.2（T64，Claude Code 并行 agent）
+
+**`lemma_A2`**（(A.3)(A.4)，显式常数，`Φ ≥ chainScaleUpTo … n`）、**`XiDiag_XiOff_step`**（(A.7) 一步，含 (A.14)(A.17)）、`XiDiag_XiOff_le_chainBound`（迭代）；
+`sum_Sblk_mul_eq`（补上 T49 的 (A.20) 末步）。输入 `1/G_ii`、loop 界 `LoopBound`、[39] `ChainLDE16`/`ChainLDE19` 为假设。
+(A.12)(A.13) 以单边比较绕过，T49 的 (A.25) 缺口不再需要。paper-deltas #39。

@@ -1310,6 +1310,18 @@
   (2.6)(2.7)$\leftarrow$(2.60) at $n=2$ with (2.57), (2.8)(2.9)$\leftarrow$(2.62); $\ell(z)\asymp\ell_t$.
 \end{proof}
 
+\begin{lemma}[$n$-chain estimate, Lemma A.2]\label{lem:A.2}
+  \lean{RBM.sum_Sblk_mul_eq, RBM.Sblk_symm, RBM.sum_Sblk_mul_le, RBM.sqrt_sum_Sblk_quad_le, RBM.norm_quad_H_le_of_LDE, RBM.norm_gchainMinor_sub_gchain_le_sum, RBM.norm_gchainMinor_sub_gchain_le_div, RBM.sq_norm_gchainMinor_le, RBM.LoopBound, RBM.ChainLDE16, RBM.ChainLDE19, RBM.chainBound, RBM.chainScaleUpTo, RBM.norm_quad_gchain_le, RBM.norm_gchain_off_le, RBM.bootstrap_A14_A17, RBM.normSq_gchain_double_le, RBM.XiDiag_XiOff_step, RBM.XiDiag_XiOff_le_chainBound, RBM.lemma_A2}
+  \leanok\uses{lem:A, lem:4.1}
+  Given $1/G_{ii}=O(1)$, the loop bound (2.77) and [39, Lemma 3.3] as hypotheses: the induction
+  (A.7) with (A.14), (A.17) gives (A.3) $|(C_nE_cC_n^\dagger)_{ii}|\le C\Phi^{-2n+1}$ and (A.4)
+  $|(C_n)_{ij}|\le C\Phi^{-n+1/2}$ for $\Phi=W\ell\eta$ large, with explicit constants.
+\end{lemma}
+\begin{proof}\leanok
+  (A.12)(A.13) are replaced by the one-sided comparison $|C^{(ii)}-C|\le c(B+\Xi^{(o)}_n)\Phi^{-n}$;
+  (A.16)'s error by positivity of $CEC^\dagger$; a real-number bootstrap closes (A.14)(A.17).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

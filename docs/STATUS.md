@@ -1187,3 +1187,10 @@ T60 可 import 此文件替换其 (5.77) 占位。paper-deltas #42。
 **Theorem 2.6**：`theorem2_6_of_steps`——(2.21) `DBMUniversality`[51]、(2.23)⇒(2.24) `GreenComparison`[37,70]、(2.23) `StepTwoClaim` 为假设；GUE 关联函数 `gueCorr` 按特征值密度的边缘显式写出。
 Step 3 已做部分：(2.27) `que_flow_of_eq747`、坏事件 `measure_bad_flow_of_eq747`（概率 ≤ 3N^{-c/18}，阈值 N^{-c/36}——疑似论文笔误）。
 **剩余缺口**：(2.25)–(2.33) ⇒ (2.23) 的 L₁/L₂ 估计（需 [70, L4.18/4.20]、离域化、特征值计数）；`Eq747` 待 T65 替换。paper-deltas #45。
+
+### `RBM1D/Hierarchy/GUEPhase.lean` — §7.2 GUE 相（T65，Claude Code 并行 agent）
+
+**`eq747_of_inputs`** 产出 `Eq747`（T68 的占位），`que_flow_of_inputs` 把它接到 `que_flow_of_eq747`，(2.27) 端到端成立；输入结构 `Eq747Inputs`（(7.26) 期望形式、(7.29)@t₀、可积性）。
+(7.25) `Stilde`/`zetaU`（复用 T46 `SBTilde`）；(7.30)–(7.32) `eq730`、`ellHat_eq_L`；(7.33)(7.34) `primRhsGUE` 与幂计数；(7.35)→(7.36) `K_bootstrap`/`eq736`；
+(7.41)–(7.44) `eq742_of`/`eq744_of`；(7.45) `eq745_of_terms`；(7.27)(7.28) `eq727`/`eq728`/`eq728_of_eq745`；GUE 相 2-loop 闭式 `kTwoGUE`。
+**剩余缺口**：`h745/h746`（(7.45)(7.46) 的 ≺ 界）需 T58 的 L−K 层级 + Duhamel/BDG；(7.29) 本身（§5.8 对 GUE 相的论证）与 (2.26)；GUE 相 ODE 的唯一性；`eq727` 的抽象极大值尚未实例化到具体 loop。paper-deltas #46。

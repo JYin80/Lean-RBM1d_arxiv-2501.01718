@@ -1385,6 +1385,20 @@
   Step 3 via (2.27).
 \end{proof}
 
+\begin{theorem}[The GUE phase, \S7.2: (7.25)--(7.47)]\label{thm:7.2-gue}
+  \lean{RBM.GUEPhase.SBgue, RBM.GUEPhase.SBTilde_eq_add, RBM.GUEPhase.Stilde, RBM.GUEPhase.zetaU, RBM.GUEPhase.half_le_zetaU, RBM.GUEPhase.eq730, RBM.GUEPhase.ellHat_eq_L, RBM.GUEPhase.scale_eq_of_ell_eq_L, RBM.GUEPhase.primBilGUE, RBM.GUEPhase.primRhsGUE, RBM.GUEPhase.norm_primBilGUE_le, RBM.GUEPhase.norm_primRhsGUE_le, RBM.GUEPhase.eq742_of, RBM.GUEPhase.eq744_of, RBM.GUEPhase.continuity_argument, RBM.GUEPhase.K_bootstrap, RBM.GUEPhase.eq736, RBM.GUEPhase.eq736_detDom, RBM.GUEPhase.eq745_of_terms, RBM.GUEPhase.eq727, RBM.GUEPhase.eq728, RBM.GUEPhase.eq728_of_eq745, RBM.GUEPhase.kTwoGUE, RBM.GUEPhase.kTwoGUE_self, RBM.GUEPhase.hasDerivAt_kTwoGUE, RBM.GUEPhase.kTwoGUE_eq_ThetaTilde, RBM.GUEPhase.Eq747Inputs, RBM.GUEPhase.eq747_of_inputs, RBM.GUEPhase.que_flow_of_inputs}
+  \leanok\uses{lem:zero-mode, def:flow-hypotheses, thm:2.5-2.6}
+  $\tilde S=(1-\zeta_U)S+\zeta_U/N$ (7.25); the scale arithmetic (7.30)--(7.32); the continuity
+  bootstrap (7.33)--(7.36); (7.39)--(7.44) re-accounted; (7.45)(7.46) give (7.27)(7.28); and (7.47),
+  discharging the placeholder \texttt{Eq747} of Theorem 2.5 for $H_t$, from (7.26), (7.29) and the
+  Duhamel/BDG bounds (7.37)(7.38) as hypotheses.
+\end{theorem}
+\begin{proof}\leanok
+  One continuity argument over all lengths $2\le n\le n_0$ (first failure time); the GUE-phase 2-loop
+  $K$ in closed form, matching (2.57) at $t_1$ and solving (7.33); the error scale converted with
+  $\eta_{t_0}=t_0^{1/2}\eta$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

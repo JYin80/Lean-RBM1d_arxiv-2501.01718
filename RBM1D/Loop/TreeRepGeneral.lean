@@ -2119,6 +2119,69 @@ theorem leaf_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)
   simp_rw [hL', hR']
   exact rhs_kTwo_left W m t _ _ _ _
 
+include hL hm in
+/-- **The root pair** `(1, n)` of (2.48) is the leaf term of the root `v = n - 1` (the left
+chain is the `2`-loop `(σ₀, σ_{n-1})`, the right chain the polygon with `a_{n-1} := y`). -/
+theorem root_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hlen : I.length = n) (v : Fin n) (hv : v.val = n - 1) :
+    (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        Kgen L W m t (I.cutGlueL 1 n x) * SB L x y * Kgen L W m t (I.cutGlueR 1 n y)
+      = ∑ x : ZMod L, ((m (I.σ.getD v false) * m (I.σ.getD (v + 1 : Fin n) false)) •
+          (thetaEdge L m t (I.σ.getD v false) (I.σ.getD (v + 1 : Fin n) false) * SB L))
+          (I.a.getD v 0) x *
+          Kn L W m t n (fun i => I.σ.getD i false)
+            (Function.update (fun i : Fin n => I.a.getD i 0) v x) := by
+  have hσl : I.σ.length = n := by rw [hI]; exact hlen
+  have hal : I.a.length = n := hlen
+  have hv1 : ((v + 1 : Fin n) : ℕ) = 0 := by
+    rw [Fin.val_add, Fin.val_one', Nat.mod_eq_of_lt (by omega : 1 < n), hv,
+      Nat.sub_add_cancel (by omega), Nat.mod_self]
+  -- the left chain: the `2`-loop `(σ₀, σ_{n-1}), (x, a_{n-1})`
+  have hL' : ∀ x, Kgen L W m t (I.cutGlueL 1 n x)
+      = kTwo L W m t (I.σ.getD 0 false) (I.σ.getD v false) x (I.a.getD v 0) := by
+    intro x
+    have hlenL : (I.cutGlueL 1 n x).length = 2 := by
+      rw [LoopIdx.length_cutGlueL I x le_rfl (by omega) (by omega)]; omega
+    rw [Kgen_of_length_two W m t _ hlenL]
+    simp only [LoopIdx.cutGlueL, Nat.sub_self, List.take_zero, List.nil_append]
+    have e1 : (List.take 1 I.σ ++ List.drop (n - 1) I.σ).getD 0 false = I.σ.getD 0 false :=
+      getD_take_append_of_lt (by omega) (by omega)
+    have e2 : (List.take 1 I.σ ++ List.drop (n - 1) I.σ).getD 1 false = I.σ.getD v false := by
+      rw [getD_take_append_of_ge le_rfl (by omega), Nat.sub_self, getD_drop', hv, Nat.add_zero]
+    have e3 : (x :: List.drop (n - 1) I.a).getD 1 0 = I.a.getD v 0 := by
+      rw [show (1 : ℕ) = 0 + 1 from rfl, getD_cons_succ', getD_drop', hv, Nat.add_zero]
+    rw [e1, e2, e3]
+    rfl
+  -- the right chain: the polygon with `a_{n-1} := y`
+  have hR' : ∀ y, Kgen L W m t (I.cutGlueR 1 n y)
+      = Kn L W m t n (fun i => I.σ.getD i false)
+          (Function.update (fun i : Fin n => I.a.getD i 0) v y) := by
+    intro y
+    have hlenR : (I.cutGlueR 1 n y).length = n := by
+      rw [LoopIdx.length_cutGlueR I y le_rfl (by omega) (by omega)]; omega
+    rw [Kgen_eq W m t hn _ hlenR]
+    congr 1
+    · funext i
+      simp only [LoopIdx.cutGlueR, Nat.sub_self, List.drop_zero]
+      rw [List.getD_eq_getElem?_getD, List.getElem?_take, ite_eq_left (by omega),
+        ← List.getD_eq_getElem?_getD]
+    · funext i
+      simp only [LoopIdx.cutGlueR, Nat.sub_self, List.drop_zero, show n - 1 + 1 = n by omega]
+      by_cases hiv : i = v
+      · subst hiv
+        rw [Function.update_self, getD_take_append_of_ge (by omega) (by omega), hv, Nat.sub_self]
+        rfl
+      · rw [Function.update_of_ne hiv]
+        have hi : i.val < n - 1 := by
+          have := i.isLt; have : i.val ≠ v.val := fun h => hiv (Fin.ext h); omega
+        rw [getD_take_append_of_lt hi (by omega)]
+  simp_rw [hL', hR']
+  rw [rhs_kTwo_right W m t hL _ _ (hm _ _)]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  have h0 : (v + 1 : Fin n) = 0 := Fin.ext (by rw [hv1]; rfl)
+  rw [h0, mul_comm (m (I.σ.getD 0 false))]
+  rfl
+
 end Lists
 
 end RBM

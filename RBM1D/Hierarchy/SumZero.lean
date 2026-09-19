@@ -72,8 +72,8 @@ theorem Psum_vartheta (hL : 3 ≤ L) {n : ℕ} {t : ℂ} (ht : ‖t‖ < 1) (x :
   rw [Psum, Finset.sum_congr rfl fun r _ => vartheta_cons L t x r, ← Finset.mul_sum,
     sum_prod_pi L (fun (_ : Fin n) (c : ZMod L) => Theta L t x c),
     Finset.prod_congr rfl fun (i : Fin n) _ => sum_Theta_row L hL ht x,
-    Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-  field_simp
+    Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← mul_pow,
+    mul_inv_cancel₀ hne, one_pow]
 
 /-- `Q_t` lands in the sum-zero tensors. -/
 theorem SumZero_Qop (hL : 3 ≤ L) {n : ℕ} {t : ℂ} (ht : ‖t‖ < 1)
@@ -134,5 +134,112 @@ theorem Psum_smul {n : ℕ} (c : ℂ) (A : LoopArg L (n + 1) → ℂ) :
     Psum L (c • A) = c • Psum L A := by
   funext x
   simp [Psum, Finset.mul_sum]
+
+/-! ### The sum-zero property is preserved by the generator
+
+This is the identity on p. 66 that makes the whole `Q_t` device work: because the row sums
+of `xi * Theta^(B)_{t xi}` do not depend on the row, applying `Theta_{t,sigma}` to a
+sum-zero tensor gives a sum-zero tensor, and hence `P . ([Q_t, Theta_{t,sigma}] . A) = 0`,
+which is (5.90). -/
+
+/-- The map `(r, c) |-> (update r j c, r j)` is an involution of `(Fin n -> Z_L) x Z_L`;
+this is the re-indexing behind `SumZero_ThetaOp`. -/
+theorem sum_sum_update_swap {n : ℕ} (j : Fin n) (F : ZMod L → ZMod L → LoopArg L n → ℂ) :
+    ∑ r : LoopArg L n, ∑ c : ZMod L, F (r j) c (Function.update r j c)
+      = ∑ r : LoopArg L n, ∑ c : ZMod L, F c (r j) r := by
+  have hinv : Function.Involutive
+      (fun p : LoopArg L n × ZMod L => (Function.update p.1 j p.2, p.1 j)) := by
+    intro p
+    refine Prod.ext ?_ ?_
+    · funext i
+      simp only [Function.update_apply]
+      by_cases h : i = j <;> simp [h]
+    · simp
+  rw [← Fintype.sum_prod_type', ← Fintype.sum_prod_type']
+  refine Fintype.sum_bijective _ hinv.bijective _ _ ?_
+  intro p
+  simp
+
+theorem update_cons_zero {n : ℕ} (x c : ZMod L) (r : LoopArg L n) :
+    Function.update (Fin.cons x r : LoopArg L (n + 1)) 0 c = Fin.cons c r := by
+  funext i
+  induction i using Fin.cases with
+  | zero => simp
+  | succ k => simp [Function.update_apply, (Fin.succ_ne_zero k)]
+
+theorem update_cons_succ {n : ℕ} (x c : ZMod L) (r : LoopArg L n) (j : Fin n) :
+    Function.update (Fin.cons x r : LoopArg L (n + 1)) j.succ c
+      = Fin.cons x (Function.update r j c) := by
+  funext i
+  induction i using Fin.cases with
+  | zero => simp [Function.update_apply, (Fin.succ_ne_zero j).symm]
+  | succ k =>
+      by_cases h : k = j
+      · subst h; simp
+      · have hk : k.succ ≠ j.succ := fun hh => h (by simpa using hh)
+        simp [Function.update_apply, hk, h]
+
+/-- **p. 66**: `P . A = 0` implies `P . (Theta_{t,sigma} . A) = 0`.
+
+The `i = 1` summand of (5.16) contributes `sum_c (xi_1 Theta)_{a_1 c} (P . A)_c`, and each
+`i >= 2` summand contributes `(xi_i / (1 - t xi_i)) (P . A)_{a_1}` after the re-indexing
+`sum_sum_update_swap` and the symmetry of `Theta^(B)`. -/
+theorem SumZero_ThetaOp (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) {A : LoopArg L (n + 1) → ℂ} (hA : SumZero L A) :
+    SumZero L (ThetaOp L ξ t A) := by
+  intro x
+  have hexp : ∀ r : LoopArg L n, ThetaOp L ξ t A (Fin.cons x r)
+      = ∑ i : Fin (n + 1), ∑ c : ZMod L,
+          (ξ i * Theta L (t * ξ i) ((Fin.cons x r : LoopArg L (n + 1)) i) c)
+            * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) i c) :=
+    fun r => rfl
+  rw [Psum, Finset.sum_congr rfl fun r _ => hexp r, Finset.sum_comm]
+  refine Finset.sum_eq_zero fun i _ => ?_
+  induction i using Fin.cases with
+  | zero =>
+      have hstep : ∀ (r : LoopArg L n) (c : ZMod L),
+          (ξ 0 * Theta L (t * ξ 0) ((Fin.cons x r : LoopArg L (n + 1)) 0) c)
+              * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) 0 c)
+            = (ξ 0 * Theta L (t * ξ 0) x c) * A (Fin.cons c r) := by
+        intro r c
+        rw [Fin.cons_zero, update_cons_zero L x c r]
+      rw [Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun c _ => hstep r c,
+        Finset.sum_comm]
+      refine Finset.sum_eq_zero fun c _ => ?_
+      rw [← Finset.mul_sum]
+      have hP : ∑ r : LoopArg L n, A (Fin.cons c r) = Psum L A c := rfl
+      rw [hP, hA c, mul_zero]
+  | succ j =>
+      have hsym : ∀ y c : ZMod L,
+          Theta L (t * ξ j.succ) c y = Theta L (t * ξ j.succ) y c := by
+        intro y c
+        have h := congrFun (congrFun (Theta_transpose L hL (ht j.succ)) y) c
+        simpa [Matrix.transpose_apply] using h
+      have hcol : ∀ y : ZMod L, ∑ c : ZMod L, ξ j.succ * Theta L (t * ξ j.succ) c y
+          = ξ j.succ * (1 - t * ξ j.succ)⁻¹ := by
+        intro y
+        rw [← Finset.mul_sum, Finset.sum_congr rfl fun c _ => hsym y c,
+          sum_Theta_row L hL (ht j.succ) y]
+      have hstep : ∀ (r : LoopArg L n) (c : ZMod L),
+          (ξ j.succ * Theta L (t * ξ j.succ) ((Fin.cons x r : LoopArg L (n + 1)) j.succ) c)
+              * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) j.succ c)
+            = (ξ j.succ * Theta L (t * ξ j.succ) (r j) c)
+                * A (Fin.cons x (Function.update r j c)) := by
+        intro r c
+        rw [Fin.cons_succ, update_cons_succ L x c r j]
+      rw [Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun c _ => hstep r c,
+        sum_sum_update_swap L j
+          (fun y c r => (ξ j.succ * Theta L (t * ξ j.succ) y c) * A (Fin.cons x r))]
+      calc ∑ r : LoopArg L n, ∑ c : ZMod L,
+            (ξ j.succ * Theta L (t * ξ j.succ) c (r j)) * A (Fin.cons x r)
+          = ∑ r : LoopArg L n, (∑ c : ZMod L, ξ j.succ * Theta L (t * ξ j.succ) c (r j))
+              * A (Fin.cons x r) :=
+            Finset.sum_congr rfl fun r _ => (Finset.sum_mul _ _ _).symm
+        _ = ∑ r : LoopArg L n, (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * A (Fin.cons x r) :=
+            Finset.sum_congr rfl fun r _ => by rw [hcol (r j)]
+        _ = (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * Psum L A x := by
+            rw [← Finset.mul_sum]
+            rfl
+        _ = 0 := by rw [hA x, mul_zero]
 
 end RBM

@@ -1128,6 +1128,35 @@
   induction.  (3.46) follows from (3.41) and at most $2^{n^2}$ layers.
 \end{proof}
 
+\chapter{Deterministic ingredients of the flow}
+
+\begin{lemma}[Scales of the flow and the time grid, \S2.7 and p.21]\label{lem:flow-scales}
+  \lean{RBM.flowScale, RBM.mE_im_nonneg, RBM.ellHat_mul_one_sub, RBM.flowScale_eq, RBM.flowScale_antitoneOn, RBM.flowScale_pos, RBM.flowScale_inv_le, RBM.gridS, RBM.gridS_zero, RBM.one_sub_gridS, RBM.gridS_lt_one, RBM.gridS_nonneg, RBM.gridS_mono, RBM.one_sub_gridS_succ, RBM.rpow_neg_pow_thirty, RBM.gridS_ratio_pow, RBM.gridS_step_2_72, RBM.gridT, RBM.gridT_zero, RBM.gridT_of_le, RBM.gridT_mono, RBM.gridT_le, RBM.rpow_neg_mul_one_sub_gridT_le, RBM.gridT_step_2_72, RBM.le_gridS_of, RBM.flowScale_ge, RBM.exists_inv_le_rpow, RBM.flowScale_inv_le_rpow, RBM.mE_im_ge, RBM.flow_grid_2_72, RBM.etaT_le, RBM.le_etaT, RBM.ellOf, RBM.ellZ, RBM.ellOf_antitone, RBM.ellOf_le_sqrt_mul, RBM.ellOf_one_sub, RBM.one_le_ellHat_of_nonneg, RBM.ellHat_le_ellZ_zt, RBM.ellZ_zt_le, RBM.sqrt_sixteen, RBM.lemma28_scales}
+  \leanok\uses{lem:2.8, lem:Theta-decay}
+  $A_t=W\ell_t\eta_t=W\operatorname{Im}m\cdot\min((1-t)^{1/2},L(1-t))$ is non-increasing in $t$;
+  along the geometric grid $1-s_k=W^{-k\tau'}$ (truncated at $t$) the step condition (2.72)
+  $A_{s_{k+1}}^{-1}\le((1-s_{k+1})/(1-s_k))^{30}$ holds; $\eta_t\asymp1-t$,
+  $\ell(z_t)\asymp\ell_t$, $\ell(z)\asymp\ell_t$.
+\end{lemma}
+\begin{proof}\leanok
+  The two branches of the min are monotone; $\tau,\tau',n_0$ are fixed first and the grid is
+  truncated at $t$ instead of solving $1-t=W^{-n_0\tau'}$.
+\end{proof}
+
+\begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
+  \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
+  \leanok
+  $T_{u,D}(\ell)=(W\ell_u\eta_u)^{-2}e^{-(\ell/\ell_u)^{1/2}}+W^{-D}$ is non-increasing and
+  $T(\ell-C\ell^*_u)\prec T(\ell)$; $\int_0^ae^{-\sqrt{a-x}-\sqrt x+\sqrt a}\,dx\le16$,
+  $\int_0^\infty e^{-\sqrt x}=2$; the convolution bound
+  $W\sum_xT(\|a_1-x\|)T(\|a_2-x\|)\le C\eta_u^{-1}(W\ell_u\eta_u)^{-1}T(\|a_1-a_2\|)$ (up to
+  $W^{-D}$ terms); and (7.12).
+\end{lemma}
+\begin{proof}\leanok
+  $\sqrt{x+y}\le\sqrt x+\sqrt y$, closed-form antiderivatives of $e^{-k\sqrt x}$, and
+  comparison of lattice sums with integrals.
+\end{proof}
+
 \chapter{Delocalization from the local law}
 
 \begin{lemma}[Eigenvector bound (2.10), proof of Theorem 2.2]\label{eq:2.10}

@@ -1018,3 +1018,16 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 `ThetaTilde_eq`：`(1−ξS̃)⁻¹ = Θ_{ξ(1−ζ)} + α·J`（手搓 Sherman–Morrison）；**`ThetaTilde_sub_ThetaTilde`**（p.84 的差分恒等式）；
 `norm_one_sub_mul_comparable`（需 `ζ ≤ |1−ξ|`，paper-deltas #25）；(2.52)(2.53)(2.54) 搬到 `S̃`：
 `norm_ThetaTilde_sub_zeroMode_le`、`norm_ThetaTilde_sub_shift_le`、`norm_ThetaTilde_second_diff_le`。
+
+### `RBM1D/Flow/Scales.lean` — 流的尺度与时间网格（T48，Claude Code 并行 agent）
+
+**网格约定（下游 T57 按此）**：先固定 `κ > 0`、`τ ≥ 0`、`τ' > 0`（`60τ' < τ`）、`n₀`（`n₀τ' ≥ 2`，如 `n₀ = ⌈2/τ'⌉`，只依赖 τ'），
+网格 `gridT W τ' t k = min(1 − W^{−kτ'}, t)`（在 t 处截断）。**`flow_grid_2_72`**：存在 `W₀`，对 `W ≥ W₀`、`1 ≤ L ≤ W`、`|E| ≤ 2−κ`、
+`(WL)^{−1+τ} ≤ 1−t` 有 `u₀ = 0`、`u_{n₀} = t`、单调、`A_t⁻¹ ≤ W^{−30τ'}` 且每步 (2.72)。另有 `flowScale_antitoneOn`（`A_s` 非增）、
+`le_etaT`/`etaT_le`（`η_t ≍ 1−t`）、`ellZ_zt_le`、`lemma28_scales`。paper-deltas #26。
+
+### `RBM1D/Analysis/StretchedExp.lean` — `exp(−√·)` 演算（T43，Claude Code 并行 agent）
+
+`tailT`（(5.27)）、`ratioJ`（(5.28)）、`tailT_antitone`、`tailT_sub_le`/`unifDetDom_tailT_sub`（(5.32)）、`integral_exp_sqrt_triangle_le`（≤ 16）、
+`integral_Ioi_exp_neg_sqrt`（= 2）、`integral_exp_half_sqrt_triangle_le`（(5.62)）、**`mul_sum_tailT_mul_tailT_le`**（(5.50)(5.72) 卷积界）、
+`sqrt_zdist_sub_sqrt_zdist_le`（(7.12)）。paper-deltas #27。

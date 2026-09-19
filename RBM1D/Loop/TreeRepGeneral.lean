@@ -1914,4 +1914,112 @@ theorem internal_term {n : ℕ} [NeZero n] (hn : 2 ≤ n) {J : Fin n × Fin n}
 end KNInternal
 
 
+section Lists
+
+variable (L : ℕ) [NeZero L]
+
+/-- **The tree representation on loop indices**: `m(σ)` for `n = 1`, Example 2.15 for `n = 2`,
+and `m_σ W^{-(n-1)} ∑_{Γ ∈ T_SP(n)} Γ` for `n ≥ 3`. -/
+noncomputable def Kgen (W : ℕ) (m : Bool → ℂ) (t : ℝ) (I : LoopIdx (ZMod L)) : ℂ :=
+  if I.length = 1 then m (I.σ.getD 0 false)
+  else if I.length = 2 then
+    kTwo L W m t (I.σ.getD 0 false) (I.σ.getD 1 false) (I.a.getD 0 0) (I.a.getD 1 0)
+  else if h : 3 ≤ I.length then
+    haveI : NeZero I.length := ⟨by omega⟩
+    Kn L W m t I.length (fun i => I.σ.getD i false) (fun i => I.a.getD i 0)
+  else 0
+
+variable {L}
+
+/-- `Kgen` on a loop of known length `n ≥ 3` is `Kn`. -/
+theorem Kgen_eq (W : ℕ) (m : Bool → ℂ) (t : ℝ) {n : ℕ} [NeZero n] (hn : 3 ≤ n)
+    (I : LoopIdx (ZMod L)) (h : I.length = n) :
+    Kgen L W m t I = Kn L W m t n (fun i => I.σ.getD i false) (fun i => I.a.getD i 0) := by
+  subst h
+  have h1 : I.length ≠ 1 := by omega
+  have h2 : I.length ≠ 2 := by omega
+  simp only [Kgen, h1, h2, ite_false, dite_eq_left hn]
+
+theorem Kgen_two (W : ℕ) (m : Bool → ℂ) (t : ℝ) (s₁ s₂ : Bool) (x y : ZMod L) :
+    Kgen L W m t ⟨[s₁, s₂], [x, y]⟩ = kTwo L W m t s₁ s₂ x y := by
+  simp [Kgen, LoopIdx.length]
+
+theorem Kgen_one (W : ℕ) (m : Bool → ℂ) (t : ℝ) (s : Bool) (x : ZMod L) :
+    Kgen L W m t ⟨[s], [x]⟩ = m s := by
+  simp [Kgen, LoopIdx.length]
+
+/-! ### Splitting the pairs `(k, l)` of (2.48) -/
+
+/-- The pair `(k, l)` of the leaf edge at `v`: `(v+1, v+2)`, or `(1, n)` for the root. -/
+def leafPair {n : ℕ} (v : Fin n) : ℕ × ℕ := if v.val + 1 < n then (v.val + 1, v.val + 2) else (1, n)
+
+theorem sum_pairs {n : ℕ} [NeZero n] (hn : 3 ≤ n) (f : ℕ → ℕ → ℂ) :
+    ∑ k ∈ Finset.Icc 1 n, ∑ l ∈ Finset.Ioc k n, f k l
+      = ∑ v : Fin n, f (leafPair v).1 (leafPair v).2
+        + ∑ J ∈ diagonals n, f (J.1.val + 1) (J.2.val + 1) := by
+  -- the pairs as a finset of `ℕ × ℕ`
+  set P : Finset (ℕ × ℕ) := (Finset.Icc 1 n).sigma (fun k => Finset.Ioc k n) |>.map
+    ⟨fun p => (p.1, p.2), fun p q h => by
+      simp only [Prod.mk.injEq] at h; exact Sigma.ext h.1 (heq_of_eq h.2)⟩ with hP
+  have hLHS : ∑ k ∈ Finset.Icc 1 n, ∑ l ∈ Finset.Ioc k n, f k l = ∑ p ∈ P, f p.1 p.2 := by
+    rw [hP, Finset.sum_map, Finset.sum_sigma]
+    rfl
+  have hmem : ∀ p : ℕ × ℕ, p ∈ P ↔ 1 ≤ p.1 ∧ p.1 < p.2 ∧ p.2 ≤ n := by
+    intro p
+    simp only [hP, Finset.mem_map, Finset.mem_sigma, Finset.mem_Icc, Finset.mem_Ioc]
+    constructor
+    · rintro ⟨⟨k, l⟩, ⟨⟨h1, h2⟩, h3, h4⟩, rfl⟩; exact ⟨h1, h3, h4⟩
+    · rintro ⟨h1, h2, h3⟩
+      exact ⟨⟨p.1, p.2⟩, ⟨⟨h1, le_of_lt (lt_of_lt_of_le h2 h3)⟩, h2, h3⟩, rfl⟩
+  have hinjL : Set.InjOn (fun v : Fin n => leafPair v) (Finset.univ : Finset (Fin n)) := by
+    intro v _ w _ h
+    simp only [leafPair] at h
+    refine Fin.ext ?_
+    have := v.isLt; have := w.isLt
+    split_ifs at h <;> simp only [Prod.mk.injEq] at h <;> omega
+  have hinjD : Set.InjOn (fun J : Fin n × Fin n => (J.1.val + 1, J.2.val + 1))
+      (diagonals n : Set (Fin n × Fin n)) := by
+    intro J _ K _ h
+    simp only [Prod.mk.injEq] at h
+    exact Prod.ext (Fin.ext (by omega)) (Fin.ext (by omega))
+  have hsplit : P = (Finset.univ.image fun v : Fin n => leafPair v) ∪
+      ((diagonals n).image fun J : Fin n × Fin n => (J.1.val + 1, J.2.val + 1)) := by
+    ext p
+    rw [hmem, Finset.mem_union, Finset.mem_image, Finset.mem_image]
+    constructor
+    · rintro ⟨h1, h2, h3⟩
+      by_cases hl : p.2 = p.1 + 1
+      · refine Or.inl ⟨⟨p.1 - 1, by omega⟩, Finset.mem_univ _, ?_⟩
+        simp only [leafPair]
+        split_ifs with hc <;> ext <;> simp <;> omega
+      by_cases hr : p.1 = 1 ∧ p.2 = n
+      · refine Or.inl ⟨⟨n - 1, by omega⟩, Finset.mem_univ _, ?_⟩
+        simp only [leafPair]
+        split_ifs with hc <;> ext <;> simp <;> omega
+      · refine Or.inr ⟨(⟨p.1 - 1, by omega⟩, ⟨p.2 - 1, by omega⟩), ?_, ?_⟩
+        · rw [mem_diagonals_iff]
+          refine ⟨by rw [Fin.lt_def]; simp; omega, by simp; omega, by simp; omega⟩
+        · ext <;> simp <;> omega
+    · rintro (⟨v, -, rfl⟩ | ⟨J, hJ, rfl⟩)
+      · simp only [leafPair]; have := v.isLt
+        split_ifs <;> simp <;> omega
+      · obtain ⟨h1, h2, h3⟩ := mem_diagonals_iff.1 hJ
+        rw [Fin.lt_def] at h1
+        have := J.2.isLt
+        simp; omega
+  have hdisj : Disjoint (Finset.univ.image fun v : Fin n => leafPair v)
+      ((diagonals n).image fun J : Fin n × Fin n => (J.1.val + 1, J.2.val + 1)) := by
+    rw [Finset.disjoint_left]
+    rintro p hp hq
+    obtain ⟨v, -, rfl⟩ := Finset.mem_image.1 hp
+    obtain ⟨J, hJ, hJv⟩ := Finset.mem_image.1 hq
+    obtain ⟨h1, h2, h3⟩ := mem_diagonals_iff.1 hJ
+    rw [Fin.lt_def] at h1
+    have := J.2.isLt
+    simp only [leafPair] at hJv
+    split_ifs at hJv <;> simp only [Prod.mk.injEq] at hJv <;> omega
+  rw [hLHS, hsplit, Finset.sum_union hdisj, Finset.sum_image hinjL, Finset.sum_image hinjD]
+
+end Lists
+
 end RBM

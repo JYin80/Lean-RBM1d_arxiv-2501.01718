@@ -238,6 +238,88 @@ theorem arcLe_total_of_arcLe {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 
 
 end Laminar
 
+section Generic
+
+variable (L : ℕ) [NeZero L]
+
+/-- The value of a weighted tree with internal nodes `Nd`, leaves `Lf` and internal edges
+`Ed`: the leaf `ℓ` has label `a ℓ`, weight `M ℓ` and hangs on `p ℓ`; the edge `e` has weight
+`E e` from `c e` to `q e`.  `∑_b ∏_ℓ (M_ℓ)_{a_ℓ, b(p ℓ)} ∏_e (E_e)_{b(c e), b(q e)}`. -/
+noncomputable def gval {Nd Lf Ed : Type*} [Fintype Nd] [DecidableEq Nd] [Fintype Lf] [Fintype Ed]
+    (a : Lf → ZMod L) (M : Lf → Matrix (ZMod L) (ZMod L) ℂ) (p : Lf → Nd)
+    (E : Ed → Matrix (ZMod L) (ZMod L) ℂ) (c q : Ed → Nd) : ℂ :=
+  ∑ b : Nd → ZMod L, (∏ ℓ, M ℓ (a ℓ) (b (p ℓ))) * ∏ e, E e (b (c e)) (b (q e))
+
+variable {L}
+
+/-- **Transport**: the value only depends on the tree up to isomorphism. -/
+theorem gval_congr {Nd Lf Ed Nd' Lf' Ed' : Type*} [Fintype Nd] [DecidableEq Nd] [Fintype Lf]
+    [Fintype Ed] [Fintype Nd'] [DecidableEq Nd'] [Fintype Lf'] [Fintype Ed']
+    (eN : Nd ≃ Nd') (eL : Lf ≃ Lf') (eE : Ed ≃ Ed')
+    {a : Lf → ZMod L} {M : Lf → Matrix (ZMod L) (ZMod L) ℂ} {p : Lf → Nd}
+    {E : Ed → Matrix (ZMod L) (ZMod L) ℂ} {c q : Ed → Nd}
+    {a' : Lf' → ZMod L} {M' : Lf' → Matrix (ZMod L) (ZMod L) ℂ} {p' : Lf' → Nd'}
+    {E' : Ed' → Matrix (ZMod L) (ZMod L) ℂ} {c' q' : Ed' → Nd'}
+    (ha : ∀ ℓ, a' (eL ℓ) = a ℓ) (hM : ∀ ℓ, M' (eL ℓ) = M ℓ) (hp : ∀ ℓ, p' (eL ℓ) = eN (p ℓ))
+    (hE : ∀ e, E' (eE e) = E e) (hc : ∀ e, c' (eE e) = eN (c e))
+    (hq : ∀ e, q' (eE e) = eN (q e)) :
+    gval L a M p E c q = gval L a' M' p' E' c' q' := by
+  unfold gval
+  rw [← (eN.arrowCongr (Equiv.refl (ZMod L))).sum_comp]
+  refine Fintype.sum_congr _ _ fun b => ?_
+  congr 1
+  · rw [← eL.prod_comp]
+    refine Fintype.prod_congr _ _ fun ℓ => ?_
+    simp [Equiv.arrowCongr_apply, ha, hM, hp]
+  · rw [← eE.prod_comp]
+    refine Fintype.prod_congr _ _ fun e => ?_
+    simp [Equiv.arrowCongr_apply, hE, hc, hq]
+
+/-- Reordering a fourfold sum: `(a, b, c, d) ↦ (d, c, a, b)`. -/
+theorem sum_perm4 {α β γ δ : Type*} [Fintype α] [Fintype β] [Fintype γ] [Fintype δ]
+    (f : α → β → γ → δ → ℂ) :
+    ∑ a, ∑ b, ∑ c, ∑ d, f a b c d = ∑ d, ∑ c, ∑ a, ∑ b, f a b c d :=
+  calc ∑ a, ∑ b, ∑ c, ∑ d, f a b c d = ∑ a, ∑ b, ∑ d, ∑ c, f a b c d :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ a, ∑ d, ∑ b, ∑ c, f a b c d := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ d, ∑ a, ∑ b, ∑ c, f a b c d := Finset.sum_comm
+    _ = ∑ d, ∑ a, ∑ c, ∑ b, f a b c d :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ d, ∑ c, ∑ a, ∑ b, f a b c d := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+
+/-- **Splitting along an edge.**  A tree made of two parts `N₁`, `N₂` joined by one edge
+`c₀ — q₀` of weight `P S Q` is `∑_{u,w} part₂(u) S_{uw} part₁(w)`, where each part gets the
+cut edge back as an extra leaf: `(u, Pᵀ)` on `c₀ ∈ N₂` and `(w, Q)` on `q₀ ∈ N₁`. -/
+theorem gval_split {N₁ N₂ Lf₁ Lf₂ Ed₁ Ed₂ : Type*} [Fintype N₁] [DecidableEq N₁] [Fintype N₂]
+    [DecidableEq N₂] [Fintype Lf₁] [Fintype Lf₂] [Fintype Ed₁] [Fintype Ed₂]
+    (a₁ : Lf₁ → ZMod L) (M₁ : Lf₁ → Matrix (ZMod L) (ZMod L) ℂ) (p₁ : Lf₁ → N₁)
+    (E₁ : Ed₁ → Matrix (ZMod L) (ZMod L) ℂ) (c₁ q₁ : Ed₁ → N₁)
+    (a₂ : Lf₂ → ZMod L) (M₂ : Lf₂ → Matrix (ZMod L) (ZMod L) ℂ) (p₂ : Lf₂ → N₂)
+    (E₂ : Ed₂ → Matrix (ZMod L) (ZMod L) ℂ) (c₂ q₂ : Ed₂ → N₂)
+    (P S Q : Matrix (ZMod L) (ZMod L) ℂ) (c₀ : N₂) (q₀ : N₁) :
+    gval L (Sum.elim a₁ a₂) (Sum.elim M₁ M₂) (Sum.elim (Sum.inl ∘ p₁) (Sum.inr ∘ p₂))
+        (fun o : Option (Ed₁ ⊕ Ed₂) => o.elim (P * S * Q) (Sum.elim E₁ E₂))
+        (fun o => o.elim (Sum.inr c₀) (Sum.elim (Sum.inl ∘ c₁) (Sum.inr ∘ c₂)))
+        (fun o => o.elim (Sum.inl q₀) (Sum.elim (Sum.inl ∘ q₁) (Sum.inr ∘ q₂)))
+      = ∑ u : ZMod L, ∑ w : ZMod L,
+          gval L (fun o : Option Lf₂ => o.elim u a₂) (fun o => o.elim P.transpose M₂)
+              (fun o => o.elim c₀ p₂) E₂ c₂ q₂
+            * S u w *
+          gval L (fun o : Option Lf₁ => o.elim w a₁) (fun o => o.elim Q M₁)
+              (fun o => o.elim q₀ p₁) E₁ c₁ q₁ := by
+  unfold gval
+  rw [← (Equiv.sumArrowEquivProdArrow N₁ N₂ (ZMod L)).symm.sum_comp, Fintype.sum_prod_type]
+  simp only [Fintype.prod_sum_type, Fintype.prod_option, Option.elim, Sum.elim_inl,
+    Sum.elim_inr, Function.comp_apply, Equiv.sumArrowEquivProdArrow_symm_apply_inl,
+    Equiv.sumArrowEquivProdArrow_symm_apply_inr, Matrix.mul_apply, Matrix.transpose_apply,
+    Finset.sum_mul, Finset.mul_sum]
+  rw [sum_perm4]
+  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun w _ =>
+    Finset.sum_congr rfl fun b₁ _ => Finset.sum_congr rfl fun b₂ _ => ?_
+  ring
+
+end Generic
+
 section Value
 
 variable (L : ℕ) [NeZero L] {n : ℕ} [NeZero n]
@@ -257,6 +339,13 @@ noncomputable def treeValG (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool) (a
     (F : Finset (Fin n × Fin n)) : ℂ :=
   treeValW L F a (fun v => thetaEdge L m t (σ v) (σ (v + 1)))
     (fun d => thetaEdge L m t (σ d.1.1) (σ d.1.2) - 1)
+
+theorem treeValW_eq_gval (F : Finset (Fin n × Fin n)) (a : Fin n → ZMod L)
+    (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) :
+    treeValW L F a M E
+      = gval L a M (fun v => ⟨leafPar F v, leafPar_mem F v⟩) E
+          (fun d => ⟨d.1, mem_nodes_of_mem d.2⟩) (fun d => ⟨nodePar F d, nodePar_mem F d⟩) :=
+  rfl
 
 /-- The empty family is the star `∑_b ∏_v (M_v)_{a_v b}`. -/
 theorem treeValW_empty (a : Fin n → ZMod L) (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ)

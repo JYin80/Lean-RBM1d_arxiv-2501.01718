@@ -53,20 +53,25 @@
   \lean{RBM.mE, RBM.mE_mul, RBM.norm_mE, RBM.eq_mE, RBM.msc, RBM.msc_mul, RBM.msc_im_pos,
     RBM.norm_msc_lt_one, RBM.zt, RBM.zt_im, RBM.lemE, RBM.lemT, RBM.mE_lemE, RBM.lemT_eq,
     RBM.lemT_pos, RBM.lemT_lt_one, RBM.abs_lemE_lt_two, RBM.msc_eq_sqrt_mul_mE,
-    RBM.eq_inv_sqrt_mul_zt}
+    RBM.eq_inv_sqrt_mul_zt, RBM.msc_add_eq_neg_inv, RBM.abs_lemE_le, RBM.lemT_ge,
+    RBM.zt_im_lemma28, RBM.lemma28_quant}
   \leanok
   $m^{(E)}=(-E+i\sqrt{4-E^2})/2$ is the unique root of $m(m+E)=-1$ with $\operatorname{Im}m>0$,
   and $|m^{(E)}|=1$.  For $\operatorname{Im}z>0$, $|m_{sc}(z)|<1$; with
   $E=-2\operatorname{Re}m_{sc}/|m_{sc}|$ and $t=|m_{sc}|^2$ one has
   $m^{(E)}=m_{sc}/|m_{sc}|$, $t=m_{sc}^2/(m^{(E)})^2\in(0,1)$, $|E|<2$,
   $m_{sc}(z)=t^{1/2}m^{(E)}$ (2.38) and $z=t^{-1/2}z^{(E)}_t$ (2.37), where
-  $z^{(E)}_t=E+(1-t)m^{(E)}$.
+  $z^{(E)}_t=E+(1-t)m^{(E)}$.  Quantitatively (2.40): if $0<\operatorname{Im}z\le1$ and
+  $|\operatorname{Re}z|\le2-\kappa$ then $|E|\le2-\kappa$, $t\ge1/16$ and
+  $\tfrac1{16}\operatorname{Im}z\le\operatorname{Im}z_t\le16\operatorname{Im}z$.
 \end{lemma}
 \begin{proof}\leanok
   The roots of $m^2+zm+1$ multiply to $1$, so their imaginary parts have opposite signs,
   and they sum to $-z$.  $u=m_{sc}/|m_{sc}|$ satisfies $u(u+E)=-|u|^2=-1$; uniqueness gives
-  $u=m^{(E)}$, and (2.37) follows from $E+u=-1/u$.  The $\kappa$-dependent bounds (2.40)
-  are deferred to the stochastic layer.
+  $u=m^{(E)}$, and (2.37) follows from $E+u=-1/u$.  For (2.40) write $m_{sc}=re^{i\theta}$:
+  $(r+r^{-1})\cos\theta=-\operatorname{Re}z$ gives $|E|=2|\cos\theta|\le|\operatorname{Re}z|$;
+  $r^{-1}=|m_{sc}+z|<1+|z|$ gives $t>(1+|z|)^{-2}$; and (2.37) gives
+  $\operatorname{Im}z_t=t^{1/2}\operatorname{Im}z$.
 \end{proof}
 
 \begin{definition}[Deterministic domination, Definition 2.1 (ii)]\label{def:2.1-ii}

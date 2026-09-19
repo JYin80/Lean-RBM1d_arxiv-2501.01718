@@ -372,7 +372,8 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
 | **`msc_eq_sqrt_mul_mE`** / **`eq_inv_sqrt_mul_zt`** | **(2.38)**、**(2.37)** |
 
 `Loop/Primitive.lean` 新增 `hasDerivAt_kTwo_mSigma`：取 `m := mSigma E`，Example 2.15 对 `0 ≤ t < 1` 无条件成立。
-(2.40) 与 κ 相关的界推迟（文件末尾注释说明）。
+(2.40)（T35，储备 B6）已补：`msc_add_eq_neg_inv`、**`abs_lemE_le`**（`|E| ≤ |Re z|`）、**`lemT_ge`**（`t ≥ (1+|z|)⁻²`）、
+**`zt_im_lemma28`**（`Im z_t = t^{1/2} Im z`）、**`lemma28_quant`**（论文形式，`c_κ = 1/16`，与 κ 无关；paper-deltas #20）。
 
 ---
 

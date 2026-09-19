@@ -492,8 +492,9 @@
 \end{proof}
 
 \begin{definition}[$G$-loops, Definition 2.9 and (2.41)]\label{def:gloop}
-  \lean{RBM.Gsig, RBM.Gsig_conjTranspose, RBM.green_sub_green, RBM.gloopProd, RBM.gloop,
-    RBM.gloopProd_append, RBM.gloop_rotate}
+  \lean{RBM.Gsig, RBM.Gsig_conjTranspose, RBM.green_sub_green, RBM.green_sub_green_conj,
+    RBM.trace_green_sub_trace_green_conj, RBM.gloopProd, RBM.gloop,
+    RBM.gloopProd_append, RBM.gloop_rotate, RBM.sum_gloop_head, RBM.gloop_two}
   \leanok\uses{def:model, def:loops, eq:2.10}
   For a fixed deterministic Hermitian $H$, $G(+) = (H-z)^{-1}$, $G(-) = (H-\bar z)^{-1}$ and
   \[ \mathcal L_{\sigma,\mathbf a} = \Bigl\langle \prod_i G(\sigma_i) E_{a_i} \Bigr\rangle ,
@@ -503,6 +504,11 @@
   and invariance of the loop under rotating its index data (trace cyclicity), which is
   the algebraic content of the word ``loop''.  Nothing here is probabilistic: the
   expectation and the It\^o calculus act on top of this layer.
+
+  Also proved: the Ward identity $G(z)-G(\bar z) = 2i\eta\,G(z)G(\bar z)$ and its traced
+  form $\operatorname{Tr}(G(z)A)-\operatorname{Tr}(G(\bar z)A) = 2i\eta\operatorname{Tr}(G(z)G(\bar z)A)$;
+  and the one-index sum rule $\sum_b \mathcal L_{\sigma,(b,\mathbf a)} = W^{-1}\langle G(\sigma_1)\cdots\rangle$,
+  which is $\sum_a E_a = W^{-1}I$ and is the first step of the paper's Ward identity for loops.
 \end{definition}
 
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}

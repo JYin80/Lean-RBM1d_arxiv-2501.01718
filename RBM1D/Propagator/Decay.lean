@@ -495,4 +495,90 @@ theorem rho_real_bounds {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
 
 end RealXi
 
+section EllHat
+
+/-! ### The decay length `ℓ̂(ξ)` and the bound on the constant
+
+`ℓ̂(ξ) = min(|1-ξ|^{-1/2}, L)` is the length scale of (2.52).  In the closed form
+it is produced entirely by the factor `1 - ρ^L` of `AA_eq`.  We prove the
+prefactor bound `‖A(ξ)‖ ≤ 4 / (|1-ξ| ℓ̂(ξ))` for real `ξ = t ∈ (0,1)`, which is
+the long-edge case `ξ = t|m|²` of the paper. -/
+
+/-- `ℓ̂(ξ) = min(|1 - ξ|^{-1/2}, L)`, the decay length of (2.52). -/
+noncomputable def ellHat (L : ℕ) (ξ : ℂ) : ℝ := min (1 / Real.sqrt ‖1 - ξ‖) (L : ℝ)
+
+theorem ellHat_ofReal (L : ℕ) {t : ℝ} (ht1 : t < 1) :
+    ellHat L (t : ℂ) = min (1 / Real.sqrt (1 - t)) (L : ℝ) := by
+  have h : ‖(1 : ℂ) - (t : ℂ)‖ = 1 - t := by
+    rw [show (1 : ℂ) - (t : ℂ) = ((1 - t : ℝ) : ℂ) by push_cast; ring,
+      Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
+  rw [ellHat, h]
+
+/-- **The core inequality behind the prefactor of (2.52).**
+`ℓ̂ · (1 - ρ) ≤ 4 (1 - ρ^L)`.  Both regimes of the `min` are used:
+
+* `ℓ̂ = L`: then `L√(1-t) ≤ 1`, so `y := L(1-ρ) ≤ √3 · L√(1-t) ≤ √3 ≤ 3`,
+  and `1 - ρ^L ≥ y/(1+y) ≥ y/4`.
+* `ℓ̂ = (1-t)^{-1/2}`: then `L√(1-t) ≥ 1`, so `y ≥ 1` and `1 - ρ^L ≥ 1/2`,
+  while the left-hand side is `(1-ρ)/√(1-t) ≤ √3 ≤ 2`. -/
+theorem ellHat_mul_one_sub_le {t r : ℝ} (ht1 : t < 1) {L : ℕ} (hL : 1 ≤ L)
+    (hr0 : 0 < r) (hr1 : r < 1)
+    (hlow : Real.sqrt (1 - t) ≤ 1 - r) (hhigh : 1 - r ≤ Real.sqrt 3 * Real.sqrt (1 - t)) :
+    min (1 / Real.sqrt (1 - t)) (L : ℝ) * (1 - r) ≤ 4 * (1 - r ^ L) := by
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr (by linarith)
+  have h3 : Real.sqrt 3 ≤ 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 3), Real.sqrt_nonneg 3]
+  have hLpos : (0:ℝ) ≤ (L : ℝ) := Nat.cast_nonneg L
+  have hpow1 : r ^ L ≤ 1 := pow_le_one₀ hr0.le hr1.le
+  have hgeom := le_one_sub_pow hr0.le hr1.le L
+  have h1 : (L : ℝ) * (1 - r) ≤ (1 - r ^ L) * (1 + (L : ℝ) * (1 - r)) := by
+    rw [div_le_iff₀ (by nlinarith)] at hgeom
+    linarith
+  rcases le_total ((L : ℝ)) (1 / Real.sqrt (1 - t)) with hcase | hcase
+  · rw [min_eq_right hcase]
+    have hLs : (L : ℝ) * Real.sqrt (1 - t) ≤ 1 := (le_div_iff₀ hs).mp hcase
+    have hy3 : (L : ℝ) * (1 - r) ≤ 3 := by
+      have hstep : (L : ℝ) * (1 - r) ≤ (L : ℝ) * (Real.sqrt 3 * Real.sqrt (1 - t)) :=
+        mul_le_mul_of_nonneg_left hhigh hLpos
+      nlinarith [Real.sqrt_nonneg 3, mul_nonneg hLpos hs.le]
+    nlinarith [h1, hpow1]
+  · rw [min_eq_left hcase]
+    have hLs : (1 : ℝ) ≤ (L : ℝ) * Real.sqrt (1 - t) := (div_le_iff₀ hs).mp hcase
+    have hy1 : (1 : ℝ) ≤ (L : ℝ) * (1 - r) :=
+      le_trans hLs (mul_le_mul_of_nonneg_left hlow hLpos)
+    have hu : (1 : ℝ) / 2 ≤ 1 - r ^ L := by nlinarith [h1, hy1]
+    have hleft : 1 / Real.sqrt (1 - t) * (1 - r) ≤ 2 := by
+      rw [one_div, inv_mul_eq_div, div_le_iff₀ hs]
+      nlinarith [hs.le]
+    linarith
+
+/-- **The prefactor of (2.52), for real `ξ = t ∈ (0,1)`.**
+`‖A(t)‖ ≤ 4 / ((1-t) · ℓ̂(t))`. -/
+theorem norm_AA_le_of_real {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) {L : ℕ} (hL : 3 ≤ L) :
+    ‖AA L (t : ℂ)‖ ≤ 4 / ((1 - t) * ellHat L (t : ℂ)) := by
+  obtain ⟨r, hrho, hr0, hr1, hlow, hhigh⟩ := rho_real_bounds ht0 ht1
+  have htne' : t ≠ 0 := ne_of_gt ht0
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast htne'
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have hL0 : L ≠ 0 := by omega
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hrL : r ^ L < 1 := pow_lt_one₀ hr0.le hr1 hL0
+  have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
+  have hAA : AA L (t : ℂ) = (((1 - r) / ((1 - t) * (1 - r ^ L) * (1 + r)) : ℝ) : ℂ) := by
+    rw [AA_eq hL0 htne hnorm, hrho]; push_cast; ring
+  have hdenpos : (0 : ℝ) < (1 - t) * (1 - r ^ L) * (1 + r) :=
+    mul_pos (mul_pos h1t (by linarith)) (by linarith)
+  have hell : (0 : ℝ) < min (1 / Real.sqrt (1 - t)) (L : ℝ) := by
+    refine lt_min (by positivity) ?_
+    exact_mod_cast Nat.pos_of_ne_zero hL0
+  have key := ellHat_mul_one_sub_le ht1 (by omega : 1 ≤ L) hr0 hr1 hlow hhigh
+  rw [hAA, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (div_pos (by linarith) hdenpos), ellHat_ofReal L ht1,
+    div_le_div_iff₀ hdenpos (by positivity)]
+  nlinarith [mul_le_mul_of_nonneg_left key h1t.le,
+    mul_nonneg (mul_nonneg h1t.le (sub_nonneg.mpr hrL.le)) hr0.le]
+
+end EllHat
+
 end RBM

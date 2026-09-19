@@ -314,6 +314,48 @@ theorem one_sub_rho_sq (hξ0 : ξ ≠ 0) :
 
 end Rate
 
+section Constant
+
+variable {L : ℕ} {ξ : ℂ}
+
+/-- **The constant `A(ξ)` in simplified form.**
+
+Substituting the identity `(1-ξ)·3ρ = ξ(1-ρ)²` of `one_sub_xi_mul` into
+`A = 3ρ / [ξ(ρ^L-1)(ρ²-1)]` cancels one power of `1-ρ` against the factor
+`ρ² - 1 = (ρ-1)(ρ+1)` and turns the `1/ξ` into a `1/(1-ξ)`:
+
+  `A(ξ) = (1 - ρ) / [(1 - ξ)(1 - ρ^L)(1 + ρ)]`.
+
+This is the form that makes `(2.52)` readable.  In the long-edge regime the
+three factors downstairs are, in order, the `|1-ξ|` of the denominator of
+(2.52), the factor that interpolates between `1` and `L(1-ρ)` -- i.e. the
+`ℓ̂(ξ) = min(|1-ξ|^{-1/2}, L)` -- and a harmless `1 + ρ ≈ 2`.  The `1 - ρ`
+upstairs is of size `|1-ξ|^{1/2}` by `rho_real_bounds`. -/
+theorem AA_eq (hL : L ≠ 0) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) :
+    AA L ξ = (1 - rho ξ) / ((1 - ξ) * (1 - rho ξ ^ L) * (1 + rho ξ)) := by
+  have hnr : ‖rho ξ‖ < 1 := norm_rho_lt_one hξ0 hξ
+  have hρ1 : rho ξ ≠ 1 := by
+    intro h; rw [h, norm_one] at hnr; exact absurd hnr (lt_irrefl 1)
+  have hρm1 : 1 + rho ξ ≠ 0 := by
+    intro h
+    have : rho ξ = -1 := by linear_combination h
+    rw [this] at hnr
+    simp at hnr
+  have hρL : 1 - rho ξ ^ L ≠ 0 := by
+    intro h
+    exact rho_pow_sub_one_ne_zero hξ0 hξ hL (by linear_combination -h)
+  have hρL' : rho ξ ^ L - 1 ≠ 0 := rho_pow_sub_one_ne_zero hξ0 hξ hL
+  have hρ2 : rho ξ ^ 2 - 1 ≠ 0 := rho_pow_sub_one_ne_zero hξ0 hξ two_ne_zero
+  have hξ1 : (1 : ℂ) - ξ ≠ 0 := by
+    intro h
+    have : ξ = 1 := by linear_combination -h
+    rw [this, norm_one] at hξ; exact absurd hξ (lt_irrefl 1)
+  unfold AA
+  rw [div_eq_div_iff (by simp [hξ0, hρL', hρ2]) (by simp [hξ1, hρL, hρm1])]
+  linear_combination ((1 - rho ξ ^ L) * (1 + rho ξ)) * one_sub_xi_mul hξ0
+
+end Constant
+
 section RealXi
 
 /-! ### Real spectral parameter

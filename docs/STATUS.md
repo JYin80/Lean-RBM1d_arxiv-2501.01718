@@ -1046,3 +1046,12 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 `Steps`（(2.73)–(2.80) 八个字段）、`Transfer`（(2.39)(2.65)(2.66)）。已证：`BoundsCore_of_Steps`/`Bounds_of_Steps`、
 `BoundsCore.stochDom_norm_Lval`（(2.61)，n ≥ 3，需 `1 ≤ Wℓη`——T57 可用 `Flow/Scales.lean` 的 `flowScale_ge` 消去）、
 `Transfer.green_sub_msc`（(2.65)）。paper-deltas #29。
+
+### `RBM1D/Loop/Split.lean` — loop 的 Cauchy–Schwarz 劈分（T44，Claude Code 并行 agent）
+
+(5.2) `norm_gloop_le_opNorm`；(5.115)(5.116) `norm_sq_gloop_le_symIdx`、`norm_gloop_symIdx_split_le`；**(5.117) `loopMax_two_mul_add_two_le`**；
+(5.118) `loopXi_le`；(6.4) `loopMax_odd_sq_le`；**Lemma 6.1 `sum_norm_inner_sq_le_trace_rpow`**（实 p ≥ 1）。`loopMax` 为 iSup 形式的 max。paper-deltas #30。
+T53（Step 3）现已解锁。
+
+**⚠ HEAD 构建失败（非 Claude Code 文件）**：`RBM1D/Hierarchy/SumZero.lean:70:44: unsolved goals`（Cowork T52，`c694b61`），
+在本机 Lean 4.34 / Mathlib `5ed2965256` 下不编译，`lake build RBM1D` 因此失败；其余模块均单独编译通过。

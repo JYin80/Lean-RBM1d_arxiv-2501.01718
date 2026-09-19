@@ -1143,6 +1143,19 @@
   truncated at $t$ instead of solving $1-t=W^{-n_0\tau'}$.
 \end{proof}
 
+\begin{lemma}[Cauchy--Schwarz splitting of loops: (5.2), (5.114)--(5.118), (6.4), Lemma 6.1]\label{lem:6.1}
+  \lean{RBM.wmass, RBM.wmass_nonneg, RBM.trace_mul_diagonal_mul_mul_diagonal, RBM.trace_mul_diagonal_mul_conjTranspose_mul_diagonal, RBM.norm_sq_trace_mul_diagonal_le, RBM.wmass_mul_diagonal_mul_le, RBM.bw, RBM.bw_nonneg, RBM.Eblk_eq_diagonal_bw, RBM.trace_mul_Eblk_mul_conjTranspose_mul_Eblk, RBM.norm_trace_mul_Eblk_mul_conjTranspose_mul_Eblk, RBM.norm_sq_trace_Eblk_le, RBM.norm_trace_Eblk_split_le, RBM.gchain_append, RBM.gloop_append_eq_trace, RBM.symIdx, RBM.gloop_symIdx, RBM.norm_sq_gloop_le_symIdx, RBM.norm_gloop_symIdx_split_le, RBM.exists_split_loopIdx, RBM.exists_split_chainIdx, RBM.loopMax, RBM.norm_gloop_le_loopMax, RBM.loopMax_le, RBM.loopMax_nonneg, RBM.norm_gloop_symIdx_le_loopMax, RBM.norm_gloop_symIdx_le_loopMax_mul, RBM.norm_gloop_le_of_symIdx_le, RBM.loopMax_two_mul_add_le, RBM.loopMax_two_mul_add_two_le, RBM.loopMax_odd_sq_le, RBM.loopXi, RBM.loopXi_le, RBM.norm_apply_le_l2_opNorm, RBM.norm_green_le, RBM.norm_Gsig_le, RBM.norm_Eblk_le, RBM.sum_bw, RBM.norm_trace_mul_Eblk_le, RBM.norm_gchain_le, RBM.norm_gloop_le_opNorm, RBM.norm_gloop_le_of_le_abs_im, RBM.re_dotProduct_mulVec_le, RBM.sum_norm_inner_sq_le_of_eigenvalues_le, RBM.trace_cfc_eq_sum, RBM.sum_norm_inner_sq_le_trace_rpow, RBM.sum_norm_inner_sq_le_trace_pow}
+  \leanok\uses{def:gloop, def:gchain}
+  For fixed Hermitian $H$: $|L_{\sigma,a}|\le|\operatorname{Im}z|^{-n}W^{-n+1}$ (5.2);
+  $\max|L^{(2n+2)}|\le\max|L^{(2l_1)}|\max|L^{(2l_2)}|$ (5.117), hence (5.118);
+  $(\max|L^{(2m+1)}|)^2\le\max|L^{(2m)}|\max|L^{(2m+2)}|$ (6.4); and Lemma 6.1,
+  $\sum_i|\langle v,w_i\rangle|^2\le\|v\|^2(\operatorname{tr}A^p)^{1/p}$ for real $p\ge1$.
+\end{lemma}
+\begin{proof}\leanok
+  Cut the loop into two chains and apply the weighted Cauchy--Schwarz inequality for
+  $\operatorname{Tr}(XE_{b'}YE_b)$; Lemma 6.1 from $\lambda_{\max}(A)\le(\operatorname{tr}A^p)^{1/p}$.
+\end{proof}
+
 \begin{lemma}[Deterministic skeleton of \S6: (6.3), (6.5), (6.7)--(6.9), (6.12)]\label{lem:continuity-skeleton}
   \lean{RBM.zSig, RBM.Gsig_eq_green_zSig, RBM.norm_zSig_sub_zSig, RBM.im_zSig, RBM.isUnit_sub_smul_one_of_im_ne_zero, RBM.isUnit_sub_zSig, RBM.green_eq_add_smul_mul, RBM.Gsig_eq_add_smul_mul, RBM.list_prod_add_eq, RBM.gchainMixed, RBM.gchain_eq_add_sum_gchainMixed, RBM.norm_add_sum_sq_le, RBM.norm_gchain_apply_sq_le, RBM.gloop_symm_eq_trace, RBM.gchain_append_singleton, RBM.Gsig_mul_conjTranspose, RBM.trace_Eblk_mul_mul_conjTranspose, RBM.trace_Eblk_gloopProd_Gsig_conjTranspose, RBM.ward_chain_row, RBM.ward_chain_row', RBM.ztTilde, RBM.ztTilde_im, RBM.etaT_nonneg, RBM.half_le_mE_im, RBM.sqrt_div_bounds, RBM.etaT_le_ztTilde_im, RBM.norm_zt_sub_ztTilde_le, RBM.norm_zt_sub_ztTilde_le_one_sub, RBM.norm_zt_sub_ztTilde_le_etaT, RBM.ztTilde_arith}
   \leanok\uses{def:gloop, def:gchain}

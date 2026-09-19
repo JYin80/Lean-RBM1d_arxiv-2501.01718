@@ -304,6 +304,45 @@ theorem norm_one_sub_rho_le (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) :
   have h2 : (0 : ℝ) ≤ 3 * ‖1 - ξ‖ := by positivity
   nlinarith [norm_nonneg (1 - ξ)]
 
+/-- `(1 − ρ)² = (1 − ξ)(1 + ρ + ρ²)`, the form used for the two-sided bound. -/
+theorem one_sub_rho_sq (hξ0 : ξ ≠ 0) :
+    (1 - rho ξ) ^ 2 = (1 - ξ) * (1 + rho ξ + rho ξ ^ 2) := by
+  apply mul_left_cancel₀ hξ0
+  have h := xi_mul_poly hξ0
+  have h2 := one_sub_xi_mul hξ0
+  linear_combination (-1 : ℂ) * h2 - (1 - ξ) * h
+
 end Rate
+
+section RealXi
+
+/-! ### Real spectral parameter
+
+For `ξ = t` real with `0 < t < 1` — the *long edge* `ξ = t|m|²` of the paper,
+where `|m| = 1` makes `ξ` real — the discriminant is a positive real, so both
+roots are real and `ρ ∈ (0,1)`.  Then `1 - ‖ρ‖ = 1 - ρ` and the identity
+`(1-ρ)² = (1-ξ)(1+ρ+ρ²)` with `1 < 1+ρ+ρ² < 3` gives the two-sided bound
+
+  `√(1-t) ≤ 1 - ρ ≤ √3 · √(1-t)`,
+
+i.e. the decay length is exactly of order `(1-t)^{-1/2}`, as in (2.52). -/
+
+/-- A complex number whose square is a positive real is itself real. -/
+theorem im_eq_zero_of_sq_eq_real {w : ℂ} {r : ℝ} (hr : 0 < r) (h : w ^ 2 = (r : ℂ)) :
+    w.im = 0 := by
+  by_contra him
+  have h1 : (w ^ 2).im = 0 := by rw [h]; simp
+  have h2 : (w ^ 2).re = r := by rw [h]; simp
+  rw [pow_two, Complex.mul_im] at h1
+  rw [pow_two, Complex.mul_re] at h2
+  have hre : w.re = 0 := by
+    have : w.re * w.im = 0 := by linarith
+    rcases mul_eq_zero.mp this with h' | h'
+    · exact h'
+    · exact absurd h' him
+  rw [hre] at h2
+  nlinarith [sq_nonneg w.im]
+
+end RealXi
 
 end RBM

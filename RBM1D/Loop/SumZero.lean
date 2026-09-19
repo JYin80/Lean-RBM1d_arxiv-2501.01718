@@ -274,4 +274,54 @@ theorem sum_selfW (F : Finset (Fin n × Fin n)) (E : ↥F → Matrix (ZMod L) (Z
 
 end TreeSum
 
+section Closed
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- The column sum of an internal edge `Θ_ξ - 1`, `ξ = t m(s) m(s')`: `(1 - ξ)^{-1} - 1`. -/
+noncomputable def edgeR (m : Bool → ℂ) (t : ℝ) (s s' : Bool) : ℂ :=
+  (1 - (t : ℂ) * (m s * m s'))⁻¹ - 1
+
+/-- `Q(σ,π) = ∑_{F ∈ T_SP(σ,π)} ∏_{e ∈ F} ((1 - ξ_e)^{-1} - 1)`. -/
+noncomputable def Qlayer (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool)
+    (π : Finset (Fin n × Fin n)) : ℂ :=
+  ∑ F ∈ TSPlong n σ π, ∏ e ∈ F, edgeR m t (σ e.1) (σ e.2)
+
+/-- `A(σ,π) = L^{-1} ∑_a K^(π)(t,σ,a) = ∏_v (1 - ξ_v)^{-1} · Q(σ,π)` (`sum_Kpi_closed`); it
+depends neither on `L` nor on `W`. -/
+noncomputable def Alayer (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool)
+    (π : Finset (Fin n × Fin n)) : ℂ :=
+  (∏ v, (1 - (t : ℂ) * (m (σ v) * m (σ (v + 1))))⁻¹) * Qlayer m t σ π
+
+omit [NeZero n] in
+theorem sum_Theta_sub_one_col (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (y : ZMod L) :
+    ∑ x : ZMod L, (Theta L ξ - 1) x y = (1 - ξ)⁻¹ - 1 := by
+  simp only [Matrix.sub_apply, sum_sub_distrib, sum_Theta_col hL hξ, Matrix.one_apply]
+  simp
+
+variable (m : Bool → ℂ) {t : ℝ} (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hm
+
+/-- `∑_d Σ^(π)(t,σ,d) = L · Q(σ,π)`. -/
+theorem sum_SigmaPi (hL : 3 ≤ L) (hn : 2 ≤ n) (σ : Fin n → Bool) (π : Finset (Fin n × Fin n)) :
+    ∑ d : Fin n → ZMod L, SigmaPi L m t σ π d = L * Qlayer m t σ π := by
+  unfold SigmaPi Qlayer
+  rw [sum_comm, mul_sum]
+  refine sum_congr rfl fun F hF => ?_
+  have hT : IsTSP F := isTSP_of_mem_TSP (TSPlong_subset σ π hF)
+  unfold selfE
+  rw [sum_selfW, treeZ_eq hT hn (fun e => thetaEdge L m t (σ e.1.1) (σ e.1.2) - 1)
+    (fun e => edgeR m t (σ e.1.1) (σ e.1.2))
+    (fun e y => sum_Theta_sub_one_col hL (hm _ _) y)]
+  rw [prod_coe_sort F (fun e => edgeR m t (σ e.1) (σ e.2))]
+
+/-- **The closed form of (3.48)**: `∑_a K^(π)(t,σ,a) = L · A(σ,π)`. -/
+theorem sum_Kpi_closed (hL : 3 ≤ L) (hn : 2 ≤ n) (σ : Fin n → Bool)
+    (π : Finset (Fin n × Fin n)) :
+    ∑ a : Fin n → ZMod L, Kpi L m t σ a π = L * Alayer m t σ π := by
+  rw [sum_Kpi_eq m hm hL, sum_SigmaPi m hm hL hn, Alayer]
+  ring
+
+end Closed
+
 end RBM

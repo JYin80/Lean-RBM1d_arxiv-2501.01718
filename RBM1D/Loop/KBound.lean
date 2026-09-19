@@ -788,6 +788,7 @@ theorem sum_prod_taylor_le (f : Fin n → ZMod L → ℂ) (a : Fin n → ZMod L)
           refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA0 _)) this
           nlinarith
 
+omit [NeZero n] in
 /-- **The remainder terms, with a distinguished value factor `q`** (`τ_q = 0`); only `f_q` needs an
 `ℓ¹` bound.  A choice with an even piece, or with two odd pieces, costs at most `(C₁/2 + 3/2 + 9C₂/4) A^{n-1} ∏_v (1+‖s_v‖)²` after summing over the centre. -/
 theorem sum_prod_taylor_le_at (f : Fin n → ZMod L → ℂ) (a : Fin n → ZMod L) {A Λ Moff C₁ C₂ : ℝ}
@@ -971,6 +972,7 @@ theorem sum_prod_taylor_le_at (f : Fin n → ZMod L → ℂ) (a : Fin n → ZMod
           refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA0 _)) this
           nlinarith
 
+omit [NeZero n] in
 /-- **No value factor besides the identity root**: if the root `p` carries the constant `1`
 and every other factor is an odd or even piece, putting the `ℓ¹` sum on one of them gives
 `G (3/2)^{n-2} ∏_v (1+‖s_v‖)²`, where `G` bounds the `ℓ¹` norms of `∇f_v` and `Δf_v / 2`. -/
@@ -2269,7 +2271,7 @@ theorem Kpi_cut (σ : Fin n → Bool) {F₀ : Finset (Fin n × Fin n)} (hF₀ : 
     · obtain ⟨h1, h2⟩ := hiff.1 h
       have h1' : Flong (FOut F J) σo = π' := h1
       have h2' : Flong (FIn F J) σi = ∅ := h2
-      rw [ite_cond_eq_true _ _ (eq_true h), hcut]
+      rw [ite_eq_left h, hcut]
       simp only [f, X, h1', h2', ite_true, one_mul]
       rfl
     · simp only [f, h, ite_false]
@@ -2305,5 +2307,154 @@ theorem Kpi_cut (σ : Fin n → Bool) {F₀ : Finset (Fin n × Fin n)} (hF₀ : 
         rw [sum_comm]
 
 end LayerCut
+
+section Lemma311
+
+/-! ### Lemma 3.11, (3.45) for every layer `π`
+
+By induction on `n`.  For `π = ∅` this is `norm_Kpi_empty_le`.  For `π ≠ ∅` (and `π` a layer,
+i.e. realised by some tree) cut at an innermost long edge `J`: by `Kpi_cut`,
+`|K^(π)| ≤ t ∑_u |A(u)| sup_w |K^(π')(w)| ≤ C_in X^{N_in-2} · C X^{n_out-1} = C' X^{n-1}`, where
+`X = (η_t ℓ̂)⁻¹`, `N_in = w_J + 1` and `n_out = n - w_J + 1` are both between `3` and `n - 1`,
+and `(N_in - 2) + (n_out - 1) = n - 1`. -/
+
+theorem sum_norm_SB_row {L : ℕ} [NeZero L] (hL : 3 ≤ L) (u : ZMod L) :
+    ∑ w : ZMod L, ‖SB L u w‖ = 1 := by
+  have h : ∀ w, ‖SB L u w‖ = (SB L u w).re := by
+    intro w
+    simp only [SB_apply, sbKernel]
+    split_ifs <;> norm_num
+  simp only [h]
+  rw [← Complex.re_sum, sum_SB_row L hL u, Complex.one_re]
+
+/-- A family of bounds indexed by `N` becomes uniform over `N ≤ N_max`. -/
+theorem exists_uniform {P : ℕ → ℝ → Prop} (hmono : ∀ N C C', P N C → C ≤ C' → P N C')
+    (h : ∀ N, 3 ≤ N → ∃ C, 0 ≤ C ∧ P N C) (Nmax : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ N, 3 ≤ N → N ≤ Nmax → P N C := by
+  induction Nmax with
+  | zero => exact ⟨0, le_rfl, fun N h3 h0 => by omega⟩
+  | succ M ih =>
+    obtain ⟨C₁, hC₁, h₁⟩ := ih
+    by_cases h3 : 3 ≤ M + 1
+    · obtain ⟨C₂, hC₂, h₂⟩ := h (M + 1) h3
+      refine ⟨C₁ + C₂, by positivity, fun N hN hNM => ?_⟩
+      rcases Nat.lt_or_ge N (M + 1) with hlt | hge
+      · exact hmono N C₁ _ (h₁ N hN (by omega)) (by linarith)
+      · obtain rfl : N = M + 1 := by omega
+        exact hmono _ C₂ _ h₂ (by linarith)
+    · exact ⟨C₁, hC₁, fun N hN hNM => h₁ N hN (by omega)⟩
+
+/-- **Lemma 3.11, (3.45)**: for `|E| ≤ 2 - k` there is `C = C(N_max, k)` with
+`|K^(π)_{t,σ,a}| ≤ C (η_t ℓ̂(t))^{-(n-1)}` for every `3 ≤ n ≤ N_max`, every `σ`, `a`, every `π`,
+every `0 < t < 1` and every `L ≥ 3`. -/
+theorem norm_Kpi_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) (Nmax : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (n : ℕ) [NeZero n], 3 ≤ n → n ≤ Nmax →
+      ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+        ∀ (σ : Fin n → Bool) (a : Fin n → ZMod L) (π : Finset (Fin n × Fin n)),
+          ‖Kpi L (mSigma E) t σ a π‖ ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (n - 1) := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  -- the inner molecules, uniformly in their size
+  obtain ⟨Cin, hCin0, hCin⟩ := exists_uniform (P := fun N C =>
+      ∀ [NeZero N], ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+        ∀ (σ' : Fin N → Bool) (p : Fin N), σ' p ≠ σ' (p + 1) → ∀ a' : Fin N → ZMod L,
+          ∑ u : ZMod L, ‖innerId (mSigma E) t σ' a' p u‖
+            ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2))
+    (fun N C C' hP hCC' => fun L _ hL t ht0 ht1 σ' p hp a' => by
+      have hb := hP L hL t ht0 ht1 σ' p hp a'
+      have : 0 ≤ (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2) := by
+        have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0 ht1; positivity
+      exact hb.trans (by nlinarith))
+    (fun N hN => by
+      have : NeZero N := ⟨by omega⟩
+      obtain ⟨C, hC0, hC⟩ := sum_norm_innerId_le hk0 hk1 hEk (N := N) hN
+      exact ⟨C, hC0, fun L _ hL t ht0 ht1 σ' p hp a' => hC L hL t ht0 ht1 σ' p hp a'⟩) Nmax
+  induction Nmax with
+  | zero => exact ⟨0, le_rfl, fun n _ h3 hN => by omega⟩
+  | succ N ih =>
+  obtain ⟨C, hC0, hC⟩ := ih (fun N' hN' hN'N => hCin N' hN' (by omega))
+  by_cases h3 : 3 ≤ N + 1
+  swap
+  · exact ⟨C, hC0, fun n _ hn hnN => by omega⟩
+  have : NeZero (N + 1) := ⟨by omega⟩
+  obtain ⟨Ce, hCe0, hCe⟩ := norm_Kpi_empty_le hk0 hk1 hEk (n := N + 1) h3
+  refine ⟨C + Ce + Cin * C, by positivity, fun n _ hn hnN L _ hL t ht0 ht1 σ a π => ?_⟩
+  set X := (etaT E t * ellHat L (t : ℂ))⁻¹ with hXdef
+  have hX0 : 0 ≤ X := by
+    have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0 ht1; positivity
+  have hXn : 0 ≤ X ^ (n - 1) := pow_nonneg hX0 _
+  rcases Nat.lt_or_ge n (N + 1) with hlt | hge
+  · refine (hC n hn (by omega) L hL t ht0 ht1 σ a π).trans ?_
+    have : 0 ≤ (Ce + Cin * C) * X ^ (n - 1) := by positivity
+    nlinarith
+  obtain rfl : n = N + 1 := by omega
+  by_cases hπ0 : π = ∅
+  · subst hπ0
+    refine (hCe L hL t ht0 ht1 σ a).trans ?_
+    have : 0 ≤ (C + Cin * C) * X ^ (N + 1 - 1) := by positivity
+    nlinarith
+  rcases (TSPlong (N + 1) σ π).eq_empty_or_nonempty with hemp | ⟨F₀, hF₀⟩
+  · simp only [Kpi, hemp, sum_empty, norm_zero]; positivity
+  obtain ⟨hF₀T, hπ⟩ := mem_TSPlong.1 hF₀
+  have hF₀' := isTSP_of_mem_TSP hF₀T
+  have hπne : π.Nonempty := nonempty_iff_ne_empty.2 hπ0
+  obtain ⟨J, hJ, hinner⟩ := exists_innermost hF₀' (σ := σ) (hπ ▸ hπne)
+  rw [hπ] at hJ hinner
+  have hm := norm_mul_mSigma_lt_one hE2 ht0.le ht1
+  have hJd : IsDiag (N + 1) J.1 J.2 := hF₀'.1 J (Flong_subset F₀ σ (hπ ▸ hJ))
+  have hJlong : σ J.1 ≠ σ J.2 := (mem_Flong.1 (hπ ▸ hJ)).2
+  have hw := width_of_isDiag hJd
+  have hwv : wIn J = J.2.val - J.1.val := rfl
+  have hw' : wIn J + 1 < N + 1 := by
+    obtain ⟨-, -, hnot⟩ := hJd
+    have := J.2.isLt
+    simp only [wIn]
+    omega
+  have hw2 : 2 ≤ wIn J := by omega
+  -- the two factors
+  have hroot : sigmaIn σ J (Fin.last _) ≠ sigmaIn σ J (Fin.last _ + 1) := by
+    rw [Fin.last_add_one]
+    have e1 : sigmaIn σ J (Fin.last _) = σ J.2 := by
+      simp only [sigmaIn, Fin.val_last, wIn]; congr 1; ext; simp only; omega
+    have e2 : sigmaIn σ J 0 = σ J.1 := by
+      simp only [sigmaIn, Fin.val_zero, add_zero]; congr 1; ext; simp only; omega
+    rw [e1, e2]; exact Ne.symm hJlong
+  have hin := hCin (wIn J + 1) (by omega) (by omega) L hL t ht0 ht1 (sigmaIn σ J) (Fin.last _)
+    hroot (aIn J a)
+  have hout : ∀ w, ‖Kpi L (mSigma E) t (sigmaOut σ J) (aOut J a w)
+      ((π.erase J).image (shiftOut J))‖ ≤ C * X ^ (N + 1 - wIn J + 1 - 1) := fun w =>
+    hC (N + 1 - wIn J + 1) (by omega) (by omega) L hL t ht0 ht1 _ _ _
+  have hξ : ‖(t : ℂ) * (mSigma E (σ J.1) * mSigma E (σ J.2))‖ ≤ 1 := by
+    rw [mSigma_mul_of_ne hE2 hJlong, mul_one, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos ht0]; exact ht1.le
+  rw [Kpi_cut hL (by omega) (mSigma E) hm σ hF₀T hπ hJ hinner a]
+  set ξ := (t : ℂ) * (mSigma E (σ J.1) * mSigma E (σ J.2))
+  set A := fun u => innerId (mSigma E) t (sigmaIn σ J) (aIn J a) (Fin.last _) u
+  set B := fun w => Kpi L (mSigma E) t (sigmaOut σ J) (aOut J a w) ((π.erase J).image (shiftOut J))
+  have hpow : X ^ (wIn J - 1) * X ^ (N + 1 - wIn J) = X ^ (N + 1 - 1) := by
+    rw [← pow_add]; congr 1; omega
+  calc ‖∑ u : ZMod L, ∑ w : ZMod L, ξ * A u * SB L u w * B w‖
+      ≤ ∑ u : ZMod L, ∑ w : ZMod L, ‖A u‖ * ‖SB L u w‖ * (C * X ^ (N + 1 - wIn J)) := by
+        refine (norm_sum_le _ _).trans (sum_le_sum fun u _ => ?_)
+        refine (norm_sum_le _ _).trans (sum_le_sum fun w _ => ?_)
+        rw [norm_mul, norm_mul, norm_mul]
+        have hb := hout w
+        rw [show N + 1 - wIn J + 1 - 1 = N + 1 - wIn J by omega] at hb
+        calc ‖ξ‖ * ‖A u‖ * ‖SB L u w‖ * ‖B w‖ ≤ 1 * ‖A u‖ * ‖SB L u w‖ * (C * X ^ (N + 1 - wIn J)) := by
+              gcongr
+          _ = _ := by ring
+    _ = (∑ u : ZMod L, ‖A u‖) * (C * X ^ (N + 1 - wIn J)) := by
+        rw [sum_mul]
+        refine sum_congr rfl fun u _ => ?_
+        rw [← sum_mul, ← mul_sum, sum_norm_SB_row hL u, mul_one]
+    _ ≤ (Cin * X ^ (wIn J - 1)) * (C * X ^ (N + 1 - wIn J)) := by
+        gcongr
+        exact hin
+    _ = Cin * C * X ^ (N + 1 - 1) := by rw [← hpow]; ring
+    _ ≤ (C + Ce + Cin * C) * X ^ (N + 1 - 1) := by
+        have : 0 ≤ (C + Ce) * X ^ (N + 1 - 1) := by positivity
+        nlinarith
+
+end Lemma311
 
 end RBM

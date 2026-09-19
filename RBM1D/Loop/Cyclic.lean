@@ -421,7 +421,7 @@ theorem isPrimitive_shift (hL : 3 ≤ L) (W : ℕ) (m : Bool → ℂ) {T : Set �
     · have := hK.1 t ht (I.shift L c) (LoopIdx.shift_WF L hI)
         (by rw [LoopIdx.length_shift]; exact h2)
       rwa [primRhs_shift] at this
-    · show K 0 (I.shift L c) = primInit L W m I
+    · change K 0 (I.shift L c) = primInit L W m I
       rw [hK.2.1 _ (LoopIdx.shift_WF L hI) (by rw [LoopIdx.length_shift]; exact h2),
         primInit_shift]
     · exact hK.2.2 t ht s (a + c)

@@ -91,7 +91,7 @@
 | T63 | Theorem 2.3 与 2.4 由 Lemma 2.18/2.19/2.20 推出（§2.6 p.22） | `Flow/Consequences.lean`（新建） | Claude Code | 进行中 |
 | T64 | 附录 A 的总装：(A.11)(A.12)(A.13)(A.14)(A.17)(A.20) ⟹ Lemma A.2 | `Loop/ChainBound.lean`（新建） | Claude Code | 进行中 |
 | T65 | §7.2 的 GUE 相：(7.25)–(7.36) 的 Grönwall 自举、(7.39)–(7.46) | `Hierarchy/GUEPhase.lean`（新建） | 待认领 | 未开工 |
-| T66 | 维护：蓝图补上第二批的全部 `\lean{}` 节点 + `leanblueprint checkdecls`；linter 清理 | `blueprint/src/content.tex` 等 | Claude Code | 进行中 |
+| T66 | 维护：蓝图补上第二批的全部 `\lean{}` 节点 + `leanblueprint checkdecls`；linter 清理 | `blueprint/src/content.tex` 等 | Claude Code | **完成** |
 
 ---
 

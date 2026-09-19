@@ -1194,6 +1194,17 @@
   $|K_{t,\sigma,a}|\le C(W\ell_t\eta_t)^{-n+1}$ (Lemma 3.11 for $n\ge3$, direct for $n=1,2$).
 \end{proof}
 
+\begin{lemma}[Minor formulas, Lemma 4.2]\label{lem:4.2}
+  \lean{RBM.sum_subtype_ne, RBM.minorMat, RBM.minorGreen, RBM.minorMat_apply, RBM.minorGreen_apply, RBM.sum_ne_green_mul, RBM.sum_ne_mul_green, RBM.minorGreen_mul_minorMat, RBM.inv_minorMat, RBM.isUnit_det_minorMat, RBM.sum_minorGreen_row, RBM.green_off_diag_eq, RBM.sum_minorGreen_col, RBM.green_diag_eq, RBM.sub_smul_one_apply_self, RBM.sub_smul_one_apply_ne, RBM.minorMat_sub_smul_one, RBM.green_mul_self, RBM.self_mul_green, RBM.inv_minor_resolvent, RBM.green_off_diag_paper, RBM.green_diag_paper}
+  \leanok
+  For $G=(H-z)^{-1}$ and the minor $G^{(i)}=(H^{(i)}-z)^{-1}$: (4.7)
+  $1/G_{ii}=H_{ii}-z-\sum_{k,l\ne i}H_{ik}G^{(i)}_{kl}H_{li}$, (4.8) $G_{ij}=-G_{ii}\sum_kH_{ik}G^{(i)}_{kj}$
+  (with a sign the paper omits), (4.9) $G^{(i)}_{kl}=G_{kl}-G_{ki}G_{il}/G_{ii}$.
+\end{lemma}
+\begin{proof}\leanok
+  Schur complement.
+\end{proof}
+
 \begin{lemma}[Resolvent entry estimate, Lemma 4.1]\label{lem:4.1}
   \lean{RBM.greenMinor, RBM.green_eq_neg_mul_sum_row, RBM.green_eq_neg_mul_sum_col, RBM.inv_green_diag_eq, RBM.GoodEvent, RBM.LDERow, RBM.LDECol, RBM.LDEQuad, RBM.norm_sq_green_le_row, RBM.norm_sq_green_le_col, RBM.norm_sq_green_le_two_sided, RBM.norm_sq_selfEnergy_err_le, RBM.Stable, RBM.norm_sq_green_diag_sub_le, RBM.norm_condExp_le, RBM.norm_sum_coef_green_sub_le, RBM.isUnit_det_sub_smul_one, RBM.Sblk, RBM.Svar_eq_ofReal, RBM.Lre, RBM.Lmax, RBM.sum_sum_Sblk_eq_nbr, RBM.inv_W_le_Lmax, RBM.stable_Sblk, RBM.Kstab, RBM.stable_Sblk_short_edge, RBM.norm_sq_green_le_blk, RBM.norm_sq_green_diag_sub_le_blk, RBM.trace_sub_mul_Eblk, RBM.norm_trace_green_sub_mul_Eblk_le, RBM.StochDom.sumElim, RBM.StochDom.of_det, RBM.StochDom.of_indicator, RBM.entry_bound_stochDom, RBM.diag_bound_stochDom, RBM.avg_bound_stochDom, RBM.entry_bound_stochDom_of_highProb, RBM.diag_bound_stochDom_of_highProb}
   \leanok\uses{def:2.1-i, def:gloop, lem:3.35}
@@ -1233,6 +1244,22 @@
 \begin{proof}\leanok
   (4.8) and (4.9) along the chain; Cauchy--Schwarz for $\operatorname{Tr}(XE_bYE_a)$.
 \end{proof}
+
+\begin{definition}[Tensor propagator and evolution kernel, Definition 5.2 and Lemma 7.1]\label{def:5.2}
+  \lean{RBM.LoopArg, RBM.sum_prod_pi, RBM.sum_norm_row_le, RBM.edgeKer, RBM.edgeKer_eq, RBM.edgeKer_self, RBM.norm_edgeKer_le, RBM.sum_norm_edgeKer_row_le, RBM.edgeKer_mul, RBM.sum_edgeKer_mul, RBM.xiOf, RBM.Uker, RBM.ThetaOp, RBM.Uker_apply, RBM.Uker_add, RBM.Uker_smul, RBM.norm_Uker_apply_le, RBM.Uker_self, RBM.Uker_comp}
+  \leanok\uses{def:Theta, lem:Theta-bounds}
+  $\Theta_{t,\sigma}$ (5.16) and $U_{s,t,\sigma}$ (5.17) on tensors $A:\mathbb Z_L^n\to\mathbb C$; the
+  identity (5.18), the semigroup law $U_{u,t}U_{s,u}=U_{s,t}$, and
+  $\|U_{s,t,\sigma}A\|_{\max}\le(1+|1-s|\max\|\Theta^{(B)}_{t\xi}\|_{\max\to\max})^n\|A\|_{\max}$ (7.1).
+\end{definition}
+
+\begin{definition}[The sum-zero operator, Definition 5.12 and (5.90)(5.99)(5.104)]\label{def:5.12}
+  \lean{RBM.Psum, RBM.SumZero, RBM.vartheta, RBM.Qop, RBM.vartheta_cons, RBM.Psum_vartheta, RBM.SumZero_Qop, RBM.Qop_of_sumZero, RBM.norm_vartheta_le, RBM.norm_Qop_apply_le, RBM.sum_ThetaOp_row, RBM.Psum_add, RBM.Psum_smul, RBM.sum_sum_update_swap, RBM.Psum_ThetaOp_eq, RBM.SumZero_ThetaOp, RBM.norm_Psum_ThetaOp_le, RBM.Psum_sub, RBM.commQT, RBM.SumZero_commQT, RBM.Psum₁, RBM.Psum₂, RBM.Psum₁₂, RBM.Qop₁, RBM.Qop₂, RBM.Psum_Psum₁, RBM.Psum₁_Qop₂, RBM.Psum₂_Qop₁, RBM.Qop₁_Qop₂_apply, RBM.Qop₂_Qop₁_apply, RBM.Qop₁_Qop₂_comm, RBM.Psum₁_Qop₁_Qop₂, RBM.Psum₂_Qop₁_Qop₂}
+  \leanok\uses{def:5.2}
+  $(P A)_{a_1}=\sum_{a_2\dots a_n}A_a$, $\vartheta_{t,a}$, $Q_t=I-\vartheta P$ with $P\vartheta=1$, $PQ_t=0$;
+  $\Theta_{t,\sigma}$ preserves the sum-zero property; the commutator (5.90)(5.99); the two-slot
+  $Q\otimes Q$ of (5.104).
+\end{definition}
 
 \begin{lemma}[Evolution kernel on fast-decay tensors, Lemmas 7.2 and 7.3]\label{lem:7.3}
   \lean{RBM.FastDecay, RBM.SumZeroAt, RBM.norm_kerOp_fastDecay_le, RBM.norm_kerOp_sumZero_le, RBM.norm_Uker_fastDecay_le, RBM.norm_Uker_fastDecay_le_short, RBM.norm_Uker_fastDecay_le_of_eq, RBM.norm_Uker_fastDecay_le_sumZero, RBM.norm_Uker_fastDecay_le_sumZero_sigma, RBM.norm_sub_le_zdist_mul, RBM.norm_Uker_tail_le, RBM.norm_Uker_tail_le_ellStar, RBM.norm_Uker_tail_le_sigma, RBM.xiOf_mSigma_true_false}

@@ -69,9 +69,11 @@ inverse of `minorMat M i`. -/
 def minorGreen (G : Matrix n n R) (i : n) : Matrix {a : n // a ≠ i} {a : n // a ≠ i} R :=
   Matrix.of fun j k => G j.1 k.1 - G j.1 i * G i k.1 / G i i
 
+omit [Fintype n] [DecidableEq n] [Field R] in
 @[simp] theorem minorMat_apply (M : Matrix n n R) (i : n) (j k : {a : n // a ≠ i}) :
     minorMat M i j k = M j.1 k.1 := rfl
 
+omit [Fintype n] [DecidableEq n] in
 @[simp] theorem minorGreen_apply (G : Matrix n n R) (i : n) (j k : {a : n // a ≠ i}) :
     minorGreen G i j k = G j.1 k.1 - G j.1 i * G i k.1 / G i i := rfl
 
@@ -106,8 +108,9 @@ theorem minorGreen_mul_minorMat (hGM : G * M = 1) (i : n) (hGii : G i i ≠ 0) :
   have hjl : ((1 : Matrix {a : n // a ≠ i} {a : n // a ≠ i} R) j l)
       = (if j.1 = l.1 then (1 : R) else 0) := by
     by_cases h : j = l
-    · simp [h]
-    · rw [Matrix.one_apply_ne h, if_neg (fun hh => h (Subtype.ext hh))]
+    · subst h
+      simp [Matrix.one_apply_eq]
+    · rw [Matrix.one_apply_ne h, ite_eq_right (fun hh => h (Subtype.ext hh))]
   rw [hjl, Matrix.mul_apply]
   have hsplit : ∑ k : {a : n // a ≠ i}, minorGreen G i j k * minorMat M i k l
       = (∑ k : {a : n // a ≠ i}, G j.1 k.1 * M k.1 l.1)
@@ -116,7 +119,7 @@ theorem minorGreen_mul_minorMat (hGM : G * M = 1) (i : n) (hGii : G i i ≠ 0) :
     refine Finset.sum_congr rfl fun k _ => ?_
     simp only [minorGreen_apply, minorMat_apply]
     ring
-  rw [hsplit, sum_ne_green_mul hGM i j.1 l.1, sum_ne_green_mul hGM i i l.1, if_neg hil]
+  rw [hsplit, sum_ne_green_mul hGM i j.1 l.1, sum_ne_green_mul hGM i i l.1, ite_eq_right hil]
   have hcancel : G j.1 i / G i i * ((0 : R) - G i i * M i l.1) = -(G j.1 i * M i l.1) := by
     rw [zero_sub, mul_neg, neg_inj]
     field_simp
@@ -145,7 +148,7 @@ theorem sum_minorGreen_row (hMG : M * G = 1) (i : n) (hGii : G i i ≠ 0)
     simp only [minorGreen_apply]
     ring
   rw [hsplit, sum_ne_mul_green hMG i i j.1, sum_ne_mul_green hMG i i i,
-    if_neg (fun h => j.2 h.symm), if_pos rfl]
+    ite_eq_right (fun h => j.2 h.symm), ite_eq_left rfl]
   field_simp
   ring
 
@@ -168,7 +171,7 @@ theorem sum_minorGreen_col (hGM : G * M = 1) (i : n) (hGii : G i i ≠ 0)
     simp only [minorGreen_apply]
     ring
   rw [hsplit, sum_ne_green_mul hGM i k.1 i, sum_ne_green_mul hGM i i i,
-    if_neg k.2, if_pos rfl]
+    ite_eq_right k.2, ite_eq_left rfl]
   field_simp
   ring
 
@@ -187,13 +190,14 @@ theorem green_diag_eq (hGM : G * M = 1) (hMG : M * G = 1) (i : n) (hGii : G i i 
       = ∑ k : {a : n // a ≠ i}, M i k.1 * -(G k.1 i / G i i) :=
     Finset.sum_congr rfl fun k _ => hinner k
   have hcol : ∑ k : {a : n // a ≠ i}, M i k.1 * G k.1 i = 1 - M i i * G i i := by
-    rw [sum_ne_mul_green hMG i i i, if_pos rfl]
+    rw [sum_ne_mul_green hMG i i i, ite_eq_left rfl]
   have houter : ∑ k : {a : n // a ≠ i}, M i k.1 * -(G k.1 i / G i i)
       = -(1 / G i i) * (1 - M i i * G i i) := by
     rw [← hcol, Finset.mul_sum]
     exact Finset.sum_congr rfl fun k _ => by ring
   have hval : M i i - -(1 / G i i) * (1 - M i i * G i i) = (G i i)⁻¹ := by
     field_simp
+    ring
   rw [hstep, houter, hval, inv_inv]
 
 end Abstract
@@ -202,14 +206,17 @@ section Resolvent
 
 variable {H : Matrix n n ℂ} {z : ℂ}
 
+omit [Fintype n] in
 theorem sub_smul_one_apply_self (H : Matrix n n ℂ) (z : ℂ) (i : n) :
     (H - z • (1 : Matrix n n ℂ)) i i = H i i - z := by
   simp [Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_eq]
 
+omit [Fintype n] in
 theorem sub_smul_one_apply_ne (H : Matrix n n ℂ) (z : ℂ) {i k : n} (h : i ≠ k) :
     (H - z • (1 : Matrix n n ℂ)) i k = H i k := by
   simp [Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_ne h]
 
+omit [Fintype n] in
 /-- The minor of `H - z` is `H^(i) - z`: so `minorGreen (green H z) i` really is the
 Green's function of the submatrix `H^(i)`, which is what the paper calls `G^(i)`. -/
 theorem minorMat_sub_smul_one (H : Matrix n n ℂ) (z : ℂ) (i : n) :
@@ -246,23 +253,30 @@ theorem green_off_diag_paper (h : IsUnit (H - z • (1 : Matrix n n ℂ)).det) (
     (hGii : green H z i i ≠ 0) (j : {a : n // a ≠ i}) :
     green H z i j.1
       = -green H z i i * ∑ k : {a : n // a ≠ i}, H i k.1 * minorGreen (green H z) i k j := by
-  rw [green_off_diag_eq (self_mul_green h) i hGii j]
-  congr 2
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [sub_smul_one_apply_ne H z (fun hh => k.2 hh.symm)]
+  have hsum : (∑ k : {a : n // a ≠ i},
+        (H - z • (1 : Matrix n n ℂ)) i k.1 * minorGreen (green H z) i k j)
+      = ∑ k : {a : n // a ≠ i}, H i k.1 * minorGreen (green H z) i k j := by
+    refine Finset.sum_congr rfl fun k _ => ?_
+    have hik : (i : n) ≠ k.1 := fun hh => k.2 hh.symm
+    rw [sub_smul_one_apply_ne H z hik]
+  rw [green_off_diag_eq (self_mul_green h) i hGii j, hsum]
 
 /-- **(4.7)** in the paper's notation. -/
 theorem green_diag_paper (h : IsUnit (H - z • (1 : Matrix n n ℂ)).det) (i : n)
     (hGii : green H z i i ≠ 0) :
     green H z i i = (H i i - z - ∑ k : {a : n // a ≠ i}, ∑ l : {a : n // a ≠ i},
         H i k.1 * minorGreen (green H z) i k l * H l.1 i)⁻¹ := by
+  have hsum : (∑ k : {a : n // a ≠ i}, ∑ l : {a : n // a ≠ i},
+        (H - z • (1 : Matrix n n ℂ)) i k.1 * minorGreen (green H z) i k l
+          * (H - z • (1 : Matrix n n ℂ)) l.1 i)
+      = ∑ k : {a : n // a ≠ i}, ∑ l : {a : n // a ≠ i},
+        H i k.1 * minorGreen (green H z) i k l * H l.1 i := by
+    refine Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => ?_
+    have hik : (i : n) ≠ k.1 := fun hh => k.2 hh.symm
+    have hli : l.1 ≠ (i : n) := l.2
+    rw [sub_smul_one_apply_ne H z hik, sub_smul_one_apply_ne H z hli]
   rw [green_diag_eq (green_mul_self h) (self_mul_green h) i hGii,
-    sub_smul_one_apply_self H z i]
-  congr 2
-  refine Finset.sum_congr rfl fun k _ => ?_
-  refine Finset.sum_congr rfl fun l _ => ?_
-  rw [sub_smul_one_apply_ne H z (fun hh => k.2 hh.symm),
-    sub_smul_one_apply_ne H z l.2]
+    sub_smul_one_apply_self H z i, hsum]
 
 end Resolvent
 

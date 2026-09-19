@@ -1068,8 +1068,7 @@ T53（Step 3）现已解锁。
 (4.2) `norm_sq_green_le_blk`/`entry_bound_stochDom`、(4.3) `norm_sq_green_diag_sub_le_blk`/`diag_bound_stochDom`、(4.5) `avg_bound_stochDom`，
 以及去掉 `1_Ω` 的 `_of_highProb` 版。paper-deltas #32。
 
-**⚠ `RBM1D/Green/Minor.lean`（Cowork T40）的 HEAD 版本在本机 Lean 4.34 / Mathlib `5ed2965256` 下有 3 处编译错误；
-工作树里有一份未提交的修复（`subst h; simp [Matrix.one_apply_eq]`、`field_simp; ring` 等，非 Claude Code 所改），本机构建依赖它。请文件主人提交。**
+（`Green/Minor.lean` 的编译修复已随 T66 提交，HEAD 全绿。）
 
 ### `RBM1D/Hierarchy/Step3.lean` — Step 3（T53，Claude Code 并行 agent）
 
@@ -1105,3 +1104,9 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 
 **第二批（T42–T57）Claude Code 部分全部完成**：T43–T51、T53–T57（T42、T52 为 Cowork）。Steps 1–6 中 (2.77)(2.78)(2.79)(2.80) 均已有形状匹配
 `Steps` 字段的定理；Lemma 2.18–2.20 由 Thm 2.21 推出（T57）。
+
+### T66（维护，Claude Code）
+
+蓝图补齐第二批 Cowork 部分的节点：`lem:4.2`（Minor，T40）、`def:5.2`（Kernel，T42）、`def:5.12`（SumZero，T52）；`\lean{}` 全部解析（989 个，
+`scripts/blueprint_preview.py` 校验；本机无 `leanblueprint`）。`Green/Minor.lean`：提交工作树中已存在的编译修复（HEAD 版在本机 3 处报错）
+并清掉全部 12 条警告（`omit … in`、`if_pos/if_neg → ite_eq_left/ite_eq_right`）；`Hierarchy/Kernel.lean` 已无警告。

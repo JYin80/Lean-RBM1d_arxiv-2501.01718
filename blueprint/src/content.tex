@@ -278,12 +278,16 @@
 \end{proof}
 
 \begin{lemma}[(3.35)--(3.36): short and long edges]\label{lem:3.35}
-  \uses{lem:Theta-bounds, lem:Theta-decay, lem:2.8}
+  \lean{RBM.norm_Theta_short_edge_le, RBM.sum_norm_Theta_row_le_complex,
+    RBM.sum_norm_Theta_short_edge_le, RBM.norm_Theta_long_edge_le,
+    RBM.sum_norm_Theta_long_edge_le}
+  \leanok\uses{lem:Theta-bounds, lem:Theta-decay, lem:2.8, lem:edges, lem:Theta-decay-complex}
   The paper states, with $\ell_t$ the decay length and $\eta_t = \operatorname{Im} z_t$,
   \[ \|\Th_{tm^2}\|_{\max} \prec 1, \quad \|\Th_{t|m|^2}\|_{\max} \prec \frac1{\ell_t\eta_t};
      \qquad
      \|\Th_{tm^2}\|_{1} \prec 1, \quad \|\Th_{t|m|^2}\|_{1} \prec \frac1{\eta_t} . \]
-  \emph{Not yet formalized as stated}, and it is worth being precise about what is missing.
+  \emph{All four are now proved}; the analysis below records what each one needed, since a
+  first reading suggested (wrongly) that the uniform bound already covered them.
   \begin{itemize}
     \item \textbf{Long edge} ($\xi = t|m|^2 = t$, real).  The $\max$ bound follows from
       (2.52) (Lemma~\ref{lem:Theta-decay}) and the $\ell^1$ bound is the identity

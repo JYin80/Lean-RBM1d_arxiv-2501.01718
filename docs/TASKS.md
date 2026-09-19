@@ -35,7 +35,7 @@
 | T26 | Lemma 3.6：𝒦 的 Ward 恒等式 | `Loop/Ward*.lean`, `Loop/Cyclic.lean` | Claude Code | **完成** |
 | T27 | Def 2.9 的 G-loop 本身（确定性 H） | `Loop/GLoop.lean` | **Cowork** | **完成**（G(σ)†=G(−σ)、预解式恒等式、loop 旋转不变） |
 | T28 | Corollary 3.5：纯 loop 的界 | `Loop/Cor35.lean`（新建） | **Claude Code #2** | 进行中 |
-| T29 | (3.35)(3.36) 的短边/长边两半（自查发现未覆盖） | `Propagator/Edges.lean`（新建） | **Cowork** | 进行中 |
+| T29 | (3.35)(3.36) 的短边/长边两半（自查发现未覆盖） | `Propagator/Edges.lean` | **Cowork** | **完成**（四条齐） |
 | T30 | Lemma 3.6 与循环不变性对真正的 `K`（`Kgen`）无条件成立 | `Loop/WardKgen.lean` | Claude Code | **完成** |
 | T31 | Def 3.8/3.9：长内部边 `F_long`、按 π 分层、`K^(π)` 与 `Σ^(π)` | `Loop/Layer.lean`（新建） | 空闲 | **可开工（优先）** |
 | T32 | Corollary 3.7（由 Lemma 3.6 直接推出） | `Loop/Ward*.lean` 之一 | **Claude Code** | 进行中 |

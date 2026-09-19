@@ -345,29 +345,45 @@
 \end{proof}
 
 \begin{lemma}[Lemma 2.14 (4): exponential decay, (2.52)]\label{lem:Theta-decay}
-  \uses{lem:Theta-band, lem:closed-form, lem:rho-rate, lem:prefactor}
-  With $\hat\ell(\xi):=\min(|1-\xi|^{-1/2},L)$,
-  \[ \bigl|(\Th_\xi)_{xy}\bigr| \;\le\;
-     \frac{C\,e^{-c|x-y|/\hat\ell(\xi)}}{|1-\xi|\cdot\hat\ell(\xi)} . \]
-  \emph{In progress.}  The root $\rho(\xi)$ is constructed
-  (Lemma~\ref{lem:rho}); what remains is the closed form
-  \[ (\Th_\xi)_{xy} \;=\; A(\xi)\bigl(\rho^{\,d}+\rho^{\,L-d}\bigr),
-     \qquad d = \overline{(x-y)} \in [0,L), \qquad
-     A(\xi) = \frac{3\rho}{\xi\,(\rho^L-1)(\rho^2-1)} , \]
-  verified by substitution into $(1-\xi\SB)\Th_\xi=1$ and closed by uniqueness of
-  the inverse (Lemma~\ref{lem:Theta-inv}).  Summing it over $d$ gives
-  $3\rho/[\xi(\rho-1)^2]$, which the characteristic equation turns into exactly
-  $(1-\xi)^{-1}$, matching the independently proved Lemma~\ref{lem:Theta-rowsum};
-  this cross-check confirms the constant.  Setting $\xi = 1-\varepsilon$ and
-  $\rho = 1-\delta$ gives $\delta \approx \sqrt{3}\,|1-\xi|^{1/2}$, which is the
-  paper's decay length.  This route avoids the contour shift and Poisson
-  summation of Appendix B entirely.
+  \lean{RBM.zdist_le, RBM.norm_Theta_apply_le_of_real}
+  \leanok\uses{lem:Theta-band, lem:closed-form, lem:rho-rate, lem:prefactor}
+  With $\hat\ell(\xi):=\min(|1-\xi|^{-1/2},L)$ and real $\xi = t \in (0,1)$,
+  \[ \bigl|(\Th_t)_{xy}\bigr| \;\le\;
+     \frac{8e\,\cdot\,e^{-\|x-y\|/\hat\ell(t)}}{(1-t)\cdot\hat\ell(t)} . \]
+  The paper's $C$ and $c$ are here the explicit $8e$ and $1$.  Real $\xi$ is the
+  long-edge case $\xi = t|m|^2 = t$ of the paper (recall $|m| = 1$), which is the
+  case that needs the sharp length scale.
 \end{lemma}
+\begin{proof}\leanok\uses{lem:Theta-band, lem:closed-form, lem:rho-rate, lem:prefactor}
+  Two regimes.  If $(1-t)^{-1/2}\le L$ the exponential does the work:
+  $\rho \le e^{-(1-\rho)} \le e^{-\sqrt{1-t}} = e^{-1/\hat\ell}$.  If $L \le (1-t)^{-1/2}$
+  the exponential is useless ($e^{-d/L}\ge e^{-1}$ for $d \le L$) and the prefactor
+  bound $|A| \le 4/((1-t)L)$ of Lemma~\ref{lem:prefactor} carries the estimate alone.
+  No contour shift and no Poisson summation.
+\end{proof}
 
 \begin{lemma}[Difference estimates (2.53)--(2.54)]\label{lem:Theta-diff}
-  \uses{lem:Theta-decay}
-  \emph{Not yet formalized.}
+  \lean{RBM.kern_succ_sub, RBM.kern_second_diff, RBM.norm_AA_mul_one_sub_rho_le,
+    RBM.norm_AA_mul_one_sub_rho_sq_le, RBM.norm_Theta_sub_shift_le,
+    RBM.kern_wrap_second, RBM.norm_Theta_second_diff_le, RBM.norm_Theta_second_diff_diag_le}
+  \leanok\uses{lem:Theta-decay, lem:prefactor}
+  For real $\xi = t \in (0,1)$,
+  \[ \bigl|(\Th_t)_{x,y}-(\Th_t)_{x,y+1}\bigr| \le \frac{8\sqrt3}{\hat\ell(t)\,(1-t)^{1/2}},
+     \qquad
+     \bigl|2(\Th_t)_{x,y}-(\Th_t)_{x,y+1}-(\Th_t)_{x,y-1}\bigr| \le \frac{24}{\hat\ell(t)}
+     \quad (x \ne y). \]
+  Both are explicit constants, hence stronger than the paper's $\prec$.
 \end{lemma}
+\begin{proof}\leanok\uses{lem:Theta-decay, lem:prefactor}
+  Writing $L = n+1+j$, the kernel differences telescope:
+  $\mathrm{kern}(n{+}1)-\mathrm{kern}(n) = A(1-\rho)(\rho^j-\rho^n)$ and
+  $\mathrm{kern}(n{+}1)+\mathrm{kern}(n{-}1)-2\,\mathrm{kern}(n) = A(1-\rho)^2(\rho^{n-1}+\rho^{j})$.
+  Each lattice difference costs exactly one factor $1-\rho \asymp (1-t)^{1/2}$, i.e. one
+  inverse decay length.  \emph{The diagonal $x = y$ is genuinely different}: there the
+  kernel $\rho^d+\rho^{L-d}$ has a cusp and only one factor $1-\rho$ comes out, giving
+  $4\|A(1-\rho)\| = O(1)$ --- consistent with the paper's right-hand side
+  $1/(\|x-y\|+1)$, which is $1$ at $x = y$.
+\end{proof}
 
 \chapter{The primitive equation and $\Kcal$}
 

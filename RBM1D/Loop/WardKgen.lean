@@ -570,6 +570,58 @@ theorem norm_totalSum_le_of_prod (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool)
         rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
         ring
 
+omit [NeZero L] in
+theorem prod_map_pow_eq (l : List (ZMod L)) (r : ℝ) (d : ZMod L → ℕ) :
+    (l.map fun x => r ^ d x).prod = r ^ (l.map d).sum := by
+  induction l with
+  | nil => simp
+  | cons x l ih => simp [ih, pow_add]
+
+/-- **From a pairwise bound to a product bound.**  If `|K_{σ,a}| ≤ B e^{-c‖a_i - a_j‖}` for
+every pair, then `|K_{σ,(a₀,rest)}| ≤ B ∏_{x ∈ rest} r^{‖x - a₀‖}`, `r = e^{-c/(m-1)}`: the
+bound for the farthest label dominates the geometric mean. -/
+theorem prod_bound_of_pairwise (K : LoopIdx (ZMod L) → ℂ) (σ : List Bool) (hσ : 2 ≤ σ.length)
+    {B c : ℝ} (hB : 0 ≤ B) (hc : 0 < c)
+    (hpair : ∀ a : List (ZMod L), a.length = σ.length → ∀ i j, i < σ.length → j < σ.length →
+      ‖K ⟨σ, a⟩‖ ≤ B * Real.exp (-(c * zdist L (a.getD i 0 - a.getD j 0))))
+    (a₀ : ZMod L) (rest : List (ZMod L)) (hrest : rest.length = σ.length - 1) :
+    ‖K ⟨σ, a₀ :: rest⟩‖ ≤ B * (rest.map fun x =>
+      Real.exp (-(c / (σ.length - 1 : ℕ))) ^ zdist L (x - a₀)).prod := by
+  set r := Real.exp (-(c / (σ.length - 1 : ℕ))) with hr
+  have hm1 : (0 : ℝ) < (σ.length - 1 : ℕ) := by exact_mod_cast (by omega : 0 < σ.length - 1)
+  have hr0 : 0 ≤ r := (Real.exp_pos _).le
+  have hr1 : r ≤ 1 := by
+    rw [hr, Real.exp_le_one_iff, neg_nonpos]
+    exact (div_pos hc hm1).le
+  have hne : rest ≠ [] := by
+    intro h
+    rw [h] at hrest
+    simp at hrest
+    omega
+  -- the farthest label
+  obtain ⟨xs, hxs, hmax⟩ := rest.toFinset.exists_max_image (fun x => zdist L (x - a₀))
+    ⟨_, List.mem_toFinset.2 (List.getLast_mem hne)⟩
+  rw [List.mem_toFinset] at hxs
+  obtain ⟨j, hj, hjx⟩ := List.mem_iff_getElem.mp hxs
+  have hK := hpair (a₀ :: rest) (by simp [hrest]; omega) (j + 1) 0 (by omega) (by omega)
+  simp only [List.getD_cons_succ, List.getD_cons_zero, List.getD_eq_getElem _ _ hj, hjx] at hK
+  refine hK.trans (mul_le_mul_of_nonneg_left ?_ hB)
+  rw [prod_map_pow_eq]
+  have hsum : (rest.map fun x => zdist L (x - a₀)).sum ≤ (σ.length - 1) * zdist L (xs - a₀) := by
+    have := List.sum_le_length_nsmul (rest.map fun x => zdist L (x - a₀)) (zdist L (xs - a₀))
+      (by
+        intro y hy
+        obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hy
+        exact hmax x (List.mem_toFinset.2 hx))
+    simpa [hrest] using this
+  calc Real.exp (-(c * zdist L (xs - a₀)))
+      = r ^ ((σ.length - 1) * zdist L (xs - a₀)) := by
+        rw [hr, ← Real.exp_nat_mul]
+        congr 1
+        push_cast
+        field_simp
+    _ ≤ r ^ (rest.map fun x => zdist L (x - a₀)).sum := pow_le_pow_of_le_one hr0 hr1 hsum
+
 end PureSum
 
 end RBM

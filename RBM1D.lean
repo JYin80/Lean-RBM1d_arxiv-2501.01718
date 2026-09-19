@@ -39,6 +39,7 @@ import RBM1D.Propagator.Deriv
 import RBM1D.Propagator.DiffComplex
 import RBM1D.Propagator.Edges
 import RBM1D.Propagator.LongDiff
+import RBM1D.Propagator.ZeroMode
 import RBM1D.Propagator.Poisson
 import RBM1D.Propagator.RateComplex
 import RBM1D.Propagator.Root

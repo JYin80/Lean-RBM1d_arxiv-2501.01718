@@ -1012,3 +1012,9 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 
 `Gsig_zero_zt_zero`：`G_0(σ) = m(σ)·I`；**`gloop_zero_zt_zero_eq_Kgen`**：`L_{0,σ,a} = K_{0,σ,a}`（无假设，§2.7 基例）；
 `gloop_zero_zt_zero_eq_of_isPrimitive`（对任意满足 Def 2.12 且 `0 ∈ T` 的 K）。paper-deltas #24。
+
+### `RBM1D/Propagator/ZeroMode.lean` — §7.2 末的零模去除（T46，Claude Code 并行 agent）
+
+`ThetaTilde_eq`：`(1−ξS̃)⁻¹ = Θ_{ξ(1−ζ)} + α·J`（手搓 Sherman–Morrison）；**`ThetaTilde_sub_ThetaTilde`**（p.84 的差分恒等式）；
+`norm_one_sub_mul_comparable`（需 `ζ ≤ |1−ξ|`，paper-deltas #25）；(2.52)(2.53)(2.54) 搬到 `S̃`：
+`norm_ThetaTilde_sub_zeroMode_le`、`norm_ThetaTilde_sub_shift_le`、`norm_ThetaTilde_second_diff_le`。

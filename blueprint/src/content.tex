@@ -526,6 +526,25 @@
   $u e^{-u}\le e^{-1}\le 1/2$.
 \end{proof}
 
+\begin{lemma}[Removing the zero mode, end of \S7.2]\label{lem:zero-mode}
+  \lean{RBM.onesMat, RBM.SBTilde, RBM.ThetaTilde, RBM.zeroMode, RBM.onesMat_apply,
+    RBM.onesMat_mul_onesMat, RBM.SB_mul_onesMat, RBM.onesMat_mul_SB, RBM.Theta_mul_onesMat,
+    RBM.onesMat_mul_Theta, RBM.one_sub_smul_SBTilde, RBM.ThetaTilde_eq, RBM.ThetaTilde_apply,
+    RBM.ThetaTilde_sub_ThetaTilde, RBM.norm_mul_one_sub_lt_one, RBM.norm_one_sub_mul_le,
+    RBM.re_le_one_of_norm_le_one, RBM.normSq_one_sub_mul, RBM.le_norm_one_sub_mul,
+    RBM.norm_one_sub_mul_ge_zeta, RBM.norm_one_sub_mul_comparable, RBM.sqrt_le_two_mul_sqrt,
+    RBM.ellHat_le_two_mul, RBM.zeroMode_setup, RBM.norm_ThetaTilde_sub_zeroMode_le,
+    RBM.norm_ThetaTilde_sub_shift_le, RBM.norm_ThetaTilde_second_diff_le}
+  \leanok\uses{lem:Theta-rowsum, lem:Theta-decay-complex, lem:Theta-diff-complex}
+  For $\tilde S^{(B)}=(1-\zeta)S^{(B)}+(\zeta/L)J$: $(1-\xi\tilde S)^{-1}=\Theta_{\xi(1-\zeta)}+\alpha J$ with an
+  explicit scalar $\alpha$, so differences of entries agree with those of $\Theta_{\xi(1-\zeta)}$;
+  $|1-\xi|/2\le|1-\xi(1-\zeta)|\le2|1-\xi|$ when $\zeta\le\min(1/2,|1-\xi|)$; hence
+  (2.52)--(2.54) hold for $\tilde S$ up to the constant zero mode.
+\end{lemma}
+\begin{proof}\leanok
+  $J$ acts only on constants and $\Theta_\xi\mathbf 1=(1-\xi)^{-1}\mathbf 1$: Sherman--Morrison by hand.
+\end{proof}
+
 \begin{lemma}[Uniform differences of the long-edge propagator]\label{lem:long-diff}
   \lean{RBM.AA_mul_one_sub_rho_eq, RBM.abs_pow_sub_pow_le, RBM.Theta_sub_shift_eq_kern,
     RBM.Theta_sub_shift_eq, RBM.AA_mul_one_sub_rho_real, RBM.norm_Theta_sub_shift_le_uniform,

@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Loop.Index
+import RBM1D.Defs.Semicircle
 import RBM1D.Propagator.Deriv
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -108,6 +109,15 @@ theorem hasDerivAt_kTwo (hL : 3 ≤ L) (W : ℕ) [NeZero W] (m : Bool → ℂ) {
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
   field_simp
+
+/-- Example 2.15 with the paper's `m(σ)` at energy `|E| ≤ 2` (`RBM.mSigma`): since
+`|m^{(E)}| = 1`, the hypothesis `‖t m₁ m₂‖ < 1` is just `0 ≤ t < 1`. -/
+theorem hasDerivAt_kTwo_mSigma (hL : 3 ≤ L) (W : ℕ) [NeZero W] {E t : ℝ} (hE : |E| ≤ 2)
+    (ht0 : 0 ≤ t) (ht1 : t < 1) (σ₁ σ₂ : Bool) (a₁ a₂ : ZMod L) :
+    HasDerivAt (fun s => kTwo L W (mSigma E) s σ₁ σ₂ a₁ a₂)
+      ((W : ℂ) * ∑ a : ZMod L, ∑ b : ZMod L,
+        kTwo L W (mSigma E) t σ₁ σ₂ a₁ a * SB L a b * kTwo L W (mSigma E) t σ₁ σ₂ b a₂) t :=
+  hasDerivAt_kTwo L hL W (mSigma E) σ₁ σ₂ (norm_mul_mSigma_lt_one hE ht0 ht1 σ₁ σ₂) a₁ a₂
 
 /-- At `t = 0`, (2.57) is the initial value of Definition 2.12 for `n = 2`. -/
 theorem kTwo_zero (W : ℕ) (m : Bool → ℂ) (σ₁ σ₂ : Bool) (a₁ a₂ : ZMod L) :

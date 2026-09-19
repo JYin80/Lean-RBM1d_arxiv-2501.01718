@@ -358,3 +358,18 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
 | 两条 `example` | (2.58) 的 σ=(+,−)、(+,+) |
 
 等 T19 的 `m_sc`/`m^{(E)}` 落地后，把 `m` 实例化即可。
+
+### `RBM1D/Defs/Semicircle.lean` — Def 2.7 + Lemma 2.8 的代数部分（T19，Claude Code）
+
+| Lean | 内容 |
+|---|---|
+| `RBM.mE` / `mE_mul` / `mE_im_pos` / **`norm_mE`** / `eq_mE` | `m^{(E)}`：`m(m+E) = −1`，`Im > 0`，**`|m^{(E)}| = 1`**，唯一性 |
+| `RBM.mSigma` / `norm_mul_mSigma_lt_one` | (2.42) 的 `m(σ)`；`‖t m₁m₂‖ = t < 1`（T18 的假设由此满足） |
+| `RBM.msc` / `msc_mul` / `msc_im_pos` / **`norm_msc_lt_one`** | `m_sc`：`m(m+z) = −1`，`Im > 0`，`|m_sc| < 1` |
+| `RBM.zt` / `zt_im` | Def 2.7 `z_t^{(E)} = E + (1−t)m^{(E)}`、(2.35) |
+| `RBM.lemE` / `lemT` / **`mE_lemE`** | Lemma 2.8 的 `E`、`t`；关键一步 `m^{(E)} = m_sc/|m_sc|` |
+| `lemT_eq` / `lemT_pos` / `lemT_lt_one` / `abs_lemE_lt_two` | `t = m_sc²/(m^{(E)})² ∈ (0,1)`，`|E| < 2` |
+| **`msc_eq_sqrt_mul_mE`** / **`eq_inv_sqrt_mul_zt`** | **(2.38)**、**(2.37)** |
+
+`Loop/Primitive.lean` 新增 `hasDerivAt_kTwo_mSigma`：取 `m := mSigma E`，Example 2.15 对 `0 ≤ t < 1` 无条件成立。
+(2.40) 与 κ 相关的界推迟（文件末尾注释说明）。

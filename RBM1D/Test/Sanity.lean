@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Defs.Domination
 import RBM1D.Delocalization
 import RBM1D.Defs.Model
+import RBM1D.Defs.Semicircle
 import RBM1D.Loop.Index
 import RBM1D.Loop.Primitive
 import RBM1D.Propagator.Basic
@@ -82,3 +83,11 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.hasDerivAt_kTwo
 #print axioms RBM.kTwo_zero
 #print axioms RBM.hasDerivAt_kTwoLoop
+#print axioms RBM.norm_mE
+#print axioms RBM.eq_mE
+#print axioms RBM.norm_msc_lt_one
+#print axioms RBM.mE_lemE
+#print axioms RBM.lemT_eq
+#print axioms RBM.msc_eq_sqrt_mul_mE
+#print axioms RBM.eq_inv_sqrt_mul_zt
+#print axioms RBM.hasDerivAt_kTwo_mSigma

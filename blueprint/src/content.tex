@@ -49,6 +49,26 @@
   $a=\lfloor i/W\rfloor$; the remaining indicator is $\SB_{\lfloor i/W\rfloor\lfloor j/W\rfloor}$.
 \end{proof}
 
+\begin{lemma}[Semicircle law and the $z_t$ flow, Definition 2.7 and Lemma 2.8]\label{lem:2.8}
+  \lean{RBM.mE, RBM.mE_mul, RBM.norm_mE, RBM.eq_mE, RBM.msc, RBM.msc_mul, RBM.msc_im_pos,
+    RBM.norm_msc_lt_one, RBM.zt, RBM.zt_im, RBM.lemE, RBM.lemT, RBM.mE_lemE, RBM.lemT_eq,
+    RBM.lemT_pos, RBM.lemT_lt_one, RBM.abs_lemE_lt_two, RBM.msc_eq_sqrt_mul_mE,
+    RBM.eq_inv_sqrt_mul_zt}
+  \leanok
+  $m^{(E)}=(-E+i\sqrt{4-E^2})/2$ is the unique root of $m(m+E)=-1$ with $\operatorname{Im}m>0$,
+  and $|m^{(E)}|=1$.  For $\operatorname{Im}z>0$, $|m_{sc}(z)|<1$; with
+  $E=-2\operatorname{Re}m_{sc}/|m_{sc}|$ and $t=|m_{sc}|^2$ one has
+  $m^{(E)}=m_{sc}/|m_{sc}|$, $t=m_{sc}^2/(m^{(E)})^2\in(0,1)$, $|E|<2$,
+  $m_{sc}(z)=t^{1/2}m^{(E)}$ (2.38) and $z=t^{-1/2}z^{(E)}_t$ (2.37), where
+  $z^{(E)}_t=E+(1-t)m^{(E)}$.
+\end{lemma}
+\begin{proof}\leanok
+  The roots of $m^2+zm+1$ multiply to $1$, so their imaginary parts have opposite signs,
+  and they sum to $-z$.  $u=m_{sc}/|m_{sc}|$ satisfies $u(u+E)=-|u|^2=-1$; uniqueness gives
+  $u=m^{(E)}$, and (2.37) follows from $E+u=-1/u$.  The $\kappa$-dependent bounds (2.40)
+  are deferred to the stochastic layer.
+\end{proof}
+
 \begin{definition}[Deterministic domination, Definition 2.1 (ii)]\label{def:2.1-ii}
   \lean{RBM.UnifDetDom, RBM.DetDom, RBM.detDom_iff}\leanok
   For deterministic $N$-dependent quantities $f,g$ write $f\prec g$ if
@@ -328,12 +348,32 @@
 
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}
   \uses{def:loops}
-  \emph{Not yet formalized.}  Canonical partitions of the oriented $n$-gon are in
+  Canonical partitions of the oriented $n$-gon are in
   bijection with crossing-free subsets of $\mathbb{Z}_n^{\mathrm{off}}$.
+  \emph{Cited, not proved}: the planar geometry of Definition 3.1 is out of scope;
+  this lemma licenses Definition~\ref{def:TSP}.
 \end{lemma}
 
+\begin{definition}[$\mathcal{T}_{SP}$ via Lemma 3.2]\label{def:TSP}
+  \lean{RBM.IsDiag, RBM.diagonals, RBM.Crossing, RBM.CrossingFree, RBM.TSP}\leanok
+  \uses{lem:3.2}
+  Vertices $0,\dots,n-1$ (the paper's $1,\dots,n$ shifted).  A diagonal is $(i,j)$ with
+  $i<j$ not adjacent mod $n$; $(i,j)$ and $(k,l)$ cross if $i<k<j<l$ or $k<i<l<j$.
+  $\mathcal{T}_{SP}(n)$ is the set of crossing-free sets of diagonals.
+\end{definition}
+
+\begin{lemma}[Small polygons, Figure 6]\label{lem:TSP-small}
+  \lean{RBM.TSP_three, RBM.TSP_four, RBM.card_TSP_five, RBM.card_TSP_six}\leanok
+  \uses{def:TSP}
+  $\mathcal{T}_{SP}(3)=\{\emptyset\}$, $\mathcal{T}_{SP}(4)=\{\emptyset,\{(0,2)\},\{(1,3)\}\}$,
+  and $|\mathcal{T}_{SP}(5)|=11$, $|\mathcal{T}_{SP}(6)|=45$ (small Schr\"oder numbers).
+\end{lemma}
+\begin{proof}\leanok
+  By \texttt{decide}.
+\end{proof}
+
 \begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
-  \uses{lem:3.2, def:primitive, lem:Theta-deriv}
+  \uses{def:TSP, def:primitive, lem:Theta-deriv}
   \emph{Not yet formalized.}  Formalization strategy: take the tree sum as the
   \emph{definition}, prove it satisfies (2.48), and invoke Gr\"onwall uniqueness,
   rather than developing existence theory for the ODE.

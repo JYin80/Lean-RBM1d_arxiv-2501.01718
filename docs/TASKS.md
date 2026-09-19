@@ -640,3 +640,49 @@ K_{t,σ,(a₁,a₂,a₃)} = m₁m₂m₃ · W⁻² · Σ_b (Θ_{t m₁m₂})_{a�
 > 规则照 `CLAUDE.md`：不留 sorry、不发明 Mathlib 引理名、每条主定理跑 `#print axioms`、
 > 不用 `native_decide`、偏离论文或建模决定记进 `docs/paper-deltas.md`、只 `git add` 自己的文件名。
 > `Propagator/Decay.lean` 是 Cowork 侧在写的，不要碰。
+
+---
+
+# 永不停工规则（2026-09-19 起生效）
+
+**队列空了不算理由。** 如果表格里没有一条「空闲 + 可开工」的工单，**不要停下来等我补**，
+按下面的顺序自己找活，并在表格里补一行说明你在做什么：
+
+1. **先做 T8–T11**（一般 Fourier 机器，`Propagator/SymbolBound.lean`）。
+   它们从来没有被取消，只是排在第 3 节之后；队列一空，它们就是当前最高优先级。
+   T8 是入口：`|1 − ξŜ(p)| ≍ |1−ξ| + |p|²` 的双边界，只依赖已完成的 `Propagator/Symbol.lean`。
+2. **再看下面的储备工单 B1–B6**，从上往下挑第一条依赖已就绪的。
+3. **都不可做时做常规维护**（这几件永远有得做）：
+   * `leanblueprint checkdecls`：确认蓝图里每个 `\lean{}` 都解析到真实声明；
+     新证的定理补进 `blueprint/src/content.tex` 的相应节点。
+   * linter 清理（见 T24 的清单，别碰 `Propagator/Decay.lean`）。
+   * `docs/mathlib-api.md`：把这一轮新查到的 Mathlib 名字记进去，下次少走弯路。
+   * 给已有定理补数值回归（`Test/Numeric.lean`），特别是新加的组合定义。
+
+唯一该停下来问我的情形，`CLAUDE.md` 里写着：**改动范围、发布/删除内容、不可逆操作**。
+其余一律自行决定、自行动手、记档。
+
+---
+
+## 储备工单 B1–B6（依赖就绪即可开工，不必等我点名）
+
+* **B1 — Corollary 3.5：纯 loop 的界**（`Loop/Cor35.lean`）。论文 p.30。
+  σ = (+,…,+) 时 `|K_{t,σ,a}| ≤ C_n exp(−c_n max_{ij} ‖a_i − a_j‖)`。
+  依赖：树表示（T21）+ (2.52)。**(2.52) 的实 ξ 版本已经证完**
+  （`RBM.norm_Theta_apply_le_of_real`，`Propagator/Decay.lean`），而 σ 全 + 时
+  `ξ = t m² `——先确认这个 ξ 是否落在实轴上；不在的话这条要等复 ξ 版本，跳过做 B2。
+* **B2 — Lemma 3.4 的一般证明**：树和满足 (2.48)，再用 T22 的唯一性得到它就是 K。
+  依赖 T21 + T22。这是第 3 节的主定理，做之前先把 T23（n=3）做扎实。
+* **B3 — Lemma 3.6 的 Ward 恒等式**（`Loop/Ward.lean`）。论文的证法形式化友好：
+  两边之差满足齐次线性 ODE 且初值为零。依赖 B2。
+* **B4 — Def 2.9 的 G-loop 本身**（`Loop/GLoop.lean`）。
+  对**给定的确定性 Hermite 矩阵 H** 定义 `L_{t,σ,a} = ⟨Π_i G(σ_i) E_{a_i}⟩`，
+  证它的代数性质（转置、循环不变、与 `Eblk` 的关系、Ward 型恒等式 `G(z)−G(w) = (z−w)G(z)G(w)` 的 loop 版本）。
+  **不碰任何概率**：随机性只在期望和 Itô 里，定义与代数是确定性的。
+  这条与第 3 节完全正交，任何时候都能做。依赖：`Defs/Model.lean` + `Delocalization.lean`（均已完成）。
+* **B5 — `Test/Numeric.lean` 扩展**：把 `scripts/tree_ode_check.py` 的有限差分核对
+  搬一部分进 Lean（有理数、小 L、`norm_num`/`decide`），至少覆盖 n=3 的树和满足 (2.48)。
+  数值脚本能防笔误，但它不进公理审计；进了 Lean 才算数。
+* **B6 — Lemma 2.8 的定量部分 (2.40)**（`Defs/Semicircle.lean`）：
+  `t ≥ c_κ`、`c_κ Im z ≤ Im z_t ≤ c_κ^{-1} Im z`、`|E| ≤ 2 − cκ`。T19 里被推迟的那部分。
+  纯实分析，随机层才用得上，但现在做也不浪费。

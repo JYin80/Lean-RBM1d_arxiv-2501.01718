@@ -179,68 +179,122 @@ theorem update_cons_succ {n : ℕ} (x c : ZMod L) (r : LoopArg L n) (j : Fin n) 
       · have hk : k.succ ≠ j.succ := fun hh => h (by simpa using hh)
         simp [Function.update_apply, hk, h]
 
-/-- **p. 66**: `P . A = 0` implies `P . (Theta_{t,sigma} . A) = 0`.
+/-- The `i = 1` summand of (5.16), after summing out the slots `2..n`. -/
+theorem Psum_ThetaOp_zero_term {n : ℕ} (ξ : Fin (n + 1) → ℂ) (t : ℂ)
+    (A : LoopArg L (n + 1) → ℂ) (x : ZMod L) :
+    (∑ r : LoopArg L n, ∑ c : ZMod L,
+        (ξ 0 * Theta L (t * ξ 0) ((Fin.cons x r : LoopArg L (n + 1)) 0) c)
+          * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) 0 c))
+      = ∑ c : ZMod L, (ξ 0 * Theta L (t * ξ 0) x c) * Psum L A c := by
+  have hstep : ∀ (r : LoopArg L n) (c : ZMod L),
+      (ξ 0 * Theta L (t * ξ 0) ((Fin.cons x r : LoopArg L (n + 1)) 0) c)
+          * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) 0 c)
+        = (ξ 0 * Theta L (t * ξ 0) x c) * A (Fin.cons c r) := by
+    intro r c
+    rw [Fin.cons_zero, update_cons_zero L x c r]
+  rw [Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun c _ => hstep r c,
+    Finset.sum_comm]
+  refine Finset.sum_congr rfl fun c _ => ?_
+  rw [← Finset.mul_sum]
+  rfl
 
-The `i = 1` summand of (5.16) contributes `sum_c (xi_1 Theta)_{a_1 c} (P . A)_c`, and each
-`i >= 2` summand contributes `(xi_i / (1 - t xi_i)) (P . A)_{a_1}` after the re-indexing
-`sum_sum_update_swap` and the symmetry of `Theta^(B)`. -/
-theorem SumZero_ThetaOp (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
-    (ht : ∀ i, ‖t * ξ i‖ < 1) {A : LoopArg L (n + 1) → ℂ} (hA : SumZero L A) :
-    SumZero L (ThetaOp L ξ t A) := by
-  intro x
+/-- The `i >= 2` summands of (5.16), after summing out the slots `2..n`.  Each contributes
+the *same* multiple of `(P . A)_{a_1}`, because the row sums of `Theta^(B)` do not depend
+on the row -- this is the identity on p. 66. -/
+theorem Psum_ThetaOp_succ_term (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) (A : LoopArg L (n + 1) → ℂ) (x : ZMod L) (j : Fin n) :
+    (∑ r : LoopArg L n, ∑ c : ZMod L,
+        (ξ j.succ * Theta L (t * ξ j.succ) ((Fin.cons x r : LoopArg L (n + 1)) j.succ) c)
+          * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) j.succ c))
+      = (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * Psum L A x := by
+  have hsym : ∀ y c : ZMod L,
+      Theta L (t * ξ j.succ) c y = Theta L (t * ξ j.succ) y c := by
+    intro y c
+    have h := congrFun (congrFun (Theta_transpose L hL (ht j.succ)) y) c
+    simpa [Matrix.transpose_apply] using h
+  have hcol : ∀ y : ZMod L, ∑ c : ZMod L, ξ j.succ * Theta L (t * ξ j.succ) c y
+      = ξ j.succ * (1 - t * ξ j.succ)⁻¹ := by
+    intro y
+    rw [← Finset.mul_sum, Finset.sum_congr rfl fun c _ => hsym y c,
+      sum_Theta_row L hL (ht j.succ) y]
+  have hstep : ∀ (r : LoopArg L n) (c : ZMod L),
+      (ξ j.succ * Theta L (t * ξ j.succ) ((Fin.cons x r : LoopArg L (n + 1)) j.succ) c)
+          * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) j.succ c)
+        = (ξ j.succ * Theta L (t * ξ j.succ) (r j) c)
+            * A (Fin.cons x (Function.update r j c)) := by
+    intro r c
+    rw [Fin.cons_succ, update_cons_succ L x c r j]
+  rw [Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun c _ => hstep r c,
+    sum_sum_update_swap L j
+      (fun y c r => (ξ j.succ * Theta L (t * ξ j.succ) y c) * A (Fin.cons x r))]
+  calc ∑ r : LoopArg L n, ∑ c : ZMod L,
+        (ξ j.succ * Theta L (t * ξ j.succ) c (r j)) * A (Fin.cons x r)
+      = ∑ r : LoopArg L n, (∑ c : ZMod L, ξ j.succ * Theta L (t * ξ j.succ) c (r j))
+          * A (Fin.cons x r) :=
+        Finset.sum_congr rfl fun r _ => (Finset.sum_mul _ _ _).symm
+    _ = ∑ r : LoopArg L n, (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * A (Fin.cons x r) :=
+        Finset.sum_congr rfl fun r _ => by rw [hcol (r j)]
+    _ = (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * Psum L A x := by
+        rw [← Finset.mul_sum]
+        rfl
+
+/-- **p. 66**, sharp form: the action of the generator on the slot sums.  The first slot
+contributes a `Theta^(B)`-average of `P . A`, every other slot contributes the constant
+`xi_i / (1 - t xi_i)` times `P . A` at the same point. -/
+theorem Psum_ThetaOp_eq (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) (A : LoopArg L (n + 1) → ℂ) (x : ZMod L) :
+    Psum L (ThetaOp L ξ t A) x
+      = (∑ c : ZMod L, (ξ 0 * Theta L (t * ξ 0) x c) * Psum L A c)
+        + (∑ j : Fin n, ξ j.succ * (1 - t * ξ j.succ)⁻¹) * Psum L A x := by
   have hexp : ∀ r : LoopArg L n, ThetaOp L ξ t A (Fin.cons x r)
       = ∑ i : Fin (n + 1), ∑ c : ZMod L,
           (ξ i * Theta L (t * ξ i) ((Fin.cons x r : LoopArg L (n + 1)) i) c)
             * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) i c) :=
     fun r => rfl
-  rw [Psum, Finset.sum_congr rfl fun r _ => hexp r, Finset.sum_comm]
-  refine Finset.sum_eq_zero fun i _ => ?_
-  induction i using Fin.cases with
-  | zero =>
-      have hstep : ∀ (r : LoopArg L n) (c : ZMod L),
-          (ξ 0 * Theta L (t * ξ 0) ((Fin.cons x r : LoopArg L (n + 1)) 0) c)
-              * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) 0 c)
-            = (ξ 0 * Theta L (t * ξ 0) x c) * A (Fin.cons c r) := by
-        intro r c
-        rw [Fin.cons_zero, update_cons_zero L x c r]
-      rw [Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun c _ => hstep r c,
-        Finset.sum_comm]
-      refine Finset.sum_eq_zero fun c _ => ?_
-      rw [← Finset.mul_sum]
-      have hP : ∑ r : LoopArg L n, A (Fin.cons c r) = Psum L A c := rfl
-      rw [hP, hA c, mul_zero]
-  | succ j =>
-      have hsym : ∀ y c : ZMod L,
-          Theta L (t * ξ j.succ) c y = Theta L (t * ξ j.succ) y c := by
-        intro y c
-        have h := congrFun (congrFun (Theta_transpose L hL (ht j.succ)) y) c
-        simpa [Matrix.transpose_apply] using h
-      have hcol : ∀ y : ZMod L, ∑ c : ZMod L, ξ j.succ * Theta L (t * ξ j.succ) c y
-          = ξ j.succ * (1 - t * ξ j.succ)⁻¹ := by
-        intro y
-        rw [← Finset.mul_sum, Finset.sum_congr rfl fun c _ => hsym y c,
-          sum_Theta_row L hL (ht j.succ) y]
-      have hstep : ∀ (r : LoopArg L n) (c : ZMod L),
-          (ξ j.succ * Theta L (t * ξ j.succ) ((Fin.cons x r : LoopArg L (n + 1)) j.succ) c)
-              * A (Function.update (Fin.cons x r : LoopArg L (n + 1)) j.succ c)
-            = (ξ j.succ * Theta L (t * ξ j.succ) (r j) c)
-                * A (Fin.cons x (Function.update r j c)) := by
-        intro r c
-        rw [Fin.cons_succ, update_cons_succ L x c r j]
-      rw [Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun c _ => hstep r c,
-        sum_sum_update_swap L j
-          (fun y c r => (ξ j.succ * Theta L (t * ξ j.succ) y c) * A (Fin.cons x r))]
-      calc ∑ r : LoopArg L n, ∑ c : ZMod L,
-            (ξ j.succ * Theta L (t * ξ j.succ) c (r j)) * A (Fin.cons x r)
-          = ∑ r : LoopArg L n, (∑ c : ZMod L, ξ j.succ * Theta L (t * ξ j.succ) c (r j))
-              * A (Fin.cons x r) :=
-            Finset.sum_congr rfl fun r _ => (Finset.sum_mul _ _ _).symm
-        _ = ∑ r : LoopArg L n, (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * A (Fin.cons x r) :=
-            Finset.sum_congr rfl fun r _ => by rw [hcol (r j)]
-        _ = (ξ j.succ * (1 - t * ξ j.succ)⁻¹) * Psum L A x := by
-            rw [← Finset.mul_sum]
-            rfl
-        _ = 0 := by rw [hA x, mul_zero]
+  rw [Psum, Finset.sum_congr rfl fun r _ => hexp r, Finset.sum_comm, Fin.sum_univ_succ,
+    Psum_ThetaOp_zero_term L ξ t A x,
+    Finset.sum_congr rfl fun j _ => Psum_ThetaOp_succ_term L hL ht A x j,
+    ← Finset.sum_mul]
+
+/-- **p. 66**: `P . A = 0` implies `P . (Theta_{t,sigma} . A) = 0`. -/
+theorem SumZero_ThetaOp (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) {A : LoopArg L (n + 1) → ℂ} (hA : SumZero L A) :
+    SumZero L (ThetaOp L ξ t A) := by
+  intro x
+  rw [Psum_ThetaOp_eq L hL ht A x, hA x, mul_zero,
+    Finset.sum_congr rfl fun c _ => by rw [hA c, mul_zero]]
+  simp
+
+/-- The deterministic content of **(5.99)**: the slot sums of `Theta_{t,sigma} . A` are
+controlled by the slot sums of `A`, with an explicit constant. -/
+theorem norm_Psum_ThetaOp_le (hL : 3 ≤ L) {n : ℕ} {ξ : Fin (n + 1) → ℂ} {t : ℂ}
+    (ht : ∀ i, ‖t * ξ i‖ < 1) (A : LoopArg L (n + 1) → ℂ) {M : ℝ} (hM0 : 0 ≤ M)
+    (hM : ∀ y, ‖Psum L A y‖ ≤ M) (x : ZMod L) :
+    ‖Psum L (ThetaOp L ξ t A) x‖
+      ≤ (‖ξ 0‖ * (1 - ‖t * ξ 0‖)⁻¹ + ∑ j : Fin n, ‖ξ j.succ‖ * ‖(1 - t * ξ j.succ)⁻¹‖) * M := by
+  have h0 : ‖∑ c : ZMod L, (ξ 0 * Theta L (t * ξ 0) x c) * Psum L A c‖
+      ≤ (‖ξ 0‖ * (1 - ‖t * ξ 0‖)⁻¹) * M := by
+    calc ‖∑ c : ZMod L, (ξ 0 * Theta L (t * ξ 0) x c) * Psum L A c‖
+        ≤ ∑ c : ZMod L, ‖(ξ 0 * Theta L (t * ξ 0) x c) * Psum L A c‖ := norm_sum_le _ _
+      _ ≤ ∑ c : ZMod L, (‖ξ 0‖ * ‖Theta L (t * ξ 0) x c‖) * M := by
+          refine Finset.sum_le_sum fun c _ => ?_
+          rw [norm_mul, norm_mul]
+          exact mul_le_mul_of_nonneg_left (hM c) (by positivity)
+      _ = (‖ξ 0‖ * ∑ c : ZMod L, ‖Theta L (t * ξ 0) x c‖) * M := by
+          rw [Finset.mul_sum, ← Finset.sum_mul]
+      _ ≤ (‖ξ 0‖ * (1 - ‖t * ξ 0‖)⁻¹) * M := by
+          refine mul_le_mul_of_nonneg_right ?_ hM0
+          exact mul_le_mul_of_nonneg_left (sum_norm_Theta_row_le L hL (ht 0) x) (norm_nonneg _)
+  have h1 : ‖(∑ j : Fin n, ξ j.succ * (1 - t * ξ j.succ)⁻¹) * Psum L A x‖
+      ≤ (∑ j : Fin n, ‖ξ j.succ‖ * ‖(1 - t * ξ j.succ)⁻¹‖) * M := by
+    rw [norm_mul]
+    refine mul_le_mul ?_ (hM x) (norm_nonneg _) (Finset.sum_nonneg fun _ _ => by positivity)
+    calc ‖∑ j : Fin n, ξ j.succ * (1 - t * ξ j.succ)⁻¹‖
+        ≤ ∑ j : Fin n, ‖ξ j.succ * (1 - t * ξ j.succ)⁻¹‖ := norm_sum_le _ _
+      _ = ∑ j : Fin n, ‖ξ j.succ‖ * ‖(1 - t * ξ j.succ)⁻¹‖ := by
+          exact Finset.sum_congr rfl fun j _ => norm_mul _ _
+  rw [Psum_ThetaOp_eq L hL ht A x, add_mul]
+  exact (norm_add_le _ _).trans (add_le_add h0 h1)
 
 /-- `P` is compatible with subtraction. -/
 theorem Psum_sub {n : ℕ} (A B : LoopArg L (n + 1) → ℂ) :

@@ -643,6 +643,19 @@
   $\eta|G_{pq}|^2 \le \operatorname{Im}G_{qq}$.
 \end{definition}
 
+\begin{definition}[$G$-chains, Appendix A]\label{def:gchain}
+  \lean{RBM.gchain, RBM.gchain_append_one, RBM.gchain_conjTranspose,
+    RBM.gchain_mul_Eblk, RBM.trace_gchain_mul_Eblk}
+  \leanok\uses{def:gloop}
+  $C_{\boldsymbol\tau,\mathbf a} = G(\tau_1)E_{a_1}G(\tau_2)\cdots E_{a_{n-1}}G(\tau_n)$
+  (Definition A.1).  Two algebraic facts, both deterministic:
+  $\langle C_{\boldsymbol\tau,\mathbf a}E_b\rangle = \mathcal L_{\boldsymbol\tau,\mathbf a b}$
+  --- a chain closed by one $E$ is a loop --- and $C^\dagger$ is again a chain, with the
+  charges reversed and flipped.  \emph{A chain conjugates to a chain}; the same computation
+  for a loop produces a cyclic shift as well, which is why the loop version is the awkward
+  statement.  The paper notes these results are not used in the main theorem.
+\end{definition}
+
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}
   \uses{def:loops}
   Canonical partitions of the oriented $n$-gon are in

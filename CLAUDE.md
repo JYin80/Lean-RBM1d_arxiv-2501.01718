@@ -129,6 +129,12 @@ Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry�
 我就是漏了这一步，把一段根本不编译的代码提交了，两分钟后才发现。
 **提交前跑一次 `ls -l --time-style=+%H:%M:%S <你的.lean> <对应的.olean> build.log`。**
 
+**补充（后来遇到的假阴性）**：olean 比 .lean 旧**不一定**说明没编译过——
+文件被 `touch`（内容不变）也会刷新 mtime，而 lake 按内容哈希判断，会直接
+「Replayed」而不重建 olean。这时候看 build.log 里那一行
+`Replayed RBM1D.Xxx` 以及它后面 warning 的**行号是否对得上你现在的文件**，
+再加上末尾的 `errors: 0`，才是准的。
+
 ## 造轮子之前先查
 
 证任何**通用工具引理**之前，先在仓库里搜一遍：

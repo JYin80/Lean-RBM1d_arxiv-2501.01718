@@ -28,6 +28,28 @@
   when $L\ge 3$.
 \end{proof}
 
+\begin{definition}[Deterministic domination, Definition 2.1 (ii)]\label{def:2.1-ii}
+  \lean{RBM.UnifDetDom, RBM.DetDom, RBM.detDom_iff}\leanok
+  For deterministic $N$-dependent quantities $f,g$ write $f\prec g$ if
+  $f\le N^\tau g$ for every $\tau>0$ and all sufficiently large $N$.  The Lean
+  definition is uniform in a possibly $N$-dependent parameter $u\in U(N)$, as in
+  part (i) of the definition.
+\end{definition}
+
+\begin{lemma}[Closure properties of $\prec$]\label{lem:2.1-ii-closure}
+  \lean{RBM.UnifDetDom.refl, RBM.UnifDetDom.trans, RBM.UnifDetDom.add,
+    RBM.UnifDetDom.mul, RBM.UnifDetDom.const_mul_left, RBM.UnifDetDom.const_mul_right,
+    RBM.UnifDetDom.of_eventually_le_const_mul}
+  \leanok\uses{def:2.1-ii}
+  On non-negative quantities $\prec$ is reflexive and transitive, closed under sums
+  and products, and absorbs positive constant factors on either side; $f\le Cg$
+  implies $f\prec g$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:2.1-ii}
+  Split $N^\tau = N^{\tau/2}N^{\tau/2}$ for transitivity and products; for
+  constants use $N^\tau\to\infty$.
+\end{proof}
+
 \chapter{The propagator}
 
 \begin{definition}[Propagator, Definition 2.13]\label{def:Theta}

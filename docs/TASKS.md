@@ -11,7 +11,7 @@
 | T3 | 组装成论文 (2.52) 的形式 | `Propagator/Decay.lean` | **Cowork** | 待 T1,T2 |
 | T4 | (2.53)(2.54) 差分估计 | `Propagator/Decay.lean` | **Cowork** | 待 T3 |
 | T5 | 附录 B (B.1) 的 Fourier 表示 | `Propagator/Symbol.lean`（新建） | **Claude Code** | 进行中 |
-| T6 | Def 2.1(ii) 的确定性 ≺ | `Defs/Domination.lean`（新建） | **Claude Code** | 进行中 |
+| T6 | Def 2.1(ii) 的确定性 ≺ | `Defs/Domination.lean` | Claude Code | **完成** |
 | T7 | 删掉 `RBM1D/Probe.lean` | — | 空闲 | 等 Phase 1 收尾 |
 
 ---

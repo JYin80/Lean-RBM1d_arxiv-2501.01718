@@ -3,6 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
+import RBM1D.Defs.Domination
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
@@ -40,3 +41,8 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.theta_eq_circulant
 #print axioms RBM.theta_apply_closed_form
 #print axioms RBM.norm_theta_apply_le_rho_pow
+#print axioms RBM.UnifDetDom.trans
+#print axioms RBM.UnifDetDom.mul
+#print axioms RBM.UnifDetDom.const_mul_right
+#print axioms RBM.DetDom.add_left
+#print axioms RBM.DetDom.smul_left

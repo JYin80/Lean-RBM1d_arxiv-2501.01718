@@ -117,14 +117,15 @@ theorem norm_mul_mul_sub_le {X X' Y Y' s : ℂ} {R d : ℝ} (hs : ‖s‖ ≤ 1)
   rw [e]
   linarith [norm_add_le ((X - X') * s * Y) (X' * s * (Y - Y'))]
 
-/-- **One step of the induction.**  Two solutions of (2.48) on `[0, T₀]` whose `2`-loops
-are bounded by `R`, which agree on all loops of length `< n` and at `t = 0` on loops of
-length `n`, agree on loops of length `n`. -/
+/-- **One step of the induction.**  Two functions satisfying (2.48) on loops of length `n`
+on `[0, T₀]`, whose `2`-loops are bounded by `R`, which agree on all loops of length `< n` and
+at `t = 0` on loops of length `n`, agree on loops of length `n`.  Only the equation at length
+`n` is used, so this also compares a solution with a candidate known only up to length `n`. -/
 theorem eq_on_level (hL : 3 ≤ L) (W : ℕ) (K K' : ℝ → LoopIdx (ZMod L) → ℂ) (T₀ R : ℝ)
-    (n : ℕ) (hn : 2 ≤ n) (hR0 : 0 ≤ R)
-    (hK : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → 2 ≤ I.length →
+    (n : ℕ) (hR0 : 0 ≤ R)
+    (hK : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = n →
       HasDerivAt (fun s => K s I) (primRhs L W (K t) I) t)
-    (hK' : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → 2 ≤ I.length →
+    (hK' : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = n →
       HasDerivAt (fun s => K' s I) (primRhs L W (K' t) I) t)
     (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 →
       ‖K t I‖ ≤ R ∧ ‖K' t I‖ ≤ R)
@@ -137,8 +138,7 @@ theorem eq_on_level (hL : 3 ≤ L) (W : ℕ) (K K' : ℝ → LoopIdx (ZMod L) �
     primRhs L W (K t) (p.toLoop L) - primRhs L W (K' t) (p.toLoop L)
   have hD : ∀ t ∈ Set.Icc 0 T₀, HasDerivAt D (D' t) t := fun t ht =>
     hasDerivAt_pi.2 fun p =>
-      (hK t ht _ (p.wf L) ((p.length L).symm ▸ hn)).sub
-        (hK' t ht _ (p.wf L) ((p.length L).symm ▸ hn))
+      (hK t ht _ (p.wf L) (p.length L)).sub (hK' t ht _ (p.wf L) (p.length L))
   let C : ℝ := W * ∑ k ∈ Icc 1 n, ∑ l ∈ Ioc k n, ∑ _a : ZMod L, ∑ _b : ZMod L, 2 * R
   have hC : 0 ≤ C := by
     refine mul_nonneg (Nat.cast_nonneg W) (Finset.sum_nonneg fun _ _ => Finset.sum_nonneg
@@ -238,8 +238,9 @@ theorem isPrimitive_unique (hL : 3 ≤ L) (W : ℕ) (m : Bool → ℂ) {T : Set 
     | _ n ih =>
       intro t ht I hI h2 hIn
       have hn : 2 ≤ n := hIn ▸ h2
-      refine eq_on_level L hL W K K' T₀ R n hn hR0 (fun s hs => hK.1 s (hT hs))
-        (fun s hs => hK'.1 s (hT hs)) hR ?_ ?_ t ht I hI hIn
+      refine eq_on_level L hL W K K' T₀ R n hR0
+        (fun s hs J hJ hJn => hK.1 s (hT hs) J hJ (hJn ▸ hn))
+        (fun s hs J hJ hJn => hK'.1 s (hT hs) J hJ (hJn ▸ hn)) hR ?_ ?_ t ht I hI hIn
       · intro s hs J hJ hJ2 hJn
         exact ih _ hJn s hs J hJ hJ2 rfl
       · intro J hJ hJn

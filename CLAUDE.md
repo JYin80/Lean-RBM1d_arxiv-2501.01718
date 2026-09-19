@@ -28,10 +28,11 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 
 1. **不留 `sorry`。** 证不出来就停下说「卡在 X」，不要 sorry 占位然后继续往下写。
 2. **不许发明 Mathlib 引理名。** 先 `grep -rn "circulant_mul" .lake/packages/mathlib/Mathlib/`，
-   或在 `RBM1D/Probe.lean` 里加 `#check @foo` 编译看签名。`exact?` / `apply?` / `rw?` / `aesop` 鼓励用。
-   （`Probe.lean` 是临时 API 侦察本，Phase 1 收尾时删掉。）
+   或在 scratch 文件里 `#check @foo` 编译看签名。`exact?` / `apply?` / `rw?` / `aesop` 鼓励用。
+   已核实的 API 记在 `docs/mathlib-api.md`（原 `Probe.lean` 已删），先查它。
 3. **公理审计。** 每条主定理证完跑 `#print axioms RBM.xxx`，只允许出现
    `propext` / `Classical.choice` / `Quot.sound`。出现 `sorryAx` 就是没做完。
+   `RBM1D.lean` 末尾的 `#assert_rbm_axioms`（`Test/Axioms.lean`）对整个 `RBM` 命名空间做硬性检查，违规即编译失败。
 4. **陈述逐字对应论文。** 不得不加假设（如 `3 ≤ L`）或换陈述形式，必须写进 `docs/paper-deltas.md`。
 5. **小步提交。** 一次只动一条引理 / 一个文件；绿了就 `git commit`，不要攒一大坨再一起编译。
 6. **不碰随机层**（Itô、Dyson Brownian motion、loop hierarchy、universality）。

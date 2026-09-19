@@ -46,7 +46,7 @@
 | T37 | Lemma 3.11：`K^(π)` 的界 (3.45)、`K` 的界 (3.46)（T34 落地后解锁） | `Propagator/LongDiff.lean`、`Loop/KBound.lean`（新建） | Claude Code | 进行中 |
 | T38 | 下沉共用求和工具到 `Defs/Sums.lean`，消掉两处重复证明 | `Defs/Sums.lean` | Claude Code #2 + Cowork | **完成**（`Decay.lean` 那几条也已下沉） |
 | T39 | 附录 A 的确定性部分：G-chain 的定义与代数（Def A.1、chain↔loop） | `Loop/Chain.lean` | **Cowork** | **完成** |
-| T40 | Lemma 4.2：预解式的 minor 公式 (4.7)(4.8)(4.9)（Schur 补，纯线性代数） | `Green/Minor.lean`（新建） | 待认领 | 未开工 |
+| T40 | Lemma 4.2：预解式的 minor 公式 (4.7)(4.8)(4.9)（Schur 补，纯线性代数） | `Green/Minor.lean`（新建） | **Cowork** | 进行中 |
 | T41 | Def 2.1 (i)(iii)(iv)：概率版 `≺`（overwhelming probability、一致版） | `Defs/StochDom.lean`（新建） | 待认领 | 未开工 |
 
 ---

@@ -370,7 +370,7 @@ theorem Psum₁_Qop₂ {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) �
   show (∑ r : LoopArg L n, Qop L t (fun b' => A (Fin.cons x r) b') b)
       = (∑ r : LoopArg L n, A (Fin.cons x r) b)
         - (∑ r : LoopArg L n, Psum L (fun b' => A (Fin.cons x r) b') (b 0)) * vartheta L t b
-  rw [← Finset.sum_mul, ← Finset.sum_sub_distrib]
+  rw [Finset.sum_mul, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun r _ => rfl
 
 theorem Psum₂_Qop₁ {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) → ℂ)
@@ -380,7 +380,7 @@ theorem Psum₂_Qop₁ {t : ℂ} (A : LoopArg L (n + 1) → LoopArg L (m + 1) �
   show (∑ s : LoopArg L m, Qop L t (fun a' => A a' (Fin.cons y s)) a)
       = (∑ s : LoopArg L m, A a (Fin.cons y s))
         - (∑ s : LoopArg L m, Psum₁ L A (a 0) (Fin.cons y s)) * vartheta L t a
-  rw [← Finset.sum_mul, ← Finset.sum_sub_distrib]
+  rw [Finset.sum_mul, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun s _ => rfl
 
 /-- **(5.104)**, first form: `Q (x) Q = I (x) I - (vartheta P) (x) I - I (x) (vartheta P)

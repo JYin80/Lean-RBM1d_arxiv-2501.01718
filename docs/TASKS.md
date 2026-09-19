@@ -96,8 +96,19 @@ def DetDom (ξ ζ : ℕ → ℝ) : Prop := ∀ τ > 0, ∀ᶠ N in Filter.atTop,
    `blueprint/src/content.tex`、`CLAUDE.md`）改动要小、要立刻提交，不要长时间持有。
 2. **git index.lock 争用** —— 两边同时 `git add`/`commit` 会撞。撞到就等几秒重试；
    若残留 `.git/index.lock` 且确认没有别的 git 在跑，删掉它即可。
-3. **`build.log` 是共用的** —— `watch.sh` 全量编译，两边的报错都会写进同一个文件。
+3. **绝不用 `git add -A`** —— 它会把对方正在写的文件暂存进你的提交。
+   **只按文件名 `git add` 自己的那几个。**
+4. **`build.log` 是共用的** —— `watch.sh` 全量编译，两边的报错都会写进同一个文件。
    读日志时按文件名过滤自己那部分，别把对方进行中的报错当成自己的。
 
 `watch.sh` 只要开着，任何一边改动都会触发重编，这对双方都有用。
 单文件快速检查用 `lake env lean RBM1D/Propagator/Xxx.lean`，它不抢 lake 的构建锁。
+
+### 核实过的事实（2026-09-19）
+
+`git worktree list` 只列出一个工作树；`git rev-list --count origin/main..HEAD` 与反向都是 0。
+所以确实是**一个共享工作树**，没有第二份克隆。
+
+若 `git pull --rebase` 看起来"带回"了对方的 commit：那是 rebase 重放**本地**提交时
+git 列出的它们，不是从远端取回的新东西。同一个树里拉不回自己已有的提交。
+这条无害，照做也行。

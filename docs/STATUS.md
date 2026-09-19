@@ -1084,3 +1084,14 @@ T53（Step 3）现已解锁。
 (A.18) `gchainMinorTail_apply_eq`、望远镜展开 `gchainMinor_apply_expand`/`gchainMinorTail_apply_expand`、(A.24) `norm_gchainMinorTail_sub_gchain_le_A24`、
 (A.26)+(A.27) ⟹ (A.13) `norm_gchainMinor_sub_gchain_diag_le_trichotomy`、(A.15) `quad_Eblk_apply_self_split`、梯子 `XiDiag_add_le`、`xi_trichotomy`。
 `1/G_ii = O(1)` 与 [39] Lemma 3.3 为显式假设。未做：(A.25) 的界形式、(A.20) 最后一步。依赖 `Green/Minor.lean`（见上方 ⚠）。paper-deltas #34。
+
+### `RBM1D/Hierarchy/KernelDecay.lean` — Lemma 7.2、7.3（T51，Claude Code 并行 agent）
+
+`FastDecay`（(7.13)）、`SumZeroAt`（(7.15)）；**`norm_Uker_fastDecay_le`**（(7.14)）、`norm_Uker_fastDecay_le_short`/`_of_eq`（(7.16) Case 1）、
+`norm_Uker_fastDecay_le_sumZero`/`_sigma`（(7.16) Case 2，(7.24)）；**`norm_Uker_tail_le`**/`_ellStar`/`_sigma`（(7.2)）。显式常数（`K` 代 `W^τ`、`δ` 代 `W^{-D}`）。
+T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-deltas #35。
+
+### `RBM1D/Hierarchy/Step45.lean` — Steps 4、5（T55，Claude Code 并行 agent）
+
+`Eq5125`（(5.125)，界传递形式）、`eq5125_of_lemma514`、**`xiLK_le_one`**（对 n 归纳，Ξ^{(L−K)} ≺ 1）、**`flow_sharpLmK`**（(2.78)，形状同 `Steps.sharpLmK`）；
+`Eq548`/`FlowEq548`（(5.48)）、`decay_of_split`、**`flow_sharpDecay`**（(2.79)，形状同 `Steps.sharpDecay`）、`flow_steps45`。paper-deltas #36。

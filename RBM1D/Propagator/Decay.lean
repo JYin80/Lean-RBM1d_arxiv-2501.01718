@@ -836,4 +836,124 @@ theorem norm_Theta_sub_shift_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t 
 
 end Differences2
 
+section SecondDiff
+
+variable (L : ℕ) [NeZero L] {ξ : ℂ}
+
+/-- The wrap-around second difference at `d = 0`.  Here the kernel has a *cusp*
+(`ρ^d + ρ^{L-d}` is `|d|`-shaped), so only **one** factor `1 - ρ` comes out, not
+two.  This is why (2.54) is stated with `1/(‖x-y‖+1)`, which is `1` at `x = y`. -/
+theorem kern_wrap_second (m : ℕ) (hL : L = m + 1) :
+    2 * kern L ξ 0 - kern L ξ m - kern L ξ 1
+      = 2 * (AA L ξ * (1 - rho ξ) * (1 - rho ξ ^ m)) := by
+  subst hL
+  have e1 : m + 1 - 0 = m + 1 := by omega
+  have e2 : m + 1 - m = 1 := by omega
+  have e3 : m + 1 - 1 = m := by omega
+  unfold kern
+  rw [e1, e2, e3]
+  ring
+
+/-- Off the diagonal, the second lattice difference costs two factors `1 - ρ`. -/
+theorem norm_Theta_second_diff_le_two_mul (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L ξ x y - Theta L ξ x (y + 1) - Theta L ξ x (y - 1)‖
+      ≤ 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ := by
+  have hr1 : ‖rho ξ‖ ≤ 1 := (norm_rho_lt_one hξ0 hξ).le
+  have hr0 : (0 : ℝ) ≤ ‖rho ξ‖ := norm_nonneg _
+  have hbound : ∀ m j : ℕ, ‖AA L ξ * (1 - rho ξ) ^ 2 * (rho ξ ^ m + rho ξ ^ j)‖
+      ≤ 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ := by
+    intro m j
+    have h1 : ‖rho ξ ^ m + rho ξ ^ j‖ ≤ 2 := by
+      calc ‖rho ξ ^ m + rho ξ ^ j‖ ≤ ‖rho ξ ^ m‖ + ‖rho ξ ^ j‖ := norm_add_le _ _
+        _ = ‖rho ξ‖ ^ m + ‖rho ξ‖ ^ j := by rw [norm_pow, norm_pow]
+        _ ≤ 1 + 1 := add_le_add (pow_le_one₀ hr0 hr1) (pow_le_one₀ hr0 hr1)
+        _ = 2 := by norm_num
+    rw [norm_mul]
+    calc ‖AA L ξ * (1 - rho ξ) ^ 2‖ * ‖rho ξ ^ m + rho ξ ^ j‖
+        ≤ ‖AA L ξ * (1 - rho ξ) ^ 2‖ * 2 := mul_le_mul_of_nonneg_left h1 (norm_nonneg _)
+      _ = 2 * ‖AA L ξ * (1 - rho ξ) ^ 2‖ := by ring
+  have hd0 : (x - y).val ≠ 0 := by
+    intro h
+    exact hxy (sub_eq_zero.mp ((ZMod.val_eq_zero _).mp h))
+  have hpos : 0 < (x - y).val := Nat.pos_of_ne_zero hd0
+  have hlt : (x - y).val < L := ZMod.val_lt _
+  rw [Theta_apply_eq_kern L hL hξ0 hξ x y, Theta_apply_eq_kern L hL hξ0 hξ x (y + 1),
+    Theta_apply_eq_kern L hL hξ0 hξ x (y - 1),
+    show x - (y + 1) = (x - y) - 1 from by ring,
+    show x - (y - 1) = (x - y) + 1 from by ring,
+    val_sub_one_of_pos L hL hpos]
+  by_cases hcase : (x - y).val + 1 = L
+  · -- `d = L - 1`: the right neighbour wraps to `0`, i.e. to `L`
+    rw [val_add_one_of_top L hL hcase, kern_zero_eq_kern_L]
+    have h := kern_second_diff (L := L) (ξ := ξ) ((x - y).val - 1) 0 (by omega)
+    have e1 : (x - y).val - 1 + 2 = L := by omega
+    have e2 : (x - y).val - 1 + 1 = (x - y).val := by omega
+    rw [e1, e2] at h
+    have hrw : 2 * kern L ξ ((x - y).val) - kern L ξ ((x - y).val - 1) - kern L ξ L
+        = -(AA L ξ * (1 - rho ξ) ^ 2 * (rho ξ ^ ((x - y).val - 1) + rho ξ ^ 0)) := by
+      linear_combination -h
+    rw [hrw, norm_neg]
+    exact hbound _ _
+  · -- interior
+    have hcase' : (x - y).val + 1 < L := by omega
+    rw [val_add_one_of_lt L hL hcase']
+    have h := kern_second_diff (L := L) (ξ := ξ) ((x - y).val - 1) (L - (x - y).val - 1)
+      (by omega)
+    have e1 : (x - y).val - 1 + 2 = (x - y).val + 1 := by omega
+    have e2 : (x - y).val - 1 + 1 = (x - y).val := by omega
+    rw [e1, e2] at h
+    have hrw : 2 * kern L ξ ((x - y).val) - kern L ξ ((x - y).val - 1)
+          - kern L ξ ((x - y).val + 1)
+        = -(AA L ξ * (1 - rho ξ) ^ 2
+            * (rho ξ ^ ((x - y).val - 1) + rho ξ ^ (L - (x - y).val - 1))) := by
+      linear_combination -h
+    rw [hrw, norm_neg]
+    exact hbound _ _
+
+/-- On the diagonal only one factor `1 - ρ` is available (the cusp). -/
+theorem norm_Theta_second_diff_diag_le (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) (x : ZMod L) :
+    ‖2 * Theta L ξ x x - Theta L ξ x (x + 1) - Theta L ξ x (x - 1)‖
+      ≤ 4 * ‖AA L ξ * (1 - rho ξ)‖ := by
+  have hr1 : ‖rho ξ‖ ≤ 1 := (norm_rho_lt_one hξ0 hξ).le
+  have hr0 : (0 : ℝ) ≤ ‖rho ξ‖ := norm_nonneg _
+  have hval0 : (x - x).val = 0 := by rw [sub_self]; simp
+  have e1 : (x - (x + 1)).val = L - 1 := by
+    rw [show x - (x + 1) = (-1 : ZMod L) from by ring, val_neg_one_eq L hL]
+  have e2 : (x - (x - 1)).val = 1 := by
+    rw [show x - (x - 1) = (1 : ZMod L) from by ring, val_one_eq L hL]
+  rw [Theta_apply_eq_kern L hL hξ0 hξ x x, Theta_apply_eq_kern L hL hξ0 hξ x (x + 1),
+    Theta_apply_eq_kern L hL hξ0 hξ x (x - 1), hval0, e1, e2,
+    kern_wrap_second L (L - 1) (by omega)]
+  have h1 : ‖1 - rho ξ ^ (L - 1)‖ ≤ 2 := by
+    calc ‖1 - rho ξ ^ (L - 1)‖ ≤ ‖(1 : ℂ)‖ + ‖rho ξ ^ (L - 1)‖ := norm_sub_le _ _
+      _ = 1 + ‖rho ξ‖ ^ (L - 1) := by rw [norm_one, norm_pow]
+      _ ≤ 1 + 1 := by gcongr; exact pow_le_one₀ hr0 hr1
+      _ = 2 := by norm_num
+  have hn2 : ‖(2 : ℂ)‖ = 2 := by norm_num
+  rw [norm_mul, norm_mul, hn2]
+  calc 2 * (‖AA L ξ * (1 - rho ξ)‖ * ‖1 - rho ξ ^ (L - 1)‖)
+      ≤ 2 * (‖AA L ξ * (1 - rho ξ)‖ * 2) := by
+        gcongr
+    _ = 4 * ‖AA L ξ * (1 - rho ξ)‖ := by ring
+
+/-- **Equation (2.54), for real `ξ = t ∈ (0,1)`, off the diagonal.**
+`|2Θ_{x,y} - Θ_{x,y+1} - Θ_{x,y-1}| ≤ 24 / ℓ̂(t)`: the factor `(1-t)` of the
+prefactor is cancelled exactly by the two lattice differences. -/
+theorem norm_Theta_second_diff_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖
+      ≤ 24 / ellHat L (t : ℂ) := by
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast ne_of_gt ht0
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have h1 := norm_Theta_second_diff_le_two_mul L hL htne hnorm hxy
+  have h2 := norm_AA_mul_one_sub_rho_sq_le (L := L) ht0 ht1 hL
+  calc ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖
+      ≤ 2 * ‖AA L (t : ℂ) * (1 - rho (t : ℂ)) ^ 2‖ := h1
+    _ ≤ 2 * (12 / ellHat L (t : ℂ)) := by linarith
+    _ = 24 / ellHat L (t : ℂ) := by ring
+
+end SecondDiff
+
 end RBM

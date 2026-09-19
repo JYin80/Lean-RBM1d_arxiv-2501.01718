@@ -30,6 +30,7 @@ import RBM1D.Loop.Cor35
 import RBM1D.Loop.Layer
 import RBM1D.Loop.SumZero
 import RBM1D.Loop.KBound
+import RBM1D.Loop.Continuity
 import RBM1D.Flow.Initial
 import RBM1D.Flow.Scales
 import RBM1D.Propagator.Basic

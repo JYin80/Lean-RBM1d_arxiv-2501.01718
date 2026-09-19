@@ -1143,6 +1143,20 @@
   truncated at $t$ instead of solving $1-t=W^{-n_0\tau'}$.
 \end{proof}
 
+\begin{lemma}[Deterministic skeleton of \S6: (6.3), (6.5), (6.7)--(6.9), (6.12)]\label{lem:continuity-skeleton}
+  \lean{RBM.zSig, RBM.Gsig_eq_green_zSig, RBM.norm_zSig_sub_zSig, RBM.im_zSig, RBM.isUnit_sub_smul_one_of_im_ne_zero, RBM.isUnit_sub_zSig, RBM.green_eq_add_smul_mul, RBM.Gsig_eq_add_smul_mul, RBM.list_prod_add_eq, RBM.gchainMixed, RBM.gchain_eq_add_sum_gchainMixed, RBM.norm_add_sum_sq_le, RBM.norm_gchain_apply_sq_le, RBM.gloop_symm_eq_trace, RBM.gchain_append_singleton, RBM.Gsig_mul_conjTranspose, RBM.trace_Eblk_mul_mul_conjTranspose, RBM.trace_Eblk_gloopProd_Gsig_conjTranspose, RBM.ward_chain_row, RBM.ward_chain_row', RBM.ztTilde, RBM.ztTilde_im, RBM.etaT_nonneg, RBM.half_le_mE_im, RBM.sqrt_div_bounds, RBM.etaT_le_ztTilde_im, RBM.norm_zt_sub_ztTilde_le, RBM.norm_zt_sub_ztTilde_le_one_sub, RBM.norm_zt_sub_ztTilde_le_etaT, RBM.ztTilde_arith}
+  \leanok\uses{def:gloop, def:gchain}
+  For a fixed Hermitian $H$: the two-parameter resolvent identity (6.3); the symmetric-loop
+  normal form (6.5); the telescoping product identity (6.7) for noncommuting factors; the chain
+  expansion (6.8) with its termwise Cauchy--Schwarz (6.9); the Ward step (6.12); and the
+  arithmetic of $\tilde z_{t_1}=(t_2/t_1)^{1/2}z_{t_1}$: $|z_{t_2}-\tilde z_{t_1}|\le C\eta_{t_1}$,
+  $\operatorname{Im}\tilde z_{t_1}\asymp\eta_{t_1}$.
+\end{lemma}
+\begin{proof}\leanok
+  Direct algebra; (6.8) by induction on the chain; (6.12) from
+  $2i\eta\,G(\sigma)G(\sigma)^\dagger=G(+)-G(-)$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

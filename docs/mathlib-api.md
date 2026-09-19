@@ -77,6 +77,12 @@
 | `Fin.prod_univ_two`、`Fin.prod_univ_four` | |
 | `Mathlib.MeasureTheory.Measure.MeasureSpaceDef`（`...Measure.MeasureSpace` 已弃用） | `Measure`、`measure_mono`、`measure_union_le`、`measure_iUnion_fintype_le`、`measure_empty` |
 | `ENNReal.ofReal_add`、`ENNReal.ofReal_mul`、`ENNReal.ofReal_natCast`、`ENNReal.ofReal_le_ofReal` | |
+| `Real.le_sqrt`、`Real.one_le_sqrt`、`eq_inv_mul_iff_mul_eq₀`、`div_le_of_le_mul₀` | |
+| `sq_sum_le_card_mul_sum_sq`（需 `Mathlib.Algebra.Order.Chebyshev`） | Cauchy–Schwarz 的求和形式 |
+| `Matrix.exists_mulVec_eq_zero_iff`、`Matrix.IsHermitian.im_star_dotProduct_mulVec_self` | |
+| `List.range'_concat` | |
+| `add_le_add_left` 参数形式已变 → 用 `add_le_add le_rfl _` | |
+| `dotProduct_star_self_eq_zero` 要 `StarOrderedRing`，`ℂ` 只在 `ComplexOrder` 下有 | |
 | `Lean.collectAxioms` | `#print axioms` 的底层；`Test/Axioms.lean` 用它做硬性审计 |
 | `Real.exp_lt_one_iff`（**不是** `Real.exp_lt_one`，后者不存在）、`Real.exp_le_one_iff` | `exp x < 1 ↔ x < 0` |
 | `Complex.norm_le_abs_re_add_abs_im` | `‖z‖ ≤ \|re z\| + \|im z\|` |

@@ -1031,3 +1031,9 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 `tailT`（(5.27)）、`ratioJ`（(5.28)）、`tailT_antitone`、`tailT_sub_le`/`unifDetDom_tailT_sub`（(5.32)）、`integral_exp_sqrt_triangle_le`（≤ 16）、
 `integral_Ioi_exp_neg_sqrt`（= 2）、`integral_exp_half_sqrt_triangle_le`（(5.62)）、**`mul_sum_tailT_mul_tailT_le`**（(5.50)(5.72) 卷积界）、
 `sqrt_zdist_sub_sqrt_zdist_le`（(7.12)）。paper-deltas #27。
+
+### `RBM1D/Loop/Continuity.lean` — §6 的确定性骨架（T50，Claude Code 并行 agent）
+
+(6.3) `green_eq_add_smul_mul`/`Gsig_eq_add_smul_mul`；(6.7) `list_prod_add_eq`（非交换）；(6.8) `gchain_eq_add_sum_gchainMixed`；
+(6.9) `norm_gchain_apply_sq_le`；(6.5) `gloop_symm_eq_trace`；(6.12) **`ward_chain_row`**/`ward_chain_row'`；
+`ztTilde_arith`（`z̃` 的四条算术界）。未做（范围外）：(6.1)、(6.10)(6.11)(6.13) 总装；(6.4)/Lemma 6.1 属 T44。paper-deltas #28。

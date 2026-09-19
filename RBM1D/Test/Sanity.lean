@@ -52,3 +52,7 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.one_sub_mul_Shat_ne_zero
 #print axioms RBM.Theta_eq_circulant_fourierKernel
 #print axioms RBM.Theta_apply_fourier
+#print axioms RBM.xi_mul_poly
+#print axioms RBM.one_sub_xi_mul
+#print axioms RBM.one_sub_rho_sq
+#print axioms RBM.rho_real_bounds

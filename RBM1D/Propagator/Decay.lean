@@ -343,6 +343,81 @@ theorem im_eq_zero_of_sq_eq_real {w : ℂ} {r : ℝ} (hr : 0 < r) (h : w ^ 2 = (
   rw [hre] at h2
   nlinarith [sq_nonneg w.im]
 
+theorem cc_ofReal {t : ℝ} (ht : t ≠ 0) : cc (t : ℂ) = ((3 / t - 1 : ℝ) : ℂ) := by
+  unfold cc
+  push_cast
+  ring
+
+theorem exists_real_of_im_eq_zero {z : ℂ} (h : z.im = 0) : ∃ r : ℝ, z = (r : ℂ) :=
+  ⟨z.re, Complex.ext rfl (by simp [h])⟩
+
+/-- **The two-sided bound on the decay rate for real spectral parameter.**
+For `0 < t < 1`, `ρ(t)` is a real number in `(0,1)` and
+
+  `√(1-t) ≤ 1 - ρ(t) ≤ √3 · √(1-t)`.
+
+So the decay length `1/(1 - ρ)` is of order `(1-t)^{-1/2}`, exactly the
+`ℓ̂(ξ) = |1-ξ|^{-1/2}` of (2.52).  The lower bound on `1 - ρ` is what the decay
+estimate needs; it is available here because `ρ` is real, so `1 - ‖ρ‖ = 1 - ρ`.
+
+This is the long-edge case `ξ = t|m|²` of the paper: `|m| = 1` makes `ξ` real. -/
+theorem rho_real_bounds {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+    ∃ r : ℝ, rho (t : ℂ) = (r : ℂ) ∧ 0 < r ∧ r < 1 ∧
+      Real.sqrt (1 - t) ≤ 1 - r ∧ 1 - r ≤ Real.sqrt 3 * Real.sqrt (1 - t) := by
+  have htne' : t ≠ 0 := ne_of_gt ht0
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast htne'
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have hcgt : (3 : ℝ) / t - 1 > 2 := by
+    have : (3 : ℝ) / t > 3 := by rw [gt_iff_lt, lt_div_iff₀ ht0]; linarith
+    linarith
+  -- the discriminant is a positive real, so `disc` is real, hence so is `ρ`
+  have hdpos : 0 < (3 / t - 1 : ℝ) ^ 2 - 4 := by nlinarith
+  have hdi : (disc (t : ℂ)).im = 0 := by
+    refine im_eq_zero_of_sq_eq_real hdpos ?_
+    rw [disc_sq, cc_ofReal htne']
+    push_cast
+    ring
+  obtain ⟨d, hd⟩ := exists_real_of_im_eq_zero hdi
+  obtain ⟨c0, hc0⟩ := exists_real_of_im_eq_zero
+    (show (cc (t : ℂ)).im = 0 by rw [cc_ofReal htne']; simp)
+  have h1 : root1 (t : ℂ) = (((c0 + d) / 2 : ℝ) : ℂ) := by
+    unfold root1; rw [hc0, hd]; push_cast; ring
+  have h2 : root2 (t : ℂ) = (((c0 - d) / 2 : ℝ) : ℂ) := by
+    unfold root2; rw [hc0, hd]; push_cast; ring
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, rho (t : ℂ) = (r : ℂ) := by
+    unfold rho; split_ifs
+    · exact ⟨_, h1⟩
+    · exact ⟨_, h2⟩
+  -- the division-free characteristic relation, in reals
+  have hpoly : t * (1 + r + r ^ 2) = 3 * r := by
+    have h := xi_mul_poly htne
+    rw [hr] at h
+    exact_mod_cast h
+  have hquad : 0 < 1 + r + r ^ 2 := by nlinarith [sq_nonneg (r + 1), sq_nonneg r]
+  have hrpos : 0 < r := by nlinarith
+  have habs : |r| < 1 := by
+    have := norm_rho_lt_one htne hnorm
+    rwa [hr, Complex.norm_real, Real.norm_eq_abs] at this
+  have hrlt : r < 1 := (abs_lt.mp habs).2
+  have hsq : (1 - r) ^ 2 = (1 - t) * (1 + r + r ^ 2) := by
+    apply mul_left_cancel₀ htne'
+    linear_combination t * hpoly
+  have h1t : 0 < 1 - t := by linarith
+  have h3 : 1 + r + r ^ 2 ≤ 3 := by nlinarith
+  have h1le : (1 : ℝ) ≤ 1 + r + r ^ 2 := by nlinarith
+  have hlow : 1 - t ≤ (1 - r) ^ 2 := by
+    rw [hsq]; nlinarith [mul_le_mul_of_nonneg_left h1le h1t.le]
+  have hhigh : (1 - r) ^ 2 ≤ 3 * (1 - t) := by
+    rw [hsq]; nlinarith [mul_le_mul_of_nonneg_left h3 h1t.le]
+  have hpos : 0 < 1 - r := by linarith
+  refine ⟨r, hr, hrpos, hrlt, ?_, ?_⟩
+  · calc Real.sqrt (1 - t) ≤ Real.sqrt ((1 - r) ^ 2) := Real.sqrt_le_sqrt hlow
+      _ = 1 - r := Real.sqrt_sq hpos.le
+  · calc 1 - r = Real.sqrt ((1 - r) ^ 2) := (Real.sqrt_sq hpos.le).symm
+      _ ≤ Real.sqrt (3 * (1 - t)) := Real.sqrt_le_sqrt hhigh
+      _ = Real.sqrt 3 * Real.sqrt (1 - t) := Real.sqrt_mul (by norm_num) _
+
 end RealXi
 
 end RBM

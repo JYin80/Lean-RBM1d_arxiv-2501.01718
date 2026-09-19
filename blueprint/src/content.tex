@@ -362,6 +362,20 @@
   No contour shift and no Poisson summation.
 \end{proof}
 
+\begin{lemma}[$\ell^1$ bound on a row, after (2.52)]\label{lem:Theta-l1}
+  \lean{RBM.exists_pos_Theta_apply_of_real, RBM.sum_norm_Theta_row_of_real}
+  \leanok\uses{lem:closed-form, lem:Theta-rowsum}
+  For real $\xi = t \in (0,1)$ every entry of $\Th_t$ is a positive real, hence
+  \[ \sum_b \bigl|(\Th_t)_{ab}\bigr| \;=\; \sum_b (\Th_t)_{ab} \;=\; (1-t)^{-1} . \]
+  The paper states $\le C(1-t)^{-1}$; positivity turns the inequality into an identity
+  with constant $1$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:closed-form, lem:Theta-rowsum}
+  In the closed form $A(\rho^d+\rho^{L-d})$ the root $\rho$ lies in $(0,1)$ and all four
+  factors of $A = (1-\rho)/[(1-t)(1-\rho^L)(1+\rho)]$ are positive, so the $\ell^1$ norm of
+  a row equals its signed sum, which is $(1-\xi)^{-1}$ by Lemma~\ref{lem:Theta-rowsum}.
+\end{proof}
+
 \begin{lemma}[Difference estimates (2.53)--(2.54)]\label{lem:Theta-diff}
   \lean{RBM.kern_succ_sub, RBM.kern_second_diff, RBM.norm_AA_mul_one_sub_rho_le,
     RBM.norm_AA_mul_one_sub_rho_sq_le, RBM.norm_Theta_sub_shift_le,

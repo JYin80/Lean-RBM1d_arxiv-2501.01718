@@ -44,7 +44,7 @@ theorem half_le_norm_one_add_rho (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ < 1) : 1 / 2 
     have h3' : ‖(3 : ℂ)‖ = 3 := by norm_num
     rw [h3'] at h
     linarith
-  rcases le_or_lt (‖rho ξ‖) (1 / 4) with hsmall | hbig
+  rcases le_total (‖rho ξ‖) (1 / 4) with hsmall | hbig
   · have h := norm_sub_le ((1 : ℂ) + rho ξ) (rho ξ)
     simp only [add_sub_cancel_right, norm_one] at h
     linarith
@@ -90,10 +90,9 @@ theorem norm_AA_mul_one_sub_rho_le_complex (hL : L ≠ 0) (hξ0 : ξ ≠ 0) (hξ
   have hhalf : 1 / 2 ≤ ‖1 + rho ξ‖ := half_le_norm_one_add_rho hξ0 hξ
   have hPos : 0 < ‖1 + rho ξ‖ := by linarith
   have hlow : 1 - ‖rho ξ‖ ^ L ≤ ‖1 - rho ξ ^ L‖ := by
-    have h := norm_sub_le ((1 : ℂ) - rho ξ ^ L) (1 : ℂ)
-    have h2 : ‖(1 : ℂ) - rho ξ ^ L - 1‖ = ‖rho ξ‖ ^ L := by
-      rw [show (1 : ℂ) - rho ξ ^ L - 1 = -(rho ξ ^ L) from by ring, norm_neg, norm_pow]
-    rw [h2, norm_one] at h
+    have h := norm_add_le ((1 : ℂ) - rho ξ ^ L) (rho ξ ^ L)
+    have h2 : (1 : ℂ) - rho ξ ^ L + rho ξ ^ L = 1 := by ring
+    rw [h2, norm_one, norm_pow] at h
     linarith
   have hA : AA L ξ * (1 - rho ξ)
       = (1 - rho ξ) ^ 2 / ((1 - ξ) * (1 - rho ξ ^ L) * (1 + rho ξ)) := by
@@ -101,7 +100,12 @@ theorem norm_AA_mul_one_sub_rho_le_complex (hL : L ≠ 0) (hξ0 : ξ ≠ 0) (hξ
   rw [hA, norm_div, norm_mul, norm_mul, norm_pow]
   rw [div_le_div_iff₀ (by positivity) hden]
   have hnum : ‖1 - rho ξ‖ ^ 2 ≤ 3 * ‖1 - ξ‖ := norm_one_sub_rho_sq_le_three hξ0 hξ
-  nlinarith [hnum, hlow, hhalf, hD, hPL, hden, norm_nonneg (1 - rho ξ)]
+  calc ‖1 - rho ξ‖ ^ 2 * (1 - ‖rho ξ‖ ^ L)
+      ≤ 3 * ‖1 - ξ‖ * (1 - ‖rho ξ‖ ^ L) := mul_le_mul_of_nonneg_right hnum hden.le
+    _ ≤ 3 * ‖1 - ξ‖ * ‖1 - rho ξ ^ L‖ := mul_le_mul_of_nonneg_left hlow (by positivity)
+    _ ≤ 6 * (‖1 - ξ‖ * ‖1 - rho ξ ^ L‖ * ‖1 + rho ξ‖) := by
+        have hfac : (0 : ℝ) ≤ 3 * ‖1 - ξ‖ * ‖1 - rho ξ ^ L‖ := by positivity
+        nlinarith [mul_le_mul_of_nonneg_left hhalf hfac]
 
 end ComplexConstants
 

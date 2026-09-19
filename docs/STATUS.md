@@ -913,3 +913,10 @@ gap 假设见 paper-deltas #17（`T₀ < 1` 时 `δ = 1 − T₀` 自动成立�
 | **`RBM.sum_zero`** | **Lemma 3.10 (2)**，(3.44)：交替 σ 时 `\|L⁻¹Σ_d Σ^(∅)\| ≤ C η_t` |
 
 公理审计：`sum_zero`、`norm_Alayer_le` 只含 propext / Classical.choice / Quot.sound。paper-deltas #21。
+
+### `RBM1D/Test/Layers.lean` — Def 3.8 的 `decide` 回归（T36，Claude Code #2）
+
+交替电荷下 `TSPlong` 的层大小与独立的暴力枚举一致：n=4 三棵树全在 `π = ∅`（论文 (3.42) 后的例子）；
+n=5 为 `5, 3, 3`；n=6 为 `18 + 9 + 9 + 9 = 45`，两条相交的长对角线不共存。
+维护：蓝图全部 405 个 `\lean{}` 名字均解析到真实声明（以 `#check` 逐个核对，无 `leanblueprint` CLI）；
+根模块 `lake build RBM1D` 通过，公理审计 2307 条声明全在允许范围内。

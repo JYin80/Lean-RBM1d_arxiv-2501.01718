@@ -712,11 +712,23 @@
   $\SB$ terms of $mB^{-1}-\bar mA^{-1}$ cancel.
 \end{proof}
 
-\begin{lemma}[Ward identity for $\Kcal$, Lemma 3.6]\label{lem:3.6}
-  \uses{lem:3.4, lem:Theta-rowsum, lem:3.6-small, lem:K-cyclic}
-  \emph{Not yet formalized for general $n$.}  The difference $D$ of the two sides satisfies a
-  homogeneous linear ODE with zero initial value.
+\begin{lemma}[Ward identity for $\Kcal$, Lemma 3.6, (3.13)]\label{lem:3.6}
+  \lean{RBM.ward_of_isPrimitive, RBM.sum_fullLoop_eq, RBM.ward_rhs_identity, RBM.ward_level,
+    RBM.wD_primInit, RBM.wardKappa, RBM.wStar, RBM.wD}\leanok
+  \uses{def:primitive, lem:Theta-rowsum, lem:3.6-small, lem:K-cyclic, lem:2.8}
+  For a solution of Definition 2.12 with $m=m^{(E)}$ on $[0,T_0]$, $T_0<1$, with bounded
+  $2$-loops, and $\sigma_1=+$, $\sigma_n=-$:
+  $\sum_{a_n}K_{t,\sigma,a}=(K_{t,\sigma^+,a/a_n}-K_{t,\sigma^-,a/a_n})/(2Wi\eta_t)$.
 \end{lemma}
+\begin{proof}\leanok
+  \uses{def:primitive, lem:Theta-rowsum, lem:3.6-small, lem:K-cyclic, lem:2.8}
+  The defect $D$ satisfies (3.18): for every cut $(k,l)$ with $l\le n-1$ the left chain of the
+  full loop is again a full loop and that of $\sigma^\pm$ is its $\sigma^\pm$, so the
+  $a_n$-sum gives $D$ one level down plus the matching $\sigma^\pm$ term; the cuts $(1,m)$ and
+  $(m,n)$ cancel for every $m$ by cyclic invariance; the cut $(1,n)$ and
+  $\partial_t\eta_t^{-1}=\eta_t^{-1}/(1-t)$ give $D/(1-t)$.  $D_0=0$; Gr\"onwall and induction
+  on $n$.
+\end{proof}
 
 \begin{lemma}[Sum-zero property, Lemma 3.10]\label{lem:3.10}
   \uses{lem:3.6, lem:Theta-decay}

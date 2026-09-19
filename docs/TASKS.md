@@ -32,7 +32,7 @@
 | T24 | 公理审计 + 删 `Probe.lean` + linter 清理 | `Test/Axioms.lean`（新建）等 | Claude Code | **完成** |
 | T25 | **Lemma 3.4：树表示**（第 3 节主定理） | `Loop/TreeRep.lean` | Claude Code #2 | **完成（n ≤ 4）**；一般 n 见 T25b |
 | T25b | Lemma 3.4 一般 n：`polyVal` 的轴无关性 + 边 ↔ (k,l) 双射（见 STATUS「T25」节） | `Loop/TreeRepGeneral.lean`（新建） | **Claude Code #2** | 进行中 |
-| T26 | Lemma 3.6：𝒦 的 Ward 恒等式 | `Loop/Ward.lean`（新建） | **Claude Code** | 进行中（n=2、3 已完成；一般 n 待做） |
+| T26 | Lemma 3.6：𝒦 的 Ward 恒等式 | `Loop/Ward*.lean`, `Loop/Cyclic.lean` | Claude Code | **完成** |
 | T27 | Def 2.9 的 G-loop 本身（确定性 H） | `Loop/GLoop.lean` | **Cowork** | **完成**（G(σ)†=G(−σ)、预解式恒等式、loop 旋转不变） |
 | T28 | Corollary 3.5：纯 loop 的界 | `Loop/Cor35.lean`（新建） | 空闲 | 待 T25 |
 

@@ -742,3 +742,14 @@ T26 第 2 阶段完成：**`RBM.ward_rhs_identity`**（`Loop/WardStep.lean`）�
 `Σ_x (2.48)(+,μ,−;a',x) − κ((2.48)(σ⁺) − (2.48)(σ⁻)) = W(Σ_k wD(相邻切口)·S·K₂ + wD((N,N+1) 切口)·S·K₂ + c·Σ_x K)`。
 这就是 (3.18) 的组合核心；`(1,m)`/`(m,n)` 对所有 m 一次抵消（证明里的 `hcancel`），无需论文的四角特判。
 剩余：第 3 阶段——加上 `∂_t κ = κ/(1−t)`、`Wc = 1/(1−t)` 得 (3.18)，Grönwall + 对长度归纳，得一般 n 的 Lemma 3.6。
+
+## T26 完成：Lemma 3.6 (3.13) 对一般 n 成立（Claude Code）
+
+**`RBM.ward_of_isPrimitive` / `RBM.sum_fullLoop_eq`**（`Loop/WardGeneral.lean`）：满足 Def 2.12（`m = m^{(E)}`, `|E| < 2`）
+于 `[0,T₀]`（`T₀ < 1`）且 2-圈有界的 `K`，对任意 `(+, μ, −; a', x)`：
+`Σ_x K_{t,(+,μ,−),(a',x)} = (K_{t,(+,μ),a'} − K_{t,(−,μ),a'}) / (2 W i η_t)`。
+
+组成：`Loop/Cyclic.lean`（循环不变性 `isPrimitive_rot`，论文未证）、`Loop/WardInd.lean`（切口的列表恒等式）、
+`Loop/WardStep.lean`（`ward_rhs_identity`：(3.18) 的组合核心）、`Loop/WardGeneral.lean`
+（`∂_t κ_t = κ_t/(1−t)`、初值 `wD_primInit`、一层 Grönwall `ward_level`、对长度归纳）。
+与论文的差别见 paper-deltas #14、#15。下游 Cor 3.7（(3.14)）现在可以做了。

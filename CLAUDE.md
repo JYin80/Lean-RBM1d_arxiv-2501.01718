@@ -117,3 +117,14 @@ Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry�
 **不要停下来等新工单。** `docs/TASKS.md` 末尾有「永不停工规则」和储备工单 B1–B6：
 队列一空就按那个顺序自己挑活（先 T8–T11 的一般 Fourier 机器，再 B1–B6，再常规维护），
 并在工单表里补一行说明你在做什么。空转是这个项目里唯一不可接受的状态。
+
+## 读 build.log 的陷阱（2026-09-19，实际踩过）
+
+`build.log` 是 `watch.sh` 轮询重写的，**它可能还是上一轮的**。看到 `errors: 0`
+不等于你刚才那次改动通过了。判断"我的改动真的编译过了"要同时满足：
+
+1. `build.log` 第一行的时间戳晚于你最后一次写文件；
+2. `.lake/build/lib/lean/<你的文件>.olean` 的 mtime 晚于 `.lean` 的 mtime。
+
+我就是漏了这一步，把一段根本不编译的代码提交了，两分钟后才发现。
+**提交前跑一次 `ls -l --time-style=+%H:%M:%S <你的.lean> <对应的.olean> build.log`。**

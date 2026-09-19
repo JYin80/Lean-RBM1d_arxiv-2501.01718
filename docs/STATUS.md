@@ -1163,3 +1163,11 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 `LoopDecay`（Def 5.8，接 T51 的 `FastDecay`）；**(5.77)**：`norm_couplingLen_le`、`norm_primBil_sub_le`、`norm_eG_le`、`norm_eTens_le`（张量形式 `norm_loopTensor_*`），
 E 项的衰减 `fastDecay_*`；(5.14) 的右分级 `primBilLenR`、`couplingLen`；Lemma 5.11 `lemma511_assembly`；Lemma 5.9 `lemma59`（在 Lemma 4.1 事件上）。
 T60 可 import 此文件替换其 (5.77) 占位。paper-deltas #42。
+
+### `RBM1D/Hierarchy/SumZeroDyn.lean` — Lemma 5.14 (5.92)（T60 ⭐，Claude Code 并行 agent）
+
+**`lemma514_flow'`**：`∀ n, 2 ≤ n → Step3.Lemma514 B.P (flowXiLK …) (flowXiL …) (flowA …) n`——**T53/T55 所假设的 (5.92) 现在是定理**，
+条件是：`Hierarchy`（(5.20)(5.91) 与鞅的 BDG/二次变差 (5.85)(5.103)，**唯一的真随机输入**）、`Lemma510`（(5.77) 占位）、`LKDecay`（(5.75) 占位）、
+(2.72)、(2.68)@s。Ward 恒等式对 L−K 已证（`wardP_holds`）。
+**剩余缺口**：`Lemma510`/`LKDecay` 与 T59（`Hierarchy/Decay.lean`）的确定性定理形状不同——需要 (i) 具体的 `E^{(G)}` 与 Def 5.4 的 `E⊗E` 粘合
+（T58 的表示桥），(ii) 把 `Decay.lemma59` 从「Lemma 4.1 事件上」提升为「对 u ∈ [s,t] 一致的 ≺」。paper-deltas #43。

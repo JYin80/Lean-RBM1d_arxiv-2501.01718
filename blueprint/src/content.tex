@@ -494,7 +494,9 @@
 \begin{definition}[$G$-loops, Definition 2.9 and (2.41)]\label{def:gloop}
   \lean{RBM.Gsig, RBM.Gsig_conjTranspose, RBM.green_sub_green, RBM.green_sub_green_conj,
     RBM.trace_green_sub_trace_green_conj, RBM.gloopProd, RBM.gloop,
-    RBM.gloopProd_append, RBM.gloop_rotate, RBM.sum_gloop_head, RBM.gloop_two}
+    RBM.gloopProd_append, RBM.gloop_rotate, RBM.sum_gloop_head, RBM.gloop_two,
+    RBM.green_sub_green_conj', RBM.trace_green_sub_trace_green_conj',
+    RBM.sum_gloop_two_ward}
   \leanok\uses{def:model, def:loops, eq:2.10}
   For a fixed deterministic Hermitian $H$, $G(+) = (H-z)^{-1}$, $G(-) = (H-\bar z)^{-1}$ and
   \[ \mathcal L_{\sigma,\mathbf a} = \Bigl\langle \prod_i G(\sigma_i) E_{a_i} \Bigr\rangle ,
@@ -509,6 +511,11 @@
   form $\operatorname{Tr}(G(z)A)-\operatorname{Tr}(G(\bar z)A) = 2i\eta\operatorname{Tr}(G(z)G(\bar z)A)$;
   and the one-index sum rule $\sum_b \mathcal L_{\sigma,(b,\mathbf a)} = W^{-1}\langle G(\sigma_1)\cdots\rangle$,
   which is $\sum_a E_a = W^{-1}I$ and is the first step of the paper's Ward identity for loops.
+  Putting the two together gives the Ward identity for the $2$-loop,
+  \[ 2i\eta\sum_b \mathcal L_{(+,-),(a,b)}
+     = W^{-1}\bigl(\operatorname{Tr}(G(z)E_a)-\operatorname{Tr}(G(\bar z)E_a)\bigr) , \]
+  a quadratic quantity on the left and a linear one on the right --- the identity that
+  makes the local law self-improving.
 \end{definition}
 
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}

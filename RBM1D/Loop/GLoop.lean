@@ -113,6 +113,35 @@ theorem trace_green_sub_trace_green_conj {H : Matrix n n ℂ} {z : ℂ}
   simpa [Matrix.sub_mul, Matrix.trace_sub, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul,
     Matrix.mul_assoc] using h
 
+/-- The Ward identity with the two resolvents in the other order.  `G(z)` and
+`G(\bar z)` commute (both are functions of `H`), but it is cheaper to get the second
+order from `green_sub_green` with the arguments swapped than to prove commutation. -/
+theorem green_sub_green_conj' {H : Matrix n n ℂ} {z : ℂ}
+    (hz : IsUnit (H - z • (1 : Matrix n n ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix n n ℂ))) :
+    green H z - green H ((starRingEnd ℂ) z)
+      = (2 * Complex.I * (z.im : ℂ)) • (green H ((starRingEnd ℂ) z) * green H z) := by
+  have h := green_sub_green hz' hz
+  have h' : green H z - green H ((starRingEnd ℂ) z)
+      = (-((starRingEnd ℂ) z - z)) • (green H ((starRingEnd ℂ) z) * green H z) := by
+    rw [← h]; module
+  rw [h']
+  congr 1
+  rw [Complex.sub_conj]
+  push_cast
+  ring
+
+/-- The traced Ward identity, with the resolvents in the order `G(\bar z)G(z)`. -/
+theorem trace_green_sub_trace_green_conj' {H : Matrix n n ℂ} {z : ℂ}
+    (hz : IsUnit (H - z • (1 : Matrix n n ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix n n ℂ))) (A : Matrix n n ℂ) :
+    Matrix.trace (green H z * A) - Matrix.trace (green H ((starRingEnd ℂ) z) * A)
+      = (2 * Complex.I * (z.im : ℂ))
+          * Matrix.trace (green H ((starRingEnd ℂ) z) * green H z * A) := by
+  have h := congrArg (fun M : Matrix n n ℂ => Matrix.trace (M * A)) (green_sub_green_conj' hz hz')
+  simpa [Matrix.sub_mul, Matrix.trace_sub, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul,
+    Matrix.mul_assoc] using h
+
 end Gsig
 
 section Loop
@@ -182,6 +211,33 @@ theorem gloop_two (s₁ s₂ : Bool) (b₁ b₂ : ZMod L) :
     gloop L W H z ⟨[s₁, s₂], [b₁, b₂]⟩
       = Matrix.trace (Gsig H z s₁ * Eblk L W b₁ * (Gsig H z s₂ * Eblk L W b₂)) := by
   simp [gloop, gloopProd_cons, gloopProd_nil, Matrix.mul_one]
+
+/-- **The Ward identity for the `2`-loop.**  Summing `L_{(+,-),(a,b)}` over the free
+label `b` and multiplying by `2i\eta` gives the imaginary part of a *single* resolvent:
+\[ 2i\eta \sum_b \mathcal L_{(+,-),(a,b)}
+   = W^{-1}\bigl(\operatorname{Tr}(G(z)E_a) - \operatorname{Tr}(G(\bar z)E_a)\bigr). \]
+This is the identity that makes the local law self-improving: a quadratic quantity on
+the left, a linear one on the right.  Both ingredients are already here --- rotation
+invariance moves `b` to the head, `sum_gloop_head` deletes its `E`, and the traced
+Ward identity collapses the product of resolvents. -/
+theorem sum_gloop_two_ward {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
+    (hz : IsUnit (H - z • (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ)))
+    (hz' : IsUnit (H - ((starRingEnd ℂ) z) • (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ)))
+    (a : ZMod L) :
+    (2 * Complex.I * (z.im : ℂ)) * ∑ b : ZMod L, gloop L W H z ⟨[true, false], [a, b]⟩
+      = (W : ℂ)⁻¹ * (Matrix.trace (green H z * Eblk L W a)
+          - Matrix.trace (green H ((starRingEnd ℂ) z) * Eblk L W a)) := by
+  have hrot : ∀ b : ZMod L, gloop L W H z ⟨[true, false], [a, b]⟩
+      = gloop L W H z ⟨[false, true], [b, a]⟩ := fun b => gloop_rotate true a rfl
+  simp_rw [hrot]
+  rw [sum_gloop_head, trace_green_sub_trace_green_conj' hz hz' (Eblk L W a)]
+  have hprod : gloopProd L W H z ⟨[true], [a]⟩ = green H z * Eblk L W a := by
+    simp [gloopProd_cons, gloopProd_nil]
+  rw [hprod]
+  show (2 * Complex.I * (z.im : ℂ)) * ((W : ℂ)⁻¹ *
+      Matrix.trace (green H ((starRingEnd ℂ) z) * (green H z * Eblk L W a))) = _
+  rw [← Matrix.mul_assoc]
+  ring
 
 end Loop
 

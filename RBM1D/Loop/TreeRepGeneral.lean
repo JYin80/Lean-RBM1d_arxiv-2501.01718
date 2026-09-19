@@ -503,4 +503,140 @@ theorem hasDerivAt_treeValW (hM : ∀ v i j, HasDerivAt (fun r => M r v i j) (M'
 
 end Value
 
+section Cut
+
+variable (L : ℕ) [NeZero L] {n : ℕ} [NeZero n]
+
+/-- Nodes, leaves and internal edges inside / outside the arc of a cut `J`. -/
+abbrev NIn (F : Finset (Fin n × Fin n)) (J : Fin n × Fin n) := {x : ↥(nodes F) // ArcLe x.1 J}
+abbrev NOut (F : Finset (Fin n × Fin n)) (J : Fin n × Fin n) := {x : ↥(nodes F) // ¬ArcLe x.1 J}
+abbrev LIn (J : Fin n × Fin n) := {v : Fin n // InArc J v}
+abbrev LOut (J : Fin n × Fin n) := {v : Fin n // ¬InArc J v}
+abbrev EIn (F : Finset (Fin n × Fin n)) (J : Fin n × Fin n) := {d : ↥F // ArcLe d.1 J ∧ d.1 ≠ J}
+abbrev EOut (F : Finset (Fin n × Fin n)) (J : Fin n × Fin n) := {d : ↥F // ¬ArcLe d.1 J}
+
+variable {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) {J : Fin n × Fin n}
+  (hJ : J ∈ F)
+
+/-- The parent of an inside leaf, as an inside node. -/
+noncomputable def inLeafPar (v : LIn J) : NIn F J :=
+  ⟨⟨leafPar F v, leafPar_mem F v⟩, leafPar_arcLe_of_inArc hF hJ v.2⟩
+
+/-- The parent of an outside leaf, as an outside node. -/
+noncomputable def outLeafPar (v : LOut J) : NOut F J :=
+  ⟨⟨leafPar F v, leafPar_mem F v⟩, not_arcLe_leafPar hF hJ v.2⟩
+
+/-- The child and parent ends of an inside edge. -/
+def inChild (d : EIn F J) : NIn F J := ⟨⟨d.1.1, mem_nodes_of_mem d.1.2⟩, d.2.1⟩
+
+noncomputable def inPar (d : EIn F J) : NIn F J :=
+  ⟨⟨nodePar F d.1.1, nodePar_mem F _⟩, nodePar_arcLe hF hn hJ d.1.2 d.2.1 d.2.2⟩
+
+/-- The child and parent ends of an outside edge. -/
+def outChild (d : EOut F J) : NOut F J := ⟨⟨d.1.1, mem_nodes_of_mem d.1.2⟩, d.2⟩
+
+noncomputable def outPar (d : EOut F J) : NOut F J :=
+  ⟨⟨nodePar F d.1.1, nodePar_mem F _⟩, not_arcLe_nodePar hF hn d.1.2 d.2⟩
+
+/-- The two ends of the cut edge `J`. -/
+def cutIn : NIn F J := ⟨⟨J, mem_nodes_of_mem hJ⟩, ⟨le_refl _, le_refl _⟩⟩
+
+noncomputable def cutOut : NOut F J :=
+  ⟨⟨nodePar F J, nodePar_mem F J⟩, not_arcLe_nodePar_self hF hn hJ⟩
+
+/-- The edges of `F`: the cut `J`, the outside edges and the inside edges. -/
+def edgeEquiv : ↥F ≃ Option (EOut F J ⊕ EIn F J) where
+  toFun d := if h1 : d.1 = J then none else
+    if h2 : ArcLe d.1 J then some (Sum.inr ⟨d, h2, h1⟩) else some (Sum.inl ⟨d, h2⟩)
+  invFun o := o.elim ⟨J, hJ⟩ (Sum.elim (fun x => x.1) (fun x => x.1))
+  left_inv d := by
+    by_cases h1 : d.1 = J
+    · simp only [h1, dite_true, Option.elim]; exact Subtype.ext h1.symm
+    · by_cases h2 : ArcLe d.1 J <;> simp [h1, h2]
+  right_inv o := by
+    rcases o with _ | x | x
+    · simp
+    · have h2 := x.2
+      have h1 : x.1.1 ≠ J := fun h => h2 (by rw [h]; exact ⟨le_refl _, le_refl _⟩)
+      simp [h1, h2]
+    · have h1 := x.2.2
+      have h2 := x.2.1
+      simp [h1, h2]
+
+/-- **Cutting a tree at the internal edge `J`.**  If the edge `J` carries `P S Q`, the tree
+value is `∑_{u,w} (inside tree + root leaf (u, Pᵀ)) S_{uw} (outside tree + leaf (w, Q))`. -/
+theorem treeValW_cut (a : Fin n → ZMod L) (M : Fin n → Matrix (ZMod L) (ZMod L) ℂ)
+    (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (P S Q : Matrix (ZMod L) (ZMod L) ℂ) :
+    treeValW L F a M (Function.update E ⟨J, hJ⟩ (P * S * Q))
+      = ∑ u : ZMod L, ∑ w : ZMod L,
+          gval L (fun o : Option (LIn J) => o.elim u (fun v => a v.1))
+              (fun o => o.elim P.transpose (fun v => M v.1))
+              (fun o => o.elim (cutIn hJ) (inLeafPar hF hJ)) (fun d : EIn F J => E d.1)
+              inChild (inPar hF hn hJ)
+            * S u w *
+          gval L (fun o : Option (LOut J) => o.elim w (fun v => a v.1))
+              (fun o => o.elim Q (fun v => M v.1))
+              (fun o => o.elim (cutOut hF hn hJ) (outLeafPar hF hJ)) (fun d : EOut F J => E d.1)
+              outChild (outPar hF hn) := by
+  rw [treeValW_eq_gval, ← gval_split]
+  refine gval_congr
+    ((Equiv.sumCompl (fun x : ↥(nodes F) => ArcLe x.1 J)).symm.trans (Equiv.sumComm _ _))
+    ((Equiv.sumCompl (fun v : Fin n => InArc J v)).symm.trans (Equiv.sumComm _ _))
+    (edgeEquiv hJ) ?_ ?_ ?_ ?_ ?_ ?_
+  · intro v
+    by_cases h : InArc J v
+    · simp [Equiv.sumCompl_symm_apply_of_pos h]
+    · simp [Equiv.sumCompl_symm_apply_of_neg h]
+  · intro v
+    by_cases h : InArc J v
+    · simp [Equiv.sumCompl_symm_apply_of_pos h]
+    · simp [Equiv.sumCompl_symm_apply_of_neg h]
+  · intro v
+    by_cases h : InArc J v
+    · have h' : ArcLe (leafPar F v) J := leafPar_arcLe_of_inArc hF hJ h
+      simp [Equiv.sumCompl_symm_apply_of_pos h, Equiv.sumCompl_symm_apply_of_pos
+        (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨leafPar F v, leafPar_mem F v⟩) h',
+        inLeafPar]
+    · have h' : ¬ArcLe (leafPar F v) J := not_arcLe_leafPar hF hJ h
+      simp [Equiv.sumCompl_symm_apply_of_neg h, Equiv.sumCompl_symm_apply_of_neg
+        (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨leafPar F v, leafPar_mem F v⟩) h',
+        outLeafPar]
+  · intro d
+    by_cases h1 : d.1 = J
+    · have hd : d = ⟨J, hJ⟩ := Subtype.ext h1
+      subst hd
+      simp [edgeEquiv]
+    · have hne : d ≠ ⟨J, hJ⟩ := fun h => h1 (congrArg Subtype.val h)
+      by_cases h2 : ArcLe d.1 J <;> simp [edgeEquiv, h1, h2, Function.update_of_ne hne]
+  · intro d
+    by_cases h1 : d.1 = J
+    · have hd : d = ⟨J, hJ⟩ := Subtype.ext h1
+      subst hd
+      simp [edgeEquiv, Equiv.sumCompl_symm_apply_of_pos
+        (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨J, mem_nodes_of_mem hJ⟩)
+        (⟨le_refl _, le_refl _⟩ : ArcLe J J), cutIn]
+    · by_cases h2 : ArcLe d.1 J
+      · simp [edgeEquiv, h1, h2, Equiv.sumCompl_symm_apply_of_pos
+          (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨d.1, mem_nodes_of_mem d.2⟩) h2,
+          inChild]
+      · simp [edgeEquiv, h1, h2, Equiv.sumCompl_symm_apply_of_neg
+          (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨d.1, mem_nodes_of_mem d.2⟩) h2,
+          outChild]
+  · intro d
+    by_cases h1 : d.1 = J
+    · have hd : d = ⟨J, hJ⟩ := Subtype.ext h1
+      subst hd
+      simp [edgeEquiv, Equiv.sumCompl_symm_apply_of_neg
+        (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨nodePar F J, nodePar_mem F J⟩)
+        (not_arcLe_nodePar_self hF hn hJ), cutOut]
+    · by_cases h2 : ArcLe d.1 J
+      · simp [edgeEquiv, h1, h2, Equiv.sumCompl_symm_apply_of_pos
+          (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨nodePar F d.1, nodePar_mem F _⟩)
+          (nodePar_arcLe hF hn hJ d.2 h2 h1), inPar]
+      · simp [edgeEquiv, h1, h2, Equiv.sumCompl_symm_apply_of_neg
+          (p := fun x : ↥(nodes F) => ArcLe x.1 J) (a := ⟨nodePar F d.1, nodePar_mem F _⟩)
+          (not_arcLe_nodePar hF hn d.2 h2), outPar]
+
+end Cut
+
 end RBM

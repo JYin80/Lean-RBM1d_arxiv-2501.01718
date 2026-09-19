@@ -48,6 +48,22 @@
 | T39 | 附录 A 的确定性部分：G-chain 的定义与代数（Def A.1、chain↔loop） | `Loop/Chain.lean` | **Cowork** | **完成** |
 | T40 | Lemma 4.2：预解式的 minor 公式 (4.7)(4.8)(4.9)（Schur 补，纯线性代数） | `Green/Minor.lean`（新建） | **Cowork** | 进行中 |
 | T41 | Def 2.1 (i)(iii)(iv)：概率版 `≺`（overwhelming probability、一致版） | `Defs/StochDom.lean`（新建） | Claude Code | **完成** |
+| T42 | Def 5.2 的张量传播子 `Θ_{t,σ}` 与演化核 `U_{s,t,σ}`、恒等式 (5.18)、半群律、Lemma 7.1 (7.1)、Lemma 5.3 的确定性一半（Duhamel） | `Hierarchy/Kernel.lean`（新建） | 待认领 | 未开工 |
+| T43 | `exp(−√·)` 演算：(5.27)(5.28)(5.32)、卷积积分 (5.50)(5.62)(5.72)、(7.12) | `Analysis/StretchedExp.lean`（新建） | 待认领 | 未开工 |
+| T44 | loop 的 Cauchy–Schwarz 劈分：(5.2)(5.114)–(5.118)、(6.4)、Lemma 6.1 | `Loop/Split.lean`（新建） | 待认领 | 未开工 |
+| T45 | Lemma 4.1：(4.2)(4.3)(4.5)，两条外部估计作为假设 | `Green/EntryBound.lean`（新建） | 待认领 | 未开工 |
+| T46 | §7.2 末尾的零模去除：`S̃^(B) = (1−ζ)S^(B) + (ζ/L)J` | `Propagator/ZeroMode.lean`（新建） | 待认领 | 未开工 |
+| T47 | (2.67)：`G_0(σ) = m(σ)·I` 与 `L_0 = K_0`（无条件，§2.7 归纳的基例） | `Flow/Initial.lean`（新建） | 待认领 | 未开工 |
+| T48 | 流的尺度层：`η_t`、`ℓ_t`、`A_t = Wℓ_tη_t` 的单调性、几何时间网格与 (2.72) | `Flow/Scales.lean`（新建） | 待认领 | 未开工 |
+| T49 | 附录 A 的确定性核心：双边 chain→loop、(A.8)–(A.10)、(A.18)、(A.21)–(A.27)、(A.15) | `Loop/ChainExpand.lean`（新建） | 待认领 | 未开工 |
+| T50 | §6 的确定性骨架：(6.3)(6.5)(6.7)(6.8)(6.9)(6.12) + `z̃` 的算术 | `Loop/Continuity.lean`（新建） | 待认领 | 未开工 |
+| T51 | Lemma 7.2 (7.2) 与 Lemma 7.3 (7.13)–(7.24)（核的快衰减/sum-zero 增益） | `Hierarchy/KernelDecay.lean`（新建） | 待认领 | 未开工（等 T42 定签名） |
+| T52 | Def 5.12 的 `P`、`ϑ_t`、`Q_t`；Lemma 5.13 (5.87)、(5.90)(5.99)(5.104) | `Hierarchy/SumZero.lean`（新建） | 待认领 | 未开工（等 T42 定签名） |
+| T53 | Step 3：(5.76)(5.107)(5.108) 与 (n,k) 双重归纳 (5.109) ⟹ (2.77) | `Hierarchy/Step3.lean`（新建） | 待认领 | 未开工（等 T44） |
+| T54 | 随机层假设接口：`Bounds`/`Thm221`/`Steps`/`Transfer`（**不得用 axiom**） | `Flow/Hypotheses.lean`（新建） | 待认领 | 未开工 |
+| T55 | Steps 4 与 5：(5.125) ⟹ (2.78)；两段劈分 ⟹ (2.79) | `Hierarchy/Step45.lean`（新建） | 待认领 | 未开工（等 T53） |
+| T56 | Step 6：(5.126)–(5.136) ⟹ (2.80) | `Hierarchy/Step6.lean`（新建） | 待认领 | 未开工（等 T42、T53） |
+| T57 | Lemma 2.18/2.19/2.20 由 Theorem 2.21 推出（§2.7 p.24 的时间网格归纳） | `Flow/Iteration.lean`（新建） | 待认领 | 未开工（等 T47、T48、T54） |
 
 ---
 
@@ -1008,4 +1024,275 @@ Mathlib 里要用的：`MeasureTheory.Measure`、`Filter.Eventually`、`Filter.a
 最省事的做法是把 `Ω` 和 `P` 都固定、让 `ξ N : Ω → ℝ` 承担 N 的依赖（相当于取乘积空间）。
 选哪个都行，但**选定后写进文件头的 docstring 并记进 `docs/STATUS.md`**，
 因为随机层将来全建在这个签名上。
+
+---
+
+# 第二批工单（T42–T57）：随机层之外的全部剩余工作
+
+**背景。** 已确认的范围决定：**暂不自建 Itô/随机积分**（自建最小切片约需 300–460 条定理，见与 Jun 的讨论）。
+因此凡是依赖随机流的命题，一律写成 **Lean 的显式假设**（定理参数或 `structure` 字段），
+**绝不写 `axiom`** —— 仓库有硬性公理审计 `#assert_rbm_axioms`，出现任何项目公理即构建失败。
+
+下面 16 张工单**每张只碰一个新文件**，互不重叠，可以同时开工。
+唯一的共享文件是根 `RBM1D.lean` 的 import 列表：**只在自己那一行做点插入，绝不整体重排**
+（`sorted(set(lines))` 曾把 `#assert_rbm_axioms` 搅进 import 块）。
+
+论文里被引用的**外部文献**（`[39]` Lemma 3.3 的大偏差估计、`[40]` (4.11) 的涨落平均）
+按「只用这一篇论文」的约束，一律作为假设进入，不去证。
+
+## 可以立刻开工（无未满足依赖）
+
+### T42 — `RBM1D/Hierarchy/Kernel.lean` · 难度 M · **最高优先级，下游六张单都 import 它**
+
+Def 5.2（p.53）的两个张量算子，作用在 `A : (Fin n → ZMod L) → ℂ` 上：
+
+* **(5.16)** `(Θ_{t,σ} ∘ A)_a = Σ_i Σ_{b_i} (m_i m_{i+1} / (1 − t·m_i m_{i+1}·S^(B)))_{a_i b_i} · A_{a^{(i)}}`
+  其中 `a^{(i)}` 是把 `a` 的第 `i` 个分量换成 `b_i`（Mathlib `Function.update`）。
+* **(5.17)** `(U_{s,t,σ} ∘ A)_a = Σ_b ∏_i ((1 − s·ξ_i·S^(B)) / (1 − t·ξ_i·S^(B)))_{a_i b_i} · A_b`，`ξ_i = m(σ_i)m(σ_{i+1})`。
+
+要证的：
+
+1. **(5.18)** `(1 − sξS^(B))(1 − tξS^(B))⁻¹ = I − (s−t)·ξ·Θ^(B)_{tξ}·S^(B)`。
+   直接从 `RBM.Theta` 的定义与 `eq_Theta_of_mul` 得到；这是整条线的地基。
+2. 半群律 `U_{u,t,σ} ∘ U_{s,u,σ} = U_{s,t,σ}`、`U_{t,t,σ} = id`。
+3. **Lemma 7.1 / (7.1)**：`‖U_{s,t,σ} ∘ A‖_max ≤ (1 + |1−s|·max_{‖ξ‖≤1}‖Θ^(B)_{tξ}‖_{max→max})^n · ‖A‖_max`，
+   再由 (2.52) 得 `≺ ‖A‖_max·(η_s/η_t)^n`。**常数不求最优**。
+4. Lemma 5.3 的确定性一半：`dA = Θ_{t,σ}∘A dt + D dt ⟹ A_t = U_{s,t,σ}∘A_s + ∫_s^t U_{u,t,σ}∘D_u du`。
+   随机积分那一项**不在本工单范围**。
+
+**已有可用**：`Propagator/Basic.lean`（`Theta`、`eq_Theta_of_mul`）、`Propagator/Bounds.lean`
+（`norm_Theta_le`、`sum_norm_Theta_row_le`）、`Propagator/DecayComplex.lean`（(2.52) 复 ξ 版）。
+
+**建议签名**（下游按这个写，改签名请先在本文件里改并提交）：
+```lean
+noncomputable def Uker (L n : ℕ) (m : Bool → ℂ) (s t : ℝ) (σ : Fin n → Bool) :
+    ((Fin n → ZMod L) → ℂ) → ((Fin n → ZMod L) → ℂ)
+```
+
+**Mathlib**：`Function.update`、`Finset.sum_comm`、`Finset.prod_congr`、`Matrix.mulVec`、
+`Finset.abs_sum_le_sum_abs`；Duhamel 用 `ODE_solution_unique` / `intervalIntegral`。
+
+---
+
+### T43 — `RBM1D/Analysis/StretchedExp.lean` · 难度 M · **完全自足，不需要任何 RBM 背景**
+
+纯实分析。定义 (5.27) `T_{u,D}(ℓ) := (Wℓ_uη_u)^{-2}·exp(−(ℓ/ℓ_u)^{1/2}) + W^{-D}`
+与 (5.28) `J_{u,D}(ℓ) := T^{(L−K)}_u(ℓ)/T_{u,D}(ℓ) + 1`，证：
+
+1. `T_{u,D}` 关于 `ℓ` 非增；**(5.32)** `T_{u,D}(ℓ − C·ℓ*_u) ≺ T_{u,D}(ℓ)`，`ℓ*_u = (log W)^{3/2}ℓ_u`。
+2. `∫_0^a exp(−√(a−x) − √x + √a) dx ≤ C`（论文说 `C ≈ 6.12`，我们只要一个显式常数）。
+3. `∫_0^∞ exp(−√x) dx = 2`。
+4. 半指数变体（(5.62) 用）。
+5. **离散卷积界**（(5.50)(5.72) 的实质）：
+   `Σ_{x : ZMod L} T_{u,D}(‖a₁−x‖)·T_{u,D}(‖a₂−x‖) ≺ η_u⁻¹(Wℓ_uη_u)⁻¹·T_{u,D}(‖a₁−a₂‖)`。
+6. **(7.12)** `max_b (‖a₁−a₂‖^{1/2} − ‖b₁−b₂‖^{1/2}) ≤ C·(log W)^{3/4}·ℓ_t^{1/2}`
+   在 `‖a_i−b_i‖ ≤ ¼ℓ*_t` 的限制下。
+
+**Mathlib**：`Real.sqrt`、`Real.exp`、`Real.add_pow_le_pow_mul_pow_of_sq_le_sq` 一类，
+`intervalIntegral`、`MeasureTheory.integral_comp_mul_left`、`Finset.sum_le_sum`，
+和式↔积分比较用 `Finset.sum_le_integral_of_monotoneOn` 家族（**先 grep 确认当前名字**）。
+
+---
+
+### T44 — `RBM1D/Loop/Split.lean` · 难度 M
+
+固定 Hermitian `H`、固定 `z`，**零概率成分**。
+
+1. **(5.2)** `‖G_t‖_op ≤ 1/η_t`、`‖E_a‖_op ≤ W⁻¹` ⟹ `|L_{t,σ,a}| = O(W^{-n+1})`。
+2. **(5.114)–(5.117)** 把 `2n+2`-loop 写成
+   `W⁻² Σ_{i∈I_b, j∈I_{b'}} (C₁^{(n+1)})_{ij}(C₂^{(n+1)})_{ji}`，再按 `l₁=⌊(n+1)/2⌋`、`l₂=n+1−l₁` 劈开，
+   得 `max|L^{(2n+2)}| ≤ max|L^{(2l₁)}|·max|L^{(2l₂)}|`。
+3. **(5.118)** `Ξ^{(L)}_{u,2n+2} ≤ Ξ^{(L)}_{u,2l₁}·Ξ^{(L)}_{u,2l₂}·(Wℓ_uη_u)`。
+4. **(6.4)** `(max|L^{(2m+1)}|)² ≤ max|L^{(2m)}|·max|L^{(2m+2)}|`。
+5. **Lemma 6.1**（Gram 界）：`v, w₁…w_m` 属于有限维内积空间，`A_{ij} = ⟨w_i, w_j⟩`，则对任意 `p ≥ 1`
+   `Σ_i |⟨v,w_i⟩|² ≤ ‖v‖²·(tr A^p)^{1/p}`。
+   有限维下最省事的路线：`A` 是 PSD Gram 阵，`‖A‖_{ℓ²→ℓ²} = λ_max(A) ≤ (tr A^p)^{1/p}`，
+   用 `Matrix.PosSemidef` + `Matrix.IsHermitian.eigenvalues` + `Finset.single_le_sum`。
+
+**已有可用**：`Loop/Chain.lean`（`gchain`、`gchain_conjTranspose`、`trace_gchain_mul_Eblk`）、
+`Loop/GLoop.lean`（`gloop`、`gloop_two_plus_minus_blocks`、`gloop_rotate`）、`Defs/Model.lean`（`Eblk`）。
+
+---
+
+### T45 — `RBM1D/Green/EntryBound.lean` · 难度 L · **下游用得最多**
+
+Lemma 4.1（p.48–50）。**两条外部输入写成本文件定理的显式假设**：
+
+```lean
+-- [39, Lemma 3.3] 的形状：X 与 H 的第 i 行独立时的大偏差界
+(hLDE : ∀ i j (X : _), Indep i X → ‖Σ_k H i k * X k‖ ≺ (Σ_k S i k * ‖X k‖^2)^(1/2))
+-- (4.12) = [40, (4.11)] 的涨落平均
+(hFA  : ∀ (c : _ → ℝ), (∀ k, |c k| ≤ W⁻¹) → Σ_k |c k| ≤ 1 →
+          ‖Σ_k c k * (1 − E_k) (G k k − m)‖ ≺ max_a L_{t,(+,−),a})
+```
+
+在这两条之上确定性地推出：
+
+* **(4.10)(4.11)** 的迭代，用 (4.8)(4.9) 去掉 `(i)` 上标 ⟹ **(4.2)**
+  `1_Ω·max_{i∈I_a,j∈I_b}|G_{ij}|² ≺ Σ_{a'=a±1}Σ_{b'=b±1} L_{t,(+,−),(a',b')} + W⁻¹·1(‖a−b‖≤1)`。
+* **(4.3)** `1_Ω·max_i |G_{ii} − m|² ≺ max_{a,b} L_{t,(+,−),(a,b)}`，
+  用 (4.7) 在 `(−z−tm)⁻¹` 附近展开，配 `m = −(tm+z)⁻¹` 与 `‖(1−tm²S)⁻¹‖_{max→max} = O(1)`
+  （后者就是我们的 `Θ^(B)`，已有）。
+* **(4.5)** `max_a |⟨(G_t − m)E_a⟩| ≺ max_{a,b} L_{t,(+,−),(a,b)}`（由 `hFA` 加自洽求解）。
+
+**已有可用**：`Green/Minor.lean`（(4.7)(4.8)(4.9)，刚落地）、`Loop/GLoop.lean`
+（`gloop_two_plus_minus_blocks` 正是 (4.2) 右端的形状）、`Defs/StochDom.lean`、`Propagator/Bounds.lean`。
+
+**注意符号**：我们证出的 (4.8) 带负号，论文写的没有；见 `docs/paper-deltas.md` 第 23 条。用我们的版本。
+
+---
+
+### T46 — `RBM1D/Propagator/ZeroMode.lean` · 难度 S/M · **干净、独立、马上能开**
+
+§7.2 末尾（p.84）的确定性内容。令 `J` 为全 1 阵，`S̃^(B) := (1−ζ)S^(B) + (ζ/L)·J`。证：
+
+```
+[(1 − ξS̃^(B))⁻¹]_{ab} − [(1 − ξS̃^(B))⁻¹]_{a₀b₀}
+  = [(1 − ξ(1−ζ)S^(B))⁻¹]_{ab} − [(1 − ξ(1−ζ)S^(B))⁻¹]_{a₀b₀}
+```
+
+以及 `‖ξ‖ ≤ 1`、`ζ` 小时的双边比较 `‖1−ξ‖ ≍ ‖1−ξ(1−ζ)‖`。
+**为什么便宜**：`J` 只作用在常数模上，而 `Θ_ξ·𝟙 = (1−ξ)⁻¹·𝟙` 我们已经证过
+（`Theta_mulVec_one` / `sum_Theta_row`），所以整个秩一修正是一个标量，
+Sherman–Morrison 可以手搓，不必找 Mathlib 的秩一更新引理。
+
+**推论**：(2.52)(2.53) 一类的界从 `Θ^(B)_{ξ(1−ζ)}` 原样搬到 `S̃^(B)` 上，只差一个常数零模。
+
+---
+
+### T47 — `RBM1D/Flow/Initial.lean` · 难度 S · **§2.7 里唯一无条件成立的一条**
+
+**(2.67)**：`H_0 = 0`、`z_0 = E + m^{(E)}`、`m(m+E) = −1` ⟹ `G_0(σ) = m(σ)·I`；
+再由 `E_a E_b = δ_{ab}W⁻¹E_a`（已证）与 `Tr E_a = 1` 得
+
+```
+L_{0,σ,a} = W^{-n+1}·∏_k m(σ_k)·1(a_1 = ⋯ = a_n) = K_{0,σ,a}
+```
+
+即 §2.7 归纳的基例，**一条假设都不用**。
+
+**已有可用**：`Loop/GLoop.lean`（`Gsig`、`gloop`、`gloopProd`）、`Defs/Model.lean`（`Eblk` 及其乘法/迹）、
+`Loop/Primitive.lean`（`primInit`）或 `Loop/TreeRepGeneral.lean`（`Kgen` 在 `t = 0`）、`Defs/Semicircle.lean`。
+
+---
+
+### T48 — `RBM1D/Flow/Scales.lean` · 难度 S/M
+
+流的尺度层与时间网格：
+
+1. `η_t = (1−t)·Im m^{(E)}`（已有 `zt_im`）、`ℓ_t = ℓ̂(t) = min((1−t)^{-1/2}, L)`（已有 `ellHat`）。
+2. 关键恒等式 `A_t := W·ℓ_t·η_t = W·Im m^{(E)}·min((1−t)^{1/2}, L(1−t))`，
+   两个分支都显然关于 `t` 反单调 ⟹ **`s ↦ W ℓ_s η_s` 在 `[0,1]` 上非增**（p.24 用）。
+3. 几何网格 `1 − s_k = W^{−kτ'}`，`s_0 = 0`，`s_{n_0} = t`，并逐对核验 **(2.72)**
+   `A_t⁻¹ ≤ ((1−t)/(1−s))^{30}`：因为 `((1−s_k)/(1−s_{k+1}))^{−30} = W^{−30τ'}`。
+4. `η_t ≍ 1−t`、`ℓ(z_t) ≍ ℓ_t`、`ℓ(z) ≍ ℓ_t`（p.21）。
+
+**风险提示**：`n_0` 依赖 `τ` 和 `W = W(N)`，所以「`1−t = W^{−n_0τ'}`」是逐 `N` 的存在性陈述。
+Lean 里最干净的做法是**先固定 `τ, τ', n_0`，再对 `t ∈ [1 − W^{−n_0τ'}, …]` 全称量化**，
+而不是从 `t` 反推 `n_0`。写之前先把这个定下来并记进 `docs/STATUS.md`。
+
+---
+
+### T49 — `RBM1D/Loop/ChainExpand.lean` · 难度 M/L
+
+附录 A 的确定性核心（附录 A 开头自己声明「未用于主定理的证明」，所以它是**加分项不是关键路径**，
+但完全可做，而且直接吃我们刚做完的 `Green/Minor.lean`）：
+
+1. 双边 chain→loop：`L_{t,σ'',a''} = ⟨E_a · C_{t,σ,a} · E_b · C†_{t,σ,a}⟩`（`gchain_conjTranspose` + `trace_gchain_mul_Eblk` 的短扩展）。
+2. **(A.5)(A.6)** 归一化比值 `Ξ^{(d)}_n`、`Ξ^{(o)}_n` 的定义。
+3. **(A.8)(A.9)(A.10)** `C_n`、`C^{(i)}_n`、`C^{(ii)}_n`（用 `minorGreen`）。
+4. **(A.18)** `(C^{(i)}_n)_{ij} = (G₁)_{ii}(H·C^{(ii)}_n)_{ij}` —— 这就是 (4.8)，直接用 `green_off_diag_paper`。
+5. **(A.21)–(A.26)** 的**精确望远镜恒等式**（用 (4.9)），组合约束按论文写成 `Finset` 上带 `1(ℓ + Σn_i = n+k)` 指示函数的和。
+6. **(A.15)** 对角劈分 `(C_nE_aC_n†)_{ii} = W⁻¹1(i∈I_a)|C_{n;ii}|² + Σ_{j≠i}C_{n;ij}E_a(j)C†_{n;ji}`。
+7. p.85/p.88 的 Cauchy–Schwarz 梯子与 **(A.27)** 的三分法。
+
+`1/G_{ii} = O(1)` 与 `[39] Lemma 3.3`（出现在 (A.16)(A.19)）**写成本文件定理的假设**。
+
+---
+
+### T50 — `RBM1D/Loop/Continuity.lean` · 难度 M
+
+§6 的确定性骨架（**不含** (6.1) 的分布标度、也不含 (6.10)(6.11)(6.13) 的总装）：
+
+* **(6.3)** 双参数预解式 `G = G̃ + (z − z̃)·G·G̃`。
+* **(6.5)** 对称 loop 的范式 `L_{t,σ',a'} = ⟨E_{a₀}·C_{t,σ,a}·E_{a_m}·C†_{t,σ,a}⟩`。
+* **(6.7)** 望远镜积恒等式 `∏(a_k+b_k) = ∏a_k + Σ_l (∏_{j<l}(a_j+b_j))·b_l·(∏_{j>l}a_j)`。
+* **(6.8)(6.9)** chain 展开与逐项 Cauchy–Schwarz。
+* **(6.12)** Ward 那一步 `W⁻¹Σ_{i∈I_{a₀}}‖v^{(l)}‖₂² = (2i Im z)⁻¹(L_{σ^{(1)}} − L_{σ^{(2)}})`。
+* `z̃_{t₁} := (t₂/t₁)^{1/2}z_{t₁}` 的算术：`|z_{t₂} − z̃_{t₁}| ≤ C(1−t₁)`、
+  `|z_{t₂} − z̃_{t₁}|² ≤ Cη_{t₁}²`、`|z_{t₂} − z̃_{t₁}|²/Im z̃_{t₁} ≤ Cη_{t₁}`、`Im z̃_{t₁} ≍ Im z_{t₁}`。
+
+## 需要先等一个签名/前置（但可以先用 `variable` 假设占位并行开工）
+
+### T51 — `RBM1D/Hierarchy/KernelDecay.lean` · 难度 L · 等 T42 的签名
+
+**Lemma 7.2** (7.2)（`n=2`、`σ=(+,−)` 的尾估计）与 **Lemma 7.3** (7.13)–(7.24)：
+
+* (7.13) `(u,τ,D)` 快衰减谓词；(7.14) 一般界；
+* (7.15) sum-zero 谓词；**(7.16)** 在 Case 1（`∃k: σ_k = σ_{k−1}`）或 Case 2（sum-zero）下的改进界
+  `≤ W^{C_nτ}‖A‖_max·(ℓ_sη_s/(ℓ_tη_t))^n + W^{−D+C_n}`。
+
+**这条是 §5.4–§5.8 的硬依赖**：sum-zero 与「短边」带来的 `(ℓ_sη_s/ℓ_tη_t)^n` 增益全靠它。
+(7.21) 用 (2.52)；Case 2 的 `|Ξ*_i| ≤ C(η_s/(ℓ_tη_t))(‖b_i−b_1‖/ℓ_t)` 用 **(2.53)**（`DiffComplex.lean` 已有）。
+(7.19) 的容斥恒等式对 `n` 归纳即可。**六张单里最重的一张，预算给足。**
+
+### T52 — `RBM1D/Hierarchy/SumZero.lean` · 难度 M · 等 T42
+
+Def 5.12：`(P∘A)_{a₁} := Σ_{a₂…a_n}A_a`；`ϑ_{t,a} := (1−t)^{n−1}∏_{i=2}^n(Θ^(B)_t)_{a₁a_i}`；
+`(Q_t∘A)_a := A_a − (P∘A)_{a₁}·ϑ_{t,a}`。由 `Σ_b(Θ^(B)_t)_{ab} = (1−t)⁻¹`（已有）得 `P∘ϑ_t = 1`、`P∘Q_t = 0`。
+
+再证：**Lemma 5.13 (5.87)**（max 范数界 + 保持快衰减）；p.66 的行和恒等式
+`Σ_{a_i}(m_im_{i+1}/(1−t m_im_{i+1}S^(B)))_{a_ib_i} = m_im_{i+1}/(1−t m_im_{i+1})`（与 `b_i` 无关）
+⟹ **`P∘A = 0 ⟹ P∘(Θ_{t,σ}∘A) = 0`**；**(5.90)**；**(5.99)** 交换子界；
+**(5.104)** 的 `Q⊗Q = I⊗I − (ϑP)⊗I − I⊗(ϑP) + (ϑP)⊗(ϑP)` 与 `(P⊗I)∘(Q⊗Q)∘A = 0`。
+
+注意：`K` 层的 sum-zero 已经在 `Loop/SumZero.lean`（T34），**不是同一个文件，不要动它**。
+
+### T53 — `RBM1D/Hierarchy/Step3.lean` · 难度 M · 等 T44 · **性价比最高的一张**
+
+定义 (5.76) 的 `Ξ^{(L)}_{t,m}`、`Ξ^{(L−K)}_{t,m}` 与 (5.108) 的 `Ψ(n,k,s,u,t)` 及谓词 `S(n,k,s,u,t)`；
+证 (5.107) 的互推；**把 Lemma 5.14 的 (5.92) 与 T44 的 (5.118) 当作假设**，证 **(5.109)** 的双重归纳
+`{l=k, m≤n−1}` 或 `{l=k−1, m≤n+2}` ⟹ `S(n,k)`；跑完归纳得 **(2.77)**；证 (5.119)(5.120)。
+
+**给定 (5.92) 作假设后，Step 3 是 100% 确定性的**，没有任何概率内容。
+
+### T54 — `RBM1D/Flow/Hypotheses.lean` · 难度 M
+
+随机层的假设接口。**全部是 `structure` 字段，一个 `axiom` 都不许有。**
+
+* `Sample`（(2.34)(2.36) 的逐 `N` 数据：`H : ℝ → Ω → Matrix …`、Hermitian、`H 0 = 0`）；
+* `Band`（`N = W·L`、(2.2) 的带宽条件、概率测度）；
+* `Lval`（(2.41)，用现成的 `gloop`）、`Kval`（用现成的 `Kgen`）；
+* `Bounds B s`：四个字段依次编码 (2.68)/(2.60)、(2.69)/(2.63)、(2.70)/(2.64)、(2.71)/(2.62)；
+* `Thm221 B κ`：`Bounds B s → (2.72) → Bounds B t`；
+* `Steps B s t`：八个字段依次是 (2.73)–(2.80)；
+* `Transfer`：(2.39)/(2.65)/(2.66) 的分布相等，**写成「界的传递」而不是测度的相等**，避免动 pushforward。
+
+顺手证两条免费的、用来校验接口没接错：
+`Bounds_of_Steps`（`u := t`，并记下 p.25 的注记：Step 6 可以从 Thm 2.21 里摘掉）；
+以及 `(2.61)` 由 `Bounds.LmK` 加已证的 (2.59) 一行得到。
+
+### T55 — `RBM1D/Hierarchy/Step45.lean` · 难度 S · 等 T53
+
+Step 4：由 (5.125) 对 `n` 归纳得 **(2.78)**；基例 `Ξ^{(L−K)}_{t,1} ≺ 1`（来自 (4.5)）与
+`Ξ^{(L−K)}_{t,2} ≺ (Wℓ_tη_t)^{1/4}`（来自 (2.76)）作假设。
+Step 5：两段劈分（`‖a₁−a₂‖ ≤ 6ℓ*_t` 用 Step 4；`> 6ℓ*_t` 用 (5.48)）得 **(2.79)**。
+**六步里最小最干净的一张**，适合当第二个 agent 的热身。
+
+### T56 — `RBM1D/Hierarchy/Step6.lean` · 难度 S/M · 等 T42、T53
+
+把 Lemma 5.15 的 (5.126) 与「(5.20) 取期望后鞅项消失」作为假设，证：
+(5.128) 的自洽求解（就是求 `Θ^(B)_{um²}` 的逆，已有）；(5.133)(5.134)(5.135) 的三角不等式劈分；
+最后的时间积分 (5.136)，用 (7.14) 与单调性 `ℓ_t²η_t ≤ ℓ_u²η_u`，得 **(2.80)**。
+
+### T57 — `RBM1D/Flow/Iteration.lean` · 难度 M · 等 T47、T48、T54
+
+§2.7 p.24 的主定理：**Lemma 2.18、2.19、2.20 由 Theorem 2.21 推出**。
+基例用 T47 的 (2.67)，网格与 (2.72) 用 T48，接口用 T54；沿 `k = 0,…,n_0−1` 归纳应用 `Thm221`，
+把有限多次 `N^ε` 的损失并进 `≺`。得到 (2.60)(2.62)(2.63)(2.64)，再加 (2.59) 得 (2.61)。
+
+## 认领方式
+
+改表格里「认领」一栏 → `git add docs/TASKS.md` → 立刻 commit（别长时间持有）→ 开工。
+**只按文件名 `git add` 自己那几个，绝不用 `git add -A`。**
 

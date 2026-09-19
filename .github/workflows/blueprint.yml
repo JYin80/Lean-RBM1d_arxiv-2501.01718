@@ -4,10 +4,25 @@ name: Compile blueprint
 # github.event_name == 'push'.  A manual "Run workflow" (workflow_dispatch)
 # builds everything and reports success, but publishes nothing.  To refresh the
 # site, push a commit.
+#
+# Not every commit triggers this: a doc-gen4 build takes about half an hour, and
+# with two agents committing steadily that would keep a queue permanently full
+# for no gain.  Lean Action CI is the fast signal that the code compiles; this
+# workflow republishes the site, so it runs only when something the site shows
+# has actually changed.  Use "Run workflow" to publish on demand -- but note
+# that docgen-action only deploys on a push event, so a manual run builds
+# without publishing.
 on:
   push:
     branches:
       - main
+    paths:
+      - 'RBM1D/**'
+      - 'blueprint/**'
+      - 'home_page/**'
+      - 'lakefile.toml'
+      - 'lean-toolchain'
+      - '.github/workflows/blueprint.yml'
   workflow_dispatch:
 
 # Do NOT cancel in progress: a deploy that is most of the way through a

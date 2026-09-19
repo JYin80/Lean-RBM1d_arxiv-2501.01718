@@ -1,33 +1,23 @@
 name: Compile blueprint
 
-# NOTE: docgen-action only uploads and deploys to Pages when
-# github.event_name == 'push'.  A manual "Run workflow" (workflow_dispatch)
-# builds everything and reports success, but publishes nothing.  To refresh the
-# site, push a commit.
+# Scheduled publication of the site (API docs + blueprint + home page).
 #
-# Not every commit triggers this: a doc-gen4 build takes about half an hour, and
-# with two agents committing steadily that would keep a queue permanently full
-# for no gain.  Lean Action CI is the fast signal that the code compiles; this
-# workflow republishes the site, so it runs only when something the site shows
-# has actually changed.  Use "Run workflow" to publish on demand -- but note
-# that docgen-action only deploys on a push event, so a manual run builds
-# without publishing.
+# Why a schedule and not every push: with several agents committing every few
+# minutes, a push trigger kept one doc-gen4 build running and cancelled every
+# queued one, so almost no run finished, the Mathlib doc cache (saved only on
+# success) was never written, and every build started from scratch.
+#
+# docgen-action only uploads and deploys when github.event_name == 'push', and it
+# also skips the API docs and the Jekyll build on other events.  So this workflow
+# uses docgen-action only for the blueprint (web + PDF) and the checkdecls check,
+# which are not push-gated, and runs the push-gated steps itself: API docs (same
+# script as docgen-action, same Mathlib doc cache), Jekyll, upload, deploy.
+# "Run workflow" (workflow_dispatch) now publishes too.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'RBM1D/**'
-      - 'blueprint/**'
-      - 'home_page/**'
-      - 'lakefile.toml'
-      - 'lean-toolchain'
-      - '.github/workflows/blueprint.yml'
+  schedule:
+    - cron: '23 */3 * * *'   # every three hours
   workflow_dispatch:
 
-# Do NOT cancel in progress: a deploy that is most of the way through a
-# doc-gen4 build should be allowed to finish rather than be killed by the next
-# push.  Queue instead.
 concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: false
@@ -42,7 +32,10 @@ permissions:
 jobs:
   build_project:
     runs-on: ubuntu-latest
-    name: Build project
+    name: Build and publish
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Cleanup to free disk space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.0
@@ -51,8 +44,8 @@ jobs:
           android: true
           dotnet: false
           haskell: false
-          large-packages: false
-          docker-images: false
+          large-packages: true
+          docker-images: true
           swap-storage: false
 
       - name: Checkout project
@@ -67,8 +60,46 @@ jobs:
           lint: false
           mk_all-check: false
 
-      - name: Compile blueprint and documentation
+      - name: Compile blueprint (web + PDF) and check declarations
         uses: leanprover-community/docgen-action@deed0cdc44dd8e5de07a300773eb751d33e32fc8 # 2025-10-26
         with:
           blueprint: true
           homepage: home_page
+          deploy: false
+
+      - name: Restore the Mathlib API doc cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: docbuild/.lake/build/doc
+          key: Docs-${{ hashFiles('lake-manifest.json') }}
+
+      - name: Build API documentation (docgen-action's script, not push-gated here)
+        env:
+          NAME: RBM1D
+          DOCS_FACETS: RBM1D:docs
+          HOMEPAGE: home_page
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/leanprover-community/docgen-action/deed0cdc44dd8e5de07a300773eb751d33e32fc8/scripts/build_docs.sh -o build_docs.sh
+          bash build_docs.sh
+
+      - name: Set up Ruby for Jekyll
+        uses: ruby/setup-ruby@eaecf785f6a34567a6d97f686bbb7bccc1ac1e5c # v1.237.0
+        with:
+          working-directory: home_page
+          ruby-version: "3.1"
+          bundler-cache: true
+
+      - name: Build the home page with Jekyll
+        working-directory: home_page
+        env:
+          JEKYLL_GITHUB_TOKEN: ${{ github.token }}
+        run: JEKYLL_ENV=production bundle exec jekyll build
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: home_page/_site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

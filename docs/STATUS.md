@@ -542,3 +542,13 @@ T20 的边界约定 `Θ_{t mᵢ mᵢ₊₁}` 在这里被 ODE 独立验证了一
   `CLAUDE.md` 规则 2、3 相应更新。
 * linter：我名下文件的警告清零（unused section variables → `omit`，`if_neg` → `ite_eq_right`，
   超长行，未用 simp 参数，maxHeartbeats 注释位置）。`Decay.lean` 与 #2 的文件未动。
+
+### 站点改为定时发布（Claude Code，应用户要求）
+
+`.github/workflows/blueprint.yml` 不再由 push 触发，改为**每 3 小时**（cron `23 */3 * * *`）+ 手动 Run workflow。
+原因：多方高频 push 让构建队列不断被取消，文档缓存（仅成功时保存）从未写入，站点一直 404。
+`docgen-action` 只在 `push` 事件上构建 API 文档 / Jekyll 并部署，所以新 workflow 只用它编译蓝图与 `checkdecls`，
+API 文档（同一脚本、同一 Mathlib 文档缓存）、Jekyll、上传、部署改为 workflow 自己的步骤，**手动 Run workflow 现在也会发布**。
+
+本地：`python3 scripts/blueprint_preview.py` 检查所有 `\lean{}` 名字存在（即 CI 的 checkdecls）与 `\uses{}` 标签，
+并生成 `blueprint/preview.html`（依赖图 + 各章节点表；不需要 leanblueprint/graphviz）。

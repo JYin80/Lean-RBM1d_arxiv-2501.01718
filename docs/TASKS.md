@@ -7,7 +7,7 @@
 | # | 任务 | 文件 | 认领 | 状态 |
 |---|---|---|---|---|
 | T1 | `1 − ‖ρ(ξ)‖ ≍ \|1−ξ\|^{1/2}` 的定量估计 | `Propagator/Decay.lean` | **Cowork** | 进行中（精确恒等式已证） |
-| T1c | T1 的复 ξ 情形：`‖1−ξ‖/8 ≤ (1−‖ρ‖)² ≤ 3‖1−ξ‖`，对全部 `‖ξ‖<1` 一致（实 ξ 情形 Cowork 已在 `c1210a4` 完成） | `Propagator/RateComplex.lean`（新建） | **Claude Code #2** | 进行中 |
+| T1c | T1 的复 ξ 情形：`‖1−ξ‖/8 ≤ (1−‖ρ‖)² ≤ 3‖1−ξ‖`，对全部 `‖ξ‖<1` 一致（实 ξ 情形 Cowork 已在 `c1210a4` 完成） | `Propagator/RateComplex.lean` | Claude Code #2 | **完成** |
 | T2 | `‖A(ξ)‖` 的上界 | `Propagator/Decay.lean` | **Cowork** | 待 T1 |
 | T3 | 组装成论文 (2.52) 的形式 | `Propagator/Decay.lean` | **Cowork** | 待 T1,T2 |
 | T4 | (2.53)(2.54) 差分估计 | `Propagator/Decay.lean` | **Cowork** | 待 T3 |
@@ -26,6 +26,10 @@
 | T18 | Def 2.12 原始方程 + Example 2.15（n=2 闭式解） | `Loop/Primitive.lean` | Claude Code | **完成** |
 | T19 | Lemma 2.8：`m_sc`、`m^{(E)}`、`t` 的代数 | `Defs/Semicircle.lean` | Claude Code | **完成**（代数部分；(2.40) 推迟） |
 | T20 | Def 3.3：星图情形 + n=4 的三张图 | `Loop/Tree.lean` | Claude Code | **完成** |
+| T21 | 一般树值 Γ 的递归定义（Def 3.3 完整版） | `Loop/Tree.lean` | 空闲 | **可开工** |
+| T22 | (2.48) 解的唯一性：双线性结构 + n=2 的 Grönwall | `Loop/Unique.lean`（新建） | 空闲 | **可开工** |
+| T23 | Example 2.16（n=3）：第一个非平凡的树表示实例 | `Loop/Example3.lean`（新建） | 空闲 | **可开工（优先）** |
+| T24 | 公理审计 + 删 `Probe.lean` + linter 清理 | `Test/Axioms.lean`（新建）等 | 空闲 | **可开工** |
 
 ---
 
@@ -470,3 +474,169 @@ Lemma 3.4 本身（树表示成立，即这个和真的解原始方程）**这�
 > 规则照 `CLAUDE.md`：不留 sorry、不发明 Mathlib 引理名（先 grep 或 `#check`）、
 > 每条主定理跑 `#print axioms`、`decide` 不用 `native_decide`、
 > 偏离论文或建模决定记进 `docs/paper-deltas.md`、只 `git add` 自己的文件名。
+
+---
+
+# 第三批工单（2026-09-19，第二批全部完成后开出）
+
+T17–T20 全部完成，218 条定理、0 sorry、`lake build exit=0`。
+T20 的两个副产品值得表扬，也决定了这一批的排法：
+
+* **论文 Figure 6 之后的 n=4 显式式有下标笔误**（边界因子应是 `Θ_{t m_i m_{i+1}}` 而非
+  `Θ_{t m_{i−1} m_i}`），并且用有限差分做了数值判据（`1e−11` vs `1e−2`）——
+  这正是 `CLAUDE.md` 说的「小错自行修改并记档」的标准做法。
+* **n = 2 必须特判**：二角形的树是单条边，不是星图；`not_hasDerivAt_starK_two`
+  用一条**否定性**定理把这件事钉死了，而不是含糊带过。
+
+**建议顺序：T23 → T21 → T22 → T24。**
+T23 放最前面，因为它是**第一次真正检验树表示**：n=2 退化（Example 2.15 已做），
+n=4 只是核对了一个静态恒等式，只有 n=3 才第一次出现「星图 + 一个内点」并且
+必须真的满足 (2.48)。如果 T23 过了，Lemma 3.4 的形状就基本确认了；如果不过，
+现在发现比在一般定义写完之后发现便宜一个数量级。
+
+---
+
+## T23 — Example 2.16（n = 3）：第一个非平凡的树表示实例（**优先**）
+
+新建 `RBM1D/Loop/Example3.lean`。论文 p.20–21（Example 2.16，紧接 Example 2.15）。
+
+### 第一步：又一次下标核对（照 T18 的做法）
+
+论文 (2.48) 在 n=3 时展开为三项（`(k,l) = (1,2), (2,3), (1,3)`）：
+
+```
+d/dt K_{t,σ,a} = W Σ_{b₁c₁} K_{t,(σ₁,σ₂),(a₁,b₁)} S_{b₁c₁} K_{t,σ,(c₁,a₂,a₃)}
+               + W Σ_{b₂c₂} K_{t,(σ₂,σ₃),(a₂,b₂)} S_{b₂c₂} K_{t,σ,(a₁,c₂,a₃)}
+               + W Σ_{b₃c₃} K_{t,(σ₃,σ₁),(a₃,b₃)} S_{b₃c₃} K_{t,σ,(a₁,a₂,c₃)}
+```
+
+用你的 `cutGlueL` / `cutGlueR` 展开一般式，证明它等于上式（就像 `primRhs_two` 那样）。
+**注意第三项**：论文里它的短链是 `(σ₃,σ₁)`，即**跨过端点回绕**的那一对——
+这是 `k=1, l=n` 的情形，也正是 `length_cutGlueR_one` 说右链长度 `= n` 的那一项。
+如果只有它对不上，问题一定在回绕的约定上。对不上就改 `Loop/Index.lean` 并记 `paper-deltas.md`。
+
+### 第二步：用 (2.57) 改写
+
+论文接着用 Example 2.15 把三项里的短链 `K_{(σᵢ,σⱼ),(aᵢ,b)}` 换成 `W⁻¹mᵢmⱼ(Θ_{t mᵢmⱼ})_{aᵢb}`，
+于是 `W · W⁻¹ = 1`，得到
+
+```
+d/dt K_{t,σ,a} = Σ_{c₁} (m₁m₂ Θ_{t m₁m₂} S^(B))_{a₁c₁} K_{t,σ,(c₁,a₂,a₃)} + （另两项同理）
+```
+
+把这一步也证出来（用你已有的 `kTwo`）。
+
+### 第三步：树表示在 n=3 成立（**本工单的里程碑**）
+
+`TSP 3 = {∅}`（`TSP_three` 已证），所以 Lemma 3.4 在 n=3 就是星图一项：
+
+```
+K_{t,σ,(a₁,a₂,a₃)} = m₁m₂m₃ · W⁻² · Σ_b (Θ_{t m₁m₂})_{a₁b} (Θ_{t m₂m₃})_{a₂b} (Θ_{t m₃m₁})_{a₃b}
+```
+
+（下标用 T20 里**更正过**的 `Θ_{t m_i m_{i+1}}` 约定，不要用论文 Figure 6 后那个笔误版。）
+
+要证：它满足第二步得到的方程，且 `t = 0` 时等于 Def 2.12 的初值
+`W⁻² m₁m₂m₃ · 1(a₁=a₂=a₃)`（`Θ_0 = 1`，三个 Θ 各给一个 δ）。
+
+求导链条：对 `Σ_b` 里的三因子乘积用乘法法则，每个因子按 (2.51) 求导得
+`mᵢmⱼ(Θ S Θ)`，正好凑出三项。用 `RBM.hasDerivAt_Theta_apply` + `HasDerivAt.mul`
+（三项乘积要嵌套两次）。**这是整个项目里第一次出现「树的每条边各贡献一项求导」的结构**，
+也是 Lemma 3.4 一般证明的缩影——把它做干净，一般证明就是同一段论证加一层归纳。
+
+如果哪一步对不上，**先用数值验**（你已经写了 `scripts/tree_ode_check.py`），
+确定是论文的问题还是我们的问题，再动手改，并记进 `docs/paper-deltas.md`。
+
+---
+
+## T21 — 一般树值 Γ 的递归定义（Def 3.3 完整版）
+
+继续 `RBM1D/Loop/Tree.lean`（你自己的文件）。
+
+按 T20 定下的路线：**不构造树的顶点集与边集**，直接对无交叉集合 `F` 递归定义 Γ 的值。
+
+```
+Γ(n, σ, a, F) :=
+  | n ≤ 2            => 单边：(Θ_{t m₀ m₁})_{a₀ a₁}                （T20 的 kTwo_eq_edge）
+  | F = ∅, n ≥ 3     => 星图：Σ_b Π_i (Θ_{t m_i m_{i+1}})_{a_i b}   （T20 的 starGamma）
+  | {i,j} ∈ F        => Σ_{x,y} Γ(左多边形, F 左) · (Θ_{t m_i m_j} − 1)_{x y} · Γ(右多边形, F 右)
+```
+
+要点：
+
+1. **递归下降**。`{i,j}` 非相邻 ⇒ 两个小多边形的边数分别是 `j−i+1` 和 `n−(j−i)+1`，
+   **都 ≤ n−1**。所以 `termination_by n` 就够，不必对 `F.card` 做字典序。
+   （相邻对不在 `diagonals` 里，这正是 `IsDiag` 排除相邻的原因——请在注释里写明这一点，
+   它是终止性的全部依据。）
+2. **`F` 的分裂**。`F \ {(i,j)}` 里的每个对角线，因为与 `(i,j)` 不交叉，必然整个落在
+   左边或整个落在右边。这条「不交叉 ⇒ 可分」是递归良定义的关键，**要作为引理证出来**，
+   不要 `decide` 糊过去（`n` 是变量）。
+3. **良定义性**。选哪个 `{i,j}` 展开会影响结果吗？数学上不会，但 Lean 里若用
+   「取 `F` 的某个元素」就得证明与选择无关。**建议避开这个坑**：按某个固定规则选
+   （例如字典序最小的对角线），这样定义是确定的，「与选择无关」就不必证。
+   代价是后面要用「换个顺序展开」时得补引理——先记在文件注释里，别现在做。
+4. 用 `List` 承载 `(σ, a)`（与 `Loop/Index.lean` 一致），切片才方便。
+
+**验收标准（已经现成）**：`gammaFour_eq`。一般定义在 `n = 4` 必须化归到 T20 已证的
+那个三项和。做完第一件事就是把这条接上。
+
+---
+
+## T22 — (2.48) 解的唯一性
+
+新建 `RBM1D/Loop/Unique.lean`。Def 2.12 说 K 是 (2.48) 的**唯一**解，我们目前只有谓词
+`IsPrimitive`，没有唯一性。Lemma 3.4 的整个策略（把树和当定义、证它满足方程、用唯一性
+得到它就是 K）就卡在这一条上。
+
+### 先证这条结构引理（它决定了证明的形状）
+
+由 `length_cutGlueL_add_length_cutGlueR`：(2.48) 右端每一项的两条链长度满足
+`len_L + len_R = n + 2`，且都 `≥ 2`、都 `≤ n`。于是：
+
+* **n = 2**：只有 `(2,2)`，方程对长度-2 的未知量是**二次**的（Riccati 型）；
+* **n ≥ 3**：含长度-n 因子的项，另一个因子长度必为 2。所以固定住所有长度 `< n` 的解之后，
+  长度-n 的方程是**线性**的（系数由长度-2 的解给出）+ 低阶源项。
+
+**把这条写成引理**（对长度做分类即可，纯组合），它是下面一切的依据，也值得单独立个名字。
+
+### 然后
+
+1. **n = 2 的唯一性**：两个解之差满足 `d/dt D = 双线性项`，在解有界的时间区间上用 Grönwall。
+   Mathlib 里找 `ODE_solution_unique` / `ODE_solution_unique_of_mem_Icc` / `norm_le_gronwallBound_of_norm_deriv_right_le`
+   （**名字先 grep**，别猜）。有界性作为假设写进去即可，不要去证解的存在性。
+2. **n ≥ 3 的唯一性**：对 `n` 归纳，用上面的线性结构 + 线性 ODE 的唯一性。
+
+**不要**做存在性。论文的存在性是靠树公式给出的（Lemma 3.4），我们也走这条路。
+
+---
+
+## T24 — 公理审计、删 Probe、linter 清理
+
+三件互不相干的收尾，凑一条工单，做完就把仓库的卫生拉到位。
+
+1. **公理审计**。新建 `RBM1D/Test/Axioms.lean`，对每条主定理跑 `#print axioms`。
+   `CLAUDE.md` 要求只出现 `propext / Classical.choice / Quot.sound`。
+   但目前是靠人读 build.log——**请改成硬性的**：查一下 Lean 有没有
+   `#guard_msgs in #print axioms foo` 这种写法能让「冒出新公理」直接编译失败
+   （先 `#check` / grep `.lake/packages/` 确认语法存在再用；不存在就退回
+   `#print axioms` 并在文件头写明需要人工核对）。这是整个项目最重要的一条回归防线。
+2. **删 `RBM1D/Probe.lean`**（原 T7）。先把里面还有价值的 `#check` 结论
+   （那些"这个引理在 Mathlib 里叫什么"的记录）转成 `docs/mathlib-api.md` 的条目，再删文件，
+   同时从 `RBM1D.lean` 的 import 里摘掉。
+3. **linter 清理**：`automatically included section variable(s) unused`、
+   `if_neg/if_pos has been deprecated`、`This line exceeds the 100 character limit`。
+   **只动你自己写的文件**：`Defs/{Block,Dist,Domination,Model,Semicircle}.lean`、
+   `Loop/*.lean`、`Propagator/{Basic,Bounds,Deriv,Root,Support,Symbol}.lean`、
+   `Delocalization.lean`、`Test/*.lean`。
+   **`Propagator/Decay.lean` 是我的，别碰**（我在里面做 (2.52)）。
+
+---
+
+## 给 Claude Code 的一句话（第三批）
+
+> 读 `docs/TASKS.md` 的「第三批工单」，按 T23 → T21 → T22 → T24 做。
+> 开工前先把表格里的 `认领` 改成自己并单独提交这一行。
+> T23 的第一步和 T18 一样是下标核对，核对完先提交再往下。
+> 规则照 `CLAUDE.md`：不留 sorry、不发明 Mathlib 引理名、每条主定理跑 `#print axioms`、
+> 不用 `native_decide`、偏离论文或建模决定记进 `docs/paper-deltas.md`、只 `git add` 自己的文件名。
+> `Propagator/Decay.lean` 是 Cowork 侧在写的，不要碰。

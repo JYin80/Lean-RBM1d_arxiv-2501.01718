@@ -956,4 +956,57 @@ theorem norm_Theta_second_diff_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : 
 
 end SecondDiff
 
+section L1Norm
+
+variable (L : ℕ) [NeZero L]
+
+/-- For real `ξ = t ∈ (0,1)` every entry of `Θ_t` is a **positive real**: in the
+closed form `A(ρ^d + ρ^{L-d})` the root `ρ` lies in `(0,1)` and
+`A = (1-ρ)/[(1-t)(1-ρ^L)(1+ρ)]` has all four factors positive. -/
+theorem exists_pos_Theta_apply_of_real (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1)
+    (x y : ZMod L) : ∃ c : ℝ, 0 < c ∧ Theta L (t : ℂ) x y = (c : ℂ) := by
+  obtain ⟨r, hrho, hr0, hr1, hlow, hhigh⟩ := rho_real_bounds ht0 ht1
+  have htne : (t : ℂ) ≠ 0 := by exact_mod_cast ne_of_gt ht0
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have hL0 : L ≠ 0 := by omega
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hrL : r ^ L < 1 := pow_lt_one₀ hr0.le hr1 hL0
+  have hAA : AA L (t : ℂ) = (((1 - r) / ((1 - t) * (1 - r ^ L) * (1 + r)) : ℝ) : ℂ) := by
+    rw [AA_eq hL0 htne hnorm, hrho]; push_cast; ring
+  refine ⟨(1 - r) / ((1 - t) * (1 - r ^ L) * (1 + r)) * (r ^ (x - y).val + r ^ (L - (x - y).val)),
+    ?_, ?_⟩
+  · have hden : (0 : ℝ) < (1 - t) * (1 - r ^ L) * (1 + r) :=
+      mul_pos (mul_pos h1t (by linarith)) (by linarith)
+    have hnum : (0 : ℝ) < 1 - r := by linarith
+    have hpow : (0 : ℝ) < r ^ (x - y).val + r ^ (L - (x - y).val) := by positivity
+    exact mul_pos (div_pos hnum hden) hpow
+  · rw [theta_apply_closed_form L hL htne hnorm x y, hAA, hrho]
+    push_cast
+    ring
+
+/-- **The `ℓ¹` bound quoted after (2.52)**, in exact form.
+
+For real `ξ = t ∈ (0,1)` the entries of `Θ_t` are positive, so the `ℓ¹` norm of a
+row *equals* the signed row sum, which `sum_Theta_row` already computes:
+`∑_b |(Θ_t)_{ab}| = (1-t)⁻¹`.  The paper states `≤ C(1-t)^{-1}`; positivity makes
+the constant `1` and the inequality an identity. -/
+theorem sum_norm_Theta_row_of_real (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1)
+    (a : ZMod L) : ∑ b : ZMod L, ‖Theta L (t : ℂ) a b‖ = (1 - t)⁻¹ := by
+  have hnorm : ‖(t : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]; exact ht1
+  have key : ∀ b : ZMod L, ‖Theta L (t : ℂ) a b‖ = (Theta L (t : ℂ) a b).re := by
+    intro b
+    obtain ⟨c, hc, hce⟩ := exists_pos_Theta_apply_of_real L hL ht0 ht1 a b
+    rw [hce, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hc, Complex.ofReal_re]
+  have hsum : ∑ b : ZMod L, ‖Theta L (t : ℂ) a b‖
+      = (∑ b : ZMod L, Theta L (t : ℂ) a b).re := by
+    rw [Complex.re_sum]
+    exact Finset.sum_congr rfl fun b _ => key b
+  rw [hsum, sum_Theta_row L hL hnorm a,
+    show (1 : ℂ) - (t : ℂ) = ((1 - t : ℝ) : ℂ) from by push_cast; ring,
+    ← Complex.ofReal_inv, Complex.ofReal_re]
+
+end L1Norm
+
 end RBM

@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Loop.TreeRep
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Data.List.GetD
 
 /-!
 # Lemma 3.4 for general `n`: a pivot-free tree value
@@ -2362,5 +2363,177 @@ theorem hasDerivAt_Kgen (I : LoopIdx (ZMod L)) (hI : I.WF) (h3 : 3 ≤ I.length)
     exact (diag_pair_term hL W m hm h3 I hI rfl (mem_diagonals_iff.1 hJ)).symm
 
 end Lists
+
+section Final
+
+variable {L : ℕ} [NeZero L]
+
+theorem prod_getD_eq {α : Type*} (l : List α) (f : α → ℂ) (d : α) {n : ℕ} (h : l.length = n) :
+    ∏ i : Fin n, f (l.getD i d) = (l.map f).prod := by
+  subst h
+  rw [← List.prod_ofFn]
+  congr 1
+  apply List.ext_getElem (by simp)
+  intro i h1 h2
+  simp only [List.getElem_ofFn, List.getElem_map]
+  rw [List.getD_eq_getElem _ _ (by simpa using h1)]
+
+theorem allEq_iff {α : Type*} (l : List α) (d : α) {n : ℕ} (h : l.length = n) (hn : 0 < n) :
+    (∀ x ∈ l, ∀ y ∈ l, x = y) ↔ ∀ i : Fin n, l.getD i d = l.getD 0 d := by
+  subst h
+  constructor
+  · intro H i
+    rw [List.getD_eq_getElem _ _ i.isLt, List.getD_eq_getElem _ _ hn]
+    exact H _ (List.getElem_mem _) _ (List.getElem_mem _)
+  · intro H x hx y hy
+    obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.1 hx
+    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.1 hy
+    have h1 := H ⟨i, hi⟩
+    have h2 := H ⟨j, hj⟩
+    rw [List.getD_eq_getElem _ _ hi] at h1
+    rw [List.getD_eq_getElem _ _ hj] at h2
+    rw [h1, h2]
+
+/-- The star with identity matrices: `∑_b ∏_v δ_{a_v b} = 1(all a_v equal)`. -/
+theorem star_one {n : ℕ} [NeZero n] (a : Fin n → ZMod L) :
+    ∑ b : ZMod L, ∏ v : Fin n, (1 : Matrix (ZMod L) (ZMod L) ℂ) (a v) b
+      = if ∀ v, a v = a 0 then 1 else 0 := by
+  simp only [Matrix.one_apply, Finset.prod_boole, Finset.mem_univ, true_imp_iff]
+  rw [Finset.sum_eq_single (a 0)]
+  · intro b _ hb
+    exact ite_eq_right (fun h => hb (h 0).symm)
+  · intro h; exact absurd (Finset.mem_univ _) h
+
+variable (W : ℕ) [NeZero W] (m : Bool → ℂ)
+
+theorem thetaEdge_zero (s s' : Bool) : thetaEdge L m 0 s s' = 1 := by
+  simp [thetaEdge, Theta_zero]
+
+omit [NeZero W] in
+/-- **The initial value** of the tree representation: at `t = 0` all internal edges vanish,
+only the star survives, and it is `1(a₁ = ⋯ = aₙ)`. -/
+theorem Kn_zero {n : ℕ} [NeZero n] (σ : Fin n → Bool) (a : Fin n → ZMod L) :
+    Kn L W m 0 n σ a = (∏ i, m (σ i)) * (W : ℂ)⁻¹ ^ (n - 1) *
+      (if ∀ v, a v = a 0 then 1 else 0) := by
+  rw [Kn]
+  congr 1
+  rw [Finset.sum_eq_single ∅]
+  · rw [treeValG, treeValW_empty]
+    simp only [thetaEdge_zero]
+    exact star_one a
+  · intro F _ hF
+    obtain ⟨d, hd⟩ := Finset.nonempty_iff_ne_empty.2 hF
+    rw [treeValG, treeValW]
+    refine Finset.sum_eq_zero fun b _ => ?_
+    refine mul_eq_zero_of_right _ (Finset.prod_eq_zero (Finset.mem_univ (⟨d, hd⟩ : ↥F)) ?_)
+    simp [thetaEdge_zero]
+  · intro h; exact absurd (empty_mem_TSP n) h
+
+omit [NeZero W] in
+theorem Kgen_zero (I : LoopIdx (ZMod L)) (hI : I.WF) (h2 : 2 ≤ I.length) :
+    Kgen L W m 0 I = primInit L W m I := by
+  rcases Nat.lt_or_ge I.length 3 with h | h
+  · -- `n = 2`
+    have hlen : I.length = 2 := by omega
+    obtain ⟨σ, a⟩ := I
+    have ha : a.length = 2 := hlen
+    have hσ : σ.length = 2 := hI.trans ha
+    obtain ⟨x₁, x₂, rfl⟩ := List.length_eq_two.1 ha
+    obtain ⟨s₁, s₂, rfl⟩ := List.length_eq_two.1 hσ
+    rw [Kgen_two]
+    exact kTwo_zero L W m s₁ s₂ x₁ x₂
+  · -- `n ≥ 3`
+    have : NeZero I.length := ⟨by omega⟩
+    have hσl : I.σ.length = I.length := hI
+    have hall : (∀ v : Fin I.length, I.a.getD v 0 = I.a.getD ((0 : Fin I.length) : ℕ) 0)
+        ↔ ∀ x ∈ I.a, ∀ y ∈ I.a, x = y := by
+      rw [Fin.val_zero]
+      exact (allEq_iff I.a 0 (n := I.length) rfl (by omega)).symm
+    rw [Kgen_eq W m 0 h I rfl, Kn_zero, primInit, prod_getD_eq I.σ m false hσl]
+    simp only [hall]
+    ring
+
+variable (hL : 3 ≤ L) {t : ℝ} (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hL hm
+
+/-- `n = 2`: the tree representation is Example 2.15. -/
+theorem hasDerivAt_Kgen_two (I : LoopIdx (ZMod L)) (hI : I.WF) (h2 : I.length = 2) :
+    HasDerivAt (fun r => Kgen L W m r I) (primRhs L W (Kgen L W m t) I) t := by
+  obtain ⟨σ, a⟩ := I
+  have ha : a.length = 2 := h2
+  have hσ : σ.length = 2 := hI.trans ha
+  obtain ⟨x₁, x₂, rfl⟩ := List.length_eq_two.1 ha
+  obtain ⟨s₁, s₂, rfl⟩ := List.length_eq_two.1 hσ
+  have hfun : (fun r => Kgen L W m r ⟨[s₁, s₂], [x₁, x₂]⟩)
+      = fun r => kTwo L W m r s₁ s₂ x₁ x₂ := funext fun r => Kgen_two W m r _ _ _ _
+  rw [hfun, primRhs_two]
+  simp only [Kgen_two]
+  exact hasDerivAt_kTwo L hL W m s₁ s₂ (hm _ _) x₁ x₂
+
+/-- **(2.48) for the tree representation, every `n ≥ 2`.** -/
+theorem hasDerivAt_Kgen_all (I : LoopIdx (ZMod L)) (hI : I.WF) (h2 : 2 ≤ I.length) :
+    HasDerivAt (fun r => Kgen L W m r I) (primRhs L W (Kgen L W m t) I) t := by
+  rcases Nat.lt_or_ge I.length 3 with h | h
+  · exact hasDerivAt_Kgen_two W m hL hm I hI (by omega)
+  · exact hasDerivAt_Kgen hL W m hm I hI h
+
+end Final
+
+section Lemma34
+
+variable {L : ℕ} [NeZero L] (hL : 3 ≤ L) (W : ℕ) [NeZero W] (m : Bool → ℂ)
+  (hm1 : ∀ s, ‖m s‖ ≤ 1) {T₀ : ℝ} (hT₀ : T₀ < 1)
+include hL hm1 hT₀
+
+/-- **The tree representation solves Definition 2.12** on `[0, T₀]`, `T₀ < 1`, `|m| ≤ 1`. -/
+theorem isPrimitive_Kgen : IsPrimitive L W m (Set.Icc 0 T₀) (fun t => Kgen L W m t) := by
+  refine ⟨fun t ht I hI h2 => ?_, fun I hI h2 => Kgen_zero W m I hI h2,
+    fun t _ s a => Kgen_one W m t s a⟩
+  exact hasDerivAt_Kgen_all W m hL
+    (fun s s' => (norm_mul_le_of_mem_Icc m hm1 ht s s').trans_lt hT₀) I hI h2
+
+omit [NeZero W] in
+theorem norm_Kgen_two_le {t : ℝ} (ht : t ∈ Set.Icc 0 T₀) (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (h2 : I.length = 2) : ‖Kgen L W m t I‖ ≤ (W : ℝ)⁻¹ * (1 - T₀)⁻¹ := by
+  obtain ⟨σ, a⟩ := I
+  have ha : a.length = 2 := h2
+  have hσ : σ.length = 2 := hI.trans ha
+  obtain ⟨x₁, x₂, rfl⟩ := List.length_eq_two.1 ha
+  obtain ⟨s₁, s₂, rfl⟩ := List.length_eq_two.1 hσ
+  rw [Kgen_two]
+  exact norm_kLoop4_two_le W m hL hm1 ht hT₀ (I := ⟨[s₁, s₂], [x₁, x₂]⟩) rfl rfl
+
+/-- **Lemma 3.4 (tree representation), every `n`.**  If `K` solves the primitive equation of
+Definition 2.12 on `[0, T₀]` (`T₀ < 1`, `|m| ≤ 1`) with bounded `2`-loops, then on every loop of
+length `n ≥ 2` it is the tree representation `Kgen`. -/
+theorem eq_Kgen_of_isPrimitive {T : Set ℝ} {K : ℝ → LoopIdx (ZMod L) → ℂ}
+    (hK : IsPrimitive L W m T K) (hT : Set.Icc 0 T₀ ⊆ T) {R : ℝ}
+    (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 → ‖K t I‖ ≤ R) :
+    ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → 2 ≤ I.length →
+      K t I = Kgen L W m t I := by
+  have hK' : IsPrimitive L W m (Set.Icc 0 T₀) K :=
+    ⟨fun t ht => hK.1 t (hT ht), hK.2.1, fun t ht => hK.2.2 t (hT ht)⟩
+  have hpos : 0 < 1 - T₀ := by linarith
+  have hR0 : 0 ≤ max R ((W : ℝ)⁻¹ * (1 - T₀)⁻¹) := le_trans (by positivity) (le_max_right _ _)
+  exact isPrimitive_unique L hL W m hK' (isPrimitive_Kgen hL W m hm1 hT₀) subset_rfl hR0
+    (fun t ht I hI h2 => ⟨(hR t ht I hI h2).trans (le_max_left _ _),
+      (norm_Kgen_two_le hL W m hm1 hT₀ ht I hI h2).trans (le_max_right _ _)⟩)
+
+/-- **Lemma 3.4, (3.5), in the paper's form** for `n ≥ 3`:
+`K_{t,σ,a} = m_σ W^{-n+1} ∑_{Γ ∈ T_SP(P_a)} Γ_a(t, σ)`. -/
+theorem treeRep_general {T : Set ℝ} {K : ℝ → LoopIdx (ZMod L) → ℂ}
+    (hK : IsPrimitive L W m T K) (hT : Set.Icc 0 T₀ ⊆ T) {R : ℝ}
+    (hR : ∀ t ∈ Set.Icc 0 T₀, ∀ I : LoopIdx (ZMod L), I.WF → I.length = 2 → ‖K t I‖ ≤ R)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 T₀) (I : LoopIdx (ZMod L)) (hI : I.WF) (h3 : 3 ≤ I.length) :
+    haveI : NeZero I.length := ⟨by omega⟩
+    K t I = (I.σ.map m).prod * (W : ℂ)⁻¹ ^ (I.length - 1) *
+      ∑ F ∈ TSP I.length, treeValG L m t (fun i => I.σ.getD i false) (fun i => I.a.getD i 0) F := by
+  have : NeZero I.length := ⟨by omega⟩
+  rw [eq_Kgen_of_isPrimitive hL W m hm1 hT₀ hK hT hR t ht I hI (by omega),
+    Kgen_eq W m t h3 I rfl, Kn]
+  congr 2
+  exact prod_getD_eq I.σ m false (n := I.length) hI
+
+end Lemma34
 
 end RBM

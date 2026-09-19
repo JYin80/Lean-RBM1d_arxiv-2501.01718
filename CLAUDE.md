@@ -58,6 +58,12 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 | 路线规划、阶段划分 | — | **主场** |
 | git / CI / GitHub Pages | 都行 | 都行 |
 
+### 任务队列
+
+`docs/TASKS.md` 是两边共用的工单表。**开工前先在表里认领并提交**。
+分工按**文件**切分，不按难度切分：同一时间两边不碰同一个文件，合并就永远是平凡的。
+推之前先 `git pull --rebase`。
+
 ### 交接契约
 
 `docs/STATUS.md` 是两边**唯一**的共享状态。任何一边：

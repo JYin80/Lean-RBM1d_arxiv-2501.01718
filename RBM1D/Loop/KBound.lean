@@ -2455,6 +2455,61 @@ theorem norm_Kpi_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 -
         have : 0 ≤ (C + Ce) * X ^ (N + 1 - 1) := by positivity
         nlinarith
 
+/-- **Lemma 3.11, (3.46)**: `|K_{t,σ,a}| ≤ C (W η_t ℓ̂(t))^{-(n-1)}` for the loops of length
+`3 ≤ n ≤ N_max`, uniformly in `L ≥ 3`, `W` and `0 < t < 1`, in the bulk `|E| ≤ 2 - k`. -/
+theorem norm_Kgen_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) (Nmax : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ (W : ℕ) [NeZero W], ∀ t : ℝ, 0 < t → t < 1 →
+      ∀ I : LoopIdx (ZMod L), I.WF → 3 ≤ I.length → I.length ≤ Nmax →
+        ‖Kgen L W (mSigma E) t I‖ ≤
+          C * ((W : ℝ) * (etaT E t * ellHat L (t : ℂ)))⁻¹ ^ (I.length - 1) := by
+  obtain ⟨C, hC0, hC⟩ := norm_Kpi_le hk0 hk1 hEk Nmax
+  refine ⟨2 ^ (Nmax * Nmax) * C, by positivity, ?_⟩
+  intro L _ hL W _ t ht0 ht1 I hI h3 hN
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  have hm1 := norm_mSigma_le_one hE
+  have : NeZero I.length := ⟨by omega⟩
+  set n := I.length
+  have hrep := K_eq_sum_Kpi hL W (mSigma E) hm1 ht1 (isPrimitive_Kgen hL W (mSigma E) hm1 ht1)
+    subset_rfl (fun s hs J hJ hJ2 => norm_Kgen_two_le hL W (mSigma E) hm1 ht1 hs J hJ hJ2)
+    ⟨ht0.le, le_rfl⟩ I hI h3
+  set X := (etaT E t * ellHat L (t : ℂ))⁻¹
+  have hX0 : 0 ≤ X := by
+    have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0 ht1; positivity
+  have hW1 : (1 : ℝ) ≤ W := by exact_mod_cast Nat.one_le_iff_ne_zero.2 (NeZero.ne W)
+  have hprod : ‖(I.σ.map (mSigma E)).prod‖ = 1 := by
+    induction I.σ with
+    | nil => simp
+    | cons b l ih => rw [List.map_cons, List.prod_cons, norm_mul, ih, norm_mSigma hE2, mul_one]
+  have hcard : ((diagonals n).powerset.card : ℝ) ≤ 2 ^ (Nmax * Nmax) := by
+    rw [card_powerset]
+    have h1 : (diagonals n).card ≤ n * n := by
+      calc (diagonals n).card ≤ (univ : Finset (Fin n × Fin n)).card := card_le_card (subset_univ _)
+        _ = n * n := by rw [card_univ, Fintype.card_prod, Fintype.card_fin]
+    have h2 : n * n ≤ Nmax * Nmax := Nat.mul_le_mul hN hN
+    exact_mod_cast Nat.pow_le_pow_right (by norm_num) (h1.trans h2)
+  have hWinv : ‖(W : ℂ)⁻¹ ^ (n - 1)‖ = ((W : ℝ)⁻¹) ^ (n - 1) := by
+    rw [norm_pow, norm_inv, Complex.norm_natCast]
+  rw [hrep, norm_mul, norm_mul, hprod, one_mul, hWinv]
+  have hsum : ‖∑ π ∈ (diagonals n).powerset,
+      Kpi L (mSigma E) t (fun i => I.σ.getD i false) (fun i => I.a.getD i 0) π‖
+        ≤ 2 ^ (Nmax * Nmax) * (C * X ^ (n - 1)) := by
+    refine (norm_sum_le _ _).trans ?_
+    calc ∑ π ∈ (diagonals n).powerset,
+          ‖Kpi L (mSigma E) t (fun i => I.σ.getD i false) (fun i => I.a.getD i 0) π‖
+        ≤ ∑ _π ∈ (diagonals n).powerset, C * X ^ (n - 1) :=
+          sum_le_sum fun π _ => hC n h3 hN L hL t ht0 ht1 _ _ π
+      _ = ((diagonals n).powerset.card : ℝ) * (C * X ^ (n - 1)) := by
+          rw [sum_const, nsmul_eq_mul]
+      _ ≤ 2 ^ (Nmax * Nmax) * (C * X ^ (n - 1)) := by
+          have : 0 ≤ C * X ^ (n - 1) := by positivity
+          gcongr
+  calc ((W : ℝ)⁻¹) ^ (n - 1) * ‖∑ π ∈ (diagonals n).powerset,
+          Kpi L (mSigma E) t (fun i => I.σ.getD i false) (fun i => I.a.getD i 0) π‖
+      ≤ ((W : ℝ)⁻¹) ^ (n - 1) * (2 ^ (Nmax * Nmax) * (C * X ^ (n - 1))) := by gcongr
+    _ = 2 ^ (Nmax * Nmax) * C * ((W : ℝ) * (etaT E t * ellHat L (t : ℂ)))⁻¹ ^ (n - 1) := by
+        rw [mul_inv, mul_pow]; ring
+
 end Lemma311
 
 end RBM

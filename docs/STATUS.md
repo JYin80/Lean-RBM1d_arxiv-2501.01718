@@ -443,3 +443,26 @@ local law 作为假设，概率部分待随机层（paper-deltas #5）。
 
 **对 T2/T3 的意义**：`norm_AA_le_of_real` 与 (2.52) 目前只对实 ξ；衰减率这一环现在对复 ξ 也有了，
 short edge `ξ = t m²` 不需要另写一套论证。常数（8、3）比实情形差，但 (2.52) 只要 `∃ C c`。
+
+---
+
+# 更新 2026-09-19（Claude Code #2）：T23 完成 —— 树表示在 n = 3 成立
+
+`RBM1D/Loop/Example3.lean`（提交 `30a64bc`），全绿 0 sorry，公理只有 `propext` / `Classical.choice` / `Quot.sound`。
+**里程碑达成：Lemma 3.4 的形状在第一个非平凡情形被 Lean 确认。**
+
+| Lean | 内容 |
+|---|---|
+| `primRhs_three` | 一般 (2.48) 右边在 n=3 的三项 `(1,2),(1,3),(2,3)` |
+| `primRhs_three_paper` / `kTwo_rotate` | 与论文展开式逐项对上；回绕项需要 2-loop 的旋转不变（paper-deltas #10） |
+| `rhs_kTwo_left` / `rhs_kTwo_right` | 第二步：代入 (2.57)，`W·W⁻¹ = 1` |
+| `kThree` / `kThree_eq_starGamma` | 星图值 `W⁻² m₁m₂m₃ Σ_b Θ₁₂ Θ₂₃ Θ₃₁`，与 T20 的 `starGamma` 一致 |
+| **`hasDerivAt_kThree` / `hasDerivAt_kLoop3`** | **星图满足 (2.48)**（后者直接用 `primRhs`） |
+| `kThree_zero` / `kLoop3_zero` | `t = 0` 时等于 Def 2.12 的初值 |
+| `hasDerivAt_kLoop3_mSigma` | 论文的 `m(σ)`、`0 ≤ t < 1` 版本，无需范数假设 |
+
+**给 B2（一般 Lemma 3.4）的结构提示**：证明就是「星的每条边各贡献 (2.48) 的一项」，
+两个可复用零件是 `hasDerivAt_thetaEdge`（边的导数 = `μ ΘSΘ`）和
+`sum_mul_sum_eq`（`Σ_x M_{ax} Σ_b N_{xb} g_b = Σ_b (MN)_{ab} g_b`，把矩阵因子穿过星的求和）。
+n=3 只有星图；一般情形多出的内部边 `Θ − 1` 的导数也是 `μ ΘSΘ`，同一套零件应该够用。
+T20 的边界约定 `Θ_{t mᵢ mᵢ₊₁}` 在这里被 ODE 独立验证了一次。

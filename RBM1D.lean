@@ -6,6 +6,7 @@ import RBM1D.Defs.Domination
 import RBM1D.Defs.Model
 import RBM1D.Defs.Semicircle
 import RBM1D.Loop.Crossing
+import RBM1D.Loop.Example3
 import RBM1D.Loop.Index
 import RBM1D.Loop.Primitive
 import RBM1D.Loop.Tree

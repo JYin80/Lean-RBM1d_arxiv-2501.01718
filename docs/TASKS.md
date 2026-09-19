@@ -28,7 +28,7 @@
 | T20 | Def 3.3：星图情形 + n=4 的三张图 | `Loop/Tree.lean` | Claude Code | **完成** |
 | T21 | 一般树值 Γ 的递归定义（Def 3.3 完整版） | `Loop/Tree.lean` | **Claude Code** | 进行中 |
 | T22 | (2.48) 解的唯一性：双线性结构 + n=2 的 Grönwall | `Loop/Unique.lean`（新建） | 空闲 | **可开工** |
-| T23 | Example 2.16（n=3）：第一个非平凡的树表示实例 | `Loop/Example3.lean`（新建） | **Claude Code #2** | 进行中 |
+| T23 | Example 2.16（n=3）：第一个非平凡的树表示实例 | `Loop/Example3.lean` | Claude Code #2 | **完成** |
 | T24 | 公理审计 + 删 `Probe.lean` + linter 清理 | `Test/Axioms.lean`（新建）等 | 空闲 | **可开工** |
 
 ---

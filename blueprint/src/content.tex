@@ -440,8 +440,41 @@
   Differentiate $\sum_b\Th_{a_1b}\Th_{ba_2}$ at $t=0$ with $\Th_0=1$ and compare.
 \end{proof}
 
+\begin{lemma}[Index check at $n=3$, Example 2.16]\label{eq:2.16-index}
+  \lean{RBM.primRhs_three, RBM.primRhs_three_paper, RBM.kTwo_rotate}\leanok
+  \uses{def:primitive, ex:2.15}
+  At $n=3$ the right-hand side of (2.48) has the three terms $(k,l)=(1,2),(1,3),(2,3)$.
+  The wrap-around term $(1,3)$ has short chain $K_{(\sigma_1,\sigma_3),(b,a_3)}$; the paper
+  writes $K_{(\sigma_3,\sigma_1),(a_3,b)}$, the same $2$-loop read from the other end.  They
+  agree for rotation-invariant $K$, in particular for (2.57).
+\end{lemma}
+\begin{proof}\leanok\uses{def:primitive, ex:2.15}
+  Evaluate the cut-and-glue operators; swap dummy indices using $\SB$ symmetric; for (2.57)
+  use $\Th$ symmetric.
+\end{proof}
+
+\begin{lemma}[Tree representation at $n=3$, Example 2.16]\label{ex:2.16}
+  \lean{RBM.rhs_kTwo_left, RBM.rhs_kTwo_right, RBM.kThree, RBM.kThree_eq_starGamma,
+    RBM.hasDerivAt_thetaEdge, RBM.hasDerivAt_kThree, RBM.kThree_zero, RBM.kLoop3,
+    RBM.hasDerivAt_kLoop3, RBM.hasDerivAt_kLoop3_mSigma, RBM.kLoop3_zero}\leanok
+  \uses{eq:2.16-index, def:3.3, lem:TSP-small, lem:Theta-deriv}
+  With $T_{SP}(3)=\{\emptyset\}$, the star value
+  \[ K_{t,\sigma,a}=W^{-2}m_1m_2m_3\sum_b(\Th_{tm_1m_2})_{a_1b}(\Th_{tm_2m_3})_{a_2b}
+     (\Th_{tm_3m_1})_{a_3b} \]
+  solves (2.48) at $n=3$, the $2$-loops being (2.57), and equals the initial value of
+  Definition 2.12 at $t=0$.
+\end{lemma}
+\begin{proof}\leanok\uses{eq:2.16-index, def:3.3, lem:TSP-small, lem:Theta-deriv}
+  Substituting (2.57) turns the three terms into
+  $\sum_x(m_im_{i+1}\Th_{tm_im_{i+1}}\SB)_{a_ix}K(\dots,x,\dots)$.  Differentiating the star
+  by the product rule, the edge at $a_i$ gives by (2.51)
+  $m_im_{i+1}(\Th\SB\Th)_{a_ib}$, and $\sum_x M_{ax}\sum_bN_{xb}g_b=\sum_b(MN)_{ab}g_b$
+  matches the terms one to one.  At $t=0$, $\Th_0=1$ collapses the sum to
+  $\mathbf 1(a_1=a_2=a_3)$.
+\end{proof}
+
 \begin{lemma}[Tree representation of $\Kcal$, Lemma 3.4]\label{lem:3.4}
-  \uses{def:TSP, def:primitive, lem:Theta-deriv}
+  \uses{def:TSP, def:primitive, lem:Theta-deriv, ex:2.16}
   \emph{Not yet formalized.}  Formalization strategy: take the tree sum as the
   \emph{definition}, prove it satisfies (2.48), and invoke Gr\"onwall uniqueness,
   rather than developing existence theory for the ODE.

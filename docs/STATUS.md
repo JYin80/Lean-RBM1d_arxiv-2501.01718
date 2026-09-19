@@ -722,7 +722,10 @@ T26：**`RBM.ward_two_of_isPrimitive`**——(3.13) 在 n=2 对**任意**满足 
 * 步骤 2 ✔（`0ab6d4d`）：层状性 `nodes_laminar`、`leafPar_eq`/`nodePar_eq`（父亲 = 最小容器的刻画）、`leafPar_root`。
 * 步骤 3a ✔（`5e05224` + 修复 `7a253e6`）：通用带权树值 `gval`（任意有限的节点/叶/边类型），
   `gval_congr`（同构不变）、`gval_split`（两块经一条权为 `PSQ` 的边相连 ⟹ `Σ_{u,w} 块₂(u) S_{uw} 块₁(w)`，剪口作为额外叶还给两块）。
-* 下一步：步骤 3b，沿区间 `J` 剪切：`N(F) = N_out ⊔ N_in`，叶与边的归属，标号和按 Fubini 分解；然后把两块搬运到
+* 步骤 3b ✔（`1155ff2`、`36cd7f7`）：`leafPar_spec`/`nodePar_spec`；剪口两侧的父亲归属；
+  **`treeValW_cut`**：J 边权为 `PSQ` 时，树值 = `Σ_{u,w} (内侧树 + 根叶 (u,Pᵀ)) S_{uw} (外侧树 + 叶 (w,Q))`，两侧为子类型上的 `gval`。
+* 下一步：步骤 3c，把两侧的 `gval` 搬到小多边形 `Fin (w+1)`（内侧，J 平移到 0，根为胶点）与 `Fin (n−w+1)`（外侧，J 塌缩为胶点）上的 `treeValW`；
+  原步骤 3b 的余下说明：：`N(F) = N_out ⊔ N_in`，叶与边的归属，标号和按 Fubini 分解；然后把两块搬运到
   `cutGlueL`/`cutGlueR` 的列表坐标上（左链：J 塌缩成胶点；右链：J 平移到 0 且胶点为根）。
 
 T26 一般 n 的推进方案（比论文 Step 3–4 简单，不需要四角特判和 3-圈 Ward）：

@@ -44,6 +44,7 @@
 | T35 | 储备 B6：Lemma 2.8 的定量部分 (2.40)（`t ≥ c_κ`、`|E| ≤ 2−cκ`、`Im z_t ≍ Im z`） | `Defs/Semicircle.lean` | Claude Code | **完成**（`lemma28_quant`，常数与 κ 无关） |
 | T36 | 维护：新组合定义 `Flong`/`TSPlong` 的 `decide` 回归（储备 B5 的组合部分；(2.48) 的数值核对已被 `hasDerivAt_Kgen_all` 取代）；蓝图 `\lean{}` 全部解析（405 个，已核） | `Test/Layers.lean`（新建） | Claude Code #2 | **完成** |
 | T37 | Lemma 3.11：`K^(π)` 的界 (3.45)、`K` 的界 (3.46)（T34 落地后解锁） | `Propagator/LongDiff.lean`、`Loop/KBound.lean`（新建） | Claude Code | 进行中 |
+| T38 | 下沉共用求和工具到 `Defs/Sums.lean`，消掉两处重复证明 | `Defs/Sums.lean`（新建） | 空闲 | 低优先级清理 |
 
 ---
 
@@ -908,3 +909,22 @@ L_{t,σ,a} = ⟨ Π_i G(σ_i) E_{a_i} ⟩       G(+) = G(z), G(−) = conj
 
 `O(1−t)` 与 `O(η_t)` 的互换由我做的字典保证
 （`Propagator/Edges.lean` 的 `zt_im_le` / `le_zt_im`：`(1−t)√(2κ)/2 ≤ η_t ≤ 1−t`）。
+
+---
+
+## T38 — 下沉共用的求和工具（低优先级清理）
+
+`RBM.Cor35.sum_pow_val_le` / `sum_pow_zdist_le`（`Loop/Cor35.lean`）与
+`RBM.sum_pow_val_le` / `sum_pow_zdist_le`（`Propagator/Edges.lean`）是同一条引理的两份证明。
+新建 `RBM1D/Defs/Sums.lean`，收拢环上的求和工具：
+
+* `sum_zmod_val`（`∑_{u : ZMod L} f u.val = ∑_{v < L} f v`）
+* `sum_pow_val_le`、`sum_pow_sub_val_le`、`sum_pow_zdist_le`
+* `sum_exp_neg_zdist_le`、`one_sub_exp_neg_ge`、`mul_exp_neg_le_exp_neg_one`
+* `two_mul_zdist_le`、`zdist_neg`
+
+**保留 Claude Code 那份 `sum_pow_val_le` 的证明**（用 `ZMod (k+1) ≃ Fin (k+1)` 的 defeq，
+比 Cowork 那份绕 `Finset.sum_image` 的短），然后让两边都 import 新文件、删掉各自的副本。
+`Defs/Sums.lean` 只能依赖 `Defs/Dist.lean`（`zdist`），不能依赖 `Propagator/` 或 `Loop/`。
+
+**动手前先确认两边都没在改这两个文件**（看 git log），这是一次跨两边文件的重构。

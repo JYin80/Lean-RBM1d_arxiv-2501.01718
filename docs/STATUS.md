@@ -938,3 +938,28 @@ n=5 为 `5, 3, 3`；n=6 为 `18 + 9 + 9 + 9 = 45`，两条相交的长对角线�
   `sup|B| ≤ C A^{n−m+1}`（归纳）；`Σ_{c₁}|A| ≤ C A^{m−2}` 同上展开（ℓ¹ 放在 z/o/e 中的一个因子上；各情形都够，用到一致的 `sup∇ ≤ C`）。
 
 落地顺序：(P1) `Propagator/LongDiff.lean` 长边六界 + 离散 Taylor；(P2) Σ^(∅) 的加权 ℓ¹；(P3) π = ∅；(P4) 分子剖分与归纳。
+
+## 一次重复劳动（2026-09-19）：两边各造了一遍同一个轮子
+
+`RBM.Cor35.sum_pow_val_le` / `RBM.Cor35.sum_pow_zdist_le`（Claude Code，`Loop/Cor35.lean`）
+与 `RBM.sum_pow_val_le` / `RBM.sum_pow_zdist_le`（Cowork，`Propagator/Edges.lean`）
+是**同一条引理的两份独立证明**，只因为前者在嵌套命名空间 `RBM.Cor35` 里才没撞名。
+两边都是在各自的估计里需要"环上几何级数求和"时顺手证的，都没先查仓库。
+
+值得一提的是 Claude Code 那份更漂亮：利用 `ZMod (k+1)` 与 `Fin (k+1)` 的 defeq，
+`Fin.sum_univ_eq_sum_range` 加 `geom_sum_Ico_le_of_lt_one` 四行搞定；
+我那份绕了 `image ZMod.val = range L` + `Finset.sum_image` + `tsum` 一圈。
+
+**规则**（已写进 `CLAUDE.md`）：证任何**通用工具引理**（ZMod 上的求和、几何级数、
+exp 不等式、Finset 重标）之前，先 `grep -rn "关键词" RBM1D/`。
+按文件分工能避免改同一个文件，但**避免不了重复造轮子**——那要靠查。
+
+清理留给 T38（低优先级），不急着动，因为两份都编译通过、都有用户。
+
+## 对账：Corollary 3.5 的陈述形式（通过）
+
+论文 (3.6) 写的是 `|K| ≤ C_n exp(−c_n max_{ij} ‖a_i − a_j‖)`；
+Lean 里的 `cor35` 写成「对每一对 `i, j`，`|K| ≤ C exp(−c‖a_i − a_j‖)`」。
+两者**等价**：对 i,j 全称量化等于取所有上界里最小的那个，而
+`min_{ij} exp(−c d_{ij}) = exp(−c max_{ij} d_{ij})`。
+Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：无缺口。**

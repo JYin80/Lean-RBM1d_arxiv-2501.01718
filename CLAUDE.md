@@ -128,3 +128,19 @@ Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry�
 
 我就是漏了这一步，把一段根本不编译的代码提交了，两分钟后才发现。
 **提交前跑一次 `ls -l --time-style=+%H:%M:%S <你的.lean> <对应的.olean> build.log`。**
+
+## 造轮子之前先查
+
+证任何**通用工具引理**之前，先在仓库里搜一遍：
+
+```
+grep -rn "sum_pow\|zdist\|geom_sum\|exp_neg" RBM1D/ --include=*.lean
+```
+
+典型的通用工具：`ZMod L` 上的求和与重标、几何级数的界、`exp` 的初等不等式、
+`Finset` 的重排。这些两边都会用到，而**按文件分工只能避免改同一个文件，
+避免不了各证一遍**。已经发生过一次（见 `docs/STATUS.md`「重复劳动」一节）。
+
+需要别的文件里已有的工具时：能 import 就 import；
+若会造成不该有的依赖方向（比如 `Propagator/` 依赖 `Loop/`），
+就把它下沉到 `RBM1D/Defs/` 里的共享文件。

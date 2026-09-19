@@ -28,6 +28,27 @@
   when $L\ge 3$.
 \end{proof}
 
+\begin{definition}[The band model, \S2.1 and (2.5)]\label{def:model}
+  \lean{RBM.SW, RBM.Svar, RBM.Eblk, RBM.Iblk, RBM.Spaper, RBM.Epaper, RBM.splitEquiv}
+  \leanok\uses{def:SB}
+  With $N=WL$ and blocks $I_a=\{aW,\dots,aW+W-1\}\subseteq\mathbb Z_N$, $a\in\ZL$,
+  \[ S_{ij}=\frac1{3W}\sum_a \mathbf 1(i\in I_a)\,\mathbf 1(j\in I_a\cup I_{a+1}\cup I_{a-1}),
+     \qquad (E_a)_{ij}=\delta_{ij}W^{-1}\mathbf 1(i\in I_a). \]
+\end{definition}
+
+\begin{lemma}[$S=\SB\otimes S_W$ and properties of $E_a$]\label{lem:model}
+  \lean{RBM.Spaper_eq, RBM.Epaper_eq, RBM.split_bijective, RBM.sum_Svar_row,
+    RBM.Svar_transpose, RBM.sum_Eblk, RBM.Eblk_conjTranspose, RBM.Eblk_mul_Eblk}
+  \leanok\uses{def:model, lem:SB-basic}
+  Under $i\mapsto(\lfloor i/W\rfloor, i\bmod W)$, $S=\SB\otimes S_W$ with
+  $(S_W)_{\alpha\beta}=W^{-1}$.  $S$ is symmetric with rows summing to $1$;
+  $E_a$ is self-adjoint, $E_aE_b=\delta_{ab}W^{-1}E_a$, and $\sum_a E_a=W^{-1}I$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:model, lem:SB-basic}
+  $i\in I_a$ iff $\lfloor i/W\rfloor=a$, so the sum over $a$ collapses to
+  $a=\lfloor i/W\rfloor$; the remaining indicator is $\SB_{\lfloor i/W\rfloor\lfloor j/W\rfloor}$.
+\end{proof}
+
 \begin{definition}[Deterministic domination, Definition 2.1 (ii)]\label{def:2.1-ii}
   \lean{RBM.UnifDetDom, RBM.DetDom, RBM.detDom_iff}\leanok
   For deterministic $N$-dependent quantities $f,g$ write $f\prec g$ if

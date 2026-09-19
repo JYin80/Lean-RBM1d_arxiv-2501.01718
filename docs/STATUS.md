@@ -296,3 +296,18 @@ Mathlib 里应该有类似 `Complex.eq_conj_iff_re` / `Complex.normSq` 的工具
 双边验证 `(1 − ξS)Θ = Θ(1 − ξS) = I`，行和 `= 2 = (1−ξ)⁻¹`，特征方程 `ρ² − 5ρ + 1 = 0`。
 **`RBM.Numeric.Theta_five_half`**：`RBM.Theta 5 (1/2)` 逐元素等于该有理矩阵（经 `SB_five_apply` 把 `RBM.SB 5` 与独立定义对上，再用 `eq_Theta_of_mul`）。
 这个文件编译约 40 秒（L = 7 的两条 `simp` 展开占大头）。
+
+### `RBM1D/Defs/Model.lean` — §2.1 模型层 + (2.5)（T15，Claude Code）
+
+主指标是块/偏移 `ZMod L × Fin W`。论文在 `Z_N` 上的原式也照写了，并证明两者逐元素相等。
+
+| Lean | 内容 |
+|---|---|
+| `RBM.SW` / `RBM.Svar` | `(S_W)_{αβ} = W⁻¹`，`S = S^(B) ⊗ₖ S_W` |
+| `RBM.sum_Svar_row` / `Svar_transpose` | 行和为 1，对称 |
+| `RBM.Eblk` | (2.5) 的 `E_a` |
+| `RBM.sum_Eblk` / `Eblk_conjTranspose` / `Eblk_mul_Eblk` | `Σ_a E_a = W⁻¹ I`，自伴，`E_a E_b = δ_ab W⁻¹ E_a` |
+| `RBM.Iblk` / `mem_Iblk` | `I_a = {aW,…,aW+W−1}`；`i ∈ I_a ↔ ⌊i/W⌋ = a` |
+| `RBM.Spaper` / **`Spaper_eq`** | 论文 §2.1 的 `S_ij` 原式 = `Svar` 在 `split` 下 |
+| `RBM.Epaper` / **`Epaper_eq`** | (2.5) 原式 = `Eblk` 在 `split` 下 |
+| `RBM.split_bijective` / `splitEquiv` | `ZMod (W*L) ≃ ZMod L × Fin W` |

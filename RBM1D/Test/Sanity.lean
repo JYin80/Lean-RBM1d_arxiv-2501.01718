@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Defs.Domination
+import RBM1D.Defs.Model
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Bounds
 import RBM1D.Propagator.Deriv
@@ -58,3 +59,10 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.one_sub_rho_sq
 #print axioms RBM.rho_real_bounds
 #print axioms RBM.Numeric.Theta_five_half
+#print axioms RBM.sum_Svar_row
+#print axioms RBM.Svar_transpose
+#print axioms RBM.sum_Eblk
+#print axioms RBM.Eblk_mul_Eblk
+#print axioms RBM.Spaper_eq
+#print axioms RBM.Epaper_eq
+#print axioms RBM.split_bijective

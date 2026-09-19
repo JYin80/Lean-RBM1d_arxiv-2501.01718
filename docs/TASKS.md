@@ -46,6 +46,8 @@
 | T37 | Lemma 3.11：`K^(π)` 的界 (3.45)、`K` 的界 (3.46)（T34 落地后解锁） | `Propagator/LongDiff.lean`、`Loop/KBound.lean`（新建） | Claude Code | 进行中 |
 | T38 | 下沉共用求和工具到 `Defs/Sums.lean`，消掉两处重复证明 | `Defs/Sums.lean` | Claude Code #2 + Cowork | **完成**（`Decay.lean` 那几条也已下沉） |
 | T39 | 附录 A 的确定性部分：G-chain 的定义与代数（Def A.1、chain↔loop） | `Loop/Chain.lean` | **Cowork** | **完成** |
+| T40 | Lemma 4.2：预解式的 minor 公式 (4.7)(4.8)(4.9)（Schur 补，纯线性代数） | `Green/Minor.lean`（新建） | 待认领 | 未开工 |
+| T41 | Def 2.1 (i)(iii)(iv)：概率版 `≺`（overwhelming probability、一致版） | `Defs/StochDom.lean`（新建） | 待认领 | 未开工 |
 
 ---
 
@@ -929,3 +931,81 @@ L_{t,σ,a} = ⟨ Π_i G(σ_i) E_{a_i} ⟩       G(+) = G(z), G(−) = conj
 `Defs/Sums.lean` 只能依赖 `Defs/Dist.lean`（`zdist`），不能依赖 `Propagator/` 或 `Loop/`。
 
 **动手前先确认两边都没在改这两个文件**（看 git log），这是一次跨两边文件的重构。
+
+---
+
+## T40 — Lemma 4.2：预解式的 minor 公式（论文 p.49）
+
+新建 `RBM1D/Green/Minor.lean`。**纯线性代数，零概率成分，与 T37 完全不同的文件**，可以立刻开工。
+
+设 `H : Matrix (Fin N) (Fin N) ℂ` Hermitian，`z : ℂ`，`Im z ≠ 0`（保证 `H − z` 可逆），
+`G = (H − z)⁻¹`。对 `i : Fin N`，`H^(i)` 是去掉第 i 行第 i 列的 minor，`G^(i) = (H^(i) − z)⁻¹`。
+
+要证的三条（论文 (4.7)(4.8)(4.9)）：
+
+```
+G i i   = (H i i − z − Σ_{k,l ≠ i} H i k * G^(i) k l * H l i)⁻¹          -- (4.7)
+G i j   = − G i i * Σ_{k ≠ i} H i k * G^(i) k j        (j ≠ i)           -- (4.8)
+G^(i) j k = G j k − G j i * G i k / G i i              (j, k ≠ i)        -- (4.9)
+```
+
+**注意符号**：论文 (4.8) 写成 `Gij = Gii Σ_k Hik G^(i)_kj`，但按 `G = (H−z)⁻¹` 的约定，
+Schur 补给出的应该是带负号的。**先自己把两边算一遍确定符号**，若与论文不符，
+按 `CLAUDE.md` 的规则记进 `docs/paper-deltas.md`（这类符号差是第 23 条候选）。
+
+**建议的形式化路线**（不要直接做 `N × N` 的分块矩阵手术，Mathlib 里很痛）：
+
+1. 索引类型用 `Option α`（`α = Fin (N−1)` 或直接 `{j // j ≠ i}`），`none` 扮演被去掉的第 i 行列。
+   Mathlib 有 `Matrix.toBlocks₁₁` … `Matrix.toBlocks₂₂`、`Matrix.fromBlocks`、
+   `Matrix.fromBlocks_inv…`、`Matrix.invOf_fromBlocks…`（先 grep 确认当前名字与签名）。
+2. 核心是 Schur 补：`fromBlocks A B C D` 在 `D` 可逆时的逆的 `(1,1)` 块是 `(A − B D⁻¹ C)⁻¹`。
+   Mathlib 应已有 `Matrix.fromBlocks_inverse_of_invertible…` 之类；若只有 `IsUnit` 版本，
+   用 `Matrix.isUnit_iff_isUnit_det` 桥接。
+3. (4.9) 是 `(2,2)` 块的对偶陈述，用同一条 Schur 恒等式反过来读。
+
+**可逆性的前提怎么给**：`H` Hermitian 且 `Im z ≠ 0` ⇒ `H − z` 可逆，这条我们可能已经有了
+（`Delocalization.lean` 里做 Thm 2.2 时用过谱定理）。**先 grep 仓库**，别重造
+（`CLAUDE.md`「造轮子之前先查」）。`H^(i)` 也是 Hermitian，所以同一条引理复用。
+
+**边界情形**：`G i i ≠ 0` 是 (4.9) 的前提。论文在用它时有 `1_Ω |G_ii| = O(1)` 撑着；
+我们把 `G i i ≠ 0` 直接写进 (4.9) 的假设，不去证它。
+
+**不要碰的部分**：§4 后面用的 [39] Lemma 3.3（大偏差估计）是外部文献里的概率引理，
+本项目「只用这一篇论文」，所以它只能作为**假设**出现，不在本工单范围内。
+
+---
+
+## T41 — Def 2.1 的概率版 `≺`（论文 p.6）
+
+新建 `RBM1D/Defs/StochDom.lean`。**纯定义 + 基本性质**，与 T37/T40 都不冲突。
+
+`Defs/Domination.lean` 里已有确定性版 `DetDom`（Def 2.1 (ii)）。现在补 (i)(iii)(iv)。
+
+```lean
+variable {Ω : Type*} [MeasurableSpace Ω] (P : ℕ → Measure Ω)   -- 每个 N 一个概率空间
+-- 或者更省事：ξ ζ : ℕ → Ω → ℝ，P : Measure Ω 固定
+
+def StochDom (ξ ζ : ℕ → Ω → ℝ) : Prop :=
+  ∀ τ > 0, ∀ D > 0, ∀ᶠ N in Filter.atTop,
+    (P N) {ω | ξ N ω > (N : ℝ) ^ τ * ζ N ω} ≤ (N : ℝ) ^ (-D)
+```
+
+要的性质（下游 §3–§5 到处在用，不证的话每次都要重来）：
+
+1. 自反、传递
+2. 对加法封闭：`ξ₁ ≺ ζ₁ → ξ₂ ≺ ζ₂ → ξ₁ + ξ₂ ≺ ζ₁ + ζ₂`
+3. 对乘法封闭（同上）
+4. 正常数倍不变；`DetDom → StochDom`（确定性的蕴含概率的）
+5. **多项式多的事件取并**：若 `ξ_k ≺ ζ` 对 `k` 一致成立且 `k` 的个数 ≤ `N^C`，
+   则 `max_k ξ_k ≺ ζ`。这一条是 (iv)「一致版」的实质内容，也是全篇用得最多的一条。
+6. `overwhelming probability`（(iii)）：`∀ D > 0, ∀ᶠ N, P (Aᶜ) ≤ N^(-D)`，
+   并证「多项式多个 w.o.p. 事件的交仍是 w.o.p.」
+
+Mathlib 里要用的：`MeasureTheory.Measure`、`Filter.Eventually`、`Filter.atTop`、
+`measure_union_le` / `measure_biUnion_finset_le`、`Finset.sup`。名字先 grep。
+
+**设计上的一个选择**：概率空间要不要随 `N` 变。论文里 `H` 的维数随 `N` 变，所以严格说是变的。
+最省事的做法是把 `Ω` 和 `P` 都固定、让 `ξ N : Ω → ℝ` 承担 N 的依赖（相当于取乘积空间）。
+选哪个都行，但**选定后写进文件头的 docstring 并记进 `docs/STATUS.md`**，
+因为随机层将来全建在这个签名上。
+

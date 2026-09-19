@@ -1007,3 +1007,8 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 性质：`refl`/`trans`/`add`/`mul`/`const_mul_left`/`const_mul_right`/`of_unifDetDom`（确定性 ⇒ 概率）、
 **`of_forall_le`**（union bound，`#U(N) ≤ N^C`）、`StochDom.highProb`、`HighProb.inter`/**`biInter`**（多项式多个 w.h.p. 事件）。
 通用工具 `of_subset`/`of_subset_union`：新性质只需证失败事件的包含关系。paper-deltas #23。
+
+### `RBM1D/Flow/Initial.lean` — (2.67)（T47，Claude Code 并行 agent）
+
+`Gsig_zero_zt_zero`：`G_0(σ) = m(σ)·I`；**`gloop_zero_zt_zero_eq_Kgen`**：`L_{0,σ,a} = K_{0,σ,a}`（无假设，§2.7 基例）；
+`gloop_zero_zt_zero_eq_of_isPrimitive`（对任意满足 Def 2.12 且 `0 ∈ T` 的 K）。paper-deltas #24。

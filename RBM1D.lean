@@ -29,6 +29,7 @@ import RBM1D.Loop.Cor35
 import RBM1D.Loop.Layer
 import RBM1D.Loop.SumZero
 import RBM1D.Loop.KBound
+import RBM1D.Flow.Initial
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds

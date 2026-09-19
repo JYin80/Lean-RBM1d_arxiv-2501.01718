@@ -671,6 +671,20 @@
   $\eta|G_{pq}|^2 \le \operatorname{Im}G_{qq}$.
 \end{definition}
 
+\begin{lemma}[The initial loops, (2.67)]\label{eq:2.67}
+  \lean{RBM.green_zero, RBM.green_zero_eq_smul, RBM.zt_zero, RBM.conj_zt_zero, RBM.mSigma_mul,
+    RBM.Gsig_zero_zt_zero, RBM.Gsig_zero_zt_zero_apply, RBM.Gsig_zero_zt_zero_sub, RBM.trace_Eblk,
+    RBM.prod_map_Eblk_cons, RBM.gloopProd_of_Gsig_eq_smul, RBM.forall_mem_cons_eq_iff,
+    RBM.gloop_zero_zt_zero, RBM.gloop_zero_zt_zero_eq_Kgen, RBM.gloop_zero_zt_zero_eq_of_isPrimitive}
+  \leanok\uses{def:gloop, def:primitive, lem:2.8, lem:model}
+  At $t=0$ ($H_0=0$, $z_0=E+m^{(E)}$): $G_0(\sigma)=m(\sigma)I$ and
+  $L_{0,\sigma,a}=W^{-n+1}\prod_k m(\sigma_k)\,\mathbf 1(a_1=\dots=a_n)=K_{0,\sigma,a}$, with no
+  hypotheses --- the base case of the induction of \S2.7.
+\end{lemma}
+\begin{proof}\leanok
+  $G_0=(-z_0)^{-1}I$ and $-1/(E+m)=m$; then $E_aE_b=\delta_{ab}W^{-1}E_a$ and $\operatorname{Tr}E_a=1$.
+\end{proof}
+
 \begin{definition}[$G$-chains, Appendix A]\label{def:gchain}
   \lean{RBM.gchain, RBM.gchain_append_one, RBM.gchain_conjTranspose,
     RBM.gchain_mul_Eblk, RBM.trace_gchain_mul_Eblk}

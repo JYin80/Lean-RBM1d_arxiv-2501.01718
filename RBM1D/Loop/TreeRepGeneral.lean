@@ -2020,6 +2020,105 @@ theorem sum_pairs {n : ℕ} [NeZero n] (hn : 3 ≤ n) (f : ℕ → ℕ → ℂ) 
     split_ifs at hJv <;> simp only [Prod.mk.injEq] at hJv <;> omega
   rw [hLHS, hsplit, Finset.sum_union hdisj, Finset.sum_image hinjL, Finset.sum_image hinjD]
 
+/-! ### Reading entries of the cut-and-glue lists -/
+
+section ListGetD
+
+variable {α : Type*} {l l' : List α} {d : α}
+
+theorem getD_take_append_of_lt {k i : ℕ} (hi : i < k) (hk : k ≤ l.length) :
+    (l.take k ++ l').getD i d = l.getD i d := by
+  simp only [List.getD_eq_getElem?_getD]
+  rw [List.getElem?_append_left (by simp; omega), List.getElem?_take]
+  simp [hi]
+
+theorem getD_take_append_of_ge {k i : ℕ} (hi : k ≤ i) (hk : k ≤ l.length) :
+    (l.take k ++ l').getD i d = l'.getD (i - k) d := by
+  simp only [List.getD_eq_getElem?_getD]
+  rw [List.getElem?_append_right (by simp; omega), List.length_take, min_eq_left hk]
+
+theorem getD_drop' {k i : ℕ} : (l.drop k).getD i d = l.getD (k + i) d := by
+  simp [List.getD_eq_getElem?_getD, List.getElem?_drop]
+
+theorem getD_drop_take {k j i : ℕ} (hi : i < j) :
+    ((l.drop k).take j).getD i d = l.getD (k + i) d := by
+  simp [List.getD_eq_getElem?_getD, List.getElem?_drop, hi]
+
+theorem getD_cons_succ' {x : α} {i : ℕ} : (x :: l).getD (i + 1) d = l.getD i d := by
+  simp [List.getD_eq_getElem?_getD]
+
+end ListGetD
+
+variable {L : ℕ} [NeZero L]
+
+theorem Kgen_of_length_two (W : ℕ) (m : Bool → ℂ) (t : ℝ) (I : LoopIdx (ZMod L))
+    (h : I.length = 2) :
+    Kgen L W m t I = kTwo L W m t (I.σ.getD 0 false) (I.σ.getD 1 false) (I.a.getD 0 0)
+      (I.a.getD 1 0) := by
+  simp [Kgen, h]
+
+variable (hL : 3 ≤ L) (W : ℕ) [NeZero W] (m : Bool → ℂ) {t : ℝ}
+  (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+
+/-- **A leaf pair** `(v+1, v+2)` of (2.48) is the leaf term of `v`. -/
+theorem leaf_pair_term {n : ℕ} [NeZero n] (hn : 3 ≤ n) (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hlen : I.length = n) (v : Fin n) (hv : v.val + 1 < n) :
+    (W : ℂ) * ∑ x : ZMod L, ∑ y : ZMod L,
+        Kgen L W m t (I.cutGlueL (v.val + 1) (v.val + 2) x) * SB L x y *
+          Kgen L W m t (I.cutGlueR (v.val + 1) (v.val + 2) y)
+      = ∑ x : ZMod L, ((m (I.σ.getD v false) * m (I.σ.getD (v + 1 : Fin n) false)) •
+          (thetaEdge L m t (I.σ.getD v false) (I.σ.getD (v + 1 : Fin n) false) * SB L))
+          (I.a.getD v 0) x *
+          Kn L W m t n (fun i => I.σ.getD i false)
+            (Function.update (fun i : Fin n => I.a.getD i 0) v x) := by
+  have hσl : I.σ.length = n := by rw [hI]; exact hlen
+  have hal : I.a.length = n := hlen
+  have hv1 : ((v + 1 : Fin n) : ℕ) = v.val + 1 := by
+    rw [Fin.val_add, Fin.val_one', Nat.mod_eq_of_lt (by omega : 1 < n), Nat.mod_eq_of_lt hv]
+  -- the left chain: the same polygon with `a_v := x`
+  have hL' : ∀ x, Kgen L W m t (I.cutGlueL (v.val + 1) (v.val + 2) x)
+      = Kn L W m t n (fun i => I.σ.getD i false)
+          (Function.update (fun i : Fin n => I.a.getD i 0) v x) := by
+    intro x
+    have hlenL : (I.cutGlueL (v.val + 1) (v.val + 2) x).length = n := by
+      rw [LoopIdx.length_cutGlueL I x (by omega) (by omega) (by omega)]; omega
+    rw [Kgen_eq W m t hn _ hlenL]
+    congr 1
+    · funext i
+      simp only [LoopIdx.cutGlueL, show v.val + 2 - 1 = v.val + 1 by omega, List.take_append_drop]
+    · funext i
+      simp only [LoopIdx.cutGlueL, show v.val + 2 - 1 = v.val + 1 by omega,
+        show v.val + 1 - 1 = v.val by omega]
+      by_cases hiv : i = v
+      · subst hiv
+        rw [Function.update_self, getD_take_append_of_ge le_rfl (by omega), Nat.sub_self]
+        rfl
+      · rw [Function.update_of_ne hiv]
+        have hiv' : i.val ≠ v.val := fun h => hiv (Fin.ext h)
+        rcases Nat.lt_or_gt_of_ne hiv' with h | h
+        · rw [getD_take_append_of_lt h (by omega)]
+        · rw [getD_take_append_of_ge (by omega) (by omega),
+            show i.val - v.val = (i.val - v.val - 1) + 1 by omega, getD_cons_succ', getD_drop']
+          congr 1; omega
+  -- the right chain: the `2`-loop `(σ_v, σ_{v+1}), (a_v, y)`
+  have hR' : ∀ y, Kgen L W m t (I.cutGlueR (v.val + 1) (v.val + 2) y)
+      = kTwo L W m t (I.σ.getD v false) (I.σ.getD (v + 1 : Fin n) false) (I.a.getD v 0) y := by
+    intro y
+    have hlenR : (I.cutGlueR (v.val + 1) (v.val + 2) y).length = 2 := by
+      rw [LoopIdx.length_cutGlueR I y (by omega) (by omega) (by omega)]; omega
+    rw [Kgen_of_length_two W m t _ hlenR]
+    simp only [LoopIdx.cutGlueR, show v.val + 1 - 1 = v.val by omega,
+      show v.val + 2 - (v.val + 1) = 1 by omega]
+    have e1 : (List.take 1 (List.drop v.val I.a) ++ [y]).getD 0 0 = I.a.getD v 0 := by
+      rw [getD_take_append_of_lt (by omega) (by simp; omega), getD_drop', Nat.add_zero]
+    have e2 : (List.take 1 (List.drop v.val I.a) ++ [y]).getD 1 0 = y := by
+      rw [getD_take_append_of_ge (by omega) (by simp; omega)]
+      simp
+    rw [getD_drop_take (by omega), getD_drop_take (by omega), hv1, e1, e2]
+    simp
+  simp_rw [hL', hR']
+  exact rhs_kTwo_left W m t _ _ _ _
+
 end Lists
 
 end RBM

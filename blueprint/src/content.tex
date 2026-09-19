@@ -491,6 +491,20 @@
   which is the double sum in (2.55); $\Th_0=1$.
 \end{proof}
 
+\begin{definition}[$G$-loops, Definition 2.9 and (2.41)]\label{def:gloop}
+  \lean{RBM.Gsig, RBM.Gsig_conjTranspose, RBM.green_sub_green, RBM.gloopProd, RBM.gloop,
+    RBM.gloopProd_append, RBM.gloop_rotate}
+  \leanok\uses{def:model, def:loops, eq:2.10}
+  For a fixed deterministic Hermitian $H$, $G(+) = (H-z)^{-1}$, $G(-) = (H-\bar z)^{-1}$ and
+  \[ \mathcal L_{\sigma,\mathbf a} = \Bigl\langle \prod_i G(\sigma_i) E_{a_i} \Bigr\rangle ,
+     \qquad \langle A\rangle = \operatorname{Tr} A . \]
+  Proved here: $G(\sigma)^\dagger = G(-\sigma)$; the resolvent identity
+  $G(z)-G(w) = (z-w)G(z)G(w)$, which is the source of every Ward identity downstream;
+  and invariance of the loop under rotating its index data (trace cyclicity), which is
+  the algebraic content of the word ``loop''.  Nothing here is probabilistic: the
+  expectation and the It\^o calculus act on top of this layer.
+\end{definition}
+
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}
   \uses{def:loops}
   Canonical partitions of the oriented $n$-gon are in

@@ -676,4 +676,45 @@ theorem prod_leaves_cut (hJd : IsDiag n J.1 J.2) (σ : Fin n → Bool) (g : Bool
 
 end Leaves
 
+section MoleculeA
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- **(3.60)–(3.64) in closed form.**  At an innermost long edge `J` of the layer `π`,
+`A(σ, π) = ξ_J (1 - ξ_J) · A(σ_in, ∅) · A(σ_out, π ∖ {J})`; for a long edge `ξ_J = t|m|²`. -/
+theorem Alayer_cut (hn : 2 ≤ n) (m : Bool → ℂ) {t : ℝ}
+    (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) (σ : Fin n → Bool)
+    {F₀ : Finset (Fin n × Fin n)} (hF₀ : F₀ ∈ TSP n) {π : Finset (Fin n × Fin n)}
+    (hπ : Flong F₀ σ = π) (hJπ : J ∈ π) (hinner : ∀ e ∈ π, ArcLe e J → e = J) :
+    Alayer m t σ π = (t * (m (σ J.1) * m (σ J.2))) * (1 - t * (m (σ J.1) * m (σ J.2))) *
+      Alayer m t (sigmaIn σ J) ∅ * Alayer m t (sigmaOut σ J) ((π.erase J).image (shiftOut J)) := by
+  have hJd : IsDiag n J.1 J.2 :=
+    (isTSP_of_mem_TSP hF₀).1 J (Flong_subset F₀ σ (hπ ▸ hJπ))
+  set g : Bool → Bool → ℂ := fun s s' => (1 - (t : ℂ) * (m s * m s'))⁻¹ with hg
+  have hP := prod_leaves_cut hJd σ g
+  set ξ : ℂ := (t : ℂ) * (m (σ J.1) * m (σ J.2)) with hξ
+  have hx : 1 - ξ ≠ 0 := by
+    intro h
+    have : ‖ξ‖ = 1 := by rw [show ξ = 1 by linear_combination -h, norm_one]
+    exact absurd (hm (σ J.1) (σ J.2)) (by rw [this]; exact lt_irrefl 1)
+  have hgJ : g (σ J.2) (σ J.1) = (1 - ξ)⁻¹ := by simp only [g, ξ, mul_comm (m (σ J.2))]
+  have hgJ' : g (σ J.1) (σ J.2) = (1 - ξ)⁻¹ := rfl
+  rw [hgJ, hgJ'] at hP
+  unfold Alayer
+  rw [Qlayer_cut hn m t σ hF₀ hπ hJπ hinner]
+  unfold edgeR
+  simp only [g] at hP
+  rw [← hξ]
+  have hP' : ∏ v, (1 - (t : ℂ) * (m (σ v) * m (σ (v + 1))))⁻¹ =
+      (∏ k : Fin (wIn J + 1), (1 - (t : ℂ) * (m (sigmaIn σ J k) * m (sigmaIn σ J (k + 1))))⁻¹) *
+        (∏ k : Fin (n - wIn J + 1),
+          (1 - (t : ℂ) * (m (sigmaOut σ J k) * m (sigmaOut σ J (k + 1))))⁻¹) * (1 - ξ) ^ 2 := by
+    rw [← hP]
+    field_simp
+  rw [hP']
+  field_simp
+  ring
+
+end MoleculeA
+
 end RBM

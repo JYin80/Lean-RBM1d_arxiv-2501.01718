@@ -11,6 +11,7 @@ import RBM1D.Propagator.Support
 import RBM1D.Propagator.Root
 import RBM1D.Propagator.Decay
 import RBM1D.Propagator.Symbol
+import RBM1D.Test.Numeric
 
 /-!
 # Axiom audit
@@ -56,3 +57,4 @@ and `Quot.sound`.  Anything else (in particular `sorryAx`) is a bug.
 #print axioms RBM.one_sub_xi_mul
 #print axioms RBM.one_sub_rho_sq
 #print axioms RBM.rho_real_bounds
+#print axioms RBM.Numeric.Theta_five_half

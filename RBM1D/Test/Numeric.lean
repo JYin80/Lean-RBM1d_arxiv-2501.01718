@@ -50,17 +50,19 @@ example : (1 - (1 / 2 : ℚ) • SBq 5) * Theta5 = 1 := by
   fin_cases i <;> fin_cases j <;>
     simp [SBq, Theta5, Matrix.mul_apply, Fin.sum_univ_succ, Matrix.one_apply] <;> norm_num
 
-example : Theta5 * (1 - (1 / 2 : ℚ) • SBq 5) = 1 := by
+theorem Theta5_mul : Theta5 * (1 - (1 / 2 : ℚ) • SBq 5) = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [SBq, Theta5, Matrix.mul_apply, Fin.sum_univ_succ, Matrix.one_apply] <;> norm_num
 
+-- 49 entries, each a 7-term rational sum unfolded by `simp`: needs more than the default.
 set_option maxHeartbeats 2000000 in
 example : (1 - (1 / 2 : ℚ) • SBq 7) * Theta7 = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [SBq, Theta7, Matrix.mul_apply, Fin.sum_univ_succ, Matrix.one_apply] <;> norm_num
 
+-- 49 entries, each a 7-term rational sum unfolded by `simp`: needs more than the default.
 set_option maxHeartbeats 2000000 in
 example : Theta7 * (1 - (1 / 2 : ℚ) • SBq 7) = 1 := by
   ext i j
@@ -81,5 +83,37 @@ example : ((5 - Real.sqrt 21) / 2) ^ 2 - 5 * ((5 - Real.sqrt 21) / 2) + 1 = 0 :=
   linear_combination h / 4
 
 example : (3 : ℚ) / (1 / 2) - 1 = 5 := by norm_num
+
+/-- `RBM.SB` at `L = 5` agrees with the independent rational `SBq 5`. -/
+theorem SB_five_apply (a b : ZMod 5) : SB 5 a b = ((SBq 5 a b : ℚ) : ℂ) := by
+  rw [SB_apply, sbKernel]
+  have h : (a - b ∈ sbSupport 5)
+      ↔ ((a.val + 5 - b.val) % 5 ≤ 1 ∨ (b.val + 5 - a.val) % 5 ≤ 1) := by
+    revert a b
+    decide
+  change _ = (((if (a.val + 5 - b.val) % 5 ≤ 1 ∨ (b.val + 5 - a.val) % 5 ≤ 1
+    then 1 / 3 else 0 : ℚ)) : ℂ)
+  rw [if_congr h rfl rfl]
+  split_ifs <;> norm_num
+
+/-- `RBM.Theta` at `L = 5`, `ξ = 1/2` equals the rational matrix `Theta5`. -/
+theorem Theta_five_half (a b : ZMod 5) : Theta 5 (1 / 2) a b = ((Theta5 a b : ℚ) : ℂ) := by
+  let B : Matrix (ZMod 5) (ZMod 5) ℂ := fun x y => ((Theta5 x y : ℚ) : ℂ)
+  have h' : ∀ x y : Fin 5, ∑ k, ((Theta5 x k : ℚ) : ℂ)
+      * ((if k = y then 1 else 0) - 1 / 2 * ((SBq 5 k y : ℚ) : ℂ)) = if x = y then 1 else 0 := by
+    intro x y
+    have h := congrArg (fun q : ℚ => (q : ℂ)) (congrFun (congrFun Theta5_mul x) y)
+    simp only [Matrix.mul_apply, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply,
+      smul_eq_mul] at h
+    simpa only [apply_ite (Rat.cast : ℚ → ℂ), Rat.cast_one, Rat.cast_zero, Rat.cast_sum,
+      Rat.cast_mul, Rat.cast_sub, Rat.cast_div, Rat.cast_ofNat] using h
+  have hmul : B * (1 - (1 / 2 : ℂ) • SB 5) = 1 := by
+    ext x y
+    rw [Matrix.mul_apply, Matrix.one_apply]
+    simp only [Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul,
+      SB_five_apply]
+    exact h' x y
+  have h := eq_Theta_of_mul 5 (by norm_num) (ξ := 1 / 2) (by norm_num) hmul
+  rw [← h]
 
 end RBM.Numeric

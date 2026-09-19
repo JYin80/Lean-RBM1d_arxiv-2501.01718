@@ -289,3 +289,10 @@ Mathlib 里应该有类似 `Complex.eq_conj_iff_re` / `Complex.normSq` 的工具
 | **`RBM.Theta_eq_circulant_fourierKernel` / `Theta_apply_fourier`** | **(B.1)** |
 
 下游 (3.48) 直接用 `Theta_apply_fourier`。
+
+### `RBM1D/Test/Numeric.lean` — 数值回归测试（T12，Claude Code）
+
+`L = 5, 7`、`ξ = 1/2`，在 `ℚ` 上独立于 `RBM.SB` 按论文重写 `S^(B)`，显式逆矩阵由精确高斯消元给出：
+双边验证 `(1 − ξS)Θ = Θ(1 − ξS) = I`，行和 `= 2 = (1−ξ)⁻¹`，特征方程 `ρ² − 5ρ + 1 = 0`。
+**`RBM.Numeric.Theta_five_half`**：`RBM.Theta 5 (1/2)` 逐元素等于该有理矩阵（经 `SB_five_apply` 把 `RBM.SB 5` 与独立定义对上，再用 `eq_Theta_of_mul`）。
+这个文件编译约 40 秒（L = 7 的两条 `simp` 展开占大头）。

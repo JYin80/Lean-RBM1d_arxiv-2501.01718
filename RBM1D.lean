@@ -9,5 +9,6 @@ import RBM1D.Propagator.Deriv
 import RBM1D.Propagator.Root
 import RBM1D.Propagator.Support
 import RBM1D.Propagator.Symbol
+import RBM1D.Test.Numeric
 import RBM1D.Test.Sanity
 import RBM1D.Probe

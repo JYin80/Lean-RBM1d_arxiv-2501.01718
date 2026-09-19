@@ -498,6 +498,27 @@
   $u e^{-u}\le e^{-1}\le 1/2$.
 \end{proof}
 
+\begin{lemma}[Uniform differences of the long-edge propagator]\label{lem:long-diff}
+  \lean{RBM.AA_mul_one_sub_rho_eq, RBM.abs_pow_sub_pow_le, RBM.Theta_sub_shift_eq_kern,
+    RBM.Theta_sub_shift_eq, RBM.AA_mul_one_sub_rho_real, RBM.norm_Theta_sub_shift_le_uniform,
+    RBM.gradK, RBM.Theta_sub_shift_real, RBM.sum_row_val_eq, RBM.sum_norm_Theta_sub_shift_le,
+    RBM.Theta_second_diff_eq, RBM.norm_Theta_second_diff_le_three,
+    RBM.sum_norm_Theta_second_diff_le}
+  \leanok\uses{lem:Theta-diff}
+  For real $\xi = t\in(0,1)$ and every $L\ge3$:
+  $|(\Th_t)_{x,y}-(\Th_t)_{x,y+1}|\le 3/2$,
+  $\sum_y|(\Th_t)_{x,y}-(\Th_t)_{x,y+1}|\le 3\hat\ell(t)$,
+  $|2(\Th_t)_{x,y}-(\Th_t)_{x,y\pm1}|\le 3$ and
+  $\sum_y|2(\Th_t)_{x,y}-(\Th_t)_{x,y+1}-(\Th_t)_{x,y-1}|\le 6$.
+  (Not stated in the paper; used for Lemma 3.11 in place of (3.66).)
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Theta-diff}
+  $A(1-\rho) = (1+\rho+\rho^2)/((1+\rho)(1-\rho^L))$ exactly, and $|\rho^j-\rho^n|\le1-\rho^L$
+  for $j,n\le L$.  The gradient bound $C/(\hat\ell\sqrt{1-t})$ of (2.53) is sharp only when
+  $\hat\ell = (1-t)^{-1/2}$; for $\hat\ell = L$ the gradient is $O(1)$.  The row sums are
+  geometric sums of $|\rho^{L-1-n}-\rho^n|$.
+\end{proof}
+
 \chapter{The primitive equation and $\Kcal$}
 
 \begin{lemma}[(2.53) for complex $\xi$]\label{lem:Theta-diff-complex}

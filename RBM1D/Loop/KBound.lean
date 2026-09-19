@@ -2034,6 +2034,133 @@ theorem sum_norm_innerId_alt_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk :
     _ = 3 ^ N * (K0 * e8 ^ (N - 2)) * (η * ℓ)⁻¹ ^ (N - 2) := by
         simp only [B, A, mul_pow]; ring
 
+/-- **`∑_u |A(u)| = O(A^{N-2})` when the inner molecule has a short boundary edge.** -/
+theorem sum_norm_innerId_short_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k)
+    {N : ℕ} [NeZero N] (hN : 3 ≤ N) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+      ∀ (σ' : Fin N → Bool) (p : Fin N), (∃ v, v ≠ p ∧ σ' v = σ' (v + 1)) →
+        ∀ a' : Fin N → ZMod L,
+          ∑ u : ZMod L, ‖innerId (mSigma E) t σ' a' p u‖
+            ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2) := by
+  set Bk := 2 * cTwo52 / Real.sqrt k + 1
+  set κ := cZero * Real.sqrt (Real.sqrt k)
+  have hδ : 0 < Real.sqrt k := Real.sqrt_pos.2 hk0
+  have hκ : 0 < κ := mul_pos cZero_pos (Real.sqrt_pos.2 hδ)
+  have hBk : 1 ≤ Bk := by
+    have := cTwo52_pos
+    have : 0 ≤ 2 * cTwo52 / Real.sqrt k := by positivity
+    simp only [Bk]; linarith
+  set S1 := 2 / (1 - Real.exp (-κ))
+  have hS1 : 0 ≤ S1 := (zero_le_one.trans (one_le_two_div hκ))
+  set SW0 := sigWeightConst N k 0
+  have hSW0 : 0 ≤ SW0 := sigWeightConst_nonneg hk0 0
+  set e8 := 8 * Real.exp 1
+  have he2 : 2 ≤ Real.exp 1 := by have := Real.add_one_le_exp (1 : ℝ); linarith
+  refine ⟨SW0 * (Bk * S1) * (Bk * e8) ^ (N - 2), by positivity, ?_⟩
+  intro L _ hL t ht0 ht1 σ' p ⟨v₀, hv₀p, hv₀⟩ a'
+  have hE : |E| < 2 := by linarith
+  have hE2 : |E| ≤ 2 := hE.le
+  set η := etaT E t with hηdef
+  set ℓ := ellHat L (t : ℂ) with hℓdef
+  have hη : 0 < η := etaT_pos hE ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hηℓ0 : 0 < η * ℓ := by positivity
+  set A := e8 * (η * ℓ)⁻¹ with hAdef
+  have hA1 : 1 ≤ A := by
+    have : 1 ≤ (η * ℓ)⁻¹ := one_le_inv₀ hηℓ0 |>.2 hηℓ
+    simp only [A, e8]; nlinarith
+  set f : Fin N → ZMod L → ℂ := innerKer (mSigma E) t σ' a' p
+  have hfp : ∀ y, f p y = 1 := fun y => by simp only [f, innerKer, Function.update_self]
+  have hfv : ∀ v, v ≠ p → ∀ y, f v y = thetaEdge L (mSigma E) t (σ' v) (σ' (v + 1)) (a' v) y :=
+    fun v hv y => by simp only [f, innerKer, Function.update_of_ne hv]
+  have hsup : ∀ v, v ≠ p → ∀ y, ‖f v y‖ ≤ Bk * A := by
+    intro v hvp y
+    rw [hfv v hvp]
+    by_cases hv : σ' v = σ' (v + 1)
+    · have h := norm_thetaEdge_same_le hL hE hk0 hk1 hEk ht0.le ht1 (σ' v) (a' v) y
+      rw [← hv]
+      calc _ ≤ Bk * Real.exp (-(κ * zdist L (a' v - y))) := h
+        _ ≤ Bk * 1 := by
+            gcongr; rw [Real.exp_le_one_iff, neg_nonpos]; positivity
+        _ ≤ Bk * A := by gcongr
+    · rw [thetaEdge_of_ne hE2 t hv]
+      have h := norm_Theta_long_edge_le L hL hk0 (by linarith) hEk ht0 ht1 (a' v) y
+      rw [← etaT_eq_zt_im, div_eq_mul_inv] at h
+      calc _ ≤ A := h
+        _ = 1 * A := (one_mul A).symm
+        _ ≤ Bk * A := by gcongr
+  have hl1 : ∀ x : ZMod L, ∑ u : ZMod L, ‖f v₀ (u + x)‖ ≤ Bk * S1 := by
+    intro x
+    calc ∑ u : ZMod L, ‖f v₀ (u + x)‖
+        ≤ ∑ u : ZMod L, Bk * Real.exp (-(κ * zdist L (u - (a' v₀ - x)))) := by
+          refine sum_le_sum fun u _ => ?_
+          rw [hfv v₀ hv₀p]
+          have h := norm_thetaEdge_same_le hL hE hk0 hk1 hEk ht0.le ht1 (σ' v₀) (a' v₀) (u + x)
+          rw [← hv₀]
+          rw [show a' v₀ - (u + x) = -(u - (a' v₀ - x)) by ring, zdist_neg] at h
+          exact h
+      _ = Bk * ∑ u : ZMod L, Real.exp (-(κ * zdist L (u - (a' v₀ - x)))) := by rw [mul_sum]
+      _ ≤ Bk * S1 := by gcongr; exact sum_exp_zdist_le L hκ _
+  have hm := norm_mul_mSigma_lt_one hE2 ht0.le ht1
+  set g : (Fin N → ZMod L) → ℂ := fun s => SigmaPi L (mSigma E) t σ' ∅ s
+  have hSg := sum_pinned_SigmaPi_le hL hE hk0 hk1 hEk ht0.le ht1 σ' (by omega) 0 p
+  simp only [pow_zero, prod_const_one, mul_one] at hSg
+  have hmem : p ∈ univ.erase v₀ := mem_erase.2 ⟨Ne.symm hv₀p, mem_univ _⟩
+  have hT : ((univ.erase v₀).erase p).card = N - 2 := by
+    rw [card_erase_of_mem hmem, card_erase_of_mem (mem_univ _), card_univ, Fintype.card_fin]
+    omega
+  calc ∑ u : ZMod L, ‖innerId (mSigma E) t σ' a' p u‖
+      ≤ ∑ u : ZMod L, ∑ s ∈ pinned L N p, ‖g s‖ * ∏ v, ‖f v (u + s v)‖ := by
+        refine sum_le_sum fun u _ => ?_
+        rw [innerId_eq hL (mSigma E) hm σ' a' p u]
+        refine (norm_sum_le _ _).trans (le_of_eq (sum_congr rfl fun s _ => ?_))
+        rw [norm_mul, norm_prod]
+    _ = ∑ s ∈ pinned L N p, ‖g s‖ * ∑ u : ZMod L, ∏ v, ‖f v (u + s v)‖ := by
+        rw [sum_comm]; simp only [mul_sum]
+    _ ≤ ∑ s ∈ pinned L N p, ‖g s‖ * ((Bk * S1) * (Bk * A) ^ (N - 2)) := by
+        refine sum_le_sum fun s _ => mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+        calc ∑ u : ZMod L, ∏ v, ‖f v (u + s v)‖
+            = ∑ u : ZMod L, ‖f v₀ (u + s v₀)‖ *
+                ∏ v ∈ (univ.erase v₀).erase p, ‖f v (u + s v)‖ := by
+              refine sum_congr rfl fun u _ => ?_
+              rw [← mul_prod_erase _ (fun v => ‖f v (u + s v)‖) (mem_univ v₀),
+                ← mul_prod_erase _ (fun v => ‖f v (u + s v)‖) hmem, hfp, norm_one, one_mul]
+          _ ≤ (∑ u : ZMod L, ‖f v₀ (u + s v₀)‖) * ∏ _v ∈ (univ.erase v₀).erase p, (Bk * A) :=
+              sum_mul_prod_le _ (fun v u => ‖f v (u + s v)‖) _ _ (fun u => norm_nonneg _)
+                (fun v u => norm_nonneg _) fun v hv u => hsup v (ne_of_mem_erase hv) _
+          _ ≤ (Bk * S1) * (Bk * A) ^ (N - 2) := by
+              rw [prod_const, hT]
+              gcongr
+              exact hl1 _
+    _ = (∑ s ∈ pinned L N p, ‖g s‖) * ((Bk * S1) * (Bk * A) ^ (N - 2)) := by rw [sum_mul]
+    _ ≤ SW0 * ((Bk * S1) * (Bk * A) ^ (N - 2)) := by gcongr
+    _ = SW0 * (Bk * S1) * (Bk * e8) ^ (N - 2) * (η * ℓ)⁻¹ ^ (N - 2) := by
+        simp only [A, mul_pow]; ring
+
+/-- **The inner molecule**: `∑_u |A(u)| ≤ C (η_t ℓ̂)^{-(N-2)}`, provided the root joins opposite
+charges (it is the cut long edge). -/
+theorem sum_norm_innerId_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k)
+    {N : ℕ} [NeZero N] (hN : 3 ≤ N) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 < t → t < 1 →
+      ∀ (σ' : Fin N → Bool) (p : Fin N), σ' p ≠ σ' (p + 1) → ∀ a' : Fin N → ZMod L,
+        ∑ u : ZMod L, ‖innerId (mSigma E) t σ' a' p u‖
+          ≤ C * (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2) := by
+  obtain ⟨C₁, hC₁, h₁⟩ := sum_norm_innerId_alt_le hk0 hk1 hEk hN
+  obtain ⟨C₂, hC₂, h₂⟩ := sum_norm_innerId_short_le hk0 hk1 hEk hN
+  refine ⟨C₁ + C₂, by positivity, fun L _ hL t ht0 ht1 σ' p hp a' => ?_⟩
+  have hE : |E| < 2 := by linarith
+  have hX : 0 ≤ (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2) := by
+    have := etaT_pos hE ht1
+    have := one_le_ellHat L hL ht0 ht1
+    positivity
+  by_cases halt : ∀ v, σ' v ≠ σ' (v + 1)
+  · exact (h₁ L hL t ht0 ht1 σ' halt a' p).trans (by nlinarith)
+  · push Not at halt
+    obtain ⟨v, hv⟩ := halt
+    have hvp : v ≠ p := fun h => hp (h ▸ hv)
+    exact (h₂ L hL t ht0 ht1 σ' p ⟨v, hvp, hv⟩ a').trans (by nlinarith)
+
 end InnerBound
 
 end RBM

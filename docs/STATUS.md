@@ -1194,3 +1194,12 @@ Step 3 已做部分：(2.27) `que_flow_of_eq747`、坏事件 `measure_bad_flow_o
 (7.25) `Stilde`/`zetaU`（复用 T46 `SBTilde`）；(7.30)–(7.32) `eq730`、`ellHat_eq_L`；(7.33)(7.34) `primRhsGUE` 与幂计数；(7.35)→(7.36) `K_bootstrap`/`eq736`；
 (7.41)–(7.44) `eq742_of`/`eq744_of`；(7.45) `eq745_of_terms`；(7.27)(7.28) `eq727`/`eq728`/`eq728_of_eq745`；GUE 相 2-loop 闭式 `kTwoGUE`。
 **剩余缺口**：`h745/h746`（(7.45)(7.46) 的 ≺ 界）需 T58 的 L−K 层级 + Duhamel/BDG；(7.29) 本身（§5.8 对 GUE 相的论证）与 (2.26)；GUE 相 ODE 的唯一性；`eq727` 的抽象极大值尚未实例化到具体 loop。paper-deltas #46。
+
+### `RBM1D/Hierarchy/Step2.lean` — §5.3 Step 2：(2.75)(2.76)（T61，Claude Code 并行 agent）
+
+**`Step2.step2`** 给出 (2.75)(2.76)，形状与 `Steps.localLaw`/`Steps.aprioriDecay` 一致（(2.74) 取自 `Step1.weakLaw`）。
+(5.26)–(5.29) `tailLK`/`jStar`（复用 T43 `tailT`/`ratioJ`）；Lemma 5.6 `eq530`/`eq531`；Lemma 5.7 (5.34) `norm_eLL_le`；(5.39)–(5.41) `norm_Uker_le_of_tail`/`step_bound`；
+自改进核心 `self_improving`（确定性）、停时 `stopTime` (5.43)；(5.47) `jS_stochDom`：`J*_{u,D} ≺ (η_s/η_u)^4`（D ≥ 60）。
+假设（`Step2.Hyp`）：`SumZeroDyn.Hierarchy`（(5.20)，T58/T60 接口，漂移 F 抽象）、`eG`（(5.35)，兼作 T58 缺口：`eLL` 与具体漂移 `primBil` 的 (L−K)×(L−K) 部分的等同尚无证明）、`mart`（(5.44)–(5.46)）、`cont`（`(L−K)_u` 高概率连续）。
+**⚠ 需 Jun 看一眼**：(2.72) 被加强为 `N^c(η_s/η_t)^30 ≤ Wℓ_tη_t`——按字面 (2.72)，`J*³(Wℓη)^{-1/3}` 项恰在阈值上，论证不闭合。另停时阈值加了 `N^δ` 余量。paper-deltas #47。
+**剩余**：(5.48) 细化形式；(5.35)(5.36) 的证明（待 T58 具体化 F 与 E⊗E）；(5.42)(5.44)–(5.46) 由 BDG 推出。

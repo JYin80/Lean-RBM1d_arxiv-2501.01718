@@ -104,7 +104,7 @@
 | T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | **Cowork** | 进行中（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上） |
 | T59 | §5.4：Def 5.8 快衰减、Lemma 5.9、Lemma 5.10 (5.77) 的幂计数、Lemma 5.11 (5.83) | `Hierarchy/Decay.lean`（新建） | Claude Code | **完成**（E⊗E 仅抽象形式，待 T58 Def 5.4） |
 | T60 | §5.5 的动力学半边：(5.88)(5.91)、**Lemma 5.14 (5.92)**、(5.95)–(5.101) | `Hierarchy/SumZeroDyn.lean`（新建） | Claude Code | **完成**（`lemma514_flow′` 给出 `Step3.Lemma514`；(5.77)(5.75) 仍为占位假设，见 STATUS） |
-| T61 | §5.3 Step 2：Lemma 5.6、Lemma 5.7 (5.34)(5.35)(5.36)、(5.39)–(5.48) 的自改进不等式 | `Hierarchy/Step2.lean`（新建） | Claude Code | 进行中（T58 未完的部分作假设占位） |
+| T61 | §5.3 Step 2：Lemma 5.6、Lemma 5.7 (5.34)(5.35)(5.36)、(5.39)–(5.48) 的自改进不等式 | `Hierarchy/Step2.lean`（新建） | Claude Code | **完成**（`step2` 给出 (2.75)(2.76)；(2.72) 需 `N^c` 增益，见 STATUS；(5.35) 为 T58 占位假设） |
 | T62 | §6 的总装：(6.10)(6.11)(6.13) 与 Lemma 5.1 | `Loop/ContinuityAssembly.lean`（新建） | Claude Code | **完成** |
 | T63 | Theorem 2.3 与 2.4 由 Lemma 2.18/2.19/2.20 推出（§2.6 p.22） | `Flow/Consequences.lean`（新建） | Claude Code | **完成**（固定能量切片；(2.4) 需 `TransferLoop1`，见 STATUS） |
 | T64 | 附录 A 的总装：(A.11)(A.12)(A.13)(A.14)(A.17)(A.20) ⟹ Lemma A.2 | `Loop/ChainBound.lean`（新建） | Claude Code | **完成** |

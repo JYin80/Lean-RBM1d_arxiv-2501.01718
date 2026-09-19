@@ -1399,6 +1399,19 @@
   $\eta_{t_0}=t_0^{1/2}\eta$.
 \end{proof}
 
+\begin{theorem}[Step 2 of Theorem 2.21: Lemmas 5.6, 5.7, (5.39)--(5.47), (2.75), (2.76)]\label{thm:step2}
+  \lean{RBM.Step2.tailLK, RBM.Step2.jStar, RBM.Step2.isGreatest_jStar, RBM.Step2.le_jStar_mul, RBM.Step2.eq530, RBM.Step2.eq531, RBM.Step2.eLL, RBM.Step2.norm_eLL_le, RBM.Step2.norm_Uker_le_of_tail, RBM.Step2.norm_Uker_flow, RBM.Step2.step_bound, RBM.Step2.self_improving, RBM.Step2.stopTime, RBM.Step2.le_stopTime_iff, RBM.Step2.Hyp, RBM.Step2.jS_highProb, RBM.Step2.jS_stochDom, RBM.Step2.aprioriDecay, RBM.Step2.localLaw, RBM.Step2.step2}
+  \leanok\uses{thm:step1, lem:5.14, lem:7.3, lem:stretched-exp, def:flow-hypotheses}
+  With the integrated hierarchy (5.20), (5.35) for the drift, the stopped-martingale bound
+  (5.44)--(5.46) and continuity of $u\mapsto(L-K)_u$ as hypotheses, and (2.72) with an $N^c$ gain:
+  $J^*_{u,D}\prec(\eta_s/\eta_u)^4$ uniformly in $u$, hence (2.76) and the local law (2.75).
+\end{theorem}
+\begin{proof}\leanok
+  Lemma 5.6 (5.30)(5.31) and (5.34); one step of the stopped hierarchy via Lemma 7.1 and (7.2);
+  a deterministic self-improving inequality at the stopping time (5.43) with threshold
+  $N^\delta(\eta_s/\eta_u)^4$; (2.75) from (2.59), Lemma 4.1 along the flow and (2.74).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

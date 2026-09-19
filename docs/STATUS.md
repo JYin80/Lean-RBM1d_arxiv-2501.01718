@@ -999,3 +999,11 @@ Lean 的形式还省去了形式化「对所有指标对取 max」。**结论：
 含短边 `norm_Kpi_empty_short_le`）。paper-deltas #22。**π ≠ ∅ 完成**：`treeValW_long_cut`（单棵树在长边处切割，`Θ−1 = (t·1)SΘ`）、`Kpi_cut`（(3.75) 的层版本）、
 `innerId`/`sum_norm_innerId_le`（根叶为恒等的内分子，`Σ_u|A(u)| = O(X^{N−2})`）、**`norm_Kpi_le`**（(3.45) 对所有 π，n ≤ N_max 一致）、
 **`norm_Kgen_le`**（(3.46)：`|K| ≤ C (W η_t ℓ̂)^{−(n−1)}`）。**T37 完成。**
+
+### `RBM1D/Defs/StochDom.lean` — Def 2.1 (i)(iii)(iv)（T41，Claude Code）
+
+**随机层的签名约定（下游全部按此）**：概率空间 `(Ω, P : Measure Ω)` 固定，族为 `ξ : ∀ N, U N → Ω → ℝ`（`U N` 为参数集）。
+`StochDom P ξ ζ`（论文 (i)，并集在概率里面）、`NormStochDom`（(iii)，任意 `[Norm E]`）、`HighProb`/`HighProbIn`（(iv)）。
+性质：`refl`/`trans`/`add`/`mul`/`const_mul_left`/`const_mul_right`/`of_unifDetDom`（确定性 ⇒ 概率）、
+**`of_forall_le`**（union bound，`#U(N) ≤ N^C`）、`StochDom.highProb`、`HighProb.inter`/**`biInter`**（多项式多个 w.h.p. 事件）。
+通用工具 `of_subset`/`of_subset_union`：新性质只需证失败事件的包含关系。paper-deltas #23。

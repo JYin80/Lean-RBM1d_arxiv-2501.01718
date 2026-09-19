@@ -82,6 +82,34 @@
   part (i) of the definition.
 \end{definition}
 
+\begin{definition}[Stochastic domination, Definition 2.1 (i)(iii)(iv)]\label{def:2.1-i}
+  \lean{RBM.badSet, RBM.StochDom, RBM.NormStochDom, RBM.HighProb, RBM.HighProbIn}\leanok
+  \uses{def:2.1-ii}
+  For families $\xi,\zeta$ of random variables indexed by $N$ and $u\in U(N)$, $\xi\prec\zeta$
+  uniformly in $u$ if for all $\tau,D>0$, eventually
+  $\mathbb P(\exists u:\ \xi(N,u)>N^\tau\zeta(N,u))\le N^{-D}$; $A=O_\prec(\zeta)$ means
+  $\|A\|\prec\zeta$; $\Xi$ holds w.h.p.\ if $\mathbb P(\Xi^c)\le N^{-D}$ eventually, for every $D$.
+  The probability space is fixed and $N$ enters through the random variables.
+\end{definition}
+
+\begin{lemma}[Properties of stochastic domination]\label{lem:2.1-i-closure}
+  \lean{RBM.eventually_two_mul_rpow_le, RBM.rpow_mul_rpow_neg_add, RBM.StochDom.of_subset,
+    RBM.StochDom.of_subset_union, RBM.StochDom.of_eventually_empty, RBM.StochDom.of_unifDetDom,
+    RBM.StochDom.refl, RBM.StochDom.trans, RBM.StochDom.add, RBM.StochDom.mul,
+    RBM.StochDom.const_mul_left, RBM.StochDom.const_mul_right, RBM.StochDom.of_forall_le,
+    RBM.StochDom.highProb, RBM.HighProb.mono, RBM.HighProb.inter, RBM.HighProb.biInter,
+    RBM.HighProb.highProbIn}
+  \leanok\uses{def:2.1-i}
+  $\prec$ is reflexive and transitive, closed under sums and products, absorbs constants, and is
+  implied by its deterministic version.  Union bound: a bound for each $u$ separately, uniform in
+  $u$, gives the uniform statement when $\#U(N)\le N^C$; likewise polynomially many w.h.p.\ events
+  hold simultaneously w.h.p.
+\end{lemma}
+\begin{proof}\leanok
+  Every property reduces to an inclusion of failure events and $2N^{-(D+1)}\le N^{-D}$,
+  resp.\ $N^C\cdot N^{-(D+C)}=N^{-D}$.
+\end{proof}
+
 \begin{lemma}[Closure properties of $\prec$]\label{lem:2.1-ii-closure}
   \lean{RBM.UnifDetDom.refl, RBM.UnifDetDom.trans, RBM.UnifDetDom.add,
     RBM.UnifDetDom.mul, RBM.UnifDetDom.const_mul_left, RBM.UnifDetDom.const_mul_right,

@@ -75,6 +75,8 @@
 | `Finset.sum_ite_irrel` | 把与求和变量无关的 `if` 提出和号——折叠 Kronecker δ 的关键 |
 | `Finset.sum_ite_eq`、`Finset.sum_ite_eq'`、`Finset.sum_comm`、`Finset.sum_pair` | |
 | `Fin.prod_univ_two`、`Fin.prod_univ_four` | |
+| `Mathlib.MeasureTheory.Measure.MeasureSpaceDef`（`...Measure.MeasureSpace` 已弃用） | `Measure`、`measure_mono`、`measure_union_le`、`measure_iUnion_fintype_le`、`measure_empty` |
+| `ENNReal.ofReal_add`、`ENNReal.ofReal_mul`、`ENNReal.ofReal_natCast`、`ENNReal.ofReal_le_ofReal` | |
 | `Lean.collectAxioms` | `#print axioms` 的底层；`Test/Axioms.lean` 用它做硬性审计 |
 | `Real.exp_lt_one_iff`（**不是** `Real.exp_lt_one`，后者不存在）、`Real.exp_le_one_iff` | `exp x < 1 ↔ x < 0` |
 | `Complex.norm_le_abs_re_add_abs_im` | `‖z‖ ≤ \|re z\| + \|im z\|` |
@@ -114,3 +116,6 @@
 | `Fin.coe_castSucc` | `Fin.val_castSucc` |
 | `List.getLast?_eq_getLast` | `List.getLast?_eq_some_getLast` |
 | `Mathlib.Data.Real.Sqrt` | `Mathlib.Analysis.Real.Sqrt` |
+| `Set.mem_setOf_eq` | `Set.mem_ofPred_eq` |
+| `zero_le _`（带参数） | `zero_le`（参数已隐式） |
+| `if_pos h` | `ite_eq_left h`（仍可用 `if_pos`，但报弃用） |

@@ -1140,3 +1140,8 @@ T56（Step 6）可用 `norm_Uker_fastDecay_le` 消去其 (7.14) 假设。paper-d
 **不建议**把 loop 层改成 `Fin n` 表示：`LoopIdx` 的 `List` 形态是 `cutGlue*` 三个算子
 （取前缀、丢后缀、拼接）能写得干净的原因，第 3 节整套树表示都压在上面。
 
+### `RBM1D/Flow/Consequences.lean` — Theorems 2.3、2.4（T63，Claude Code 并行 agent）
+
+**`localSemicircleLaw_of_Thm221`**（(2.3)(2.4) 与迹律）、**`quantumDiffusion_of_Thm221`**（(2.6)–(2.9)）；逐式版 `*_of_bounds` 与 `W^τ` 概率版。
+缺口（接口所致）：只在固定能量切片 `SpecSeq`（`lemE (z N) = E`）上成立——全域一致需 `Bounds`/`Thm221` 允许 N 相关能量；
+(2.4) 需新假设 `TransferLoop1`（1-loop 版 (2.39)）。paper-deltas #38。

@@ -1298,6 +1298,18 @@
   $\ell_u^2(1-u)$ is non-increasing; $\int_s^u\eta_v^{-1}dv\le2\log W$ by (2.72).
 \end{proof}
 
+\begin{theorem}[Theorems 2.3 and 2.4 from Lemmas 2.18--2.20, \S2.6 p.22]\label{thm:2.3-2.4}
+  \lean{RBM.Band.zScale, RBM.Band.scale_inv_le, RBM.SpecSeq, RBM.SpecSeq.bounds, RBM.StochDom.average, RBM.Band.prob_le_of_stochDom, RBM.gloop_one_eq, RBM.gloop_pm_eq, RBM.gloop_pp_eq, RBM.TransferLoop1, RBM.localLaw_of_bounds, RBM.loop1_of_bounds, RBM.partialTrace_of_bounds, RBM.loop2_of_bounds, RBM.quantumDiffusion_pm_of_bounds, RBM.quantumDiffusion_pp_of_bounds, RBM.expect_loop2_of_bounds, RBM.expect_quantumDiffusion_pm_of_bounds, RBM.expect_quantumDiffusion_pp_of_bounds, RBM.trace_of_bounds, RBM.localLaw_prob_of_bounds, RBM.partialTrace_prob_of_bounds, RBM.quantumDiffusion_pm_prob_of_bounds, RBM.quantumDiffusion_pp_prob_of_bounds, RBM.expect_quantumDiffusion_pm_W_of_bounds, RBM.expect_quantumDiffusion_pp_W_of_bounds, RBM.localSemicircleLaw_of_Thm221, RBM.quantumDiffusion_of_Thm221}
+  \leanok\uses{thm:2.18-from-2.21, def:flow-hypotheses, lem:2.8, lem:flow-scales}
+  Assuming Theorem 2.21 and the distributional transfers (2.39)/(2.65)/(2.66): the local law
+  (2.3), the partial tracial law (2.4) and the tracial law (Theorem 2.3), and quantum diffusion
+  (2.6)--(2.9) (Theorem 2.4), for spectral parameters on a fixed-energy slice.
+\end{theorem}
+\begin{proof}\leanok
+  $z=t^{-1/2}z_t$ (Lemma 2.8); (2.3)$\leftarrow$(2.64), (2.4)$\leftarrow$(2.60) at $n=1$ with $K_{t,+,a}=m$,
+  (2.6)(2.7)$\leftarrow$(2.60) at $n=2$ with (2.57), (2.8)(2.9)$\leftarrow$(2.62); $\ell(z)\asymp\ell_t$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

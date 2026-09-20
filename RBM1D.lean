@@ -70,6 +70,7 @@ import RBM1D.Flow.Iteration
 import RBM1D.Flow.Scales
 import RBM1D.Flow.Universality
 import RBM1D.Gauss.Stein
+import RBM1D.Gauss.SteinMatrix
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds

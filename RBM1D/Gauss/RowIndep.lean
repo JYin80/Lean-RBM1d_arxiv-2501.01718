@@ -904,6 +904,24 @@ theorem card_LdeIdx_le (N : ℕ) :
   rw [hcard] at this
   exact_mod_cast this
 
+/-- The index set of the row LDE is polynomially large: `#LdeIdx ≤ N²` eventually. -/
+theorem eventually_card_LdeIdx_le (d : Dims) :
+    ∀ᶠ N : ℕ in Filter.atTop, (Fintype.card (LdeIdx d N) : ℝ) ≤ (N : ℝ) ^ (2 : ℝ) := by
+  filter_upwards [d.dim, Filter.eventually_ge_atTop 1] with N hN hN1
+  refine (card_LdeIdx_le N).trans ?_
+  have hLW : ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) := by
+    have := hN.1
+    have hcomm : d.W N * d.L N = d.L N * d.W N := Nat.mul_comm _ _
+    rw [hcomm] at this
+    exact_mod_cast this
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have h0 : (0 : ℝ) ≤ ((d.L N * d.W N : ℕ) : ℝ) := by positivity
+  calc ((d.L N * d.W N : ℕ) : ℝ) * ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) * (N : ℝ) :=
+        mul_le_mul hLW hLW h0 (le_of_lt hNpos)
+    _ = (N : ℝ) ^ (2 : ℝ) := by
+        rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+        ring
+
 /-- **Stochastic domination for any row sum with off-row coefficients.**  Given a family of
 rows `row N q` and coefficients `C N q` that read only the corresponding off-row block, the
 normalised row sums are `≺ 1`, uniformly over a polynomially large index set.  Both the row LDE
@@ -951,22 +969,7 @@ theorem stochDom_rowSum_minorCol (hu : 0 ≤ u) (z : ℂ) :
       (fun N (q : LdeIdx d N) ω =>
         ‖rowSum d N u q.1 (rowCoeffNorm d N u q.1 (minorCol d N u z q.1 q.2)) ω‖)
       (fun _ _ _ => 1) := by
-  have hcard : ∀ᶠ N : ℕ in Filter.atTop,
-      (Fintype.card (LdeIdx d N) : ℝ) ≤ (N : ℝ) ^ (2 : ℝ) := by
-    filter_upwards [d.dim, Filter.eventually_ge_atTop 1] with N hN hN1
-    refine (card_LdeIdx_le N).trans ?_
-    have hLW : ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) := by
-      have := hN.1
-      have hcomm : d.W N * d.L N = d.L N * d.W N := Nat.mul_comm _ _
-      rw [hcomm] at this
-      exact_mod_cast this
-    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
-    have h0 : (0 : ℝ) ≤ ((d.L N * d.W N : ℕ) : ℝ) := by positivity
-    calc ((d.L N * d.W N : ℕ) : ℝ) * ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) * (N : ℝ) :=
-          mul_le_mul hLW hLW h0 (le_of_lt hNpos)
-      _ = (N : ℝ) ^ (2 : ℝ) := by
-          rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
-          ring
+  have hcard := eventually_card_LdeIdx_le d
   exact stochDom_rowSum_general (U := fun N => LdeIdx d N) (Ccard := 2) hu hcard
     (fun N q => q.1) (fun N q => minorCol d N u z q.1 q.2)
     (fun N q => measurable_minorCol u z q.1 q.2)
@@ -1013,22 +1016,7 @@ theorem stochDom_rowSum_minorRowConj (hu : 0 ≤ u) (z : ℂ) :
       (fun N (q : LdeIdx d N) ω =>
         ‖rowSum d N u q.1 (rowCoeffNorm d N u q.1 (minorRowConj d N u z q.1 q.2)) ω‖)
       (fun _ _ _ => 1) := by
-  have hcard : ∀ᶠ N : ℕ in Filter.atTop,
-      (Fintype.card (LdeIdx d N) : ℝ) ≤ (N : ℝ) ^ (2 : ℝ) := by
-    filter_upwards [d.dim, Filter.eventually_ge_atTop 1] with N hN hN1
-    refine (card_LdeIdx_le N).trans ?_
-    have hLW : ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) := by
-      have := hN.1
-      have hcomm : d.W N * d.L N = d.L N * d.W N := Nat.mul_comm _ _
-      rw [hcomm] at this
-      exact_mod_cast this
-    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
-    have h0 : (0 : ℝ) ≤ ((d.L N * d.W N : ℕ) : ℝ) := by positivity
-    calc ((d.L N * d.W N : ℕ) : ℝ) * ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) * (N : ℝ) :=
-          mul_le_mul hLW hLW h0 (le_of_lt hNpos)
-      _ = (N : ℝ) ^ (2 : ℝ) := by
-          rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
-          ring
+  have hcard := eventually_card_LdeIdx_le d
   exact stochDom_rowSum_general (U := fun N => LdeIdx d N) (Ccard := 2) hu hcard
     (fun N q => q.1) (fun N q => minorRowConj d N u z q.1 q.2)
     (fun N q => measurable_minorRowConj u z q.1 q.2)

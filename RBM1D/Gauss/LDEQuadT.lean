@@ -497,6 +497,103 @@ theorem wirtVal_WA_WB (l : κ) (ω : Ω d) :
             + C.B ω l k * (starRingEnd ℂ) (C.B ω l k)) :=
   C.wirtVal_Wt l ω
 
+/-! ### The integration by parts of `E[T^{q+1}]` -/
+
+variable (C)
+
+/-- `Z_{q,l} = W_l · T^q`, the coefficient of `\bar h_l` in `T^{q+1}`. -/
+noncomputable def Zt (q : ℕ) (l : κ) (ω : Ω d) : ℂ :=
+  C.Wt l ω * ((C.Tq ω : ℝ) : ℂ) ^ q
+
+/-- `∂Z_{q,l}/∂a_l`. -/
+noncomputable def ZA (q : ℕ) (l : κ) (ω : Ω d) : ℂ :=
+  C.WA l ω * ((C.Tq ω : ℝ) : ℂ) ^ q
+    + C.Wt l ω * ((q : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ (q - 1) * C.TA l ω)
+
+/-- `∂Z_{q,l}/∂b_l`. -/
+noncomputable def ZB (q : ℕ) (l : κ) (ω : Ω d) : ℂ :=
+  C.WB l ω * ((C.Tq ω : ℝ) : ℂ) ^ q
+    + C.Wt l ω * ((q : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ (q - 1) * C.TB l ω)
+
+theorem tameZt (q : ℕ) (l : κ) : Tame d (C.Zt q l) :=
+  (C.tameWt l).mul (C.tameTq.pow q)
+
+theorem tameZA (q : ℕ) (l : κ) : Tame d (C.ZA q l) :=
+  ((C.tameWA l).mul (C.tameTq.pow q)).add
+    ((C.tameWt l).mul
+      (((Tame.const (d := d) ((q : ℂ))).mul (C.tameTq.pow (q - 1))).mul (C.tameTA l)))
+
+theorem tameZB (q : ℕ) (l : κ) : Tame d (C.ZB q l) :=
+  ((C.tameWB l).mul (C.tameTq.pow q)).add
+    ((C.tameWt l).mul
+      (((Tame.const (d := d) ((q : ℂ))).mul (C.tameTq.pow (q - 1))).mul (C.tameTB l)))
+
+variable {C}
+
+theorem Tq_pow_succ_eq_sum (q : ℕ) (ω : Ω d) :
+    ((C.Tq ω : ℝ) : ℂ) ^ (q + 1) = ∑ l, (starRingEnd ℂ) (C.h ω l) * C.Zt q l ω := by
+  have h := Tq_eq_sum_conj_h_mul (C := C) ω
+  calc ((C.Tq ω : ℝ) : ℂ) ^ (q + 1)
+      = ((C.Tq ω : ℝ) : ℂ) ^ q * ((C.Tq ω : ℝ) : ℂ) := pow_succ _ _
+    _ = ((C.Tq ω : ℝ) : ℂ) ^ q * ∑ l, (starRingEnd ℂ) (C.h ω l) * C.Wt l ω := by rw [← h]
+    _ = ∑ l, (starRingEnd ℂ) (C.h ω l) * C.Zt q l ω := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun l _ => by rw [Zt]; ring
+
+variable (C)
+
+theorem hasDerivAt_Zt_true (q : ℕ) (l : κ) (ω : Ω d) :
+    HasDerivAt (fun s : ℝ => C.Zt q l (Function.update ω (C.co l true) s)) (C.ZA q l ω)
+      (ω (C.co l true)) := by
+  have hself := Function.update_eq_self (C.co l true) ω
+  have hW := C.hasDerivAt_Wt_true l ω
+  have hT := (C.hasDerivAt_Tq_true l ω).fun_pow q
+  have hmul := hW.fun_mul hT
+  simp only [hself] at hmul
+  exact hmul
+
+theorem hasDerivAt_Zt_false (q : ℕ) (l : κ) (ω : Ω d) :
+    HasDerivAt (fun s : ℝ => C.Zt q l (Function.update ω (C.co l false) s)) (C.ZB q l ω)
+      (ω (C.co l false)) := by
+  have hself := Function.update_eq_self (C.co l false) ω
+  have hW := C.hasDerivAt_Wt_false l ω
+  have hT := (C.hasDerivAt_Tq_false l ω).fun_pow q
+  have hmul := hW.fun_mul hT
+  simp only [hself] at hmul
+  exact hmul
+
+variable {C}
+
+/-- **`D_l Z_{q,l}`**: the diagonal term (which will sum to `2V_q T^q`) plus the cross term. -/
+theorem wirtVal_ZA_ZB (q : ℕ) (l : κ) (ω : Ω d) :
+    C.wirtVal l (C.ZA q l ω) (C.ZB q l ω)
+      = (2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+            (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+              + C.B ω l k * (starRingEnd ℂ) (C.B ω l k))) * ((C.Tq ω : ℝ) : ℂ) ^ q
+        + C.Wt l ω * ((q : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ (q - 1) *
+            (2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+              (C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+                + C.B ω l k * (starRingEnd ℂ) (C.V ω k)))) := by
+  rw [ZA, ZB, wirtVal_add, wirtVal_mul_right, wirtVal_WA_WB, wirtVal_smul, wirtVal_smul,
+    wirtVal_TA_TB]
+
+/-- **The integration by parts of `E[T^{q+1}]`.**  `T^{q+1} = ∑_l \bar h_l Z_{q,l}`, and each
+`\bar h_l` is integrated by parts against `Z_{q,l}`. -/
+theorem integral_Tq_pow_succ (hG : GaussIBP d) (q : ℕ) :
+    ∫ ω, ((C.Tq ω : ℝ) : ℂ) ^ (q + 1) ∂(P d)
+      = ∑ l, (C.w l : ℂ) * ∫ ω, C.wirtVal l (C.ZA q l ω) (C.ZB q l ω) ∂(P d) := by
+  have hint : ∀ l : κ, Integrable (fun ω => (starRingEnd ℂ) (C.h ω l) * C.Zt q l ω) (P d) :=
+    fun l => (((C.tameh l).conj).mul (C.tameZt q l)).integrable hG
+  calc ∫ ω, ((C.Tq ω : ℝ) : ℂ) ^ (q + 1) ∂(P d)
+      = ∫ ω, ∑ l, (starRingEnd ℂ) (C.h ω l) * C.Zt q l ω ∂(P d) :=
+        integral_congr_ae (Filter.Eventually.of_forall fun ω => Tq_pow_succ_eq_sum q ω)
+    _ = ∑ l, ∫ ω, (starRingEnd ℂ) (C.h ω l) * C.Zt q l ω ∂(P d) :=
+        integral_finsetSum _ fun l _ => hint l
+    _ = ∑ l, (C.w l : ℂ) * ∫ ω, C.wirtVal l (C.ZA q l ω) (C.ZB q l ω) ∂(P d) :=
+        Finset.sum_congr rfl fun l _ =>
+          C.integral_conj_h_mul_gen hG l (C.tameZt q l) (C.tameZA q l) (C.tameZB q l)
+            (C.hasDerivAt_Zt_true q l) (C.hasDerivAt_Zt_false q l)
+
 end RowChaos
 
 end RBM.Gauss

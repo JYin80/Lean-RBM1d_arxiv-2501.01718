@@ -29,6 +29,7 @@ concrete form used by the moment computations.
 namespace RBM.Gauss
 
 open MeasureTheory ProbabilityTheory
+open scoped NNReal
 
 variable {d : Dims} {N : ℕ}
 
@@ -208,5 +209,95 @@ theorem im_row_sum (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ) (ω : Ω d) :
   simp only [Fintype.sum_bool, rowIm, rowVar, rowSign, ↓reduceIte]
   by_cases h : idxKey d N i < idxKey d N k.1 <;>
     simp [h, Complex.add_im, Complex.mul_im] <;> ring
+
+/-! ### The moment bound for a row sum with frozen coefficients -/
+
+theorem rowCoord_inj (i : d.Idx N) :
+    Function.Injective fun q : RowIdx d N i => rowCoord d N i q.1.1 q.2 := by
+  rintro ⟨⟨k, hk⟩, b⟩ ⟨⟨l, hl⟩, c⟩ h
+  obtain ⟨h1, h2⟩ := rowCoord_injOn hk hl h
+  subst h1
+  subst h2
+  rfl
+
+/-- The row coordinates form an independent family. -/
+theorem iIndepFun_rowVar (i : d.Idx N) :
+    ProbabilityTheory.iIndepFun (rowVar d N i) (P d) :=
+  ProbabilityTheory.iIndepFun.precomp
+    (g := fun q : RowIdx d N i => rowCoord d N i q.1.1 q.2) (rowCoord_inj i) (iIndepFun_coord d)
+
+theorem measurable_rowVar (i : d.Idx N) (q : RowIdx d N i) :
+    Measurable (rowVar d N i q) := measurable_pi_apply _
+
+theorem map_rowVar (i : d.Idx N) (q : RowIdx d N i) :
+    (P d).map (rowVar d N i q) = gaussianReal 0 (gvar d (rowCoord d N i q.1.1 q.2)) :=
+  P_map_eval d _
+
+/-- Off the diagonal the coordinate variance is `S_{ik}/2`, in either order of the index pair. -/
+theorem gvar_rowCoord {i k : d.Idx N} (hk : k ≠ i) (b : Bool) :
+    (gvar d (rowCoord d N i k b) : ℝ) = Sblk (d.L N) (d.W N) i k / 2 := by
+  unfold rowCoord
+  split_ifs with h
+  · exact gvar_offDiag d N i k b (Ne.symm hk)
+  · rw [gvar_offDiag d N k i b hk, Sblk_comm]
+
+/-- The variance of the real part of the row sum: `(u/2) ∑_k S_{ik} |c_k|²`. -/
+theorem linVar_rowRe {u : ℝ} (hu : 0 ≤ u) (i : d.Idx N) (c : d.Idx N → ℂ) :
+    ((linVar (fun q : RowIdx d N i => gvar d (rowCoord d N i q.1.1 q.2))
+        (rowRe d N u i c) Finset.univ : ℝ≥0) : ℝ)
+      = u / 2 * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 * ‖c k.1‖ ^ 2 := by
+  unfold linVar
+  push_cast
+  rw [Fintype.sum_prod_type, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Fintype.sum_bool]
+  simp only [rowRe, rowSign, ↓reduceIte, gvar_rowCoord k.2]
+  have hsq : Real.sqrt u ^ 2 = u := Real.sq_sqrt hu
+  have hnorm : ‖c k.1‖ ^ 2 = (c k.1).re ^ 2 + (c k.1).im ^ 2 := by
+    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+    ring
+  by_cases h : idxKey d N i < idxKey d N k.1 <;> simp [h, hnorm, mul_pow, hsq] <;> ring
+
+/-- The variance of the imaginary part is the same. -/
+theorem linVar_rowIm {u : ℝ} (hu : 0 ≤ u) (i : d.Idx N) (c : d.Idx N → ℂ) :
+    ((linVar (fun q : RowIdx d N i => gvar d (rowCoord d N i q.1.1 q.2))
+        (rowIm d N u i c) Finset.univ : ℝ≥0) : ℝ)
+      = u / 2 * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 * ‖c k.1‖ ^ 2 := by
+  unfold linVar
+  push_cast
+  rw [Fintype.sum_prod_type, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Fintype.sum_bool]
+  simp only [rowIm, rowSign, ↓reduceIte, gvar_rowCoord k.2]
+  have hsq : Real.sqrt u ^ 2 = u := Real.sq_sqrt hu
+  have hnorm : ‖c k.1‖ ^ 2 = (c k.1).re ^ 2 + (c k.1).im ^ 2 := by
+    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+    ring
+  by_cases h : idxKey d N i < idxKey d N k.1 <;> simp [h, hnorm, mul_pow, hsq] <;> ring
+
+/-- **The moment bound for a row sum with frozen coefficients**:
+`E‖∑_{k ≠ i} H_{ik} c_k‖^{2p} ≤ 2 (2p-1)!! (u ∑_k S_{ik} |c_k|²)^p`. -/
+theorem integral_norm_row_sum_pow_le {u : ℝ} (hu : 0 ≤ u) (i : d.Idx N) (c : d.Idx N → ℂ)
+    (p : ℕ) :
+    ∫ ω, ‖∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1‖ ^ (2 * p) ∂(P d)
+      ≤ 2 * (dfac p *
+        (u * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 * ‖c k.1‖ ^ 2) ^ p) := by
+  set V : ℝ := u / 2 * ∑ k : {k : d.Idx N // k ≠ i},
+    Sblk (d.L N) (d.W N) i k.1 * ‖c k.1‖ ^ 2 with hV
+  have hpt : ∀ ω : Ω d, ‖∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1‖ ^ (2 * p)
+      = ((∑ q : RowIdx d N i, rowRe d N u i c q * rowVar d N i q ω) ^ 2
+        + (∑ q : RowIdx d N i, rowIm d N u i c q * rowVar d N i q ω) ^ 2) ^ p := by
+    intro ω
+    rw [pow_mul, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, ← re_row_sum, ← im_row_sum]
+    ring_nf
+  simp_rw [hpt]
+  have hbound := integral_sq_add_sq_pow_le (P := P d) (measurable_rowVar (d := d) (N := N) i)
+    (map_rowVar (d := d) (N := N) i) (iIndepFun_rowVar (d := d) (N := N) i)
+    (rowRe d N u i c) (rowIm d N u i c) Finset.univ p
+  rw [linVar_rowRe hu, linVar_rowIm hu] at hbound
+  refine hbound.trans (le_of_eq ?_)
+  simp only [mul_pow, div_pow]
+  field_simp
+  ring
 
 end RBM.Gauss

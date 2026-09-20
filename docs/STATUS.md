@@ -1211,3 +1211,19 @@ Step 3 已做部分：(2.27) `que_flow_of_eq747`、坏事件 `measure_bad_flow_o
 **⚠ 接口提醒**：Hölder 而非 Lipschitz 是刻意的——T69 的 `‖H_u − H_{u'}‖ = |√u−√u'|·‖X‖` 在 u=0 附近**不是** Lipschitz，只有 1/2-Hölder。
 **T69 对接时取 γ = 1/2**，并需 `‖X‖ ≤ N^K` 对每个 ω 成立（或先限制到好事件）。`hmom` 待 T72 的 Grönwall 输出。
 假设：`[IsFiniteMeasure P]`、`|Y|^{2p}` 可积、`Φ > 0`；不需可测性（`badSet` 用外测度 `measure_mono`）。paper-deltas #48。
+
+### `RBM1D/Gauss/Model.lean` — 高斯带矩阵与 `H_u = √u·X`（T69，Claude Code 并行 agent）
+
+**`sample : RBM.Sample (band d)`**——`Sample` 的三个字段现在是**定理**（`Hflow_zero`、`Hflow_isHermitian`、`measurable_Hflow`）。
+`integral_normSq_Xentry : ∫ ‖X_ij‖² dP = S_ij`（含对角）——这条是约定是否抄对的自检。
+Lipschitz：`norm_Hflow_sub : ‖H_u − H_u'‖ = |√u − √u'|·‖X‖`（ℓ²→ℓ² 算子范数）、`abs_sqrt_sub_sqrt_le : |√u−√u'| ≤ √|u−u'|`——正好对上 T73 的 Hölder-γ 接口（取 γ=1/2）。
+
+**⚠ T70/T71 必须逐字对上的指标约定**（详见文件头）：`idxKey d N (a,α) = W·a.val + α`，「i < j」一律指 `idxKey i < idxKey j`；
+坐标 `Coord d = Σ N, Idx × Idx × Bool`（`true` = 实部，`false` = 虚部）；方差 `gvar = S_ij`（i=j）或 `S_ij/2`（i≠j），两个 tag 相同；
+`X_ji = conj X_ij` 对每个 ω **逐点**成立（非 a.e.）。冗余坐标（`idxKey j < idxKey i`、对角虚部）从不被读取——**T71 对坐标求和时必须限制到被用到的那些**。
+T70 的入口是 `P_map_eval`（单坐标律）与 `P_map_restrict`（任意有限坐标集的联合律 = `Measure.pi`）。
+
+**两处缺口（未开工单，只在此记录，等 Jun 安排）**：
+1. `‖X‖ ≺ 1`（算子范数的高斯尾）未证，现为假设结构 `OpNormBound`；Mathlib 既无矩方法也无矩阵范数的高斯集中。
+2. **`Dims` 尚无实例**——整条矩路线在形式上以「`Dims` 非空」为前提。给出 `L=3, W=N/3, c=1/4` 之类的实例，唯一不平凡处是 (2.2)：`N^{3/4} ≤ ⌊N/3⌋` 终于成立（实 `rpow` 的活）。
+另：本文件 import `Green.EntryBound` 仅为 `RBM.Sblk`；若不想要这个依赖方向，应把 `Sblk` 下沉到 `RBM1D/Defs/`。paper-deltas #49。

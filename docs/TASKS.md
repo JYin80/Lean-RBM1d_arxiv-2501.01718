@@ -118,7 +118,7 @@
 | T66 | 维护：蓝图补上第二批的全部 `\lean{}` 节点 + `leanblueprint checkdecls`；linter 清理 | `blueprint/src/content.tex` 等 | Claude Code | **完成** |
 | T67 | **§5.1 Step 1**：(2.73)(2.74)、三情形分解、(5.2)(5.3)(5.4)(5.8)、(5.9) 的禁区论证 | `Hierarchy/Step1.lean`（新建） | Claude Code | **完成** |
 | T68 | §2.3 + §7.2 的出口：**Theorem 2.5（QUE）与 Theorem 2.6（普适性）** | `Flow/Universality.lean`（新建） | Claude Code | **完成** |
-| T69 | 固定高斯带矩阵 `X`、流 `H_u := √u·X`、实例化 `Sample`、确定性 Lipschitz | `Gauss/Model.lean`（新建） | Claude Code | 进行中 |
+| T69 | 固定高斯带矩阵 `X`、流 `H_u := √u·X`、实例化 `Sample`、确定性 Lipschitz | `Gauss/Model.lean`（新建） | Claude Code | **完成**（`Sample` 三字段为定理；`‖X‖ ≺ 1` 与 `Dims` 实例两处缺口见 STATUS） |
 | T70 | **Stein 分部积分**：`E[x·f(x)] = v·E[f′(x)]`，一维 → 乘积 → 矩阵 | `Gauss/Stein.lean`（新建） | **Cowork** | 进行中 ← **⭐ 整条线的地基** |
 | T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | 待认领 | 未开工（等 T70） |
 | T72 | 对矩的 Grönwall：`φ′ ≤ aφ + b` ⟹ 界；**二阶项 = (5.25) 的二次变差** | `Gauss/MomentGronwall.lean`（新建） | 待认领 | 未开工（等 T71） |

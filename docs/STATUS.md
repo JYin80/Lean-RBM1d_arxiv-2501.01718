@@ -1537,3 +1537,27 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 `∫⁻ ‖Z/√V‖^{2p} ≤ 2(2p−1)!!`，再由有限性**反推**可积性。
 **下一步**：把第十三块的冻结界转成 `∫⁻` 形式（非负可积 ⟹ `∫⁻ = ofReal ∫`），
 套 `lintegral_indep_pair_le` 得无假设版本的比值界，然后接 T73。
+
+### `RBM1D/Gauss/FlucAvg.lean` — (4.12) ⟹ (4.5) 的总装（T88，Claude Code 并行 agent）
+
+**先说结论**：`hFA` **已在原签名下卸掉**（`EntryBound` 一字未动），(4.5) 由 (4.12) + `hIBP` 得出（确定性版与 ≺ 版都是定理）。
+`norm_trace_green_sub_mul_Eblk_le_flucAvg` 把 `EntryBound` 的 `x` 实例化到新的 `condExpDiag`，之后 `hFA`/`hFA'` **字面上就是**对 `flucAvg` 的界（`flucAvg_eq_sum_sub` 是 `rfl`）。
+**两条可测性都证了，不再是假设**：`measurable_green_apply`（经新证的 `measurable_matrix_inv_apply`：`A⁻¹ = Ring.inverse(det A) • adjugate A`）与 `measurable_condRow`（`StronglyMeasurable.integral_prod_right'` 沿联合可测的 `rowSplit`）——
+**T87 的 `hZmeas`/`hYmeas`/`hrow` 全部卸掉**，T84/T86 标记的那两个浅缺口就此补上。
+截断接缝在唯一无条件的方向上合拢：`flucBound_env` 由 `norm_green_zt_le` 给出真正逐点一致的 `B = 2(η_t⁻¹+1)`、`ε = 4η_t⁻¹`，故 T87 的矩界成为无条件定理，`stochDom_flucAvg_blockAvg_env` 是**无假设**的 ≺ 陈述（控制是常数，证明接口不空洞）。
+两组系数的基数条件由模型自己的 `Dims.dim`/`bandwidth` 证出，故两条推论不带基数假设。
+
+## ⚠⚠ (4.12) **尚未成为定理**：一个真实的数学缺口（T88 发现，2026-09-20，**需要 Jun 决定**）
+
+不是记账问题，也不是截断问题。T87 给的是
+`E|Σₖ tₖZₖ|^{2p} ≤ (2p−1)·ε·B^{2p−1} + c^p p^{2p} B^{2p}`；(4.12) 要 `≲ N^{δp}Ψ^{4p}`。
+第二项没问题（`c = W⁻¹ ≤ Ψ²` 给出 `Ψ^{4p}`）。**第一项**即便取到理想参数 `ε ≍ Ψ²`（T85）、`B ≍ Ψ`，也只有 `Ψ^{2p+1}`——`p=1` 时是 `Ψ³`，而要的是 `Ψ⁴`。
+**这正是 `docs/TASKS.md` 第六批开头记下的方差路线的那个亏空。**
+根因：**T86 的小行替换只迭代到一阶**（`Z_{kᵢ} ↦ Z^{(k_{i₀})}_{kᵢ}` 换一次），标准证法要迭代到 `2p` 阶，残项才是 `Ψ^{4p}`。
+**任何 ≺/指示函数记账都补不回来**：T86 的消失性依赖 `E_k[(1−E_k)X] = 0`，而 `1_Ω·X` 破坏它，且 `1_Ω` 不是 `FinDepOffRow`、无法从 `E_k` 里提出来。
+缺口被隔离成单独一条假设 `hsmall`（(4.12) 的其余部分全部已证）。**要补的是一条新工单：把 `FlucVanish` 的机器迭代到 `2p` 阶。** 我不写工单，留给 Jun/Cowork 定。
+另一条剩余假设是 `hIBP`（T83，堵在 Cowork 的 T70 矩阵版 Stein）。paper-deltas #60。
+
+## HEAD 编译已恢复（2026-09-20）
+
+上一节记的 `Gauss/RowIndep.lean` 编译失败已由对面修好；`lake build RBM1D` 绿，公理审计 6568 条声明全部合规。

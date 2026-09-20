@@ -16,6 +16,7 @@ import RBM1D.Gauss.LDEQuad
 import RBM1D.Gauss.LDEQuadT
 import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.Generator
+import RBM1D.Gauss.IBP
 import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.MomentGronwall
 import RBM1D.Gauss.LinearForm

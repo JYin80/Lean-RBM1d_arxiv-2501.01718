@@ -91,7 +91,7 @@
 
 | # | 任务 | 文件 | 认领 | 状态 |
 |---|---|---|---|---|
-| T1 | `1 − ‖ρ(ξ)‖ ≍ \|1−ξ\|^{1/2}` 的定量估计 | `Propagator/Decay.lean` | **Cowork** | 进行中（精确恒等式已证） |
+| T1 | `1 − ‖ρ(ξ)‖ ≍ \|1−ξ\|^{1/2}` 的定量估计 | `Propagator/Decay.lean` | **待认领（Cowork 已交出）** | 精确恒等式已证，剩下是初等不等式 |
 | T1c | T1 的复 ξ 情形：`‖1−ξ‖/8 ≤ (1−‖ρ‖)² ≤ 3‖1−ξ‖`，对全部 `‖ξ‖<1` 一致（实 ξ 情形 Cowork 已在 `c1210a4` 完成） | `Propagator/RateComplex.lean` | Claude Code #2 | **完成** |
 | T2 | `‖A(ξ)‖` 的上界 | `Propagator/Decay.lean` | **Cowork** | **完成**（`norm_AA_le_of_real`、复 ξ 版在 `DiffComplex`） |
 | T3 | 组装成论文 (2.52) 的形式 | `Propagator/Decay.lean` | **Cowork** | **完成**（实 ξ；复 ξ 由 Claude Code 的 Fourier 路线给出） |
@@ -149,7 +149,7 @@
 | T55 | Steps 4 与 5：(5.125) ⟹ (2.78)；两段劈分 ⟹ (2.79) | `Hierarchy/Step45.lean`（新建） | Claude Code | **完成** |
 | T56 | Step 6：(5.126)–(5.136) ⟹ (2.80) | `Hierarchy/Step6.lean`（新建） | Claude Code | **完成** |
 | T57 | Lemma 2.18/2.19/2.20 由 Theorem 2.21 推出（§2.7 p.24 的时间网格归纳） | `Flow/Iteration.lean`（新建） | Claude Code | **完成** |
-| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | **Cowork** | 进行中（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上） |
+| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | **待认领（Cowork 已交出）** | 规格见下文「T58 交接：表示桥的设计决定」（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上） |
 | T59 | §5.4：Def 5.8 快衰减、Lemma 5.9、Lemma 5.10 (5.77) 的幂计数、Lemma 5.11 (5.83) | `Hierarchy/Decay.lean`（新建） | Claude Code | **完成**（E⊗E 仅抽象形式，待 T58 Def 5.4） |
 | T60 | §5.5 的动力学半边：(5.88)(5.91)、**Lemma 5.14 (5.92)**、(5.95)–(5.101) | `Hierarchy/SumZeroDyn.lean`（新建） | Claude Code | **完成**（`lemma514_flow′` 给出 `Step3.Lemma514`；(5.77)(5.75) 仍为占位假设，见 STATUS） |
 | T61 | §5.3 Step 2：Lemma 5.6、Lemma 5.7 (5.34)(5.35)(5.36)、(5.39)–(5.48) 的自改进不等式 | `Hierarchy/Step2.lean`（新建） | Claude Code | **完成**（`step2` 给出 (2.75)(2.76)；(2.72) 需 `N^c` 增益，见 STATUS；(5.35) 为 T58 占位假设） |
@@ -171,7 +171,7 @@
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | **完成**（与 T73 的正向桥量词序一致，可复合；含 `norm_gloop_le_det`） |
 | T81 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | Claude Code #2 | **完成**（行、列两条，`Gauss/RowIndep.lean`） |
 | T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | Claude Code | **完成**（矩递推与 p=1 精确恒等式；缺 `E[T^p] ≤ C_p E[Vq^p]`，文件头有草图） |
-| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean` | **待认领（Cowork 已交出）** | 前五格已落地并提交，剩余部分见下文「T83 交接」 |
+| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean` | Claude Code | 进行中（接手 Cowork 的交接，做剩下 (a)(b)(c) 三格） |
 | T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | Claude Code | **完成**（`E_k` 为精确 Fubini；公共引理 `FinDepOffRow` 供 T81/T82/T86） |
 | T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | Claude Code | **完成**（含三元组版与 Ψ-级版；`|G_kk|` 下界由事件 (4.1) 读出，非额外假设） |
 | T86 | **消失引理**：某指标只出现一次 ⟹ 期望 = O(替换误差) | `Gauss/FlucVanish.lean`（新建） | Claude Code | **完成**（替换后期望恰为 0；`B`/`ε` 与 T85 的 `≺` 之间的截断记账留给 T87/T88） |
@@ -198,6 +198,9 @@
 | T106 | **`u ↦ ‖G_u − m‖²_max` 的 Hölder 模**（T99 的 (C) 里唯一还没人做的一块，且**不依赖 T100**）：纯确定性。预解式恒等式 + `norm_Hflow_sub`（`‖H_u−H_u'‖ = \|√u−√u'\|·‖X‖`）+ `\|√u−√u'\| ≤ \|u−u'\|^{1/2}` + `z_u` 的 Lipschitz 性，给出 `\|llMax_u² − llMax_u'²\| ≤ C·η_t⁻²(‖X‖+1)·\|u−u'\|^{1/2}`。配 T101 的 `≺`-常数版与 T100 的 `‖X‖ ≺ 1` 即可关掉 `Lemma41Flow` | `Gauss/FlowHolder.lean`（新建） | **Claude Code #2** | 已完成 |
 | T107 | **带时间指标的 Lemma 4.1**（T107 原计划的障碍一，纯接口重做）：用 `Green/EntryBound.lean` 的**确定性内核** `norm_sq_green_le_blk` / `norm_sq_green_diag_sub_le_blk` 加自己的 `StochDom.of_det` 调用，把 (4.2)(4.3) 的指标集扩成 `TimeIcc s t N × …`（时间与谱参数随指标走）。`δ N := (scale E N (t N))⁻¹^{1/6}`（`scale` 对 u 反单调，方向正确）。**不碰 `Green/EntryBound.lean`** | `Gauss/EntryBoundTime.lean`（新建） | **Claude Code #2** | 进行中 |
 | T108 | **`Lemma41Flow` 总装**（依赖 T107 + T100）。还要处理障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而 T101/T75 的时间网桥只吃 `Φ : ℕ → ℝ`；需给桥补一个 `Φ` 的缓变假设，或在本文件重做网论证 | `Gauss/Lemma41FlowGauss.lean`（新建） | Claude Code | **完成**（`lemma41Flow` 对任意 `Φ ≥ 0` 成立——**不需要时间网**，障碍二不成立；缓变桥仍已交付，见 STATUS） |
+| T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`，Wick 配对 + 闭走计数。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | 待认领 | 未开工 ← **论文的公开缺口，paper-deltas #49** |
+| T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证） | `Gauss/FlucIter.lean` | 待认领 | 未开工 ← **全队最高风险，见 STATUS** |
+| T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。在高斯实现里它们是关于 `P d` 的陈述，不需要 Itô | `Gauss/DistEq.lean`（新建） | 待认领 | 未开工 |
 
 ---
 
@@ -1908,3 +1911,48 @@ Cowork 留在路线判断、审计、工单与论文侧。
 矩阵的范数实例要 `open scoped Matrix.Norms.L2Operator` 才在作用域里；
 CLM 与 `HasDerivAt` 复合后函数停在 `(f ∘ g)` 且 ℂ 的 `AddCommGroup` 实例走了 normed 那条路，
 `simpa` 关不掉，要 `simp only [Function.comp_def, entryCLM_apply] at h` 再 `exact h`。
+
+---
+
+# Cowork 只做调度（2026-09-20，Jun 指定）
+
+**Cowork 侧不再写 Lean。** 证据：484 个提交里终端侧 413、Cowork 71；68 375 行 Lean 里
+Cowork 写了 1 910 行（2.8%），却写了全部 107 张工单、全部路线判断与审计。
+而 Cowork 改一次要等 `watch.sh` 全量重建再读 `build.log`，约**两分钟一轮**；
+终端侧 `lake env lean 单文件`是**秒级**。同一个类型不匹配，终端试三次的时间 Cowork 试一次。
+
+**分工从此固定**：
+
+* **Cowork**：读论文、定路线、开工单、写规格、审计、蓝图、论文侧的编辑预算。
+  发现设计决策没人做时，**由 Cowork 拍板并写成规格**，不要留在队列里等。
+* **终端 agent**：全部 Lean 实现。
+
+Cowork 手上原有的 T1、T58、T83 已全部交回队列，规格见下文。
+
+---
+
+## T58 交接：表示桥的设计决定（Cowork 拍板，2026-09-20）
+
+**问题**（原记于 STATUS「一条需要先定下来的表示桥」）：`Hierarchy/Kernel.lean`（T42）的
+张量算子 `Uker`、`ThetaOp` 作用在 `A : (Fin n → ZMod L) → ℂ`；loop 层用的是 `LoopIdx`
+（两条 `List`：`σ : List Bool`、`a : List (ZMod L)`）。两者没有桥，卡住 (5.19)、(5.20)(5.21)、Def 5.4。
+
+**决定：把小的一侧搬过去，不要搬大的一侧。**
+`LoopIdx` 这边是 loop 层的地基（`primRhs`/`primBil`/`cutGlue` 全建在上面，几百条定理），
+`Fin n` 那边只有 T42 的十来条。所以：
+
+* **保留 `LoopIdx` 为规范表示**，把 `Uker` / `ThetaOp` **共轭到 `LoopIdx` 上**，
+  得到 `UkerL` / `ThetaOpL`，并证它们与原版经桥相等；
+* 桥用 `List.ofFn` / `List.get`：对 `I : LoopIdx α` 与 `h : I.a.length = n`，
+  `I.a.get ∘ Fin.cast h : Fin n → α`；反向 `List.ofFn`。
+  需要的引理 Mathlib 都有：`List.length_ofFn`、`List.get_ofFn`、`List.ofFn_get`。
+  σ 一侧同理，且 `ThetaOp` 的 `ξ : Fin n → ℂ` 本来就是由 σ 逐位算出来的（`xiOf`）。
+* **(5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E` 全部在 `LoopIdx` 一侧陈述**，
+  不要把 loop 层搬到 `Fin n`。
+
+**不要改**：`Hierarchy/Kernel.lean` 里 `Uker`/`ThetaOp` 的现有陈述（T42 已证的十几条），
+只在新文件里加共轭版本与桥。`Hierarchy/Dynamics.lean` 里 T58 已落地的
+(5.12)–(5.15)（`primBil`、`primBilLen`、`primBil_eq_two_add` 等）全部在 `LoopIdx` 一侧，不受影响。
+
+**为什么这条卡着主定理**：Theorem 2.21 的六步总装等 (5.19)(5.20)(5.21)。
+桥一搭，2.21 就从「阻塞」变成「排队」。

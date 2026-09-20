@@ -371,4 +371,128 @@ theorem row_sum_congr (u : ℝ) {i : d.Idx N} (C : Ω d → d.Idx N → ℂ)
   rw [hC ω ω' hoff]
   exact Finset.sum_congr rfl fun k _ => by rw [Hflow_row_congr u hrow k.2]
 
+/-! ### The conditional moment bound: random coefficients -/
+
+variable {u : ℝ} {i : d.Idx N} {p : ℕ}
+
+/-- Abbreviation for the row sum with coefficients `C`. -/
+noncomputable def rowSum (d : Dims) (N : ℕ) (u : ℝ) (i : d.Idx N) (C : Ω d → d.Idx N → ℂ)
+    (ω : Ω d) : ℂ :=
+  ∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * C ω k.1
+
+/-- The (random) variance of the row sum. -/
+noncomputable def rowVarSum (d : Dims) (N : ℕ) (u : ℝ) (i : d.Idx N) (C : Ω d → d.Idx N → ℂ)
+    (ω : Ω d) : ℝ :=
+  u * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 * ‖C ω k.1‖ ^ 2
+
+/-- **The row LDE moment bound.**  If the coefficients read only the off-row block, then
+`E‖∑_{k ≠ i} H_{ik} C_k‖^{2p} ≤ 2 (2p-1)!! · E[(u ∑_k S_{ik} |C_k|²)^p]`: conditionally on the
+off-row block the row sum is a centred complex Gaussian of variance `u ∑_k S_{ik}|C_k|²`, so the
+frozen bound `integral_norm_row_sum_pow_le` applies fibrewise. -/
+theorem integral_norm_rowSum_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
+    (hCmeas : Measurable C)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω')
+    (hint : Integrable (fun ω => ‖rowSum d N u i C ω‖ ^ (2 * p)) (P d))
+    (hint' : Integrable (fun ω => rowVarSum d N u i C ω ^ p) (P d)) :
+    ∫ ω, ‖rowSum d N u i C ω‖ ^ (2 * p) ∂(P d)
+      ≤ 2 * (dfac p * ∫ ω, rowVarSum d N u i C ω ^ p ∂(P d)) := by
+  classical
+  set S := rowSet d N i with hS
+  set T := offRowCoord d N i with hT
+  set U : Ω d → ({c // c ∈ S} → ℝ) := fun ω c => ω c.1 with hU
+  set V : Ω d → ({c // c ∈ T} → ℝ) := fun ω c => ω c.1 with hV
+  have hUmeas : Measurable U := Measurable.of_eval fun c => measurable_pi_apply c.1
+  have hVmeas : Measurable V := Measurable.of_eval fun c => measurable_pi_apply c.1
+  have hindep : IndepFun U V (P d) := indepFun_rowSet i T (disjoint_rowSet_offRowCoord i)
+  have hdisj := disjoint_rowSet_offRowCoord (d := d) (N := N) i
+  -- the coefficients read only the second block, so they may be read off `V` alone
+  have hCy : ∀ ω : Ω d, C ω = C (glue S T (0, V ω)) := by
+    intro ω
+    refine hC _ _ fun c hc => ?_
+    have hcS : c ∉ S := Finset.disjoint_right.1 hdisj hc
+    simp [glue, hcS, hc, hV]
+  -- the row sum is a function of the two blocks
+  have hrow : ∀ ω : Ω d, rowSum d N u i C ω = rowSum d N u i C (glue S T (U ω, V ω)) := by
+    intro ω
+    refine row_sum_congr u C hC fun c hc => ?_
+    exact (glue_agree S T ω hc).symm
+  set F : ({c // c ∈ S} → ℝ) × ({c // c ∈ T} → ℝ) → ℝ :=
+    fun q => ‖rowSum d N u i C (glue S T q)‖ ^ (2 * p) with hF
+  set G : ({c // c ∈ T} → ℝ) → ℝ :=
+    fun y => 2 * (dfac p * rowVarSum d N u i C (glue S T (0, y)) ^ p) with hG
+  -- measurability of the glued quantities
+  have hglue := measurable_glue (ι := Coord d) S T
+  have hFmeas : Measurable F := by
+    refine (Measurable.pow_const ?_ _)
+    refine Measurable.norm ?_
+    refine Finset.measurable_sum _ fun k _ => ?_
+    exact ((measurable_Hflow d N u i k.1).comp hglue).mul
+      (((measurable_pi_apply k.1).comp hCmeas).comp hglue)
+  have hGmeas : Measurable G := by
+    refine (measurable_const.mul ((measurable_const.mul (Measurable.pow_const ?_ _))))
+    refine (measurable_const.mul ?_)
+    refine Finset.measurable_sum _ fun k _ => ?_
+    exact measurable_const.mul
+      ((((measurable_pi_apply k.1).comp hCmeas).comp (hglue.comp (measurable_const.prodMk
+        measurable_id))).norm.pow_const _)
+  -- transport the two integrability hypotheses
+  have hpair : (P d).map (fun ω => (U ω, V ω)) = ((P d).map U).prod ((P d).map V) :=
+    (indepFun_iff_map_prod_eq_prod_map_map hUmeas.aemeasurable hVmeas.aemeasurable).1 hindep
+  have hFint : Integrable F (((P d).map U).prod ((P d).map V)) := by
+    rw [← hpair]
+    refine (integrable_map_measure hFmeas.aestronglyMeasurable
+      (hUmeas.prodMk hVmeas).aemeasurable).2 ?_
+    refine hint.congr (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [hF, Function.comp]
+    rw [← hrow]
+  have hGint : Integrable G ((P d).map V) := by
+    refine (integrable_map_measure hGmeas.aestronglyMeasurable hVmeas.aemeasurable).2 ?_
+    refine ((hint'.const_mul (dfac p)).const_mul 2).congr
+      (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [hG, Function.comp, rowVarSum]
+    rw [← hCy]
+  -- the fibrewise (conditional) bound
+  have hinner : ∀ y : {c // c ∈ T} → ℝ, (∫ x, F (x, y) ∂((P d).map U)) ≤ G y := by
+    intro y
+    have hmap := integral_map (μ := P d) (φ := U) (f := fun x => F (x, y))
+      hUmeas.aemeasurable (hFmeas.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable
+    rw [hmap]
+    have hval : ∀ ω : Ω d, F (U ω, y)
+        = ‖∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 *
+            C (glue S T (0, y)) k.1‖ ^ (2 * p) := by
+      intro ω
+      simp only [hF, rowSum]
+      congr 2
+      refine Finset.sum_congr rfl fun k _ => ?_
+      have hHe : Hflow d N u (glue S T (U ω, y)) i k.1 = Hflow d N u ω i k.1 := by
+        refine Hflow_row_congr u (fun c hc => ?_) k.2
+        have hcS : c ∈ S := hc
+        simp [glue, hcS, hU]
+      have hCe : C (glue S T (U ω, y)) k.1 = C (glue S T (0, y)) k.1 := by
+        have : C (glue S T (U ω, y)) = C (glue S T (0, y)) := by
+          refine hC _ _ fun c hc => ?_
+          have hcS : c ∉ S := Finset.disjoint_right.1 hdisj hc
+          simp [glue, hcS, hc]
+        rw [this]
+      rw [hHe, hCe]
+    simp only [hval]
+    exact (integral_norm_row_sum_pow_le hu i (C (glue S T (0, y))) p).trans (le_of_eq (by
+      simp only [hG, rowVarSum]))
+  -- assemble
+  have hmain := integral_indep_pair_le hUmeas hVmeas hindep hFint hGint
+    (Filter.Eventually.of_forall hinner)
+  have hL : ∫ ω, ‖rowSum d N u i C ω‖ ^ (2 * p) ∂(P d) = ∫ ω, F (U ω, V ω) ∂(P d) := by
+    refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [hF]
+    rw [← hrow]
+  have hR : ∫ y, G y ∂((P d).map V) = 2 * (dfac p * ∫ ω, rowVarSum d N u i C ω ^ p ∂(P d)) := by
+    rw [integral_map hVmeas.aemeasurable hGmeas.aestronglyMeasurable]
+    simp only [hG, rowVarSum]
+    rw [integral_const_mul, integral_const_mul]
+    congr 2
+    refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [← hCy]
+  rw [hL, ← hR]
+  exact hmain
+
 end RBM.Gauss

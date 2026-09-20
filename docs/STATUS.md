@@ -1401,3 +1401,10 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **`|G_kk|` 的下界不是额外假设**——由事件 (4.1) 经 `GoodEvent.half_le_norm_diag` 读出（`≥ 1/2`），与 `EntryBound.lean` 里 Lemma 4.1 的打包方式一致，故 T86 可以复用它**已经需要**的那个 `hΩ`，不必再背一条冗余假设。每条结论都给了 `1_Ω` 指示函数版与 `hΩ` 版两种。
 唯一的假设是 `hoff : |G_{ij}| ≺ Ψ`（`i ≠ j`），即 Step 2 的 (2.75)；`stochDom_offdiag_of_localLaw` 负责形状转换，`Ψ` 留成自由的 `ℕ → ℝ` 供 T86 实例化。
 **未做**：Ψ-级结论右端是 `Ψ² + Ψ` 而非 `Ψ`（收拢需 `∀ᶠ N, Ψ N ≤ 1`，agent 选择不硬塞一条 `hdet` 看不见的假设；`StochDom.mono_right_eventually` 一行可收）。paper-deltas：无新增。
+
+**T81 第九块 ✔**：`glue` / `measurable_glue` / `eq_glue_of_congr`——把「只读 `S ∪ T` 的量」写成
+`F(块_S, 块_T)` 的形状（其余坐标填 0），正是 `integral_indep_pair` 需要的输入。
+至此 T81 的通用机器全部就位（矩、线性型、行独立、分块 Fubini、胶水）。
+**剩下**：定义行 `i` 的坐标有限集 `rowSet`、与「其余相关坐标」`usedCoord ∖ rowSet` 两块，
+用 `iIndepFun.indepFun_finset` 得独立，再把 `ldeRowLHS`/`ldeRowRHS` 用 `eq_glue_of_congr` 写成两块的函数，
+内层套 `integral_sq_add_sq_pow_le`，外层接 T73。

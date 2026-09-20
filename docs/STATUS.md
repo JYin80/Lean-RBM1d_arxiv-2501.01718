@@ -1468,3 +1468,15 @@ minor 矩阵 `H^(i)` 只读 off-row 块。注意这条比第三块的 `AgreeOffR
 **T81 只差最后对接**：取 `C ω := G^(i)_{·j}(ω)`（`greenMinor_congr_of_offRow` / 
 `Hflow_submatrix_congr_offRowCoord` 给出「只读 off-row 块」），得到
 `E[ldeRowLHS^p] ≤ 2(2p−1)!!·E[(t·ldeRowRHS)^p]`，再经 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+### `RBM1D/Gauss/FlucCount.lean` — 计数（T87，Claude Code 并行 agent）
+
+**`integral_norm_flucAvg_pow_le`**（任意实权重 `t`，`Σ|t_k| ≤ 1`）：`∫‖Σ_k t_k Z_k‖^{2p} ≤ (2p−1)·ε·B^{2p−1} + (Σ_{v : ¬HasLoneSlot} ∏_i |t_{v i}|)·B^{2p}`；
+`integral_norm_flucAvg_pow_le_uniform` 把权重和算出来，得 `… + c^p·p^{2p}·B^{2p}`。
+展开用 `prod_epsHom_sum_eq`（`‖Σ t_k Z_k‖^{2p} = Σ_v (∏ t)·∏_i e_i(Z_{v i})`，`epsHom` 在左半 slot 取恒等、右半取共轭）。
+分层用谓词 `HasLoneSlot`（**就是 T86 的 `hone`**）配 `Finset.sum_filter_add_sum_filter_not`：lone 那层逐字喂给 T86 的 `norm_integral_prod_le`，其总权重经 `Finset.sum_prod_piFinset` 由 `(Σ|t_k|)^{2p} ≤ 1` 控住；
+补集那层走 `two_le_card_fiber → two_mul_card_image_le → card_filter_not_hasLoneSlot_le`（`≤ (#A)^p·p^{2p}`）。**如 T86 文档所许诺，`FlucVanish.lean` 一行都不用改。**
+两组系数都已备好：`uniformWeight_blockAvg`（`c = W⁻¹`、`#A = W`）与 `uniformWeight_Sblk`（`c = (3W)⁻¹`、`#A = 3W`），基数由 `card_filter_fst_mem`/`card_filter_sub_mem_sbSupport` 算出。
+
+**⚠ 与 T85 的 `≺`/逐点接缝仍未合拢——留给 T88**（agent 明说没有伪造）。本单的贡献是把截断要打的靶子压成**一个平坦的接口**：只对指标集量化的六条假设 `hZmeas`/`hYmeas`/`hrow`/`hZB`/`hYB`/`hεb`（加 `0 ≤ B`、`0 ≤ ε`）；
+T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子类型）已在证明内部消化干净。可测性与 `RowIntegrable` 承自 T84/T86（paper-deltas #56、#57），非新增。paper-deltas #58。

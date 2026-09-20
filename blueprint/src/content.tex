@@ -1614,31 +1614,43 @@
 \end{proof}
 
 \begin{lemma}[Positive chaos moment bound: $\mathbb E[T^p]\le C_p\,\mathbb E[V_q^p]$]\label{lem:lde-quad-T}
-  \uses{lem:lde-quad}
-  \emph{Not yet formalized} --- the one remaining mathematical gap of the quadratic estimate.
+  \lean{RBM.Gauss.RowChaos.wirtVal, RBM.Gauss.RowChaos.wirtVal_U, RBM.Gauss.RowChaos.wirtVal_V,
+    RBM.Gauss.RowChaos.wirtVal_conj_U, RBM.Gauss.RowChaos.wirtVal_conj_V,
+    RBM.Gauss.RowChaos.integral_conj_h_mul_gen, RBM.Gauss.RowChaos.TA, RBM.Gauss.RowChaos.TB,
+    RBM.Gauss.RowChaos.hasDerivAt_Tq_true, RBM.Gauss.RowChaos.hasDerivAt_Tq_false,
+    RBM.Gauss.RowChaos.wirtVal_TA_TB, RBM.Gauss.RowChaos.Wt,
+    RBM.Gauss.RowChaos.Tq_eq_sum_conj_h_mul, RBM.Gauss.RowChaos.wirtVal_Wt,
+    RBM.Gauss.RowChaos.WA, RBM.Gauss.RowChaos.WB, RBM.Gauss.RowChaos.hasDerivAt_Wt_true,
+    RBM.Gauss.RowChaos.hasDerivAt_Wt_false, RBM.Gauss.RowChaos.Zt, RBM.Gauss.RowChaos.ZA,
+    RBM.Gauss.RowChaos.ZB, RBM.Gauss.RowChaos.Tq_pow_succ_eq_sum,
+    RBM.Gauss.RowChaos.wirtVal_ZA_ZB, RBM.Gauss.RowChaos.integral_Tq_pow_succ,
+    RBM.Gauss.RowChaos.sum_sg_mul_normSq, RBM.Gauss.RowChaos.sum_w_diag,
+    RBM.Gauss.RowChaos.weighted_cauchy, RBM.Gauss.RowChaos.Arow, RBM.Gauss.RowChaos.sq_Arow_le,
+    RBM.Gauss.RowChaos.crossT, RBM.Gauss.RowChaos.sum_w_wirtVal_ZA_ZB,
+    RBM.Gauss.RowChaos.norm_crossT_le, RBM.Gauss.RowChaos.momVpow,
+    RBM.Gauss.RowChaos.momTpow_succ_le, RBM.Gauss.RowChaos.momTpow_le,
+    RBM.Gauss.RowChaos.mom_le_momVpow}
+  \leanok\uses{lem:lde-quad, def:gauss-model}
   With $T=\sum_k\sigma_k(\|U_k\|^2+\|V_k\|^2)$ and
-  $V_q=\sum_{k,l}\sigma_k\|B_{kl}\|^2\sigma_l$, one has $\mathbb E[T^p]\le C_p\,\mathbb E[V_q^p]$;
-  together with \texttt{mom\_succ\_le} this turns $\mathbb E|Q|^{2p}\le(2p-1)^p\mathbb E[T^p]$
-  into the paper's control, and hence gives the hypothesis \texttt{hLquad} of
-  \texttt{diag\_bound\_stochDom}.  At $p=1$ it is the identity \texttt{momT\_zero},
-  $\mathbb E[T]=2\mathbb E[V_q]$.
-
-  \emph{Route} (conditioning-free, so that no conditional expectation is needed).  Run the same
-  Gaussian integration by parts on $\mathbb E[T^p]$, with the Wirtinger derivation along the row
-  entry, $D_l=r(\partial_{a_l}-\varepsilon_l i\,\partial_{b_l})$.  It satisfies
-  $D_lU_k=0$, $D_l\bar V_k=0$, $D_l\bar U_k=2r^2\bar B_{kl}$, $D_lV_k=2r^2B_{lk}$, so the
-  diagonal term reproduces $V_q\,T^{p-1}$ exactly and the cross term is bounded by
-  Cauchy--Schwarz, first in $(k,m)$ and then in $k$, by $V_q\,T^{p-1}$ again.  The resulting
-  $\mathbb E[T^p]\le C_p\,\mathbb E[V_qT^{p-1}]$ is closed by the same pointwise Young inequality
-  \texttt{young\_pow} that closes \texttt{mom\_succ\_le}.
-
-  \emph{Formalized so far} (\texttt{RBM1D/Gauss/LDEQuadT.lean}): the derivation
-  \texttt{RBM.Gauss.RowChaos.wirtVal} with its four values
-  \texttt{wirtVal\_U}, \texttt{wirtVal\_V}, \texttt{wirtVal\_conj\_U},
-  \texttt{wirtVal\_conj\_V}, and the master identity
-  \texttt{RBM.Gauss.RowChaos.integral\_conj\_h\_mul\_gen}:
-  $\int\bar h_l\,Z=w_l\int D_lZ$ for tame $Z$.
+  $V_q=\sum_{k,l}\sigma_k\|B_{kl}\|^2\sigma_l$, one has
+  $\mathbb E[T^{p}]\le(4p-2)^{p}\,\mathbb E[V_q^{p}]$, and hence, with
+  \texttt{mom\_succ\_le}, $\mathbb E|Q|^{2p}\le\bigl((2p-1)(4p-2)\bigr)^{p}\mathbb E[V_q^p]$:
+  the quadratic large deviation estimate in the paper's own control.
 \end{lemma}
+\begin{proof}\leanok
+  Conditioning-free, so no conditional expectation is needed.  Both $U_k\bar U_k$ and
+  $V_k\bar V_k$ carry exactly one factor $\bar h$, so $T=\sum_l\bar h_lW_l$ with
+  $W_l=\sum_k\sigma_k(B_{kl}\bar U_k+V_k\bar B_{lk})$, and $T^{q+1}=\sum_l\bar h_lW_lT^q$.
+  Gaussian integration by parts along the row entry gives
+  $\int\bar h_lZ=w_l\int D_lZ$ for the Wirtinger derivation
+  $D_l=r(\partial_{a_l}-\varepsilon_l i\,\partial_{b_l})$, which satisfies
+  $D_lU_k=0$, $D_l\bar V_k=0$, $D_l\bar U_k=2r^2\bar B_{kl}$, $D_lV_k=2r^2B_{lk}$.  The
+  diagonal part reproduces $2V_qT^q$ exactly; the cross term is bounded by Cauchy--Schwarz,
+  first in $k$ and then against $\sigma_l$, by $4qV_qT^q$.  The resulting
+  $\mathbb E[T^{q+1}]\le(4q+2)\mathbb E[V_qT^q]$ is closed by the same pointwise Young
+  inequality \texttt{young\_pow} that closes \texttt{mom\_succ\_le}, with $K=4q+2$; every
+  exponent stays a natural number.
+\end{proof}
 
 \begin{lemma}[Diagonal LDE: $|H_{ii}|^2\prec S_{ii}$]\label{lem:lde-diag}
   \lean{RBM.Sblk_diag_pos, RBM.Gauss.integral_pow_coord, RBM.Gauss.integrable_pow_coord,

@@ -1703,3 +1703,44 @@ integral_conj_h_mul_gen : ∫ conj(h_l)·Z = w_l · ∫ D_l Z        （Z tame�
 
 蓝图新节点 `lem:lde-quad-T`（**故意不打 `\leanok`**：结论未证，依赖图上应当显示为缺口），
 节点里记了路线与已落地的部分。全量构建通过，公理审计 **6624 条声明**全部合规。
+
+**T93 ✔**（`Gauss/LDEQuadT.lean`，新建 ~1000 行，零 sorry，**全程没碰 `Gauss/LDEQuad.lean`**）：
+T82 留下的唯一数学缺口补上了。
+
+```
+momTpow_le     : E[T^{q+1}] ≤ (4q+2)^{q+1} · E[Vq^{q+1}]
+mom_le_momVpow : E|Q|^{2p}  ≤ ((2p−1)(4p−2))^p · E[Vq^p]        -- 配 T82 的 mom_succ_le
+```
+
+`Vq = ∑_{k,l}σ_k‖B_{kl}‖²σ_l` 就是论文的右端（差因子 `t²`，见 `Vq_eq_ldeQuadRHS` 与 #59），
+所以 (4.7) 的二次 LDE 现在是**带显式常数的定理**，不再是引用结果。
+
+**路线（无条件期望）**。教科书证法要对 `B` 取条件期望；这里改为对 `E[T^p]` 再跑一次同样的
+行分部积分。关键是行方向的 Wirtinger 导子
+
+```
+D_l = r(∂_{a_l} − ε_l·i·∂_{b_l}),   D_lU_k = 0,  D_lV̄_k = 0,  D_lŪ_k = 2r²B̄_{kl},  D_lV_k = 2r²B_{lk}
+```
+
+`U` 与 `V̄` 都被 `D_l` 杀掉，所以 `T = ∑_kσ_k(U_kŪ_k + V_kV̄_k)` 求导后只剩 `B`。七块：
+
+1. `integral_conj_h_mul_gen`：`∫ h̄_l·Z = w_l·∫ D_lZ`（`GaussIBP.stein` 对行的两个坐标各一次）；
+2. `TA`/`TB` + `wirtVal_TA_TB`：`D_lT = 2r²∑_kσ_k(U_kB̄_{kl} + B_{lk}V̄_k)`；
+3. `Tq_eq_sum_conj_h_mul`：`T = ∑_l h̄_l·W_l`，`W_l = ∑_kσ_k(B_{kl}Ū_k + V_kB̄_{lk})`
+   —— `U_kŪ_k` 与 `V_kV̄_k` 各恰含一个 `h̄`，这是整条路线能走的原因；
+4. `Zt = W_l·T^q`、`ZA`/`ZB`、`integral_Tq_pow_succ`：`E[T^{q+1}] = ∑_l w_l·E[D_lZ_{q,l}]`；
+5. `sum_w_diag`：对角项 `= 2·Vq·T^q`（两个二重和交换指标后都等于 `Vq`）；
+6. `norm_crossT_le`：交叉项 `≤ 4q·Vq·T^q`。两次 Cauchy–Schwarz——先在 `k`
+   （`sq_Arow_le`，用 `Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul` 的加权版 `weighted_cauchy`），
+   再对 `l` 配 `σ_l` 用 `sum_sg_mul_normSq`。关键观察：`‖W_l‖` 与 `‖D_lT‖/(2r²)`
+   有**同一个**上界 `A_l = ∑_kσ_k(‖B_{kl}‖‖U_k‖ + ‖V_k‖‖B_{lk}‖)`，所以交叉项是 `σ_l·q·T^{q−1}·A_l²`；
+7. `momTpow_succ_le` → `momTpow_le`：`E[T^{q+1}] ≤ (4q+2)E[VqT^q]`，再用 T82 的 `young_pow`
+   （`K = 4q+2`）闭合，全程只有自然数次幂，不用 `rpow`、不用 Hölder。
+
+蓝图节点 `lem:lde-quad-T` 现在带 `\leanok`（36 个 `\lean{}` 名字逐条 `#check` 通过），
+paper-deltas **#64**。全量构建通过，公理审计 **6698 条声明**全部合规。
+
+**`diag_bound_stochDom` 的四条假设**：`hLrow` ✔(T91)、`hLcol` ✔(T91)、`hLdiag` ✔(T92)、
+`hLquad` —— 矩界已齐，**只差把矩翻成 `StochDom`**（`LDEQuad.lean` 文件头「What is not done
+here」的第 2、3 条：为模型造一个 `RowChaos` 实例，再用 `StochDom.of_det`，因为 `ldeQuadRHS`
+是随机控制）。这是下一张工单。

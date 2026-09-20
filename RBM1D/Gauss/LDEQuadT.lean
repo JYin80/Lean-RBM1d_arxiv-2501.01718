@@ -29,12 +29,20 @@ controlled by `B` alone.
 
 Nothing here touches `RBM1D/Gauss/LDEQuad.lean`.
 
-## This file so far
+## Main results
 
-* `RBM.Gauss.RowChaos.wirtVal`          : the derivation `D_l`, as a function of the two partials
 * `RBM.Gauss.RowChaos.integral_conj_h_mul_gen` : **the master identity**
-  `∫ \bar h_l Z = w_l ∫ D_l Z` for tame `Z`
-* `wirtVal_U`, `wirtVal_V`, `wirtVal_conj_U`, `wirtVal_conj_V` : the four derivation values
+  `∫ \bar h_l Z = w_l ∫ D_l Z` for tame `Z`; `wirtVal_U`, `wirtVal_V`, `wirtVal_conj_U`,
+  `wirtVal_conj_V` are the four derivation values
+* `RBM.Gauss.RowChaos.Tq_eq_sum_conj_h_mul`    : `T = ∑_l \bar h_l W_l`
+* `RBM.Gauss.RowChaos.integral_Tq_pow_succ`    : `E[T^{q+1}] = ∑_l w_l E[D_l Z_{q,l}]`
+* `RBM.Gauss.RowChaos.norm_crossT_le`          : the cross term is `≤ 4q V_q T^q`
+* `RBM.Gauss.RowChaos.momTpow_succ_le`         : `E[T^{q+1}] ≤ (4q+2) E[V_q T^q]`
+* `RBM.Gauss.RowChaos.momTpow_le`              : **`E[T^{q+1}] ≤ (4q+2)^{q+1} E[V_q^{q+1}]`**
+* `RBM.Gauss.RowChaos.mom_le_momVpow`          : **Hanson–Wright in the paper's control**,
+  `E|Q|^{2p} ≤ ((2p−1)(4p−2))^p E[V_q^p]`
+
+The constants are explicit and not optimal (CLAUDE.md rule 7).
 -/
 
 namespace RBM.Gauss
@@ -921,6 +929,107 @@ theorem momTpow_succ_le (hG : GaussIBP d) (q : ℕ) :
     exact this
   have := (abs_le.1 habs).2
   linarith
+
+/-! ### Closing the recursion: `E[T^p] ≤ (4p−2)^p E[V_q^p]` -/
+
+/-- **The positive chaos moment bound.**  `E[T^{q+1}] ≤ (4q+2)^{q+1} E[V_q^{q+1}]`.
+
+The recursion `E[T^{q+1}] ≤ (4q+2)E[V_qT^q]` is closed by the same pointwise Young inequality
+`RBM.Gauss.young_pow` that closes `RBM.Gauss.RowChaos.mom_succ_le`, with the rational parameter
+`K = 4q+2`; every exponent stays a natural number. -/
+theorem momTpow_le (hG : GaussIBP d) (q : ℕ) :
+    C.momTpow (q + 1) ≤ (4 * (q : ℝ) + 2) ^ (q + 1) * C.momVpow (q + 1) := by
+  set K : ℝ := 4 * (q : ℝ) + 2 with hKdef
+  have hK0 : (0 : ℝ) < K := by rw [hKdef]; positivity
+  have hq1 : (0 : ℝ) < (q : ℝ) + 1 := by positivity
+  have hpt : ∀ ω : Ω d, C.Vq ω * C.Tq ω ^ q
+      ≤ (K ^ q / ((q : ℝ) + 1)) * C.Vq ω ^ (q + 1)
+        + ((q : ℝ) / (((q : ℝ) + 1) * K)) * C.Tq ω ^ (q + 1) := by
+    intro ω
+    have hV := C.Vq_nonneg ω
+    have hT := C.Tq_nonneg ω
+    have hy := young_pow q (mul_nonneg hV hK0.le) hT
+    have hmul : (0 : ℝ) < ((q : ℝ) + 1) * K := by positivity
+    refine le_of_mul_le_mul_left ?_ hmul
+    have hleft : ((q : ℝ) + 1) * K * (C.Vq ω * C.Tq ω ^ q)
+        = ((q : ℝ) + 1) * (C.Vq ω * K * C.Tq ω ^ q) := by ring
+    have hrhs : ((q : ℝ) + 1) * K * ((K ^ q / ((q : ℝ) + 1)) * C.Vq ω ^ (q + 1)
+          + ((q : ℝ) / (((q : ℝ) + 1) * K)) * C.Tq ω ^ (q + 1))
+        = (C.Vq ω * K) ^ (q + 1) + (q : ℝ) * C.Tq ω ^ (q + 1) := by
+      rw [mul_pow]
+      field_simp
+      ring
+    rw [hleft, hrhs]
+    exact hy
+  have hi1 := C.integrable_Vq_pow hG (q + 1)
+  have hi2 := C.integrable_Tq_pow hG (q + 1)
+  have hA : (∫ ω, C.Vq ω * C.Tq ω ^ q ∂(P d))
+      ≤ (K ^ q / ((q : ℝ) + 1)) * C.momVpow (q + 1)
+        + ((q : ℝ) / (((q : ℝ) + 1) * K)) * C.momTpow (q + 1) := by
+    calc ∫ ω, C.Vq ω * C.Tq ω ^ q ∂(P d)
+        ≤ ∫ ω, ((K ^ q / ((q : ℝ) + 1)) * C.Vq ω ^ (q + 1)
+            + ((q : ℝ) / (((q : ℝ) + 1) * K)) * C.Tq ω ^ (q + 1)) ∂(P d) :=
+          MeasureTheory.integral_mono (C.integrable_Vq_mul_Tq_pow hG q)
+            ((hi1.const_mul _).add (hi2.const_mul _)) hpt
+      _ = _ := by
+          rw [MeasureTheory.integral_add (hi1.const_mul _) (hi2.const_mul _),
+            MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul]
+          rfl
+  have hKne : K ≠ 0 := ne_of_gt hK0
+  have hqne : ((q : ℝ) + 1) ≠ 0 := ne_of_gt hq1
+  have hM := C.momTpow_succ_le hG q
+  rw [← hKdef] at hM
+  have hN := C.momVpow_nonneg (q + 1)
+  have hT0 := C.momTpow_nonneg (q + 1)
+  have hKmul : K * ((K ^ q / ((q : ℝ) + 1)) * C.momVpow (q + 1)
+        + ((q : ℝ) / (((q : ℝ) + 1) * K)) * C.momTpow (q + 1))
+      = (K ^ (q + 1) / ((q : ℝ) + 1)) * C.momVpow (q + 1)
+        + ((q : ℝ) / ((q : ℝ) + 1)) * C.momTpow (q + 1) := by
+    rw [pow_succ]
+    field_simp
+  have hchain : C.momTpow (q + 1)
+      ≤ (K ^ (q + 1) / ((q : ℝ) + 1)) * C.momVpow (q + 1)
+        + ((q : ℝ) / ((q : ℝ) + 1)) * C.momTpow (q + 1) := by
+    refine hM.trans ?_
+    rw [← hKmul]
+    exact mul_le_mul_of_nonneg_left hA hK0.le
+  have hA' : K ^ (q + 1) / ((q : ℝ) + 1) ≤ K ^ (q + 1) := by
+    rw [div_le_iff₀ hq1]
+    nlinarith [pow_nonneg hK0.le (q + 1), Nat.cast_nonneg (α := ℝ) q]
+  have hstep : (1 - (q : ℝ) / ((q : ℝ) + 1)) * C.momTpow (q + 1)
+      ≤ (K ^ (q + 1) / ((q : ℝ) + 1)) * C.momVpow (q + 1) := by nlinarith [hchain]
+  have hone : (1 : ℝ) - (q : ℝ) / ((q : ℝ) + 1) = 1 / ((q : ℝ) + 1) := by
+    rw [eq_div_iff hqne, sub_mul, div_mul_cancel₀ _ hqne, one_mul]
+    ring
+  rw [hone] at hstep
+  have := mul_le_mul_of_nonneg_left hstep hq1.le
+  have hl : ((q : ℝ) + 1) * (1 / ((q : ℝ) + 1) * C.momTpow (q + 1)) = C.momTpow (q + 1) := by
+    field_simp
+  have hr : ((q : ℝ) + 1) * ((K ^ (q + 1) / ((q : ℝ) + 1)) * C.momVpow (q + 1))
+      = K ^ (q + 1) * C.momVpow (q + 1) := by field_simp
+  rw [hl, hr] at this
+  exact this
+
+/-- **Hanson–Wright for the Gaussian row chaos, in the paper's control.**  Combining the
+recursion of `RBM.Gauss.RowChaos.mom_succ_le` with the positive chaos bound,
+
+`E|Q|^{2(q+1)} ≤ ((2q+1)(4q+2))^{q+1} E[V_q^{q+1}]`,
+
+with `V_q = ∑_{k,l}σ_k‖B_{kl}‖²σ_l` — exactly `RBM.ldeQuadRHS` up to the factor `t²`
+(`RBM.Gauss.RowChaos.Vq_eq_ldeQuadRHS`).  This closes the last mathematical gap of the
+quadratic large deviation estimate. -/
+theorem mom_le_momVpow (hG : GaussIBP d) (q : ℕ) :
+    C.mom (q + 1)
+      ≤ ((2 * (q : ℝ) + 1) * (4 * (q : ℝ) + 2)) ^ (q + 1) * C.momVpow (q + 1) := by
+  have h1 := C.mom_succ_le hG q
+  have h2 := C.momTpow_le hG q
+  have hc : (0 : ℝ) ≤ (2 * (q : ℝ) + 1) ^ (q + 1) := by positivity
+  calc C.mom (q + 1) ≤ (2 * (q : ℝ) + 1) ^ (q + 1) * C.momTpow (q + 1) := h1
+    _ ≤ (2 * (q : ℝ) + 1) ^ (q + 1) *
+        ((4 * (q : ℝ) + 2) ^ (q + 1) * C.momVpow (q + 1)) :=
+          mul_le_mul_of_nonneg_left h2 hc
+    _ = ((2 * (q : ℝ) + 1) * (4 * (q : ℝ) + 2)) ^ (q + 1) * C.momVpow (q + 1) := by
+        rw [mul_pow]; ring
 
 end RowChaos
 

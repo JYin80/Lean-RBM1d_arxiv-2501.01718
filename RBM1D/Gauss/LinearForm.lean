@@ -237,6 +237,28 @@ theorem integral_indep_pair_le {U : Ω → α} {V : Ω → β} (hU : Measurable 
   rw [integral_indep_pair hU hV h hF]
   exact integral_mono_ae hF.integral_prod_right hg hbound
 
+/-- **Tonelli across an independent pair.**  For a nonnegative measurable `F`, no integrability
+is needed: the integral of `F(U, V)` is the iterated integral against the two laws.  This is what
+lets the conditional bound be proved without assuming integrability first. -/
+theorem lintegral_indep_pair {U : Ω → α} {V : Ω → β} (hU : Measurable U) (hV : Measurable V)
+    (h : IndepFun U V P) {F : α × β → ℝ≥0∞} (hF : Measurable F) :
+    ∫⁻ ω, F (U ω, V ω) ∂P = ∫⁻ y, (∫⁻ x, F (x, y) ∂(P.map U)) ∂(P.map V) := by
+  have hpair : P.map (fun ω => (U ω, V ω)) = (P.map U).prod (P.map V) :=
+    (indepFun_iff_map_prod_eq_prod_map_map hU.aemeasurable hV.aemeasurable).1 h
+  rw [← lintegral_map hF (hU.prodMk hV), hpair, lintegral_prod_symm' F hF]
+
+/-- The same, as an upper bound from a bound on the inner (conditional) integral. -/
+theorem lintegral_indep_pair_le {U : Ω → α} {V : Ω → β} (hU : Measurable U) (hV : Measurable V)
+    (h : IndepFun U V P) {F : α × β → ℝ≥0∞} (hF : Measurable F) {c : ℝ≥0∞}
+    (hbound : ∀ y, (∫⁻ x, F (x, y) ∂(P.map U)) ≤ c) [IsProbabilityMeasure P] :
+    ∫⁻ ω, F (U ω, V ω) ∂P ≤ c := by
+  rw [lintegral_indep_pair hU hV h hF]
+  calc ∫⁻ y, (∫⁻ x, F (x, y) ∂(P.map U)) ∂(P.map V)
+      ≤ ∫⁻ _y, c ∂(P.map V) := lintegral_mono hbound
+    _ = c := by
+        rw [lintegral_const]
+        simp
+
 end Block
 
 section Glue

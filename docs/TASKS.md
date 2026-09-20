@@ -192,7 +192,8 @@
 | T100 | **`‖X‖ ≺ 1`**：高斯带状矩阵的算子范数界，卸掉 `Gauss/Model.lean` 的 `OpNormBound` 字段（paper-deltas #49 的公开缺口）。迹/矩方法：`E‖X‖^{2p} ≤ E Tr(X^{2p})`。T101 之外的另一半时间一致性前提 | `Gauss/OpNorm.lean`（新建） | Claude Code | 进行中 |
 | T101 | `stochDom_timeIcc_of_holder` 的变体：Hölder 模只在**高概率事件**上成立（或常数本身被 `≺` 控制）。与 T100 独立 | `Gauss/DominationHolder.lean`（新建） | Claude Code | 进行中 |
 | T102 | `Lemma41Flow` 的接口对齐 + 界传递（T99 审计的 (A)(B) 两块，**不依赖时间一致性**）：`‖Lval (pmLoop a b)‖ = Lre`、`goodEv ↔ goodSet`、`llMax²` 由逐 `(i,j)` 的界合成、随机控制经假设传到确定性 `Φ` | `Gauss/Lemma41Glue.lean`（新建） | **Claude Code #2** | 已完成 |
-| T103 | 审计：全库**仍被携带的假设**清点（`Flow/Hypotheses.lean` 的 structure 字段、各文件的 `Prop` 参数），逐条标注「已被高斯层卸掉 / 可卸但没人做 / 真缺口（缺什么）」，产出下一批工单 | `docs/STATUS.md`（审计记录） | **Claude Code #2** | 进行中 |
+| T103 | 审计：全库**仍被携带的假设**清点（`Flow/Hypotheses.lean` 的 structure 字段、各文件的 `Prop` 参数），逐条标注「已被高斯层卸掉 / 可卸但没人做 / 真缺口（缺什么）」，产出下一批工单 | `docs/STATUS.md`（审计记录） | **Claude Code #2** | 已完成 |
+| T104 | **卸掉 `GaussIBP`**（`Gauss/LDEQuad.lean` 的两个字段，T103 审计出的唯一「可卸未卸」项）。`stein`：把 `SteinMatrix.matrixStein` 的逐坐标 Fubini 论证从「全局有界」换成「多项式增长」——一维的 `integral_mul_gaussianReal`（`Gauss/Stein.lean:94`）本来就只要三条可积性，**不需要光滑截断**；`polyInt`：初等高斯矩。卸掉后 T93/T95/T96/T97 全链无携带假设 | `Gauss/IBPPoly.lean`（新建） | **Claude Code #2** | 进行中 |
 
 ---
 

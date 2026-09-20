@@ -2015,3 +2015,47 @@ stochDom_indicator_llMax_sq (hG) (0<κ≤1) (|E|≤2−κ) (0≤u<1) (δ 的两�
 **剩下的就只有时间一致性（T99 的 (C)）**：`Lemma41Flow` 的指标集是
 `TimeIcc s t N × (ZMod L × ZMod L)`，要对 `u` 一致。缺口是 T100（`‖X‖ ≺ 1`）
 与 T101（Hölder 模只在高概率事件上成立的 `stochDom_timeIcc_of_holder` 变体），两张都还空闲。
+
+**T103 ✔（审计）：全库仍被携带的假设清点**
+
+把「被假设、没被证」的东西分三类。定义性的 `Prop`（`GoodEvent`、`Crossing`、`FinDep`…）
+不算，只算**接口假设**。
+
+**(1) 已经卸掉（现在是定理）**
+
+| 曾经的假设 | 由谁卸掉 |
+|---|---|
+| `MatrixStein` | `RBM.Gauss.matrixStein`（T70） |
+| `EntryBound` 的 `hLrow`/`hLcol` | T91 |
+| `EntryBound` 的 `hLdiag` | T92 |
+| `EntryBound` 的 `hLquad` | T96 |
+| `EntryBound` 的 `hFA`（签名层面） | T88（(4.12) 本身的缺口由 T94 在补） |
+| `WardP` | `wardP_holds`（T60） |
+
+**(2) 可卸、但没人在做 —— 只有一条，已开 T104**
+
+`GaussIBP`（`Gauss/LDEQuad.lean` 的两个字段）。理由：
+
+* `stein` 现在写成「`Tame`（多项式增长）」版本，而已证的 `matrixStein` 要求**全局有界**。
+  但一维的 `RBM.integral_mul_gaussianReal`（`Gauss/Stein.lean:94`）**本来就只要三条可积性**，
+  不要有界性——`SteinMatrix.matrixStein` 用的是它的有界特例
+  `integral_mul_gaussianReal_of_bdd`。所以把同一条逐坐标 Fubini 论证换成
+  「多项式增长 ⟹ 可积」即可，**不需要文件头设想的光滑截断**；
+* `polyInt`（`P d` 的一切多项式矩有限）是初等高斯矩，`Gauss/LDEDiag.lean` 的
+  `integrable_pow_coord` 已经是单坐标版本。
+
+**这条一卸，T93/T95/T96/T97 整条链就没有任何携带假设了**
+（`mom_le_momVpow`、`stochDom_ldeQuad`、`entry_bound_gauss`、`diag_bound_gauss`、
+`stochDom_indicator_llMax_sq` 现在都带 `hG : GaussIBP d`）。
+
+**(3) 真缺口，缺什么写明**
+
+| 假设 | 缺什么 |
+|---|---|
+| `OpNormBound`（`‖X‖ ≺ 1`） | 迹/矩方法。T100 进行中 |
+| `Lemma41Flow` | 只差**时间一致性**（T99 的 (C)）；固定时刻版已由 T102 证出。需 T100 + T101 |
+| `LoopIto.second` / `EG` | cut-and-glue 的确定性代数，paper-deltas #52；矩路线里无法从 Itô 推出 |
+| `Transfer.green` / `loop2` / `loop2_expect`（(2.39)(2.66)） | 需要 `H_u = √u X` 与论文 `H(z)` 的分布恒等，而 #49 明确不编码方差剖面，**结构性不可卸** |
+| `Thm221.step`、`Steps.*`、`Lemma510`、`LKDecay`、`StepTwoClaim`、`Eq747`、`LoopScaling`、`NetLift`、`DBMUniversality`、`GreenComparison` | 论文 §5/§7 的主体，按工单表推进中 |
+
+结论：**随机层这边可卸而未卸的只剩 `GaussIBP` 一条**（T104）；其余要么在做，要么是论文层面的主体工作，要么（`Transfer`）按矩路线的设计就卸不掉。

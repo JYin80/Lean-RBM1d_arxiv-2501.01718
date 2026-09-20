@@ -117,4 +117,51 @@ theorem indepFun_rowSet (i : d.Idx N) (T : Finset (Coord d))
     IndepFun (fun (ω : Ω d) (c : rowSet d N i) => ω c) (fun (ω : Ω d) (c : T) => ω c) (P d) :=
   (iIndepFun_coord d).indepFun_finset _ _ hT fun c => measurable_pi_apply c
 
+/-! ### The row as a family indexed by `(column, real/imaginary)` -/
+
+/-- The coordinate carrying the real (`b = true`) or imaginary (`b = false`) part of the entry
+`X_{ik}`, for `k ≠ i`. -/
+def rowCoord (d : Dims) (N : ℕ) (i k : d.Idx N) (b : Bool) : Coord d :=
+  if idxKey d N i < idxKey d N k then ⟨N, i, k, b⟩ else ⟨N, k, i, b⟩
+
+/-- The sign with which the imaginary coordinate enters `X_{ik}`. -/
+def rowSign (d : Dims) (N : ℕ) (i k : d.Idx N) : ℝ :=
+  if idxKey d N i < idxKey d N k then 1 else -1
+
+theorem rowCoord_mem_rowSet (i k : d.Idx N) (b : Bool) :
+    rowCoord d N i k b ∈ rowSet d N i := by
+  unfold rowCoord
+  split_ifs with h
+  · exact mem_rowSet.2 (Or.inl rfl)
+  · exact mem_rowSet.2 (Or.inr rfl)
+
+/-- **The entry `X_{ik}` in terms of the two row coordinates.**  For `k ≠ i` it is
+`ω(real) + ε i ω(imag)` with `ε = ±1`. -/
+theorem Xentry_eq_rowCoord {i k : d.Idx N} (hik : i ≠ k) (ω : Ω d) :
+    Xentry d N ω i k = (ω (rowCoord d N i k true) : ℂ)
+      + (rowSign d N i k : ℂ) * Complex.I * (ω (rowCoord d N i k false) : ℂ) := by
+  have hkey : idxKey d N i ≠ idxKey d N k := fun h => hik (idxKey_injective d N h)
+  unfold Xentry rowCoord rowSign
+  rcases lt_or_gt_of_ne hkey with h | h
+  · simp only [h, ↓reduceIte]
+    push_cast
+    ring
+  · have h' : ¬ idxKey d N i < idxKey d N k := by omega
+    simp only [h', ↓reduceIte, h]
+    push_cast
+    ring
+
+/-- The row coordinates are distinct: `(k, b) ↦ rowCoord i k b` is injective away from `i`. -/
+theorem rowCoord_injOn {i : d.Idx N} {k l : d.Idx N} {b c : Bool} (hk : k ≠ i) (hl : l ≠ i)
+    (h : rowCoord d N i k b = rowCoord d N i l c) : k = l ∧ b = c := by
+  unfold rowCoord at h
+  have hk' := hk
+  have hl' := hl
+  split_ifs at h with h1 h2 h2 <;> injection h with h3 h4 <;>
+    simp only [Prod.mk.injEq] at h4 <;>
+    first
+      | exact ⟨h4.2.1, h4.2.2⟩
+      | exact ⟨h4.1, h4.2.2⟩
+      | (exfalso; simp_all)
+
 end RBM.Gauss

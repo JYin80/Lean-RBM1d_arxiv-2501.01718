@@ -1600,6 +1600,28 @@
   the variance carries a factor $u$, harmless for $u\le1$.
 \end{proof}
 
+\begin{lemma}[Gaussian integration by parts against polynomially bounded integrands]\label{lem:gauss-ibp}
+  \lean{RBM.Gauss.add_pow_le_two_pow_mul, RBM.Gauss.integrable_abs_pow_coord,
+    RBM.Gauss.continuous_polyW, RBM.Gauss.integrable_polyW_pow,
+    RBM.Gauss.integrable_abs_pow_gaussianReal, RBM.Gauss.integral_mul_gaussianReal_int,
+    RBM.Gauss.integral_mul_gaussianReal_complex_int, RBM.Gauss.polyW_upd_le,
+    RBM.Gauss.norm_le_of_tame_upd, RBM.Gauss.gaussIBP}
+  \leanok\uses{def:gauss-model}
+  $\mathbb E[\omega_c\,g]=\sigma_c\,\mathbb E[\partial_c g]$ for every continuous, finitely
+  dependent, \emph{polynomially} bounded $g$, and every polynomial moment of the Gaussian
+  product measure is finite.  This discharges the structure \texttt{GaussIBP} carried by the
+  quadratic estimate.
+\end{lemma}
+\begin{proof}\leanok
+  No smooth cutoff is needed.  The one-dimensional identity
+  \texttt{integral\_mul\_gaussianReal} already takes \emph{integrability} hypotheses rather
+  than boundedness --- the matrix version of T70 merely used its bounded corollary --- so the
+  same fibrewise argument goes through: resampling the coordinate $c$ leaves the measure
+  invariant, Fubini separates it, and on the fibre the integrand is polynomially bounded, hence
+  integrable.  Polynomial integrability itself is an induction on the finite coordinate set,
+  using $(a+b)^n\le2^n(a^n+b^n)$ and the one-coordinate Gaussian moments.
+\end{proof}
+
 \begin{lemma}[Quadratic LDE: Gaussian Hanson--Wright by moment recursion]\label{lem:lde-quad}
   \lean{RBM.Gauss.polyW, RBM.Gauss.Tame, RBM.Gauss.Tame.integrable, RBM.Gauss.young_pow, RBM.Gauss.GaussIBP, RBM.Gauss.RowChaos, RBM.Gauss.RowChaos.sum_coord_mul_deriv, RBM.Gauss.RowChaos.integral_chaos_mul, RBM.Gauss.RowChaos.moment_recursion, RBM.Gauss.RowChaos.two_mul_mom_succ_le, RBM.Gauss.RowChaos.mom_succ_le, RBM.Gauss.RowChaos.integral_conj_h_mul_h, RBM.Gauss.RowChaos.momT_zero, RBM.Gauss.RowChaos.mom_one, RBM.Gauss.RowChaos.norm_chaos_sq_eq_ldeQuadLHS, RBM.Gauss.RowChaos.Vq_eq_ldeQuadRHS, RBM.Gauss.RowChaos.integral_ldeQuadLHS_eq}
   \leanok\uses{def:gauss-model, thm:generator, lem:condrow}

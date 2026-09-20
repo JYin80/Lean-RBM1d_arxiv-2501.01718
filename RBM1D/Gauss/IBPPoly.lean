@@ -186,4 +186,145 @@ theorem integral_mul_gaussianReal_complex_int {var : ℝ≥0} {f f' : ℝ → �
       hlim, hrim]
     exact hI
 
+/-! ### The fibrewise argument -/
+
+/-- `|x|^k` is integrable for a centred Gaussian. -/
+theorem integrable_abs_pow_gaussianReal (v : ℝ≥0) (k : ℕ) :
+    Integrable (fun x : ℝ => |x| ^ k) (gaussianReal 0 v) := by
+  have h := (integrable_pow_gaussianReal v k).abs
+  refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+  show |x ^ k| = |x| ^ k
+  rw [abs_pow]
+
+/-- Updating one coordinate increases the polynomial weight by at most `|t|`. -/
+theorem polyW_upd_le (d : Dims) (c : Coord d) (I : Finset (Coord d)) (p : Ω d × ℝ) :
+    polyW I (upd d c p) ≤ polyW I p.1 + |p.2| := by
+  classical
+  have hterm : ∀ x ∈ I, |(upd d c p) x| ≤ |p.1 x| + (if x = c then |p.2| else 0) := by
+    intro x _
+    by_cases hx : x = c
+    · subst hx
+      rw [upd_self]
+      simp
+    · rw [upd_of_ne c p hx, ite_eq_right hx]
+      simp
+  have hsum : ∑ x ∈ I, |(upd d c p) x|
+      ≤ ∑ x ∈ I, (|p.1 x| + (if x = c then |p.2| else 0)) :=
+    Finset.sum_le_sum hterm
+  have hsplit : ∑ x ∈ I, (|p.1 x| + (if x = c then |p.2| else 0))
+      = (∑ x ∈ I, |p.1 x|) + ∑ x ∈ I, (if x = c then |p.2| else 0) :=
+    Finset.sum_add_distrib
+  have hlast : (∑ x ∈ I, (if x = c then |p.2| else 0)) ≤ |p.2| := by
+    by_cases hc : c ∈ I
+    · rw [Finset.sum_ite_eq' I c fun _ => |p.2|, ite_eq_left hc]
+    · rw [Finset.sum_ite_eq' I c fun _ => |p.2|, ite_eq_right hc]
+      exact abs_nonneg _
+  show 1 + ∑ x ∈ I, |(upd d c p) x| ≤ (1 + ∑ x ∈ I, |p.1 x|) + |p.2|
+  rw [hsplit] at hsum
+  linarith
+
+/-- The majorant used for the product integrability. -/
+theorem norm_le_of_tame_upd (d : Dims) (c : Coord d) {f : Ω d → ℂ} {I : Finset (Coord d)}
+    {n : ℕ} {C : ℝ} (hb : ∀ ω, ‖f ω‖ ≤ C * polyW I ω ^ n) (hC : 0 ≤ C) (p : Ω d × ℝ) :
+    ‖f (upd d c p)‖ ≤ C * 2 ^ n * (polyW I p.1 ^ n + |p.2| ^ n) := by
+  refine (hb _).trans ?_
+  have h1 : polyW I (upd d c p) ^ n ≤ (polyW I p.1 + |p.2|) ^ n :=
+    pow_le_pow_left₀ (polyW_nonneg _ _) (polyW_upd_le d c I p) n
+  have h2 : (polyW I p.1 + |p.2|) ^ n ≤ 2 ^ n * (polyW I p.1 ^ n + |p.2| ^ n) :=
+    add_pow_le_two_pow_mul (polyW_nonneg _ _) (abs_nonneg _) n
+  calc C * polyW I (upd d c p) ^ n ≤ C * ((polyW I p.1 + |p.2|) ^ n) :=
+        mul_le_mul_of_nonneg_left h1 hC
+    _ ≤ C * (2 ^ n * (polyW I p.1 ^ n + |p.2| ^ n)) := mul_le_mul_of_nonneg_left h2 hC
+    _ = C * 2 ^ n * (polyW I p.1 ^ n + |p.2| ^ n) := by ring
+
+/-- **`GaussIBP`, discharged.**  The same fibrewise argument as `RBM.Gauss.matrixStein`, with
+"globally bounded" replaced by "polynomially bounded"; no smooth cutoff is needed, because the
+one-dimensional identity only ever wanted integrability. -/
+theorem gaussIBP (d : Dims) : GaussIBP d := by
+  refine ⟨fun c g g' hg hg' hderiv => ?_, integrable_polyW_pow d⟩
+  classical
+  obtain ⟨Ig, ng, Cg, hgb0⟩ := hg.poly
+  obtain ⟨Ig', ng', Cg', hg'b0⟩ := hg'.poly
+  -- the constants may be taken nonnegative
+  have hCg : (0 : ℝ) ≤ max Cg 0 := le_max_right _ _
+  have hCg' : (0 : ℝ) ≤ max Cg' 0 := le_max_right _ _
+  have hgb : ∀ ω, ‖g ω‖ ≤ max Cg 0 * polyW Ig ω ^ ng := fun ω =>
+    (hgb0 ω).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
+      (pow_nonneg (polyW_nonneg _ _) _))
+  have hg'b : ∀ ω, ‖g' ω‖ ≤ max Cg' 0 * polyW Ig' ω ^ ng' := fun ω =>
+    (hg'b0 ω).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
+      (pow_nonneg (polyW_nonneg _ _) _))
+  have hUm : Measurable (upd d c) := measurable_upd d c
+  have hgm : Measurable g := hg.cont.measurable
+  have hg'm : Measurable g' := hg'.cont.measurable
+  have hfib : ∀ (ω : Ω d) (t : ℝ),
+      HasDerivAt (fun s : ℝ => g (Function.update ω c s)) (g' (Function.update ω c t)) t := by
+    intro ω t
+    simpa only [Function.update_idem, Function.update_self] using
+      hderiv (Function.update ω c t)
+  -- the three integrability facts on the product
+  have hprodg : Integrable (fun p : Ω d × ℝ => g (upd d c p))
+      ((P d).prod (gaussianReal 0 (gvar d c))) := by
+    refine Integrable.mono'
+      ((((integrable_polyW_pow d Ig ng).comp_fst _).add
+        ((integrable_abs_pow_gaussianReal (gvar d c) ng).comp_snd _)).const_mul
+          (max Cg 0 * 2 ^ ng))
+      ((hgm.comp hUm).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun p => ?_)
+    simpa using norm_le_of_tame_upd d c hgb hCg p
+  have hprodg' : Integrable (fun p : Ω d × ℝ => g' (upd d c p))
+      ((P d).prod (gaussianReal 0 (gvar d c))) := by
+    refine Integrable.mono'
+      ((((integrable_polyW_pow d Ig' ng').comp_fst _).add
+        ((integrable_abs_pow_gaussianReal (gvar d c) ng').comp_snd _)).const_mul
+          (max Cg' 0 * 2 ^ ng'))
+      ((hg'm.comp hUm).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun p => ?_)
+    simpa using norm_le_of_tame_upd d c hg'b hCg' p
+  have hprodx : Integrable (fun p : Ω d × ℝ => (p.2 : ℂ) * g (upd d c p))
+      ((P d).prod (gaussianReal 0 (gvar d c))) := by
+    have hmaj : Integrable
+        (fun p : Ω d × ℝ => max Cg 0 * 2 ^ ng *
+          (polyW Ig p.1 ^ ng * |p.2| + 1 * |p.2| ^ (ng + 1)))
+        ((P d).prod (gaussianReal 0 (gvar d c))) := by
+      refine Integrable.const_mul ?_ _
+      refine Integrable.add ?_ ?_
+      · exact (integrable_polyW_pow d Ig ng).mul_prod
+          (by simpa using integrable_abs_pow_gaussianReal (gvar d c) 1)
+      · exact (integrable_const (1 : ℝ)).mul_prod
+          (integrable_abs_pow_gaussianReal (gvar d c) (ng + 1))
+    refine Integrable.mono' hmaj
+      (((Complex.continuous_ofReal.measurable.comp measurable_snd).mul
+        (hgm.comp hUm)).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun p => ?_)
+    have hb := norm_le_of_tame_upd d c hgb hCg p
+    have habs : (0 : ℝ) ≤ |p.2| := abs_nonneg _
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
+    calc |p.2| * ‖g (upd d c p)‖
+        ≤ |p.2| * (max Cg 0 * 2 ^ ng * (polyW Ig p.1 ^ ng + |p.2| ^ ng)) :=
+          mul_le_mul_of_nonneg_left hb habs
+      _ = max Cg 0 * 2 ^ ng * (polyW Ig p.1 ^ ng * |p.2| + 1 * |p.2| ^ (ng + 1)) := by
+          rw [pow_succ]; ring
+  -- both sides through the resampling map
+  have hL : ∫ ω, (ω c : ℂ) * g ω ∂(P d)
+      = ∫ p : Ω d × ℝ, (p.2 : ℂ) * g (upd d c p)
+          ∂((P d).prod (gaussianReal 0 (gvar d c))) := by
+    conv_lhs => rw [← P_map_update d c]
+    rw [integral_map hUm.aemeasurable (by
+      rw [P_map_update d c]
+      exact ((Complex.continuous_ofReal.measurable.comp
+        (measurable_pi_apply c)).mul hgm).aestronglyMeasurable)]
+    simp only [upd_self]
+  have hR : ∫ ω, g' ω ∂(P d)
+      = ∫ p : Ω d × ℝ, g' (upd d c p) ∂((P d).prod (gaussianReal 0 (gvar d c))) := by
+    conv_lhs => rw [← P_map_update d c]
+    rw [integral_map hUm.aemeasurable (by
+      rw [P_map_update d c]
+      exact hg'm.aestronglyMeasurable)]
+  rw [hL, hR, integral_prod _ hprodx, integral_prod _ hprodg', ← integral_const_mul]
+  refine integral_congr_ae ?_
+  filter_upwards [hprodx.prod_right_ae, hprodg.prod_right_ae, hprodg'.prod_right_ae]
+    with ω h1 h2 h3
+  exact integral_mul_gaussianReal_complex_int (hfib ω) h2 h1 h3
+
 end RBM.Gauss

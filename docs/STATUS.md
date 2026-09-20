@@ -2071,3 +2071,41 @@ agent 在 scratch 里验证过：以 `Ξ ≡ univ` 可逐字复原 T73 的 `stoc
 **可以据此卸掉逐点假设的下游**：`Step2Moment.MomentHyp.holder`（进而 `jS_stochDom`/(5.47)）；**T99 审计的阻塞项 (C)**（`Lemma41Flow` 的时间一致性那半）——预解式的模 `‖G_u − G_{u'}‖ ≤ η^{-2}|√u−√u'|·‖X‖` 正是形式 (b)（`γ = 1/2`，经 `abs_sqrt_sub_sqrt_le`），**余下的输入只剩 T100 的 `‖X‖ ≺ 1`**。
 **注意重复**：因 `Gauss/` 不能 import `Hierarchy/`（Step2Moment 反向依赖 `Gauss.Envelope`），`netTime`/`netTime_mem`/`exists_netTime_close` 在此重证了一份（命名空间 `RBM.Gauss`，与 T75 的 `RBM.Step2Moment` 不冲突）。
 **下次编辑 `Hierarchy/Step2Moment.lean` 时应删掉它那三条，改用这里的**；本单按协议未改动该文件。`…_one_of_holder_hp`/`…_one_of_holder_dom` 除模假设外与 T75 签名一致，是直接的替换件。paper-deltas #62。
+
+**T104 ✔**（`Gauss/IBPPoly.lean`，新建，零 sorry）：**`GaussIBP` 卸掉了。**
+
+```
+gaussIBP (d : Dims) : GaussIBP d
+```
+
+T103 审计里说的「不需要光滑截断」是对的：`Gauss/LDEQuad.lean` 的文件头设想用
+`χ_n(ω) = η(∑(ω c)²/n²)` 从有界版逼近，但**一维的 `RBM.integral_mul_gaussianReal`
+（`Gauss/Stein.lean:94`）本来就只要三条可积性**，`SteinMatrix.matrixStein` 用的是它的有界特例
+`integral_mul_gaussianReal_of_bdd`。所以把 `matrixStein` 的同一条逐坐标论证
+（`P_map_update` 重采样 + Fubini）里的「全局有界」换成「多项式增长 ⟹ 可积」就行。三块：
+
+1. **`polyInt`**（`integrable_polyW_pow`）：对坐标有限集归纳，`(a+b)^n ≤ 2^n(a^n+b^n)`
+   （`add_pow_le_two_pow_mul`）+ 单坐标矩 `integrable_abs_pow_coord`（T92 的
+   `integrable_pow_coord` 加绝对值）。
+2. **一维 Stein 的可积性版**：`integral_mul_gaussianReal_int`（实）与
+   `integral_mul_gaussianReal_complex_int`（复，且**不限制方差**，`var = 0` 时两端都为 0）。
+   假设写成「对高斯**测度**可积」而不是「对**密度**可积」——后者是
+   `Gauss/Stein.lean` 的原形状，转换用我在 T81 写的 `integrable_mul_gaussianPDFReal`。
+3. **纤维化**：`polyW_upd_le`（换一个坐标最多把权重加 `|t|`）+ `norm_le_of_tame_upd`
+   给出乘积测度上的控制 `C·2^n(polyW(p.1)^n + |p.2|^n)`，用 `Integrable.mul_prod` /
+   `comp_fst` / `comp_snd` 拼出可积性，再用 `Integrable.prod_right_ae` 把可积性下放到纤维，
+   `filter_upwards` 三条 a.e. 后逐纤维用第 2 块。
+
+**后果**：`hG : GaussIBP d` 现在**处处可以直接填 `gaussIBP d`**。于是
+
+```
+mom_le_momVpow → stochDom_ldeQuad → diag_bound_gauss → stochDom_indicator_llMax_sq
+```
+
+整条链（T93/T95/T96/T97/T102）**没有任何携带假设**。签名我没动（保持接口稳定、避免和另一边
+撞文件）；要无假设版本的，调用处写 `(gaussIBP d)` 即可。若要把 `hG` 从我这几个文件的签名里
+删掉，可另开一张小工单。
+
+蓝图新节点 `lem:gauss-ibp`。全量构建通过，公理审计 **6964 条声明**全部合规。
+
+**T103 的「可卸未卸」清单现在是空的。**

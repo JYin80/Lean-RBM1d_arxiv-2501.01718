@@ -1524,3 +1524,9 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 **T81 收尾还需**：(a) 可积性假设的消除（由 `‖G^{(i)}‖ ≤ η⁻¹` 的确定性包络给出，接 T77）；
 (b) 与 `Green/EntryBound.lean` 的 `ldeRowLHS`/`ldeRowRHS` 对齐（`greenMinor` = minor 预解式，
 即 T40 的 `inv_minor_resolvent`，带可逆性前提）；(c) 经 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+**T81 第二十一块 ✔**：与论文 LDE 量的对齐——`minorCol_eq_greenMinor`（用 T40 的 `inv_minor_resolvent`，
+带可逆性前提）、**`ldeRowLHS_eq`**（`ldeRowLHS = ‖行和‖²`）、**`rowVarSum_eq`**（`rowVarSum = u · ldeRowRHS`）。
+于是第二十块的常数矩界可以逐字翻译成论文的 `|∑_k H_ik G^(i)_kj|² ≺ ∑_k S_ik |G^(i)_kj|²`。
+**T81 只差**：(a) 消掉可积性假设（由 `‖G^(i)‖ ≤ η⁻¹` 的确定性包络，接 T77）；
+(b) 经 T73 的 `stochDom_of_momentDom` 正式落成 `≺`（需按 `MomentDom` 的量词次序组织：ε 在 p 外）。

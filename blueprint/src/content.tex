@@ -1875,6 +1875,19 @@
   inside the time-frozen one by monotonicity of the scale.
 \end{proof}
 
+\begin{lemma}[Gaussian integration by parts: the p.\,50 display, and \texttt{hIBP}]\label{lem:ibp}
+  \lean{RBM.Gauss.green_sub_smul_one_eq, RBM.Gauss.hasDerivAt_green_Hflow_update, RBM.Gauss.mul_Bmat_mul_apply_of_ne, RBM.Gauss.mul_Bmat_mul_apply_diag, RBM.Gauss.tame_green_apply, RBM.Gauss.integral_coord_mul_green_apply, RBM.Gauss.sum_gvar_Bmat_sandwich_diag, RBM.Gauss.integral_Hflow_mul_green_diag, RBM.Gauss.Tame.comp_rowSplit, RBM.Gauss.rowSplit_update, RBM.Gauss.condRow_coord_mul, RBM.Gauss.Bmat_mul_apply_diag_of_ne, RBM.Gauss.condRow_Hflow_mul_green_diag, RBM.Gauss.condExpDiag_eq_sum_Sblk, RBM.Gauss.ibpRem, RBM.Gauss.ibpRem_eq_add, RBM.Gauss.norm_condExpDiag_sub_le, RBM.Gauss.condExpDiag_stochDom_of_ibpRem, RBM.Gauss.condExpDiag_stochDom_of_pieces}
+  \leanok\uses{def:gauss-model, lem:condrow, lem:fluc-avg, lem:4.2}
+  $\mathbb E_i(G_{ii}-m)=t\,m\sum_kS_{ik}\,\mathbb E_i[G_{ii}(G_{kk}-m)]$ as an exact identity, the
+  whole $O_\prec(\Psi^2)$ isolated in one remainder; hence \texttt{hIBP} at its frozen signature,
+  given the local law squared and the (4.9) minor replacement.
+\end{lemma}
+\begin{proof}\leanok
+  One Gaussian coordinate at a time, the two tags recombining to $S_{ik}$ (the squared off-diagonal
+  terms cancel); $\mathbb E_i$ is itself an integral against a frozen row, and \texttt{rowSplit}
+  commutes with updating a row-$i$ coordinate, so the same integration by parts applies inside it.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -212,7 +212,7 @@
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | **完成**（与 T73 的正向桥量词序一致，可复合；含 `norm_gloop_le_det`） |
 | T81 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | Claude Code #2 | **完成**（行、列两条，`Gauss/RowIndep.lean`） |
 | T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | Claude Code | **完成**（矩递推与 p=1 精确恒等式；缺 `E[T^p] ≤ C_p E[Vq^p]`，文件头有草图） |
-| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean` | Claude Code | 进行中（接手 Cowork 的交接，做剩下 (a)(b)(c) 三格） |
+| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean` | Claude Code | **完成**（(a)(b)(c) 全部落地，`hIBP` 可在冻结签名下卸掉；余 `hprod`/`hminor` 两个输入，见 STATUS） |
 | T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | Claude Code | **完成**（`E_k` 为精确 Fubini；公共引理 `FinDepOffRow` 供 T81/T82/T86） |
 | T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | Claude Code | **完成**（含三元组版与 Ψ-级版；`|G_kk|` 下界由事件 (4.1) 读出，非额外假设） |
 | T86 | **消失引理**：某指标只出现一次 ⟹ 期望 = O(替换误差) | `Gauss/FlucVanish.lean`（新建） | Claude Code | **完成**（替换后期望恰为 0；`B`/`ε` 与 T85 的 `≺` 之间的截断记账留给 T87/T88） |

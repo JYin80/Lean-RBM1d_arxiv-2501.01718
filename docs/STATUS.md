@@ -2315,3 +2315,18 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 **收工前至少跑一次全量构建**，别只信单文件绿。
 
 这一条同时说明 T90（全库重复扫描）那类维护单值得定期重跑。
+
+### `RBM1D/Gauss/IBP.lean` — T83 交接的后三格已完成（Claude Code 并行 agent，2026-09-20）
+
+**(a)(b)(c) 全部落地；`hIBP` 可在其冻结签名下卸掉**——已用 scratch 文件验证：把 `condExpDiag_stochDom_of_ibpRem` 喂进 `trace_green_sub_mul_Eblk_stochDom` 的 `hIBP` 槽，直接得到 (4.5) 的结论，**任何签名都没改**。
+**(a)** `integral_Hflow_mul_green_diag : E[(H_u G)_{aa}] = −u Σ_k S_{ak} E[G_{aa}G_{kk}]`；组合核心 `sum_gvar_Bmat_sandwich_diag`——两个 tag 在**平方的非对角项**上贡献 `c_b² = ±1` 故**相消**，而 `c_b c̄_b = 1` 使每个 tag 各出一半的 `S_{xy}G_{xx}G_{yy}`，对角坐标（实 tag，`gvar = S`）补上 `S_{aa}G_{aa}²`。
+**(b)** 没有重复造分析：`E_i` 本身就是对 `rowSplit` 复合后的 `P d`-积分，而 `rowSplit` 与「更新第 i 行的坐标」交换（`rowSplit_update`），故 `gaussIBP` 逐字适用；新增 `Tame.comp_rowSplit`（冻结非本行坐标后 tame 性保持）与 `condRow_coord_mul`。不碰第 i 行的坐标**逐点**掉出（`Bmat_mul_apply_diag_of_ne`），无需对指标集动手术。
+**(c)** `condExpDiag_eq_sum_Sblk` 是 p.50 的式子且**无误差项**；误差全部进 `ibpRem`。
+
+**唯一剩余缺口**：`condExpDiag_stochDom_of_ibpRem` 需 `‖ibpRem‖ ≺ Lmax`；`ibpRem_eq_add` 把它拆成论文的两个输入，`condExpDiag_stochDom_of_pieces` 分别接收：
+`hprod`（局部律的平方 `E_i[(G_ii−m)(G_kk−m)] ≺ Lmax`）与 `hminor`（(4.9) 的替换 `E_i(G_kk−m) − (G_kk−m) ≺ Lmax`，T85）。两者都未证。
+**`hminor` 还缺一块通用工具：「被 ≺ 支配的量取 `E_i` 后仍被 ≺ 支配」——这不是自动的，仓库里没有这条引理，是真正的下一张单**（我不写工单，留给 Jun/Cowork）。
+
+**整合时踩到的一个坑（已修）**：新加的 `condRow_zero` 与我 T94 `FlucIter.lean` 里的同名声明冲突，`RBM1D.lean` 同时 import 两者即报
+`environment already contains 'RBM.Gauss.condRow_zero'`。已把 `IBP.lean` 里的改名为 `condRow_zero_apply`（逐点形式）。
+**教训**：并行 agent 各写各的文件时，`lake env lean 单文件` 绿**不能**保证全局无重名——整合时必须跑一次全量 `lake build`。paper-deltas #64。

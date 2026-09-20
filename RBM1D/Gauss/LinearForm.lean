@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.Model
+import RBM1D.Gauss.Moments
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.HasLaw
 
@@ -111,5 +112,101 @@ theorem map_sum_const_mul_coord (a : Coord d → ℝ) (s : Finset (Coord d)) :
       = gaussianReal 0 (∑ c ∈ s, NNReal.mk (a c ^ 2) (sq_nonneg _) * gvar d c) :=
   map_sum_const_mul_of_indep (fun c => measurable_pi_apply c) (fun c => P_map_eval d c)
     (iIndepFun_coord d) a s
+
+section MomentBound
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+  {ι : Type*} [DecidableEq ι] {X : ι → Ω → ℝ} {v : ι → ℝ≥0}
+
+/-- The variance of the linear form `∑ a_i X_i`. -/
+noncomputable def linVar (v : ι → ℝ≥0) (a : ι → ℝ) (s : Finset ι) : ℝ≥0 :=
+  ∑ i ∈ s, NNReal.mk (a i ^ 2) (sq_nonneg _) * v i
+
+variable (hmeas : ∀ i, Measurable (X i)) (hlaw : ∀ i, P.map (X i) = gaussianReal 0 (v i))
+  (hindep : iIndepFun X P)
+include hmeas hlaw hindep
+
+omit [IsProbabilityMeasure P] [DecidableEq ι] hlaw hindep in
+theorem measurable_lin (a : ι → ℝ) (s : Finset ι) :
+    Measurable fun ω => ∑ i ∈ s, a i * X i ω :=
+  Finset.measurable_sum _ fun i _ => (hmeas i).const_mul _
+
+/-- The law of the linear form, in terms of `linVar`. -/
+theorem map_lin (a : ι → ℝ) (s : Finset ι) :
+    P.map (fun ω => ∑ i ∈ s, a i * X i ω) = gaussianReal 0 (linVar v a s) :=
+  map_sum_const_mul_of_indep hmeas hlaw hindep a s
+
+/-- All even moments of a linear form exist. -/
+theorem integrable_pow_lin (a : ι → ℝ) (s : Finset ι) (p : ℕ) :
+    Integrable (fun ω => (∑ i ∈ s, a i * X i ω) ^ (2 * p)) P := by
+  have hm := measurable_lin hmeas a s
+  have h := integrable_pow_gaussianReal (linVar v a s) (2 * p)
+  rw [← map_lin hmeas hlaw hindep a s] at h
+  exact (integrable_map_measure ((measurable_id.pow_const (2 * p)).aestronglyMeasurable)
+    hm.aemeasurable).1 h
+
+/-- **The even moments of a linear form**: `E[(∑ a_i X_i)^{2p}] = (2p-1)!! (∑ a_i² v_i)^p`. -/
+theorem integral_pow_lin (a : ι → ℝ) (s : Finset ι) (p : ℕ) :
+    ∫ ω, (∑ i ∈ s, a i * X i ω) ^ (2 * p) ∂P = dfac p * (linVar v a s : ℝ) ^ p := by
+  have hm := measurable_lin hmeas a s
+  have h := integral_map (μ := P) (φ := fun ω => ∑ i ∈ s, a i * X i ω)
+    (f := fun y : ℝ => y ^ (2 * p)) hm.aemeasurable
+    ((measurable_id.pow_const (2 * p)).aestronglyMeasurable)
+  rw [map_lin hmeas hlaw hindep a s] at h
+  rw [← h, integral_pow_gaussianReal']
+
+/-- **The moment bound for the modulus of a complex linear form.**  If `Y = ∑ a_i X_i` and
+`Y' = ∑ b_i X_i` are the real and imaginary parts, then
+`E[(Y² + Y'²)^p] ≤ 2^p (2p-1)!! (V_a^p + V_b^p)`; in the circular case `V_a = V_b = σ²/2` this
+is `E‖Z‖^{2p} ≤ (2p-1)!! σ^{2p}`. -/
+theorem integral_sq_add_sq_pow_le (a b : ι → ℝ) (s : Finset ι) (p : ℕ) :
+    ∫ ω, ((∑ i ∈ s, a i * X i ω) ^ 2 + (∑ i ∈ s, b i * X i ω) ^ 2) ^ p ∂P
+      ≤ 2 ^ p * (dfac p * ((linVar v a s : ℝ) ^ p + (linVar v b s : ℝ) ^ p)) := by
+  have hia := integrable_pow_lin hmeas hlaw hindep a s p
+  have hib := integrable_pow_lin hmeas hlaw hindep b s p
+  have hpt : ∀ ω, ((∑ i ∈ s, a i * X i ω) ^ 2 + (∑ i ∈ s, b i * X i ω) ^ 2) ^ p
+      ≤ 2 ^ p * ((∑ i ∈ s, a i * X i ω) ^ (2 * p) + (∑ i ∈ s, b i * X i ω) ^ (2 * p)) := by
+    intro ω
+    set x := (∑ i ∈ s, a i * X i ω) ^ 2 with hx
+    set y := (∑ i ∈ s, b i * X i ω) ^ 2 with hy
+    have hx0 : 0 ≤ x := by positivity
+    have hy0 : 0 ≤ y := by positivity
+    have hmax : x + y ≤ 2 * max x y := by
+      rcases le_total x y with h | h
+      · simp [max_eq_right h]; linarith
+      · simp [max_eq_left h]; linarith
+    have h1 : (x + y) ^ p ≤ (2 * max x y) ^ p :=
+      pow_le_pow_left₀ (by positivity) hmax p
+    have h2 : (2 * max x y) ^ p = 2 ^ p * max x y ^ p := by rw [mul_pow]
+    have h3 : max x y ^ p ≤ x ^ p + y ^ p := by
+      rcases le_total x y with h | h
+      · rw [max_eq_right h]
+        have : (0 : ℝ) ≤ x ^ p := by positivity
+        linarith
+      · rw [max_eq_left h]
+        have : (0 : ℝ) ≤ y ^ p := by positivity
+        linarith
+    have hxp : x ^ p = (∑ i ∈ s, a i * X i ω) ^ (2 * p) := by
+      rw [hx, ← pow_mul]
+    have hyp : y ^ p = (∑ i ∈ s, b i * X i ω) ^ (2 * p) := by
+      rw [hy, ← pow_mul]
+    calc (x + y) ^ p ≤ 2 ^ p * max x y ^ p := by rw [← h2]; exact h1
+      _ ≤ 2 ^ p * (x ^ p + y ^ p) := by
+          have : (0 : ℝ) ≤ 2 ^ p := by positivity
+          exact mul_le_mul_of_nonneg_left h3 this
+      _ = _ := by rw [hxp, hyp]
+  have hint : Integrable (fun ω => 2 ^ p * ((∑ i ∈ s, a i * X i ω) ^ (2 * p)
+      + (∑ i ∈ s, b i * X i ω) ^ (2 * p))) P := (hia.add hib).const_mul _
+  have hle := integral_mono_of_nonneg (Filter.Eventually.of_forall fun ω => by positivity) hint
+    (Filter.Eventually.of_forall hpt)
+  calc ∫ ω, ((∑ i ∈ s, a i * X i ω) ^ 2 + (∑ i ∈ s, b i * X i ω) ^ 2) ^ p ∂P
+      ≤ ∫ ω, 2 ^ p * ((∑ i ∈ s, a i * X i ω) ^ (2 * p)
+          + (∑ i ∈ s, b i * X i ω) ^ (2 * p)) ∂P := hle
+    _ = 2 ^ p * (dfac p * ((linVar v a s : ℝ) ^ p + (linVar v b s : ℝ) ^ p)) := by
+        rw [integral_const_mul, integral_add hia hib, integral_pow_lin hmeas hlaw hindep,
+          integral_pow_lin hmeas hlaw hindep]
+        ring
+
+end MomentBound
 
 end RBM.Gauss

@@ -1306,3 +1306,11 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 条件化后 `∑_k H_ik X_k` 是中心复高斯 ⟹ 用上面的矩公式 ⟹ 经 T73 的 Markov 桥落成 `≺`。
 **插曲**：期间 `Gauss/Stein.lean` 一度编不过（Cowork 的 T70 在改，未提交），我用 HEAD 快照
 （`.lake/packages` 软链 + `.lake/build` 复制到 scratchpad）离线验证，等对面提交后再在主工作区编译通过才提交。
+
+**T81 第三块 ✔**（`Gauss/RowIndep.lean`）：`AgreeOffRow d N i ω ω'`（两个样本点在所有避开 `i` 的坐标上相等）⟹
+`Xentry_congr_of_ne` ⟹ `Hflow_submatrix_congr`（minor 矩阵相同）⟹ **`greenMinor_congr_of_offRow`**：
+在两边预解式都存在、对角元非零处，`G^(i)` 不读第 `i` 行的坐标。用的是 T40 的 `inv_minor_resolvent`。
+这就是工单点名要抽出来、T82 也要用的那条独立性引理。
+**下一步**：把「条件化」写成乘积测度上的 Fubini——行 `i` 的坐标是**有限**集，`G^(i)` 只依赖其补集，
+于是 `∑_{k≠i} H_ik G^(i)_kj` 在冻结补集后是中心复高斯，矩由 `integral_add_sq_pow_gaussian_prod` 给出，
+最后经 T73 的 `stochDom_of_momentDom` 落成 `≺`。

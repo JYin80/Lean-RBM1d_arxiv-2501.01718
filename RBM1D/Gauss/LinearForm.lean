@@ -209,4 +209,34 @@ theorem integral_sq_add_sq_pow_le (a b : ι → ℝ) (s : Finset ι) (p : ℕ) :
 
 end MomentBound
 
+section Block
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+  {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- **Conditioning on an independent block.**  If `U` and `V` are independent, an integral of
+`F(U, V)` is the iterated integral against their laws: the outer variable `V` may be frozen and
+the inner integral computed against the law of `U` alone. -/
+theorem integral_indep_pair {U : Ω → α} {V : Ω → β} (hU : Measurable U) (hV : Measurable V)
+    (h : IndepFun U V P) {F : α × β → ℝ} (hF : Integrable F ((P.map U).prod (P.map V))) :
+    ∫ ω, F (U ω, V ω) ∂P = ∫ y, (∫ x, F (x, y) ∂(P.map U)) ∂(P.map V) := by
+  have hpair : P.map (fun ω => (U ω, V ω)) = (P.map U).prod (P.map V) :=
+    (indepFun_iff_map_prod_eq_prod_map_map hU.aemeasurable hV.aemeasurable).1 h
+  have hmap := integral_map (μ := P) (φ := fun ω => (U ω, V ω)) (f := F)
+    (hU.prodMk hV).aemeasurable (by rw [hpair]; exact hF.aestronglyMeasurable)
+  rw [hpair] at hmap
+  rw [← hmap, integral_prod_symm F hF]
+
+/-- The same, as an upper bound: a uniform bound on the inner (conditional) integral gives a
+bound on the whole integral. -/
+theorem integral_indep_pair_le {U : Ω → α} {V : Ω → β} (hU : Measurable U) (hV : Measurable V)
+    (h : IndepFun U V P) {F : α × β → ℝ} (hF : Integrable F ((P.map U).prod (P.map V)))
+    {g : β → ℝ} (hg : Integrable g (P.map V))
+    (hbound : ∀ᵐ y ∂(P.map V), (∫ x, F (x, y) ∂(P.map U)) ≤ g y) :
+    ∫ ω, F (U ω, V ω) ∂P ≤ ∫ y, g y ∂(P.map V) := by
+  rw [integral_indep_pair hU hV h hF]
+  exact integral_mono_ae hF.integral_prod_right hg hbound
+
+end Block
+
 end RBM.Gauss

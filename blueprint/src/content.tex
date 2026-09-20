@@ -1555,6 +1555,36 @@
   $2\,\#\mathrm{image}\,v\le\#\iota$ gives the count.
 \end{proof}
 
+\begin{lemma}[Linear LDE: the Gaussian row and column sums]\label{lem:lde-linear}
+  \lean{RBM.Gauss.rowSet, RBM.Gauss.indepFun_rowSet, RBM.Gauss.offRowCoord,
+    RBM.Gauss.Hflow_submatrix_congr_offRowCoord, RBM.Gauss.rowCoord, RBM.Gauss.Xentry_eq_rowCoord,
+    RBM.Gauss.re_row_sum, RBM.Gauss.im_row_sum, RBM.Gauss.integral_norm_row_sum_pow_le,
+    RBM.Gauss.rowSum, RBM.Gauss.rowVarSum, RBM.Gauss.integral_norm_rowSum_pow_le,
+    RBM.Gauss.rowCoeffNorm, RBM.Gauss.rowVarSum_rowCoeffNorm,
+    RBM.Gauss.lintegral_norm_rowSum_norm_pow_le, RBM.Gauss.integrable_norm_rowSum_norm_pow,
+    RBM.Gauss.integral_norm_rowSum_norm_pow_le', RBM.Gauss.minorCol, RBM.Gauss.minorCol_congr,
+    RBM.Gauss.measurable_minorCol, RBM.Gauss.minorCol_eq_greenMinor, RBM.Gauss.ldeRowLHS_eq,
+    RBM.Gauss.rowVarSum_eq, RBM.Gauss.stochDom_rowSum_general,
+    RBM.Gauss.stochDom_rowSum_minorCol, RBM.Gauss.minorRowConj,
+    RBM.Gauss.stochDom_rowSum_minorRowConj}
+  \leanok\uses{def:gauss-model, lem:moment-dom}
+  For the Gaussian model, $\bigl|\sum_{k\ne i}H_{ik}G^{(i)}_{kj}\bigr|
+  \prec\bigl(\sum_k S_{ik}|G^{(i)}_{kj}|^2\bigr)^{1/2}$ uniformly in $(i,j)$, and the same for the
+  column sums: the $\mathtt{LDERow}$ and $\mathtt{LDECol}$ hypotheses of
+  \texttt{Green/EntryBound.lean} hold for the Gaussian ensemble.
+\end{lemma}
+\begin{proof}\leanok\uses{def:gauss-model, lem:moment-dom}
+  $G^{(i)}$ is the resolvent of the minor, hence a function of the coordinates off row $i$, which
+  are independent of the row.  Conditionally on them the row sum is a centred complex Gaussian:
+  its real and imaginary parts are real linear forms in the row coordinates, with equal variances
+  $\tfrac12 u\sum_kS_{ik}|c_k|^2$.  The Gaussian even moments give
+  $\mathbb E\|Z\|^{2p}\le2(2p-1)!!\,(u\sum_kS_{ik}|c_k|^2)^p$ fibrewise; normalising by the
+  conditional standard deviation makes the bound constant, and Tonelli across the two blocks
+  removes every integrability side condition.  The union bound over the $\le(LW)^2\le N^2$ pairs
+  is \texttt{stochDom\_of\_momentDom}.  The column case is the conjugate row sum, by Hermitian
+  symmetry.
+\end{proof}
+
 \begin{lemma}[Quadratic LDE: Gaussian Hanson--Wright by moment recursion]\label{lem:lde-quad}
   \lean{RBM.Gauss.polyW, RBM.Gauss.Tame, RBM.Gauss.Tame.integrable, RBM.Gauss.young_pow, RBM.Gauss.GaussIBP, RBM.Gauss.RowChaos, RBM.Gauss.RowChaos.sum_coord_mul_deriv, RBM.Gauss.RowChaos.integral_chaos_mul, RBM.Gauss.RowChaos.moment_recursion, RBM.Gauss.RowChaos.two_mul_mom_succ_le, RBM.Gauss.RowChaos.mom_succ_le, RBM.Gauss.RowChaos.integral_conj_h_mul_h, RBM.Gauss.RowChaos.momT_zero, RBM.Gauss.RowChaos.mom_one, RBM.Gauss.RowChaos.norm_chaos_sq_eq_ldeQuadLHS, RBM.Gauss.RowChaos.Vq_eq_ldeQuadRHS, RBM.Gauss.RowChaos.integral_ldeQuadLHS_eq}
   \leanok\uses{def:gauss-model, thm:generator, lem:condrow}

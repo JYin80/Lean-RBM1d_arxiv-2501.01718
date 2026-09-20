@@ -1586,3 +1586,7 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 的系数族 + 多项式大小的指标集），`minorCol` 版本是其实例。
 **下一步**：列版本 `LDECol`——由 `H` 的 Hermitian 性，`∑_{l≠j} G^(j)_kl H_lj` 的共轭是
 以 `conj G^(j)_{k·}` 为系数的**行和**（行 = `j`），故同样是 `stochDom_rowSum_general` 的实例。
+
+**T81 完成 ✔**（`Gauss/RowIndep.lean`，30 块，零 sorry）：行 LDE `stochDom_rowSum_minorCol` 与
+列 LDE `stochDom_rowSum_minorRowConj`，均为一般定理 `stochDom_rowSum_general` 的实例。
+蓝图节点 `lem:lde-linear`，paper-deltas #61。

@@ -1601,3 +1601,18 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 用 `continuous_id.matrix_det` / `.matrix_adjugate`）+ 逐元素包装 `measurable_inv_entries`（T81 侧用）。
 两边调用点签名不变。全量构建通过，公理审计 6581 条声明全部合规（比去重前少 2 条，正是删掉的副本）。
 **教训重申**：写新引理前先 `grep -rn` 一下全库，尤其是「可测性 / 求和 / 范数」这类通用工具。
+
+**T90 ✔（维护：全库重复扫描）**：写了个小脚本比对所有 `theorem/lemma` 的**陈述文本**（归一化空白后），
+找出「不同文件里同一条陈述」。结果：
+
+| 重复项 | 位置 | 处理 |
+|---|---|---|
+| `half_le_ellHat` | `Propagator/Edges.lean`、`Loop/Cor35.lean` | **已下沉**到 `Propagator/DecayComplex.lean`（两边都已 import，不新增依赖；全库名字 `RBM.half_le_ellHat` 不变，`L` 改为显式） |
+| `ellHat_real_pos` / `ellHat_real_pos'` | `Hierarchy/KernelDecay.lean`、`Hierarchy/SumZeroDyn.lean` | 待 T51/T60 负责人合并 |
+| `cKerShort_nonneg` | `Hierarchy/Decay.lean`、`Hierarchy/SumZeroDyn.lean` | 待 T59/T60 负责人合并 |
+| `rpow_pow_eq` / `natCast_rpow_pow` | `Hierarchy/SumZeroDyn.lean`、`Hierarchy/Step2.lean` | 同一条 `((N^a)^k = N^(a·k))`，待合并（建议下沉到 `Defs/`） |
+| `cor35Const_nonneg` | `Hierarchy/Decay.lean`、`Loop/WardKgen.lean` | 同名同义，待合并 |
+
+（`treeRep_general` vs `K_eq_sum_Kpi` 是脚本的假阳性：前缀绑定相同、结论不同。）
+全量构建通过，公理审计 6580 条声明全部合规。**这是第三次发现重复造轮子**（前两次 T38、T89），
+建议新引理入库前固定动作：`grep -rn "陈述关键词" RBM1D/`。

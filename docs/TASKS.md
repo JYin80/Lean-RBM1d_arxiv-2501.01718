@@ -186,7 +186,7 @@
 | T94 | **把 `FlucVanish` 的机器迭代到 `2p` 阶**：卸掉 T88 隔离出来的 `hsmall`，让 (4.12) 真正成为定理 | `Gauss/FlucIter.lean`（新建） | Claude Code | 进行中 |
 | T95 | **为高斯模型造 `RowChaos` 实例**（T82/T93 的 `LDEQuad.lean` 文件头「What is not done here」第 2 条）。关键：`B` 取**小方阵预解式** `(H^{(i)} − z)⁻¹` 而不是 `greenMinor`——它由 `norm_green_le` 全局有界 `η⁻¹`、连续、且只读 off-row 坐标（`Hflow_submatrix_congr_offRowCoord`），而 `greenMinor` 因 `G_ii` 无全局下界而无界；两者对**每个 ω** 相等，由 `inv_minor_resolvent` + T91 的 `green_diag_ne_zero`。`co`/`eps` 由 `Xentry` 的 `idxKey` 分支读出（同 T81）。**不碰 `Gauss/LDEQuad.lean`** | `Gauss/LDEQuadInst.lean`（新建） | **Claude Code #2** | 已完成 |
 | T96 | **`hLquad` 的最后一段**：把 T95 的矩不等式 `E[ldeQuadLHS^p] ≤ C_p u^{2p} E[ldeQuadRHS^p]` 翻成 `diag_bound_stochDom` 要的 `StochDom P ldeQuadLHS ldeQuadRHS`。难点：控制 `ldeQuadRHS` 是**随机**的，`stochDom_of_momentDom`（T73）只接受确定性控制；走 `StochDom.of_det` 或先用好事件上的确定性控制夹住。**不碰 `Gauss/LDEQuad.lean`、`Green/EntryBound.lean`** | `Gauss/LDEQuadDom.lean`（新建） | **Claude Code #2** | 已完成 |
-| T97 | **总装 (4.2)(4.3) 的高斯版**：把 T91/T92/T96 的四条 `StochDom`（`hLrow`/`hLcol`/`hLdiag`/`hLquad`）喂进 `entry_bound_stochDom` 与 `diag_bound_stochDom`，得到对高斯流无 LDE 假设的 Lemma 4.1。需核对 `zt E t` 的 `im ≠ 0`（由 `0 ≤ t < 1`）与各处 `Sblk` 参数一致。**不碰 `Green/EntryBound.lean`** | `Gauss/EntryBoundGauss.lean`（新建） | **Claude Code #2** | 进行中 |
+| T97 | **总装 (4.2)(4.3) 的高斯版**：把 T91/T92/T96 的四条 `StochDom`（`hLrow`/`hLcol`/`hLdiag`/`hLquad`）喂进 `entry_bound_stochDom` 与 `diag_bound_stochDom`，得到对高斯流无 LDE 假设的 Lemma 4.1。需核对 `zt E t` 的 `im ≠ 0`（由 `0 ≤ t < 1`）与各处 `Sblk` 参数一致。**不碰 `Green/EntryBound.lean`** | `Gauss/EntryBoundGauss.lean`（新建） | **Claude Code #2** | 已完成 |
 
 ---
 

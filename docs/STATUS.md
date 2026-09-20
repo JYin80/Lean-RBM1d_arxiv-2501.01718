@@ -1827,3 +1827,28 @@ stochDom_ldeQuad (hG : GaussIBP d) (hz : z.im ≠ 0) (hu0 : 0 ≤ u) (hu1 : u �
 `Green/EntryBound.lean` 的 `entry_bound_stochDom` / `diag_bound_stochDom`，得到 (4.2)(4.3)
 对高斯模型的无假设版本——那是个纯粹的对接工单（需要核对 `zt E t` 的 `im ≠ 0`、
 `0 ≤ t < 1` 与各处 `Sblk` 参数一致），**不碰 `Green/EntryBound.lean` 本身**，新开文件即可。
+
+**T97 ✔**（`Gauss/EntryBoundGauss.lean`，新建，零 sorry，不碰 `Green/EntryBound.lean`）：
+**Lemma 4.1 的 (4.2)(4.3) 对高斯流成立，不带任何大偏差假设。**
+
+```
+entry_bound_gauss (0 ≤ u) (u ≤ 1) (z.im ≠ 0) (‖m‖ = 1) (δ …) : StochDom (P d) …   -- (4.2)
+diag_bound_gauss  (hG : GaussIBP d) (0 < κ ≤ 1) (|E| ≤ 2−κ) (0 ≤ t < 1) (δ …) : StochDom (P d) …  -- (4.3)
+```
+
+这是两半项目（确定性的 `Green/EntryBound.lean` 与随机层的 `Gauss/*`）**第一次合上**。
+论文里四条 `[39, Lemma 3.3]` 的引用，现在都是定理：
+
+| `EntryBound` 的假设 | 由谁卸掉 |
+|---|---|
+| `hLrow` | T91 `stochDom_ldeRow` |
+| `hLcol` | T91 `stochDom_ldeCol` |
+| `hLdiag` | T92 `stochDom_normSq_Hflow_diag` |
+| `hLquad` | T96 `stochDom_ldeQuad` |
+
+`(zt E t).im ≠ 0` 由 `zt_im_ne_zero`（`|E| ≤ 2−κ`、`t < 1`）给出。本文件一次编译通过，
+没有新数学，纯对接。蓝图新节点 `lem:4.1-gauss`。全量构建通过，公理审计 **6771 条声明**全部合规。
+
+**仍未卸的**：(4.5)（`norm_sq_green_diag_sub_le_blk` 那条）还带 `hFA`/`hIBP`
+——`hFA` 已由 T88 卸掉，但 T88 的 STATUS 记了 (4.12) 本身有真实数学缺口
+（T86 只迭代一阶，T94 正在做）。所以 (4.5) 的高斯版要等 T94。

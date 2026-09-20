@@ -1723,6 +1723,20 @@
   $LW\le N$ sites.
 \end{proof}
 
+\begin{lemma}[Lemma 4.1 for the Gaussian model, with no LDE hypotheses]\label{lem:4.1-gauss}
+  \lean{RBM.Gauss.entry_bound_gauss, RBM.Gauss.diag_bound_gauss}
+  \leanok\uses{lem:4.1, lem:lde-linear, lem:lde-diag, lem:lde-quad-dom}
+  For the Gaussian flow $H_u=\sqrt u\,X$, (4.2) and (4.3) hold with \emph{no} large deviation
+  hypothesis: all four --- the row and column estimates of (4.8), the quadratic form of (4.7)
+  and $|H_{ii}|^2\prec S_{ii}$ --- are theorems.
+\end{lemma}
+\begin{proof}\leanok
+  Instantiate \texttt{entry\_bound\_stochDom} and \texttt{diag\_bound\_stochDom} at
+  $H=H_u$, feeding them \texttt{stochDom\_ldeRow}, \texttt{stochDom\_ldeCol},
+  \texttt{stochDom\_ldeQuad} and \texttt{stochDom\_normSq\_Hflow\_diag}.  For (4.3) the
+  spectral parameter is $z_t$, whose imaginary part is nonzero by $|E|\le2-\kappa$ and $t<1$.
+\end{proof}
+
 \begin{lemma}[Assembly of the fluctuation average: (4.12) into (4.5)]\label{lem:fluc-avg}
   \lean{RBM.Gauss.measurable_matrix_inv_apply, RBM.Gauss.measurable_green_apply, RBM.Gauss.measurable_condRow, RBM.Gauss.measurable_flucDiag, RBM.Gauss.measurable_flucAvg, RBM.Gauss.norm_green_apply_le_etaT, RBM.Gauss.greenMinorMat_eq_green_submatrix, RBM.Gauss.norm_greenDiagCentered_le_env, RBM.Gauss.rowIntegrable_greenDiagCentered, RBM.Gauss.FlucBound, RBM.Gauss.flucBound_env, RBM.Gauss.integral_norm_flucAvg_pow_le_of_flucBound, RBM.Gauss.integrable_norm_flucAvg_pow, RBM.Gauss.momentDom_flucAvg, RBM.Gauss.stochDom_flucAvg, RBM.Gauss.card_blockAvg_support, RBM.Gauss.card_Sblk_support, RBM.Gauss.stochDom_flucAvg_blockAvg, RBM.Gauss.stochDom_flucAvg_Sblk, RBM.Gauss.stochDom_flucAvg_blockAvg_env, RBM.Gauss.condExpDiag, RBM.Gauss.flucAvg_eq_sum_sub, RBM.Gauss.norm_trace_green_sub_mul_Eblk_le_flucAvg, RBM.Gauss.trace_green_sub_mul_Eblk_stochDom}
   \leanok\uses{lem:fluc-count, lem:fluc-vanish, lem:moment-dom, lem:4.1}

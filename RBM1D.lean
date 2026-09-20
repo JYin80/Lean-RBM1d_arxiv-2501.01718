@@ -16,6 +16,7 @@ import RBM1D.Gauss.LDEQuad
 import RBM1D.Gauss.LDEQuadDom
 import RBM1D.Gauss.LDEQuadInst
 import RBM1D.Gauss.LDEQuadT
+import RBM1D.Gauss.EntryBoundGauss
 import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.IBP

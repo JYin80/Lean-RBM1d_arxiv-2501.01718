@@ -11,6 +11,7 @@ import RBM1D.Gauss.Generator
 import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.MomentGronwall
 import RBM1D.Gauss.Model
+import RBM1D.Gauss.Moments
 import RBM1D.Hierarchy.Decay
 import RBM1D.Hierarchy.Kernel
 import RBM1D.Hierarchy.KernelDecay

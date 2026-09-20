@@ -13,6 +13,7 @@ import RBM1D.Gauss.FlucVanish
 import RBM1D.Gauss.FlucCount
 import RBM1D.Gauss.FlucAvg
 import RBM1D.Gauss.LDEQuad
+import RBM1D.Gauss.LDEQuadDom
 import RBM1D.Gauss.LDEQuadInst
 import RBM1D.Gauss.LDEQuadT
 import RBM1D.Gauss.Envelope

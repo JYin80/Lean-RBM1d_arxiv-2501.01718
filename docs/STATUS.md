@@ -1616,3 +1616,39 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 （`treeRep_general` vs `K_eq_sum_Kpi` 是脚本的假阳性：前缀绑定相同、结论不同。）
 全量构建通过，公理审计 6580 条声明全部合规。**这是第三次发现重复造轮子**（前两次 T38、T89），
 建议新引理入库前固定动作：`grep -rn "陈述关键词" RBM1D/`。
+
+**T91 ✔**（`Gauss/LDEHyp.lean`，新建，零 sorry）：把 T81 的 `≺` 落成 `RBM.entry_bound_stochDom`
+**逐字要求**的两条假设：
+
+```
+stochDom_ldeRow : StochDom (P d) (ldeRowLHS (Hflow …) (green …)) (ldeRowRHS (Sblk …) (green …))
+stochDom_ldeCol : StochDom (P d) (ldeColLHS (Hflow …) (green …)) (ldeColRHS (Sblk …) (green …))
+```
+
+指标是 `OffPair d.L d.W N`（`EntryBound` 用的那个），假设只有 `0 ≤ u ≤ 1` 与 `z.im ≠ 0`。
+三处缺口各自补上：
+
+1. **`G_ii ≠ 0` 现在是定理**（`RBM.green_diag_ne_zero`，一般 Hermitian 矩阵，无例外集）：
+   由单点 Ward 恒等式 `RBM.im_green_diag`——`Im G_ii = Im z · ‖G e_i‖²`。证法是取 `v = G e_i`，
+   则 `conj G_ii = ⟪v, (H−z)v⟫`，Hermitian 部分不贡献虚部；`v ≠ 0` 因为 `(H−z)v = e_i`，
+   正性由 `dotProduct_star_self_pos_iff`（需 `open scoped ComplexOrder`）。
+   这条以前在 `#40`/`#34` 里一直是携带的假设。
+2. **`V = 0` 的退化分支**：`highProb_norm_rowSum_sq_le`（`Gauss/RowIndep.lean`，T91 第二块）
+   把 `StochDom.highProb` 与 `rowSum_ae_eq_zero_of_varSum_eq_zero` 的 a.s. 论证交起来，
+   得到对每个 `τ > 0` 的高概率不等式 `‖Z‖² ≤ N^{2τ}·V`（在 `V = 0` 处也成立）。
+   辅助引理 `rowSum_rowCoeffNorm`：`V > 0` 时 `rowSum (rowCoeffNorm C) = (√V)⁻¹ · rowSum C`。
+3. **因子 `u`**：条件方差是 `u · ldeRowRHS`（`ldeRowRHS` 按论文用 `S` 而非 `tS`），
+   `u ≤ 1` 把它丢掉。通用桥 `stochDom_sq_of_rowSum` 一次写好，行/列两边都是它的实例
+   （取 `τ/4`，再用 `N^{τ/2} ≤ N^τ` 造矛盾）。
+
+列版本另需 `minorRowConj_eq_greenMinor`、`ldeColLHS_eq`、`rowVarSum_minorRowConj_eq`
+（`conj(∑ G^{(j)}_{kl} H_{lj}) = ∑ H_{jl} conj G^{(j)}_{kl}`，用 `Hflow` 的 Hermitian 性与 `Sblk_comm`）。
+顺手把 `#LdeIdx ≤ N²` 抽成 `eventually_card_LdeIdx_le`（原先在 `RowIndep.lean` 里抄了两遍）。
+
+蓝图节点仍是 `lem:lde-linear`（证明段补了三处缺口的说明），paper-deltas **#62**。
+全量 `lake build RBM1D` 通过，公理审计 **6605 条声明**全部合规。
+
+**下一步（给接手的人）**：`entry_bound_stochDom` 的 `hLrow`/`hLcol` 已备齐，
+`diag_bound_stochDom` 还差 `hLquad`（T82 的 `LDEQuad`，`Gauss/LDEQuad.lean`）与
+`hLdiag`（`‖H_ii‖² ≺ S_ii`，尚无工单）——两者同样需要从矩界经 `stochDom_of_momentDom` 落成
+`StochDom`，`stochDom_sq_of_rowSum` 的写法可以照抄。

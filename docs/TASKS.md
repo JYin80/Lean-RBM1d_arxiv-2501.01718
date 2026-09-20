@@ -180,7 +180,7 @@
 | T78 | 连续归纳（bootstrap）原理：`φ` 连续 + 自改进 `φ ≤ C → φ ≤ B` ⟹ `φ ≤ B`；T75 卸停时 (5.43) 的分析内核，**不依赖 T72** | `Analysis/Bootstrap.lean`（新建） | Claude Code #2 | **完成**（`le_of_bootstrap`；T75 直接调用即可） |
 | T89 | 维护：下沉矩阵可测性（`measurable_matrix_inv_apply` 在 `Gauss/FlucAvg.lean` 与 `Gauss/RowIndep.lean` 各证了一遍） | `Defs/MatrixMeasurable.lean`（新建） | Claude Code #2 | **完成** |
 | T90 | 维护：全库重复扫描 + 下沉 `half_le_ellHat`（`Propagator/Edges.lean` 与 `Loop/Cor35.lean` 各一份）；其余重复项列入 STATUS 交各自负责人 | `Propagator/DecayComplex.lean` | Claude Code #2 | **完成**（`half_le_ellHat` 已下沉；其余 4 处列在 STATUS，归各自负责人） |
-| T91 | 把 T81 的 `≺` 落成 `EntryBound` 需要的假设形式：高概率下的 `LDERow`/`LDECol`（含 `V = 0` 退化分支的 a.s. 论证） | `Gauss/LDEHyp.lean`（新建） | **Claude Code #2** | 进行中 |
+| T91 | 把 T81 的 `≺` 落成 `EntryBound` 需要的假设形式：高概率下的 `LDERow`/`LDECol`（含 `V = 0` 退化分支的 a.s. 论证） | `Gauss/LDEHyp.lean`（新建） | **Claude Code #2** | 已完成 |
 
 ---
 

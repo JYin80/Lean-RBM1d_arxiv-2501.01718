@@ -20,6 +20,7 @@ import RBM1D.Gauss.MomentGronwall
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Model
 import RBM1D.Gauss.Moments
+import RBM1D.Gauss.LDEHyp
 import RBM1D.Gauss.RowIndep
 import RBM1D.Hierarchy.Decay
 import RBM1D.Hierarchy.Kernel

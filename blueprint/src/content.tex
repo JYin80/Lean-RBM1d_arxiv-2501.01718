@@ -1566,7 +1566,14 @@
     RBM.Gauss.measurable_minorCol, RBM.Gauss.minorCol_eq_greenMinor, RBM.Gauss.ldeRowLHS_eq,
     RBM.Gauss.rowVarSum_eq, RBM.Gauss.stochDom_rowSum_general,
     RBM.Gauss.stochDom_rowSum_minorCol, RBM.Gauss.minorRowConj,
-    RBM.Gauss.stochDom_rowSum_minorRowConj}
+    RBM.Gauss.stochDom_rowSum_minorRowConj,
+    RBM.Gauss.lintegral_norm_rowSum_pow_le_of_const,
+    RBM.Gauss.rowSum_ae_eq_zero_of_varSum_eq_zero, RBM.Gauss.rowSum_rowCoeffNorm,
+    RBM.Gauss.highProb_norm_rowSum_sq_le, RBM.Gauss.eventually_card_LdeIdx_le,
+    RBM.im_green_diag, RBM.green_diag_ne_zero, RBM.Gauss.isUnit_det_Hflow_sub,
+    RBM.Gauss.green_Hflow_diag_ne_zero, RBM.Gauss.minorRowConj_eq_greenMinor,
+    RBM.Gauss.ldeColLHS_eq, RBM.Gauss.rowVarSum_minorRowConj_eq,
+    RBM.Gauss.stochDom_sq_of_rowSum, RBM.Gauss.stochDom_ldeRow, RBM.Gauss.stochDom_ldeCol}
   \leanok\uses{def:gauss-model, lem:moment-dom}
   For the Gaussian model, $\bigl|\sum_{k\ne i}H_{ik}G^{(i)}_{kj}\bigr|
   \prec\bigl(\sum_k S_{ik}|G^{(i)}_{kj}|^2\bigr)^{1/2}$ uniformly in $(i,j)$, and the same for the
@@ -1583,6 +1590,14 @@
   removes every integrability side condition.  The union bound over the $\le(LW)^2\le N^2$ pairs
   is \texttt{stochDom\_of\_momentDom}.  The column case is the conjugate row sum, by Hermitian
   symmetry.
+
+  To land on the hypotheses of \texttt{entry\_bound\_stochDom} three gaps are closed.  The
+  normalised bound says nothing where the conditional variance vanishes, while the LDE
+  inequality demands that the sum itself vanish there: it does, almost surely.  The
+  identification of $\mathtt{ldeRowLHS}$ with the row sum needs $H-z$ invertible and
+  $G_{ii}\ne0$; both hold for \emph{every} $\omega$ when $\operatorname{Im}z\ne0$, the second by
+  the one-site Ward identity $\operatorname{Im}G_{ii}=\operatorname{Im}z\,\|Ge_i\|^2$.  Finally
+  the variance carries a factor $u$, harmless for $u\le1$.
 \end{proof}
 
 \begin{lemma}[Quadratic LDE: Gaussian Hanson--Wright by moment recursion]\label{lem:lde-quad}

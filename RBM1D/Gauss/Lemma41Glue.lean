@@ -362,6 +362,104 @@ theorem stochDom_indicator_diag (hG : GaussIBP d) {κ : ℝ} (hκ0 : 0 < κ) (h�
   have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
   linarith [hΦ0 N]
 
+/-- **The off-diagonal half of Lemma 4.1 at a fixed time**: `1_Ω|G_{ij}|² ≺ Φ + W⁻¹`. -/
+theorem stochDom_indicator_offdiag {κ : ℝ} (hκ0 : 0 < κ) (hE : |E| ≤ 2 - κ)
+    (hu0 : 0 ≤ u) (hu1 : u < 1) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hδ0 : ∀ N, 0 ≤ ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6))
+    (hδ : ∀ᶠ N : ℕ in Filter.atTop,
+      ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6) ≤ (N : ℝ) ^ (-c₀))
+    (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
+    StochDom (P d)
+      (fun N (p : OffPair d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖green (Hflow d N u ω) (zt E u) p.1.1 p.1.2‖ ^ 2) ω)
+      (fun N _ _ => Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
+  have hz : (zt E u).im ≠ 0 := zt_im_ne_zero hκ0 hE hu1
+  have hm : ‖mE E‖ = 1 := norm_mE (by linarith [abs_nonneg E])
+  have hset : ∀ N : ℕ, Step1.goodEv (sample d) E N u
+      = goodSet (L := d.L) (W := d.W) (fun N ω => Hflow d N u ω) (zt E u) (mE E)
+          (fun N => ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6)) N :=
+    fun N => goodEv_eq_goodSet E N u
+  have h1 : StochDom (P d)
+      (fun N (p : OffPair d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖green (Hflow d N u ω) (zt E u) p.1.1 p.1.2‖ ^ 2) ω)
+      (fun N (p : OffPair d.L d.W N) ω =>
+        (∑ a ∈ sbSupport (d.L N), ∑ b ∈ sbSupport (d.L N),
+            Lre (Hflow d N u ω) (zt E u) (p.1.2.1 + b) (p.1.1.1 + a))
+          + if p.1.1.1 - p.1.2.1 ∈ sbSupport (d.L N) then ((d.W N : ℕ) : ℝ)⁻¹ else 0) := by
+    simp only [hset]
+    exact entry_bound_gauss hu0 hu1.le hz hm hδ0 hc₀ hδ
+  refine StochDom.trans_indicator h1 (stochDom_indicator_entryControl hΦ0 hΦ)
+    (fun N _ _ => ?_)
+  have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+  linarith [hΦ0 N]
+
+/-- **Lemma 4.1 at a fixed time, in the language of `RBM.Lemma41Flow`**:
+`1_Ω‖G_u − m‖²_max ≺ Φ + W⁻¹`, given `1_Ω‖L_{(+,-),(a,b)}‖ ≺ Φ` with `Φ` deterministic.
+
+This is `RBM.Lemma41Flow` with the time quantifier removed; the time-uniform statement needs a
+Hölder modulus in `u`, see `docs/STATUS.md` (T99) and tickets T100/T101. -/
+theorem stochDom_indicator_llMax_sq {V : ℕ → Type*} (hG : GaussIBP d) {κ : ℝ} (hκ0 : 0 < κ)
+    (hκ1 : κ ≤ 1) (hE : |E| ≤ 2 - κ) (hu0 : 0 ≤ u) (hu1 : u < 1) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hδ0 : ∀ N, 0 ≤ ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6))
+    (hδ : ∀ᶠ N : ℕ in Filter.atTop,
+      ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6) ≤ (N : ℝ) ^ (-c₀))
+    (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
+    StochDom (P d)
+      (fun N (_ : V N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => Step1.llMax (sample d) E N u ω ^ 2) ω)
+      (fun N _ _ => Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
+  refine StochDom.of_subset_union
+    (stochDom_indicator_offdiag hκ0 hE hu0 hu1 hc₀ hδ0 hδ hΦ0 hΦ)
+    (stochDom_indicator_diag hG hκ0 hκ1 hE hu0 hu1 hc₀ hδ0 hδ hΦ0 hΦ)
+    fun τ hτ => ⟨τ, hτ, ?_⟩
+  filter_upwards with N
+  intro ω hω
+  simp only [badSet, Set.mem_ofPred_eq] at hω
+  obtain ⟨-, hlt⟩ := hω
+  have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+  have hC : (0 : ℝ) ≤ (N : ℝ) ^ τ * (Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
+    have h1 : (0 : ℝ) ≤ Φ N + ((d.W N : ℕ) : ℝ)⁻¹ := by linarith [hΦ0 N]
+    have h2 : (0 : ℝ) ≤ (N : ℝ) ^ τ := Real.rpow_nonneg (Nat.cast_nonneg N) τ
+    positivity
+  -- the failure forces `ω ∈ Ω`
+  by_cases hmem : ω ∈ Step1.goodEv (sample d) E N u
+  · rw [Set.indicator_of_mem hmem] at hlt
+    set c : ℝ := (N : ℝ) ^ τ * (Φ N + ((d.W N : ℕ) : ℝ)⁻¹) with hc
+    set r : ℝ := Real.sqrt c with hr
+    have hr0 : 0 ≤ r := Real.sqrt_nonneg c
+    have hr2 : r ^ 2 = c := Real.sq_sqrt hC
+    -- some entry exceeds `r`
+    have hex : ∃ ij : (band d).Idx N × (band d).Idx N,
+        r < (sample d).llErr E N u ω ij := by
+      by_contra hcon
+      push Not at hcon
+      have : Step1.llMax (sample d) E N u ω ≤ r := Step1.llMax_le _ hcon
+      have hm0 : 0 ≤ Step1.llMax (sample d) E N u ω := Step1.llMax_nonneg _ N u ω
+      nlinarith [hlt, hr2, this, hm0]
+    obtain ⟨ij, hij⟩ := hex
+    have hij0 : 0 ≤ (sample d).llErr E N u ω ij := norm_nonneg _
+    have hsq : c < (sample d).llErr E N u ω ij ^ 2 := by nlinarith [hij, hr0, hr2, hij0]
+    rw [(sample d).llErr_eq N u ω ij] at hsq
+    by_cases hne : ij.1 = ij.2
+    · refine Set.mem_union_right _ ⟨ij.2, ?_⟩
+      show c < (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖green (Hflow d N u ω) (zt E u) ij.2 ij.2 - mE E‖ ^ 2) ω
+      rw [Set.indicator_of_mem hmem]
+      rw [hne] at hsq
+      simp only [↓reduceIte] at hsq
+      exact hsq
+    · refine Set.mem_union_left _ ⟨⟨(ij.1, ij.2), hne⟩, ?_⟩
+      show c < (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖green (Hflow d N u ω) (zt E u) ij.1 ij.2‖ ^ 2) ω
+      rw [Set.indicator_of_mem hmem]
+      simp only [hne, ↓reduceIte, sub_zero] at hsq
+      exact hsq
+  · rw [Set.indicator_of_notMem hmem] at hlt
+    exact absurd hlt (not_lt.2 hC)
+
 end Gauss
 
 end RBM

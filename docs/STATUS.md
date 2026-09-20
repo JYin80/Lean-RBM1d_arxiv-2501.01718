@@ -1986,3 +1986,32 @@ Step1 那边是 `Cond272` + `hreg`）。**时间一致性（T99 的 (C)）仍不
 **当前状态**：(4.12) 除一条具名接口 `FlucGain` 外无假设；**(4.5) 还差 `hIBP`（T83，堵在 T70）与确定性控制 `ρB` 与论文随机控制 `Lmax` 的比较**（那是局部律，不属涨落平均）。
 `FlucGain`（高阶小行展开：再作用 `m` 个 `Q_{κ_i}` 得 `ρ^m`）已证 `m = 0` 与 **`m = 1`**（`norm_qRow_flucDiag_le`：`Q_κ` 湮灭 `Z^{(κ)}_k`，后者与 `Z_k` 相差 T85 的 `ε`，故 `‖Q_κ Z_k‖ ≤ 2ε ≍ Ψ²`）；
 **`m ≥ 2` 需要迭代小行 `G^{(κ₁κ₂)}` 及其 `≺ Ψ^{m+1}` 估计，仓库里还没有**。`flucGain_env` 是无条件的（无增益，`ρ = 2`）实例，故接口不空洞。paper-deltas #61。
+
+**T102 ✔**（`Gauss/Lemma41Glue.lean`，零 sorry，不碰 `Hierarchy/Step1.lean`、`Green/EntryBound.lean`）：
+**固定时刻的 `Lemma41Flow` 成立。**
+
+```
+stochDom_indicator_llMax_sq (hG) (0<κ≤1) (|E|≤2−κ) (0≤u<1) (δ 的两条) (0≤Φ) (LoopHyp d E u Φ) :
+  StochDom (P d) (fun N _ ω => 1_{Ω_u} (llMax_u ω)²) (fun N _ _ => Φ N + W⁻¹)
+```
+
+即 `Lemma41Flow` **去掉时间量词**后的形状。T99 审计的 (A)(B) 两块全部做完：
+
+| 块 | 结果 |
+|---|---|
+| 词典 | `norm_gloop_pm_eq_Lre`、`Sample.llErr_eq`、`Step1.goodEv_eq_setOf_goodEvent`、`Gauss.sample_Lval_pm`、`Gauss.goodEv_eq_goodSet` |
+| 指示函数传递 | `StochDom.trans_indicator`（坏事件上左端为正 ⟹ ω ∈ Ω，控制上的指示函数白送）、`StochDom.control_mono` |
+| 控制传递 | `stochDom_indicator_Lmax`（`sup'` 可达）、`card_sbSupport_le` + `sum_sum_Lre_le`（≤ 9·L^max）、`stochDom_indicator_entryControl` |
+| 合成 | `stochDom_indicator_offdiag`（(4.2)）、`stochDom_indicator_diag`（(4.3)）、`stochDom_indicator_llMax_sq`（`llMax² > c` ⟹ 某个 `llErr > √c`，按 `i = j` 与否分到两边） |
+
+两处小心得：
+* `StochDom.of_subset` 要求**结论与前提的指标类型相同**；指标类型不同时用 `of_subset_union h h`
+  （代价是 `D+1`，无所谓）。
+* `Lmax` 是 `Finset.sup'`，用 `Finset.exists_mem_eq_sup'` 取到达点，就能把
+  「`1_Ω L^max ≺ Φ`」归约到假设里逐对的 `1_Ω L^re_{ab} ≺ Φ`。
+
+蓝图新节点 `lem:4.1-fixedtime`。全量构建通过，公理审计 **6937 条声明**全部合规。
+
+**剩下的就只有时间一致性（T99 的 (C)）**：`Lemma41Flow` 的指标集是
+`TimeIcc s t N × (ZMod L × ZMod L)`，要对 `u` 一致。缺口是 T100（`‖X‖ ≺ 1`）
+与 T101（Hölder 模只在高概率事件上成立的 `stochDom_timeIcc_of_holder` 变体），两张都还空闲。

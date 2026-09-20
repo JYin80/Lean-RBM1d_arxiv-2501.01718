@@ -1723,6 +1723,30 @@
   $LW\le N$ sites.
 \end{proof}
 
+\begin{lemma}[Lemma 4.1 at a fixed time, in the language of the flow]\label{lem:4.1-fixedtime}
+  \lean{RBM.norm_gloop_pm_eq_Lre, RBM.Sample.llErr_eq,
+    RBM.Step1.goodEv_eq_setOf_goodEvent, RBM.StochDom.control_mono,
+    RBM.StochDom.trans_indicator, RBM.Gauss.sample_Lval_pm, RBM.Gauss.goodEv_eq_goodSet,
+    RBM.Gauss.LoopHyp, RBM.Gauss.loopHyp_iff, RBM.Gauss.stochDom_indicator_Lmax,
+    RBM.Gauss.card_sbSupport_le, RBM.Gauss.sum_sum_Lre_le,
+    RBM.Gauss.stochDom_indicator_entryControl, RBM.Gauss.stochDom_indicator_diag,
+    RBM.Gauss.stochDom_indicator_offdiag, RBM.Gauss.stochDom_indicator_llMax_sq}
+  \leanok\uses{lem:4.1-gauss, lem:4.1}
+  For the Gaussian flow at a fixed time $u$: if $1_\Omega\|L_{u,(+,-),(a,b)}\|\prec\Phi$ with
+  $\Phi$ deterministic, then $1_\Omega\|G_u-m\|_{\max}^2\prec\Phi+W^{-1}$.  This is
+  \texttt{Lemma41Flow} with the time quantifier removed.
+\end{lemma}
+\begin{proof}\leanok
+  The two vocabularies agree: the $(+,-)$ two-loop is the nonnegative real
+  $W^{-2}\sum|G|^2$, so its norm is $L^{re}$; \texttt{llErr} is the entrywise quantity of
+  \texttt{GoodEvent}; and \texttt{goodEv} is \texttt{goodSet} at $\delta=(W\ell_u\eta_u)^{-1/6}$.
+  The controls of (4.2) and (4.3) carry no indicator while the hypothesis does, but they chain
+  anyway, because on the failure event the left-hand side is positive and so $\omega$ lies in
+  $\Omega$.  Each of the at most nine two-loops in the control of (4.2) is at most $L^{\max}$,
+  which is attained, and $\|G-m\|_{\max}^2>c$ forces some entry to exceed $\sqrt c$; the
+  off-diagonal entries are covered by (4.2) and the diagonal ones by (4.3).
+\end{proof}
+
 \begin{lemma}[Lemma 4.1 for the Gaussian model, with no LDE hypotheses]\label{lem:4.1-gauss}
   \lean{RBM.Gauss.entry_bound_gauss, RBM.Gauss.diag_bound_gauss}
   \leanok\uses{lem:4.1, lem:lde-linear, lem:lde-diag, lem:lde-quad-dom}

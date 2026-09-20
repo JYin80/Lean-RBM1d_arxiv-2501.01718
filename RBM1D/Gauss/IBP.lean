@@ -280,4 +280,51 @@ theorem hasDerivAt_green_apply_update (d : Dims) (N : ℕ) (u : ℝ) {z : ℂ} (
 
 end Entry
 
+/-! ### Step 2e: the integration step
+
+This is where the display stops being pathwise.  `RBM.Gauss.gaussIBP` (T104) replaces the
+Gaussian coordinate `ω_c` by `gvar_c · ∂_c`, and `∂_c` of a resolvent entry is the sandwich
+of step 2a.  The only thing to check is that both sides are tame, and for the derivative
+that follows by writing the sandwich as a double sum of entries. -/
+
+section Integral
+
+variable {d : Dims} {N : ℕ} {E t : ℝ}
+
+/-- A resolvent sandwich is tame: expand it as a double sum of products of entries. -/
+theorem tame_green_mul_mul_green_apply (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    (B : Matrix (d.Idx N) (d.Idx N) ℂ) (a b : d.Idx N) :
+    Tame d (fun ω : Ω d => (green (Hflow d N u ω) (zt E t) * B
+      * green (Hflow d N u ω) (zt E t)) a b) := by
+  have hfun : (fun ω : Ω d => (green (Hflow d N u ω) (zt E t) * B
+      * green (Hflow d N u ω) (zt E t)) a b)
+      = fun ω : Ω d => ∑ l : d.Idx N, ∑ k : d.Idx N,
+        green (Hflow d N u ω) (zt E t) a k * B k l
+          * green (Hflow d N u ω) (zt E t) l b := by
+    funext ω
+    rw [Matrix.mul_apply]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [Matrix.mul_apply, Finset.sum_mul]
+  rw [hfun]
+  exact Tame.sum _ fun l _ => Tame.sum _ fun k _ =>
+    ((tame_green_apply hE ht u a k).mul (Tame.const _)).mul (tame_green_apply hE ht u l b)
+
+/-- **Gaussian integration by parts for one resolvent entry.**  `E[ω_c · G_ab]` becomes
+`gvar_c · E[∂_c G_ab]`, and the derivative is the sandwich `-√u · (G B_c G)_ab`.  This is the
+step where the `H_ik` factor of the p. 50 display is eliminated. -/
+theorem integral_coord_mul_green_apply (hG : GaussIBP d) (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {p : d.Idx N × d.Idx N × Bool} (hp : p ∈ usedCoord d N) (a b : d.Idx N) :
+    ∫ ω, (ω (crd d N p) : ℂ) * green (Hflow d N u ω) (zt E t) a b ∂(P d)
+      = (gvar d (crd d N p) : ℝ) * ∫ ω, -((Real.sqrt u : ℂ)
+          * (green (Hflow d N u ω) (zt E t) * Bmat d N p.1 p.2.1 p.2.2
+            * green (Hflow d N u ω) (zt E t)) a b) ∂(P d) := by
+  refine hG.stein (crd d N p) _ _ (tame_green_apply hE ht u a b) ?_ ?_
+  · exact ((Tame.const (d := d) (Real.sqrt u : ℂ)).mul
+      (tame_green_mul_mul_green_apply hE ht u _ a b)).neg
+  · intro ω
+    have h := hasDerivAt_green_apply_update d N u (zt_im_ne_zero_of_lt_one hE ht) ω hp a b
+    simpa [Complex.real_smul] using h
+
+end Integral
+
 end RBM.Gauss

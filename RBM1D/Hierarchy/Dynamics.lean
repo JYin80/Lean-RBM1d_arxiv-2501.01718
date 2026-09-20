@@ -125,4 +125,30 @@ theorem primBil_eq_two_add (W : ℕ) (K K' : LoopIdx (ZMod L) → ℂ) (I : Loop
         + ∑ lK ∈ (Finset.range N).erase 2, primBilLen L W lK K K' I := by
   rw [← sum_primBilLen L W K K' I hN, ← Finset.add_sum_erase _ _ h2]
 
+/-! ### The `n = 1` hierarchy is linear
+
+A fact needed for the feasibility question "can (4.5) be obtained from the hierarchy instead
+of from the fluctuation averaging (4.12)?".  The quadratic coupling of (2.48) sums over
+`1 <= k < l <= n`; at `n = 1` that range is empty, so the `1`-loop equation carries **no**
+quadratic term and is *linear* in `L - K`.  (Recall `K_{t,+,a} = m` by (2.49), and
+`L_{t,+,a} - m = <(G - m) E_a>`, so (4.5) is literally the `n = 1` case of (2.78).) -/
+
+theorem primBil_of_length_one (W : ℕ) (K K' : LoopIdx (ZMod L) → ℂ) (I : LoopIdx (ZMod L))
+    (h1 : I.length = 1) : primBil L W K K' I = 0 := by
+  rw [primBil, h1, Finset.Icc_self, Finset.sum_singleton, Finset.Ioc_self, Finset.sum_empty,
+    mul_zero]
+
+/-- The same for the quadratic right-hand side of (2.48) itself. -/
+theorem primRhs_of_length_one (W : ℕ) (K : LoopIdx (ZMod L) → ℂ) (I : LoopIdx (ZMod L))
+    (h1 : I.length = 1) : primRhs L W K I = 0 := by
+  rw [← primBil_self]
+  exact primBil_of_length_one L W K K I h1
+
+/-- Consequently the `n = 1` difference `L - K` obeys a hierarchy with **no** quadratic
+coupling: subtracting (5.11) from (5.10) at `n = 1` leaves only the error terms. -/
+theorem primRhs_sub_of_length_one (W : ℕ) (Lf K : LoopIdx (ZMod L) → ℂ)
+    (I : LoopIdx (ZMod L)) (h1 : I.length = 1) :
+    primRhs L W Lf I - primRhs L W K I = 0 := by
+  rw [primRhs_of_length_one L W Lf I h1, primRhs_of_length_one L W K I h1, sub_self]
+
 end RBM

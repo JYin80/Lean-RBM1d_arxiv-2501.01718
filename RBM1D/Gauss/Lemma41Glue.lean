@@ -165,6 +165,61 @@ theorem goodEv_eq_goodSet (E : ℝ) (N : ℕ) (u : ℝ) :
           (fun N => ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6)) N :=
   Step1.goodEv_eq_setOf_goodEvent (sample d) N u
 
+/-! ### Transferring the random controls of (4.2) and (4.3) to the deterministic `Φ`
+
+`RBM.Lemma41Flow` supplies `1_Ω‖L_{(+,-),(a,b)}‖ ≺ Φ` with `Φ` deterministic.  The controls of
+`RBM.entry_bound_stochDom` and `RBM.diag_bound_stochDom` are built from the same two-loops, so
+they too are `≺ Φ` (up to a constant, which `N^τ` absorbs). -/
+
+variable {d : Dims} {E u : ℝ} {Φ : ℕ → ℝ}
+
+/-- The hypothesis of `RBM.Lemma41Flow` at a fixed time, restated with `RBM.Lre`. -/
+abbrev LoopHyp (d : Dims) (E u : ℝ) (Φ : ℕ → ℝ) : Prop :=
+  StochDom (P d)
+    (fun N (ab : ZMod (d.L N) × ZMod (d.L N)) ω =>
+      (Step1.goodEv (sample d) E N u).indicator
+        (fun ω => Lre (Hflow d N u ω) (zt E u) ab.1 ab.2) ω)
+    (fun N _ _ => Φ N)
+
+/-- `RBM.Gauss.LoopHyp` is exactly the hypothesis of `RBM.Lemma41Flow` at a fixed time. -/
+theorem loopHyp_iff :
+    LoopHyp d E u Φ ↔ StochDom (P d)
+      (fun N (ab : ZMod (d.L N) × ZMod (d.L N)) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖(sample d).Lval E N u ω (pmLoop ab.1 ab.2)‖) ω)
+      (fun N _ _ => Φ N) := by
+  have h : ∀ (N : ℕ) (ab : ZMod (d.L N) × ZMod (d.L N)) (ω : Ω d),
+      ‖(sample d).Lval E N u ω (pmLoop ab.1 ab.2)‖
+        = Lre (Hflow d N u ω) (zt E u) ab.1 ab.2 := fun N ab ω =>
+    sample_Lval_pm E N u ω ab.1 ab.2
+  constructor <;> intro hh <;>
+    simpa only [h] using hh
+
+/-- **`1_Ω L^{max} ≺ Φ`**: the maximum over the (finitely many) block pairs is attained. -/
+theorem stochDom_indicator_Lmax (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
+    StochDom (P d)
+      (fun N (_ : Unit) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => Lmax (Hflow d N u ω) (zt E u)) ω)
+      (fun N _ _ => Φ N) := by
+  unfold LoopHyp at hΦ
+  refine StochDom.of_subset_union hΦ hΦ fun τ hτ => ⟨τ, hτ, ?_⟩
+  filter_upwards with N
+  intro ω hω
+  refine Set.mem_union_left _ ?_
+  simp only [badSet, Set.mem_ofPred_eq] at hω ⊢
+  obtain ⟨-, hlt⟩ := hω
+  by_cases hmem : ω ∈ Step1.goodEv (sample d) E N u
+  · rw [Set.indicator_of_mem hmem] at hlt
+    obtain ⟨p, -, hp⟩ := Finset.exists_mem_eq_sup' (Finset.univ_nonempty)
+      (fun p : ZMod (d.L N) × ZMod (d.L N) => Lre (Hflow d N u ω) (zt E u) p.1 p.2)
+    unfold Lmax at hlt
+    rw [hp] at hlt
+    exact ⟨p, by rw [Set.indicator_of_mem hmem]; exact hlt⟩
+  · rw [Set.indicator_of_notMem hmem] at hlt
+    exact absurd hlt (not_lt.2
+      (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) τ) (hΦ0 N)))
+
 end Gauss
 
 end RBM

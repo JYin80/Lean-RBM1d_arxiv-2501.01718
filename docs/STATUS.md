@@ -1673,3 +1673,33 @@ stochDom_normSq_Hflow_diag (hu0 : 0 ≤ u) :
 **`diag_bound_stochDom` 的四条假设现状**：`hLrow` ✔（T91）、`hLcol` ✔（T91）、`hLdiag` ✔（T92）、
 **`hLquad` 仍缺**——T82 证到 `E|Q|^{2p} ≤ (2p−1)^p E[T^p]`，还差 `E[T^p] ≤ C_p E[Vq^p]`
 （`Gauss/LDEQuad.lean` 文件头有草图）。这是通往 (4.3) 的唯一剩余缺口。
+
+**T93 进行中**（`Gauss/LDEQuadT.lean`，新建，**不碰 `Gauss/LDEQuad.lean`**）：补 T82 留下的唯一
+数学缺口 `E[T^p] ≤ C_p E[Vq^p]`。
+
+**第一块 ✔**：行方向的 Wirtinger 导子与它的分部积分恒等式。
+
+```
+wirtVal C l a b = r * (a − ε_l·i·b)          -- D_l = r(∂_{a_l} − ε_l i ∂_{b_l})
+integral_conj_h_mul_gen : ∫ conj(h_l)·Z = w_l · ∫ D_l Z        （Z tame）
+```
+
+四个导子值（这是整条路线成立的原因——`T` 由 `U·Ū`、`V·V̄` 组成，求导后只剩 `B`）：
+
+| | 值 |
+|---|---|
+| `D_l U_k` | `0` |
+| `D_l V̄_k` | `0` |
+| `D_l Ū_k` | `2r²·B̄_{kl}` |
+| `D_l V_k` | `2r²·B_{lk}` |
+
+代数上全由 `(ε_l·i)² = −1` 一条闭合（`linear_combination`）。
+`integral_conj_h_mul_gen` 是 `GaussIBP.stein` 对行的两个坐标各用一次，
+再配 `conj(h_l) = r(ω_{a_l} − ε_l i ω_{b_l})`；它是 `integral_chaos_mul` 的「单个行元」版本。
+
+**下一步**：`E[T^p] = ∑_k σ_k E[(U_kŪ_k + V_kV̄_k)T^{p−1}]`，对每个 `h̄_l` 用上面的恒等式；
+对角项恰好给出 `E[Vq·T^{p−1}]`，交叉项先在 `(k,m)` 后在 `k` 用两次 Cauchy–Schwarz
+压成 `Vq·T`，最后用 `young_pow`（与 `mom_succ_le` 同一条）闭合。
+
+蓝图新节点 `lem:lde-quad-T`（**故意不打 `\leanok`**：结论未证，依赖图上应当显示为缺口），
+节点里记了路线与已落地的部分。全量构建通过，公理审计 **6624 条声明**全部合规。

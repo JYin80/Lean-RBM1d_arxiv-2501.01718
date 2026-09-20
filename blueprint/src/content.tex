@@ -1613,6 +1613,33 @@
   coordinate, and Young's inequality with a rational exponent close the recursion.
 \end{proof}
 
+\begin{lemma}[Positive chaos moment bound: $\mathbb E[T^p]\le C_p\,\mathbb E[V_q^p]$]\label{lem:lde-quad-T}
+  \uses{lem:lde-quad}
+  \emph{Not yet formalized} --- the one remaining mathematical gap of the quadratic estimate.
+  With $T=\sum_k\sigma_k(\|U_k\|^2+\|V_k\|^2)$ and
+  $V_q=\sum_{k,l}\sigma_k\|B_{kl}\|^2\sigma_l$, one has $\mathbb E[T^p]\le C_p\,\mathbb E[V_q^p]$;
+  together with \texttt{mom\_succ\_le} this turns $\mathbb E|Q|^{2p}\le(2p-1)^p\mathbb E[T^p]$
+  into the paper's control, and hence gives the hypothesis \texttt{hLquad} of
+  \texttt{diag\_bound\_stochDom}.  At $p=1$ it is the identity \texttt{momT\_zero},
+  $\mathbb E[T]=2\mathbb E[V_q]$.
+
+  \emph{Route} (conditioning-free, so that no conditional expectation is needed).  Run the same
+  Gaussian integration by parts on $\mathbb E[T^p]$, with the Wirtinger derivation along the row
+  entry, $D_l=r(\partial_{a_l}-\varepsilon_l i\,\partial_{b_l})$.  It satisfies
+  $D_lU_k=0$, $D_l\bar V_k=0$, $D_l\bar U_k=2r^2\bar B_{kl}$, $D_lV_k=2r^2B_{lk}$, so the
+  diagonal term reproduces $V_q\,T^{p-1}$ exactly and the cross term is bounded by
+  Cauchy--Schwarz, first in $(k,m)$ and then in $k$, by $V_q\,T^{p-1}$ again.  The resulting
+  $\mathbb E[T^p]\le C_p\,\mathbb E[V_qT^{p-1}]$ is closed by the same pointwise Young inequality
+  \texttt{young\_pow} that closes \texttt{mom\_succ\_le}.
+
+  \emph{Formalized so far} (\texttt{RBM1D/Gauss/LDEQuadT.lean}): the derivation
+  \texttt{RBM.Gauss.RowChaos.wirtVal} with its four values
+  \texttt{wirtVal\_U}, \texttt{wirtVal\_V}, \texttt{wirtVal\_conj\_U},
+  \texttt{wirtVal\_conj\_V}, and the master identity
+  \texttt{RBM.Gauss.RowChaos.integral\_conj\_h\_mul\_gen}:
+  $\int\bar h_l\,Z=w_l\int D_lZ$ for tame $Z$.
+\end{lemma}
+
 \begin{lemma}[Diagonal LDE: $|H_{ii}|^2\prec S_{ii}$]\label{lem:lde-diag}
   \lean{RBM.Sblk_diag_pos, RBM.Gauss.integral_pow_coord, RBM.Gauss.integrable_pow_coord,
     RBM.Gauss.normSq_Hflow_diag, RBM.Gauss.integral_norm_Hflow_diag_pow,

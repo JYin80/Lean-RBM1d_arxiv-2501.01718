@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.Model
 import RBM1D.Green.Minor
 import RBM1D.Gauss.LinearForm
+import RBM1D.Gauss.Generator
 
 /-!
 # The minor resolvent does not read row `i`
@@ -299,5 +300,53 @@ theorem integral_norm_row_sum_pow_le {u : ℝ} (hu : 0 ≤ u) (i : d.Idx N) (c :
   simp only [mul_pow, div_pow]
   field_simp
   ring
+
+/-! ### The two concrete finite blocks -/
+
+/-- The coordinates that `H` at size `N` actually reads. -/
+def relCoord (d : Dims) (N : ℕ) : Finset (Coord d) := (usedCoord d N).image (crd d N)
+
+/-- The relevant coordinates outside row `i`. -/
+def offRowCoord (d : Dims) (N : ℕ) (i : d.Idx N) : Finset (Coord d) :=
+  relCoord d N \ rowSet d N i
+
+theorem disjoint_rowSet_offRowCoord (i : d.Idx N) :
+    Disjoint (rowSet d N i) (offRowCoord d N i) := by
+  rw [Finset.disjoint_right]
+  intro c hc
+  exact (Finset.mem_sdiff.1 hc).2
+
+theorem mem_relCoord_of_usedCoord {p : d.Idx N × d.Idx N × Bool} (hp : p ∈ usedCoord d N) :
+    (⟨N, p⟩ : Coord d) ∈ relCoord d N :=
+  Finset.mem_image.2 ⟨p, hp, rfl⟩
+
+/-- **The minor matrix reads only the off-row block.**  Two sample points agreeing on
+`offRowCoord` have the same `H^{(i)}`. -/
+theorem Hflow_submatrix_congr_offRowCoord (u : ℝ) {i : d.Idx N} {ω ω' : Ω d}
+    (h : ∀ c ∈ offRowCoord d N i, ω c = ω' c) :
+    (Hflow d N u ω).submatrix (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+        (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+      = (Hflow d N u ω').submatrix (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+        (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N) := by
+  have key : ∀ (k l : d.Idx N) (b : Bool), k ≠ i → l ≠ i → (⟨N, k, l, b⟩ : Coord d) ∈ relCoord d N →
+      ω ⟨N, k, l, b⟩ = ω' ⟨N, k, l, b⟩ := by
+    intro k l b hk hl hmem
+    refine h _ (Finset.mem_sdiff.2 ⟨hmem, ?_⟩)
+    rw [mem_rowSet]
+    rintro (rfl | rfl)
+    · exact hk rfl
+    · exact hl rfl
+  ext k l
+  simp only [Matrix.submatrix_apply, Hflow_apply]
+  have hk := k.2
+  have hl := l.2
+  unfold Xentry
+  split_ifs with h1 h2
+  · rw [key k.1 l.1 true hk hl (mem_relCoord_of_usedCoord (mem_usedCoord.2 (Or.inl h1))),
+      key k.1 l.1 false hk hl (mem_relCoord_of_usedCoord (mem_usedCoord.2 (Or.inl h1)))]
+  · rw [key l.1 k.1 true hl hk (mem_relCoord_of_usedCoord (mem_usedCoord.2 (Or.inl h2))),
+      key l.1 k.1 false hl hk (mem_relCoord_of_usedCoord (mem_usedCoord.2 (Or.inl h2)))]
+  · have hkl : k.1 = l.1 := idxKey_injective d N (by omega)
+    rw [key k.1 l.1 true hk hl (mem_relCoord_of_usedCoord (mem_usedCoord.2 (Or.inr ⟨hkl, rfl⟩)))]
 
 end RBM.Gauss

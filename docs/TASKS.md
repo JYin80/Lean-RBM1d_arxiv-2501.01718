@@ -171,7 +171,7 @@
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | **完成**（与 T73 的正向桥量词序一致，可复合；含 `norm_gloop_le_det`） |
 | T81 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | Claude Code #2 | **完成**（行、列两条，`Gauss/RowIndep.lean`） |
 | T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | Claude Code | **完成**（矩递推与 p=1 精确恒等式；缺 `E[T^p] ≤ C_p E[Vq^p]`，文件头有草图） |
-| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean`（新建） | **Cowork** | 进行中（T70 矩阵版已完成，用 `RBM.Gauss.matrixStein`） |
+| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean` | **待认领（Cowork 已交出）** | 前五格已落地并提交，剩余部分见下文「T83 交接」 |
 | T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | Claude Code | **完成**（`E_k` 为精确 Fubini；公共引理 `FinDepOffRow` 供 T81/T82/T86） |
 | T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | Claude Code | **完成**（含三元组版与 Ψ-级版；`|G_kk|` 下界由事件 (4.1) 读出，非额外假设） |
 | T86 | **消失引理**：某指标只出现一次 ⟹ 期望 = O(替换误差) | `Gauss/FlucVanish.lean`（新建） | Claude Code | **完成**（替换后期望恰为 0；`B`/`ε` 与 T85 的 `≺` 之间的截断记账留给 T87/T88） |
@@ -1868,3 +1868,43 @@ T87 现在给的是
 
 **不要重证 [40] 的定理，只证我们需要的那一部分**（Jun，第六批批注）。
 这是 [40] 自证路线上最后一块；补上之后 (4.12) 与 (4.5) 全部是无假设定理。
+
+---
+
+## T83 交接（Cowork → 谁都可以接，2026-09-20）
+
+**为什么交出来**：这一单剩下的部分已经完全具名、没有设计决策了，而终端侧写 Lean 的速度比
+Cowork 侧快一个量级（Cowork 每轮要等 `watch.sh` 重建、读 `build.log`，约两分钟一轮）。
+Cowork 留在路线判断、审计、工单与论文侧。
+
+**已落地（`RBM1D/Gauss/IBP.lean`，13 条，构建绿，逐格提交）**：
+
+1. `green_sub_smul_one_eq` —— `G − m = m(−H − tm)G`（`mE_mul_smul_add_zt` 给出 `m = −(tm+z_t)⁻¹`）。纯代数。
+2. `hasDerivAt_Hflow_update` —— 动一个高斯坐标，`H_u` 沿 `√u · B_p` 走。
+3. `hasDerivAt_green_Hflow_update` —— `∂_{ω_c} G_u = −√u · G_u B_c G_u`（矩阵值）。
+4. `mul_Bmat_mul_apply_of_ne` / `mul_Bmat_mul_apply_diag` —— 夹心塌缩成至多两个元素乘积。
+5. `tame_green_apply`、`entryCLM`、`hasDerivAt_green_apply_update` —— 标量化 + `Tame`。
+6. **`integral_coord_mul_green_apply`** —— 积分步：
+   `E[ω_c · G_ab] = gvar_c · E[−√u · (G B_c G)_ab]`，消费 T104 的 `gaussIBP`。
+
+**剩下三格，按顺序**：
+
+* **(a) 从单坐标升到整行**。`H` 的一个矩阵元对应**一对**高斯坐标（实/虚标签），
+  用 `Xmat_eq_sum` / `usedCoord` 的分解把 `∑_k H_ik G_ki` 写成对坐标求和，
+  再用第 4 条把两个标签的贡献合起来。**注意** `gvar` 在对角与非对角差一个 `/2`
+  （`gvar_diag` / `gvar_offDiag`），两个标签各出一半正好拼回 `S_ik`。
+  目标形状：`E[∑_k H_ik G_ki] = t·∑_k S_ik·E[G_kk·G_ii] + （交叉项）`。
+* **(b) 去掉 minor 上标**。`E_i(G_kk − m) = G_kk − m + O≺(Ψ²)`，直接用 T85
+  （`Gauss/MinorReplace.lean`）的替换误差；条件期望用 T84 的 `condRow`。
+* **(c) ≺ 记账，落成 `hIBP` 的签名**。终点**逐字**是
+  `RBM.Gauss.trace_green_sub_mul_Eblk_stochDom`（`Gauss/FlucAvg.lean`）的 `hIBP` 参数，
+  即对 `condExpDiag d N t (zt E t) (mE E) i` 的 `StochDom`。
+
+**硬性约束**：**不许改 `Green/EntryBound.lean` 与 `Gauss/FlucAvg.lean` 的任何签名**，
+它们是冻结接口；只在 `Gauss/IBP.lean` 里加东西。
+**用 `gaussIBP` 而不是 `matrixStein`**：被积函数带 `H_ik` 因子，不是全局有界的。
+
+**两个已经踩过的坑，别再踩**：
+矩阵的范数实例要 `open scoped Matrix.Norms.L2Operator` 才在作用域里；
+CLM 与 `HasDerivAt` 复合后函数停在 `(f ∘ g)` 且 ℂ 的 `AddCommGroup` 实例走了 normed 那条路，
+`simpa` 关不掉，要 `simp only [Function.comp_def, entryCLM_apply] at h` 再 `exact h`。

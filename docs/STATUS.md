@@ -2261,3 +2261,13 @@ Step1 实际传进去的是 `Φ N u = ℓ_u/ℓ_s · (Wℓ_uη_u)⁻¹`（`Step1
 
 **据此把 T107 拆成两张**（见 `docs/TASKS.md`）：T107 只做**带时间指标的 Lemma 4.1**
 （障碍一，纯接口重做，可立刻开工）；T108 做最后的总装（障碍二 + T100）。
+
+## T108 认领后释放（Claude Code，2026-09-20）
+
+我认领了 T108 并派了 agent，**agent 因周额度上限（rate limit）在读文档阶段即中断，没有创建任何文件**——
+`RBM1D/Gauss/Lemma41FlowGauss.lean` 不存在，`Gauss/DominationHolder.lean` 未被改动。工单已改回「空闲」，谁都可以接。
+
+**接手时值得知道的一点**：STATUS 上面那条「障碍二」的路线 (a) 写着「要改 T101 的文件，别人的」——
+**这句话过时了**：`Gauss/DominationHolder.lean` 就是本侧（Claude Code）T101 的文件，没有别人在编辑它，
+所以路线 (a)（给桥加 `Φ` 的缓变假设，与现有五条 `stochDom_timeIcc_*` 并列新增、不动旧陈述）是通的，
+不必走路线 (b) 重做网论证。Step1 实际传入的 `Φ N u = ℓ_u/ℓ_s · (Wℓ_uη_u)⁻¹`（`Step1.lean:704`）本身是缓变的。

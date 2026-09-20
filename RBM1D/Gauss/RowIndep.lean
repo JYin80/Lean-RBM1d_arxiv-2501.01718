@@ -773,4 +773,18 @@ theorem integrable_norm_row_sum_pow (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ
   calc (x ^ 2 + y ^ 2) ^ p ≤ 2 ^ p * (x ^ (2 * p) + y ^ (2 * p)) := hxy
     _ = _ := by simp only [Pi.add_apply, hx, hy]
 
+/-- The frozen bound, in `ℝ≥0∞` form. -/
+theorem lintegral_norm_row_sum_pow_le {u : ℝ} (hu : 0 ≤ u) (i : d.Idx N) (c : d.Idx N → ℂ)
+    (p : ℕ) :
+    ∫⁻ ω, ENNReal.ofReal (‖∑ k : {k : d.Idx N // k ≠ i},
+        Hflow d N u ω i k.1 * c k.1‖ ^ (2 * p)) ∂(P d)
+      ≤ ENNReal.ofReal (2 * (dfac p *
+        (u * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 * ‖c k.1‖ ^ 2) ^ p)) := by
+  have hint := integrable_norm_row_sum_pow u i c p
+  have hnn : 0 ≤ᵐ[P d] fun ω : Ω d =>
+      ‖∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1‖ ^ (2 * p) :=
+    Filter.Eventually.of_forall fun ω => by positivity
+  rw [← ofReal_integral_eq_lintegral_ofReal hint hnn]
+  exact ENNReal.ofReal_le_ofReal (integral_norm_row_sum_pow_le hu i c p)
+
 end RBM.Gauss

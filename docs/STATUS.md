@@ -1459,3 +1459,12 @@ minor 矩阵 `H^(i)` 只读 off-row 块。注意这条比第三块的 `AgreeOffR
 只要求在**有限**的 off-row 块上相等（`AgreeOffRow` 要求所有避开 `i` 的坐标，包括非规范序的那些）。
 **T81 最后一步**：`U` = 行块、`V` = off-row 块；`indepFun_rowSet` 给 `U ⟂ V`；
 `eq_glue_of_congr` 把行和与 `G^(i)` 分别写成 `U`、`V` 的函数；内层套第十三块；外层接 T73。
+
+**T81 第十六块 ✔（核心结论）**：**`integral_norm_rowSum_pow_le`**——系数 `C` 只读 off-row 块时，
+`E‖∑_{k≠i} H_ik C_k‖^{2p} ≤ 2(2p−1)!!·E[(u ∑_k S_ik‖C_k‖²)^p]`。
+即「条件化后行和是中心复高斯」这一步已经**完整证出**：用 `indepFun_rowSet` + `glue` 把两块分开
+（`integral_indep_pair_le`），纤维上套第十三块的冻结界，再积回去。
+可积性作为显式假设（实例化到 `G^(i)` 时由确定性包络 `‖G‖ ≤ η⁻¹` 给出），另需 `C` 可测。
+**T81 只差最后对接**：取 `C ω := G^(i)_{·j}(ω)`（`greenMinor_congr_of_offRow` / 
+`Hflow_submatrix_congr_offRowCoord` 给出「只读 off-row 块」），得到
+`E[ldeRowLHS^p] ≤ 2(2p−1)!!·E[(t·ldeRowRHS)^p]`，再经 T73 的 `stochDom_of_momentDom` 落成 `≺`。

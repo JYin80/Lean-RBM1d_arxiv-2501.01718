@@ -102,6 +102,16 @@ is positive, so `ω ∈ Ω` and the indicator on the control is free. -/
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {U : ℕ → Type*}
 
+/-- Weakening the control. -/
+theorem control_mono {ξ ζ ζ' : ∀ N, U N → Ω → ℝ} (h : StochDom P ξ ζ)
+    (hle : ∀ N u ω, ζ N u ω ≤ ζ' N u ω) : StochDom P ξ ζ' := by
+  refine StochDom.of_subset h fun τ hτ => ⟨τ, hτ, ?_⟩
+  filter_upwards with N
+  intro ω hω
+  obtain ⟨v, hv⟩ := hω
+  refine ⟨v, lt_of_le_of_lt ?_ hv⟩
+  exact mul_le_mul_of_nonneg_left (hle N v ω) (Real.rpow_nonneg (Nat.cast_nonneg N) τ)
+
 /-- **Transitivity through an indicator.**  If `1_A f ≺ g` (control without indicator) and
 `1_A g ≺ h` (control `h ≥ 0`), then `1_A f ≺ h`. -/
 theorem trans_indicator {A : ℕ → Set Ω} {f g h : ∀ N, U N → Ω → ℝ}
@@ -196,9 +206,9 @@ theorem loopHyp_iff :
     simpa only [h] using hh
 
 /-- **`1_Ω L^{max} ≺ Φ`**: the maximum over the (finitely many) block pairs is attained. -/
-theorem stochDom_indicator_Lmax (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
+theorem stochDom_indicator_Lmax {V : ℕ → Type*} (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
     StochDom (P d)
-      (fun N (_ : Unit) ω =>
+      (fun N (_ : V N) ω =>
         (Step1.goodEv (sample d) E N u).indicator
           (fun ω => Lmax (Hflow d N u ω) (zt E u)) ω)
       (fun N _ _ => Φ N) := by
@@ -314,6 +324,43 @@ theorem stochDom_indicator_entryControl (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHy
       have h1 : (0 : ℝ) ≤ Φ N + ((d.W N : ℕ) : ℝ)⁻¹ := by linarith [hΦ0 N, hW]
       positivity
     linarith [hlt]
+
+/-- **The diagonal half of Lemma 4.1 at a fixed time**: `1_Ω|G_{ii} − m|² ≺ Φ + W⁻¹`. -/
+theorem stochDom_indicator_diag (hG : GaussIBP d) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hE : |E| ≤ 2 - κ) (hu0 : 0 ≤ u) (hu1 : u < 1) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hδ0 : ∀ N, 0 ≤ ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6))
+    (hδ : ∀ᶠ N : ℕ in Filter.atTop,
+      ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6) ≤ (N : ℝ) ^ (-c₀))
+    (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
+    StochDom (P d)
+      (fun N (i : BIdx d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖green (Hflow d N u ω) (zt E u) i i - mE E‖ ^ 2) ω)
+      (fun N _ _ => Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
+  have hset : ∀ N : ℕ, Step1.goodEv (sample d) E N u
+      = goodSet (L := d.L) (W := d.W) (fun N ω => Hflow d N u ω) (zt E u) (mE E)
+          (fun N => ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6)) N :=
+    fun N => goodEv_eq_goodSet E N u
+  have h1 : StochDom (P d)
+      (fun N (i : BIdx d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => ‖green (Hflow d N u ω) (zt E u) i i - mE E‖ ^ 2) ω)
+      (fun N _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
+    simp only [hset]
+    exact diag_bound_gauss hG hκ0 hκ1 hE hu0 hu1 hδ0 hc₀ hδ
+  have h2 : StochDom (P d)
+      (fun N (_ : BIdx d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => Lmax (Hflow d N u ω) (zt E u)) ω)
+      (fun N _ _ => Φ N + ((d.W N : ℕ) : ℝ)⁻¹) :=
+    StochDom.control_mono
+      (stochDom_indicator_Lmax (V := fun N => BIdx d.L d.W N) hΦ0 hΦ)
+      (fun N _ _ => by
+        have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+        linarith)
+  refine StochDom.trans_indicator h1 h2 (fun N _ _ => ?_)
+  have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+  linarith [hΦ0 N]
 
 end Gauss
 

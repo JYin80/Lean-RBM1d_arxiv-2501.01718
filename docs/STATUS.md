@@ -1326,3 +1326,10 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **唯一真正缺的输入**：`MomentHyp` 的 `bnd/thr/init/step/bnd_poly`——(5.39)–(5.41)+(5.45) 的矩形式。
 这正是 T74/T76 那道坎：`Gauss/Hierarchy.lean` 给的是 `∂_u E[L_u]`，而 `Step2.step_bound` 消费的 `SumZeroDyn.Hierarchy.duhamel` 是带 `mart` 字段的逐路径积分恒等式（STATUS 已记「现有形状下不可卸」）。agent 没有伪造推导。
 `cont`/`holder`/`env`/`meas` 四个字段原则上都能由 `Gauss/Model.lean` + `Gauss/Envelope.lean` 给出（γ=1/2），但那要写在 `Gauss/` 下，本工单不许碰——**留给后续工单**。paper-deltas #54。
+
+**T81 第四块 ✔**（`Gauss/LinearForm.lean`）：`iIndepFun_coord`（坐标独立，由 Mathlib 的 `iIndepFun_infinitePi`）、
+`hasLaw_coord`（每个坐标是 `N(0, gvar c)`）、`hasLaw_const_mul_coord`（`a·ω c` 是 `N(0, a² gvar c)`）。
+**下一步**（已探明 Mathlib 侧零件）：有限实线性型 `∑ a_c ω_c` 的律——
+`iIndepFun.hasGaussianLaw_fun_sum` 给出和是高斯，`IsGaussian.eq_gaussianReal` 由均值/方差定出具体的 `gaussianReal`，
+方差用 `variance_sum`（独立）。再把 `(Re Z, Im Z)` 的联合律认成两个独立一维高斯的乘积
+（零协方差 + 联合高斯 ⟹ 独立），最后接上已证的 `integral_add_sq_pow_gaussian_prod`。

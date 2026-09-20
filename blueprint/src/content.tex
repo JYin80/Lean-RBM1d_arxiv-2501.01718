@@ -1789,6 +1789,19 @@
   (\texttt{condRow\_condRow\_comm}), which is what lets the innermost $Q$ survive the growing word.
 \end{proof}
 
+\begin{lemma}[The time net with a modulus holding only with high probability]\label{lem:holder-hp}
+  \lean{RBM.Gauss.stochDom_of_subset_highProb, RBM.Gauss.netTime, RBM.Gauss.netTime_mem, RBM.Gauss.exists_netTime_close, RBM.Gauss.stochDom_timeIcc_of_holder_hp, RBM.Gauss.stochDom_Icc_of_holder_hp, RBM.Gauss.stochDom_timeIcc_one_of_holder_hp, RBM.Gauss.stochDom_timeIcc_of_holder_dom, RBM.Gauss.stochDom_timeIcc_one_of_holder_dom}
+  \leanok\uses{lem:moment-dom, def:2.1-i}
+  The $N^{-C}$ net of (5.46) needs its H\"older modulus only eventually in $N$ and on a
+  high-probability family $\Xi$, or with a random constant $R\prec1$; the interval may be the
+  $N$-dependent $[s_N,t_N]$. T73 and T75 are the special cases $\Xi\equiv\mathrm{univ}$.
+\end{lemma}
+\begin{proof}\leanok
+  $\mathrm{badSet}\subseteq(\mathrm{badSet}\cap\Xi)\cup\Xi^c$; for the random constant,
+  $\{R\le N\}$ is high-probability and there the modulus is deterministic, costing one power of $N$
+  in the net exponent.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -2059,3 +2059,15 @@ stochDom_indicator_llMax_sq (hG) (0<κ≤1) (|E|≤2−κ) (0≤u<1) (δ 的两�
 | `Thm221.step`、`Steps.*`、`Lemma510`、`LKDecay`、`StepTwoClaim`、`Eq747`、`LoopScaling`、`NetLift`、`DBMUniversality`、`GreenComparison` | 论文 §5/§7 的主体，按工单表推进中 |
 
 结论：**随机层这边可卸而未卸的只剩 `GaussIBP` 一条**（T104）；其余要么在做，要么是论文层面的主体工作，要么（`Transfer`）按矩路线的设计就卸不掉。
+
+### `RBM1D/Gauss/DominationHolder.lean` — 高概率 Hölder 模的时间网（T101，Claude Code 并行 agent）
+
+两种放宽都做了，且第二种由第一种**推出**：
+**(a) 高概率形式** `stochDom_timeIcc_of_holder_hp`：`HighProb P Ξ` + `∀ᶠ N, ∀ ω ∈ Ξ N, …`（两处独立放宽：例外集与「终于」）。核心是 `stochDom_of_subset_highProb`（`badSet ⊆ (badSet ∩ Ξ) ∪ Ξᶜ`，`RBM.StochDom.of_subset` 的高概率类比，且不需 `[IsFiniteMeasure P]`）。
+**(b) `≺` 控制的常数** `stochDom_timeIcc_of_holder_dom`：`hR` 的类型**就是** `RBM.Gauss.OpNormBound.norm_X` 的类型——**T100 的 `‖X‖ ≺ 1` 可以零胶水插入**（取 `R N ω := ‖Xmat d N ω‖`）。归约：`{ω | R N ω ≤ N}` 是高概率事件，其上模是确定性的 `N^{K+1}|u−u'|^γ`。
+**推广程度**：主定理严格强于两个前身——N-依赖区间 `[s_N,t_N]`（T75 的一般性，且 `T = 1` 放宽为任意 `T > 0`）**加** T73 的确定性控制 `Φ`（T75 只有 `Φ ≡ 1`）。T73 = `s ≡ 0, t ≡ T`；T75 = `Φ ≡ 1, T = 1`。
+agent 在 scratch 里验证过：以 `Ξ ≡ univ` 可逐字复原 T73 的 `stochDom_Icc_of_holder`；`γ = 1/2`、`R = ‖X‖` 的实例对 `stochDom_timeIcc_one_of_holder_dom` 类型检查通过。
+
+**可以据此卸掉逐点假设的下游**：`Step2Moment.MomentHyp.holder`（进而 `jS_stochDom`/(5.47)）；**T99 审计的阻塞项 (C)**（`Lemma41Flow` 的时间一致性那半）——预解式的模 `‖G_u − G_{u'}‖ ≤ η^{-2}|√u−√u'|·‖X‖` 正是形式 (b)（`γ = 1/2`，经 `abs_sqrt_sub_sqrt_le`），**余下的输入只剩 T100 的 `‖X‖ ≺ 1`**。
+**注意重复**：因 `Gauss/` 不能 import `Hierarchy/`（Step2Moment 反向依赖 `Gauss.Envelope`），`netTime`/`netTime_mem`/`exists_netTime_close` 在此重证了一份（命名空间 `RBM.Gauss`，与 T75 的 `RBM.Step2Moment` 不冲突）。
+**下次编辑 `Hierarchy/Step2Moment.lean` 时应删掉它那三条，改用这里的**；本单按协议未改动该文件。`…_one_of_holder_hp`/`…_one_of_holder_dom` 除模假设外与 T75 签名一致，是直接的替换件。paper-deltas #62。

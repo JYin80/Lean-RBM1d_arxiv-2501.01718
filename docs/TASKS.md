@@ -170,10 +170,10 @@
 | T76 | 卸掉 (2.34) 与 Lemma 2.11：不证 SDE，直接证期望/矩版本 | `Gauss/Hierarchy.lean`（新建） | Claude Code | **完成**（(2.45) 的期望版；`duhamel`/`duhamelQ` 在现有逐路径形状下不可卸，见 STATUS） |
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | **完成**（与 T73 的正向桥量词序一致，可复合；含 `norm_gloop_le_det`） |
 | T81 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | **Claude Code #2** | 进行中 ← **卸 [39] 之一** |
-| T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | 待认领 | 未开工 ← **卸 [39] 之二** |
+| T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | Claude Code | 进行中 |
 | T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean`（新建） | 待认领 | 未开工（等 T70 矩阵版） |
-| T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | 待认领 | 未开工 ← **涨落平均的地基** |
-| T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | 待认领 | 未开工 |
+| T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | Claude Code | 进行中 |
+| T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | Claude Code | 进行中 |
 | T86 | **消失引理**：某指标只出现一次 ⟹ 期望 = O(替换误差) | `Gauss/FlucVanish.lean`（新建） | 待认领 | 未开工（等 T84、T85） |
 | T87 | **计数**：按不同指标个数分层 ⟹ 额外一个 `Ψ` | `Gauss/FlucCount.lean`（新建） | 待认领 | 未开工（等 T86）← **这一批的大头** |
 | T88 | 组装 ⟹ 卸掉 `EntryBound` 的 `hFA`（(4.12)），进而得 (4.5) | `Gauss/FlucAvg.lean`（新建） | 待认领 | 未开工（等 T87） |

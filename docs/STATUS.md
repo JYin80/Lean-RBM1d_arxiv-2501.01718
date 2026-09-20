@@ -1484,3 +1484,10 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 **T81 第十七块 ✔**：`rowCoeffNorm`（系数除以随机标准差 `√V`）与 `rowVarSum_rowCoeffNorm`
 （归一化后方差恰为 `1`，`V = 0` 时为 `0`）。把它代入第十六块即得**常数**矩界
 `E[(‖Z‖²/V)^p] ≤ 2(2p−1)!!`——正是 `MomentDom`（Φ = 1）要的形状，比值形式直接对接 T73。
+
+**T81 第十八块 ✔**：**`integral_norm_rowSum_norm_pow_le`**——归一化后得到**常数**矩界
+`E‖Z/√V‖^{2p} ≤ 2(2p−1)!!`（`V = 0` 的退化分支一并处理），配套 `measurable_rowVarSum`、
+`measurable_rowCoeffNorm`。这正是 `MomentDom`（Φ = 1）的输入。
+**T81 仅剩**：取 `C ω := (H^{(i)} − z)⁻¹` 的第 `j` 列（`Hflow_submatrix_congr_offRowCoord`
+给出「只读 off-row 块」），把它与 `ldeRowLHS`/`ldeRowRHS` 对上（需要 `greenMinor` = minor 预解式，
+即 T40 的 `inv_minor_resolvent`，带可逆性前提），最后经 `stochDom_of_momentDom` 得 `≺`。

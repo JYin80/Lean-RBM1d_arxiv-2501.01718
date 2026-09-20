@@ -161,8 +161,8 @@
 | T67 | **§5.1 Step 1**：(2.73)(2.74)、三情形分解、(5.2)(5.3)(5.4)(5.8)、(5.9) 的禁区论证 | `Hierarchy/Step1.lean`（新建） | Claude Code | **完成** |
 | T68 | §2.3 + §7.2 的出口：**Theorem 2.5（QUE）与 Theorem 2.6（普适性）** | `Flow/Universality.lean`（新建） | Claude Code | **完成** |
 | T69 | 固定高斯带矩阵 `X`、流 `H_u := √u·X`、实例化 `Sample`、确定性 Lipschitz | `Gauss/Model.lean`（新建） | Claude Code | **完成**（`Sample` 三字段为定理；`‖X‖ ≺ 1` 与 `Dims` 实例两处缺口见 STATUS） |
-| T70 | **Stein 分部积分**：一维 ✅；**剩 ℂ 值 + 乘积/Fubini，用来卸 T71 的 `MatrixStein`** | `Gauss/Stein.lean` | **Cowork** | 进行中（一维实值已落地；矩阵版见下） |
-| T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | Claude Code | **完成**（`MatrixStein` 为单字段假设待 T70 卸；含全局导数界） |
+| T70 | **Stein 分部积分**：一维实值 + ℂ 值 + 矩阵版 | `Gauss/Stein.lean`、`Gauss/SteinMatrix.lean` | **Cowork** | **完成**（`RBM.Gauss.matrixStein` 已卸掉 `MatrixStein`，见下） |
+| T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | Claude Code | **完成**（`MatrixStein` 已由 T70 卸掉：填 `RBM.Gauss.matrixStein d`） |
 | T72 | 对矩的 Grönwall：`φ′ ≤ aφ + b` ⟹ 界；**二阶项 = (5.25) 的二次变差** | `Gauss/MomentGronwall.lean`（新建） | Claude Code | **完成**（`secondOrder_eq_quadVar` 已证；与 `Hierarchy.EE` 的对接缺两座桥，见 STATUS） |
 | T73 | `≺` ↔ 矩 的桥；`N^{-C}` 时间网 + Lipschitz ⟹ `u` 一致的 `≺` | `Gauss/Domination.lean`（新建） | Claude Code | **完成**（Hölder-γ 接口，T69 对接取 γ=1/2；`hmom` 待 T72） |
 | T74 | 卸掉 Lemma 5.5（BDG）那个假设字段 | `Gauss/DischargeBDG.lean`（新建） | Claude Code | **完成**（结论：`bdg`/`bdgQ` 现有签名下**不可卸**，三条理由见 STATUS；Def 5.4 已有定义，(5.22)(5.25) 已证） |
@@ -171,7 +171,7 @@
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | **完成**（与 T73 的正向桥量词序一致，可复合；含 `norm_gloop_le_det`） |
 | T81 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | **Claude Code #2** | 进行中 ← **卸 [39] 之一** |
 | T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | Claude Code | 进行中 |
-| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean`（新建） | 待认领 | 未开工（等 T70 矩阵版） |
+| T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean`（新建） | 待认领 | **可开工**（T70 矩阵版已完成，用 `RBM.Gauss.matrixStein`） |
 | T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | Claude Code | **完成**（`E_k` 为精确 Fubini；公共引理 `FinDepOffRow` 供 T81/T82/T86） |
 | T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | Claude Code | **完成**（含三元组版与 Ψ-级版；`|G_kk|` 下界由事件 (4.1) 读出，非额外假设） |
 | T86 | **消失引理**：某指标只出现一次 ⟹ 期望 = O(替换误差) | `Gauss/FlucVanish.lean`（新建） | Claude Code | **完成**（替换后期望恰为 0；`B`/`ε` 与 T85 的 `≺` 之间的截断记账留给 T87/T88） |
@@ -1643,49 +1643,39 @@ T72 里每处 dominated 条件、T77 里每处包络都用它。
 
 ---
 
-## T70 的剩余部分：卸掉 `Gauss/Generator.lean` 的 `MatrixStein`
+## T70 的剩余部分：卸掉 `Gauss/Generator.lean` 的 `MatrixStein` — ✅ **已完成 2026-09-20**
 
-**已落地**（`RBM1D/Gauss/Stein.lean`，构建绿）：
-
-* `hasDerivAt_gaussianPDFReal_zero` —— `p′ = −(x/v)·p`，整条路线唯一的概率内容
-* `integral_mul_gaussianPDF` —— 密度形式的 Stein（**实值**）
-* `integral_mul_gaussianReal` —— 测度形式 `E[X f(X)] = v E[f′(X)]`（**实值**）
-
-**要交付的目标**（T71 已经把形状写死了，照抄即可）：
+落地在 **`RBM1D/Gauss/SteinMatrix.lean`**（新文件，已进根 import，构建绿，公理审计通过）：
 
 ```lean
-theorem matrixStein (d : Dims) : RBM.Gauss.MatrixStein d
+theorem RBM.Gauss.matrixStein (d : Dims) : RBM.Gauss.MatrixStein d
 ```
 
-其唯一字段是：对 `c : Coord d`、`g g' : Ω d → ℂ`，在
-`Continuous g`、`Continuous g'`、`FinDep d g`、`FinDep d g'`、
-`∀ ω, HasDerivAt (fun t => g (Function.update ω c t)) (g' ω) (ω c)`、
-以及 `g`、`g'` 全局有界之下，
+**下游怎么用**：所有带 `(hst : MatrixStein d)` 的定理（`Gauss/Hierarchy.lean` 的
+`hasDerivAt_integral_gloop` 等、`Gauss/DischargeBDG.lean` 的 `momentDom_of_quadVar` 等）
+**签名一个字都没改**，直接把 `hst` 填成 `RBM.Gauss.matrixStein d` 即可。
+这正是「做不了的东西写成 `structure` 字段、日后原地换成定理」那条规矩兑现的地方。
 
-    ∫ ω, ω c • g ω ∂(P d) = (gvar d c : ℝ) • ∫ ω, g' ω ∂(P d)
+**实际走的路线**（比原计划的 `Measure.pi` + Fubini 便宜很多，记下来给 d≥3 抄）：
 
-**三步，按这个顺序做**：
+1. `upd d c (ω, t)` = 把 `ω` 的第 `c` 个坐标换成 `t`。
+2. **`P_map_update`**：`((P d) ⊗ γ_c).map (upd d c) = P d`
+   —— 用自己那一维的独立样本重采样一个坐标，不改测度。
+   证法是在可测长方体上验证，`Measure.eq_infinitePi` + `Measure.infinitePi_pi`，
+   两种情形（`c ∈ s` / `c ∉ s`）各一行乘积重排。**独立性只在这一处用到。**
+3. Stein 两边都沿这个映射推过去，乘积上 Fubini（`integral_prod`）把 `t` 分离出来，
+   内层就是 `Gauss/Stein.lean` 的一维复值 Stein。
+4. `integral_mul_gaussianReal_complex'` 连方差为 0 的退化情形一起覆盖
+   （`gaussianReal 0 0 = dirac 0`，两边都是 0），所以 `MatrixStein` 不需要 `gvar ≠ 0` 假设。
 
-1. **ℂ 值的一维 Stein**。现有的是实值。用 `Complex.reCLM` / `Complex.imCLM` 加
-   `ContinuousLinearMap.integral_comp_comm` 拆成实虚两部，各用一次现有定理。
-   `HasDerivAt` 的实虚部由 `Complex.reCLM.hasFDerivAt.comp_hasDerivAt` 给出。
-2. **把「连续 + 全局有界」换成可积性**。现有定理的假设是密度形式的
-   `Integrable (f * gaussianPDFReal 0 var)`，而 `MatrixStein` 给的是「连续 + 有界」。
-   需要两条小引理：
-   * 有界连续 ⟹ `Integrable (f * p)`（用 `integrable_gaussianPDFReal` 加 `bdd_mul`）；
-   * **`Integrable (fun x => x * p x)`** —— 高斯一阶绝对矩，Mathlib 里**大概没有现成的**，
-     要自己证（`x·p(x)` 有原函数 `−v·p(x)`，或者直接用 `Real.integrable_rpow_mul_exp_neg_mul_sq` 一类，
-     **先 grep**）。这是本单唯一有分析难度的地方。
-3. **Fubini**。`g`、`g'` 都 `FinDep`，取 `I ⊇ {c} ∪ (两个 FinDep 见证)`，
-   用 `Model.lean` 的 `P_map_restrict d I` 把 `Measure.infinitePi` 换成 `Measure.pi`，
-   再用 `Measure.pi` 上的 Fubini 把坐标 `c` 与其余分离，内层正是第 1 步。
-   **坑**：要把 `g` 沿 `I` 分解成 `(I → ℝ) → ℂ`，需要一个「在 `I` 外任取默认值」的扩张；
-   `FinDep` 的见证保证了取值无关。这一步的记号先在文件头定死再写。
+**意外收获**：`MatrixStein` 的两条 `FinDep` 假设在这条路线上**根本用不到**
+（重采样恒等式对整个无穷乘积成立，不需要先约化到有限坐标）。为了不动 T71 已在消费的接口，
+它们照收不误、直接忽略。
 
-**不要改 `MatrixStein` 的陈述**——它是 T71 已经在消费的接口。
-
-**为什么它在关键路径上**：`T70(矩阵) → T71 卸掉假设 → T72 → {T74, T75}`。
-T71 的生成元恒等式本身已经证完了，只差这一个字段。
+**`Gauss/Stein.lean` 这一侧新增**（同批，已提交）：
+`integral_mul_gaussianReal_complex`（复值一维 Stein，实虚部拆分）、
+`integrable_of_bdd_gaussianReal`、`integrable_id_gaussianReal`、
+`integrable_ofReal_mul_gaussianReal`。
 
 ---
 

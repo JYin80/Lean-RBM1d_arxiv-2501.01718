@@ -13,6 +13,7 @@ import RBM1D.Gauss.FlucVanish
 import RBM1D.Gauss.FlucCount
 import RBM1D.Gauss.FlucAvg
 import RBM1D.Gauss.LDEQuad
+import RBM1D.Gauss.LDEQuadT
 import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.Hierarchy

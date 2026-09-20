@@ -1000,4 +1000,66 @@ theorem stochDom_rowSum_minorCol (hu : 0 ≤ u) (z : ℂ) :
     (fun N q => measurable_minorCol u z q.1 q.2)
     (fun N q ω ω' h => minorCol_congr u z q.2 h)
 
+/-! ### The column LDE, by Hermitian symmetry -/
+
+/-- The conjugate of the `k`-th row of the minor resolvent `(H^{(j)} - z)^{-1}`, as coefficients
+indexed by all of `Idx N` (zero at `j`).  By Hermitian symmetry the column sum of the paper is
+the conjugate of the row sum with these coefficients. -/
+noncomputable def minorRowConj (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ) (j : d.Idx N)
+    (k : {a : d.Idx N // a ≠ j}) (ω : Ω d) (l : d.Idx N) : ℂ :=
+  if h : l ≠ j then
+    (starRingEnd ℂ) ((((Hflow d N u ω).submatrix (Subtype.val : {a : d.Idx N // a ≠ j} → d.Idx N)
+        (Subtype.val : {a : d.Idx N // a ≠ j} → d.Idx N)
+      - z • (1 : Matrix {a : d.Idx N // a ≠ j} {a : d.Idx N // a ≠ j} ℂ))⁻¹) k ⟨l, h⟩)
+  else 0
+
+theorem minorRowConj_congr (u : ℝ) (z : ℂ) {j : d.Idx N} (k : {a : d.Idx N // a ≠ j})
+    {ω ω' : Ω d} (h : ∀ c ∈ offRowCoord d N j, ω c = ω' c) :
+    minorRowConj d N u z j k ω = minorRowConj d N u z j k ω' := by
+  funext l
+  unfold minorRowConj
+  rw [Hflow_submatrix_congr_offRowCoord u h]
+
+theorem measurable_minorRowConj (u : ℝ) (z : ℂ) (j : d.Idx N)
+    (k : {a : d.Idx N // a ≠ j}) : Measurable (minorRowConj d N u z j k) := by
+  refine Measurable.of_eval fun l => ?_
+  unfold minorRowConj
+  split
+  · refine Complex.continuous_conj.measurable.comp ?_
+    exact measurable_inv_entries
+      (A := fun ω : Ω d => (Hflow d N u ω).submatrix
+        (Subtype.val : {a : d.Idx N // a ≠ j} → d.Idx N)
+        (Subtype.val : {a : d.Idx N // a ≠ j} → d.Idx N)
+        - z • (1 : Matrix {a : d.Idx N // a ≠ j} {a : d.Idx N // a ≠ j} ℂ))
+      (fun a b => (measurable_Hflow d N u a.1 b.1).sub measurable_const) _ _
+  · exact measurable_const
+
+/-- **The column LDE of T81 as stochastic domination**: the column sums
+`∑_{l ≠ j} G^{(j)}_{kl} H_{lj}` obey the same bound, uniformly in `(j, k)`. -/
+theorem stochDom_rowSum_minorRowConj (hu : 0 ≤ u) (z : ℂ) :
+    StochDom (P d)
+      (fun N (q : LdeIdx d N) ω =>
+        ‖rowSum d N u q.1 (rowCoeffNorm d N u q.1 (minorRowConj d N u z q.1 q.2)) ω‖)
+      (fun _ _ _ => 1) := by
+  have hcard : ∀ᶠ N : ℕ in Filter.atTop,
+      (Fintype.card (LdeIdx d N) : ℝ) ≤ (N : ℝ) ^ (2 : ℝ) := by
+    filter_upwards [d.dim, Filter.eventually_ge_atTop 1] with N hN hN1
+    refine (card_LdeIdx_le N).trans ?_
+    have hLW : ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) := by
+      have := hN.1
+      have hcomm : d.W N * d.L N = d.L N * d.W N := Nat.mul_comm _ _
+      rw [hcomm] at this
+      exact_mod_cast this
+    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+    have h0 : (0 : ℝ) ≤ ((d.L N * d.W N : ℕ) : ℝ) := by positivity
+    calc ((d.L N * d.W N : ℕ) : ℝ) * ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) * (N : ℝ) :=
+          mul_le_mul hLW hLW h0 (le_of_lt hNpos)
+      _ = (N : ℝ) ^ (2 : ℝ) := by
+          rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+          ring
+  exact stochDom_rowSum_general (U := fun N => LdeIdx d N) (Ccard := 2) hu hcard
+    (fun N q => q.1) (fun N q => minorRowConj d N u z q.1 q.2)
+    (fun N q => measurable_minorRowConj u z q.1 q.2)
+    (fun N q ω ω' h => minorRowConj_congr u z q.2 h)
+
 end RBM.Gauss

@@ -202,4 +202,85 @@ theorem Vq_modelChaosEps_le_one (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N) {
   rw [div_le_one (by linarith)]
   linarith
 
+/-! ### The moment bound for the normalised chaos -/
+
+/-- The constant of T93 at `p = q+1`. -/
+noncomputable def hwConst (q : ℕ) : ℝ := ((2 * (q : ℝ) + 1) * (4 * (q : ℝ) + 2)) ^ (q + 1)
+
+theorem hwConst_pos (q : ℕ) : 0 < hwConst q := by unfold hwConst; positivity
+
+/-- **`E[(|Q|²/(V_q+ε))^{q+1}] ≤ A_{q+1}`, uniformly in `ε`.** -/
+theorem mom_modelChaosEps_le (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N)
+    {ε : ℝ} (hε : 0 < ε) (q : ℕ) :
+    (modelChaosEps d N u hz hu i ε hε).mom (q + 1) ≤ hwConst q := by
+  have h := (modelChaosEps d N u hz hu i ε hε).mom_le_momVpow hG q
+  have hV : (modelChaosEps d N u hz hu i ε hε).momVpow (q + 1) ≤ 1 := by
+    show (∫ ω, (modelChaosEps d N u hz hu i ε hε).Vq ω ^ (q + 1) ∂(P d)) ≤ 1
+    calc ∫ ω, (modelChaosEps d N u hz hu i ε hε).Vq ω ^ (q + 1) ∂(P d)
+        ≤ ∫ _ω : Ω d, (1 : ℝ) ∂(P d) :=
+          MeasureTheory.integral_mono
+            ((modelChaosEps d N u hz hu i ε hε).integrable_Vq_pow hG (q + 1))
+            (MeasureTheory.integrable_const 1)
+            (fun ω => pow_le_one₀ (RowChaos.Vq_nonneg ω)
+              (Vq_modelChaosEps_le_one hz hu i hε ω))
+      _ = 1 := by simp
+  have hc : (0 : ℝ) ≤ hwConst q := (hwConst_pos q).le
+  refine h.trans ?_
+  calc hwConst q * (modelChaosEps d N u hz hu i ε hε).momVpow (q + 1)
+      ≤ hwConst q * 1 := mul_le_mul_of_nonneg_left hV hc
+    _ = hwConst q := mul_one _
+
+/-! ### The tail bound, at fixed `ε` and then in the limit -/
+
+theorem norm_chaos_modelChaosEps (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N) {ε : ℝ}
+    (hε : 0 < ε) (ω : Ω d) :
+    ‖(modelChaosEps d N u hz hu i ε hε).chaos ω‖
+      = ‖(modelChaos d N u hz i).chaos ω‖ / sqVq d N u z i ε ω := by
+  rw [chaos_modelChaosEps hz hu i hε ω, norm_div, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg (sqVq_pos (z := z) hu hε i ω).le]
+
+/-- **Markov at fixed `ε`.** -/
+theorem meas_lt_normSq_chaos_le_eps (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ u)
+    (i : d.Idx N) {lam : ℝ} (hlam : 0 < lam) (q : ℕ) {ε : ℝ} (hε : 0 < ε) :
+    (P d) {ω | lam * (vqM d N u z i ω + ε) < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2}
+      ≤ ENNReal.ofReal (hwConst q / lam ^ (q + 1)) := by
+  set C' := modelChaosEps d N u hz hu i ε hε with hC'
+  set Y : Ω d → ℝ := fun ω => ‖C'.chaos ω‖ with hY
+  have hYnn : ∀ ω, 0 ≤ Y ω := fun ω => norm_nonneg _
+  have habs : ∀ ω, |Y ω| ^ (2 * (q + 1)) = ‖C'.chaos ω‖ ^ (2 * (q + 1)) := fun ω => by
+    rw [hY, abs_of_nonneg (hYnn ω)]
+  have hint : Integrable (fun ω => |Y ω| ^ (2 * (q + 1))) (P d) := by
+    simpa only [habs] using C'.integrable_norm_pow hG (q + 1)
+  have hmom0 : (∫ ω, ‖C'.chaos ω‖ ^ (2 * (q + 1)) ∂(P d)) ≤ hwConst q :=
+    mom_modelChaosEps_le hG hz hu i hε q
+  have hmom : ∫ ω, |Y ω| ^ (2 * (q + 1)) ∂(P d) ≤ hwConst q := by
+    simpa only [habs] using hmom0
+  have ht : (0 : ℝ) < Real.sqrt lam := Real.sqrt_pos.2 hlam
+  have hmark := meas_gt_le_of_moment (P := P d) (Y := Y) ht hint hmom
+  have hset : {ω | lam * (vqM d N u z i ω + ε) < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2}
+      = {ω | Real.sqrt lam < Y ω} := by
+    ext ω
+    have hs := sqVq_pos (z := z) hu hε i ω
+    have hsq := sq_sqVq (z := z) hu hε i ω
+    have hYv : Y ω = ‖(modelChaos d N u hz i).chaos ω‖ / sqVq d N u z i ε ω := by
+      rw [hY, hC']; exact norm_chaos_modelChaosEps hz hu i hε ω
+    have hc : (0 : ℝ) ≤ ‖(modelChaos d N u hz i).chaos ω‖ := norm_nonneg _
+    have hsl : Real.sqrt lam ^ 2 = lam := Real.sq_sqrt hlam.le
+    have hsln : (0 : ℝ) ≤ Real.sqrt lam := Real.sqrt_nonneg lam
+    simp only [Set.mem_ofPred_eq, hYv]
+    rw [lt_div_iff₀ hs, ← hsq]
+    constructor
+    · intro h
+      nlinarith [h, hs, hc, hsl, hsln,
+        sq_nonneg (Real.sqrt lam * sqVq d N u z i ε ω - ‖(modelChaos d N u hz i).chaos ω‖),
+        sq_nonneg (Real.sqrt lam * sqVq d N u z i ε ω + ‖(modelChaos d N u hz i).chaos ω‖)]
+    · intro h
+      have hms := mul_self_lt_mul_self (mul_nonneg hsln hs.le) h
+      nlinarith [hms, hsl, hs]
+  rw [hset]
+  refine hmark.trans (ENNReal.ofReal_le_ofReal ?_)
+  have hpow : Real.sqrt lam ^ (2 * (q + 1)) = lam ^ (q + 1) := by
+    rw [pow_mul, Real.sq_sqrt hlam.le]
+  rw [hpow]
+
 end RBM.Gauss

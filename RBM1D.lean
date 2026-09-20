@@ -7,6 +7,7 @@ import RBM1D.Green.EntryBound
 import RBM1D.Green.Minor
 import RBM1D.Gauss.Domination
 import RBM1D.Gauss.DominationHolder
+import RBM1D.Gauss.Lemma41FlowGauss
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.CondRow
 import RBM1D.Gauss.MinorReplace

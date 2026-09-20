@@ -417,4 +417,196 @@ theorem stochDom_timeIcc_one_of_holder_dom {s t : ℕ → ℝ} (hst : ∀ N, s N
 
 end RandomConstant
 
+/-! ### The net theorem with a **time-dependent** control
+
+All five statements above take a control `Φ : ℕ → ℝ` that does not depend on the time.  The
+controls that the flow produces do: `RBM.Step1.Lemma41Flow` is quantified over
+`Φ : ∀ N, RBM.TimeIcc s t N → ℝ`, and the `Φ` that `RBM1D/Hierarchy/Step1.lean` actually
+supplies is `Φ(N,u) = (ℓ_u/ℓ_s)(W ℓ_u η_u)⁻¹`.
+
+The net argument transports a bound from a net point `v` to a nearby `u`, so with a
+`u`-dependent control it needs `Φ(N,v) ≤ N^ε Φ(N,u)` for `v` close to `u`.  That is **false**
+for an arbitrary nonnegative `Φ`, so it has to be assumed; the two theorems below are the
+variants of `stochDom_timeIcc_of_holder_hp` and `stochDom_timeIcc_of_holder_dom` carrying it.
+
+To make the hypothesis dischargeable, the separation at which slow variation is required is
+*exposed*: the caller supplies its own scale `δ : ℕ → ℝ` together with `hδ`, which says that
+`δ` dominates the spacing `T·N^{-(K+B+1)/γ}` of the net that the proof builds — the net has
+`⌈N^{(K+B+1)/γ}⌉₊ + 1` points on an interval of length at most `T`
+(`RBM.Gauss.netSize`, `RBM.Gauss.rpow_le_netSize`), so its spacing is at most that.  The
+exponent `(K+B+1)/γ` is determined by the explicit inputs `K`, `B`, `γ`, so both hypotheses
+are statements the caller can check.
+
+The `N^{-B} ≤ Φ` hypothesis is likewise relativized to the interval.  Nothing above is
+changed: these are new declarations. -/
+
+section SlowControl
+
+variable {P : Measure Ω} [IsFiniteMeasure P]
+
+/-- **Definition 2.1 (i) with the uncountable union intact, for a time-dependent control.**
+
+`stochDom_timeIcc_of_holder_hp` with the deterministic control `Φ(N)` replaced by `Φ(N,u)`,
+at the price of the slow-variation hypothesis `hslow`: at any polynomially small `ε > 0`, times
+at distance at most `δ N` have controls within a factor `N^ε` of each other.  `hδ` says that
+`δ N` is at least the spacing `T·N^{-(K+B+1)/γ}` of the net used in the proof, so `hslow` is in
+force at every net point.
+
+The three-way split of the budget `τ`: `τ/3` for the net error (as before), `τ/3` for the
+slow-variation loss, and `τ/3` to absorb `x² + x ≤ x³` at `x = N^{τ/3} ≥ 2`. -/
+theorem stochDom_timeIcc_of_holder_slow_hp {s t : ℕ → ℝ} (hst : ∀ N, s N ≤ t N) {T : ℝ}
+    (hT : 0 < T) (hlen : ∀ N, t N - s N ≤ T) {K B γ : ℝ} (hK : 0 ≤ K) (hB : 0 ≤ B) (hγ : 0 < γ)
+    {Y : ℕ → ℝ → Ω → ℝ} {Φ : ℕ → ℝ → ℝ} (hΦ : ∀ N u, 0 < Φ N u)
+    (hΦlow : ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N), (N : ℝ) ^ (-B) ≤ Φ N u)
+    {δ : ℕ → ℝ} (hδ : ∀ᶠ N : ℕ in atTop, T / (N : ℝ) ^ ((K + B + 1) / γ) ≤ δ N)
+    (hslow : ∀ ε > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
+      ∀ v ∈ Set.Icc (s N) (t N), |u - v| ≤ δ N → Φ N v ≤ (N : ℝ) ^ ε * Φ N u)
+    {Ξ : ℕ → Set Ω} (hΞ : HighProb P Ξ)
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N, ∀ u ∈ Set.Icc (s N) (t N),
+      ∀ u' ∈ Set.Icc (s N) (t N), |Y N u ω - Y N u' ω| ≤ (N : ℝ) ^ K * |u - u'| ^ γ)
+    (hint : ∀ (p N : ℕ), ∀ u ∈ Set.Icc (s N) (t N),
+      Integrable (fun ω => |Y N u ω| ^ (2 * p)) P)
+    (hmom : ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ u ∈ Set.Icc (s N) (t N),
+        ∫ ω, |Y N u ω| ^ (2 * p) ∂P ≤ C * ((N : ℝ) ^ (ε * p) * Φ N u ^ (2 * p))) :
+    StochDom P (U := fun N => RBM.TimeIcc s t N) (fun N u ω => Y N (u : ℝ) ω)
+      (fun N u _ => Φ N (u : ℝ)) := by
+  set A : ℝ := (K + B + 1) / γ with hA_def
+  have hA : 0 ≤ A := div_nonneg (by linarith) hγ.le
+  have hAγ : A * γ = K + B + 1 := by rw [hA_def]; field_simp
+  -- step 1 on the net (unconditional: the moment input is unconditional)
+  have hnet : StochDom P (fun (N : ℕ) (k : Fin (netSize A N + 1)) ω =>
+      Y N (netTime s t T A N k) ω) (fun N k _ => Φ N (netTime s t T A N k)) := by
+    refine stochDom_of_momentDom (card_net_le hA) (Φ := fun N k => Φ N (netTime s t T A N k))
+      (fun N k => hΦ N _) (fun p N k => hint p N _ (netTime_mem hst hT.le A N k)) ?_
+    intro ε hε p
+    obtain ⟨C, hC0, hCN⟩ := hmom ε hε p
+    exact ⟨C, hC0, by
+      filter_upwards [hCN] with N hN k using hN _ (netTime_mem hst hT.le A N k)⟩
+  -- step 2: transfer from the net to the whole interval, on `Ξ`
+  refine stochDom_of_subset_highProb hnet hΞ fun τ hτ => ⟨τ / 3, by linarith, ?_⟩
+  have hτ3 : (0 : ℝ) < τ / 3 := by linarith
+  have hTγ : (0 : ℝ) < T ^ γ := Real.rpow_pos_of_pos hT γ
+  filter_upwards [hHol, hΦlow, hδ, hslow (τ / 3) hτ3, eventually_ge_atTop 1,
+    eventually_le_rpow 2 hτ3, eventually_le_rpow (T ^ γ) one_pos]
+    with N hHolN hΦN hδN hslowN hN1 hN2 hNT
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hTN : T ^ γ ≤ (N : ℝ) := by rwa [Real.rpow_one] at hNT
+  have hm : (0 : ℝ) < (netSize A N : ℝ) := by exact_mod_cast netSize_pos A N
+  have hmge : (N : ℝ) ^ A ≤ (netSize A N : ℝ) := rpow_le_netSize A N
+  have hNA : (0 : ℝ) < (N : ℝ) ^ A := Real.rpow_pos_of_pos hNpos A
+  rintro ω ⟨⟨u, hub⟩, hωΞ⟩
+  obtain ⟨k, hk⟩ := exists_netTime_close hT hlen A N u.2
+  refine ⟨k, ?_⟩
+  set v : ℝ := netTime s t T A N k with hv_def
+  have hvmem : v ∈ Set.Icc (s N) (t N) := netTime_mem hst hT.le A N k
+  set x : ℝ := (N : ℝ) ^ (τ / 3) with hx_def
+  have hx2 : (2 : ℝ) ≤ x := hN2
+  have hxpos : (0 : ℝ) < x := by linarith
+  -- the net spacing is at most `δ N`, so slow variation applies between `u` and `v`
+  have hspace : T / (netSize A N : ℝ) ≤ δ N :=
+    (div_le_div_of_nonneg_left hT.le hNA hmge).trans hδN
+  have hslow' : Φ N v ≤ x * Φ N u.1 := hslowN u.1 u.2 v hvmem (hk.trans hspace)
+  -- the net error is at most `x · Φ(N,u)`
+  have herr : (N : ℝ) ^ K * (T / (netSize A N : ℝ)) ^ γ ≤ x * Φ N u.1 := by
+    have hΦu : (N : ℝ) ^ (-B) ≤ Φ N u.1 := hΦN u.1 u.2
+    have hstep1 : T / (netSize A N : ℝ) ≤ T / (N : ℝ) ^ A :=
+      div_le_div_of_nonneg_left hT.le hNA hmge
+    have hstep1' : (T / (netSize A N : ℝ)) ^ γ ≤ (T / (N : ℝ) ^ A) ^ γ :=
+      Real.rpow_le_rpow (div_pos hT hm).le hstep1 hγ.le
+    have hKpos : (0 : ℝ) < (N : ℝ) ^ K := Real.rpow_pos_of_pos hNpos K
+    have hstep2 : (N : ℝ) ^ K * (T / (netSize A N : ℝ)) ^ γ
+        ≤ (N : ℝ) ^ K * (T / (N : ℝ) ^ A) ^ γ :=
+      mul_le_mul_of_nonneg_left hstep1' hKpos.le
+    have hpowA : ((N : ℝ) ^ A) ^ γ = (N : ℝ) ^ (K + B + 1) := by
+      rw [← Real.rpow_mul hNpos.le, hAγ]
+    have hdiv : (T / (N : ℝ) ^ A) ^ γ = T ^ γ / (N : ℝ) ^ (K + B + 1) := by
+      rw [Real.div_rpow hT.le hNA.le, hpowA]
+    have hexp : K - (K + B + 1) = -B + -1 := by ring
+    have hKA : (N : ℝ) ^ K / (N : ℝ) ^ (K + B + 1) = (N : ℝ) ^ (-B) * (N : ℝ)⁻¹ := by
+      rw [← Real.rpow_sub hNpos, ← Real.rpow_neg_one (N : ℝ), ← Real.rpow_add hNpos, hexp]
+    have hstep3 : (N : ℝ) ^ K * (T / (N : ℝ) ^ A) ^ γ
+        = T ^ γ * ((N : ℝ) ^ (-B) * (N : ℝ)⁻¹) := by
+      rw [hdiv, ← hKA]; ring
+    have hinvn : (0 : ℝ) ≤ (N : ℝ)⁻¹ := by positivity
+    have hstep4 : T ^ γ * ((N : ℝ) ^ (-B) * (N : ℝ)⁻¹) ≤ T ^ γ * (Φ N u.1 * (N : ℝ)⁻¹) :=
+      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hΦu hinvn) hTγ.le
+    have hstep5 : T ^ γ * (Φ N u.1 * (N : ℝ)⁻¹) ≤ x * Φ N u.1 := by
+      have hTinv : T ^ γ * (N : ℝ)⁻¹ ≤ 1 := by
+        rw [mul_inv_le_iff₀ hNpos, one_mul]; exact hTN
+      have h1 : (1 : ℝ) ≤ x := by linarith
+      have heq : T ^ γ * (Φ N u.1 * (N : ℝ)⁻¹) = (T ^ γ * (N : ℝ)⁻¹) * Φ N u.1 := by ring
+      rw [heq]
+      exact mul_le_mul_of_nonneg_right (hTinv.trans h1) (hΦ N u.1).le
+    linarith
+  -- the modulus of continuity between `u` and the net point `v`
+  have hhol := hHolN ω hωΞ u.1 u.2 v hvmem
+  have hle : |Y N u.1 ω - Y N v ω| ≤ x * Φ N u.1 := by
+    refine hhol.trans (le_trans ?_ herr)
+    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (abs_nonneg _) hk hγ.le)
+      (Real.rpow_pos_of_pos hNpos K).le
+  have hdiff : Y N u.1 ω - Y N v ω ≤ x * Φ N u.1 := (le_abs_self _).trans hle
+  -- `N^τ = x³` and `x³ ≥ x² + x` for `x ≥ 2`
+  have hx3 : (N : ℝ) ^ τ = x * (x * x) := by
+    rw [hx_def, ← Real.rpow_add hNpos, ← Real.rpow_add hNpos]
+    congr 1
+    ring
+  have hΦu0 : (0 : ℝ) < Φ N u.1 := hΦ N u.1
+  have hcube : 0 ≤ x * x * x - x * x - x := by nlinarith [hx2]
+  have hgap : x * (x * Φ N u.1) + x * Φ N u.1 ≤ (x * (x * x)) * Φ N u.1 := by
+    nlinarith [hcube, hΦu0.le]
+  have hstep : x * Φ N v ≤ x * (x * Φ N u.1) :=
+    mul_le_mul_of_nonneg_left hslow' hxpos.le
+  have hub' : (x * (x * x)) * Φ N u.1 < Y N u.1 ω := by
+    have : (N : ℝ) ^ τ * Φ N u.1 < Y N u.1 ω := hub
+    rwa [hx3] at this
+  show x * Φ N v < Y N v ω
+  linarith
+
+/-- **The time-dependent control together with a `≺`-controlled Hölder constant.**
+
+`stochDom_timeIcc_of_holder_dom` with `Φ(N)` replaced by `Φ(N,u)`, under the same
+slow-variation hypothesis as `stochDom_timeIcc_of_holder_slow_hp`.  This is the form that
+composes with `RBM.Gauss.OpNormBound.norm_X` (T100) with no glue: `hR` has literally its
+type. -/
+theorem stochDom_timeIcc_of_holder_slow_dom {s t : ℕ → ℝ} (hst : ∀ N, s N ≤ t N) {T : ℝ}
+    (hT : 0 < T) (hlen : ∀ N, t N - s N ≤ T) {K B γ : ℝ} (hK : 0 ≤ K) (hB : 0 ≤ B) (hγ : 0 < γ)
+    {Y : ℕ → ℝ → Ω → ℝ} {Φ : ℕ → ℝ → ℝ} (hΦ : ∀ N u, 0 < Φ N u)
+    (hΦlow : ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N), (N : ℝ) ^ (-B) ≤ Φ N u)
+    {δ : ℕ → ℝ} (hδ : ∀ᶠ N : ℕ in atTop, T / (N : ℝ) ^ ((K + 1 + B + 1) / γ) ≤ δ N)
+    (hslow : ∀ ε > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
+      ∀ v ∈ Set.Icc (s N) (t N), |u - v| ≤ δ N → Φ N v ≤ (N : ℝ) ^ ε * Φ N u)
+    {R : ℕ → Ω → ℝ}
+    (hR : StochDom P (fun N (_ : Unit) ω => R N ω) (fun _ _ _ => (1 : ℝ)))
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ (ω : Ω), ∀ u ∈ Set.Icc (s N) (t N),
+      ∀ u' ∈ Set.Icc (s N) (t N), |Y N u ω - Y N u' ω| ≤ (N : ℝ) ^ K * R N ω * |u - u'| ^ γ)
+    (hint : ∀ (p N : ℕ), ∀ u ∈ Set.Icc (s N) (t N),
+      Integrable (fun ω => |Y N u ω| ^ (2 * p)) P)
+    (hmom : ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ u ∈ Set.Icc (s N) (t N),
+        ∫ ω, |Y N u ω| ^ (2 * p) ∂P ≤ C * ((N : ℝ) ^ (ε * p) * Φ N u ^ (2 * p))) :
+    StochDom P (U := fun N => RBM.TimeIcc s t N) (fun N u ω => Y N (u : ℝ) ω)
+      (fun N u _ => Φ N (u : ℝ)) := by
+  -- the good event: the random Hölder constant is at most `N`
+  have hΞ : HighProb P (fun N => {ω | R N ω ≤ (N : ℝ)}) := by
+    refine (hR.highProb one_pos).mono (Eventually.of_forall fun N ω hω => ?_)
+    have h := hω ()
+    simpa [Real.rpow_one] using h
+  refine stochDom_timeIcc_of_holder_slow_hp hst hT hlen (K := K + 1) (by linarith) hB hγ hΦ
+    hΦlow hδ hslow hΞ ?_ hint hmom
+  filter_upwards [hHol, eventually_ge_atTop 1] with N hHolN hN1 ω hωΞ u hu u' hu'
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hd : (0 : ℝ) ≤ |u - u'| ^ γ := Real.rpow_nonneg (abs_nonneg _) _
+  have hKnn : (0 : ℝ) ≤ (N : ℝ) ^ K := Real.rpow_nonneg hNpos.le _
+  have hRle : R N ω ≤ (N : ℝ) := hωΞ
+  refine (hHolN ω u hu u' hu').trans ?_
+  have hc : (N : ℝ) ^ K * R N ω ≤ (N : ℝ) ^ (K + 1) := by
+    rw [Real.rpow_add hNpos, Real.rpow_one]
+    exact mul_le_mul_of_nonneg_left hRle hKnn
+  exact mul_le_mul_of_nonneg_right hc hd
+
+end SlowControl
+
 end RBM.Gauss
+

@@ -1860,6 +1860,21 @@
   the quantifier order of \texttt{MomentDom}.
 \end{proof}
 
+\begin{theorem}[Lemma 4.1 along the flow, for the Gaussian model]\label{thm:lemma41-flow}
+  \lean{RBM.Gauss.stochDom_mono_left, RBM.Gauss.stochDom_trans_indicator_idx, RBM.Gauss.flowDelta, RBM.Gauss.goodEv_subset_goodSet_flow, RBM.Gauss.EntryBoundFlow, RBM.Gauss.DiagBoundFlow, RBM.Gauss.LoopHypFlow, RBM.Gauss.stochDom_indicator_Lmax_flow, RBM.Gauss.stochDom_indicator_entryControl_flow, RBM.Gauss.stochDom_indicator_diag_flow, RBM.Gauss.stochDom_indicator_offdiag_flow, RBM.Gauss.stochDom_indicator_llMax_sq_flow, RBM.Gauss.lemma41Flow, RBM.Gauss.step1Phi_eq, RBM.Gauss.slow_step1Phi, RBM.Gauss.stochDom_timeIcc_of_holder_slow_hp, RBM.Gauss.stochDom_timeIcc_of_holder_slow_dom}
+  \leanok\uses{lem:4.1, lem:holder-hp, def:gauss-model, thm:step1}
+  From the time-indexed (4.2)/(4.3) one gets \texttt{Step1.Lemma41Flow} for \emph{every}
+  $\Phi\ge0$: the transfer is between two dominations that are already uniform in time, so no
+  time net and no slow variation of $\Phi$ is needed. The net bridge with a slowly varying
+  $\Phi(N,u)$ is supplied anyway, with the spacing exposed so the hypothesis is dischargeable;
+  for Step 1's own $\Phi=(\ell_sW\eta_u)^{-1}$ it reduces to the net spacing being below $1-t_N$.
+\end{theorem}
+\begin{proof}\leanok
+  Each step is a statement about the failure event at one $N$ and $\omega$ with an existential over
+  the index set, so enlarging that set by the time is harmless; the good event at time $u$ sits
+  inside the time-frozen one by monotonicity of the scale.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

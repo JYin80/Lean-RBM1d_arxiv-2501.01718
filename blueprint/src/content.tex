@@ -1613,6 +1613,24 @@
   coordinate, and Young's inequality with a rational exponent close the recursion.
 \end{proof}
 
+\begin{lemma}[Diagonal LDE: $|H_{ii}|^2\prec S_{ii}$]\label{lem:lde-diag}
+  \lean{RBM.Sblk_diag_pos, RBM.Gauss.integral_pow_coord, RBM.Gauss.integrable_pow_coord,
+    RBM.Gauss.normSq_Hflow_diag, RBM.Gauss.integral_norm_Hflow_diag_pow,
+    RBM.Gauss.integrable_norm_Hflow_diag_pow, RBM.Gauss.eventually_card_Idx_le,
+    RBM.Gauss.stochDom_normSq_Hflow_diag}
+  \leanok\uses{def:gauss-model, lem:moment-dom}
+  For the Gaussian flow, $|H_{ii}|^2\prec S_{ii}$ uniformly in $i$: the hypothesis
+  \texttt{hLdiag} of \texttt{diag\_bound\_stochDom}.
+\end{lemma}
+\begin{proof}\leanok
+  The diagonal of a Hermitian matrix is real, and \texttt{Xentry} reads a single coordinate
+  there, so $H_{ii}=\sqrt u\,\omega_{(i,i,\mathrm{tt})}$ is a one-dimensional centred Gaussian of
+  variance $u S_{ii}$.  Hence $\mathbb E|H_{ii}|^{2p}=u^p(2p-1)!!\,S_{ii}^p$, and the factor
+  $u^{2p}$ is absorbed into the constant of \texttt{MomentDom}, so no upper bound on $u$ is
+  needed.  The control $S_{ii}=1/(3W)$ is strictly positive, and the union bound runs over the
+  $LW\le N$ sites.
+\end{proof}
+
 \begin{lemma}[Assembly of the fluctuation average: (4.12) into (4.5)]\label{lem:fluc-avg}
   \lean{RBM.Gauss.measurable_matrix_inv_apply, RBM.Gauss.measurable_green_apply, RBM.Gauss.measurable_condRow, RBM.Gauss.measurable_flucDiag, RBM.Gauss.measurable_flucAvg, RBM.Gauss.norm_green_apply_le_etaT, RBM.Gauss.greenMinorMat_eq_green_submatrix, RBM.Gauss.norm_greenDiagCentered_le_env, RBM.Gauss.rowIntegrable_greenDiagCentered, RBM.Gauss.FlucBound, RBM.Gauss.flucBound_env, RBM.Gauss.integral_norm_flucAvg_pow_le_of_flucBound, RBM.Gauss.integrable_norm_flucAvg_pow, RBM.Gauss.momentDom_flucAvg, RBM.Gauss.stochDom_flucAvg, RBM.Gauss.card_blockAvg_support, RBM.Gauss.card_Sblk_support, RBM.Gauss.stochDom_flucAvg_blockAvg, RBM.Gauss.stochDom_flucAvg_Sblk, RBM.Gauss.stochDom_flucAvg_blockAvg_env, RBM.Gauss.condExpDiag, RBM.Gauss.flucAvg_eq_sum_sub, RBM.Gauss.norm_trace_green_sub_mul_Eblk_le_flucAvg, RBM.Gauss.trace_green_sub_mul_Eblk_stochDom}
   \leanok\uses{lem:fluc-count, lem:fluc-vanish, lem:moment-dom, lem:4.1}

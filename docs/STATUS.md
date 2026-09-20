@@ -1652,3 +1652,24 @@ stochDom_ldeCol : StochDom (P d) (ldeColLHS (Hflow …) (green …)) (ldeColRHS 
 `diag_bound_stochDom` 还差 `hLquad`（T82 的 `LDEQuad`，`Gauss/LDEQuad.lean`）与
 `hLdiag`（`‖H_ii‖² ≺ S_ii`，尚无工单）——两者同样需要从矩界经 `stochDom_of_momentDom` 落成
 `StochDom`，`stochDom_sq_of_rowSum` 的写法可以照抄。
+
+**T92 ✔**（`Gauss/LDEDiag.lean`，新建，零 sorry）：`diag_bound_stochDom` 的最后一条**容易**假设
+
+```
+stochDom_normSq_Hflow_diag (hu0 : 0 ≤ u) :
+  StochDom (P d) (fun N i ω => ‖Hflow d N u ω i i‖ ^ 2) (fun N i _ => Sblk (d.L N) (d.W N) i i)
+```
+
+关键观察：**对角元是实的**。Hermitian 矩阵对角无虚部，`Xentry` 在 `i = j` 那一支只读单个坐标
+`ω ⟨N,i,i,tt⟩`，所以 `‖H_ii‖² = u·(ω c)²`，`E‖H_ii‖^{2p} = u^p·(2p−1)!!·S_ii^p`
+（`integral_norm_Hflow_diag_pow`）。因子 `u^{2p}` 进 `MomentDom` 的常数 `C(ε,p)`，
+故**不需要 `u ≤ 1`**（比论文弱的假设，paper-deltas #63）。
+控制的严格正性由 `Sblk_diag_pos`（`S_ii = 1/(3W) > 0`）给出，union bound 跑 `LW ≤ N` 个格点
+（`eventually_card_Idx_le`）。顺带两条通用小引理：`integral_pow_coord`、`integrable_pow_coord`
+（单个坐标的矩与可积性，经 `P_map_eval` 推到 `gaussianReal`）。
+
+蓝图新节点 `lem:lde-diag`。全量构建通过，公理审计 **6613 条声明**全部合规。
+
+**`diag_bound_stochDom` 的四条假设现状**：`hLrow` ✔（T91）、`hLcol` ✔（T91）、`hLdiag` ✔（T92）、
+**`hLquad` 仍缺**——T82 证到 `E|Q|^{2p} ≤ (2p−1)^p E[T^p]`，还差 `E[T^p] ≤ C_p E[Vq^p]`
+（`Gauss/LDEQuad.lean` 文件头有草图）。这是通往 (4.3) 的唯一剩余缺口。

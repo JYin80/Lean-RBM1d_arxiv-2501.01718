@@ -1561,3 +1561,8 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 ## HEAD 编译已恢复（2026-09-20）
 
 上一节记的 `Gauss/RowIndep.lean` 编译失败已由对面修好；`lake build RBM1D` 绿，公理审计 6568 条声明全部合规。
+
+**T81 第二十三、二十四块 ✔**：`integrable_norm_row_sum_pow`（冻结行和的偶数阶矩存在，
+用两个实线性型的矩做控制）与 `lintegral_norm_row_sum_pow_le`（冻结界的 `∫⁻` 形式）。
+**下一步**：用 `lintegral_indep_pair_le` 把它提升到随机系数，得到**无可积性假设**的
+`∫⁻ ‖Z/√V‖^{2p} ≤ 2(2p−1)!!`，再由有限性反推可积性，替换掉第十六/十八块里的假设。

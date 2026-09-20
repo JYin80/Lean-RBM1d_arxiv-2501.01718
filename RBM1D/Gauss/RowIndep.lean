@@ -721,4 +721,56 @@ theorem rowVarSum_eq (u : ℝ) {i : d.Idx N} (j : {a : d.Idx N // a ≠ i}) {ω 
   exact Finset.sum_congr rfl fun k _ =>
     by rw [minorCol_eq_greenMinor u j hdet hGii k.2]
 
+/-! ### The frozen bound in `ℝ≥0∞` form -/
+
+theorem measurable_row_sum (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ) :
+    Measurable fun ω : Ω d => ∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1 :=
+  Finset.measurable_sum _ fun k _ => (measurable_Hflow d N u i k.1).mul measurable_const
+
+/-- All even moments of a frozen row sum exist. -/
+theorem integrable_norm_row_sum_pow (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ) (p : ℕ) :
+    Integrable (fun ω : Ω d =>
+      ‖∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1‖ ^ (2 * p)) (P d) := by
+  have hre := integrable_pow_lin (P := P d) (measurable_rowVar (d := d) (N := N) i)
+    (map_rowVar (d := d) (N := N) i) (iIndepFun_rowVar (d := d) (N := N) i)
+    (rowRe d N u i c) Finset.univ p
+  have him := integrable_pow_lin (P := P d) (measurable_rowVar (d := d) (N := N) i)
+    (map_rowVar (d := d) (N := N) i) (iIndepFun_rowVar (d := d) (N := N) i)
+    (rowIm d N u i c) Finset.univ p
+  refine ((hre.add him).const_mul ((2 : ℝ) ^ p)).mono'
+    (((measurable_row_sum u i c).norm).pow_const _).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun ω => ?_)
+  set x := (∑ q : RowIdx d N i, rowRe d N u i c q * rowVar d N i q ω) with hx
+  set y := (∑ q : RowIdx d N i, rowIm d N u i c q * rowVar d N i q ω) with hy
+  have hz : ‖∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1‖ ^ (2 * p)
+      = (x ^ 2 + y ^ 2) ^ p := by
+    rw [pow_mul, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, hx, hy, ← re_row_sum,
+      ← im_row_sum]
+    ring_nf
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), hz]
+  have hxy : (x ^ 2 + y ^ 2) ^ p ≤ 2 ^ p * (x ^ (2 * p) + y ^ (2 * p)) := by
+    have hx0 : (0 : ℝ) ≤ x ^ 2 := by positivity
+    have hy0 : (0 : ℝ) ≤ y ^ 2 := by positivity
+    have h1 : (x ^ 2 + y ^ 2) ^ p ≤ (2 * max (x ^ 2) (y ^ 2)) ^ p := by
+      refine pow_le_pow_left₀ (by positivity) ?_ p
+      rcases le_total (x ^ 2) (y ^ 2) with h | h
+      · simp [max_eq_right h]; linarith
+      · simp [max_eq_left h]; linarith
+    have h2 : max (x ^ 2) (y ^ 2) ^ p ≤ x ^ (2 * p) + y ^ (2 * p) := by
+      rw [pow_mul, pow_mul]
+      rcases le_total (x ^ 2) (y ^ 2) with h | h
+      · rw [max_eq_right h]
+        have : (0 : ℝ) ≤ (x ^ 2) ^ p := by positivity
+        linarith
+      · rw [max_eq_left h]
+        have : (0 : ℝ) ≤ (y ^ 2) ^ p := by positivity
+        linarith
+    calc (x ^ 2 + y ^ 2) ^ p ≤ (2 * max (x ^ 2) (y ^ 2)) ^ p := h1
+      _ = 2 ^ p * max (x ^ 2) (y ^ 2) ^ p := by rw [mul_pow]
+      _ ≤ 2 ^ p * (x ^ (2 * p) + y ^ (2 * p)) := by
+          have : (0 : ℝ) ≤ 2 ^ p := by positivity
+          exact mul_le_mul_of_nonneg_left h2 this
+  calc (x ^ 2 + y ^ 2) ^ p ≤ 2 ^ p * (x ^ (2 * p) + y ^ (2 * p)) := hxy
+    _ = _ := by simp only [Pi.add_apply, hx, hy]
+
 end RBM.Gauss

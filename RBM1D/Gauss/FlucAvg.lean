@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.FlucCount
 import RBM1D.Gauss.Envelope
 import Mathlib.Analysis.Matrix.MeasurableSpace
+import RBM1D.Defs.MatrixMeasurable
 
 /-!
 # Assembling the fluctuation averaging: (4.12) and (4.5)
@@ -120,21 +121,6 @@ variable {d : Dims} {N : ℕ}
 
 Two facts were left open by T84 and T86 (`docs/paper-deltas.md` #56, #57) and are the last
 obstruction to the hypotheses `hZmeas`, `hYmeas`, `hrow` of T87.  Both are proved here. -/
-
-/-- Entries of `A⁻¹` are measurable in `A`: `A⁻¹ = Ring.inverse (det A) • adjugate A`, with
-`det` and `adjugate` continuous (polynomial) and `Ring.inverse = (·)⁻¹` measurable on `ℂ`. -/
-theorem measurable_matrix_inv_apply {n : Type*} [Fintype n] [DecidableEq n] {Ω : Type*}
-    [MeasurableSpace Ω] {M : Ω → Matrix n n ℂ} (hM : Measurable M) (i j : n) :
-    Measurable fun ω => (M ω)⁻¹ i j := by
-  have h : (fun ω => (M ω)⁻¹ i j)
-      = fun ω => Ring.inverse (M ω).det * (M ω).adjugate i j := by
-    funext ω; rw [Matrix.inv_def]; rfl
-  rw [h]
-  refine Measurable.mul ?_ ?_
-  · have hinv : Measurable (Ring.inverse : ℂ → ℂ) := by
-      rw [Ring.inverse_eq_inv']; exact measurable_inv
-    exact hinv.comp ((continuous_id.matrix_det).measurable.comp hM)
-  · exact ((continuous_id.matrix_adjugate).measurable.comp hM).eval_matrix
 
 /-- `ω ↦ H_u(ω) - z` is measurable as a matrix-valued map. -/
 theorem measurable_Hflow_sub (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ) :

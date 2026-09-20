@@ -9,6 +9,7 @@ import RBM1D.Green.EntryBound
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.Domination
+import RBM1D.Defs.MatrixMeasurable
 
 /-!
 # The minor resolvent does not read row `i`
@@ -601,36 +602,6 @@ theorem integral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N �
   nlinarith [hle, hd]
 
 /-! ### Measurability of the minor resolvent -/
-
-section MatrixMeasurable
-
-variable {n : Type*} [Fintype n] [DecidableEq n] {Θ : Type*} [MeasurableSpace Θ]
-  {A : Θ → Matrix n n ℂ}
-
-theorem measurable_det_entries (hA : ∀ k l, Measurable fun ω => A ω k l) :
-    Measurable fun ω => (A ω).det := by
-  simp_rw [Matrix.det_apply]
-  refine Finset.measurable_sum _ fun σ _ => ?_
-  refine Measurable.const_smul ?_ _
-  exact Finset.measurable_prod _ fun k _ => hA (σ k) k
-
-theorem measurable_adjugate_entries (hA : ∀ k l, Measurable fun ω => A ω k l) (k l : n) :
-    Measurable fun ω => (A ω).adjugate k l := by
-  simp_rw [Matrix.adjugate_apply]
-  refine measurable_det_entries fun a b => ?_
-  by_cases h : a = l
-  · subst h
-    simp only [Matrix.updateRow_self]
-    exact measurable_const
-  · simp only [Matrix.updateRow_ne h]
-    exact hA a b
-
-theorem measurable_inv_entries (hA : ∀ k l, Measurable fun ω => A ω k l) (k l : n) :
-    Measurable fun ω => (A ω)⁻¹ k l := by
-  simp_rw [Matrix.inv_def, Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv']
-  exact ((measurable_det_entries hA).inv).mul (measurable_adjugate_entries hA k l)
-
-end MatrixMeasurable
 
 /-- The `j`-th column of the minor resolvent `(H^{(i)} - z)^{-1}`, as coefficients indexed by
 all of `Idx N` (zero at `i`). -/

@@ -1579,3 +1579,10 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 `E‖Z/√V‖^{2p} ≤ 2(2p−1)!!` **无任何假设**（只需 `0 ≤ u`）。
 **T81 只剩**：把这条按 `MomentDom` 的量词次序（ε 在 p 外）组织，经 T73 的 `stochDom_of_momentDom`
 落成 `≺`；`ldeRowLHS_eq`/`rowVarSum_eq`（第二十一块）负责与论文量对齐。
+
+**T81 第二十八、二十九块 ✔（主目标达成）**：**`stochDom_rowSum_minorCol`**——
+`|∑_{k≠i} H_ik G^(i)_kj| ≺ (∑_k S_ik|G^(i)_kj|²)^{1/2}`，对 `(i,j)` 一致，即工单要的
+`LDERow` 的 `StochDom` 版本。并已一般化为 **`stochDom_rowSum_general`**（任意「只读 off-row 块」
+的系数族 + 多项式大小的指标集），`minorCol` 版本是其实例。
+**下一步**：列版本 `LDECol`——由 `H` 的 Hermitian 性，`∑_{l≠j} G^(j)_kl H_lj` 的共轭是
+以 `conj G^(j)_{k·}` 为系数的**行和**（行 = `j`），故同样是 `stochDom_rowSum_general` 的实例。

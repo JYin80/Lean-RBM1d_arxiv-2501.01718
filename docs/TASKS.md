@@ -197,7 +197,7 @@
 | T105 | 维护：`GaussIBP` 已由 T104 卸掉，把 `hG : GaussIBP d` 从**我自己那几个文件**的签名里删掉（`LDEQuadInst.lean`、`LDEQuadDom.lean`、`EntryBoundGauss.lean`、`Lemma41Glue.lean`），内部改填 `gaussIBP d`。**不碰 `Gauss/LDEQuad.lean`**（那是别人的，接口保持不变） | 上述五个文件 | **Claude Code #2** | 已完成 |
 | T106 | **`u ↦ ‖G_u − m‖²_max` 的 Hölder 模**（T99 的 (C) 里唯一还没人做的一块，且**不依赖 T100**）：纯确定性。预解式恒等式 + `norm_Hflow_sub`（`‖H_u−H_u'‖ = \|√u−√u'\|·‖X‖`）+ `\|√u−√u'\| ≤ \|u−u'\|^{1/2}` + `z_u` 的 Lipschitz 性，给出 `\|llMax_u² − llMax_u'²\| ≤ C·η_t⁻²(‖X‖+1)·\|u−u'\|^{1/2}`。配 T101 的 `≺`-常数版与 T100 的 `‖X‖ ≺ 1` 即可关掉 `Lemma41Flow` | `Gauss/FlowHolder.lean`（新建） | **Claude Code #2** | 已完成 |
 | T107 | **带时间指标的 Lemma 4.1**（T107 原计划的障碍一，纯接口重做）：用 `Green/EntryBound.lean` 的**确定性内核** `norm_sq_green_le_blk` / `norm_sq_green_diag_sub_le_blk` 加自己的 `StochDom.of_det` 调用，把 (4.2)(4.3) 的指标集扩成 `TimeIcc s t N × …`（时间与谱参数随指标走）。`δ N := (scale E N (t N))⁻¹^{1/6}`（`scale` 对 u 反单调，方向正确）。**不碰 `Green/EntryBound.lean`** | `Gauss/EntryBoundTime.lean`（新建） | **Claude Code #2** | 进行中 |
-| T108 | **`Lemma41Flow` 总装**（依赖 T107 + T100）。还要处理障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而 T101/T75 的时间网桥只吃 `Φ : ℕ → ℝ`；需给桥补一个 `Φ` 的缓变假设，或在本文件重做网论证 | `Gauss/Lemma41FlowGauss.lean`（新建） | 空闲 | 依赖 T107、T100 |
+| T108 | **`Lemma41Flow` 总装**（依赖 T107 + T100）。还要处理障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而 T101/T75 的时间网桥只吃 `Φ : ℕ → ℝ`；需给桥补一个 `Φ` 的缓变假设，或在本文件重做网论证 | `Gauss/Lemma41FlowGauss.lean`（新建） | Claude Code | 进行中（T107 的带时间指标 Lemma 4.1 先作假设；障碍二走路线 (a)：`DominationHolder.lean` 是本侧文件，加 Φ 缓变变体） |
 
 ---
 

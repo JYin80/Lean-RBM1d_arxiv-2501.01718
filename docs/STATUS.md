@@ -1930,3 +1930,39 @@ diag_bound_gauss  (hG : GaussIBP d) (0 < κ ≤ 1) (|E| ≤ 2−κ) (0 ≤ t < 1
 
 据此新开三张工单（见 `docs/TASKS.md` T100/T101/T102），**T102（接口对齐 + 界传递）不依赖
 (C)，可以立刻开工**；T100、T101 互相独立，合起来才解锁 `Lemma41Flow`。
+
+**T102 进行中**（`Gauss/Lemma41Glue.lean`，新建，不碰 `Hierarchy/Step1.lean`、`Green/EntryBound.lean`）
+
+**第一块 ✔（词典）**：两套语言对得上，逐条写出来了。
+
+```
+norm_gloop_pm_eq_Lre : ‖gloop L W H z ⟨[tt,ff],[a,b]⟩‖ = Lre H z a b      （H Hermitian）
+Sample.llErr_eq      : llErr = ‖G i j − (i=j ? m(E) : 0)‖                  （= GoodEvent 的逐元素量）
+Step1.goodEv_eq_setOf_goodEvent : goodEv X E N u = {ω | GoodEvent (G_u) m(E) (Wℓη)^{-1/6}}
+Gauss.sample_Lval_pm, Gauss.goodEv_eq_goodSet                              （高斯实例，固定时刻）
+```
+
+`‖gloop‖ = Lre` 靠 `gloop_two_plus_minus_blocks`：这个 2-loop 的值是
+`((W⁻²∑∑‖G‖² : ℝ) : ℂ)`，**实且非负**，所以范数就是实部。
+
+**第二块 ✔（指示函数的传递）**：`entry_bound_stochDom`/`diag_bound_stochDom` 给的是
+`1_Ω ξ ≺ ζ`，**控制 ζ 上没有指示函数**；而 `Lemma41Flow` 提供的是 `1_Ω ζ ≺ χ`。
+两者仍可串联——**坏事件上左端为正，故 ω ∈ Ω，指示函数是白送的**：
+
+```
+StochDom.trans_indicator :
+  1_A f ≺ g  →  1_A g ≺ h  →  (0 ≤ h)  →  1_A f ≺ h
+```
+
+证法是 `StochDom.of_subset_union`（两次 `τ/2`）。这条是通用的，将来可以下沉到
+`Defs/StochDom.lean`（共享文件，先放在本文件里）。
+
+**下一步（第三块）**：固定时刻的 `Lemma41Flow`——把 `entry_bound_gauss`（`i ≠ j`）与
+`diag_bound_gauss`（`i = j`）的结论用 `llMax² = (⨆ llErr)²` 合成，控制经 `trans_indicator`
+传到 `Φ + W⁻¹`。需要的额外输入：`δ_N = (Wℓη)^{-1/6} ≤ N^{-c₀}`（即对 scale 的多项式下界，
+Step1 那边是 `Cond272` + `hreg`）。**时间一致性（T99 的 (C)）仍不在本工单范围内。**
+
+（过程教训：这轮有一次 `lake build … | tail && git commit` 在**构建失败**时仍然提交了
+——管道的退出码是 `tail` 的。单文件 `lake env lean` 通过**不等于**全量通过：
+跨文件重名只有根文件 import 全部时才暴露，这次就是 `RBM.Gauss.sample_G` 与
+`Gauss/Hierarchy.lean` 撞名。已 push 修复。）

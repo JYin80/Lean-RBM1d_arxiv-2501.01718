@@ -91,6 +91,62 @@ theorem goodEv_eq_setOf_goodEvent (N : ℕ) (u : ℝ) :
 
 end Step1
 
+namespace StochDom
+
+/-! ### Chaining through an indicator
+
+`RBM.entry_bound_stochDom` and `RBM.diag_bound_stochDom` conclude
+`1_Ω ξ ≺ ζ` where the **control `ζ` carries no indicator**, while `RBM.Lemma41Flow` supplies
+`1_Ω ζ ≺ χ`.  The two chain anyway: on the failure event of the conclusion the left-hand side
+is positive, so `ω ∈ Ω` and the indicator on the control is free. -/
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {U : ℕ → Type*}
+
+/-- **Transitivity through an indicator.**  If `1_A f ≺ g` (control without indicator) and
+`1_A g ≺ h` (control `h ≥ 0`), then `1_A f ≺ h`. -/
+theorem trans_indicator {A : ℕ → Set Ω} {f g h : ∀ N, U N → Ω → ℝ}
+    (h₁ : StochDom P (fun N u ω => (A N).indicator (f N u) ω) g)
+    (h₂ : StochDom P (fun N u ω => (A N).indicator (g N u) ω) h)
+    (hh : ∀ N u ω, 0 ≤ h N u ω) :
+    StochDom P (fun N u ω => (A N).indicator (f N u) ω) h := by
+  refine StochDom.of_subset_union h₁ h₂ fun τ hτ => ⟨τ / 2, by linarith, ?_⟩
+  filter_upwards [Filter.eventually_ge_atTop 1] with N hN1
+  intro ω hω
+  obtain ⟨u, hu0'⟩ := hω
+  have hu : (N : ℝ) ^ τ * h N u ω < (A N).indicator (f N u) ω := hu0'
+  by_contra hcon
+  rw [Set.mem_union] at hcon
+  push Not at hcon
+  obtain ⟨hb1, hb2⟩ := hcon
+  simp only [badSet, Set.mem_ofPred_eq, not_exists, not_lt] at hb1 hb2
+  replace hb1 : ∀ v, (A N).indicator (f N v) ω ≤ (N : ℝ) ^ (τ / 2) * g N v ω := hb1
+  replace hb2 : ∀ v, (A N).indicator (g N v) ω ≤ (N : ℝ) ^ (τ / 2) * h N v ω := hb2
+  have hN0 : (0 : ℝ) < N := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hN1
+  have hp : (0 : ℝ) < (N : ℝ) ^ (τ / 2) := Real.rpow_pos_of_pos hN0 _
+  -- the failure event forces `ω ∈ A N`
+  have hmem : ω ∈ A N := by
+    by_contra hnot
+    rw [Set.indicator_of_notMem hnot] at hu
+    exact absurd hu (not_lt.2
+      (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) τ) (hh N u ω)))
+  have e1 : (A N).indicator (f N u) ω ≤ (N : ℝ) ^ (τ / 2) * g N u ω := hb1 u
+  have e2 : g N u ω ≤ (N : ℝ) ^ (τ / 2) * h N u ω := by
+    have := hb2 u
+    rwa [Set.indicator_of_mem hmem] at this
+  have hchain : (A N).indicator (f N u) ω
+      ≤ (N : ℝ) ^ (τ / 2) * ((N : ℝ) ^ (τ / 2) * h N u ω) := by
+    refine e1.trans ?_
+    exact mul_le_mul_of_nonneg_left e2 hp.le
+  have hpow : (N : ℝ) ^ (τ / 2) * ((N : ℝ) ^ (τ / 2) * h N u ω)
+      = (N : ℝ) ^ τ * h N u ω := by
+    rw [← mul_assoc, ← Real.rpow_add hN0]
+    congr 2
+    ring
+  rw [hpow] at hchain
+  exact absurd hu (not_lt.2 hchain)
+
+end StochDom
+
 namespace Gauss
 
 variable {d : Dims}

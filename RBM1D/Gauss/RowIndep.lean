@@ -545,4 +545,57 @@ theorem rowCoeffNorm_congr (C : Ω d → d.Idx N → ℂ)
   simp only [rowCoeffNorm, rowVarSum, hCe]
   rfl
 
+theorem measurable_rowVarSum (C : Ω d → d.Idx N → ℂ) (hCmeas : Measurable C) :
+    Measurable (rowVarSum d N u i C) := by
+  unfold rowVarSum
+  refine measurable_const.mul (Finset.measurable_sum _ fun k _ => ?_)
+  exact measurable_const.mul ((((measurable_pi_apply k.1).comp hCmeas).norm).pow_const 2)
+
+theorem measurable_rowCoeffNorm (C : Ω d → d.Idx N → ℂ) (hCmeas : Measurable C) :
+    Measurable (rowCoeffNorm d N u i C) := by
+  refine Measurable.of_eval fun k => ?_
+  refine Measurable.ite (measurableSet_lt measurable_const (measurable_rowVarSum C hCmeas)) ?_
+    measurable_const
+  refine ((measurable_pi_apply k).comp hCmeas).div ?_
+  exact Complex.measurable_ofReal.comp (Real.continuous_sqrt.measurable.comp
+    (measurable_rowVarSum C hCmeas))
+
+/-- **The row LDE, ratio form.**  Normalising by the conditional standard deviation gives a
+*constant* moment bound: `E[(‖∑_{k≠i} H_{ik} C_k‖² / (u ∑_k S_{ik}|C_k|²))^p] ≤ 2 (2p-1)!!`.
+This is the `MomentDom` input (with `Φ = 1`) that `stochDom_of_momentDom` turns into `≺`. -/
+theorem integral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
+    (hCmeas : Measurable C)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω')
+    (hint : Integrable
+      (fun ω => ‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p)) (P d)) :
+    ∫ ω, ‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p) ∂(P d) ≤ 2 * dfac p := by
+  have hvar := rowVarSum_rowCoeffNorm (d := d) (N := N) (u := u) (i := i) hu C
+  have hmeas' : Measurable (fun ω => rowVarSum d N u i (rowCoeffNorm d N u i C) ω ^ p) :=
+    (measurable_rowVarSum _ (measurable_rowCoeffNorm C hCmeas)).pow_const p
+  have hbdd : ∀ ω : Ω d, ‖rowVarSum d N u i (rowCoeffNorm d N u i C) ω ^ p‖ ≤ 1 := by
+    intro ω
+    rw [hvar ω]
+    rcases Nat.eq_zero_or_pos p with rfl | hp
+    · by_cases h : 0 < rowVarSum d N u i C ω <;> simp [h]
+    · by_cases h : 0 < rowVarSum d N u i C ω <;> simp [h, zero_pow hp.ne']
+  have hint' : Integrable (fun ω => rowVarSum d N u i (rowCoeffNorm d N u i C) ω ^ p) (P d) :=
+    (integrable_const (1 : ℝ)).mono' hmeas'.aestronglyMeasurable
+      (Filter.Eventually.of_forall hbdd)
+  have hmain := integral_norm_rowSum_pow_le (d := d) (N := N) (u := u) (i := i) (p := p) hu
+    (rowCoeffNorm d N u i C) (measurable_rowCoeffNorm C hCmeas)
+    (fun ω ω' h => rowCoeffNorm_congr C hC ω ω' h) hint hint'
+  refine hmain.trans ?_
+  have hle : ∫ ω, rowVarSum d N u i (rowCoeffNorm d N u i C) ω ^ p ∂(P d) ≤ 1 := by
+    calc ∫ ω, rowVarSum d N u i (rowCoeffNorm d N u i C) ω ^ p ∂(P d)
+        ≤ ∫ _ω : Ω d, (1 : ℝ) ∂(P d) := by
+          refine integral_mono hint' (integrable_const 1) fun ω => ?_
+          have := hbdd ω
+          rw [Real.norm_eq_abs] at this
+          exact (le_abs_self _).trans this
+      _ = 1 := by simp
+  have hd : 0 ≤ dfac p := by
+    unfold dfac
+    positivity
+  nlinarith [hle, hd]
+
 end RBM.Gauss

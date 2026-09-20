@@ -1480,3 +1480,7 @@ minor 矩阵 `H^(i)` 只读 off-row 块。注意这条比第三块的 `AgreeOffR
 
 **⚠ 与 T85 的 `≺`/逐点接缝仍未合拢——留给 T88**（agent 明说没有伪造）。本单的贡献是把截断要打的靶子压成**一个平坦的接口**：只对指标集量化的六条假设 `hZmeas`/`hYmeas`/`hrow`/`hZB`/`hYB`/`hεb`（加 `0 ≤ B`、`0 ≤ ε`）；
 T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子类型）已在证明内部消化干净。可测性与 `RowIntegrable` 承自 T84/T86（paper-deltas #56、#57），非新增。paper-deltas #58。
+
+**T81 第十七块 ✔**：`rowCoeffNorm`（系数除以随机标准差 `√V`）与 `rowVarSum_rowCoeffNorm`
+（归一化后方差恰为 `1`，`V = 0` 时为 `0`）。把它代入第十六块即得**常数**矩界
+`E[(‖Z‖²/V)^p] ≤ 2(2p−1)!!`——正是 `MomentDom`（Φ = 1）要的形状，比值形式直接对接 T73。

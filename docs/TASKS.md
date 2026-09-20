@@ -172,6 +172,11 @@
 | T81 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | **Claude Code #2** | 进行中 ← **卸 [39] 之一** |
 | T82 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | 待认领 | 未开工 ← **卸 [39] 之二** |
 | T83 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean`（新建） | 待认领 | 未开工（等 T70 矩阵版） |
+| T84 | **条件期望 = 坐标积分**：`E_k` 的定义与代数；`G^(k)` 与第 k 行严格独立 | `Gauss/CondRow.lean`（新建） | 待认领 | 未开工 ← **涨落平均的地基** |
+| T85 | 替换误差 `\|G_ll − G^(k)_ll\| ≺ Ψ²`（由已证的 (4.9)） | `Gauss/MinorReplace.lean`（新建） | 待认领 | 未开工 |
+| T86 | **消失引理**：某指标只出现一次 ⟹ 期望 = O(替换误差) | `Gauss/FlucVanish.lean`（新建） | 待认领 | 未开工（等 T84、T85） |
+| T87 | **计数**：按不同指标个数分层 ⟹ 额外一个 `Ψ` | `Gauss/FlucCount.lean`（新建） | 待认领 | 未开工（等 T86）← **这一批的大头** |
+| T88 | 组装 ⟹ 卸掉 `EntryBound` 的 `hFA`（(4.12)），进而得 (4.5) | `Gauss/FlucAvg.lean`（新建） | 待认领 | 未开工（等 T87） |
 | T78 | 连续归纳（bootstrap）原理：`φ` 连续 + 自改进 `φ ≤ C → φ ≤ B` ⟹ `φ ≤ B`；T75 卸停时 (5.43) 的分析内核，**不依赖 T72** | `Analysis/Bootstrap.lean`（新建） | Claude Code #2 | **完成**（`le_of_bootstrap`；T75 直接调用即可） |
 
 ---
@@ -1752,4 +1757,68 @@ ldeRowLHS H G i j = ‖∑_{k≠i} H_ik G^(i)_kj‖²   ≺   ∑_{k≠i} S_ik �
 
 它**就是**高斯分部积分，也就是 T70 的矩阵版 Stein。T70 一落地这条基本是套用。
 **注意**：它只是 (4.5) 证明里的一步，(4.5) 本身还要 (4.12)，那是第六批的事。
+
+---
+
+# 第六批工单（T84–T88）：自证涨落平均 (4.12)，卸掉 [40]
+
+**推演结论（2026-09-20，已记入 STATUS）**：两条便宜路线都试过，**都不行**——
+
+* **方差/正交性**：`E_k[Z_k]=0` 加 (4.9) 的替换只给到 `E|∑t_kZ_k|² ≲ Ψ³`，即 `≺ Ψ^{3/2}`，
+  比 (4.12) 要的 `Ψ²` 差一个 `Ψ^{1/2}`。方差只看二阶，看不到「每个指标至少出现两次」。
+* **高斯 Poincaré / Efron–Stein**：`∂_{H_jm}G_kk = −G_kjG_mk ≺ Ψ²` ⟹ `Var ≲ N·Ψ⁴`，
+  差 `N` 倍。它完全没用上 `(1−E_k)` 的结构。
+
+**所以走标准高阶矩展开，没有捷径。** 高斯让第 1、2 步变干净（精确 Fubini、严格独立，
+而不是 [39] 那种一般分布的矩方法），但**第 5 步的计数不因高斯而简化**。
+
+依赖：`T84 → T86 → T87 → T88`；`T85 → T86`。T84、T85 可并行开工。
+
+## T84 — `RBM1D/Gauss/CondRow.lean` · M · **地基**
+
+在 `Gauss/Model.lean` 的乘积模型里，`E_k[X] := E[X | H^{(k)}]` **就是对第 k 行的坐标积分**，
+是精确的 Fubini，**不要用抽象 `condExp`**。要：
+
+* `condRow d N k : (Ω d → ℂ) → (Ω d → ℂ)`，由 `P_map_restrict` + Fubini 定义；
+* 幂等 `E_k ∘ E_k = E_k`；**`E_k ∘ (1 − E_k) = 0`**（消失引理的全部依据）；
+* 不读第 k 行的因子可以提出：`E_k[X·Y] = X·E_k[Y]`（`X` 的 `FinDep` 见证集不含第 k 行）；
+* `E[E_k X] = E[X]`；
+* **`G^(k)` 与第 k 行严格独立**：写成「`G^(k)` 是 `FinDep` 且见证集不含第 k 行坐标」。
+  这条 T81/T82 也要用，**抽成公共引理**。
+
+## T85 — `RBM1D/Gauss/MinorReplace.lean` · S/M
+
+`|G_ll − G^(k)_ll| ≺ Ψ²`，`l ≠ k`。**(4.9) 已经在 `Green/Minor.lean` 里证了**
+（`RBM.inv_minorMat` / `green_diag_paper`），本单只是把它配上
+`|G_lk| ≺ Ψ`（来自 Step 2 的 (2.75)）与 `|G_kk|` 下界，得到误差界。基本是套用，便宜。
+
+## T86 — `RBM1D/Gauss/FlucVanish.lean` · M · 等 T84、T85
+
+**消失引理**：设 `Z_k := (1−E_k)(G_kk − m)`。若在乘积 `Z_{k_1}···Z_{k_{2p}}` 中某个指标
+（比如 `k_1`）**恰好出现一次**，则
+
+    |E[∏_i Z_{k_i}]| ≲ (替换误差) × (其余因子的界)
+
+做法：把每个 `Z_{k_i}`（`i ≠ 1`）换成 `Z^{(k_1)}_{k_i}`（用 `G^{(k_1)}` 造），
+换完之后它们与第 `k_1` 行严格独立，于是 `E_{k_1}` 可以穿过去打在 `Z_{k_1}` 上，得 0（T84）；
+替换误差由 T85 逐项估计。
+
+## T87 — `RBM1D/Gauss/FlucCount.lean` · L · **大头**
+
+把 `E|∑_k t_k Z_k|^{2p}` 展开成对 `(k_1,…,k_{2p})` 的求和，按 **不同指标的个数** 分层：
+
+* 有指标只出现一次的那些层，用 T86 压掉；
+* 其余层：每个指标至少出现两次 ⟹ 不同指标至多 `p` 个 ⟹ 权重求和给出额外的因子。
+
+配上 `|Z_k| ≺ Ψ`、`∑_k|t_k| ≤ 1`、`|t_k| ≤ CW⁻¹`，得到 `E|∑t_kZ_k|^{2p} ≲ (N^ε Ψ²)^{2p}`。
+
+**我们只需要两组系数**（`t_k = W⁻¹1(k∈I_a)` 与 `t_k = S_{ik}`，都是块上的均匀平均），
+如果一般权重的记账太痛，**可以只对这两组做**——签名照 `EntryBound` 现有的来。
+
+## T88 — `RBM1D/Gauss/FlucAvg.lean` · M · 等 T87
+
+用 T73 的 `stochDom_of_momentDom` 把 T87 的矩界落成 `≺`，得到 **(4.12)**；
+再配 `Green/EntryBound.lean` 已有的确定性部分（`norm_condExp_le`、`norm_sum_coef_green_sub_le`）
+与 T83 的 `hIBP`，卸掉 `hFA`，得到 **(4.5)**。
+**不要改 `EntryBound` 的签名。**
 

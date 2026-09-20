@@ -1852,3 +1852,37 @@ diag_bound_gauss  (hG : GaussIBP d) (0 < κ ≤ 1) (|E| ≤ 2−κ) (0 ≤ t < 1
 **仍未卸的**：(4.5)（`norm_sq_green_diag_sub_le_blk` 那条）还带 `hFA`/`hIBP`
 ——`hFA` 已由 T88 卸掉，但 T88 的 STATUS 记了 (4.12) 本身有真实数学缺口
 （T86 只迭代一阶，T94 正在做）。所以 (4.5) 的高斯版要等 T94。
+
+**T98 ✔（维护 + 审计）**
+
+1. **`docs/mathlib-api.md`** 新增一节「第二轮随机层（T91–T97）核实过的名字」，26 条。
+   几个会绊人的：
+   * `dotProduct_star_self_pos_iff` 在 ℂ 上要先 **`open scoped ComplexOrder`**，
+     否则 `PartialOrder ℂ` / `StarOrderedRing ℂ` 合成不出来；
+   * `hasFDerivAt_ringInverse` 与 `norm_apply_le_l2_opNorm` 在 `Matrix n n ℂ` 上要
+     **`open scoped Matrix.Norms.L2Operator`**，否则 `NormedRing` 的实例路径对不上（报
+     「`Semiring.toMonoid semiring` vs `NormedRing.toRing.toSemiring`」）；
+   * **`Matrix.smul_mulVec`**，不是 `smul_mulVec_assoc`（后者不存在）；
+   * **`HasDerivAt.fun_pow`**，不是 `.pow`（后者给 `Pi.pow`，`simp` 化不开）；
+   * `Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul` 是 Cauchy–Schwarz 的**带权**形式
+     （取 `r = σxy`、`f = σx²`、`g = σy²`）；无权版是 `sum_mul_sq_le_sq_mul_sq`。
+   另记了三条方法论教训（全局有界字段的绕法、随机控制的归一化、`linear_combination` 系数
+   按 `ring` 残项反推）。
+
+2. **全库重复扫描**（T90 之后新增约 250 条声明）。**自己的文件里没有新重复**。
+   新发现两处，归各自负责人：
+
+| 重复项 | 位置 | 说明 |
+|---|---|---|
+| `mE_mul_smul_add_zt` / `mE_mul_add_zt` | `Gauss/IBP.lean`、`Green/EntryBound.lean` | 同一条 `m(E)·(t·m(E) + z_t) = −1` |
+| `xiOf_mSigma_true_false` / `sigPM_xi` | `Hierarchy/KernelDecay.lean`、`Hierarchy/Step2.lean` | 同一条 `ξ` 的取值 |
+
+   T90 列的四处（`ellHat_real_pos`、`cKerShort_nonneg`、`rpow_pow_eq`/`natCast_rpow_pow`、
+   `cor35Const_nonneg`）**仍未合并**。另外 T95 记的
+   `continuous_green_comp`（`Gauss/Hierarchy.lean`）是我 `continuous_green_of_isHermitian`
+   的 `d.Idx N` 特例，证明一字不差，也待合并。
+
+3. **审计**：`lake build RBM1D` 全量通过；公理审计 **6771 条声明**全部只含
+   propext / Classical.choice / Quot.sound（故无 `sorryAx`）；全库 `grep sorry` 只剩两处
+   **文档里的散文**（`Gauss/LDEQuad.lean:67`、`Gauss/FlucAvg.lean:79`），无真 `sorry`；
+   蓝图 **1589 个 `\lean{}` 名字**逐条 `#check` 全部解析。

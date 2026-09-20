@@ -129,6 +129,47 @@
 **教训**：非负被积函数**先做 `∫⁻`（Tonelli 无需可积性）再反推可积性**，比把可积性当假设一路带下去干净得多；
 本项目 T81 因此去掉了全部技术性假设。
 
+## 第二轮随机层（T91–T97）核实过的名字
+
+| 名字 | 用途 |
+|---|---|
+| `Matrix.IsHermitian.im_star_dotProduct_mulVec_self` | `RCLike.im (star x ⬝ᵥ A *ᵥ x) = 0`；单点 Ward 恒等式的核心（T91 的 `im_green_diag`） |
+| `Matrix.dotProduct_star_self_pos_iff` | `0 < star v ⬝ᵥ v ↔ v ≠ 0`。**ℂ 上要先 `open scoped ComplexOrder`**，否则 `PartialOrder ℂ` / `StarOrderedRing ℂ` 合成不出来 |
+| `Complex.lt_def` / `Complex.le_def` | 把 `ComplexOrder` 的 `<`/`≤` 拆成实部与虚部 |
+| `Matrix.mulVec_mulVec` | `M *ᵥ N *ᵥ v = (M * N) *ᵥ v`（注意参数序是 `(v) (M) (N)`） |
+| `Matrix.dotProduct_single_one` / `single_one_dotProduct` | `v ⬝ᵥ Pi.single i 1 = v i` |
+| `Matrix.smul_mulVec` | `(b • M) *ᵥ v = b • M *ᵥ v`（**不是** `smul_mulVec_assoc`，那个名字不存在） |
+| `Matrix.IsHermitian.submatrix` | Hermitian 的子方阵还是 Hermitian（T95 的全局界靠它） |
+| `Matrix.IsHermitian.apply` | `star (A j i) = A i j`（注意下标顺序） |
+| `Continuous.matrix_elem` / `Continuous.matrix_submatrix` | 矩阵值连续映射的逐元素 / 子矩阵连续性 |
+| `hasFDerivAt_ringInverse` | `Ring.inverse` 在单位元处可微 ⟹ 预解式连续（`Matrix n n ℂ` 上要 `open scoped Matrix.Norms.L2Operator`，否则 `NormedRing` 实例路径对不上） |
+| `RBM.norm_apply_le_l2_opNorm`（本项目 `Loop/Split.lean`） | `‖M p q‖ ≤ ‖M‖`；配 `norm_green_le` 得逐元素的 `η⁻¹` 界。同样需要 `open scoped Matrix.Norms.L2Operator` |
+| `HasDerivAt.fun_pow` | `f^n` 的导数，**函数形式**；`.pow` 给的是 `Pi.pow`，`simp` 化不开 |
+| `MeasureTheory.integral_finsetSum` | 有限和与积分交换（旧名 `integral_finset_sum` 已弃用） |
+| `Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul` | Cauchy–Schwarz 的**带权**形式：取 `r = σxy`、`f = σx²`、`g = σy²`（`sum_mul_sq_le_sq_mul_sq` 是无权版） |
+| `MeasureTheory.tendsto_measure_iUnion_atTop` | 测度的下连续性；配 `le_of_tendsto` 可以**不用任何积分极限定理**去掉辅助参数 ε（T96） |
+| `exists_nat_one_div_lt` | `0 < ε → ∃ n, 1/(n+1) < ε`，上一条的配件 |
+| `RBM.meas_gt_le_of_moment`（本项目 T73） | `∫|Y|^{2p} ≤ M` ⟹ `P{t < Y} ≤ ofReal (M/t^{2p})`，直接给 `ENNReal` 形式 |
+| `RBM.eventually_le_rpow`（本项目 `Defs/Domination.lean`） | `∀ᶠ N, C ≤ N^τ`（`τ > 0`），把常数吸进 `N^{-D}` 的标准配件 |
+| `RBM.zt_im_ne_zero` | `(zt E t).im ≠ 0`，由 `0 < κ`、`|E| ≤ 2−κ`、`t < 1` |
+| `mul_self_lt_mul_self` | `0 ≤ a → a < b → a*a < b*b`；比给 `nlinarith` 喂乘积提示可靠 |
+| `Real.sq_sqrt` / `Real.sqrt_le_sqrt` / `Real.sqrt_pos` | `√` 的三件套 |
+| `le_mul_of_one_le_left` | `0 ≤ b → 1 ≤ a → b ≤ a * b` |
+| `div_le_div_of_nonneg_left` | `0 ≤ a → 0 < c → c ≤ b → a/b ≤ a/c` |
+| `pow_le_pow_left₀` | `0 ≤ a → a ≤ b → a^n ≤ b^n` |
+| `pow_le_one₀` | `0 ≤ a → a ≤ 1 → a^n ≤ 1` |
+| `one_div_le_one_div_of_le` | `0 < a → a ≤ b → 1/b ≤ 1/a` |
+
+**教训（T93/T96）**：
+
+* 结构里一个「**全局**有界」的字段挡住实例时，先问「换一个等价的量是不是天然全局有界」
+  ——T95 用小方阵预解式（`‖·‖ ≤ |Im z|⁻¹`）替掉 `greenMinor`（`G_ii` 无下界），
+  两者在 `Im z ≠ 0` 时对每个 ω 相等，什么都没损失。
+* 随机控制挡住 `stochDom_of_momentDom` 时，**归一化**（除以一个与求和指标无关、
+  且只读「冻结」坐标的因子）把控制变成 1；加 ε 保住全局有界性，最后用测度下连续性去掉 ε。
+* `linear_combination c * h` 的系数算错时，**读 `ring` 报出的残项**反推 `c`，比重新手推快。
+* `congr 1` 在 `σ * f = c * (σ * g)` 这种形状上会劈错；把每项的恒等式抽成独立引理再 `rw` 更稳。
+
 ## 本工具链里已弃用的名字
 
 | 旧 | 新 |

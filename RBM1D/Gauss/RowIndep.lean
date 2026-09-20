@@ -922,10 +922,54 @@ theorem eventually_card_LdeIdx_le (d : Dims) :
         rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
         ring
 
-/-- **Stochastic domination for any row sum with off-row coefficients.**  Given a family of
-rows `row N q` and coefficients `C N q` that read only the corresponding off-row block, the
-normalised row sums are `≺ 1`, uniformly over a polynomially large index set.  Both the row LDE
-and (by Hermitian symmetry) the column LDE are instances. -/
+/-- **Stochastic domination for any row sum with off-row coefficients, with the time in the
+index set.**  Given a family of times `tim N q ≥ 0`, rows `row N q` and coefficients `C N q`
+that read only the corresponding off-row block, the normalised row sums are `≺ 1`, uniformly
+over a polynomially large index set.
+
+The time is part of the index because `RBM.Lemma41Flow` needs the estimate along the flow, not
+at a single time; the moment bound `RBM.Gauss.integral_norm_rowSum_norm_pow_le'` has a constant
+`2(2p-1)!!` that does not depend on the time, so nothing is lost. -/
+theorem stochDom_rowSum_generalTime {U : ℕ → Type*} [∀ N, Fintype (U N)] {Ccard : ℝ}
+    (hcard : ∀ᶠ N : ℕ in Filter.atTop, (Fintype.card (U N) : ℝ) ≤ (N : ℝ) ^ Ccard)
+    (tim : ∀ N, U N → ℝ) (htim : ∀ N q, 0 ≤ tim N q)
+    (row : ∀ N, U N → d.Idx N) (C : ∀ N, U N → Ω d → d.Idx N → ℂ)
+    (hCmeas : ∀ N q, Measurable (C N q))
+    (hC : ∀ N q (ω ω' : Ω d),
+      (∀ c ∈ offRowCoord d N (row N q), ω c = ω' c) → C N q ω = C N q ω') :
+    StochDom (P d)
+      (fun N q ω =>
+        ‖rowSum d N (tim N q) (row N q)
+          (rowCoeffNorm d N (tim N q) (row N q) (C N q)) ω‖)
+      (fun _ _ _ => 1) := by
+  refine stochDom_of_momentDom hcard (fun N q => zero_lt_one) ?_ ?_
+  · intro p N q
+    have := integrable_norm_rowSum_norm_pow (d := d) (N := N) (u := tim N q) (i := row N q)
+      (p := p) (htim N q) (C N q) (hCmeas N q) (fun ω ω' h => hC N q ω ω' h)
+    refine this.congr (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [abs_norm]
+  · intro ε hε p
+    have hd0 : (0 : ℝ) ≤ dfac p := by unfold dfac; positivity
+    refine ⟨2 * dfac p + 1, by linarith, ?_⟩
+    filter_upwards [Filter.eventually_ge_atTop 1] with N hN1 q
+    have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+    have hbound := integral_norm_rowSum_norm_pow_le' (d := d) (N := N) (u := tim N q)
+      (i := row N q) (p := p) (htim N q) (C N q) (hCmeas N q) (fun ω ω' h => hC N q ω ω' h)
+    have habs : ∫ ω, |‖rowSum d N (tim N q) (row N q)
+          (rowCoeffNorm d N (tim N q) (row N q) (C N q)) ω‖| ^ (2 * p) ∂(P d)
+        = ∫ ω, ‖rowSum d N (tim N q) (row N q)
+            (rowCoeffNorm d N (tim N q) (row N q) (C N q)) ω‖ ^ (2 * p) ∂(P d) := by
+      refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+      simp only [abs_norm]
+    rw [habs]
+    have hpow : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) := Real.one_le_rpow hN1' (by positivity)
+    have : (2 * dfac p) ≤ (2 * dfac p + 1) * ((N : ℝ) ^ (ε * p) * 1 ^ (2 * p)) := by
+      rw [one_pow, mul_one]
+      nlinarith [hpow, hd0]
+    linarith [hbound, this]
+
+/-- The single-time case of `RBM.Gauss.stochDom_rowSum_generalTime`.  Both the row LDE and (by
+Hermitian symmetry) the column LDE are instances. -/
 theorem stochDom_rowSum_general (hu : 0 ≤ u) {U : ℕ → Type*} [∀ N, Fintype (U N)] {Ccard : ℝ}
     (hcard : ∀ᶠ N : ℕ in Filter.atTop, (Fintype.card (U N) : ℝ) ≤ (N : ℝ) ^ Ccard)
     (row : ∀ N, U N → d.Idx N) (C : ∀ N, U N → Ω d → d.Idx N → ℂ)
@@ -935,32 +979,8 @@ theorem stochDom_rowSum_general (hu : 0 ≤ u) {U : ℕ → Type*} [∀ N, Finty
     StochDom (P d)
       (fun N q ω =>
         ‖rowSum d N u (row N q) (rowCoeffNorm d N u (row N q) (C N q)) ω‖)
-      (fun _ _ _ => 1) := by
-  refine stochDom_of_momentDom hcard (fun N q => zero_lt_one) ?_ ?_
-  · intro p N q
-    have := integrable_norm_rowSum_norm_pow (d := d) (N := N) (u := u) (i := row N q) (p := p) hu
-      (C N q) (hCmeas N q) (fun ω ω' h => hC N q ω ω' h)
-    refine this.congr (Filter.Eventually.of_forall fun ω => ?_)
-    simp only [abs_norm]
-  · intro ε hε p
-    have hd0 : (0 : ℝ) ≤ dfac p := by unfold dfac; positivity
-    refine ⟨2 * dfac p + 1, by linarith, ?_⟩
-    filter_upwards [Filter.eventually_ge_atTop 1] with N hN1 q
-    have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
-    have hbound := integral_norm_rowSum_norm_pow_le' (d := d) (N := N) (u := u)
-      (i := row N q) (p := p) hu (C N q) (hCmeas N q) (fun ω ω' h => hC N q ω ω' h)
-    have habs : ∫ ω, |‖rowSum d N u (row N q)
-          (rowCoeffNorm d N u (row N q) (C N q)) ω‖| ^ (2 * p) ∂(P d)
-        = ∫ ω, ‖rowSum d N u (row N q)
-            (rowCoeffNorm d N u (row N q) (C N q)) ω‖ ^ (2 * p) ∂(P d) := by
-      refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
-      simp only [abs_norm]
-    rw [habs]
-    have hpow : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) := Real.one_le_rpow hN1' (by positivity)
-    have : (2 * dfac p) ≤ (2 * dfac p + 1) * ((N : ℝ) ^ (ε * p) * 1 ^ (2 * p)) := by
-      rw [one_pow, mul_one]
-      nlinarith [hpow, hd0]
-    linarith [hbound, this]
+      (fun _ _ _ => 1) :=
+  stochDom_rowSum_generalTime hcard (fun _ _ => u) (fun _ _ => hu) row C hCmeas hC
 
 /-- **The linear LDE of T81 as stochastic domination**: for the Gaussian model,
 `|∑_{k ≠ i} H_{ik} G^{(i)}_{kj}| ≺ (∑_k S_{ik} |G^{(i)}_{kj}|²)^{1/2}`, uniformly in `(i, j)`. -/

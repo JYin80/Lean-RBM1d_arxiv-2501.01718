@@ -140,4 +140,74 @@ theorem hasDerivAt_green_Hflow_update (d : Dims) (N : ℕ) (u : ℝ) {z : ℂ} (
 
 end Deriv
 
+/-! ### Step 2b: the sandwich collapses to two entries
+
+`B_p` has at most two nonzero entries, so `G B_p G` is a sum of two products of resolvent
+entries.  This is the Lean form of the paper's `∂_{H_ij} G_ac = -G_ai G_jc`. -/
+
+section Sandwich
+
+variable {d : Dims} {N : ℕ}
+
+/-- Off the diagonal, `M B_{ij,b} M'` has exactly two terms. -/
+theorem mul_Bmat_mul_apply_of_ne {M M' : Matrix (d.Idx N) (d.Idx N) ℂ} {i j : d.Idx N}
+    (hij : i ≠ j) (b : Bool) (a c : d.Idx N) :
+    (M * Bmat d N i j b * M') a c
+      = (if b then (1 : ℂ) else Complex.I) * (M a i * M' j c)
+        + (if b then (1 : ℂ) else -Complex.I) * (M a j * M' i c) := by
+  have hrow : ∀ l : d.Idx N, (M * Bmat d N i j b) a l
+      = (if l = j then (if b then (1 : ℂ) else Complex.I) * M a i else 0)
+        + (if l = i then (if b then (1 : ℂ) else -Complex.I) * M a j else 0) := by
+    intro l
+    rw [Matrix.mul_apply]
+    by_cases hlj : l = j
+    · have hli : ¬ l = i := fun h => hij (h ▸ hlj)
+      rw [if_pos hlj, if_neg hli, add_zero]
+      refine (Finset.sum_eq_single i ?_ ?_).trans ?_
+      · intro k _ hk
+        rw [Bmat_apply, if_neg (fun h => hk h.1), if_neg (fun h => hli h.2), mul_zero]
+      · intro h
+        exact absurd (Finset.mem_univ i) h
+      · rw [Bmat_apply, if_pos ⟨rfl, hlj⟩, mul_comm]
+    · by_cases hli : l = i
+      · rw [if_neg hlj, if_pos hli, zero_add]
+        refine (Finset.sum_eq_single j ?_ ?_).trans ?_
+        · intro k _ hk
+          rw [Bmat_apply, if_neg (fun h => hlj h.2), if_neg (fun h => hk h.1), mul_zero]
+        · intro h
+          exact absurd (Finset.mem_univ j) h
+        · rw [Bmat_apply, if_neg (fun h => hlj h.2), if_pos ⟨rfl, hli⟩, mul_comm]
+      · rw [if_neg hlj, if_neg hli, add_zero]
+        refine Finset.sum_eq_zero fun k _ => ?_
+        rw [Bmat_apply, if_neg (fun h => hlj h.2), if_neg (fun h => hli h.2), mul_zero]
+  rw [Matrix.mul_apply]
+  simp only [hrow, add_mul, ite_mul, zero_mul]
+  rw [Finset.sum_add_distrib, Finset.sum_ite_eq' Finset.univ j, Finset.sum_ite_eq' Finset.univ i,
+    if_pos (Finset.mem_univ j), if_pos (Finset.mem_univ i)]
+  ring
+
+/-- On the diagonal the real tag gives a single entry.  (`⟨N, i, i, false⟩` is never a used
+coordinate, so the imaginary tag does not occur there.) -/
+theorem mul_Bmat_mul_apply_diag {M M' : Matrix (d.Idx N) (d.Idx N) ℂ} (i a c : d.Idx N) :
+    (M * Bmat d N i i true * M') a c = M a i * M' i c := by
+  have hrow : ∀ l : d.Idx N, (M * Bmat d N i i true) a l = (if l = i then M a i else 0) := by
+    intro l
+    rw [Matrix.mul_apply]
+    by_cases hli : l = i
+    · rw [if_pos hli]
+      refine (Finset.sum_eq_single i ?_ ?_).trans ?_
+      · intro k _ hk
+        rw [Bmat_apply, if_neg (fun h => hk h.1), if_neg (fun h => hk h.1), mul_zero]
+      · intro h
+        exact absurd (Finset.mem_univ i) h
+      · rw [Bmat_apply, if_pos ⟨rfl, hli⟩]
+        simp
+    · refine (Finset.sum_eq_zero fun k _ => ?_).trans (if_neg hli).symm
+      rw [Bmat_apply, if_neg (fun h => hli h.2), if_neg (fun h => hli h.2), mul_zero]
+  rw [Matrix.mul_apply]
+  simp only [hrow, ite_mul, zero_mul]
+  rw [Finset.sum_ite_eq' Finset.univ i, if_pos (Finset.mem_univ i)]
+
+end Sandwich
+
 end RBM.Gauss

@@ -96,6 +96,112 @@ theorem integral_pow_gaussianReal (v : ℝ≥0) (p : ℕ) :
       prod_range_succ]
     ring
 
+/-! ### The modulus of a centred complex Gaussian -/
+
+/-- The double factorial `(2p-1)!! = ∏_{i<p} (2i+1)`, the `2p`-th moment of a standard
+Gaussian. -/
+noncomputable def dfac (p : ℕ) : ℝ := ∏ i ∈ range p, (2 * (i : ℝ) + 1)
+
+@[simp] theorem dfac_zero : dfac 0 = 1 := by simp [dfac]
+
+theorem dfac_succ (p : ℕ) : dfac (p + 1) = (2 * (p : ℝ) + 1) * dfac p := by
+  rw [dfac, dfac, prod_range_succ, mul_comm]
+
+theorem integral_pow_gaussianReal' (v : ℝ≥0) (p : ℕ) :
+    ∫ x : ℝ, x ^ (2 * p) ∂(gaussianReal 0 v) = dfac p * (v : ℝ) ^ p :=
+  integral_pow_gaussianReal v p
+
+/-- **The convolution identity behind the complex moment**:
+`∑_k C(p,k) (2k-1)!! (2(p-k)-1)!! = 2^p p!`.  Pascal's rule turns the sum at `p+1` into
+`(2p+2)` times the sum at `p`, because `(2(p-k)+1) + (2k+1) = 2p+2`. -/
+theorem sum_choose_dfac (p : ℕ) :
+    ∑ k ∈ range (p + 1), (p.choose k : ℝ) * (dfac k * dfac (p - k)) = 2 ^ p * (Nat.factorial p : ℝ) := by
+  induction p with
+  | zero => simp
+  | succ p ih =>
+    have hzero : ((p.choose (p + 1) : ℕ) : ℝ) = 0 := by
+      rw [Nat.choose_eq_zero_of_lt (Nat.lt_succ_self p)]; norm_num
+    -- peel the term `k = 0` and shift the rest
+    rw [sum_range_succ' (fun k => ((p + 1).choose k : ℝ) * (dfac k * dfac (p + 1 - k))) (p + 1)]
+    have hterm : ∀ j ∈ range (p + 1),
+        ((p + 1).choose (j + 1) : ℝ) * (dfac (j + 1) * dfac (p + 1 - (j + 1)))
+          = (p.choose j : ℝ) * ((2 * (j : ℝ) + 1) * (dfac j * dfac (p - j)))
+            + (p.choose (j + 1) : ℝ) * (dfac (j + 1) * dfac (p - j)) := by
+      intro j _
+      rw [Nat.choose_succ_succ, Nat.succ_sub_succ, dfac_succ]
+      push_cast
+      ring
+    rw [sum_congr rfl hterm, sum_add_distrib]
+    -- the shifted sum is the sum at `p` with `p + 1 - k` in place of `p - k`, minus its `k = 0` term
+    have hshift : ∑ j ∈ range (p + 1), (p.choose (j + 1) : ℝ) * (dfac (j + 1) * dfac (p - j))
+        = (∑ k ∈ range (p + 1), (p.choose k : ℝ) * (dfac k * dfac (p + 1 - k)))
+          - dfac (p + 1) := by
+      rw [sum_range_succ' (fun k => (p.choose k : ℝ) * (dfac k * dfac (p + 1 - k))) p,
+        sum_range_succ _ p, hzero]
+      simp only [Nat.choose_zero_right, Nat.cast_one, dfac_zero, Nat.sub_zero, one_mul, zero_mul,
+        add_zero, Nat.succ_sub_succ]
+      ring
+    have hpk : ∀ k ∈ range (p + 1), (p.choose k : ℝ) * (dfac k * dfac (p + 1 - k))
+        = (p.choose k : ℝ) * ((2 * ((p : ℝ) - k) + 1) * (dfac k * dfac (p - k))) := by
+      intro k hk
+      rw [mem_range, Nat.lt_succ_iff] at hk
+      rw [show p + 1 - k = (p - k) + 1 from by omega, dfac_succ]
+      have : ((p - k : ℕ) : ℝ) = (p : ℝ) - k := by
+        have := Nat.cast_sub (R := ℝ) hk; linarith [this]
+      rw [this]
+      ring
+    rw [hshift, sum_congr rfl hpk]
+    -- combine the two sums into `(2p+2)` times the sum at `p`
+    have hcomb : ∑ k ∈ range (p + 1),
+          (p.choose k : ℝ) * ((2 * ((p : ℝ) - k) + 1) * (dfac k * dfac (p - k)))
+        + ∑ j ∈ range (p + 1), (p.choose j : ℝ) * ((2 * (j : ℝ) + 1) * (dfac j * dfac (p - j)))
+        = (2 * (p : ℝ) + 2) * ∑ k ∈ range (p + 1), (p.choose k : ℝ) * (dfac k * dfac (p - k)) := by
+      rw [← sum_add_distrib, mul_sum]
+      refine sum_congr rfl fun k _ => ?_
+      ring
+    have hdfac : dfac (p + 1) = ((p + 1).choose 0 : ℝ) * (dfac 0 * dfac (p + 1 - 0)) := by
+      simp
+    rw [← hdfac, ih] at *
+    push_cast [Nat.factorial_succ, pow_succ]
+    linear_combination hcomb
+
+/-- **The absolute moments of a centred complex Gaussian.**  If `X` and `Y` are independent
+centred real Gaussians of variance `w`, then `Z = X + iY` satisfies
+`E‖Z‖^{2p} = E[(X² + Y²)^p] = p! (2w)^p = p! σ^{2p}` with `σ² = E‖Z‖² = 2w`. -/
+theorem integral_add_sq_pow_gaussian_prod (w : ℝ≥0) (p : ℕ) :
+    ∫ z : ℝ × ℝ, (z.1 ^ 2 + z.2 ^ 2) ^ p
+        ∂((gaussianReal 0 w).prod (gaussianReal 0 w))
+      = (Nat.factorial p : ℝ) * (2 * (w : ℝ)) ^ p := by
+  have hexp : ∀ z : ℝ × ℝ, (z.1 ^ 2 + z.2 ^ 2) ^ p
+      = ∑ k ∈ range (p + 1), z.1 ^ (2 * k) * z.2 ^ (2 * (p - k)) * (p.choose k : ℝ) := by
+    intro z
+    rw [add_pow]
+    refine sum_congr rfl fun k hk => ?_
+    rw [mem_range, Nat.lt_succ_iff] at hk
+    rw [← pow_mul, ← pow_mul, mul_comm 2 k, mul_comm 2 (p - k)]
+  simp_rw [hexp]
+  rw [integral_finsetSum _ (fun k _ => ?_)]
+  · have hval : ∀ k ∈ range (p + 1),
+        ∫ z : ℝ × ℝ, z.1 ^ (2 * k) * z.2 ^ (2 * (p - k)) * (p.choose k : ℝ)
+            ∂((gaussianReal 0 w).prod (gaussianReal 0 w))
+          = (p.choose k : ℝ) * (dfac k * dfac (p - k)) * (w : ℝ) ^ p := by
+      intro k hk
+      rw [mem_range, Nat.lt_succ_iff] at hk
+      simp_rw [mul_comm _ ((p.choose k : ℝ))]
+      rw [integral_const_mul, integral_prod_mul (fun x : ℝ => x ^ (2 * k))
+        (fun y : ℝ => y ^ (2 * (p - k))), integral_pow_gaussianReal', integral_pow_gaussianReal']
+      have hw : (w : ℝ) ^ k * (w : ℝ) ^ (p - k) = (w : ℝ) ^ p := by
+        rw [← pow_add]
+        congr 1
+        omega
+      rw [← hw]
+      ring
+    rw [sum_congr rfl hval, ← sum_mul, sum_choose_dfac]
+    rw [mul_pow]
+    ring
+  · exact ((integrable_pow_gaussianReal w (2 * k)).mul_prod
+      (integrable_pow_gaussianReal w (2 * (p - k)))).mul_const _
+
 end Moments
 
 end RBM

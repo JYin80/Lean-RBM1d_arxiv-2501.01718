@@ -89,4 +89,82 @@ theorem norm_green_sub_le {H H' : Matrix n n ℂ} (hH : H.IsHermitian) (hH' : H'
 
 end Resolvent
 
+/-! ### Two elementary estimates -/
+
+/-- `|√x - √y| ≤ √|x - y|`. -/
+theorem abs_sqrt_sub_sqrt_le {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    |Real.sqrt x - Real.sqrt y| ≤ Real.sqrt |x - y| := by
+  rcases le_total y x with h | h
+  · have hs : Real.sqrt y ≤ Real.sqrt x := Real.sqrt_le_sqrt h
+    rw [abs_of_nonneg (sub_nonneg.2 hs), abs_of_nonneg (sub_nonneg.2 h)]
+    have key : (Real.sqrt x - Real.sqrt y) ^ 2 ≤ x - y := by
+      have hxx : Real.sqrt x ^ 2 = x := Real.sq_sqrt hx
+      have hyy : Real.sqrt y ^ 2 = y := Real.sq_sqrt hy
+      have hxy : Real.sqrt y * Real.sqrt y ≤ Real.sqrt x * Real.sqrt y :=
+        mul_le_mul_of_nonneg_right hs (Real.sqrt_nonneg y)
+      nlinarith [hxx, hyy, hxy]
+    have h2 := Real.sqrt_le_sqrt key
+    rwa [Real.sqrt_sq (sub_nonneg.2 hs)] at h2
+  · have hs : Real.sqrt x ≤ Real.sqrt y := Real.sqrt_le_sqrt h
+    rw [abs_sub_comm, abs_sub_comm x y,
+      abs_of_nonneg (sub_nonneg.2 hs), abs_of_nonneg (sub_nonneg.2 h)]
+    have key : (Real.sqrt y - Real.sqrt x) ^ 2 ≤ y - x := by
+      have hxx : Real.sqrt x ^ 2 = x := Real.sq_sqrt hx
+      have hyy : Real.sqrt y ^ 2 = y := Real.sq_sqrt hy
+      have hxy : Real.sqrt x * Real.sqrt x ≤ Real.sqrt y * Real.sqrt x :=
+        mul_le_mul_of_nonneg_right hs (Real.sqrt_nonneg x)
+      nlinarith [hxx, hyy, hxy]
+    have h2 := Real.sqrt_le_sqrt key
+    rwa [Real.sqrt_sq (sub_nonneg.2 hs)] at h2
+
+/-- `‖z_u - z_{u'}‖ = |u - u'|`, because `z_t = E + (1-t)m(E)` and `‖m(E)‖ = 1`. -/
+theorem norm_zt_sub {E : ℝ} (hE : |E| ≤ 2) (u u' : ℝ) :
+    ‖zt E u - zt E u'‖ = |u - u'| := by
+  have hsub : zt E u - zt E u' = ((u' - u : ℝ) : ℂ) * mE E := by
+    simp only [zt]
+    push_cast
+    ring
+  rw [hsub, norm_mul, Complex.norm_real, Real.norm_eq_abs, norm_mE hE, mul_one,
+    abs_sub_comm]
+
 end RBM
+
+namespace RBM.Gauss
+
+open MeasureTheory Matrix
+
+open scoped Matrix.Norms.L2Operator
+
+/-! ### The Hölder estimate for the Gaussian flow -/
+
+/-- **The resolvent of the flow moves by at most `η^{-2}(‖X‖+1)|u-u'|^{1/2}`.**  Both the
+matrix and the spectral parameter contribute: `‖H_u - H_{u'}‖ = |√u-√u'|‖X‖` and
+`‖z_u - z_{u'}‖ = |u-u'|`. -/
+theorem norm_green_flow_sub_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {u u' : ℝ}
+    (hu1 : u < 1) (hu'1 : u' < 1) (ω : Ω d) :
+    ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N u' ω) (zt E u')‖
+      ≤ (etaT E u)⁻¹ * (|Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|)
+          * (etaT E u')⁻¹ := by
+  have hη : 0 < etaT E u := by
+    show 0 < (1 - u) * (mE E).im
+    exact mul_pos (by linarith) (mE_im_pos hE)
+  have hη' : 0 < etaT E u' := by
+    show 0 < (1 - u') * (mE E).im
+    exact mul_pos (by linarith) (mE_im_pos hE)
+  have hzim : (zt E u).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact ne_of_gt hη
+  have hzim' : (zt E u').im ≠ 0 := by rw [← etaT_eq_zt_im]; exact ne_of_gt hη'
+  have hG : ‖green (Hflow d N u ω) (zt E u)‖ ≤ (etaT E u)⁻¹ :=
+    norm_green_le (Hflow_isHermitian d N u ω) hη
+      (by rw [← etaT_eq_zt_im, abs_of_pos hη])
+  have hG' : ‖green (Hflow d N u' ω) (zt E u')‖ ≤ (etaT E u')⁻¹ :=
+    norm_green_le (Hflow_isHermitian d N u' ω) hη'
+      (by rw [← etaT_eq_zt_im, abs_of_pos hη'])
+  refine (norm_green_sub_le (Hflow_isHermitian d N u ω) (Hflow_isHermitian d N u' ω)
+    hzim hzim').trans ?_
+  rw [norm_Hflow_sub, norm_zt_sub hE.le]
+  have hmid : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'| := by
+    have : (0 : ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+    positivity
+  gcongr
+
+end RBM.Gauss

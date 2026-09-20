@@ -594,6 +594,48 @@ theorem integral_Tq_pow_succ (hG : GaussIBP d) (q : ℕ) :
           C.integral_conj_h_mul_gen hG l (C.tameZt q l) (C.tameZA q l) (C.tameZB q l)
             (C.hasDerivAt_Zt_true q l) (C.hasDerivAt_Zt_false q l)
 
+/-! ### The diagonal term sums to `2 V_q` -/
+
+/-- `∑_l σ_l ∑_k σ_k(‖B_{kl}‖² + ‖B_{lk}‖²) = 2V_q`: the two double sums are the same after
+swapping the indices. -/
+theorem sum_sg_mul_normSq (ω : Ω d) :
+    ∑ l, C.sg l * ∑ k, C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2) = 2 * C.Vq ω := by
+  have e1 : ∑ l, C.sg l * ∑ k, C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2)
+      = (∑ l, ∑ k, C.sg k * ‖C.B ω k l‖ ^ 2 * C.sg l)
+        + ∑ l, ∑ k, C.sg l * ‖C.B ω l k‖ ^ 2 * C.sg k := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  have e2 : (∑ l, ∑ k, C.sg k * ‖C.B ω k l‖ ^ 2 * C.sg l) = C.Vq ω := by
+    rw [Vq, Finset.sum_comm]
+  have e3 : (∑ l, ∑ k, C.sg l * ‖C.B ω l k‖ ^ 2 * C.sg k) = C.Vq ω := rfl
+  rw [e1, e2, e3]; ring
+
+/-- The diagonal part of `∑_l w_l D_l Z_{q,l}` is `2 V_q T^q`. -/
+theorem sum_w_diag (q : ℕ) (ω : Ω d) :
+    ∑ l, (C.w l : ℂ) * ((2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+        (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+          + C.B ω l k * (starRingEnd ℂ) (C.B ω l k))) * ((C.Tq ω : ℝ) : ℂ) ^ q)
+      = ((2 * C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ) := by
+  have hterm : ∀ l : κ, (C.w l : ℂ) * ((2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+        (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+          + C.B ω l k * (starRingEnd ℂ) (C.B ω l k))) * ((C.Tq ω : ℝ) : ℂ) ^ q)
+      = ((C.sg l * ∑ k, C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2) : ℝ) : ℂ)
+        * ((C.Tq ω : ℝ) : ℂ) ^ q := by
+    intro l
+    have hk : ∀ k : κ, ((C.sg k : ℝ) : ℂ) *
+        (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+          + C.B ω l k * (starRingEnd ℂ) (C.B ω l k))
+        = ((C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2) : ℝ) : ℂ) := by
+      intro k
+      rw [Complex.ofReal_mul, Complex.ofReal_add, ofReal_normSq, ofReal_normSq]
+    rw [Finset.sum_congr rfl fun k _ => hk k, ← Complex.ofReal_sum, Complex.ofReal_mul,
+      C.sg_complex l]
+    ring
+  rw [Finset.sum_congr rfl fun l _ => hterm l, ← Finset.sum_mul, ← Complex.ofReal_sum,
+    C.sum_sg_mul_normSq ω, ← Complex.ofReal_pow, ← Complex.ofReal_mul]
+
 end RowChaos
 
 end RBM.Gauss

@@ -1886,3 +1886,47 @@ diag_bound_gauss  (hG : GaussIBP d) (0 < κ ≤ 1) (|E| ≤ 2−κ) (0 ≤ t < 1
    propext / Classical.choice / Quot.sound（故无 `sorryAx`）；全库 `grep sorry` 只剩两处
    **文档里的散文**（`Gauss/LDEQuad.lean:67`、`Gauss/FlucAvg.lean:79`），无真 `sorry`；
    蓝图 **1589 个 `\lean{}` 名字**逐条 `#check` 全部解析。
+
+**T99 ✔（审计）：从 T97 的 (4.2)(4.3) 到 `Hierarchy/Step1.lean` 的 `Lemma41Flow`，还差什么**
+
+`Lemma41Flow X E s t` 的形状是**界传递**：
+
+```
+(∀ Φ 确定性 ≥ 0)  1_{Ω_u}‖L_{u,(+,-),(a,b)}‖ ≺ Φ_u  ⟹  1_{Ω_u}(llMax_u)² ≺ Φ_u + W⁻¹
+```
+指标集是 `TimeIcc s t N × (ZMod L × ZMod L)`，即**对 `u ∈ [s_N, t_N]` 一致**。
+
+逐条核对，缺口恰好三块（前两块机械，第三块是真障碍）：
+
+**(A) 接口对齐（机械）。** 三处都对得上，但都要写出来：
+* `X.Lval E N u ω (pmLoop a b) = gloop … ⟨[true,false],[a,b]⟩`，而
+  `Lre H z a b = (gloop … ⟨[true,false],[a,b]⟩).re`；由 `Lre_eq`（`= W⁻²∑|G|²`，实且非负）
+  可得 `‖Lval (pmLoop a b)‖ = Lre`（H Hermitian 时）。
+* `goodEv X E N u = {llMax_u ≤ (Wℓη)^{-1/6}}` 与 `goodSet H z m δ N = {GoodEvent (green …) m (δ N)}`
+  ——`GoodEvent G m δ = ∀ x y, ‖G x y − (x=y ? m : 0)‖ ≤ δ`，`llErr` 正是这个量，
+  所以两者在 `δ N := (B.scale E N u)⁻¹^{1/6}` 下相同。**注意 `entry_bound_stochDom` 的 `δ` 只依赖 N，
+  而 `goodEv` 的阈值还依赖 `u`** ——固定 `u` 时无碍，时间一致时要留意。
+* `llMax` 是对 `Idx × Idx` 的 `iSup`；T97 给的是逐 `(i,j)` 的界。合成 `llMax²` 需要
+  「多项式多个 `≺` 取 sup 仍 `≺`」——`StochDom.of_forall_le` 的标准用法。
+
+**(B) 控制的形状（机械）。** T97 的控制是**随机**的（`∑∑Lre`、`Lmax`），
+`Lemma41Flow` 要的是传递到**确定性** `Φ`。这正是它的假设 `1_Ω‖L‖ ≺ Φ` 的用处，
+配 `StochDom.trans`（再加指标集上的求和/取 max）即可，只是指示函数的簿记要小心。
+
+**(C) 时间一致性 —— 真障碍。** T97 是**固定 `u`、固定 `z`** 的。桥梁是
+`stochDom_timeIcc_of_holder`（T75），它要求一个**逐 ω 一致**的 Hölder 模
+`|Y_N(u,ω) − Y_N(u',ω)| ≤ N^K|u−u'|^γ`。而由预解式恒等式
+
+```
+‖G_u − G_{u'}‖ ≤ ‖G_u‖·‖H_u − H_{u'}‖·‖G_{u'}‖ ≤ η⁻²·|√u − √u'|·‖X‖
+```
+（`Gauss/Model.lean` 的 `norm_Hflow_sub` 已给出中间那一步），**Hölder 常数含 `‖X‖`，
+而 `‖X‖` 逐 ω 无界** ——`‖X‖ ≺ 1` 正是 paper-deltas #49 里那个尚未证明的
+`OpNormBound` 字段。所以 (C) 分成两张独立工单：
+
+* 证 `‖X‖ ≺ 1`（矩/迹方法），卸掉 `OpNormBound`；
+* 做一个 `stochDom_timeIcc_of_holder` 的变体，允许 Hölder 模只在**高概率事件**上成立
+  （或常数本身被 `≺` 控制）。
+
+据此新开三张工单（见 `docs/TASKS.md` T100/T101/T102），**T102（接口对齐 + 界传递）不依赖
+(C)，可以立刻开工**；T100、T101 互相独立，合起来才解锁 `Lemma41Flow`。

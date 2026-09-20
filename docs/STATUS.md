@@ -1566,3 +1566,9 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 用两个实线性型的矩做控制）与 `lintegral_norm_row_sum_pow_le`（冻结界的 `∫⁻` 形式）。
 **下一步**：用 `lintegral_indep_pair_le` 把它提升到随机系数，得到**无可积性假设**的
 `∫⁻ ‖Z/√V‖^{2p} ≤ 2(2p−1)!!`，再由有限性反推可积性，替换掉第十六/十八块里的假设。
+
+**T81 第二十五块 ✔（去掉假设）**：**`lintegral_norm_rowSum_norm_pow_le`**——
+对**任意**可测、只读 off-row 块的系数 `C`，直接有 `∫⁻ ‖Z/√V‖^{2p} ≤ 2(2p−1)!!`，
+**不带任何可积性假设**（Tonelli 只要可测与非负）。这替代了第十八块的带假设版本。
+**T81 收尾**：由右端有限即得可积性与 Bochner 版 `∫ ‖Z/√V‖^{2p} ≤ 2(2p−1)!!`，
+再取 `C := minorCol`（第十九块）并经 T73 的 `stochDom_of_momentDom` 得 `≺`。

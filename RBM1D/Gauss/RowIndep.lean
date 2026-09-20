@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.Model
 import RBM1D.Green.Minor
+import RBM1D.Green.EntryBound
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Generator
 
@@ -679,5 +680,45 @@ theorem integral_norm_rowSum_minorCol_pow_le (hu : 0 ≤ u) (z : ℂ)
       ≤ 2 * dfac p :=
   integral_norm_rowSum_norm_pow_le hu (minorCol d N u z i j) (measurable_minorCol u z i j)
     (fun ω ω' h => minorCol_congr u z j h) hint
+
+/-! ### Alignment with the LDE of `Green/EntryBound.lean` -/
+
+variable {z : ℂ}
+
+/-- Where the resolvent exists, the coefficients `minorCol` are the entries of `G^{(i)}`. -/
+theorem minorCol_eq_greenMinor (u : ℝ) {i : d.Idx N} (j : {a : d.Idx N // a ≠ i}) {ω : Ω d}
+    (hdet : IsUnit (Hflow d N u ω - z • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)).det)
+    (hGii : green (Hflow d N u ω) z i i ≠ 0) {k : d.Idx N} (hk : k ≠ i) :
+    minorCol d N u z i j ω k = greenMinor (green (Hflow d N u ω) z) i k j.1 := by
+  unfold minorCol
+  rw [dite_cond_eq_true (by simpa using hk), inv_minor_resolvent hdet i hGii]
+  rfl
+
+/-- **The left-hand side of the row LDE** is the row sum with the minor resolvent column. -/
+theorem ldeRowLHS_eq (u : ℝ) {i : d.Idx N} (j : {a : d.Idx N // a ≠ i}) {ω : Ω d}
+    (hdet : IsUnit (Hflow d N u ω - z • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)).det)
+    (hGii : green (Hflow d N u ω) z i i ≠ 0) :
+    ldeRowLHS (Hflow d N u ω) (green (Hflow d N u ω) z) i j.1
+      = ‖rowSum d N u i (minorCol d N u z i j) ω‖ ^ 2 := by
+  unfold ldeRowLHS rowSum
+  congr 2
+  rw [Finset.sum_subtype (p := fun k => k ≠ i) (Finset.univ.erase i)
+    (fun k => by simp [Finset.mem_erase]) _]
+  exact Finset.sum_congr rfl fun k _ =>
+    by rw [minorCol_eq_greenMinor u j hdet hGii k.2]
+
+/-- **The right-hand side of the row LDE** is the variance of that row sum, up to the factor
+`u`. -/
+theorem rowVarSum_eq (u : ℝ) {i : d.Idx N} (j : {a : d.Idx N // a ≠ i}) {ω : Ω d}
+    (hdet : IsUnit (Hflow d N u ω - z • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)).det)
+    (hGii : green (Hflow d N u ω) z i i ≠ 0) :
+    rowVarSum d N u i (minorCol d N u z i j) ω
+      = u * ldeRowRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i j.1 := by
+  unfold rowVarSum ldeRowRHS
+  congr 1
+  rw [Finset.sum_subtype (p := fun k => k ≠ i) (Finset.univ.erase i)
+    (fun k => by simp [Finset.mem_erase]) _]
+  exact Finset.sum_congr rfl fun k _ =>
+    by rw [minorCol_eq_greenMinor u j hdet hGii k.2]
 
 end RBM.Gauss

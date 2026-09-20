@@ -241,4 +241,43 @@ theorem tame_green_apply (hE : |E| < 2) (ht : t < 1) (u : ℝ) (a b : d.Idx N) :
 
 end Tame
 
+/-! ### Step 2d: reading off one entry
+
+Stein's identity is applied to scalar test functions, so the matrix-valued derivative of
+step 2a has to be pushed through the evaluation map.  For the L2 operator norm that map is
+bounded with constant one (`norm_apply_le_l2_opNorm`), hence a continuous linear map. -/
+
+section Entry
+
+/-- Reading off the `(a, b)` entry, as a bounded `ℝ`-linear map. -/
+noncomputable def entryCLM (n : Type*) [Fintype n] [DecidableEq n] (a b : n) :
+    Matrix n n ℂ →L[ℝ] ℂ :=
+  LinearMap.mkContinuous
+    { toFun := fun M => M a b
+      map_add' := fun _ _ => rfl
+      map_smul' := fun _ _ => rfl } 1
+    (fun M => by
+      show ‖M a b‖ ≤ 1 * ‖M‖
+      simpa using norm_apply_le_l2_opNorm M a b)
+
+@[simp] theorem entryCLM_apply {n : Type*} [Fintype n] [DecidableEq n] (a b : n)
+    (M : Matrix n n ℂ) : entryCLM n a b M = M a b := rfl
+
+variable {d : Dims} {N : ℕ}
+
+/-- **The coordinate derivative of a resolvent entry.**  This is the scalar statement Stein's
+identity consumes. -/
+theorem hasDerivAt_green_apply_update (d : Dims) (N : ℕ) (u : ℝ) {z : ℂ} (hz : z.im ≠ 0)
+    (ω : Ω d) {p : d.Idx N × d.Idx N × Bool} (hp : p ∈ usedCoord d N) (a b : d.Idx N) :
+    HasDerivAt
+      (fun t : ℝ => green (Hflow d N u (Function.update ω (crd d N p) t)) z a b)
+      (-(Real.sqrt u) • (green (Hflow d N u ω) z * Bmat d N p.1 p.2.1 p.2.2
+        * green (Hflow d N u ω) z) a b) (ω (crd d N p)) := by
+  have h := hasDerivAt_green_Hflow_update d N u hz ω hp
+  have h2 := (entryCLM (d.Idx N) a b).hasFDerivAt.comp_hasDerivAt (ω (crd d N p)) h
+  simp only [Function.comp_def, entryCLM_apply] at h2
+  exact h2
+
+end Entry
+
 end RBM.Gauss

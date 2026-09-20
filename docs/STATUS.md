@@ -1420,3 +1420,19 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 `Xentry_eq_rowCoord`（`X_{ik} = ω(实) + ε i ω(虚)`，`ε = ±1`）、`rowCoord_mem_rowSet`、`rowCoord_injOn`（单射）。
 这样行和就是以 `(k, b)` 为指标的线性型，**不需要把和重标号到 `Coord` 上**——
 直接用 `iIndepFun.precomp`（单射前合成）把坐标族拉到这个指标集上，再套第六/七块。
+
+### `RBM1D/Gauss/FlucVanish.lean` — 消失引理（T86，Claude Code 并行 agent）
+
+**`norm_integral_prod_flucDiag_le`**：`k i₀` 恰好出现一次 ⟹ `‖E[∏ᵢ Z_{kᵢ}]‖ ≤ (#ι−1)·ε·B^(#ι−1)`。
+抽象层 `integral_mul_prod_eq_zero` 证的是替换之后期望**恰为 0**（T84 的 `condRow_sub_condRow`），误差由 `norm_prod_sub_prod_le` 逐项望远镜化。
+补齐了 `FinDepOffRow` 的封闭性（CondRow 只有 `.comp`/`.finDep`）：`.mul`/`.sub`/`finDepOffRow_prod`/**`finDepOffRow_condRow`**（`E_{k'}` 不会重新引入对第 k 行的依赖——这正是 `G^{(k₁)}` 前面那个 `(1−E_{kᵢ})` 无害的原因）。
+
+**为什么用矩形式而不是 `≺`**：`E[∏ᵢ Z_{kᵢ}]` 是个**数**，没有随机变量可供 `≺` 支配；写成 `≺` 就得凭空造一个常数随机变量。
+T87 展开 `E|Σₖ tₖZₖ|^{2p} = Σ_{(k₁,…,k_{2p})} (∏t)·E[∏ᵢ Z_{kᵢ}]` 并按不同指标个数分层，每个被加项正是这个形状的数；`≺` 到 T88 末尾经 `stochDom_of_momentDom` 才回来。
+**T87 要的索引形状**：抽象 `[Fintype ι] [DecidableEq ι]`（T87 取 `ι = Fin (2p)`）加特选 `i₀`，多重指标 `k : ι → Idx`，「只出现一次」即 `hone : ∀ i ≠ i₀, k i ≠ k i₀`；
+抽象层把 `Z Y : ι → Ω → ℂ` 当**任意族**，不强制 `k i = k j ⟹ Z i = Z j`，故 T87 可在一半 slot 放共轭因子。
+
+**⚠ 与 T85 的接缝（T87/T88 要处理）**：`B`、`ε` 是**逐点一致**的参数，而 T85 的 `minorReplace_diag_stochDom` 给的是 `≺ Ψ²`（高概率事件上的界）。
+把后者变成一致的 `ε` 是指示函数/截断的记账，属 T87/T88。陈述**不空洞**：`Im z > 0` 已使 `B`、`ε` 确定性地有限（Envelope 的 `norm_green_zt_le`），只是不小——小是截断买来的。
+已备好两座桥供 T85 直接插入：`greenMinorMat_apply_eq_greenMinor`（T84 的全函数 `greenMinorMat` = T85 的 `RBM.greenMinor`）与 `norm_flucDiag_sub_flucDiagMinorFam_le`（entry 误差 `e` ⟹ 因子误差 `2e`）。
+**剩余假设**：可测性 `hZmeas`/`hYmeas`（CondRow 有意未证 `Measurable (condRow k X)`，见 paper-deltas #56；仓库也没有 `ω ↦ green (Hflow …) z k k` 的可测性——都很浅但不在本单范围）、`hrow : RowIntegrable`、`hB : 0 ≤ B`。paper-deltas #57。

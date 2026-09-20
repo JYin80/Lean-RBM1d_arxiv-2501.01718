@@ -9,6 +9,7 @@ import RBM1D.Gauss.Domination
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.CondRow
 import RBM1D.Gauss.MinorReplace
+import RBM1D.Gauss.FlucVanish
 import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.Hierarchy

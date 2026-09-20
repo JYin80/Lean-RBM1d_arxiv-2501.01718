@@ -1530,6 +1530,19 @@
   exact identity $G^{(k)}_{ll}-G_{ll}=-G_{lk}G_{kl}/G_{kk}$ with $|G_{kk}|\ge1/2$ read off (4.1).
 \end{proof}
 
+\begin{lemma}[Vanishing lemma: an index occurring once kills the expectation]\label{lem:fluc-vanish}
+  \lean{RBM.Gauss.finDepOffRow_const, RBM.Gauss.FinDepOffRow.mul, RBM.Gauss.FinDepOffRow.sub, RBM.Gauss.finDepOffRow_prod, RBM.Gauss.finDepOffRow_condRow, RBM.Gauss.norm_prod_sub_prod_le, RBM.Gauss.integral_mul_prod_eq_zero, RBM.Gauss.norm_integral_prod_le, RBM.Gauss.greenDiagCentered, RBM.Gauss.flucDiag, RBM.Gauss.flucDiagMinor, RBM.Gauss.flucDiagMinorFam, RBM.Gauss.condRow_flucDiag, RBM.Gauss.finDepOffRow_flucDiagMinorFam, RBM.Gauss.norm_flucDiag_sub_flucDiagMinorFam_le, RBM.Gauss.norm_flucDiag_le, RBM.Gauss.norm_flucDiagMinorFam_le, RBM.Gauss.greenMinorMat_apply_eq_greenMinor, RBM.Gauss.norm_integral_prod_flucDiag_le}
+  \leanok\uses{lem:condrow, lem:4.1}
+  With $Z_k=(1-\mathbb E_k)(G_{kk}-m)$, if $k_{i_0}$ occurs exactly once in
+  $\prod_i Z_{k_i}$ then $\|\mathbb E\prod_i Z_{k_i}\|\le(\#\iota-1)\,\varepsilon\,B^{\#\iota-1}$,
+  where $\varepsilon$ is the replacement error and $B$ bounds the factors.
+\end{lemma}
+\begin{proof}\leanok
+  Replace every other factor by its $G^{(k_{i_0})}$ version; those read no row $k_{i_0}$, so
+  $\mathbb E_{k_{i_0}}$ passes through and annihilates $Z_{k_{i_0}}$, giving exactly $0$; the
+  replacement error is telescoped by \texttt{norm\_prod\_sub\_prod\_le}.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

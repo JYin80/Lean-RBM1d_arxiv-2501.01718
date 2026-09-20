@@ -5,6 +5,8 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.FlucAvg
 import RBM1D.Gauss.MomentGronwall
+import RBM1D.Gauss.IBPPoly
+import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.SteinMatrix
 
 /-!
@@ -209,5 +211,34 @@ theorem mul_Bmat_mul_apply_diag {M M' : Matrix (d.Idx N) (d.Idx N) ℂ} (i a c :
   rw [Finset.sum_ite_eq' Finset.univ i, if_pos (Finset.mem_univ i)]
 
 end Sandwich
+
+/-! ### Step 2c: resolvent entries are tame
+
+T104's `RBM.Gauss.gaussIBP` is Stein's identity for *polynomially bounded* test functions
+(`RBM.Gauss.Tame`), which is the version the display needs: its integrand carries a factor
+`H_ik`, so it is never globally bounded.  Resolvent entries themselves are tame for the
+cheapest possible reason — the deterministic envelope `‖G‖ ≤ η_t⁻¹`. -/
+
+section Tame
+
+variable {d : Dims} {N : ℕ} {E t : ℝ}
+
+/-- `Im z_t ≠ 0` strictly inside the flow. -/
+theorem zt_im_ne_zero_of_lt_one (hE : |E| < 2) (ht : t < 1) : (zt E t).im ≠ 0 := by
+  rw [← etaT_eq_zt_im]
+  exact ne_of_gt (etaT_pos_of_lt_one hE ht)
+
+/-- **Every resolvent entry is tame.**  No polynomial is needed: the entry is bounded by
+`η_t⁻¹` on the whole space, so the dominating polynomial can be taken constant. -/
+theorem tame_green_apply (hE : |E| < 2) (ht : t < 1) (u : ℝ) (a b : d.Idx N) :
+    Tame d (fun ω : Ω d => green (Hflow d N u ω) (zt E t) a b) := by
+  refine ⟨?_, finDep_of_Hflow d N u (fun M => green M (zt E t) a b),
+    ⟨∅, 0, (etaT E t)⁻¹, fun ω => ?_⟩⟩
+  · exact Continuous.matrix_elem
+      (continuous_green_comp (continuous_Hflow d N u) (Hflow_isHermitian d N u)
+        (zt_im_ne_zero_of_lt_one hE ht)) a b
+  · simpa using norm_green_apply_le_etaT hE ht u a b ω
+
+end Tame
 
 end RBM.Gauss

@@ -220,6 +220,101 @@ theorem stochDom_indicator_Lmax (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u 
     exact absurd hlt (not_lt.2
       (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) τ) (hΦ0 N)))
 
+/-- `#{0, 1, -1} ≤ 3`. -/
+theorem card_sbSupport_le (L : ℕ) : (sbSupport L).card ≤ 3 := by
+  unfold sbSupport
+  calc ({0, 1, -1} : Finset (ZMod L)).card ≤ ({1, -1} : Finset (ZMod L)).card + 1 :=
+        Finset.card_insert_le _ _
+    _ ≤ (({-1} : Finset (ZMod L)).card + 1) + 1 := by
+        have := Finset.card_insert_le (1 : ZMod L) ({-1} : Finset (ZMod L))
+        omega
+    _ = 3 := by simp
+
+/-- The double sum of two-loops in the control of (4.2) is at most `9 L^max`. -/
+theorem sum_sum_Lre_le (d : Dims) (N : ℕ) (E u : ℝ) (ω : Ω d) (a₀ b₀ : ZMod (d.L N)) :
+    (∑ a ∈ sbSupport (d.L N), ∑ b ∈ sbSupport (d.L N),
+        Lre (Hflow d N u ω) (zt E u) (b₀ + b) (a₀ + a))
+      ≤ 9 * Lmax (Hflow d N u ω) (zt E u) := by
+  have hH := Hflow_isHermitian d N u ω
+  have hM : 0 ≤ Lmax (Hflow d N u ω) (zt E u) := Lmax_nonneg hH
+  have hc : ((sbSupport (d.L N)).card : ℝ) ≤ 3 := by
+    exact_mod_cast card_sbSupport_le (d.L N)
+  have hc0 : (0 : ℝ) ≤ ((sbSupport (d.L N)).card : ℝ) := Nat.cast_nonneg _
+  have hinner : ∀ a : ZMod (d.L N),
+      (∑ b ∈ sbSupport (d.L N), Lre (Hflow d N u ω) (zt E u) (b₀ + b) (a₀ + a))
+        ≤ ((sbSupport (d.L N)).card : ℝ) * Lmax (Hflow d N u ω) (zt E u) := by
+    intro a
+    calc (∑ b ∈ sbSupport (d.L N), Lre (Hflow d N u ω) (zt E u) (b₀ + b) (a₀ + a))
+        ≤ ∑ _b ∈ sbSupport (d.L N), Lmax (Hflow d N u ω) (zt E u) :=
+          Finset.sum_le_sum fun b _ => Lre_le_Lmax _ _
+      _ = ((sbSupport (d.L N)).card : ℝ) * Lmax (Hflow d N u ω) (zt E u) := by
+          rw [Finset.sum_const, nsmul_eq_mul]
+  calc (∑ a ∈ sbSupport (d.L N), ∑ b ∈ sbSupport (d.L N),
+        Lre (Hflow d N u ω) (zt E u) (b₀ + b) (a₀ + a))
+      ≤ ∑ _a ∈ sbSupport (d.L N),
+          ((sbSupport (d.L N)).card : ℝ) * Lmax (Hflow d N u ω) (zt E u) :=
+        Finset.sum_le_sum fun a _ => hinner a
+    _ = ((sbSupport (d.L N)).card : ℝ) *
+          (((sbSupport (d.L N)).card : ℝ) * Lmax (Hflow d N u ω) (zt E u)) := by
+        rw [Finset.sum_const, nsmul_eq_mul]
+    _ ≤ 9 * Lmax (Hflow d N u ω) (zt E u) := by
+        have hsq : ((sbSupport (d.L N)).card : ℝ) * ((sbSupport (d.L N)).card : ℝ) ≤ 9 := by
+          nlinarith [hc, hc0]
+        nlinarith [hsq, hM]
+
+/-- **The control of (4.2) is `≺ Φ + W⁻¹`.**  Each of the at most nine two-loops is at most
+`L^max`, and the `W⁻¹` term is absorbed by the `W⁻¹` of the target. -/
+theorem stochDom_indicator_entryControl (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHyp d E u Φ) :
+    StochDom (P d)
+      (fun N (p : OffPair d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N u).indicator
+          (fun ω => (∑ a ∈ sbSupport (d.L N), ∑ b ∈ sbSupport (d.L N),
+              Lre (Hflow d N u ω) (zt E u) (p.1.2.1 + b) (p.1.1.1 + a))
+            + if p.1.1.1 - p.1.2.1 ∈ sbSupport (d.L N) then ((d.W N : ℕ) : ℝ)⁻¹ else 0) ω)
+      (fun N _ _ => Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
+  unfold LoopHyp at hΦ
+  refine StochDom.of_subset_union hΦ hΦ fun τ hτ => ⟨τ / 2, by linarith, ?_⟩
+  filter_upwards [eventually_le_rpow 9 (show (0:ℝ) < τ / 2 by linarith),
+    Filter.eventually_ge_atTop 1] with N h9 hN1
+  intro ω hω
+  refine Set.mem_union_left _ ?_
+  simp only [badSet, Set.mem_ofPred_eq] at hω ⊢
+  obtain ⟨p, hlt⟩ := hω
+  have hN0 : (0 : ℝ) < N := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hN1
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hW : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+  have hτ1 : (1 : ℝ) ≤ (N : ℝ) ^ τ := Real.one_le_rpow hN1' hτ.le
+  have hτ2 : (1 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.one_le_rpow hN1' (by linarith)
+  by_cases hmem : ω ∈ Step1.goodEv (sample d) E N u
+  · rw [Set.indicator_of_mem hmem] at hlt
+    -- drop the `W⁻¹` term
+    have hite : (if p.1.1.1 - p.1.2.1 ∈ sbSupport (d.L N) then ((d.W N : ℕ) : ℝ)⁻¹ else 0)
+        ≤ (N : ℝ) ^ τ * ((d.W N : ℕ) : ℝ)⁻¹ := by
+      split_ifs
+      · nlinarith [hW, hτ1]
+      · positivity
+    have hsum : (N : ℝ) ^ τ * Φ N
+        < ∑ a ∈ sbSupport (d.L N), ∑ b ∈ sbSupport (d.L N),
+            Lre (Hflow d N u ω) (zt E u) (p.1.2.1 + b) (p.1.1.1 + a) := by
+      nlinarith [hlt, hite]
+    have h9M := sum_sum_Lre_le d N E u ω p.1.1.1 p.1.2.1
+    have hM : 0 ≤ Lmax (Hflow d N u ω) (zt E u) := Lmax_nonneg (Hflow_isHermitian d N u ω)
+    have hkey : (N : ℝ) ^ (τ / 2) * Φ N < Lmax (Hflow d N u ω) (zt E u) := by
+      have hsplit : (N : ℝ) ^ τ = (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) := by
+        rw [← Real.rpow_add hN0]; congr 1; ring
+      nlinarith [hsum, h9M, h9, hΦ0 N, hτ2]
+    obtain ⟨q, -, hq⟩ := Finset.exists_mem_eq_sup' (Finset.univ_nonempty)
+      (fun q : ZMod (d.L N) × ZMod (d.L N) => Lre (Hflow d N u ω) (zt E u) q.1 q.2)
+    unfold Lmax at hkey
+    rw [hq] at hkey
+    exact ⟨q, by rw [Set.indicator_of_mem hmem]; exact hkey⟩
+  · rw [Set.indicator_of_notMem hmem] at hlt
+    exfalso
+    have : (0 : ℝ) ≤ (N : ℝ) ^ τ * (Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
+      have h1 : (0 : ℝ) ≤ Φ N + ((d.W N : ℕ) : ℝ)⁻¹ := by linarith [hΦ0 N, hW]
+      positivity
+    linarith [hlt]
+
 end Gauss
 
 end RBM

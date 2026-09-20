@@ -1490,6 +1490,19 @@
   give the $C^2$ bounds.
 \end{proof}
 
+\begin{theorem}[Step 2 without the stopping time: continuous induction on moments]\label{thm:step2-moment}
+  \lean{RBM.Step2Moment.le_of_bootstrap_weight, RBM.Step2Moment.ratR, RBM.Step2Moment.continuousOn_ratR, RBM.Step2Moment.jSnorm, RBM.Step2Moment.phi, RBM.Step2Moment.phiN, RBM.Step2Moment.continuousOn_phi, RBM.Step2Moment.continuousOn_phiN, RBM.Step2Moment.netTime, RBM.Step2Moment.exists_netTime_close, RBM.Step2Moment.stochDom_timeIcc_of_holder, RBM.Step2Moment.MomentHyp, RBM.Step2Moment.jSnorm_le_env, RBM.Step2Moment.integrable_jSnorm_pow, RBM.Step2Moment.phi_le, RBM.Step2Moment.phiN_le, RBM.Step2Moment.moment_bound, RBM.Step2Moment.stochDom_jSnorm, RBM.Step2Moment.jS_stochDom, RBM.Step2Moment.aprioriDecay_of_jS, RBM.Step2Moment.aprioriDecay, RBM.Step2Moment.step2}
+  \leanok\uses{thm:step2, lem:moment-dom, lem:envelope, thm:moment-gronwall}
+  $\varphi(u)=\mathbb E[(J^*_{u,D})^q]$ is deterministic and continuous, so the bootstrap of \S5.3
+  closes by continuous induction: (5.43) and optional stopping are not used. The conclusions
+  \texttt{jS\_stochDom}, \texttt{aprioriDecay} and \texttt{step2} are term-for-term those of T61.
+\end{theorem}
+\begin{proof}\leanok
+  Continuity of $\varphi$ by dominated convergence off the deterministic envelope; the prefix
+  bootstrap applied to $\varphi/w$; the uncountable union over $u$ by the $N^{-C}$ net on the
+  $N$-dependent interval $[s_N,t_N]$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

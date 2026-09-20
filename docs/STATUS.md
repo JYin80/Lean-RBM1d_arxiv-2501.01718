@@ -1314,3 +1314,15 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **下一步**：把「条件化」写成乘积测度上的 Fubini——行 `i` 的坐标是**有限**集，`G^(i)` 只依赖其补集，
 于是 `∑_{k≠i} H_ik G^(i)_kj` 在冻结补集后是中心复高斯，矩由 `integral_add_sq_pow_gaussian_prod` 给出，
 最后经 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+### `RBM1D/Hierarchy/Step2Moment.lean` — 不用停时的 Step 2（T75，Claude Code 并行 agent）
+
+**停时真的没了**：`Step2.stopTime`/`tau`/`le_stopTime_iff`/`stopTime_eq_right`/`self_improving`/`step_bound`/`jS_highProb`/`Step2.Hyp` 在本文件里**一处都没引用**。
+替代物：`le_of_bootstrap_weight`（复用 Cowork 的 `RBM.le_of_bootstrap_prefix`，`Analysis/Bootstrap.lean`，未重证）作用在**确定性**的 `φ_q(u) = E[(J*_{u,D})^q]` 上；
+停止鞅字段 `Step2.Hyp.mart` → 不停止的矩字段 `MomentHyp.step`；高概率路径连续性 `Step2.Hyp.cont` → 逐 ω 的 `MomentHyp.cont`；Def 2.1(i) 的不可数并 → `stochDom_timeIcc_of_holder`（(5.46) 的网，T73 的版本写死在固定 `[0,T]`，故按 N-依赖区间重做）。
+`continuousOn_phi` 用 `continuousOn_of_dominated` + T77 确定性包络给的常数控制函数。
+**结论与 T61 逐字同形**：`jS_stochDom` 结论与 `Step2.jS_stochDom` 完全一致（复用 T61 的 `Step2.jS`，两条路线可互换），`aprioriDecay`、`step2` 同理；且假设更少（不需 `BoundsCore`、`hreg`、`60 ≤ D`——它们只在下游出现）。
+
+**唯一真正缺的输入**：`MomentHyp` 的 `bnd/thr/init/step/bnd_poly`——(5.39)–(5.41)+(5.45) 的矩形式。
+这正是 T74/T76 那道坎：`Gauss/Hierarchy.lean` 给的是 `∂_u E[L_u]`，而 `Step2.step_bound` 消费的 `SumZeroDyn.Hierarchy.duhamel` 是带 `mart` 字段的逐路径积分恒等式（STATUS 已记「现有形状下不可卸」）。agent 没有伪造推导。
+`cont`/`holder`/`env`/`meas` 四个字段原则上都能由 `Gauss/Model.lean` + `Gauss/Envelope.lean` 给出（γ=1/2），但那要写在 `Gauss/` 下，本工单不许碰——**留给后续工单**。paper-deltas #54。

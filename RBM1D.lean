@@ -23,6 +23,7 @@ import RBM1D.Hierarchy.GUEPhase
 import RBM1D.Hierarchy.Step3
 import RBM1D.Hierarchy.Step1
 import RBM1D.Hierarchy.Step2
+import RBM1D.Hierarchy.Step2Moment
 import RBM1D.Hierarchy.Step45
 import RBM1D.Hierarchy.Step6
 import RBM1D.Defs.Dist

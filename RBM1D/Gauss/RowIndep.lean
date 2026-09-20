@@ -495,4 +495,54 @@ theorem integral_norm_rowSum_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ
   rw [hL, ← hR]
   exact hmain
 
+/-- The coefficients normalised by the (random) standard deviation of the row sum. -/
+noncomputable def rowCoeffNorm (d : Dims) (N : ℕ) (u : ℝ) (i : d.Idx N) (C : Ω d → d.Idx N → ℂ)
+    (ω : Ω d) (k : d.Idx N) : ℂ :=
+  if 0 < rowVarSum d N u i C ω then C ω k / (Real.sqrt (rowVarSum d N u i C ω) : ℂ) else 0
+
+theorem rowVarSum_nonneg (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ) (ω : Ω d) :
+    0 ≤ rowVarSum d N u i C ω := by
+  refine mul_nonneg hu (Finset.sum_nonneg fun k _ => ?_)
+  exact mul_nonneg (Sblk_nonneg _ _) (by positivity)
+
+/-- **The normalised row sum has variance `1`** wherever the variance is positive. -/
+theorem rowVarSum_rowCoeffNorm (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ) (ω : Ω d) :
+    rowVarSum d N u i (rowCoeffNorm d N u i C) ω
+      = if 0 < rowVarSum d N u i C ω then 1 else 0 := by
+  have hV0 := rowVarSum_nonneg (i := i) hu C ω
+  by_cases h : 0 < rowVarSum d N u i C ω
+  · have hs : (0 : ℝ) < Real.sqrt (rowVarSum d N u i C ω) := Real.sqrt_pos.2 h
+    have hsq : Real.sqrt (rowVarSum d N u i C ω) ^ 2 = rowVarSum d N u i C ω := Real.sq_sqrt hV0
+    have hcoef : ∀ k : {k : d.Idx N // k ≠ i}, ‖rowCoeffNorm d N u i C ω k.1‖ ^ 2
+        = ‖C ω k.1‖ ^ 2 / rowVarSum d N u i C ω := by
+      intro k
+      simp only [rowCoeffNorm, h, ↓reduceIte, norm_div, div_pow, Complex.norm_real,
+        Real.norm_of_nonneg hs.le, hsq]
+    rw [if_pos h]
+    have hne : rowVarSum d N u i C ω ≠ 0 := ne_of_gt h
+    have hcalc : rowVarSum d N u i (rowCoeffNorm d N u i C) ω
+        = rowVarSum d N u i C ω / rowVarSum d N u i C ω := by
+      conv_lhs => unfold rowVarSum
+      simp only [hcoef]
+      rw [Finset.sum_congr rfl fun k _ => (mul_div_assoc (Sblk (d.L N) (d.W N) i k.1)
+        (‖C ω k.1‖ ^ 2) (rowVarSum d N u i C ω)).symm, ← Finset.sum_div, ← mul_div_assoc]
+      rfl
+    rw [hcalc, div_self hne]
+  · rw [if_neg h]
+    have hzero : ∀ k : {k : d.Idx N // k ≠ i}, rowCoeffNorm d N u i C ω k.1 = 0 := by
+      intro k
+      simp [rowCoeffNorm, h]
+    unfold rowVarSum
+    simp [hzero]
+
+/-- The normalised coefficients still read only the off-row block. -/
+theorem rowCoeffNorm_congr (C : Ω d → d.Idx N → ℂ)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω')
+    (ω ω' : Ω d) (h : ∀ c ∈ offRowCoord d N i, ω c = ω' c) :
+    rowCoeffNorm d N u i C ω = rowCoeffNorm d N u i C ω' := by
+  have hCe := hC ω ω' h
+  funext k
+  simp only [rowCoeffNorm, rowVarSum, hCe]
+  rfl
+
 end RBM.Gauss

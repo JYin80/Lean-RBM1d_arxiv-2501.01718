@@ -54,4 +54,40 @@ theorem hasLaw_const_mul_coord (a : ℝ) (c : Coord d) :
   rw [h, P_map_eval d c, gaussianReal_map_const_mul a]
   simp
 
+/-- The family of scaled coordinates is independent. -/
+theorem iIndepFun_const_mul_coord (a : Coord d → ℝ) :
+    iIndepFun (fun (c : Coord d) (ω : Ω d) => a c * ω c) (P d) :=
+  (iIndepFun_coord d).comp (fun c => fun x : ℝ => a c * x) fun _ => by fun_prop
+
+/-- **A finite real linear form in the coordinates is a centred Gaussian**, with variance the
+weighted sum `∑ a_c² v_c`.  Induction on the finite set, using independence and the convolution
+of Gaussians. -/
+theorem map_sum_const_mul_coord (a : Coord d → ℝ) (s : Finset (Coord d)) :
+    (P d).map (fun ω : Ω d => ∑ c ∈ s, a c * ω c)
+      = gaussianReal 0 (∑ c ∈ s, NNReal.mk (a c ^ 2) (sq_nonneg _) * gvar d c) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp [Measure.map_const]
+  | insert c₀ s hc₀ ih =>
+    have hmeas : ∀ c : Coord d, Measurable (fun ω : Ω d => a c * ω c) := by
+      intro c; fun_prop
+    have hsum : Measurable (fun ω : Ω d => ∑ c ∈ s, a c * ω c) :=
+      Finset.measurable_sum _ fun c _ => hmeas c
+    have hindep0 :=
+      (iIndepFun_const_mul_coord d a).indepFun_finsetSum_of_notMem (fun c => hmeas c) hc₀
+    have hfun : (∑ j ∈ s, fun ω : Ω d => a j * ω j) = fun ω : Ω d => ∑ c ∈ s, a c * ω c := by
+      funext ω
+      simp [Finset.sum_apply]
+    rw [hfun] at hindep0
+    have hindep : IndepFun (fun ω : Ω d => a c₀ * ω c₀)
+        (fun ω : Ω d => ∑ c ∈ s, a c * ω c) (P d) := hindep0.symm
+    have hadd : (fun ω : Ω d => ∑ c ∈ insert c₀ s, a c * ω c)
+        = (fun ω : Ω d => a c₀ * ω c₀) + (fun ω : Ω d => ∑ c ∈ s, a c * ω c) := by
+      funext ω
+      simp [Finset.sum_insert hc₀]
+    rw [hadd, hindep.map_add_eq_map_conv_map (hmeas c₀) hsum, ih,
+      (hasLaw_const_mul_coord d (a c₀) c₀).map_eq, gaussianReal_conv_gaussianReal,
+      Finset.sum_insert hc₀]
+    simp
+
 end RBM.Gauss

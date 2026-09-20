@@ -2293,3 +2293,25 @@ T102 那条链的每一步都是「在单个 `N`、`ω` 上关于失败事件的
 字面上就是 `entry_bound_gauss`/`diag_bound_gauss` 放大指标集，T107 的 `of_det` 输出应当无胶水对上。
 **T107 落地时要核对**：若它直接产出 `Step1.goodEv` 指示函数的形式，则 `goodEv_subset_goodSet_flow` 不再需要，假设可简化。
 新增的 `..._slow_*` 桥目前**没有消费者**（因为总装不需要网），保留为通用工具与后备。paper-deltas #63。
+
+## ⚠ HEAD 编译失败：`Gauss/IBP.lean` 与 `Gauss/FlucIter.lean` 的重名（2026-09-20，Cowork 值守发现）
+
+```
+error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
+  environment already contains 'RBM.Gauss.condRow_zero' from RBM1D.Gauss.FlucIter
+```
+
+`condRow_zero` 被声明了两次：
+
+* `Gauss/FlucIter.lean:338`（T94，**已合并、有下游消费者** —— 同文件 421/425 行在用）
+* `Gauss/IBP.lean:782`（T83，**在飞行中**）
+
+**处理办法：后来的那个改名**，即 `Gauss/IBP.lean` 里那条。建议叫 `condRow_zero_apply`
+或 `condRow_zero'`（它的陈述带 `(ω : Ω d)`，与 FlucIter 那条的形状不同，本来就该区分开）。
+同文件 861 行的 `simp only [..., condRow_zero, ...]` 一起改。
+
+**给 T83 接手人的提醒**：**单文件 `lake env lean` 查不出跨文件重名**——它只在全量 `lake build`
+把根 `RBM1D.lean` 的 import 链拼起来时才炸。所以动了公共命名空间里的名字之后，
+**收工前至少跑一次全量构建**，别只信单文件绿。
+
+这一条同时说明 T90（全库重复扫描）那类维护单值得定期重跑。

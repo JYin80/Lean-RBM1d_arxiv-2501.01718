@@ -54,40 +54,62 @@ theorem hasLaw_const_mul_coord (a : ℝ) (c : Coord d) :
   rw [h, P_map_eval d c, gaussianReal_map_const_mul a]
   simp
 
+section General
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+  {ι : Type*} [DecidableEq ι]
+
+/-- **A finite real linear form in an independent Gaussian family is a centred Gaussian**, with
+variance `∑ a_i² v_i`.  Induction on the finite set: a scaled variable is independent of the sum
+of the others, and Gaussians convolve. -/
+theorem map_sum_const_mul_of_indep {X : ι → Ω → ℝ} {v : ι → ℝ≥0} (hmeas : ∀ i, Measurable (X i))
+    (hlaw : ∀ i, P.map (X i) = gaussianReal 0 (v i)) (hindep : iIndepFun X P) (a : ι → ℝ)
+    (s : Finset ι) :
+    P.map (fun ω => ∑ i ∈ s, a i * X i ω)
+      = gaussianReal 0 (∑ i ∈ s, NNReal.mk (a i ^ 2) (sq_nonneg _) * v i) := by
+  classical
+  have hmul : ∀ i, Measurable (fun ω => a i * X i ω) := fun i => (hmeas i).const_mul _
+  have hindep' : iIndepFun (fun i ω => a i * X i ω) P :=
+    hindep.comp (fun i => fun x : ℝ => a i * x) fun _ => by fun_prop
+  have hlaw' : ∀ i, P.map (fun ω => a i * X i ω)
+      = gaussianReal 0 (NNReal.mk (a i ^ 2) (sq_nonneg _) * v i) := by
+    intro i
+    have h : P.map (fun ω => a i * X i ω) = (P.map (X i)).map (fun x : ℝ => a i * x) := by
+      rw [Measure.map_map (by fun_prop) (hmeas i)]
+      rfl
+    rw [h, hlaw i, gaussianReal_map_const_mul (a i)]
+    simp
+  induction s using Finset.induction with
+  | empty => simp [Measure.map_const]
+  | insert i₀ s hi₀ ih =>
+    have hsum : Measurable (fun ω => ∑ i ∈ s, a i * X i ω) :=
+      Finset.measurable_sum _ fun i _ => hmul i
+    have hindep0 := hindep'.indepFun_finsetSum_of_notMem (fun i => hmul i) hi₀
+    have hfun : (∑ j ∈ s, fun ω => a j * X j ω) = fun ω => ∑ i ∈ s, a i * X i ω := by
+      funext ω
+      simp [Finset.sum_apply]
+    rw [hfun] at hindep0
+    have hadd : (fun ω => ∑ i ∈ insert i₀ s, a i * X i ω)
+        = (fun ω => a i₀ * X i₀ ω) + (fun ω => ∑ i ∈ s, a i * X i ω) := by
+      funext ω
+      simp [Finset.sum_insert hi₀]
+    rw [hadd, (hindep0.symm).map_add_eq_map_conv_map (hmul i₀) hsum, ih, hlaw' i₀,
+      gaussianReal_conv_gaussianReal, Finset.sum_insert hi₀]
+    simp
+
+end General
+
 /-- The family of scaled coordinates is independent. -/
 theorem iIndepFun_const_mul_coord (a : Coord d → ℝ) :
     iIndepFun (fun (c : Coord d) (ω : Ω d) => a c * ω c) (P d) :=
   (iIndepFun_coord d).comp (fun c => fun x : ℝ => a c * x) fun _ => by fun_prop
 
 /-- **A finite real linear form in the coordinates is a centred Gaussian**, with variance the
-weighted sum `∑ a_c² v_c`.  Induction on the finite set, using independence and the convolution
-of Gaussians. -/
+weighted sum `∑ a_c² v_c`. -/
 theorem map_sum_const_mul_coord (a : Coord d → ℝ) (s : Finset (Coord d)) :
     (P d).map (fun ω : Ω d => ∑ c ∈ s, a c * ω c)
-      = gaussianReal 0 (∑ c ∈ s, NNReal.mk (a c ^ 2) (sq_nonneg _) * gvar d c) := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp [Measure.map_const]
-  | insert c₀ s hc₀ ih =>
-    have hmeas : ∀ c : Coord d, Measurable (fun ω : Ω d => a c * ω c) := by
-      intro c; fun_prop
-    have hsum : Measurable (fun ω : Ω d => ∑ c ∈ s, a c * ω c) :=
-      Finset.measurable_sum _ fun c _ => hmeas c
-    have hindep0 :=
-      (iIndepFun_const_mul_coord d a).indepFun_finsetSum_of_notMem (fun c => hmeas c) hc₀
-    have hfun : (∑ j ∈ s, fun ω : Ω d => a j * ω j) = fun ω : Ω d => ∑ c ∈ s, a c * ω c := by
-      funext ω
-      simp [Finset.sum_apply]
-    rw [hfun] at hindep0
-    have hindep : IndepFun (fun ω : Ω d => a c₀ * ω c₀)
-        (fun ω : Ω d => ∑ c ∈ s, a c * ω c) (P d) := hindep0.symm
-    have hadd : (fun ω : Ω d => ∑ c ∈ insert c₀ s, a c * ω c)
-        = (fun ω : Ω d => a c₀ * ω c₀) + (fun ω : Ω d => ∑ c ∈ s, a c * ω c) := by
-      funext ω
-      simp [Finset.sum_insert hc₀]
-    rw [hadd, hindep.map_add_eq_map_conv_map (hmeas c₀) hsum, ih,
-      (hasLaw_const_mul_coord d (a c₀) c₀).map_eq, gaussianReal_conv_gaussianReal,
-      Finset.sum_insert hc₀]
-    simp
+      = gaussianReal 0 (∑ c ∈ s, NNReal.mk (a c ^ 2) (sq_nonneg _) * gvar d c) :=
+  map_sum_const_mul_of_indep (fun c => measurable_pi_apply c) (fun c => P_map_eval d c)
+    (iIndepFun_coord d) a s
 
 end RBM.Gauss

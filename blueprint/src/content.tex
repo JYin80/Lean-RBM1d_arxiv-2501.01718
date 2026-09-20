@@ -1461,6 +1461,19 @@
   $N^{-D'}$ and is controlled by the envelope with $D'=2p(K+B)+1$.
 \end{proof}
 
+\begin{theorem}[Lemma 2.11 in moment form: the hierarchy for $\partial_u\mathbb E[L]$]\label{thm:moment-hierarchy}
+  \lean{RBM.Gauss.sample_G, RBM.Gauss.sample_Lval, RBM.Gauss.sample_ELval, RBM.Gauss.continuous_green_comp, RBM.Gauss.continuous_gloop_Hflow, RBM.Gauss.integrable_gloop_Hflow, RBM.Gauss.integrable_sample_Lval, RBM.Gauss.norm_sample_Lval_le, RBM.Gauss.norm_sample_ELval_le, RBM.Gauss.loopObs, RBM.Gauss.loopObs_Hflow, RBM.Gauss.norm_loopObs_le, RBM.Gauss.testFun_loopObs, RBM.Gauss.integrable_wirtSecond, RBM.Gauss.integral_sum_wirtSecond, RBM.Gauss.hasDerivAt_integral_gloop, RBM.Gauss.LoopIto, RBM.Gauss.hasDerivAt_integral_gloop_hierarchy, RBM.Gauss.hasDerivAt_integral_Lval_hierarchy, RBM.Gauss.eGterm}
+  \leanok\uses{thm:generator, def:gauss-model, lem:envelope}
+  $\partial_v\mathbb E[L(H_v,z)]|_{v=u}=\mathbb E[\tilde E]+\mathbb E[\mathrm{primRhs}\,L_u]$, i.e.
+  (2.45) in expectation, with the martingale term (2.46) simply absent. The SDE itself is never
+  proved and never needed. $\mathbb E\,L_{u,\sigma,a}$ is a genuine Bochner integral
+  (\texttt{integrable\_sample\_Lval}).
+\end{theorem}
+\begin{proof}\leanok
+  The generator identity at the loop observable, precomposed with the Hermitian projection; the
+  deterministic cut-and-glue algebra of Lemma 2.11 is carried as the hypothesis \texttt{LoopIto}.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

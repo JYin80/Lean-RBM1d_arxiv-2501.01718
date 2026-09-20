@@ -1260,3 +1260,16 @@ T70 的入口是 `P_map_eval`（单坐标律）与 `P_map_restrict`（任意有�
 覆盖 `loopMax_le_det`、`loopXi_le_det`、`norm_gloop_sub_le_det`（L−K，K 的逐点界作假设）；多项式增长形式 `norm_gloop_le_rpow` 是交给 T72 的对接点。
 `J*` 未重证：已有的 `RBM.jStar_le` 已把它归约到分子的逐点界，重证会让 `Gauss/` 依赖 `Hierarchy/Step2.lean`（方向不对）。
 假设：`Measurable (Y N u)`（`StochDom` 用外测度不需要，但分割积分需要）、`|Y|^{2p}` 可积、`Φ > 0` 且 `N^{-B} ≤ Φ`、包络 `|Y| ≤ Env N ≤ N^Kenv`（每个 ω）。paper-deltas #51。
+
+### `RBM1D/Gauss/Hierarchy.lean` — Lemma 2.11 的矩形式（T76，Claude Code 并行 agent）
+
+**`hasDerivAt_integral_gloop_hierarchy`**：`∂_v E[L(H_v,z)]|_{v=u} = E[Ẽ] + E[primRhs L_u]`——(2.45) 的期望版，`primRhs` 就是仓库里已有的那个。
+`hasDerivAt_integral_Lval_hierarchy` 是 `z := zt E u` 的版本。**(2.45) 本身从不被证明**（工单明令）。
+`integrable_sample_Lval`：`L_{u,σ,a}` 可积——**这条补上了 `Flow/Hypotheses.lean` 偏差清单里明确标记的可积性缺口**。
+确定性包络 `norm_sample_Lval_le`（(5.2)，处处成立）；`loopObs` + `testFun_loopObs`（`bdd₀` 字段已卸，即 (5.2)）。
+
+**⚠ 与现有假设字段的对接结论（需 Jun/Cowork 定夺）**：`RBM.Hierarchy` 的 `duhamel`/`duhamelQ` 是**逐路径**（∀ω）的积分恒等式且含鞅字段 `mart`，
+矩路线既无逐路径 Duhamel 也无鞅，**这两个字段在现有形状下不可卸**——本文件的结果是它们的 `∂_u E[…]` 替代品，是不同的陈述，不是同签名的更小版本。`bdg`/`bdgQ` 属 T72+T73/T77，不在此。
+`Bounds`/`Thm221`/`Steps`/`Transfer` 里没有与本文件同形状的字段。
+**剩余假设**：`MatrixStein`（欠 T70）、`TestFun`（需矩阵求逆的 Fréchet `C²` + `List.foldr` 乘积的 Leibniz；Generator.lean 只有逐线的 `iteratedDeriv` 版）、`LoopIto`（纯确定性的 cut-and-glue 代数）。
+**未做**：动 `z_u` 的全导数——需「偏导连续 ⟹ 可微」，Mathlib 没有可直接用的引理；这是冻结陈述与 (2.45) 字面期望之间唯一缺的分析步骤。paper-deltas #52。

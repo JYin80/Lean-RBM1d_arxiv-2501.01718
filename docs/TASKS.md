@@ -223,7 +223,7 @@
 | T106 | **`u ↦ ‖G_u − m‖²_max` 的 Hölder 模**（T99 的 (C) 里唯一还没人做的一块，且**不依赖 T100**）：纯确定性。预解式恒等式 + `norm_Hflow_sub`（`‖H_u−H_u'‖ = \|√u−√u'\|·‖X‖`）+ `\|√u−√u'\| ≤ \|u−u'\|^{1/2}` + `z_u` 的 Lipschitz 性，给出 `\|llMax_u² − llMax_u'²\| ≤ C·η_t⁻²(‖X‖+1)·\|u−u'\|^{1/2}`。配 T101 的 `≺`-常数版与 T100 的 `‖X‖ ≺ 1` 即可关掉 `Lemma41Flow` | `Gauss/FlowHolder.lean`（新建） | **Claude Code #2** | 已完成 |
 | T107 | **带时间指标的 Lemma 4.1**（T107 原计划的障碍一，纯接口重做）：用 `Green/EntryBound.lean` 的**确定性内核** `norm_sq_green_le_blk` / `norm_sq_green_diag_sub_le_blk` 加自己的 `StochDom.of_det` 调用，把 (4.2)(4.3) 的指标集扩成 `TimeIcc s t N × …`（时间与谱参数随指标走）。`δ N := (scale E N (t N))⁻¹^{1/6}`（`scale` 对 u 反单调，方向正确）。**不碰 `Green/EntryBound.lean`** | `Gauss/EntryBoundTime.lean`（新建） | **Claude Code #2** | 进行中 |
 | T108 | **`Lemma41Flow` 总装**（依赖 T107 + T100）。还要处理障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而 T101/T75 的时间网桥只吃 `Φ : ℕ → ℝ`；需给桥补一个 `Φ` 的缓变假设，或在本文件重做网论证 | `Gauss/Lemma41FlowGauss.lean`（新建） | Claude Code | **完成**（`lemma41Flow` 对任意 `Φ ≥ 0` 成立——**不需要时间网**，障碍二不成立；缓变桥仍已交付，见 STATUS） |
-| T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`，Wick 配对 + 闭走计数。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | 待认领 | 未开工 ← **论文的公开缺口，paper-deltas #49** |
+| T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`。**规格见下文「T109 规格」：建议用已证的 `gaussIBP` 跑矩递推绕开 Wick 与走计数，第 0 步先验因子**。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | 待认领 | 未开工 ← **论文的公开缺口，paper-deltas #49** |
 | T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证）。**规格见下文「T110 规格」，第 0 步先手算 m = 2** | `Gauss/FlucIterHigh.lean`（新建） | 待认领 | 未开工 ← **全队最高风险** |
 | T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。在高斯实现里它们是关于 `P d` 的陈述，不需要 Itô | `Gauss/DistEq.lean`（新建） | 待认领 | 未开工 |
 
@@ -2024,3 +2024,49 @@ Cowork 手上原有的 T1、T58、T83 已全部交回队列，规格见下文。
 
 **为什么它值这个价**：补上之后 (4.12) 与 (4.5) 全部是无假设定理，[40] 这条外部输入彻底不需要，
 论文里两条「引用外部文献」就都清干净了。
+
+---
+
+## T109 规格：`TraceMomentBound` 的 `p ≥ 2`（Cowork 设计，2026-09-20）
+
+**先说一条可能省掉整张单大半工作量的判断，请接手的人第一件事就验它。**
+
+`docs/STATUS.md` 里 T100 记的挡路石是「需要 Wick/Isserlis + 闭走计数，而 Mathlib 两样都没有，
+还得在 `Measure.infinitePi` 上从 `P_map_restrict` 造分解」。**这条路确实很贵，但它不是唯一的路。**
+
+### 建议路线：用已经证好的 `gaussIBP` 跑矩递推，绕开 Isserlis 与走计数
+
+`RBM.Gauss.gaussIBP`（T104，**已是定理**）给的是多项式增长（`Tame`）测试函数的高斯分部积分。
+而 `Tr(X^{2p})` 的被积函数是坐标的**多项式**——正好落在 `Tame` 里。于是：
+
+    E Tr(X^{2p}) = ∑_{i,j} E[ X_ij · (X^{2p−1})_{ji} ]
+
+对每个 `X_ij` 用一次分部积分，`X_ij` 变成方差乘导数，而
+
+    ∂(X^{m})_{ji} / ∂X_{ji} = ∑_{k+l=m−1} (X^k)_{jj} · (X^l)_{ii}
+
+于是得到**自洽递推**
+
+    E Tr(X^{2p}) = ∑_{i,j} S_ij ∑_{k+l=2p−2} E[ (X^k)_{jj} (X^l)_{ii} ]
+
+再用 `∑_j S_ij = 1`（`RBM.sum_Sblk_row`，`p = 1` 那条已经在用）与对 `p` 的归纳 + Cauchy–Schwarz，
+就得到 `E Tr(X^{2p}) ≤ C_p · N`。这正是 Catalan 数那条递推，**但一行组合计数都不用写**。
+
+**第 0 步（先做这个，再决定走哪条）**：把上面那条分部积分恒等式在**本仓库的实坐标参数化**下
+验一遍——模型用的是实/虚两个标签的实高斯，非对角方差是 `S_ij/2`（`gvar_offDiag`）、对角是 `S_ij`
+（`gvar_diag`）。**因子 2 和 Hermitian 约束下 `X_ji = conj X_ij` 的配对就在这里，是最容易错的地方。**
+`RBM1D/Gauss/IBP.lean`（T83）里 `hasDerivAt_Hflow_update` 与 `mul_Bmat_mul_apply_of_ne`
+已经把「动一个坐标 → 矩阵沿 `B_p` 走 → 夹心塌成两项」这条链做好了，**直接抄那两条的模式**，
+只是把预解式换成 `X^m`。验通了就照这条走；验不通再回头考虑 Isserlis。
+
+### 硬性约束
+
+* **不许改 `Gauss/OpNorm.lean` 里 `TraceMomentBound` 的定义**，也不许改
+  `opNormBound_of_traceMomentBound` 与 `Gauss/Model.lean` 的 `OpNormBound`——冻结接口，只把假设变定理。
+* `p = 1` 已无条件（`traceMomentBound_one`），**拿它当归纳的起点，也当因子是否算对的体检**：
+  你的递推在 `p = 1` 处必须退化成 `E Tr(X²) = ∑_{ij} S_ij = WL ≤ N`，对不上就是因子错了。
+* 复用：`gaussIBP`（T104）、`Tame` 全套（`LDEQuad.lean`）、`frobSq`/`trace_pow_eq_frobSq`（T100）、
+  `Xmat_update`/`Bmat`（T71）、`sum_Sblk_row`。
+
+**这张单卸掉之后**：`‖X‖ ≺ 1` 无条件，`Gauss/Model.lean` 的 `OpNormBound` 字段变定理，
+论文那条「直接使用、未证」的公开缺口（paper-deltas #49）补上。

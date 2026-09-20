@@ -1590,3 +1590,7 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 **T81 完成 ✔**（`Gauss/RowIndep.lean`，30 块，零 sorry）：行 LDE `stochDom_rowSum_minorCol` 与
 列 LDE `stochDom_rowSum_minorRowConj`，均为一般定理 `stochDom_rowSum_general` 的实例。
 蓝图节点 `lem:lde-linear`，paper-deltas #61。
+
+**维护/审计（Claude Code #2，T81 收尾后）**：`lake build RBM1D` 全量通过；
+公理审计 **6583 条声明**全部只含 propext / Classical.choice / Quot.sound；
+蓝图 **1502 个 `\lean{}` 名字**逐条 `#check` 全部解析（含新节点 `lem:lde-linear`）。

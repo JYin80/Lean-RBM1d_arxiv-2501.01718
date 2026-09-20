@@ -109,6 +109,26 @@
 | `Function.update_of_ne (h : a ≠ a') v f : update f a' v a = f a`、`Function.update_self` | |
 | `Finset.filter_image : (s.image f).filter p = (s.filter (p ∘ f)).image f` | |
 
+## 概率与测度（`Gauss/*.lean`，T81 用到）
+
+| 名字 | 说明 |
+|---|---|
+| `ProbabilityTheory.iIndepFun_infinitePi` | 无穷乘积测度的坐标相互独立——`P` 的独立性入口 |
+| `iIndepFun.precomp (hg : g.Injective)` | 沿**单射**把独立族拉到新指标集（行的 `(列, 实/虚)` 参数化） |
+| `iIndepFun.indepFun_finsetSum_of_notMem` | 单个变量与其余之和独立（线性型归纳） |
+| `iIndepFun.indepFun_finset S T (hST : Disjoint S T)` | 两个**不交有限块**的元组独立——条件化的基础 |
+| `indepFun_iff_map_prod_eq_prod_map_map` | 独立 ⟺ 联合律 = 乘积律；配 `integral_prod_symm` / `lintegral_prod_symm'` 做分块 Fubini/Tonelli |
+| `gaussianReal_conv_gaussianReal`、`gaussianReal_map_const_mul` | 高斯卷积与缩放——线性型的律 |
+| `memLp_id_gaussianReal'`、`MemLp.integrable_norm_pow'` | 高斯的多项式矩存在 |
+| `integrable_withDensity_iff_integrable_smul'` | 测度形式 ↔ 密度形式的可积性（`gaussianReal = withDensity`） |
+| `stochDom_of_momentDom`（本项目 T73） | 矩界 + 多项式大小指标集 ⟹ `≺`；注意 `MomentDom` 里 ε 在 p **外面** |
+| `hasFiniteIntegral_iff_enorm` + `Real.enorm_eq_ofReal` | 由 `∫⁻ < ∞` **反推**可积性（非负被积函数的标准路线） |
+| `ofReal_integral_eq_lintegral_ofReal` | 非负可积时 `∫⁻ ofReal f = ofReal ∫ f` |
+| `Matrix.det_apply`、`Matrix.adjugate_apply`、`Matrix.inv_def` + `Ring.inverse_eq_inv'` | 逐元素证矩阵行列式/伴随/**逆**的可测性（`Matrix` 没有 measurable space 实例，要写成逐元素形式） |
+
+**教训**：非负被积函数**先做 `∫⁻`（Tonelli 无需可积性）再反推可积性**，比把可积性当假设一路带下去干净得多；
+本项目 T81 因此去掉了全部技术性假设。
+
 ## 本工具链里已弃用的名字
 
 | 旧 | 新 |

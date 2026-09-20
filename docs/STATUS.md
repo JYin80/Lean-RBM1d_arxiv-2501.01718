@@ -1572,3 +1572,10 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 **不带任何可积性假设**（Tonelli 只要可测与非负）。这替代了第十八块的带假设版本。
 **T81 收尾**：由右端有限即得可积性与 Bochner 版 `∫ ‖Z/√V‖^{2p} ≤ 2(2p−1)!!`，
 再取 `C := minorCol`（第十九块）并经 T73 的 `stochDom_of_momentDom` 得 `≺`。
+
+**T81 第二十六、二十七块 ✔（全部假设消除）**：`integrable_norm_rowSum_norm_pow`（由 `∫⁻` 界的有限性
+反推可积性）、`integral_norm_rowSum_norm_pow_le'`（Bochner 版，无边条件），以及
+**`integral_norm_rowSum_minorCol_pow_le'`**——对 minor 预解式列的系数，
+`E‖Z/√V‖^{2p} ≤ 2(2p−1)!!` **无任何假设**（只需 `0 ≤ u`）。
+**T81 只剩**：把这条按 `MomentDom` 的量词次序（ε 在 p 外）组织，经 T73 的 `stochDom_of_momentDom`
+落成 `≺`；`ldeRowLHS_eq`/`rowVarSum_eq`（第二十一块）负责与论文量对齐。

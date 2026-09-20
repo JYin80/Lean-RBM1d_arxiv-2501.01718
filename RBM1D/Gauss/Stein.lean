@@ -60,9 +60,9 @@ theorem hasDerivAt_gaussianPDFReal_zero (hv : (var : ℝ) ≠ 0) (x : ℝ) :
   have hc := (hp.exp).const_mul ((Real.sqrt (2 * π * (var : ℝ)))⁻¹)
   rw [key]
   convert hc using 1
-  rw [key]
+  simp only
   field_simp
-  ring
+  try ring
 
 /-- **Stein's identity**, density form:
 `∫ x f(x) p(x) dx = v ∫ f'(x) p(x) dx`.
@@ -84,7 +84,7 @@ theorem integral_mul_gaussianPDF (hv : (var : ℝ) ≠ 0) {f f' : ℝ → ℝ}
       = fun x : ℝ => (-(1 / (var : ℝ))) * (x * f x * gaussianPDFReal 0 var x) := by
     funext x
     field_simp
-    ring
+    try ring
   rw [hL, integral_const_mul] at key
   field_simp at key
   linarith

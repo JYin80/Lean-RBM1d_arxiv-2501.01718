@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.Model
 import RBM1D.Green.Minor
+import RBM1D.Gauss.LinearForm
 
 /-!
 # The minor resolvent does not read row `i`
@@ -27,7 +28,7 @@ concrete form used by the moment computations.
 
 namespace RBM.Gauss
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 
 variable {d : Dims} {N : ℕ}
 
@@ -72,5 +73,48 @@ theorem greenMinor_congr_of_offRow (u : ℝ) (z : ℂ) {i : d.Idx N} {ω ω' : �
   have : minorGreen (green (Hflow d N u ω) z) i = minorGreen (green (Hflow d N u ω') z) i := by
     rw [← e, ← e', hsub]
   exact congrFun (congrFun this k) l
+
+/-! ### The coordinates of row `i` -/
+
+open Finset
+
+/-- The coordinates of row `i` at size `N`: those whose index pair contains `i`. -/
+def rowSet (d : Dims) (N : ℕ) (i : d.Idx N) : Finset (Coord d) :=
+  (univ : Finset (d.Idx N × Bool)).image (fun p => (⟨N, i, p.1, p.2⟩ : Coord d)) ∪
+    (univ : Finset (d.Idx N × Bool)).image (fun p => (⟨N, p.1, i, p.2⟩ : Coord d))
+
+@[simp] theorem mem_rowSet {i k l : d.Idx N} {b : Bool} :
+    (⟨N, k, l, b⟩ : Coord d) ∈ rowSet d N i ↔ (k = i ∨ l = i) := by
+  classical
+  constructor
+  · intro h
+    rcases Finset.mem_union.1 h with h | h
+    · obtain ⟨p, -, hp⟩ := Finset.mem_image.1 h
+      injection hp with h1 h2
+      simp only [Prod.mk.injEq] at h2
+      exact Or.inl h2.1.symm
+    · obtain ⟨p, -, hp⟩ := Finset.mem_image.1 h
+      injection hp with h1 h2
+      simp only [Prod.mk.injEq] at h2
+      exact Or.inr h2.2.1.symm
+  · rintro (rfl | rfl)
+    · exact Finset.mem_union_left _ (Finset.mem_image.2 ⟨(l, b), Finset.mem_univ _, rfl⟩)
+    · exact Finset.mem_union_right _ (Finset.mem_image.2 ⟨(k, b), Finset.mem_univ _, rfl⟩)
+
+/-- Agreeing outside the coordinates of row `i` is agreeing off row `i`. -/
+theorem agreeOffRow_of_agree_compl {i : d.Idx N} {ω ω' : Ω d}
+    (h : ∀ c ∉ rowSet d N i, ω c = ω' c) : AgreeOffRow d N i ω ω' := by
+  intro k l b hk hl
+  refine h _ ?_
+  rw [mem_rowSet]
+  rintro (rfl | rfl)
+  · exact hk rfl
+  · exact hl rfl
+
+/-- **The row block is independent of any disjoint block of coordinates.** -/
+theorem indepFun_rowSet (i : d.Idx N) (T : Finset (Coord d))
+    (hT : Disjoint (rowSet d N i) T) :
+    IndepFun (fun (ω : Ω d) (c : rowSet d N i) => ω c) (fun (ω : Ω d) (c : T) => ω c) (P d) :=
+  (iIndepFun_coord d).indepFun_finset _ _ hT fun c => measurable_pi_apply c
 
 end RBM.Gauss

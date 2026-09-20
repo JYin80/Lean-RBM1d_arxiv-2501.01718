@@ -1415,3 +1415,8 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **T81 余下**：把 `ldeRowLHS`/`ldeRowRHS` 用 `eq_glue_of_congr` 写成 (行块, 其余相关块) 的函数
 （`G^(i)` 只依赖后者，需要用 minor 预解式的形式以避免可逆性边条件），
 内层对冻结的系数套 `integral_sq_add_sq_pow_le`，外层用 T73 的 `stochDom_of_momentDom`。
+
+**T81 第十一块 ✔**：`rowCoord d N i k b` / `rowSign`——把行 `i` 的坐标按「(列 k, 实/虚标志 b)」参数化；
+`Xentry_eq_rowCoord`（`X_{ik} = ω(实) + ε i ω(虚)`，`ε = ±1`）、`rowCoord_mem_rowSet`、`rowCoord_injOn`（单射）。
+这样行和就是以 `(k, b)` 为指标的线性型，**不需要把和重标号到 `Coord` 上**——
+直接用 `iIndepFun.precomp`（单射前合成）把坐标族拉到这个指标集上，再套第六/七块。

@@ -20,21 +20,27 @@
 >
 > ---
 >
-> ## 当前最高优先级：**T60**（2026-09-19，Jun 指定）
+> ## 方向变更（2026-09-20，Jun 授权）：**随机层改走「矩路线」，不造 Itô**
 >
-> **谁空出来就先做 T60**，其他单往后排。
+> Jun 原话：「按你觉得最好的方案走下去，只要证明跑通，我可以适当的改 paper」。
 >
-> 理由：T53（Step 3）与 T55（Steps 4–5）现在都把 **Lemma 5.14 的 (5.92)** 当假设用着，
-> §5.3 的 Step 2 也要靠它收尾。只要 (5.92) 还是假设，Theorem 2.21 的六步就始终是
-> 「挂在一条没证的引理上」，后面每加一张单都在这个洞上面盖楼。
+> 全文审计（`claude/stochastic-layer-audit.md`）发现：论文里真正路径化的只有
+> **Lemma 5.3 的随机积分、Lemma 5.5 的 BDG、(5.43) 的那一个停时**，外加 Def 2.1(i) 的不可数并。
+> 全文**没有**域流、Markov 性、两时刻联合律、Doob 不等式。
 >
-> 而 (5.92) 里**真正随机的只有鞅那一步**（(5.103)(5.105) 的二次变差 + BDG）。
-> 把它做出来，挂起点就正好压在 Itô 的边界上，一步不多——这正是第三批的整个目的。
+> 于是：把流实现成 **`H_u := √u · X`**（`X` 是固定的高斯带矩阵，一时刻边缘与 (2.34) 完全一致），
+> 用**生成元恒等式 + 对矩的 Grönwall** 替掉 Duhamel + BDG，
+> 用**连续归纳**替掉停时，用 **`N^{-C}` 时间网 + 确定性 Lipschitz** 替掉不可数并。
+> 关键：生成元恒等式的二阶项 `|F|^{2p−2}·Σ_α S_α|∂_α F|²` **正好是 (5.25) 的二次变差**，即 BDG 的右端。
 >
-> T60 依赖的东西**已经全在库里**：T52 的 `Q_t` 全套（`Hierarchy/SumZero.lean`）、
-> T51 的 (7.16)、T58 的 `primBil`。缺的是 T59 的 (5.77) 幂计数——
-> **如果有两个 agent 空着，一个做 T59、一个做 T60**，T60 先把 (5.77) 写成假设占位，
-> 等 T59 落地再换成真定理。
+> Lean 侧只要有限维高斯测度 + 一条 Stein 分部积分，**Mathlib 全都有**（Stein 那条要自己证，但
+> `gaussianPDFReal` 是显式的，`p′ = −(x/v)p`，一次分部积分的事）。
+>
+> **新工单 T69–T76，先做 T70（Stein 分部积分）**，它是整条线的地基。
+> 完整路线与风险见项目文档 `claude/moment-route-plan.md`。
+>
+> 旧的「随机层写成假设接口挂起」的决定**到此取消**。已经写好的 `Flow/Hypotheses.lean`
+> 接口不用改——`Sample` 结构正好能被 `H_u = √u·X` 实例化；矩路线要做的是把那些**字段从假设变成定理**。
 
 
 两边共用的工单。**认领前先改 `认领` 一栏并提交**，避免重复劳动。
@@ -112,6 +118,14 @@
 | T66 | 维护：蓝图补上第二批的全部 `\lean{}` 节点 + `leanblueprint checkdecls`；linter 清理 | `blueprint/src/content.tex` 等 | Claude Code | **完成** |
 | T67 | **§5.1 Step 1**：(2.73)(2.74)、三情形分解、(5.2)(5.3)(5.4)(5.8)、(5.9) 的禁区论证 | `Hierarchy/Step1.lean`（新建） | Claude Code | **完成** |
 | T68 | §2.3 + §7.2 的出口：**Theorem 2.5（QUE）与 Theorem 2.6（普适性）** | `Flow/Universality.lean`（新建） | Claude Code | **完成** |
+| T69 | 固定高斯带矩阵 `X`、流 `H_u := √u·X`、实例化 `Sample`、确定性 Lipschitz | `Gauss/Model.lean`（新建） | 待认领 | 未开工 |
+| T70 | **Stein 分部积分**：`E[x·f(x)] = v·E[f′(x)]`，一维 → 乘积 → 矩阵 | `Gauss/Stein.lean`（新建） | **Cowork** | 进行中 ← **⭐ 整条线的地基** |
+| T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | 待认领 | 未开工（等 T70） |
+| T72 | 对矩的 Grönwall：`φ′ ≤ aφ + b` ⟹ 界；**二阶项 = (5.25) 的二次变差** | `Gauss/MomentGronwall.lean`（新建） | 待认领 | 未开工（等 T71） |
+| T73 | `≺` ↔ 矩 的桥；`N^{-C}` 时间网 + Lipschitz ⟹ `u` 一致的 `≺` | `Gauss/Domination.lean`（新建） | 待认领 | 未开工（等 T69） |
+| T74 | 卸掉 Lemma 5.5（BDG）那个假设字段 | `Gauss/DischargeBDG.lean`（新建） | 待认领 | 未开工（等 T72） |
+| T75 | 用连续归纳替掉 Step 2 的停时 (5.43) | `Hierarchy/Step2Moment.lean`（新建） | 待认领 | 未开工（等 T72） |
+| T76 | 卸掉 (2.34) 与 Lemma 2.11：不证 SDE，直接证期望/矩版本 | `Gauss/Hierarchy.lean`（新建） | 待认领 | 未开工（等 T71、T73） |
 
 ---
 
@@ -1468,4 +1482,78 @@ p.66 的行和恒等式与锐化等式、(5.90)、(5.99) 的定量核、(5.104) 
 
 这两条是论文摘要里的 (iii)(iv)，所以哪怕只是把陈述和逻辑骨架搭出来、把外部输入写成假设，
 主定理的四条就齐了——值得做。
+
+---
+
+# 第四批工单（T69–T76）：矩路线
+
+完整路线、依赖图与风险见项目文档 `claude/moment-route-plan.md`。这里只列每张单要做什么。
+
+**依赖**：`T70 → T71 → T72 → {T74, T75}`；`T69` 与 `T70` 可并行；`T73` 等 `T69`；`T76` 等 `T71`+`T73`。
+
+## T70 — `RBM1D/Gauss/Stein.lean` · M · ⭐ **地基，先做**
+
+1. 一维：`X ~ gaussianReal 0 v`（`v ≠ 0`）、`f` 可微且 `f`、`f′` 被多项式控制 ⟹
+   **`E[X · f(X)] = v · E[f′(X)]`**。
+   证法：`gaussianPDFReal 0 v x = (√(2πv))⁻¹ exp(−x²/(2v))`，直接算出
+   `d/dx p_v(x) = −(x/v)·p_v(x)`，然后 ℝ 上分部积分（`MeasureTheory.integral_mul_deriv_eq_deriv_mul`
+   一类，**名字先 grep**）。可积性由高斯尾 + 多项式控制给出。
+2. 乘积：`Measure.pi` 上对第 `i` 个坐标的版本（其余坐标 Fubini 拿出去）。
+3. 矩阵：`X` 是 Hermitian 带矩阵，实部虚部独立、方差 `S_ij`；给出
+   `E[X_ij · F(X)] = S_ij · E[∂_ji F(X)]` 的形式（注意 Hermitian 约束下 `X_ji = conj X_ij`，
+   所以对 `X_ij` 的导数要按实部/虚部拆，**这一步的记号要定死并写进文件头**）。
+
+**Mathlib**：`ProbabilityTheory.gaussianReal`、`gaussianPDFReal_def`、`integrable_gaussianPDFReal`、
+`MeasureTheory.Measure.pi`、`integral_integral_swap`、分部积分（先 grep 确认名字）。
+
+## T69 — `RBM1D/Gauss/Model.lean` · M
+
+固定的高斯带矩阵 `X`：Hermitian，`X_ij` 独立（`i ≤ j`），`E|X_ij|² = S_ij`。流 `H_u := √u • X`。要证：
+
+* `Sample` 的三个字段：`hermitian`、`H_zero`（`√0 = 0`）、`measurable`；
+* **确定性 Lipschitz**：`‖H_u − H_{u'}‖ = |√u − √u'| · ‖X‖`（这是 T73 降不可数并的全部依据）；
+* `‖X‖ ≺ 1`（算子范数的高斯尾；若太贵，先写成假设，标注清楚）。
+
+**与论文的偏差**：`H_u = √u·X` 不是布朗运动，增量不独立。**一时刻边缘完全一致**，
+而层级方程只用一时刻边缘。这是重大 paper-delta，记进 `docs/paper-deltas.md`。
+
+## T71 — `RBM1D/Gauss/Generator.lean` · L · **核心**
+
+`∂_u E[Φ(H_u)] = ½ Σ_{ij} S_ij E[∂_ij ∂_ji Φ(H_u)]`。
+
+路线：`E[Φ(√u·X)]` 对 `u` 求导 = 含参积分求导（`hasDerivAt_integral_of_dominated_loc_of_deriv_le`），
+被积函数的导数是 `(1/(2√u)) Σ_ij X_ij ∂_ij Φ`，再对每个 `X_ij` 用 **T70 的 Stein**，
+把 `X_ij` 换成 `S_ij ∂_ji`，`√u` 相消，得到上式。
+
+**dominated 条件白送**：我们只对 `Φ = |F|^{2p}`、`F` 是 `G = (H−z)⁻¹` 的多项式用它，
+而 `Im z ≥ η > 0` 给出 `‖G‖ ≤ η⁻¹` 在**全空间**成立，各阶导被 `k!·η^{-(k+1)}` 全局控制。
+**把这条「全局控制」单独抽成一条引理**，后面每处都要用。
+
+## T72 — `RBM1D/Gauss/MomentGronwall.lean` · L
+
+取 `Φ = |F|^{2p}`，展开生成元恒等式的二阶导：
+
+```
+d/du E|X_u|^{2p} = 2p·Re E[ |X|^{2p−2} · X̄ · ∂_u F ]
+                 + p(2p−1)· E[ |X|^{2p−2} · Σ_α S_α |∂_α F|² ]
+```
+
+**第二项必须被证明等于 (5.25) 里算出的二次变差**（即 `Σ_α Σ_k |U∘E^(M)(α,k)|²`）——
+这是整条路线的支点，单独成一条定理，名字建议 `secondOrder_eq_quadVar`。
+然后由 `φ′(u) ≤ a(u)φ(u) + b(u)` 用 Mathlib 的 `gronwallBound` 收尾。
+
+## T73 — `RBM1D/Gauss/Domination.lean` · M
+
+1. **矩 ⟹ `≺`**：Markov/Chebyshev。若 `∀p, E|Y_N|^{2p} ≤ C_p N^{εp}`，则 `Y ≺ 1`。
+2. **`u` 一致的 `≺`**：取 `N^{-C}` 时间网 `u_k`，网上用 1. 加有限并；
+   网间用 T69 的确定性 Lipschitz 把误差压到 `N^{-C'}`。
+   **这条就是 Def 2.1(i) 不可数并的全部解法**，论文自己在 (5.46) 用的是同一个网。
+
+## T74 / T75 / T76 — 卸载
+
+* **T74**：把 `Flow/Hypotheses.lean` 里 BDG 那个字段换成 T72 的定理。
+* **T75**：Step 2 的 bootstrap 原来用停时 (5.43)；`φ(u) := E[(J*_{u,D})^q]` 是确定性连续函数后，
+  退化成「`φ` 连续 + 闭集取 sup」的连续归纳，不需要 optional stopping。
+* **T76**：**不要去证 (2.45) 这条 SDE**。矩路线根本不需要它——只需要 `∂_u E[…]`。
+  直接由 T71 推出层级的期望/矩版本。这是最大的一处 paper-delta，务必逐条记录。
 

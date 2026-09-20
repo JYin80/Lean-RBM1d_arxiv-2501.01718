@@ -1333,3 +1333,11 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 `iIndepFun.hasGaussianLaw_fun_sum` 给出和是高斯，`IsGaussian.eq_gaussianReal` 由均值/方差定出具体的 `gaussianReal`，
 方差用 `variance_sum`（独立）。再把 `(Re Z, Im Z)` 的联合律认成两个独立一维高斯的乘积
 （零协方差 + 联合高斯 ⟹ 独立），最后接上已证的 `integral_add_sq_pow_gaussian_prod`。
+
+**T81 第五块 ✔**（`Gauss/LinearForm.lean`）：**`map_sum_const_mul_coord`**——有限实线性型 `∑_c a_c ω_c` 的律是
+`N(0, ∑_c a_c² v_c)`。证法是对有限集归纳：`iIndepFun_const_mul_coord` + Mathlib 的
+`indepFun_finsetSum_of_notMem`（单个坐标与其余之和独立）+ `gaussianReal_conv_gaussianReal`（高斯卷积）。
+没走「均值/方差 + `IsGaussian.eq_gaussianReal`」那条路，卷积归纳更短。
+**下一步**：`(Re Z, Im Z)` 的联合律 = 两个独立 `N(0, σ²/2)` 的乘积（零协方差 + 联合高斯 ⟹ 独立），
+接上 `integral_add_sq_pow_gaussian_prod` 即得 `E‖Z‖^{2p} = p!σ^{2p}`；再冻结补集坐标（行 `i` 坐标是有限集，
+`G^(i)` 只依赖补集，见 `RowIndep.lean`），最后经 T73 的 `stochDom_of_momentDom` 落成 `≺`。

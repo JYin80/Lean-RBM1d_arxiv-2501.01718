@@ -1203,3 +1203,11 @@ Step 3 已做部分：(2.27) `que_flow_of_eq747`、坏事件 `measure_bad_flow_o
 假设（`Step2.Hyp`）：`SumZeroDyn.Hierarchy`（(5.20)，T58/T60 接口，漂移 F 抽象）、`eG`（(5.35)，兼作 T58 缺口：`eLL` 与具体漂移 `primBil` 的 (L−K)×(L−K) 部分的等同尚无证明）、`mart`（(5.44)–(5.46)）、`cont`（`(L−K)_u` 高概率连续）。
 **⚠ 需 Jun 看一眼**：(2.72) 被加强为 `N^c(η_s/η_t)^30 ≤ Wℓ_tη_t`——按字面 (2.72)，`J*³(Wℓη)^{-1/3}` 项恰在阈值上，论证不闭合。另停时阈值加了 `N^δ` 余量。paper-deltas #47。
 **剩余**：(5.48) 细化形式；(5.35)(5.36) 的证明（待 T58 具体化 F 与 E⊗E）；(5.42)(5.44)–(5.46) 由 BDG 推出。
+
+### `RBM1D/Gauss/Domination.lean` — 矩 ⟹ ≺、`N^{-C}` 时间网（T73，Claude Code 并行 agent）
+
+第四批「矩路线」的第一块落地。**`stochDom_of_momentDom`**：`MomentDom`（∀ε>0 ∀p ∃C，`E|Y|^{2p} ≤ C·N^{εp}Φ^{2p}`）+ `#U(N) ≤ N^Ccard` ⟹ `RBM.StochDom`（经已有的 `StochDom.of_forall_le`）；`stochDom_one_of_momentDom` 是 Φ=1 的情形。
+**`stochDom_Icc_of_holder`**：`N^{-C}` 网（`netSize`/`netPt`/`exists_netPt_close`/`card_net_le`）+ 逐点 Hölder-γ 模 ⟹ **Def 2.1(i) 中对 u ∈ [0,T] 的不可数并在概率内部**——这是不可数并的解法。`stochDom_Icc_of_lipschitz` 是 γ=1 的推论。
+**⚠ 接口提醒**：Hölder 而非 Lipschitz 是刻意的——T69 的 `‖H_u − H_{u'}‖ = |√u−√u'|·‖X‖` 在 u=0 附近**不是** Lipschitz，只有 1/2-Hölder。
+**T69 对接时取 γ = 1/2**，并需 `‖X‖ ≤ N^K` 对每个 ω 成立（或先限制到好事件）。`hmom` 待 T72 的 Grönwall 输出。
+假设：`[IsFiniteMeasure P]`、`|Y|^{2p}` 可积、`Φ > 0`；不需可测性（`badSet` 用外测度 `measure_mono`）。paper-deltas #48。

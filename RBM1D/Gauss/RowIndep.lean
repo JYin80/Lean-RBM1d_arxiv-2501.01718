@@ -164,4 +164,49 @@ theorem rowCoord_injOn {i : d.Idx N} {k l : d.Idx N} {b c : Bool} (hk : k ≠ i)
       | exact ⟨h4.1, h4.2.2⟩
       | (exfalso; simp_all)
 
+/-! ### The row sum as a pair of real linear forms -/
+
+/-- The index set of the row: a column `k ≠ i` together with a real/imaginary flag. -/
+abbrev RowIdx (d : Dims) (N : ℕ) (i : d.Idx N) : Type := {k : d.Idx N // k ≠ i} × Bool
+
+/-- The Gaussian coordinates of the row, indexed by `RowIdx`. -/
+noncomputable def rowVar (d : Dims) (N : ℕ) (i : d.Idx N) (q : RowIdx d N i) (ω : Ω d) : ℝ :=
+  ω (rowCoord d N i q.1.1 q.2)
+
+/-- The coefficients of the real part of `∑_{k ≠ i} H_{ik} c_k`. -/
+noncomputable def rowRe (d : Dims) (N : ℕ) (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ)
+    (q : RowIdx d N i) : ℝ :=
+  if q.2 then Real.sqrt u * (c q.1.1).re
+  else -(Real.sqrt u * rowSign d N i q.1.1 * (c q.1.1).im)
+
+/-- The coefficients of the imaginary part of `∑_{k ≠ i} H_{ik} c_k`. -/
+noncomputable def rowIm (d : Dims) (N : ℕ) (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ)
+    (q : RowIdx d N i) : ℝ :=
+  if q.2 then Real.sqrt u * (c q.1.1).im
+  else Real.sqrt u * rowSign d N i q.1.1 * (c q.1.1).re
+
+/-- **The row sum, real part**: a real linear form in the row coordinates. -/
+theorem re_row_sum (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ) (ω : Ω d) :
+    (∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1).re
+      = ∑ q : RowIdx d N i, rowRe d N u i c q * rowVar d N i q ω := by
+  rw [Complex.re_sum]
+  conv_rhs => rw [Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Hflow_apply, Xentry_eq_rowCoord (Ne.symm k.2) ω]
+  simp only [Fintype.sum_bool, rowRe, rowVar, rowSign, ↓reduceIte]
+  by_cases h : idxKey d N i < idxKey d N k.1 <;>
+    simp [h, Complex.add_re, Complex.mul_re] <;> ring
+
+/-- **The row sum, imaginary part**. -/
+theorem im_row_sum (u : ℝ) (i : d.Idx N) (c : d.Idx N → ℂ) (ω : Ω d) :
+    (∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * c k.1).im
+      = ∑ q : RowIdx d N i, rowIm d N u i c q * rowVar d N i q ω := by
+  rw [Complex.im_sum]
+  conv_rhs => rw [Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Hflow_apply, Xentry_eq_rowCoord (Ne.symm k.2) ω]
+  simp only [Fintype.sum_bool, rowIm, rowVar, rowSign, ↓reduceIte]
+  by_cases h : idxKey d N i < idxKey d N k.1 <;>
+    simp [h, Complex.add_im, Complex.mul_im] <;> ring
+
 end RBM.Gauss

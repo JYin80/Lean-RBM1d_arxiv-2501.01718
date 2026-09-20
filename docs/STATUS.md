@@ -1350,3 +1350,17 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **这样就完全绕开了「联合律 = 两个独立一维高斯之积」那一步**（零协方差 ⟹ 独立那套不必碰）。
 剩下的唯一机器是分块 Fubini：`iIndepFun.indepFun_finset`（行 `i` 的坐标块 ⟂ 其余块）
 + `indepFun_iff_map_prod_eq_prod_map_map` + `integral_prod`，把 `G^(i)` 冻结成常系数。
+
+### `RBM1D/Gauss/DischargeBDG.lean` — Def 5.4、(5.22)(5.25)、Lemma 5.5（T74，Claude Code 并行 agent）
+
+**结论先说：`bdg`/`bdgQ` 在现有签名下不可卸，且不是「暂时做不到」而是结构性的。** agent 核实了 T72 的两条，并找到第三条（模块文档里写全了）：
+1. `SumZeroDyn.Hierarchy` 的 `F`/`EE`/`mart`/`martQ` 是**无约束的数据字段**，`duhamel` 可以**按定义造出来**（取 `mart :=` 残差即可对任意 `F` 成立），于是全部内容都压在 `bdg` 上；
+   甚至能取到使 `bdg` 空洞的 `F`（同时让 `SumZeroDyn.Lemma510` 为假）——那是伪造，agent 没做。
+2. 残差 `∫_s^v U_{u,v}∘F_u(H_u) du` **不是 `H_v` 的函数**（路径依赖）：代入 `X = H_v/√v` 后 `Ψ_v` 通过两个位置依赖 v，需要 T71 不提供的「对 v 的偏导」——与 T76 卡在动 `z_u` 是同一堵墙。
+3. 没有任何东西保证残差**无漂移**：Grönwall 要 `𝓛F = 0`，真 Itô 鞅自动满足，而 `H_u = √u·X` 给不出（无域流无鞅）。
+**故 `bdg`/`bdgQ` 保持假设，未碰任何 `Hierarchy/` 文件**；本文件给的是同一陈述（≺ 进、≺ 出）在矩路线词汇下的版本 `stochDom_of_quadVar`。
+
+**正面成果**：`eeRaw` 给了 Def 5.4 一个**定义**，且 `eeRaw_self_eq_quadVar` 证明其对角**就是** `quadVar`——这正是 T72 说「仓库里没有可等同的对象」的那条等式，现在有了。
+(5.22) `eeEdge_eq_sum_SB`（`W` 因子由 `S = S^(B)/W` 与 `E_a = W⁻¹P_a` 自然落出，不是手插的）；(5.25) 的 Schwarz 步 `quadVarPairs_le_of_split`；
+`LoopArg ↔ LoopIdx` 桥 `toIdx` 与 `emart_Uker`/`quadVarPairs_Uker`（论文「`U_{u,t,σ}` 是确定性线性算子」那一步，因 `RBM.Uker` 字面就是这样的线性组合）。
+**剩余假设**：`MatrixStein`（T70）、`BddC2`（T72 只对预解式观测量卸掉，loop 观测量待 T76 的 `List.foldr` Leibniz 缺口）、`hdrift : 𝓛F = 0`、`hsplit`（链式法则 `E(α)=Σ_k E(α,k)`）、`hdiff`——后三条同源于同一个缺失的 Leibniz 规则。paper-deltas #55。

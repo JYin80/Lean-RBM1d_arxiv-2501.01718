@@ -1503,6 +1503,20 @@
   $N$-dependent interval $[s_N,t_N]$.
 \end{proof}
 
+\begin{theorem}[Definition 5.4, (5.22), (5.25), and Lemma 5.5 without BDG]\label{thm:discharge-bdg}
+  \lean{RBM.Gauss.emart, RBM.Gauss.eeRaw, RBM.Gauss.eeRaw_self_eq_quadVar, RBM.Gauss.loopCut, RBM.Gauss.emartEdge, RBM.Gauss.eeEdge, RBM.Gauss.eeTens, RBM.Gauss.eeEdge_self, RBM.Gauss.sum_Sblk_mul_conj, RBM.Gauss.eeEdge_eq_sum_SB, RBM.Gauss.toIdx, RBM.Gauss.EmartCoeff_sum, RBM.Gauss.emart_Uker, RBM.Gauss.quadVarPairs_Uker, RBM.Gauss.quadVarPairs_le_of_split, RBM.Gauss.genMomentPt_le_driftless, RBM.Gauss.integrable_quadVar_pow, RBM.Gauss.momentIntegral_le_of_quadVar, RBM.Gauss.momentIntegral_le_exp, RBM.Gauss.momentDom_of_quadVar, RBM.Gauss.stochDom_of_quadVar}
+  \leanok\uses{thm:moment-gronwall, lem:envelope, lem:moment-dom, thm:moment-hierarchy}
+  $E\otimes E$ of Definition 5.4 is given a definition, and its diagonal \emph{is} the quadratic
+  variation (\texttt{eeRaw\_self\_eq\_quadVar}); (5.22) via $\sum_{ij}S_{ij}R_{ji}\overline{R'_{ji}}
+  =W\sum_{bb'}S^{(B)}_{bb'}\langle E_{b'}RE_b R'^\dagger\rangle$; the Schwarz split (5.25); and
+  Lemma 5.5's conclusion by Gr\"onwall, with ``this term is a martingale'' replaced by
+  $\mathcal LF=0$.
+\end{theorem}
+\begin{proof}\leanok
+  $U_{u,t,\sigma}$ is a deterministic linear combination, so the Wirtinger derivative passes through
+  it (\texttt{emart\_Uker}); then moments in, Gr\"onwall, $\prec$ out.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

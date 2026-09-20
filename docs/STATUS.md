@@ -2148,3 +2148,23 @@ norm_green_sub_le : ‖G_u − G_u'‖ ≤ ‖G_u‖ · (‖H_u − H_u'‖ + �
 再逐元素传到 `llErr`（`llMax` 的差 ≤ 算子范数差）与 `llMax²`
 （`|a²−b²| = (a+b)|a−b|`，`llMax ≤ η⁻¹ + 1`）。配 T101 的 `≺`-常数版与 T100 即可关掉
 `Lemma41Flow`。
+
+### `RBM1D/Gauss/OpNorm.lean` — `‖X‖ ≺ 1` 的迹/矩路线（T100，Claude Code 并行 agent）
+
+**缺口收窄，未完全合拢**：整条概率链已证，剩下的**恰好是走计数组合**，隔离成一条具名假设
+`TraceMomentBound d : ∀ p, ∃ C > 0, ∀ᶠ N, E Tr(X^{2p}) ≤ C·N`（经 `trace_pow_eq_frobSq` 确认它真的是 `E Tr(X^{2p})` 而非更弱的东西）。
+填 `OpNormBound` 的项是 **`opNormBound_of_traceMomentBound`**，其字段 `stochDom_norm_Xmat` 的类型**逐字**是 `OpNormBound.norm_X`，故 `Model.lean` 无需改动。
+`p = 1` 已无条件证出（`traceMomentBound_one`，由 `∑_j S_ij = 1` 得 `E Tr(X²) = WL ≤ N`，常数 1）——**带状结构目前只在这里用到**。
+
+**两处值得记的技术选择**：
+1. **`‖A‖^{2q} ≤ Tr(A^{2q})` 绕开了谱定理**（Mathlib 没有「Hermitian 的算子范数 = 最大特征值绝对值」）：迭代 C\*-恒等式 `l2_opNorm_conjTranspose_mul_self` 得 `‖A^q‖ = ‖A‖^q`，**只对 `q = 2^m`** 成立，再配 op ≤ Frobenius。不构成限制——下游的 `q` 可以自由选。
+2. **与 T73 的量词序不匹配，已桥接**：`MomentDom` 要 `ε` 在 `p` 外，迹方法给的是 `E‖X‖^{2p} ≤ C_p·N`，而 `εp < 1` 时 `N ≰ C N^{εp}`。用 `pow_le_add_inv_mul_pow`（`g^{2p} ≤ M^{2p} + M^{-2r} g^{2(p+r)}`，取 `M = N^{ε/2}`、`p+r = 2^m`、`m = p + ⌈1/ε⌉₊`）得 `E‖X‖^{2p} ≤ (1+C_q) N^{εp}`，直接喂 T73 的 `stochDom_one_of_momentDom`。
+
+**`p ≥ 2` 被什么挡住**：需要 (a) 对 `{X_ij}` 的 Wick/Isserlis（或至少「独立对上的期望分解 + `E[z^m z̄^n] = 0`（m ≠ n）」，使只有每条边都重复的走留存），(b) 闭走计数（至多 `p+1` 个不同顶点、步长受带宽限制）。
+**Mathlib 既无 Isserlis 也无闭走组合**，分解还得在 `Measure.infinitePi` 上从 `P_map_restrict` 造起——这是独立一单的体量，agent 没有伪造。
+复用情况：高斯矩只用到 `RBM.integrable_pow_gaussianReal`（可积性）；`Stein.lean`/`LDEQuad.lean`/`LDEQuadT.lean` 给的是预解式二次型的条件/逐行混沌估计，**都不是**迹展开需要的 `X` 的 entry 矩，故无可复用。paper-deltas #49 已相应收窄。
+
+## ⚠ HEAD 编译失败：`Gauss/FlowHolder.lean`（别人的 T106，2026-09-20）
+
+`lake build RBM1D` 在 `RBM1D.Gauss.FlowHolder` 上失败（`2f1e01b`「T106 part 2」）：`181:89 unsolved goals`、`185/186 Function expected`、`202:15 don't know how to synthesize implicit argument E`。
+**不是我这边的文件。** `RBM1D.Gauss.OpNorm` 与 `RBM1D.Gauss.DominationHolder` 单独 `lake build` 均为 exit 0。

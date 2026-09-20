@@ -28,6 +28,7 @@ import RBM1D.Gauss.MomentGronwall
 import RBM1D.Gauss.Lemma41Glue
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Model
+import RBM1D.Gauss.OpNorm
 import RBM1D.Gauss.Moments
 import RBM1D.Gauss.IBPPoly
 import RBM1D.Gauss.LDEDiag

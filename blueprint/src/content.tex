@@ -1824,6 +1824,19 @@
   in the net exponent.
 \end{proof}
 
+\begin{lemma}[$\|X\|\prec1$ from the trace moments]\label{lem:opnorm}
+  \lean{RBM.Gauss.frobSq, RBM.Gauss.l2_opNorm_sq_le_frobSq, RBM.Gauss.l2_opNorm_pow_two_pow, RBM.Gauss.l2_opNorm_pow_le_frobSq, RBM.Gauss.trace_pow_eq_frobSq, RBM.Gauss.measurable_norm_Xmat, RBM.Gauss.integrable_norm_Xmat_pow, RBM.Gauss.integrable_frobSq_Xmat_pow, RBM.Gauss.TraceMomentBound, RBM.Gauss.integral_frobSq_Xmat_one, RBM.Gauss.traceMomentBound_one, RBM.Gauss.pow_le_add_inv_mul_pow, RBM.Gauss.integral_norm_Xmat_pow_le, RBM.Gauss.momentDom_norm_Xmat, RBM.Gauss.stochDom_norm_Xmat, RBM.Gauss.opNormBound_of_traceMomentBound}
+  \leanok\uses{def:gauss-model, lem:moment-dom}
+  Given $\mathbb E\operatorname{Tr}X^{2p}\le C_pN$, the operator norm satisfies $\|X\|\prec1$,
+  discharging \texttt{OpNormBound}. The step $\|A\|^{2q}\le\operatorname{Tr}A^{2q}$ avoids the
+  spectral theorem by iterating the C*-identity at $q=2^m$; the trace bound
+  $\mathbb E\operatorname{Tr}X^2=WL\le N$ is unconditional.
+\end{lemma}
+\begin{proof}\leanok
+  $g^{2p}\le M^{2p}+M^{-2r}g^{2(p+r)}$ with $M=N^{\varepsilon/2}$ and $p+r$ a power of two bridges
+  the quantifier order of \texttt{MomentDom}.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -1491,3 +1491,27 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 **T81 仅剩**：取 `C ω := (H^{(i)} − z)⁻¹` 的第 `j` 列（`Hflow_submatrix_congr_offRowCoord`
 给出「只读 off-row 块」），把它与 `ldeRowLHS`/`ldeRowRHS` 对上（需要 `greenMinor` = minor 预解式，
 即 T40 的 `inv_minor_resolvent`，带可逆性前提），最后经 `stochDom_of_momentDom` 得 `≺`。
+
+### `RBM1D/Gauss/LDEQuad.lean` — 二次 LDE（T82，Claude Code 并行 agent）
+
+按工单的路线 (b)：每个行坐标做一次高斯分部积分，化成对矩的递推；**先做 p=1 再上归纳**（工单要求），p=1 得到的是**精确恒等式**。
+`integral_chaos_mul`（分部积分主恒等式）← `sum_coord_mul_deriv`（Euler：`Σ_α ω_α ∂_α Q = 2(Q + Σ_k σ_k B_kk)`）；
+`moment_recursion` → `two_mul_mom_succ_le` → **`mom_succ_le : E|Q|^{2p} ≤ (2p−1)^p·E[T^p]`**（用自证的 `young_pow` 收口，有理指数，不需 `rpow`、不需 Hölder）；
+`mom_one : E|Q|² = E[Σ_{k,l} σ_k‖B_kl‖² σ_l]` 精确。
+**与 `RBM.LDEQuad` 的对接**：`norm_chaos_sq_eq_ldeQuadLHS`、`Vq_eq_ldeQuadRHS`、`integral_ldeQuadLHS_eq` 把两边与 `ldeQuadLHS`/`ldeQuadRHS` **逐字**对上（纯重排）。
+**行独立性假设**（T84 可卸）：`RowChaos` 的 `Ifree`/`Ifree_free`/`B_free` 三个字段，正是「`B` 是 `FinDep` 且见证集不含第 i 行坐标」；T84 的 `rowSet`/`greenMinor_congr_of_offRow` 是自然的卸法。
+
+**唯一真正的缺口**：`E[T^p] ≤ C_p E[Vq^p]`——`mom_succ_le` 把一切归约到它，p=1 时就是已证的 `momT_zero`。
+教科书证法是带**随机权重**的 Jensen，需要 T84 的条件期望；免条件化的证法是对 `E[T^p]` 再跑一遍同样的分部积分（导子 `D_l = r∂_{a_l} − rε_l i∂_{b_l}` 杀掉 `U_k`、`\bar V_k`），得 `E[T^p] ≤ c_p E[Vq·T^{p−1}]` 再配 `young_pow`——文件头有完整草图。
+**另未做**：模型上的具体 `RowChaos` 实例（需 `co`/`eps` 由 `Xentry` 的 `idxKey` 分情况给出，以及 `greenMinor` 的全局连续性与有界性——属 T84/T85 领地）；`StochDom` 收尾（`stochDom_of_momentDom` 要**确定性**控制，而 `ldeQuadRHS` 是随机的，应走 `StochDom.of_det`）。
+携带假设 `GaussIBP`（同 `MatrixStein`，属 T70 领地；文件头记了由 `MatrixStein` 经截断推出 (i) 的论证）。paper-deltas #59。
+
+## ⚠ HEAD 编译失败：`Gauss/RowIndep.lean`（Cowork / Claude Code #2 的 T81，2026-09-20）
+
+`lake build RBM1D` 在 `RBM1D.Gauss.RowIndep` 上失败（最新提交 `f6b959c`「T81 (part 18)」）：
+
+- `RowIndep.lean:656:4: `simp` made no progress`
+- `RowIndep.lean:659:10: invalid `▸` notation`（`dif_neg h` 的等式两边都不含期望的结果类型 `Measurable fun c ↦ if h : k ≠ i then … else 0`）
+
+**不是我这边的文件**，我没有改它。我这一批（T82/T84/T85/T86/T87）各文件的 `lake env lean` 与全局的 `Replayed` 行都是绿的。
+按 CLAUDE.md「build 红着的时候」那一节：这期间两边判断自己的文件是否通过，要看 `build.log` 里自己文件的 `Built/Replayed` 行，而不是末尾的 `errors:`。

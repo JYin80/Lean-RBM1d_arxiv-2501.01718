@@ -1555,6 +1555,19 @@
   $2\,\#\mathrm{image}\,v\le\#\iota$ gives the count.
 \end{proof}
 
+\begin{lemma}[Quadratic LDE: Gaussian Hanson--Wright by moment recursion]\label{lem:lde-quad}
+  \lean{RBM.Gauss.polyW, RBM.Gauss.Tame, RBM.Gauss.Tame.integrable, RBM.Gauss.young_pow, RBM.Gauss.GaussIBP, RBM.Gauss.RowChaos, RBM.Gauss.RowChaos.sum_coord_mul_deriv, RBM.Gauss.RowChaos.integral_chaos_mul, RBM.Gauss.RowChaos.moment_recursion, RBM.Gauss.RowChaos.two_mul_mom_succ_le, RBM.Gauss.RowChaos.mom_succ_le, RBM.Gauss.RowChaos.integral_conj_h_mul_h, RBM.Gauss.RowChaos.momT_zero, RBM.Gauss.RowChaos.mom_one, RBM.Gauss.norm_chaos_sq_eq_ldeQuadLHS, RBM.Gauss.Vq_eq_ldeQuadRHS, RBM.Gauss.integral_ldeQuadLHS_eq}
+  \leanok\uses{def:gauss-model, thm:generator, lem:condrow}
+  One integration by parts per row coordinate turns $\mathbb E|Q|^{2p}$ into a recursion:
+  $\mathbb E|Q|^{2p}\le(2p-1)^p\,\mathbb E[T^p]$, with the variance identity
+  $\mathbb E|Q|^2=\mathbb E\sum_{k,l}\sigma_k\|B_{kl}\|^2\sigma_l$ exact. The two sides match
+  \texttt{ldeQuadLHS}/\texttt{ldeQuadRHS} verbatim.
+\end{lemma}
+\begin{proof}\leanok
+  Euler's identity $\sum_\alpha\omega_\alpha\partial_\alpha Q=2(Q+\sum_k\sigma_kB_{kk})$, Stein per
+  coordinate, and Young's inequality with a rational exponent close the recursion.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

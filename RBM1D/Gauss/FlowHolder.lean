@@ -167,4 +167,102 @@ theorem norm_green_flow_sub_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {u 
     positivity
   gcongr
 
+/-! ### Transfer to `llErr`, `llMax` and its square -/
+
+/-- Each entry of `G_u - m` moves by at most `‖G_u - G_{u'}‖`. -/
+theorem abs_llErr_sub_le (d : Dims) (N : ℕ) (E u u' : ℝ) (ω : Ω d)
+    (ij : (band d).Idx N × (band d).Idx N) :
+    |(sample d).llErr E N u ω ij - (sample d).llErr E N u' ω ij|
+      ≤ ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N u' ω) (zt E u')‖ := by
+  have hGG : (sample d).G E N u ω - (sample d).G E N u' ω
+      = green (Hflow d N u ω) (zt E u) - green (Hflow d N u' ω) (zt E u') := rfl
+  have hentry : ((sample d).G E N u ω
+        - mE E • (1 : Matrix ((band d).Idx N) ((band d).Idx N) ℂ)) ij.1 ij.2
+      - ((sample d).G E N u' ω
+        - mE E • (1 : Matrix ((band d).Idx N) ((band d).Idx N) ℂ)) ij.1 ij.2
+      = ((sample d).G E N u ω - (sample d).G E N u' ω) ij.1 ij.2 := by
+    simp only [Matrix.sub_apply]
+    ring
+  rw [← hGG]
+  calc |(sample d).llErr E N u ω ij - (sample d).llErr E N u' ω ij|
+      ≤ ‖((sample d).G E N u ω
+            - mE E • (1 : Matrix ((band d).Idx N) ((band d).Idx N) ℂ)) ij.1 ij.2
+          - ((sample d).G E N u' ω
+            - mE E • (1 : Matrix ((band d).Idx N) ((band d).Idx N) ℂ)) ij.1 ij.2‖ :=
+        abs_norm_sub_norm_le _ _
+    _ = ‖((sample d).G E N u ω - (sample d).G E N u' ω) ij.1 ij.2‖ := by rw [hentry]
+    _ ≤ ‖(sample d).G E N u ω - (sample d).G E N u' ω‖ := norm_apply_le_l2_opNorm _ _ _
+
+/-- `‖G_u - m‖_max` is Lipschitz in the resolvent. -/
+theorem abs_llMax_sub_le (d : Dims) (N : ℕ) (E u u' : ℝ) (ω : Ω d) :
+    |Step1.llMax (sample d) E N u ω - Step1.llMax (sample d) E N u' ω|
+      ≤ ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N u' ω) (zt E u')‖ := by
+  set C : ℝ := ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N u' ω) (zt E u')‖ with hC
+  have hC0 : 0 ≤ C := norm_nonneg _
+  have h1 : Step1.llMax (sample d) E N u ω ≤ Step1.llMax (sample d) E N u' ω + C := by
+    refine Step1.llMax_le _ fun ij => ?_
+    have h := abs_llErr_sub_le d N E u u' ω ij
+    have h2 := Step1.llErr_le_llMax (E := E) (sample d) N u' ω ij
+    have h3 := (abs_le.1 h).2
+    linarith
+  have h2 : Step1.llMax (sample d) E N u' ω ≤ Step1.llMax (sample d) E N u ω + C := by
+    refine Step1.llMax_le _ fun ij => ?_
+    have h := abs_llErr_sub_le d N E u u' ω ij
+    have h2 := Step1.llErr_le_llMax (E := E) (sample d) N u ω ij
+    have h3 := (abs_le.1 h).1
+    linarith
+  rw [abs_le]
+  constructor <;> linarith
+
+/-- `‖G_u - m‖_max ≤ η_u^{-1} + 1`. -/
+theorem llMax_le_inv_etaT (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {u : ℝ} (hu1 : u < 1)
+    (ω : Ω d) : Step1.llMax (sample d) E N u ω ≤ (etaT E u)⁻¹ + 1 := by
+  have hη : 0 < etaT E u := by
+    show 0 < (1 - u) * (mE E).im
+    exact mul_pos (by linarith) (mE_im_pos hE)
+  have hG : ‖green (Hflow d N u ω) (zt E u)‖ ≤ (etaT E u)⁻¹ :=
+    norm_green_le (Hflow_isHermitian d N u ω) hη (by rw [← etaT_eq_zt_im, abs_of_pos hη])
+  refine Step1.llMax_le _ fun ij => ?_
+  rw [(sample d).llErr_eq N u ω ij]
+  refine (norm_sub_le _ _).trans ?_
+  have h1 : ‖(sample d).G E N u ω ij.1 ij.2‖ ≤ (etaT E u)⁻¹ :=
+    (norm_apply_le_l2_opNorm _ _ _).trans hG
+  have h2 : ‖(if ij.1 = ij.2 then mE E else 0)‖ ≤ 1 := by
+    split_ifs
+    · exact le_of_eq (norm_mE hE.le)
+    · simp
+  exact add_le_add h1 h2
+
+/-- **The Hölder estimate for `‖G_u - m‖²_max`.** -/
+theorem abs_llMax_sq_sub_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {u u' : ℝ}
+    (hu1 : u < 1) (hu'1 : u' < 1) (ω : Ω d) :
+    |Step1.llMax (sample d) E N u ω ^ 2 - Step1.llMax (sample d) E N u' ω ^ 2|
+      ≤ ((etaT E u)⁻¹ + (etaT E u')⁻¹ + 2) *
+        ((etaT E u)⁻¹ * (|Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|)
+          * (etaT E u')⁻¹) := by
+  set a : ℝ := Step1.llMax (sample d) E N u ω with ha
+  set b : ℝ := Step1.llMax (sample d) E N u' ω with hb
+  have ha0 : 0 ≤ a := Step1.llMax_nonneg _ N u ω
+  have hb0 : 0 ≤ b := Step1.llMax_nonneg _ N u' ω
+  have haU : a ≤ (etaT E u)⁻¹ + 1 := llMax_le_inv_etaT d N hE hu1 ω
+  have hbU : b ≤ (etaT E u')⁻¹ + 1 := llMax_le_inv_etaT d N hE hu'1 ω
+  have hdiff : |a - b|
+      ≤ (etaT E u)⁻¹ * (|Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|)
+          * (etaT E u')⁻¹ :=
+    (abs_llMax_sub_le d N E u u' ω).trans (norm_green_flow_sub_le d N hE hu1 hu'1 ω)
+  have hD0 : (0 : ℝ) ≤ (etaT E u)⁻¹ * (|Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|)
+      * (etaT E u')⁻¹ := le_trans (abs_nonneg _) hdiff
+  have hsq : |a ^ 2 - b ^ 2| = (a + b) * |a - b| := by
+    rw [show a ^ 2 - b ^ 2 = (a + b) * (a - b) from by ring, abs_mul,
+      abs_of_nonneg (by linarith : (0 : ℝ) ≤ a + b)]
+  have hηu : 0 < etaT E u := by
+    show 0 < (1 - u) * (mE E).im
+    exact mul_pos (by linarith) (mE_im_pos hE)
+  have hηu' : 0 < etaT E u' := by
+    show 0 < (1 - u') * (mE E).im
+    exact mul_pos (by linarith) (mE_im_pos hE)
+  rw [hsq]
+  refine mul_le_mul ?_ hdiff (abs_nonneg _) (by positivity)
+  linarith
+
 end RBM.Gauss

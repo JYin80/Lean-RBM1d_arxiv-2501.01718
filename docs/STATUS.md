@@ -2168,3 +2168,32 @@ norm_green_sub_le : ‖G_u − G_u'‖ ≤ ‖G_u‖ · (‖H_u − H_u'‖ + �
 
 `lake build RBM1D` 在 `RBM1D.Gauss.FlowHolder` 上失败（`2f1e01b`「T106 part 2」）：`181:89 unsolved goals`、`185/186 Function expected`、`202:15 don't know how to synthesize implicit argument E`。
 **不是我这边的文件。** `RBM1D.Gauss.OpNorm` 与 `RBM1D.Gauss.DominationHolder` 单独 `lake build` 均为 exit 0。
+
+**T106 第二、三块 ✔**（`Gauss/FlowHolder.lean`）：
+
+```
+abs_sqrt_sub_sqrt_le    : |√x − √y| ≤ √|x−y|
+norm_zt_sub             : ‖z_u − z_u'‖ = |u − u'|          （因 z_t = E + (1−t)m(E)、‖m(E)‖ = 1）
+norm_green_flow_sub_le  : ‖G_u − G_u'‖ ≤ η_u⁻¹·(|√u−√u'|·‖X‖ + |u−u'|)·η_u'⁻¹
+abs_llErr_sub_le        : |llErr_u(ij) − llErr_u'(ij)| ≤ ‖G_u − G_u'‖
+abs_llMax_sub_le        : |llMax_u − llMax_u'| ≤ ‖G_u − G_u'‖
+llMax_le_inv_etaT       : llMax_u ≤ η_u⁻¹ + 1
+abs_llMax_sq_sub_le     : |llMax_u² − llMax_u'²| ≤ (η_u⁻¹+η_u'⁻¹+2)·(上面那个界)
+```
+
+**谱参数那一半比想象中简单**：`zt E t = E + (1−t)·m(E)`，所以
+`z_u − z_u' = (u'−u)·m(E)`，而 `‖m(E)‖ = 1`（`norm_mE`），于是 `‖z_u − z_u'‖ = |u−u'|`
+——不需要碰 `etaT` 的表达式。
+
+**下一步（最后一块）**：在 `[0, t]`（`t < 1`）上把两个 `η_u⁻¹` 统一放大成 `η_t⁻¹`
+（`etaT` 对 u 反单调），并用 `|√u−√u'| ≤ |u−u'|^{1/2}`、`|u−u'| ≤ |u−u'|^{1/2}`
+（`|u−u'| ≤ 1`）收成
+
+```
+|llMax_u² − llMax_u'²| ≤ (2η_t⁻¹+2)·η_t⁻²·(‖X‖+1)·|u−u'|^{1/2}
+```
+
+即 `stochDom_timeIcc_of_holder` 要的 `K(ω)·|u−u'|^γ`（γ = 1/2，`K(ω)` 与 `‖X‖` 成正比）。
+之后配 T101 的 `≺`-常数版与 T100 的 `‖X‖ ≺ 1` 就能关掉 `Lemma41Flow`。
+
+全量构建通过，公理审计 **7007 条声明**全部合规。

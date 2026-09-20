@@ -900,4 +900,16 @@ theorem integral_norm_rowSum_norm_pow_le' (hu : 0 ≤ u) (C : Ω d → d.Idx N �
   integral_norm_rowSum_norm_pow_le hu C hCmeas hC
     (integrable_norm_rowSum_norm_pow hu C hCmeas hC)
 
+/-- **The linear LDE of T81, final moment form.**  For the coefficients given by the `j`-th
+column of the minor resolvent — independent of row `i` — the normalised row sum obeys the
+constant moment bound, with no side conditions at all:
+
+`E[ ‖∑_{k ≠ i} H_{ik} G^{(i)}_{kj}‖² / (u ∑_k S_{ik}|G^{(i)}_{kj}|²) ]^p ≤ 2 (2p-1)!!`. -/
+theorem integral_norm_rowSum_minorCol_pow_le' (hu : 0 ≤ u) (z : ℂ)
+    (j : {a : d.Idx N // a ≠ i}) :
+    ∫ ω, ‖rowSum d N u i (rowCoeffNorm d N u i (minorCol d N u z i j)) ω‖ ^ (2 * p) ∂(P d)
+      ≤ 2 * dfac p :=
+  integral_norm_rowSum_norm_pow_le' hu (minorCol d N u z i j) (measurable_minorCol u z i j)
+    (fun ω ω' h => minorCol_congr u z j h)
+
 end RBM.Gauss

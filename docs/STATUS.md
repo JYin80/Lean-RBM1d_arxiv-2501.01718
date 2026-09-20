@@ -1341,3 +1341,12 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **下一步**：`(Re Z, Im Z)` 的联合律 = 两个独立 `N(0, σ²/2)` 的乘积（零协方差 + 联合高斯 ⟹ 独立），
 接上 `integral_add_sq_pow_gaussian_prod` 即得 `E‖Z‖^{2p} = p!σ^{2p}`；再冻结补集坐标（行 `i` 坐标是有限集，
 `G^(i)` 只依赖补集，见 `RowIndep.lean`），最后经 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+**T81 第六块 ✔**：`map_sum_const_mul_of_indep`——第五块的抽象版，对**任意**独立高斯族成立（不绑定 `P d`），
+`map_sum_const_mul_coord` 变成它的推论。这样冻结补集后得到的**有限块乘积测度**也能直接用同一条。
+**收口路线已定**（比原计划省事）：LDE 只需矩的**上界**，不必精确等式——
+`‖Z‖^{2p} ≤ 2^{p−1}((Re Z)^{2p} + (Im Z)^{2p})`，而 Re、Im 各自是实线性型，
+其律由上面这条给出、矩由 `integral_pow_gaussianReal` 给出，于是 `E‖Z‖^{2p} ≤ 2^p(2p−1)!!σ^{2p}`。
+**这样就完全绕开了「联合律 = 两个独立一维高斯之积」那一步**（零协方差 ⟹ 独立那套不必碰）。
+剩下的唯一机器是分块 Fubini：`iIndepFun.indepFun_finset`（行 `i` 的坐标块 ⟂ 其余块）
++ `indepFun_iff_map_prod_eq_prod_map_map` + `integral_prod`，把 `G^(i)` 冻结成常系数。

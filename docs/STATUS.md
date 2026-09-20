@@ -1452,3 +1452,10 @@ T87 展开 `E|Σₖ tₖZₖ|^{2p} = Σ_{(k₁,…,k_{2p})} (∏t)·E[∏ᵢ Z_{
 **T81 只剩最后一步**：把常系数 `c` 换成 `G^(i)_{·j}`——用 `indepFun_rowSet` + `eq_glue_of_congr`
 把行块与其余块分开（`G^(i)` 只依赖后者，见 `greenMinor_congr_of_offRow`），
 内层套这一条，外层经 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+**T81 第十四块 ✔**：`relCoord d N`（`H` 在尺度 `N` 实际读到的坐标）、`offRowCoord = relCoord ∖ rowSet`、
+两块不交（`disjoint_rowSet_offRowCoord`），以及 **`Hflow_submatrix_congr_offRowCoord`**——
+minor 矩阵 `H^(i)` 只读 off-row 块。注意这条比第三块的 `AgreeOffRow` 更贴合分块 Fubini：
+只要求在**有限**的 off-row 块上相等（`AgreeOffRow` 要求所有避开 `i` 的坐标，包括非规范序的那些）。
+**T81 最后一步**：`U` = 行块、`V` = off-row 块；`indepFun_rowSet` 给 `U ⟂ V`；
+`eq_glue_of_congr` 把行和与 `G^(i)` 分别写成 `U`、`V` 的函数；内层套第十三块；外层接 T73。

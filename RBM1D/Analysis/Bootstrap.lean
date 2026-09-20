@@ -25,6 +25,7 @@ Nothing here is specific to the model, and nothing outside Mathlib is used.
 ## Main statements
 
 * `le_of_bootstrap` : `[a, b]` version, self-improvement `φ u ≤ C → φ u ≤ B` with `B < C`
+* `le_of_bootstrap_prefix` : the self-improvement may use the bound on all of `[a, u]`
 * `le_of_bootstrap_two_mul` : the common shape, `C = 2 * B` with `0 < B`
 -/
 
@@ -59,6 +60,85 @@ theorem le_of_bootstrap {a b B C : ℝ} {φ : ℝ → ℝ} (hab : a ≤ b)
   intro u hu
   have : (⟨u, hu⟩ : Icc a b) ∈ S := this ▸ mem_univ _
   exact this
+
+/-- **Continuous induction, prefix form.**  The self-improvement may use the a priori bound on
+the whole initial segment `[a, u]`, not just at `u`: this is the shape of the paper's Step 2,
+where "assume `J*_{v,D} ≤ (η_s/η_t)⁴` for all `v ≤ u`" improves the bound at `u`.
+
+Let `s` be the supremum of the times up to which `φ ≤ B` holds.  Continuity gives `φ s ≤ B`,
+so the bound holds on `[a, s]`; if `s < b`, continuity gives `φ < C` slightly beyond `s`, and
+the self-improvement then upgrades it to `φ ≤ B` there, contradicting the supremum. -/
+theorem le_of_bootstrap_prefix {a b B C : ℝ} {φ : ℝ → ℝ} (hab : a ≤ b)
+    (hc : ContinuousOn φ (Icc a b)) (hBC : B < C) (h0 : φ a ≤ B)
+    (hstep : ∀ u ∈ Icc a b, (∀ v ∈ Icc a u, φ v ≤ C) → φ u ≤ B) :
+    ∀ u ∈ Icc a b, φ u ≤ B := by
+  set S : Set ℝ := {u | u ∈ Icc a b ∧ ∀ v ∈ Icc a u, φ v ≤ B} with hSdef
+  have haS : a ∈ S := ⟨left_mem_Icc.2 hab, fun v hv => by
+    rw [le_antisymm hv.2 hv.1]; exact h0⟩
+  have hSne : S.Nonempty := ⟨a, haS⟩
+  have hbdd : BddAbove S := ⟨b, fun u hu => hu.1.2⟩
+  set s : ℝ := sSup S with hsdef
+  have hsa : a ≤ s := le_csSup hbdd haS
+  have hsb : s ≤ b := csSup_le hSne fun u hu => hu.1.2
+  have hsIcc : s ∈ Icc a b := ⟨hsa, hsb⟩
+  -- `φ ≤ B` strictly below the supremum
+  have hlt : ∀ v ∈ Ico a s, φ v ≤ B := by
+    intro v hv
+    obtain ⟨u, huS, hvu⟩ := exists_lt_of_lt_csSup hSne hv.2
+    exact huS.2 v ⟨hv.1, hvu.le⟩
+  -- and at the supremum, by continuity
+  have hφs : φ s ≤ B := by
+    rcases eq_or_lt_of_le hsa with h | h
+    · rw [← h]; exact h0
+    · by_contra hcon
+      push Not at hcon
+      obtain ⟨δ, hδ0, hδ⟩ :=
+        Metric.continuousWithinAt_iff.1 (hc s hsIcc) (φ s - B) (by linarith)
+      have hy2 : max a (s - δ / 2) < s := by
+        rcases le_or_gt (s - δ / 2) a with h' | h'
+        · rwa [max_eq_left h']
+        · rw [max_eq_right h'.le]; linarith
+      have hy1 : a ≤ max a (s - δ / 2) := le_max_left _ _
+      have hdist : dist (max a (s - δ / 2)) s < δ := by
+        rw [Real.dist_eq, abs_of_nonpos (by linarith)]
+        have : s - δ / 2 ≤ max a (s - δ / 2) := le_max_right _ _
+        linarith
+      have hclose := hδ ⟨hy1, le_trans hy2.le hsb⟩ hdist
+      have hyB : φ (max a (s - δ / 2)) ≤ B := hlt _ ⟨hy1, hy2⟩
+      rw [Real.dist_eq] at hclose
+      have := abs_lt.1 hclose
+      linarith [this.1]
+  have hsS : s ∈ S := ⟨hsIcc, fun v hv => by
+    rcases eq_or_lt_of_le hv.2 with h | h
+    · rw [h]; exact hφs
+    · exact hlt v ⟨hv.1, h⟩⟩
+  -- the supremum is the right endpoint
+  have hsEq : s = b := by
+    by_contra hne
+    have hsb2 : s < b := lt_of_le_of_ne hsb hne
+    obtain ⟨δ, hδ0, hδ⟩ :=
+      Metric.continuousWithinAt_iff.1 (hc s hsIcc) (C - φ s) (by linarith)
+    have hsu : s < min b (s + δ / 2) := lt_min hsb2 (by linarith)
+    have huIcc : min b (s + δ / 2) ∈ Icc a b := ⟨le_trans hsa hsu.le, min_le_left _ _⟩
+    have hCon : ∀ v ∈ Icc a (min b (s + δ / 2)), φ v ≤ C := by
+      intro v hv
+      rcases le_or_gt v s with h | h
+      · exact le_trans (hsS.2 v ⟨hv.1, h⟩) hBC.le
+      · have hvb : v ≤ b := le_trans hv.2 huIcc.2
+        have hdist : dist v s < δ := by
+          rw [Real.dist_eq, abs_of_nonneg (by linarith)]
+          have := le_trans hv.2 (min_le_right b (s + δ / 2))
+          linarith
+        have hclose := hδ ⟨hv.1, hvb⟩ hdist
+        rw [Real.dist_eq] at hclose
+        have := abs_lt.1 hclose
+        linarith [this.2]
+    have huS : min b (s + δ / 2) ∈ S :=
+      ⟨huIcc, fun v hv => hstep v ⟨hv.1, le_trans hv.2 huIcc.2⟩
+        fun w hw => hCon w ⟨hw.1, le_trans hw.2 hv.2⟩⟩
+    exact absurd (le_csSup hbdd huS) (not_le.2 hsu)
+  intro u hu
+  exact (hsEq ▸ hsS).2 u hu
 
 /-- The common shape of the bootstrap: the improved bound is half of the a priori one. -/
 theorem le_of_bootstrap_two_mul {a b B : ℝ} {φ : ℝ → ℝ} (hab : a ≤ b)

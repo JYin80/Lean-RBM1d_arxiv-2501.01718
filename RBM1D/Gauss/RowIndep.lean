@@ -1090,4 +1090,84 @@ theorem rowSum_ae_eq_zero_of_varSum_eq_zero (hu : 0 ≤ u) (C : Ω d → d.Idx N
   rwa [show rowSum d N u i D ω = rowSum d N u i C ω by
     unfold rowSum; simp only [hDC']] at this
 
+/-- Normalising the coefficients divides the row sum by the conditional standard deviation. -/
+theorem rowSum_rowCoeffNorm (C : Ω d → d.Idx N → ℂ) {ω : Ω d}
+    (hV : 0 < rowVarSum d N u i C ω) :
+    rowSum d N u i (rowCoeffNorm d N u i C) ω
+      = ((Real.sqrt (rowVarSum d N u i C ω) : ℂ))⁻¹ * rowSum d N u i C ω := by
+  unfold rowSum rowCoeffNorm
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  simp only [hV, ↓reduceIte]
+  field_simp
+
+/-- **The row LDE as a high-probability inequality.**  For every `τ > 0`, with overwhelming
+probability every pair `(i, j)` satisfies
+`‖∑_{k ≠ i} H_{ik} C_{k}‖² ≤ N^{2τ} · u ∑_k S_{ik}|C_k|²`. -/
+theorem highProb_norm_rowSum_sq_le (hu : 0 ≤ u) {U : ℕ → Type*} [∀ N, Fintype (U N)] {Ccard : ℝ}
+    (hcard : ∀ᶠ N : ℕ in Filter.atTop, (Fintype.card (U N) : ℝ) ≤ (N : ℝ) ^ Ccard)
+    (row : ∀ N, U N → d.Idx N) (C : ∀ N, U N → Ω d → d.Idx N → ℂ)
+    (hCmeas : ∀ N q, Measurable (C N q))
+    (hC : ∀ N q (ω ω' : Ω d),
+      (∀ c ∈ offRowCoord d N (row N q), ω c = ω' c) → C N q ω = C N q ω')
+    {τ : ℝ} (hτ : 0 < τ) :
+    HighProb (P d) (fun N => {ω | ∀ q : U N,
+      ‖rowSum d N u (row N q) (C N q) ω‖ ^ 2
+        ≤ (N : ℝ) ^ (2 * τ) * rowVarSum d N u (row N q) (C N q) ω}) := by
+  classical
+  -- the normalised sums are `≺ 1`
+  have hgood := (stochDom_rowSum_general (d := d) (u := u) hu hcard row C hCmeas hC).highProb hτ
+  -- the degenerate fibres are negligible
+  have hdeg : HighProb (P d) (fun N => {ω | ∀ q : U N,
+      rowVarSum d N u (row N q) (C N q) ω = 0 → rowSum d N u (row N q) (C N q) ω = 0}) := by
+    intro D hD
+    filter_upwards with N
+    have hae : ∀ᵐ ω ∂(P d), ∀ q : U N,
+        rowVarSum d N u (row N q) (C N q) ω = 0 → rowSum d N u (row N q) (C N q) ω = 0 := by
+      rw [MeasureTheory.ae_all_iff]
+      intro q
+      exact rowSum_ae_eq_zero_of_varSum_eq_zero hu (C N q) (hCmeas N q) (hC N q)
+    have : (P d) {ω | ¬ ∀ q : U N,
+        rowVarSum d N u (row N q) (C N q) ω = 0 → rowSum d N u (row N q) (C N q) ω = 0} = 0 := by
+      simpa [MeasureTheory.ae_iff] using hae
+    rw [Set.compl_ofPred, this]
+    simp
+  refine (hgood.inter hdeg).mono ?_
+  filter_upwards [Filter.eventually_ge_atTop 1] with N hN1 ω hω q
+  obtain ⟨h1, h2⟩ := hω
+  have hV0 : 0 ≤ rowVarSum d N u (row N q) (C N q) ω :=
+    rowVarSum_nonneg hu (C N q) ω
+  rcases eq_or_lt_of_le hV0 with hV | hV
+  · rw [← hV, h2 q hV.symm]
+    simp
+  · have hs : (0 : ℝ) < Real.sqrt (rowVarSum d N u (row N q) (C N q) ω) := Real.sqrt_pos.2 hV
+    have hnorm := h1 q
+    rw [rowSum_rowCoeffNorm (C N q) hV, norm_mul, norm_inv, Complex.norm_real,
+      Real.norm_of_nonneg hs.le, mul_one] at hnorm
+    have hle : ‖rowSum d N u (row N q) (C N q) ω‖
+        ≤ (N : ℝ) ^ τ * Real.sqrt (rowVarSum d N u (row N q) (C N q) ω) := by
+      rw [inv_mul_le_iff₀ hs] at hnorm
+      linarith [hnorm]
+    have hnn : (0 : ℝ) ≤ ‖rowSum d N u (row N q) (C N q) ω‖ := norm_nonneg _
+    have hrhs : (0 : ℝ) ≤ (N : ℝ) ^ τ * Real.sqrt (rowVarSum d N u (row N q) (C N q) ω) := by
+      have : (0 : ℝ) ≤ (N : ℝ) ^ τ := Real.rpow_nonneg (by positivity) τ
+      positivity
+    have hsq := mul_le_mul hle hle hnn hrhs
+    have hsqrt : Real.sqrt (rowVarSum d N u (row N q) (C N q) ω) *
+        Real.sqrt (rowVarSum d N u (row N q) (C N q) ω)
+        = rowVarSum d N u (row N q) (C N q) ω := Real.mul_self_sqrt hV0
+    have hNpow : (N : ℝ) ^ τ * (N : ℝ) ^ τ = (N : ℝ) ^ (2 * τ) := by
+      rw [← Real.rpow_add (by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hN1)]
+      congr 1
+      ring
+    calc ‖rowSum d N u (row N q) (C N q) ω‖ ^ 2
+        = ‖rowSum d N u (row N q) (C N q) ω‖ * ‖rowSum d N u (row N q) (C N q) ω‖ := by ring
+      _ ≤ ((N : ℝ) ^ τ * Real.sqrt (rowVarSum d N u (row N q) (C N q) ω)) *
+          ((N : ℝ) ^ τ * Real.sqrt (rowVarSum d N u (row N q) (C N q) ω)) := hsq
+      _ = ((N : ℝ) ^ τ * (N : ℝ) ^ τ) *
+          (Real.sqrt (rowVarSum d N u (row N q) (C N q) ω) *
+            Real.sqrt (rowVarSum d N u (row N q) (C N q) ω)) := by ring
+      _ = (N : ℝ) ^ (2 * τ) * rowVarSum d N u (row N q) (C N q) ω := by
+          rw [hNpow, hsqrt]
+
 end RBM.Gauss

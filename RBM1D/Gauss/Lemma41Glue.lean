@@ -95,10 +95,6 @@ namespace Gauss
 
 variable {d : Dims}
 
-/-- The Gaussian sample's Green function is the resolvent of the flow. -/
-@[simp] theorem sample_G (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω d) :
-    (sample d).G E N u ω = green (Hflow d N u ω) (zt E u) := rfl
-
 /-- **The Gaussian sample's `2`-loop is `Lre` of the flow.** -/
 theorem sample_Lval_pm (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω d) (a b : ZMod (d.L N)) :
     ‖(sample d).Lval E N u ω (pmLoop a b)‖

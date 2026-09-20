@@ -327,6 +327,82 @@ theorem wirtVal_TA_TB (l : κ) (ω : Ω d) :
   rw [wirtVal_smul, wirtVal_term]
   ring
 
+/-! ### `T` as a linear form in the row: `T = ∑_l \bar h_l W_l` -/
+
+variable (C)
+
+/-- `W_l = ∑_k σ_k(B_{kl}\bar U_k + V_k \bar B_{lk})`, the coefficient of `\bar h_l` in `T`. -/
+noncomputable def Wt (l : κ) (ω : Ω d) : ℂ :=
+  ∑ k, ((C.sg k : ℝ) : ℂ) * (C.B ω k l * (starRingEnd ℂ) (C.U ω k)
+    + C.V ω k * (starRingEnd ℂ) (C.B ω l k))
+
+theorem tameWt (l : κ) : Tame d (C.Wt l) :=
+  Tame.sum _ fun k _ => (Tame.const (d := d) ((C.sg k : ℝ) : ℂ)).mul
+    (((C.tameB k l).mul (C.tameU k).conj).add ((C.tameV k).mul (C.tameB l k).conj))
+
+variable {C}
+
+/-- **`T` is a linear form in the conjugated row.**  Both `U_k\bar U_k` and `V_k\bar V_k`
+contain exactly one factor `\bar h`, so `T = ∑_l \bar h_l W_l`.  This is what makes the
+integration by parts of `E[T^{q+1}]` possible. -/
+theorem Tq_eq_sum_conj_h_mul (ω : Ω d) :
+    ((C.Tq ω : ℝ) : ℂ) = ∑ l, (starRingEnd ℂ) (C.h ω l) * C.Wt l ω := by
+  have hU : ∀ k : κ, C.U ω k = ∑ l, C.B ω k l * (starRingEnd ℂ) (C.h ω l) := fun _ => rfl
+  have hV : ∀ k : κ, (starRingEnd ℂ) (C.V ω k)
+      = ∑ l, (starRingEnd ℂ) (C.h ω l) * (starRingEnd ℂ) (C.B ω l k) := by
+    intro k
+    show (starRingEnd ℂ) (∑ m, C.h ω m * C.B ω m k) = _
+    rw [map_sum]
+    exact Finset.sum_congr rfl fun m _ => map_mul _ _ _
+  have hexp : (∑ l, (starRingEnd ℂ) (C.h ω l) * C.Wt l ω)
+      = ∑ l, ∑ k, ((C.sg k : ℝ) : ℂ) *
+        (C.B ω k l * (starRingEnd ℂ) (C.h ω l) * (starRingEnd ℂ) (C.U ω k)
+          + C.V ω k * ((starRingEnd ℂ) (C.h ω l) * (starRingEnd ℂ) (C.B ω l k))) := by
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [Wt, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  rw [C.Tq_complex ω, hexp, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [← Finset.mul_sum]
+  congr 1
+  nth_rewrite 1 [hU k]
+  rw [hV k, Finset.sum_mul, Finset.mul_sum, ← Finset.sum_add_distrib]
+
+/-- The `k`-th summand of `D_l W_l`. -/
+theorem wirtVal_termW (l k : κ) (ω : Ω d) :
+    C.wirtVal l
+      (C.B ω k l * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+        + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.B ω l k))
+      (C.B ω k l * (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+        + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) *
+          (starRingEnd ℂ) (C.B ω l k))
+      = 2 * (C.r : ℂ) ^ 2 * (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+        + C.B ω l k * (starRingEnd ℂ) (C.B ω l k)) := by
+  have hq : ((C.eps l : ℂ) * Complex.I) ^ 2 = -1 := by
+    rw [mul_pow, C.eps_sq_complex l, Complex.I_sq, one_mul]
+  simp only [wirtVal, map_mul, map_neg, Complex.conj_I, Complex.conj_ofReal]
+  linear_combination (-((C.r : ℂ) ^ 2 *
+    (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+      + C.B ω l k * (starRingEnd ℂ) (C.B ω l k)))) * hq
+
+/-- **`D_l W_l = 2r² ∑_k σ_k(‖B_{kl}‖² + ‖B_{lk}‖²)`.** -/
+theorem wirtVal_Wt (l : κ) (ω : Ω d) :
+    C.wirtVal l
+      (∑ k, ((C.sg k : ℝ) : ℂ) * (C.B ω k l * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+        + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.B ω l k)))
+      (∑ k, ((C.sg k : ℝ) : ℂ) *
+        (C.B ω k l *
+            (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+          + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) *
+            (starRingEnd ℂ) (C.B ω l k)))
+      = 2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+          (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+            + C.B ω l k * (starRingEnd ℂ) (C.B ω l k)) := by
+  rw [wirtVal_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [wirtVal_smul, wirtVal_termW]
+  ring
+
 end RowChaos
 
 end RBM.Gauss

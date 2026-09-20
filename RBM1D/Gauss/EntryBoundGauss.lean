@@ -58,7 +58,7 @@ theorem entry_bound_gauss {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u ≤ 1) {z : ℂ} (h
 uniformly in `i`, with **no** large deviation hypothesis: the four estimates are
 `RBM.Gauss.stochDom_ldeRow`, `RBM.Gauss.stochDom_ldeCol`, `RBM.Gauss.stochDom_ldeQuad` and
 `RBM.Gauss.stochDom_normSq_Hflow_diag`. -/
-theorem diag_bound_gauss (hG : GaussIBP d) {E κ t : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+theorem diag_bound_gauss {E κ t : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hE : |E| ≤ 2 - κ) (ht0 : 0 ≤ t) (ht1 : t < 1)
     {δ : ℕ → ℝ} (hδ0 : ∀ N, 0 ≤ δ N) {c₀ : ℝ} (hc₀ : 0 < c₀)
     (hδ : ∀ᶠ N : ℕ in atTop, δ N ≤ (N : ℝ) ^ (-c₀)) :
@@ -72,6 +72,6 @@ theorem diag_bound_gauss (hG : GaussIBP d) {E κ t : ℝ} (hκ0 : 0 < κ) (hκ1 
     (fun N ω => Hflow d N t ω) (fun N ω => Hflow_isHermitian d N t ω)
     hκ0 hκ1 hE ht0 ht1 hδ0 hc₀ hδ
     (stochDom_ldeRow d ht0 ht1.le hzt) (stochDom_ldeCol d ht0 ht1.le hzt)
-    (stochDom_ldeQuad hG hzt ht0 ht1.le) (stochDom_normSq_Hflow_diag ht0)
+    (stochDom_ldeQuad hzt ht0 ht1.le) (stochDom_normSq_Hflow_diag ht0)
 
 end RBM.Gauss

@@ -2109,3 +2109,18 @@ mom_le_momVpow → stochDom_ldeQuad → diag_bound_gauss → stochDom_indicator_
 蓝图新节点 `lem:gauss-ibp`。全量构建通过，公理审计 **6964 条声明**全部合规。
 
 **T103 的「可卸未卸」清单现在是空的。**
+
+**T105 ✔（维护）**：`hG : GaussIBP d` 已从**应用层四个文件**的签名里删掉：
+`LDEQuadInst.lean`、`LDEQuadDom.lean`、`EntryBoundGauss.lean`、`Lemma41Glue.lean`。
+于是下面这些现在**一个假设都不带**（除了模型本身的 `0 ≤ u`、`Im z ≠ 0` 之类）：
+
+```
+integral_ldeQuadLHS_pow_le, stochDom_ldeQuad, entry_bound_gauss, diag_bound_gauss,
+stochDom_indicator_diag, stochDom_indicator_llMax_sq
+```
+
+**`Gauss/LDEQuadT.lean` 里的 `hG` 故意保留**：那一层是抽象 `RowChaos` 的机器，
+`GaussIBP` 在那里正是被使用的接口，与 `Gauss/LDEQuad.lean`（别人的文件）的写法一致；
+应用层调用时填 `(gaussIBP d)`。`Gauss/LDEQuad.lean` **一字未动**。
+
+全量构建通过，公理审计 6964 条声明全部合规。

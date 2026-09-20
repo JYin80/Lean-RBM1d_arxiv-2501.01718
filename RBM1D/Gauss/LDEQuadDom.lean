@@ -211,16 +211,16 @@ noncomputable def hwConst (q : ℕ) : ℝ := ((2 * (q : ℝ) + 1) * (4 * (q : �
 theorem hwConst_pos (q : ℕ) : 0 < hwConst q := by unfold hwConst; positivity
 
 /-- **`E[(|Q|²/(V_q+ε))^{q+1}] ≤ A_{q+1}`, uniformly in `ε`.** -/
-theorem mom_modelChaosEps_le (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N)
+theorem mom_modelChaosEps_le (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N)
     {ε : ℝ} (hε : 0 < ε) (q : ℕ) :
     (modelChaosEps d N u hz hu i ε hε).mom (q + 1) ≤ hwConst q := by
-  have h := (modelChaosEps d N u hz hu i ε hε).mom_le_momVpow hG q
+  have h := (modelChaosEps d N u hz hu i ε hε).mom_le_momVpow (gaussIBP d) q
   have hV : (modelChaosEps d N u hz hu i ε hε).momVpow (q + 1) ≤ 1 := by
     show (∫ ω, (modelChaosEps d N u hz hu i ε hε).Vq ω ^ (q + 1) ∂(P d)) ≤ 1
     calc ∫ ω, (modelChaosEps d N u hz hu i ε hε).Vq ω ^ (q + 1) ∂(P d)
         ≤ ∫ _ω : Ω d, (1 : ℝ) ∂(P d) :=
           MeasureTheory.integral_mono
-            ((modelChaosEps d N u hz hu i ε hε).integrable_Vq_pow hG (q + 1))
+            ((modelChaosEps d N u hz hu i ε hε).integrable_Vq_pow (gaussIBP d) (q + 1))
             (MeasureTheory.integrable_const 1)
             (fun ω => pow_le_one₀ (RowChaos.Vq_nonneg ω)
               (Vq_modelChaosEps_le_one hz hu i hε ω))
@@ -241,7 +241,7 @@ theorem norm_chaos_modelChaosEps (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N) 
     abs_of_nonneg (sqVq_pos (z := z) hu hε i ω).le]
 
 /-- **Markov at fixed `ε`.** -/
-theorem meas_lt_normSq_chaos_le_eps (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ u)
+theorem meas_lt_normSq_chaos_le_eps (hz : z.im ≠ 0) (hu : 0 ≤ u)
     (i : d.Idx N) {lam : ℝ} (hlam : 0 < lam) (q : ℕ) {ε : ℝ} (hε : 0 < ε) :
     (P d) {ω | lam * (vqM d N u z i ω + ε) < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2}
       ≤ ENNReal.ofReal (hwConst q / lam ^ (q + 1)) := by
@@ -251,9 +251,9 @@ theorem meas_lt_normSq_chaos_le_eps (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 
   have habs : ∀ ω, |Y ω| ^ (2 * (q + 1)) = ‖C'.chaos ω‖ ^ (2 * (q + 1)) := fun ω => by
     rw [hY, abs_of_nonneg (hYnn ω)]
   have hint : Integrable (fun ω => |Y ω| ^ (2 * (q + 1))) (P d) := by
-    simpa only [habs] using C'.integrable_norm_pow hG (q + 1)
+    simpa only [habs] using C'.integrable_norm_pow (gaussIBP d) (q + 1)
   have hmom0 : (∫ ω, ‖C'.chaos ω‖ ^ (2 * (q + 1)) ∂(P d)) ≤ hwConst q :=
-    mom_modelChaosEps_le hG hz hu i hε q
+    mom_modelChaosEps_le hz hu i hε q
   have hmom : ∫ ω, |Y ω| ^ (2 * (q + 1)) ∂(P d) ≤ hwConst q := by
     simpa only [habs] using hmom0
   have ht : (0 : ℝ) < Real.sqrt lam := Real.sqrt_pos.2 hlam
@@ -287,7 +287,7 @@ theorem meas_lt_normSq_chaos_le_eps (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 
 /-- **The tail bound with the true control.**  `{λV_q < |Q|²} = ⋃_n {λ(V_q + 1/(n+1)) < |Q|²}`
 is an increasing union, so continuity of the measure from below removes `ε`: no integral limit
 theorem, and no separate treatment of `{V_q = 0}`. -/
-theorem meas_lt_normSq_chaos_le (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N)
+theorem meas_lt_normSq_chaos_le (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N)
     {lam : ℝ} (hlam : 0 < lam) (q : ℕ) :
     (P d) {ω | lam * vqM d N u z i ω < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2}
       ≤ ENNReal.ofReal (hwConst q / lam ^ (q + 1)) := by
@@ -323,7 +323,7 @@ theorem meas_lt_normSq_chaos_le (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ 
   rw [← hunion]
   refine le_of_tendsto (tendsto_measure_iUnion_atTop (μ := P d) hmono)
     (Filter.Eventually.of_forall fun n => ?_)
-  exact meas_lt_normSq_chaos_le_eps hG hz hu i hlam q (by positivity)
+  exact meas_lt_normSq_chaos_le_eps hz hu i hlam q (by positivity)
 
 /-! ### The hypothesis `hLquad` of `RBM.diag_bound_stochDom` -/
 
@@ -353,7 +353,7 @@ theorem chaos_modelChaos_zero (hz : z.im ≠ 0) (i : d.Idx N) (ω : Ω d) :
 /-- **The hypothesis `hLquad` of `RBM.diag_bound_stochDom`, for the Gaussian flow.**
 `|∑_{k,l≠i}H_{ik}G^{(i)}_{kl}H_{li} − u∑_kS_{ik}G^{(i)}_{kk}|² ≺ ∑_{k,l}S_{ik}|G^{(i)}_{kl}|²S_{li}`,
 uniformly in `i`, for `0 ≤ u ≤ 1` and `Im z ≠ 0`. -/
-theorem stochDom_ldeQuad (hG : GaussIBP d) (hz : z.im ≠ 0) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
+theorem stochDom_ldeQuad (hz : z.im ≠ 0) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
     StochDom (P d)
       (fun N (i : BIdx d.L d.W N) ω =>
         ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) z) (Sblk (d.L N) (d.W N)) u i)
@@ -418,7 +418,7 @@ theorem stochDom_ldeQuad (hG : GaussIBP d) (hz : z.im ≠ 0) (hu0 : 0 ≤ u) (hu
           = (N : ℝ) ^ τ * ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i from by
         field_simp]
     rw [hset]
-    refine (meas_lt_normSq_chaos_le hG hz hu0 i hlam q).trans
+    refine (meas_lt_normSq_chaos_le hz hu0 i hlam q).trans
       (ENNReal.ofReal_le_ofReal ?_)
     have hpow : (N : ℝ) ^ (τ * ((q : ℝ) + 1)) = ((N : ℝ) ^ τ) ^ (q + 1) := by
       rw [← Real.rpow_natCast ((N : ℝ) ^ τ) (q + 1), ← Real.rpow_mul hN0.le]

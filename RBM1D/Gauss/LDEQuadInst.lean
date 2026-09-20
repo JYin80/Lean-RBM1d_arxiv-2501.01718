@@ -3,6 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
+import RBM1D.Gauss.IBPPoly
 import RBM1D.Gauss.LDEQuadT
 import RBM1D.Gauss.RowIndep
 import RBM1D.Gauss.LDEHyp
@@ -210,7 +211,7 @@ include hz in
 
 for every `p ≥ 1`, with no side conditions beyond `0 ≤ u` and `Im z ≠ 0`.  This is
 `RBM.Gauss.RowChaos.mom_le_momVpow` (T93) read through the instance. -/
-theorem integral_ldeQuadLHS_pow_le (hG : GaussIBP d) (hu : 0 ≤ u) (q : ℕ) :
+theorem integral_ldeQuadLHS_pow_le (hu : 0 ≤ u) (q : ℕ) :
     ∫ ω, ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) z)
         (Sblk (d.L N) (d.W N)) u i ^ (q + 1) ∂(P d)
       ≤ ((2 * (q : ℝ) + 1) * (4 * (q : ℝ) + 2)) ^ (q + 1) * (u ^ 2) ^ (q + 1) *
@@ -235,7 +236,7 @@ theorem integral_ldeQuadLHS_pow_le (hG : GaussIBP d) (hu : 0 ≤ u) (q : ℕ) :
       = (u ^ 2) ^ (q + 1) *
         ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i ^ (q + 1)
     rw [modelChaos_Vq hz i hu ω, mul_pow]
-  have h := C.mom_le_momVpow hG q
+  have h := C.mom_le_momVpow (gaussIBP d) q
   rw [hmom, hV] at h
   calc ∫ ω, ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) z)
         (Sblk (d.L N) (d.W N)) u i ^ (q + 1) ∂(P d)

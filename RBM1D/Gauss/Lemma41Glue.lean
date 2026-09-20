@@ -326,7 +326,7 @@ theorem stochDom_indicator_entryControl (hΦ0 : ∀ N, 0 ≤ Φ N) (hΦ : LoopHy
     linarith [hlt]
 
 /-- **The diagonal half of Lemma 4.1 at a fixed time**: `1_Ω|G_{ii} − m|² ≺ Φ + W⁻¹`. -/
-theorem stochDom_indicator_diag (hG : GaussIBP d) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+theorem stochDom_indicator_diag {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hE : |E| ≤ 2 - κ) (hu0 : 0 ≤ u) (hu1 : u < 1) {c₀ : ℝ} (hc₀ : 0 < c₀)
     (hδ0 : ∀ N, 0 ≤ ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6))
     (hδ : ∀ᶠ N : ℕ in Filter.atTop,
@@ -347,7 +347,7 @@ theorem stochDom_indicator_diag (hG : GaussIBP d) {κ : ℝ} (hκ0 : 0 < κ) (h�
           (fun ω => ‖green (Hflow d N u ω) (zt E u) i i - mE E‖ ^ 2) ω)
       (fun N _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
     simp only [hset]
-    exact diag_bound_gauss hG hκ0 hκ1 hE hu0 hu1 hδ0 hc₀ hδ
+    exact diag_bound_gauss hκ0 hκ1 hE hu0 hu1 hδ0 hc₀ hδ
   have h2 : StochDom (P d)
       (fun N (_ : BIdx d.L d.W N) ω =>
         (Step1.goodEv (sample d) E N u).indicator
@@ -400,7 +400,7 @@ theorem stochDom_indicator_offdiag {κ : ℝ} (hκ0 : 0 < κ) (hE : |E| ≤ 2 - 
 
 This is `RBM.Lemma41Flow` with the time quantifier removed; the time-uniform statement needs a
 Hölder modulus in `u`, see `docs/STATUS.md` (T99) and tickets T100/T101. -/
-theorem stochDom_indicator_llMax_sq {V : ℕ → Type*} (hG : GaussIBP d) {κ : ℝ} (hκ0 : 0 < κ)
+theorem stochDom_indicator_llMax_sq {V : ℕ → Type*} {κ : ℝ} (hκ0 : 0 < κ)
     (hκ1 : κ ≤ 1) (hE : |E| ≤ 2 - κ) (hu0 : 0 ≤ u) (hu1 : u < 1) {c₀ : ℝ} (hc₀ : 0 < c₀)
     (hδ0 : ∀ N, 0 ≤ ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 6))
     (hδ : ∀ᶠ N : ℕ in Filter.atTop,
@@ -413,7 +413,7 @@ theorem stochDom_indicator_llMax_sq {V : ℕ → Type*} (hG : GaussIBP d) {κ : 
       (fun N _ _ => Φ N + ((d.W N : ℕ) : ℝ)⁻¹) := by
   refine StochDom.of_subset_union
     (stochDom_indicator_offdiag hκ0 hE hu0 hu1 hc₀ hδ0 hδ hΦ0 hΦ)
-    (stochDom_indicator_diag hG hκ0 hκ1 hE hu0 hu1 hc₀ hδ0 hδ hΦ0 hΦ)
+    (stochDom_indicator_diag hκ0 hκ1 hE hu0 hu1 hc₀ hδ0 hδ hΦ0 hΦ)
     fun τ hτ => ⟨τ, hτ, ?_⟩
   filter_upwards with N
   intro ω hω

@@ -22,6 +22,7 @@ import RBM1D.Gauss.Generator
 import RBM1D.Gauss.IBP
 import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.MomentGronwall
+import RBM1D.Gauss.Lemma41Glue
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Model
 import RBM1D.Gauss.Moments

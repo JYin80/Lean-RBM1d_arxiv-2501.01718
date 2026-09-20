@@ -1,4 +1,5 @@
 import RBM1D.Basic
+import RBM1D.Analysis.Bootstrap
 import RBM1D.Analysis.StretchedExp
 import RBM1D.Defs.Block
 import RBM1D.Delocalization

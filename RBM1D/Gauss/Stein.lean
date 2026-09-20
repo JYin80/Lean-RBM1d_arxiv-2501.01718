@@ -139,7 +139,7 @@ theorem integrable_bdd_mul_deriv_gaussianPDFReal (hv : 0 < (var : ℝ)) {f : ℝ
     (Filter.Eventually.of_forall hC)).const_mul (-(1 / (var : ℝ)))
   refine h.congr (Filter.Eventually.of_forall fun x => ?_)
   field_simp
-  ring
+  try ring
 
 /-- **Stein's identity with the hypotheses `MatrixStein` actually supplies**: `f` is
 differentiable with continuous derivative, and both `f` and `f'` are globally bounded. -/
@@ -147,9 +147,11 @@ theorem integral_mul_gaussianReal_of_bdd (hv : var ≠ 0) {f f' : ℝ → ℝ} {
     (hf : ∀ x, HasDerivAt f (f' x) x) (hf'c : Continuous f')
     (hb : ∀ x, ‖f x‖ ≤ C) (hb' : ∀ x, ‖f' x‖ ≤ C) :
     ∫ x : ℝ, x * f x ∂(gaussianReal 0 var) = (var : ℝ) * ∫ x : ℝ, f' x ∂(gaussianReal 0 var) := by
-  have hv' : (0 : ℝ) < (var : ℝ) := lt_of_le_of_ne var.coe_nonneg (Ne.symm (NNReal.coe_ne_zero.mpr hv))
+  have hv' : (0 : ℝ) < (var : ℝ) :=
+    lt_of_le_of_ne var.coe_nonneg (Ne.symm (NNReal.coe_ne_zero.mpr hv))
+  have hd : Differentiable ℝ f := fun x => (hf x).differentiableAt
   have hfm : AEStronglyMeasurable f MeasureTheory.volume :=
-    (fun x => (hf x).differentiableAt : Differentiable ℝ f).continuous.aestronglyMeasurable
+    hd.continuous.aestronglyMeasurable
   have hf'm : AEStronglyMeasurable f' MeasureTheory.volume := hf'c.aestronglyMeasurable
   exact integral_mul_gaussianReal hv hf
     (integrable_bdd_mul_deriv_gaussianPDFReal hv' hfm hb)

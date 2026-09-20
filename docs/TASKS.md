@@ -169,7 +169,7 @@
 | T75 | 用连续归纳替掉 Step 2 的停时 (5.43) | `Hierarchy/Step2Moment.lean`（新建） | 待认领 | 未开工（等 T72） |
 | T76 | 卸掉 (2.34) 与 Lemma 2.11：不证 SDE，直接证期望/矩版本 | `Gauss/Hierarchy.lean`（新建） | Claude Code | 进行中 |
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | 进行中 |
-| T78 | 连续归纳（bootstrap）原理：`φ` 连续 + 自改进 `φ ≤ C → φ ≤ B` ⟹ `φ ≤ B`；T75 卸停时 (5.43) 的分析内核，**不依赖 T72** | `Analysis/Bootstrap.lean`（新建） | **Claude Code #2** | 进行中 |
+| T78 | 连续归纳（bootstrap）原理：`φ` 连续 + 自改进 `φ ≤ C → φ ≤ B` ⟹ `φ ≤ B`；T75 卸停时 (5.43) 的分析内核，**不依赖 T72** | `Analysis/Bootstrap.lean`（新建） | Claude Code #2 | **完成**（`le_of_bootstrap`；T75 直接调用即可） |
 
 ---
 

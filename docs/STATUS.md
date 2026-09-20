@@ -1237,3 +1237,14 @@ T70 的入口是 `P_map_eval`（单坐标律）与 `P_map_restrict`（任意有�
 
 **⚠ 给 Cowork（T70）的接口**：矩阵版 Stein 作假设 `MatrixStein`（单字段），假设刻意取强以让 T70 的活尽量小——`FinDep`（有限依赖）让 `P_map_restrict` 把无穷乘积塌成 `Measure.pi`，之后就是对其余坐标 Fubini + 已落地的一维 `RBM.integral_mul_gaussianReal`。未碰 `Stein.lean`，也未写乘积版，无冲突。
 **剩余**：`MatrixStein` 待 T70 卸掉；为具体的 `|F|^{2p}` 造 `TestFun` 是 T72 的活。paper-deltas #50。
+
+### `RBM1D/Analysis/Bootstrap.lean` — 连续归纳（T78，Claude Code #2）✔
+
+`RBM.le_of_bootstrap`：`φ` 在 `[a,b]` 上连续、`φ a ≤ B`、`B < C`，且逐点自改进 `φ u ≤ C → φ u ≤ B`，
+则 `φ ≤ B` 于 `[a,b]`；`le_of_bootstrap_two_mul` 是 `C = 2B`（`B > 0`）的常用形。
+证法：自改进把闭的下水平集 `{φ ≤ B}` 和开集 `{φ < C}` 认同，于是它在 `[a,b]` 里既开又闭，含 `a`，而 `[a,b]` 连通。
+只依赖 Mathlib，公理审计干净。
+
+**给 T75 的接口**：Step 2 的 bootstrap 里 `φ(u) := E[(J*_{u,D})^q]` 一旦是确定性连续函数，
+停时 (5.43) 直接换成这条，不需要 optional stopping；只需另外提供 `φ` 在时间区间上的连续性。
+若 T75 需要「自改进依赖 `[a,u]` 上的 sup」那种变体，在本文件加一条即可，路线相同。

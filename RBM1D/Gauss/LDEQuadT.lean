@@ -168,6 +168,165 @@ theorem integral_conj_h_mul_gen (hG : GaussIBP d) {Z ZA ZB : Ω d → ℂ} (l : 
         rw [integral_sub (hiA.const_mul _) (hiB.const_mul _), integral_const_mul,
           integral_const_mul]
 
+/-- Right-hand scalar: `D_l (a·z, b·z) = (D_l(a,b))·z`. -/
+theorem wirtVal_mul_right (l : κ) (z a b : ℂ) :
+    C.wirtVal l (a * z) (b * z) = C.wirtVal l a b * z := by
+  simp only [wirtVal]; ring
+
+/-! ### The partials of `T` along the row -/
+
+/-- `∂T/∂a_l`, in complex form. -/
+noncomputable def TA (l : κ) (ω : Ω d) : ℂ :=
+  ∑ k, ((C.sg k : ℝ) : ℂ) *
+    ((C.B ω k l * (C.r : ℂ)) * (starRingEnd ℂ) (C.U ω k)
+      + C.U ω k * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+      + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.V ω k)
+      + C.V ω k * (starRingEnd ℂ) ((C.r : ℂ) * C.B ω l k))
+
+/-- `∂T/∂b_l`, in complex form. -/
+noncomputable def TB (l : κ) (ω : Ω d) : ℂ :=
+  ∑ k, ((C.sg k : ℝ) : ℂ) *
+    ((C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I))) * (starRingEnd ℂ) (C.U ω k)
+      + C.U ω k *
+        (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+      + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) * (starRingEnd ℂ) (C.V ω k)
+      + C.V ω k *
+        (starRingEnd ℂ) (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k))
+
+theorem tameTA (l : κ) : Tame d (C.TA l) :=
+  Tame.sum _ fun k _ => (Tame.const (d := d) ((C.sg k : ℝ) : ℂ)).mul
+    (((((C.tameB k l).mul (Tame.const (d := d) ((C.r : ℂ)))).mul (C.tameU k).conj).add
+      ((C.tameU k).mul (((C.tameB k l).mul (Tame.const (d := d) ((C.r : ℂ)))).conj))).add
+      (((Tame.const (d := d) ((C.r : ℂ))).mul (C.tameB l k)).mul (C.tameV k).conj) |>.add
+      ((C.tameV k).mul (((Tame.const (d := d) ((C.r : ℂ))).mul (C.tameB l k)).conj)))
+
+theorem tameTB (l : κ) : Tame d (C.TB l) :=
+  Tame.sum _ fun k _ => (Tame.const (d := d) ((C.sg k : ℝ) : ℂ)).mul
+    (((((C.tameB k l).mul (Tame.const (d := d)
+        (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))).mul (C.tameU k).conj).add
+      ((C.tameU k).mul (((C.tameB k l).mul (Tame.const (d := d)
+        (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))).conj))).add
+      (((Tame.const (d := d) ((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)).mul
+        (C.tameB l k)).mul (C.tameV k).conj) |>.add
+      ((C.tameV k).mul (((Tame.const (d := d)
+        ((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)).mul (C.tameB l k)).conj)))
+
+theorem hasDerivAt_Tq_true (l : κ) (ω : Ω d) :
+    HasDerivAt (fun s : ℝ => ((C.Tq (Function.update ω (C.co l true) s) : ℝ) : ℂ))
+      (C.TA l ω) (ω (C.co l true)) := by
+  have hfun : (fun s : ℝ => ((C.Tq (Function.update ω (C.co l true) s) : ℝ) : ℂ))
+      = fun s : ℝ => ∑ k, ((C.sg k : ℝ) : ℂ) *
+        (C.U (Function.update ω (C.co l true) s) k *
+            (starRingEnd ℂ) (C.U (Function.update ω (C.co l true) s) k)
+          + C.V (Function.update ω (C.co l true) s) k *
+            (starRingEnd ℂ) (C.V (Function.update ω (C.co l true) s) k)) := by
+    funext s; exact C.Tq_complex _
+  rw [hfun]
+  have hself := Function.update_eq_self (C.co l true) ω
+  have hterm : ∀ k : κ, HasDerivAt
+      (fun s : ℝ => ((C.sg k : ℝ) : ℂ) *
+        (C.U (Function.update ω (C.co l true) s) k *
+            (starRingEnd ℂ) (C.U (Function.update ω (C.co l true) s) k)
+          + C.V (Function.update ω (C.co l true) s) k *
+            (starRingEnd ℂ) (C.V (Function.update ω (C.co l true) s) k)))
+      (((C.sg k : ℝ) : ℂ) *
+        ((C.B ω k l * (C.r : ℂ)) * (starRingEnd ℂ) (C.U ω k)
+          + C.U ω k * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+          + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.V ω k)
+          + C.V ω k * (starRingEnd ℂ) ((C.r : ℂ) * C.B ω l k)))
+      (ω (C.co l true)) := by
+    intro k
+    have hU := C.hasDerivAt_U_true l k ω
+    have hV := C.hasDerivAt_V_true l k ω
+    have hUc := hasDerivAt_conj' hU
+    have hVc := hasDerivAt_conj' hV
+    have h1 := hU.fun_mul hUc
+    have h2 := hV.fun_mul hVc
+    have hadd := (h1.add h2).const_mul (((C.sg k : ℝ) : ℂ))
+    simp only [hself] at hadd
+    convert hadd using 1
+    ring
+  have hsum := HasDerivAt.fun_sum (u := (Finset.univ : Finset κ)) fun k _ => hterm k
+  exact hsum
+
+theorem hasDerivAt_Tq_false (l : κ) (ω : Ω d) :
+    HasDerivAt (fun s : ℝ => ((C.Tq (Function.update ω (C.co l false) s) : ℝ) : ℂ))
+      (C.TB l ω) (ω (C.co l false)) := by
+  have hfun : (fun s : ℝ => ((C.Tq (Function.update ω (C.co l false) s) : ℝ) : ℂ))
+      = fun s : ℝ => ∑ k, ((C.sg k : ℝ) : ℂ) *
+        (C.U (Function.update ω (C.co l false) s) k *
+            (starRingEnd ℂ) (C.U (Function.update ω (C.co l false) s) k)
+          + C.V (Function.update ω (C.co l false) s) k *
+            (starRingEnd ℂ) (C.V (Function.update ω (C.co l false) s) k)) := by
+    funext s; exact C.Tq_complex _
+  rw [hfun]
+  have hself := Function.update_eq_self (C.co l false) ω
+  have hterm : ∀ k : κ, HasDerivAt
+      (fun s : ℝ => ((C.sg k : ℝ) : ℂ) *
+        (C.U (Function.update ω (C.co l false) s) k *
+            (starRingEnd ℂ) (C.U (Function.update ω (C.co l false) s) k)
+          + C.V (Function.update ω (C.co l false) s) k *
+            (starRingEnd ℂ) (C.V (Function.update ω (C.co l false) s) k)))
+      (((C.sg k : ℝ) : ℂ) *
+        ((C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I))) * (starRingEnd ℂ) (C.U ω k)
+          + C.U ω k *
+            (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+          + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) * (starRingEnd ℂ) (C.V ω k)
+          + C.V ω k *
+            (starRingEnd ℂ) (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k)))
+      (ω (C.co l false)) := by
+    intro k
+    have hU := C.hasDerivAt_U_false l k ω
+    have hV := C.hasDerivAt_V_false l k ω
+    have hUc := hasDerivAt_conj' hU
+    have hVc := hasDerivAt_conj' hV
+    have h1 := hU.fun_mul hUc
+    have h2 := hV.fun_mul hVc
+    have hadd := (h1.add h2).const_mul (((C.sg k : ℝ) : ℂ))
+    simp only [hself] at hadd
+    convert hadd using 1
+    ring
+  have hsum := HasDerivAt.fun_sum (u := (Finset.univ : Finset κ)) fun k _ => hterm k
+  exact hsum
+
+variable {C}
+
+/-- The `k`-th summand of `D_l T`: `D_l(U_k\bar U_k + V_k\bar V_k)
+= 2r²(U_k\bar B_{kl} + B_{lk}\bar V_k)`. -/
+theorem wirtVal_term (l k : κ) (ω : Ω d) :
+    C.wirtVal l
+      ((C.B ω k l * (C.r : ℂ)) * (starRingEnd ℂ) (C.U ω k)
+        + C.U ω k * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+        + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.V ω k)
+        + C.V ω k * (starRingEnd ℂ) ((C.r : ℂ) * C.B ω l k))
+      ((C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I))) * (starRingEnd ℂ) (C.U ω k)
+        + C.U ω k *
+          (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+        + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) * (starRingEnd ℂ) (C.V ω k)
+        + C.V ω k *
+          (starRingEnd ℂ) (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k))
+      = 2 * (C.r : ℂ) ^ 2 *
+        (C.U ω k * (starRingEnd ℂ) (C.B ω k l) + C.B ω l k * (starRingEnd ℂ) (C.V ω k)) := by
+  have hq : ((C.eps l : ℂ) * Complex.I) ^ 2 = -1 := by
+    rw [mul_pow, C.eps_sq_complex l, Complex.I_sq, one_mul]
+  simp only [wirtVal, map_mul, map_neg, Complex.conj_I, Complex.conj_ofReal]
+  linear_combination ((C.r : ℂ) ^ 2 *
+    (C.B ω k l * (starRingEnd ℂ) (C.U ω k) - C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+      - C.B ω l k * (starRingEnd ℂ) (C.V ω k)
+      + C.V ω k * (starRingEnd ℂ) (C.B ω l k))) * hq
+
+/-- **`D_l T = 2r² ∑_k σ_k (U_k \bar B_{kl} + B_{lk} \bar V_k)`.**  Both `U` and `\bar V` are
+killed by `D_l`, so only `B` survives — this is the whole point of the derivation. -/
+theorem wirtVal_TA_TB (l : κ) (ω : Ω d) :
+    C.wirtVal l (C.TA l ω) (C.TB l ω)
+      = 2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+          (C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+            + C.B ω l k * (starRingEnd ℂ) (C.V ω k)) := by
+  rw [TA, TB, wirtVal_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [wirtVal_smul, wirtVal_term]
+  ring
+
 end RowChaos
 
 end RBM.Gauss

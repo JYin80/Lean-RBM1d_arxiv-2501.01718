@@ -169,6 +169,9 @@
 | T75 | 用连续归纳替掉 Step 2 的停时 (5.43) | `Hierarchy/Step2Moment.lean`（新建） | 待认领 | 未开工（等 T72） |
 | T76 | 卸掉 (2.34) 与 Lemma 2.11：不证 SDE，直接证期望/矩版本 | `Gauss/Hierarchy.lean`（新建） | Claude Code | **完成**（(2.45) 的期望版；`duhamel`/`duhamelQ` 在现有逐路径形状下不可卸，见 STATUS） |
 | T77 | **反向桥**：`≺` + 确定性包络 ⟹ 矩（`MomentDom`）；包络由 `‖G‖ ≤ η⁻¹` 全局给出 | `Gauss/Envelope.lean`（新建） | Claude Code | **完成**（与 T73 的正向桥量词序一致，可复合；含 `norm_gloop_le_det`） |
+| T78 | **线性 LDE**（高斯情形）：`LDERow` / `LDECol` 的 `StochDom` 版本 | `Gauss/LDELinear.lean`（新建） | 待认领 | 未开工 ← **卸 [39] 之一** |
+| T79 | **二次 LDE**（高斯 Hanson–Wright）：`LDEQuad` 的 `StochDom` 版本 | `Gauss/LDEQuad.lean`（新建） | 待认领 | 未开工 ← **卸 [39] 之二** |
+| T80 | 卸掉 `Green/EntryBound.lean` 的 `hIBP`（p.50 的高斯分部积分显式式） | `Gauss/IBP.lean`（新建） | 待认领 | 未开工（等 T70 矩阵版） |
 | T78 | 连续归纳（bootstrap）原理：`φ` 连续 + 自改进 `φ ≤ C → φ ≤ B` ⟹ `φ ≤ B`；T75 卸停时 (5.43) 的分析内核，**不依赖 T72** | `Analysis/Bootstrap.lean`（新建） | Claude Code #2 | **完成**（`le_of_bootstrap`；T75 直接调用即可） |
 
 ---
@@ -1678,4 +1681,75 @@ theorem matrixStein (d : Dims) : RBM.Gauss.MatrixStein d
 
 **为什么它在关键路径上**：`T70(矩阵) → T71 卸掉假设 → T72 → {T74, T75}`。
 T71 的生成元恒等式本身已经证完了，只差这一个字段。
+
+---
+
+# 第五批工单（T78–T80）：卸掉外部文献 [39]
+
+**背景（2026-09-20，Jun 指定）**：「我希望这篇论文里不包含外部文献输入（因为也是我的工作，
+错对的责任也在我身上）」。所以 `[39, Lemma 3.3]` 与 `[40, (4.11)]` 都要自己证。
+
+**注意：不是重证 [39]/[40] 里的定理，只证我们需要的那一部分。**
+仓库里这一部分早就切好了——`Green/EntryBound.lean` 的 `LDERow`/`LDECol`/`LDEQuad` 三条，
+以及 `hIBP`。照着它们的**现有签名**做，**不要改签名**。
+
+**关键红利**：论文自己在 §5.1 白纸黑字写着 *"the entries of `H_t` follow a Gaussian
+distribution"*。[39] Lemma 3.3 之所以是篇幅可观的引理，是因为它要处理**任意分布**
+（矩条件 + 矩方法）。**我们只要高斯**，线性那一半直接塌成恒等式。
+
+`[40]` 的涨落平均 (4.12) 另开一批，方案待定（见 `docs/STATUS.md` 的可行性核查记录：
+用 n=1 层级绕开的路线**已被否掉**，原因是 `E^{(G̃)}` 自耦合系数 `η_u^{-1}` 的积分是对数的，
+Grönwall 因子是多项式量级，`≺` 吸不掉）。
+
+## T78 — `RBM1D/Gauss/LDELinear.lean` · M · **最便宜的一张**
+
+目标：对 `Gauss/Model.lean` 的高斯模型，证 `RBM.LDERow` / `RBM.LDECol` 的 `StochDom` 版本
+（`Φ = N^τ`，对任意 `τ > 0`）。
+
+```
+ldeRowLHS H G i j = ‖∑_{k≠i} H_ik G^(i)_kj‖²   ≺   ∑_{k≠i} S_ik ‖G^(i)_kj‖² = ldeRowRHS
+```
+
+**为什么便宜**：`G^(i)` 只读第 `i` 行以外的坐标，与 `H_ik`（`k≠i`）**严格独立**。
+条件在其余坐标上，`∑_{k≠i} H_ik X_k` 就是一个**中心复高斯**，方差恰为 `t·∑_k S_ik‖X_k‖²`。
+于是矩形式是**恒等式**而非估计：
+
+    E[ ‖∑_k H_ik X_k‖^{2p} | 其余坐标 ] = p! · ( t ∑_k S_ik ‖X_k‖² )^p
+
+再用 T73 的 `stochDom_of_momentDom`（Markov）落地成 `≺`。
+
+**需要的零件**：独立高斯的复线性组合仍是高斯（Mathlib 的 `isGaussian_map` 走 CLM）、
+复中心高斯的绝对矩公式 `E‖Z‖^{2p} = p!σ^{2p}`、条件期望 = 乘积测度上的 Fubini
+（`Model.lean` 的 `P_map_restrict` 已经有了）。
+
+**坑**：`G^(i)` 的独立性要真的说清楚——写成「`G^(i)` 是 `FinDep` 且其见证集不含第 `i` 行的坐标」。
+这条单独抽一个引理，T79 也要用。
+
+## T79 — `RBM1D/Gauss/LDEQuad.lean` · L · **这一批的主要工作量**
+
+目标：`RBM.LDEQuad` 的 `StochDom` 版本，即高斯情形的 Hanson–Wright：
+
+```
+‖∑_{k,l≠i} H_ik B_kl H_li − t ∑_k S_ik B_kk‖²  ≺  ∑_{k,l} S_ik ‖B_kl‖² S_li
+```
+
+`B = G^(i)`，与第 `i` 行独立。左边是**中心的二阶高斯混沌**。
+
+**两条路，建议走 (b)**：
+
+* **(a) Wick 展开 + 配对计数** —— 组合重，Lean 里贵。
+* **(b) 用 `MatrixStein` 做矩递推** —— 对 `E‖Q‖^{2p}` 用一次分部积分，
+  把一个 `H_ik` 换成 `S_ik ∂`，得到 `E‖Q‖^{2p} ≲ (2p−1)σ²E‖Q‖^{2p−2} + (交叉项)`，
+  对 `p` 归纳。**复用我们已经有的机器**，而且天然是矩形式，正好接 T73。
+
+**先做 (b) 的 `p=1`（方差）那一例把记号跑通**，再上归纳。
+
+## T80 — `RBM1D/Gauss/IBP.lean` · S · 等 T70 矩阵版
+
+卸掉 `Green/EntryBound.lean` 的 `hIBP`——论文 p.50 的那个显式式
+
+    E_i(G_ii − m) = E_i[m(−H − tm)G]_ii = ∑_k E_i[m(G_kk − m)tS_ki G_ii] + O≺(Ψ²)
+
+它**就是**高斯分部积分，也就是 T70 的矩阵版 Stein。T70 一落地这条基本是套用。
+**注意**：它只是 (4.5) 证明里的一步，(4.5) 本身还要 (4.12)，那是第六批的事。
 

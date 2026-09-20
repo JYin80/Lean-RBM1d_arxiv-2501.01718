@@ -349,4 +349,26 @@ theorem Hflow_submatrix_congr_offRowCoord (u : ℝ) {i : d.Idx N} {ω ω' : Ω d
   · have hkl : k.1 = l.1 := idxKey_injective d N (by omega)
     rw [key k.1 l.1 true hk hl (mem_relCoord_of_usedCoord (mem_usedCoord.2 (Or.inr ⟨hkl, rfl⟩)))]
 
+/-- The row entries `H_{ik}`, `k ≠ i`, read only the row block. -/
+theorem Hflow_row_congr (u : ℝ) {i : d.Idx N} {ω ω' : Ω d}
+    (h : ∀ c ∈ rowSet d N i, ω c = ω' c) {k : d.Idx N} (hk : k ≠ i) :
+    Hflow d N u ω i k = Hflow d N u ω' i k := by
+  rw [Hflow_apply, Hflow_apply, Xentry_eq_rowCoord (Ne.symm hk) ω,
+    Xentry_eq_rowCoord (Ne.symm hk) ω', h _ (rowCoord_mem_rowSet i k true),
+    h _ (rowCoord_mem_rowSet i k false)]
+
+/-- The row sum with coefficients reading only the off-row block, as a function of the two
+blocks. -/
+theorem row_sum_congr (u : ℝ) {i : d.Idx N} (C : Ω d → d.Idx N → ℂ)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω')
+    {ω ω' : Ω d} (h : ∀ c ∈ rowSet d N i ∪ offRowCoord d N i, ω c = ω' c) :
+    (∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω i k.1 * C ω k.1)
+      = ∑ k : {k : d.Idx N // k ≠ i}, Hflow d N u ω' i k.1 * C ω' k.1 := by
+  have hrow : ∀ c ∈ rowSet d N i, ω c = ω' c := fun c hc =>
+    h c (Finset.mem_union_left _ hc)
+  have hoff : ∀ c ∈ offRowCoord d N i, ω c = ω' c := fun c hc =>
+    h c (Finset.mem_union_right _ hc)
+  rw [hC ω ω' hoff]
+  exact Finset.sum_congr rfl fun k _ => by rw [Hflow_row_congr u hrow k.2]
+
 end RBM.Gauss

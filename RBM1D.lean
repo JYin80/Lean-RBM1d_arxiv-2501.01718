@@ -27,6 +27,7 @@ import RBM1D.Gauss.Lemma41Glue
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Model
 import RBM1D.Gauss.Moments
+import RBM1D.Gauss.IBPPoly
 import RBM1D.Gauss.LDEDiag
 import RBM1D.Gauss.LDEHyp
 import RBM1D.Gauss.RowIndep

@@ -241,7 +241,7 @@
 | T108 | **`Lemma41Flow` 总装**（依赖 T107 + T100）。还要处理障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而 T101/T75 的时间网桥只吃 `Φ : ℕ → ℝ`；需给桥补一个 `Φ` 的缓变假设，或在本文件重做网论证 | `Gauss/Lemma41FlowGauss.lean`（新建） | Claude Code | **完成**（`lemma41Flow` 对任意 `Φ ≥ 0` 成立——**不需要时间网**，障碍二不成立；缓变桥仍已交付，见 STATUS） |
 | T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`。**规格见下文「T109 规格」：建议用已证的 `gaussIBP` 跑矩递推绕开 Wick 与走计数，第 0 步先验因子**。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | 待认领 | 未开工 ← **论文的公开缺口，paper-deltas #49** |
 | T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证）。**规格见下文「T110 规格」，第 0 步先手算 m = 2** | `Gauss/FlucIterHigh.lean`（新建） | 待认领 | 未开工 ← **全队最高风险** |
-| T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。在高斯实现里它们是关于 `P d` 的陈述，不需要 Itô | `Gauss/DistEq.lean`（新建） | 待认领 | 未开工 |
+| T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。**规格见下文「T111 规格」：先查是不是同一个 `X` 的确定性标度；真换律就走 `gaussianReal_map_const_mul` + `infinitePi_map_pi`** | `Gauss/DistEq.lean`（新建） | 待认领 | 未开工 |
 
 ---
 
@@ -2086,3 +2086,51 @@ Cowork 手上原有的 T1、T58、T83 已全部交回队列，规格见下文。
 
 **这张单卸掉之后**：`‖X‖ ≺ 1` 无条件，`Gauss/Model.lean` 的 `OpNormBound` 字段变定理，
 论文那条「直接使用、未证」的公开缺口（paper-deltas #49）补上。
+
+---
+
+## T111 规格：两条分布相等 (2.39) 与 (6.1)（Cowork 设计，2026-09-20）
+
+**先厘清它们到底是什么。** 这三条在仓库里都不是「公设」，而是**`≺` 界的转移**：
+
+* `RBM.Transfer` / `RBM.TransferLoop1`（`Flow/Consequences.lean`）—— (2.39)/(2.66)，
+  把 `X.Lval` 上的 `≺` 界转移到 `gloop (T.Hband ...)` 上；
+* `RBM.LoopScaling`（`Loop/ContinuityAssembly.lean`）—— (6.1)，
+  把 `t₁` 处 loop 的 `≺` 界转移到 `t₂` 处、参数换成 `ztTilde E t₁ t₂`。
+
+论文里这三条的理由都是**同一句话**：两边的矩阵在分布上相等（差一个确定性的标度）。
+在一般模型里这要靠分布论证；**在我们的高斯实现里它是可以直接算的**，因为
+`H_u = √u · X` 的律是显式的。
+
+### 建议路线
+
+**情形 A（最常见）：两边是同一个 `X` 的确定性标度。** 那就根本不需要分布论证——
+把两边都写成同一个 `ω` 的函数，标度是确定性的，`≺` 的转移退化成一条不等式的重写。
+**先逐条检查是不是这种情形**，是的话这一单就很轻。
+
+**情形 B：真的换了律。** 那就走坐标标度的映射，两条 Mathlib 引理正好接上：
+
+* `ProbabilityTheory.gaussianReal_map_const_mul`（`Gaussian/Real.lean:329`）——
+  一维高斯乘常数还是高斯，方差乘 `c²`；
+* `MeasureTheory.Measure.infinitePi_map_pi`（`ProductMeasure.lean:482`）——
+  **逐坐标**映射可以提到无穷乘积外面：
+  `(infinitePi μ).map (fun x i => f i (x i)) = infinitePi (fun i => (μ i).map (f i))`。
+
+两条一拼就得到：
+
+    (P d).map (fun ω c => a c * ω c) = infinitePi (fun c => gaussianReal 0 ((a c)² * gvar d c))
+
+也就是**坐标逐个乘常数，`P d` 还是同族的乘积高斯，方差按 `a²` 缩放**。
+(2.39)/(6.1) 需要的标度全部是这个形状，代进去即可。
+`StochDom` 的转移随后由 `Measure.map` 下的积分/测度改写得到（注意 `StochDom` 是对失败事件的测度陈述，
+`map_apply` 加可测性就够，不需要重做 `≺` 的记账）。
+
+### 硬性约束
+
+* **不许改** `RBM.Transfer`、`RBM.TransferLoop1`、`RBM.LoopScaling` 三个 `structure` 的字段签名——
+  `Flow/Consequences.lean` 与 `Loop/ContinuityAssembly.lean` 的下游已经在消费它们。
+  只在新文件 `Gauss/DistEq.lean` 里给出**高斯实现下的项**（`theorem transferLoop1_gauss : TransferLoop1 ...` 这种形状）。
+* 与 T69 的 `Gauss/Model.lean` 对齐：`Hflow`、`Sample`、`Band` 的实例都在那里，不要另起一套。
+* 先做 `TransferLoop1`（只涉及 1-loop，最小），通了再做 `Transfer`，最后 `LoopScaling`。
+
+**卸掉之后**：全文图里三个「仍作为假设」的橙点去掉两个，Theorem 2.4 不再带额外假设。

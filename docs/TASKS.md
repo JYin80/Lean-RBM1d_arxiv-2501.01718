@@ -161,7 +161,7 @@
 | T67 | **§5.1 Step 1**：(2.73)(2.74)、三情形分解、(5.2)(5.3)(5.4)(5.8)、(5.9) 的禁区论证 | `Hierarchy/Step1.lean`（新建） | Claude Code | **完成** |
 | T68 | §2.3 + §7.2 的出口：**Theorem 2.5（QUE）与 Theorem 2.6（普适性）** | `Flow/Universality.lean`（新建） | Claude Code | **完成** |
 | T69 | 固定高斯带矩阵 `X`、流 `H_u := √u·X`、实例化 `Sample`、确定性 Lipschitz | `Gauss/Model.lean`（新建） | Claude Code | **完成**（`Sample` 三字段为定理；`‖X‖ ≺ 1` 与 `Dims` 实例两处缺口见 STATUS） |
-| T70 | **Stein 分部积分**：`E[x·f(x)] = v·E[f′(x)]`，一维 → 乘积 → 矩阵 | `Gauss/Stein.lean`（新建） | **Cowork** | 进行中 ← **⭐ 整条线的地基** |
+| T70 | **Stein 分部积分**：一维 ✅；**剩 ℂ 值 + 乘积/Fubini，用来卸 T71 的 `MatrixStein`** | `Gauss/Stein.lean` | **Cowork** | 进行中（一维实值已落地；矩阵版见下） |
 | T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | Claude Code | **完成**（`MatrixStein` 为单字段假设待 T70 卸；含全局导数界） |
 | T72 | 对矩的 Grönwall：`φ′ ≤ aφ + b` ⟹ 界；**二阶项 = (5.25) 的二次变差** | `Gauss/MomentGronwall.lean`（新建） | Claude Code | 进行中 |
 | T73 | `≺` ↔ 矩 的桥；`N^{-C}` 时间网 + Lipschitz ⟹ `u` 一致的 `≺` | `Gauss/Domination.lean`（新建） | Claude Code | **完成**（Hölder-γ 接口，T69 对接取 γ=1/2；`hmom` 待 T72） |
@@ -1631,4 +1631,50 @@ T72 里每处 dominated 条件、T77 里每处包络都用它。
 
 - T72 的 Grönwall：输入是 `≺`，先用 T77 升成矩，跑完 Grönwall 再用 T73 降回 `≺`。
 - T74 卸 `bdg`：**签名保持 `SumZeroDyn` 里现在那个样子**，只是把它从字段变成定理。
+
+---
+
+## T70 的剩余部分：卸掉 `Gauss/Generator.lean` 的 `MatrixStein`
+
+**已落地**（`RBM1D/Gauss/Stein.lean`，构建绿）：
+
+* `hasDerivAt_gaussianPDFReal_zero` —— `p′ = −(x/v)·p`，整条路线唯一的概率内容
+* `integral_mul_gaussianPDF` —— 密度形式的 Stein（**实值**）
+* `integral_mul_gaussianReal` —— 测度形式 `E[X f(X)] = v E[f′(X)]`（**实值**）
+
+**要交付的目标**（T71 已经把形状写死了，照抄即可）：
+
+```lean
+theorem matrixStein (d : Dims) : RBM.Gauss.MatrixStein d
+```
+
+其唯一字段是：对 `c : Coord d`、`g g' : Ω d → ℂ`，在
+`Continuous g`、`Continuous g'`、`FinDep d g`、`FinDep d g'`、
+`∀ ω, HasDerivAt (fun t => g (Function.update ω c t)) (g' ω) (ω c)`、
+以及 `g`、`g'` 全局有界之下，
+
+    ∫ ω, ω c • g ω ∂(P d) = (gvar d c : ℝ) • ∫ ω, g' ω ∂(P d)
+
+**三步，按这个顺序做**：
+
+1. **ℂ 值的一维 Stein**。现有的是实值。用 `Complex.reCLM` / `Complex.imCLM` 加
+   `ContinuousLinearMap.integral_comp_comm` 拆成实虚两部，各用一次现有定理。
+   `HasDerivAt` 的实虚部由 `Complex.reCLM.hasFDerivAt.comp_hasDerivAt` 给出。
+2. **把「连续 + 全局有界」换成可积性**。现有定理的假设是密度形式的
+   `Integrable (f * gaussianPDFReal 0 var)`，而 `MatrixStein` 给的是「连续 + 有界」。
+   需要两条小引理：
+   * 有界连续 ⟹ `Integrable (f * p)`（用 `integrable_gaussianPDFReal` 加 `bdd_mul`）；
+   * **`Integrable (fun x => x * p x)`** —— 高斯一阶绝对矩，Mathlib 里**大概没有现成的**，
+     要自己证（`x·p(x)` 有原函数 `−v·p(x)`，或者直接用 `Real.integrable_rpow_mul_exp_neg_mul_sq` 一类，
+     **先 grep**）。这是本单唯一有分析难度的地方。
+3. **Fubini**。`g`、`g'` 都 `FinDep`，取 `I ⊇ {c} ∪ (两个 FinDep 见证)`，
+   用 `Model.lean` 的 `P_map_restrict d I` 把 `Measure.infinitePi` 换成 `Measure.pi`，
+   再用 `Measure.pi` 上的 Fubini 把坐标 `c` 与其余分离，内层正是第 1 步。
+   **坑**：要把 `g` 沿 `I` 分解成 `(I → ℝ) → ℂ`，需要一个「在 `I` 外任取默认值」的扩张；
+   `FinDep` 的见证保证了取值无关。这一步的记号先在文件头定死再写。
+
+**不要改 `MatrixStein` 的陈述**——它是 T71 已经在消费的接口。
+
+**为什么它在关键路径上**：`T70(矩阵) → T71 卸掉假设 → T72 → {T74, T75}`。
+T71 的生成元恒等式本身已经证完了，只差这一个字段。
 

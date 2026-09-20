@@ -10,6 +10,7 @@ import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.MomentGronwall
+import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Model
 import RBM1D.Gauss.Moments
 import RBM1D.Gauss.RowIndep

@@ -1408,3 +1408,10 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 **剩下**：定义行 `i` 的坐标有限集 `rowSet`、与「其余相关坐标」`usedCoord ∖ rowSet` 两块，
 用 `iIndepFun.indepFun_finset` 得独立，再把 `ldeRowLHS`/`ldeRowRHS` 用 `eq_glue_of_congr` 写成两块的函数，
 内层套 `integral_sq_add_sq_pow_le`，外层接 T73。
+
+**T81 第十块 ✔**（`Gauss/RowIndep.lean`）：`rowSet d N i`（索引对含 `i` 的坐标，有限集）、`mem_rowSet`、
+`agreeOffRow_of_agree_compl`（在 `rowSet` 之外相等 ⟹ `AgreeOffRow`，接上第三块）、
+**`indepFun_rowSet`**（行块与任何不交坐标块独立，由 `iIndepFun.indepFun_finset`）。
+**T81 余下**：把 `ldeRowLHS`/`ldeRowRHS` 用 `eq_glue_of_congr` 写成 (行块, 其余相关块) 的函数
+（`G^(i)` 只依赖后者，需要用 minor 预解式的形式以避免可逆性边条件），
+内层对冻结的系数套 `integral_sq_add_sq_pow_le`，外层用 T73 的 `stochDom_of_momentDom`。

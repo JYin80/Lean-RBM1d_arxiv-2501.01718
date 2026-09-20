@@ -183,6 +183,7 @@
 | T91 | 把 T81 的 `≺` 落成 `EntryBound` 需要的假设形式：高概率下的 `LDERow`/`LDECol`（含 `V = 0` 退化分支的 a.s. 论证） | `Gauss/LDEHyp.lean`（新建） | **Claude Code #2** | 已完成 |
 | T92 | **对角 LDE**：`‖H_ii‖² ≺ S_ii`，即 `diag_bound_stochDom` 的 `hLdiag`（高斯情形，`H_ii = √u·ω⟨N,i,i,tt⟩` 是一维实高斯，直接用 T81 的矩机器 + `stochDom_of_momentDom`） | `Gauss/LDEDiag.lean`（新建） | **Claude Code #2** | 已完成 |
 | T93 | **正混沌矩界 `E[T^p] ≤ C_p E[Vq^p]`**：T82 留下的唯一数学缺口（`LDEQuad.lean` 文件头「What is not done here」第 1 条）。做法：对 `E[T^p]` 再跑一次行 IBP，用导子 `D_l = r(∂_{a_l} − ε_l i ∂_{b_l})`（`D_l U_k = 0`、`D_l V̄_k = 0`、`D_l Ū_k = 2r²B̄_{kl}`、`D_l V_k = 2r²B_{lk}`），交叉项用 Cauchy–Schwarz 压成 `Vq·T`，再用 `young_pow` 闭合。**不碰 `Gauss/LDEQuad.lean`** | `Gauss/LDEQuadT.lean`（新建） | **Claude Code #2** | 进行中 |
+| T94 | **把 `FlucVanish` 的机器迭代到 `2p` 阶**：卸掉 T88 隔离出来的 `hsmall`，让 (4.12) 真正成为定理 | `Gauss/FlucIter.lean`（新建） | 待认领 | 未开工 ← **[40] 最后一条** |
 
 ---
 
@@ -1817,3 +1818,39 @@ ldeRowLHS H G i j = ‖∑_{k≠i} H_ik G^(i)_kj‖²   ≺   ∑_{k≠i} S_ik �
 与 T83 的 `hIBP`，卸掉 `hFA`，得到 **(4.5)**。
 **不要改 `EntryBound` 的签名。**
 
+---
+
+## T94 — `RBM1D/Gauss/FlucIter.lean` · L · **[40] 的最后一条，(4.12) 的真实缺口**
+
+**背景**：T88 把 (4.12) 的其余部分全部证完了，`hFA` 已在原签名下卸掉、(4.5) 已得证，
+但 (4.12) 本身还差一口气，缺口被隔离成单独一条假设 `hsmall`（见 `docs/STATUS.md`
+「⚠⚠ (4.12) 尚未成为定理」一节）。**这不是记账问题，也不是截断问题。**
+
+T87 现在给的是
+
+    E|Σₖ tₖ Zₖ|^{2p} ≤ (2p−1)·ε·B^{2p−1} + c^p p^{2p} B^{2p}
+
+(4.12) 要的是 `≲ N^{δp} Ψ^{4p}`。第二项没问题（`c = W⁻¹ ≤ Ψ²` 给出 `Ψ^{4p}`）。
+**第一项**即便取到理想参数 `ε ≍ Ψ²`（T85）、`B ≍ Ψ`，也只有 `Ψ^{2p+1}`——
+`p=1` 时是 `Ψ³`，要的是 `Ψ⁴`。差的正是第六批开头记下的那个 `Ψ^{1/2}` 亏空。
+
+**根因**：T86 的小行替换**只迭代到一阶**（`Z_{kᵢ} ↦ Z^{(k_{i₀})}_{kᵢ}` 只换一次）。
+标准证法要迭代到 `2p` 阶，残项才是 `Ψ^{4p}`。
+
+**要做的**：把 `Gauss/FlucVanish.lean` 的消失引理 + `Gauss/MinorReplace.lean` 的替换误差
+组织成一个**可迭代 `2p` 次**的归纳，每次替换换掉一个还只出现一次的指标，
+残项按 T85 的 `ε` 级数累加。
+
+**硬性约束（照抄，不要改）**：
+
+* **不要改 `Green/EntryBound.lean` 的任何签名**，也不要改 T87 `Gauss/FlucCount.lean`
+  与 T88 `Gauss/FlucAvg.lean` 的现有陈述——只把 `hsmall` 从假设变成定理。
+* **不要用 `1_Ω` 记账**：T86 的消失性依赖 `E_k[(1−E_k)X] = 0`，而 `1_Ω·X` 破坏它，
+  且 `1_Ω` 不是 `FinDepOffRow`、无法从 `E_k` 里提出来。STATUS 里已经确认
+  **任何 ≺ / 指示函数记账都补不回这一项**。截断接缝要走 T88 已经打通的
+  `flucBound_env`（`B = 2(η_t⁻¹+1)`、`ε = 4η_t⁻¹` 逐点一致）那条无条件方向。
+* 复用而不是重证：`FinDepOffRow`（T84）、`condRow` 的幂等与 `E_k∘(1−E_k)=0`（T84）、
+  `MinorReplace` 的三元组版与 Ψ-级版（T85）、`HasLoneSlot` 与分层矩界（T87）。
+
+**不要重证 [40] 的定理，只证我们需要的那一部分**（Jun，第六批批注）。
+这是 [40] 自证路线上最后一块；补上之后 (4.12) 与 (4.5) 全部是无假设定理。

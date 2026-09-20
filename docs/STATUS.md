@@ -1371,3 +1371,11 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 不需要识别联合律）。纯分析部分到此齐活。
 **只剩最后一步**：分块 Fubini——把行 `i` 的坐标块与补集分开（`iIndepFun.indepFun_finset`），
 冻结补集后 `G^(i)` 成常系数，套用上面两条得条件矩界，最后经 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+**T81 第八块 ✔**：`integral_indep_pair`（`U ⟂ V` 时 `E[F(U,V)]` = 对两个律的迭代积分）与
+`integral_indep_pair_le`（内层条件积分的一致上界 ⟹ 整体上界）。这就是把 `G^(i)` 冻结成常系数的那一步。
+**T81 剩下的全是对接**：(1) 取 `K` = 行 `i` 的坐标（有限），`U` = 该块、`V` = 其余坐标；
+`iIndepFun.indepFun_finset` 给 `U ⟂ V`。(2) 用 `RowIndep.lean` 把 `G^(i)` 写成 `V` 的函数
+（对 minor 预解式 `((H^(i) − z)⁻¹` 直接成立，无需可逆性边条件）。(3) 内层用第七块的
+`integral_sq_add_sq_pow_le`，得条件矩界 `≤ (2p−1)!!·σ^{2p}`，其中 `σ² = t ∑_k S_ik |G^(i)_kj|²`。
+(4) 外层用 T73 的 `stochDom_of_momentDom` 落成 `≺`。

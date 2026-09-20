@@ -6,6 +6,7 @@ Authors: Jun Yin
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # Gaussian integration by parts (Stein's identity)
@@ -106,5 +107,53 @@ theorem integral_mul_gaussianReal (hv : var ≠ 0) {f f' : ℝ → ℝ}
     show (fun x : ℝ => gaussianPDFReal 0 var x * f' x)
         = fun x : ℝ => f' x * gaussianPDFReal 0 var x from by funext x; ring]
   exact h
+
+/-! ### Integrability, so that the hypotheses become "continuous and bounded"
+
+`MatrixStein` (T71, `RBM1D/Gauss/Generator.lean`) supplies its test functions as *continuous
+and globally bounded*, not as integrable.  These three lemmas make the conversion, and the
+only non-formal ingredient is the first absolute moment of a Gaussian. -/
+
+/-- The first absolute moment of a centred Gaussian is finite. -/
+theorem integrable_id_mul_gaussianPDFReal (hv : 0 < (var : ℝ)) :
+    Integrable fun x : ℝ => x * gaussianPDFReal 0 var x := by
+  have hb : (0 : ℝ) < 1 / (2 * (var : ℝ)) := by positivity
+  have h := (integrable_rpow_mul_exp_neg_mul_sq hb (by norm_num : (-1 : ℝ) < 1)).const_mul
+      ((Real.sqrt (2 * π * (var : ℝ)))⁻¹)
+  refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+  simp only [Real.rpow_one, gaussianPDFReal]
+  rw [show -(1 / (2 * (var : ℝ))) * x ^ 2 = -(x - 0) ^ 2 / (2 * (var : ℝ)) by ring]
+  ring
+
+/-- A bounded measurable function times the Gaussian density is integrable. -/
+theorem integrable_bdd_mul_gaussianPDFReal {f : ℝ → ℝ} {C : ℝ}
+    (hf : AEStronglyMeasurable f MeasureTheory.volume) (hC : ∀ x, ‖f x‖ ≤ C) :
+    Integrable fun x : ℝ => f x * gaussianPDFReal 0 var x :=
+  (integrable_gaussianPDFReal 0 var).bdd_mul hf (Filter.Eventually.of_forall hC)
+
+/-- The third integrability hypothesis of `integral_mul_gaussianPDF`, from boundedness. -/
+theorem integrable_bdd_mul_deriv_gaussianPDFReal (hv : 0 < (var : ℝ)) {f : ℝ → ℝ} {C : ℝ}
+    (hf : AEStronglyMeasurable f MeasureTheory.volume) (hC : ∀ x, ‖f x‖ ≤ C) :
+    Integrable fun x : ℝ => f x * (-(x / (var : ℝ)) * gaussianPDFReal 0 var x) := by
+  have h := ((integrable_id_mul_gaussianPDFReal hv).bdd_mul hf
+    (Filter.Eventually.of_forall hC)).const_mul (-(1 / (var : ℝ)))
+  refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+  field_simp
+  ring
+
+/-- **Stein's identity with the hypotheses `MatrixStein` actually supplies**: `f` is
+differentiable with continuous derivative, and both `f` and `f'` are globally bounded. -/
+theorem integral_mul_gaussianReal_of_bdd (hv : var ≠ 0) {f f' : ℝ → ℝ} {C : ℝ}
+    (hf : ∀ x, HasDerivAt f (f' x) x) (hf'c : Continuous f')
+    (hb : ∀ x, ‖f x‖ ≤ C) (hb' : ∀ x, ‖f' x‖ ≤ C) :
+    ∫ x : ℝ, x * f x ∂(gaussianReal 0 var) = (var : ℝ) * ∫ x : ℝ, f' x ∂(gaussianReal 0 var) := by
+  have hv' : (0 : ℝ) < (var : ℝ) := lt_of_le_of_ne var.coe_nonneg (Ne.symm (NNReal.coe_ne_zero.mpr hv))
+  have hfm : AEStronglyMeasurable f MeasureTheory.volume :=
+    (fun x => (hf x).differentiableAt : Differentiable ℝ f).continuous.aestronglyMeasurable
+  have hf'm : AEStronglyMeasurable f' MeasureTheory.volume := hf'c.aestronglyMeasurable
+  exact integral_mul_gaussianReal hv hf
+    (integrable_bdd_mul_deriv_gaussianPDFReal hv' hfm hb)
+    (integrable_bdd_mul_gaussianPDFReal hf'm hb')
+    (integrable_bdd_mul_gaussianPDFReal hfm hb)
 
 end RBM

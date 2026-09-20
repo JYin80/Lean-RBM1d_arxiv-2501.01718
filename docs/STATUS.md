@@ -1444,3 +1444,11 @@ T87 展开 `E|Σₖ tₖZₖ|^{2p} = Σ_{(k₁,…,k_{2p})} (∏t)·E[∏ᵢ Z_{
 与各自的律（`P_map_eval` + `gvar_offDiag` 得方差 `S_ik/2`），
 然后 `linVar` 算出 `V_a = V_b = (u/2)∑_k S_ik‖c_k‖²`，套第七块得
 `E‖∑_k H_ik c_k‖^{2p} ≤ 2(2p−1)!!(u ∑_k S_ik‖c_k‖²)^p`（系数 `c` 为常数的冻结版本）。
+
+**T81 第十三块 ✔**（关键一步）：**`integral_norm_row_sum_pow_le`**——系数冻结时
+`E‖∑_{k≠i} H_ik c_k‖^{2p} ≤ 2·(2p−1)!!·(u ∑_k S_ik‖c_k‖²)^p`。
+用到 `iIndepFun_rowVar`（沿单射的行参数化做 `precomp`）、坐标的律与方差 `S_ik/2`（`gvar_rowCoord`）、
+`linVar_rowRe`/`linVar_rowIm`（两个方差都等于 `(u/2)∑_k S_ik‖c_k‖²`），最后套第七块。
+**T81 只剩最后一步**：把常系数 `c` 换成 `G^(i)_{·j}`——用 `indepFun_rowSet` + `eq_glue_of_congr`
+把行块与其余块分开（`G^(i)` 只依赖后者，见 `greenMinor_congr_of_offRow`），
+内层套这一条，外层经 T73 的 `stochDom_of_momentDom` 落成 `≺`。

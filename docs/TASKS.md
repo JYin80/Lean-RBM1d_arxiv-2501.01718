@@ -199,7 +199,7 @@
 | T107 | **带时间指标的 Lemma 4.1**（T107 原计划的障碍一，纯接口重做）：用 `Green/EntryBound.lean` 的**确定性内核** `norm_sq_green_le_blk` / `norm_sq_green_diag_sub_le_blk` 加自己的 `StochDom.of_det` 调用，把 (4.2)(4.3) 的指标集扩成 `TimeIcc s t N × …`（时间与谱参数随指标走）。`δ N := (scale E N (t N))⁻¹^{1/6}`（`scale` 对 u 反单调，方向正确）。**不碰 `Green/EntryBound.lean`** | `Gauss/EntryBoundTime.lean`（新建） | **Claude Code #2** | 进行中 |
 | T108 | **`Lemma41Flow` 总装**（依赖 T107 + T100）。还要处理障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而 T101/T75 的时间网桥只吃 `Φ : ℕ → ℝ`；需给桥补一个 `Φ` 的缓变假设，或在本文件重做网论证 | `Gauss/Lemma41FlowGauss.lean`（新建） | Claude Code | **完成**（`lemma41Flow` 对任意 `Φ ≥ 0` 成立——**不需要时间网**，障碍二不成立；缓变桥仍已交付，见 STATUS） |
 | T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`，Wick 配对 + 闭走计数。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | 待认领 | 未开工 ← **论文的公开缺口，paper-deltas #49** |
-| T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证） | `Gauss/FlucIter.lean` | 待认领 | 未开工 ← **全队最高风险，见 STATUS** |
+| T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证）。**规格见下文「T110 规格」，第 0 步先手算 m = 2** | `Gauss/FlucIterHigh.lean`（新建） | 待认领 | 未开工 ← **全队最高风险** |
 | T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。在高斯实现里它们是关于 `P d` 的陈述，不需要 Itô | `Gauss/DistEq.lean`（新建） | 待认领 | 未开工 |
 
 ---
@@ -1956,3 +1956,46 @@ Cowork 手上原有的 T1、T58、T83 已全部交回队列，规格见下文。
 
 **为什么这条卡着主定理**：Theorem 2.21 的六步总装等 (5.19)(5.20)(5.21)。
 桥一搭，2.21 就从「阻塞」变成「排队」。
+
+---
+
+## T110 规格：`FlucGain` 的 `m ≥ 2`（Cowork 设计，2026-09-20）
+
+**这是全队风险最高的一张，所以先说怎么控风险：不要一上来就建一般归纳。**
+
+### 第 0 步（先做这一步，做完先在 STATUS 报一句，再决定要不要往下建）
+
+**在 `m = 2` 上手算一遍，确认增益是乘性的。** 也就是要确认
+
+    ‖Q_{κ₂} Q_{κ₁} Z_k‖ ≲ Ψ³     （而不是 2Ψ²）
+
+`m = 1` 已经证了（`norm_qRow_flucDiag_le`：`Q_κ` 湮灭 `Z^{(κ)}_k`，而 `Z_k` 与它相差 T85 的 `ε ≍ Ψ²`）。
+`m = 2` 的关键在于：把 `Z_k` 换成 `Z^{(κ₁)}_k` 之后，**剩下的那个 `Q_{κ₂}` 要作用在替换误差上再赚一个 `Ψ`**。
+**如果这里只是加性的（每次替换各赚 `Ψ²`、互不相乘），整条路线就不成立，立刻停下报告。**
+这正是 (4.12) 那个缺口的本体，不要绕过它去建框架。
+
+### 第 1–4 步（第 0 步通过之后）
+
+1. **`Finset` 索引的迭代小行**：`greenMinorSet d N u z (S : Finset (d.Idx N))`，
+   即在 `{a // a ∉ S}` 上的预解式。**用 `Green/Minor.lean`（T40）的 (4.9) 迭代来建**——
+   那里的 `minorGreen`、`green_off_diag_eq`、`green_diag_eq` 对**任意** Fintype 索引成立，
+   与模型无关，正合适。**不要**试图把 T85 的 `minorReplace_*_stochDom` 原样套 `m` 次：
+   它们的索引类型钉死在 `BIdx L W N` 上，小行的索引类型不是它。
+2. **`FinDepOffRows`**：把 T84 的 `FinDepOffRow`（单行）推广到一个 `Finset` 的行。
+   然后证：`S` 里任何一个 `Q_κ` 湮灭 `FinDepOffRows S` 的函数。这是湮灭那一半的全部内容。
+3. **望远镜式的替换误差**：`|G_ll − G^{(S)}_ll|` 按 `S` 逐行展开，每一步用 (4.9)。
+   `≺` 记账只在最后做一次，不要每行做一次。
+4. **对 `m` 的归纳**，结论落成 `FlucGain d N u z m B ρ` 的现有定义
+   （`ρ ≍ Ψ`，`B` 用 `flucBound_env` 那条无条件的）。
+
+### 硬性约束
+
+* **不许改** `Gauss/FlucCount.lean`、`Gauss/FlucAvg.lean`、`Green/EntryBound.lean` 的任何签名，
+  也不许改 `FlucGain` 的定义本身——它是 T94 已经在消费的接口。只在新文件里加东西。
+* **不许用 `1_Ω` 记账**：湮灭性依赖 `E_κ[(1−E_κ)X] = 0`，乘上指示函数就破坏它，
+  且 `1_Ω` 不是 `FinDepOffRow` 的、提不出 `E_κ`。STATUS 已确认任何 `≺`/指示函数记账都补不回来。
+* 复用而不是重证：`FinDepOffRow` 与 `condRow`（T84）、(4.9)（T40）、`FlucBound`/`flucBound_env`（T87/T88）、
+  `applyOps`/`numQ`/`qRow`（T94）。
+
+**为什么它值这个价**：补上之后 (4.12) 与 (4.5) 全部是无假设定理，[40] 这条外部输入彻底不需要，
+论文里两条「引用外部文献」就都清干净了。

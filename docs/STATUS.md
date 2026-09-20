@@ -1364,3 +1364,10 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 (5.22) `eeEdge_eq_sum_SB`（`W` 因子由 `S = S^(B)/W` 与 `E_a = W⁻¹P_a` 自然落出，不是手插的）；(5.25) 的 Schwarz 步 `quadVarPairs_le_of_split`；
 `LoopArg ↔ LoopIdx` 桥 `toIdx` 与 `emart_Uker`/`quadVarPairs_Uker`（论文「`U_{u,t,σ}` 是确定性线性算子」那一步，因 `RBM.Uker` 字面就是这样的线性组合）。
 **剩余假设**：`MatrixStein`（T70）、`BddC2`（T72 只对预解式观测量卸掉，loop 观测量待 T76 的 `List.foldr` Leibniz 缺口）、`hdrift : 𝓛F = 0`、`hsplit`（链式法则 `E(α)=Σ_k E(α,k)`）、`hdiff`——后三条同源于同一个缺失的 Leibniz 规则。paper-deltas #55。
+
+**T81 第七块 ✔**（`Gauss/LinearForm.lean`）：`linVar`（线性型的方差）、`map_lin`、`integrable_pow_lin`、
+**`integral_pow_lin`**（`E[(∑ a_i X_i)^{2p}] = (2p−1)!!·(∑ a_i² v_i)^p`，由线性型的律 + `integral_pow_gaussianReal`）、
+**`integral_sq_add_sq_pow_le`**（`E[(Y²+Y'²)^p] ≤ 2^p (2p−1)!!(V_a^p + V_b^p)`，即模的矩界，
+不需要识别联合律）。纯分析部分到此齐活。
+**只剩最后一步**：分块 Fubini——把行 `i` 的坐标块与补集分开（`iIndepFun.indepFun_finset`），
+冻结补集后 `G^(i)` 成常系数，套用上面两条得条件矩界，最后经 T73 的 `stochDom_of_momentDom` 落成 `≺`。

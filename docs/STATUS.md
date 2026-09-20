@@ -1248,3 +1248,13 @@ T70 的入口是 `P_map_eval`（单坐标律）与 `P_map_restrict`（任意有�
 **给 T75 的接口**：Step 2 的 bootstrap 里 `φ(u) := E[(J*_{u,D})^q]` 一旦是确定性连续函数，
 停时 (5.43) 直接换成这条，不需要 optional stopping；只需另外提供 `φ` 在时间区间上的连续性。
 若 T75 需要「自改进依赖 `[a,u]` 上的 sup」那种变体，在本文件加一条即可，路线相同。
+
+### `RBM1D/Gauss/Envelope.lean` — 反向桥 `≺ ⟹ 矩`、确定性包络（T77，Claude Code 并行 agent）
+
+**`momentDom_of_stochDom`** 产出的就是 T73 的 `RBM.Gauss.MomentDom`（量词序逐字一致，两座桥按构造可复合）；
+`momentDom_of_stochDom_of_nonneg`（`bdg`/`bdgQ` 实际用的形状）、`momentDom_of_normStochDom`。
+常数 `C = P.real univ + 1`，阈值 `τ = ε/2`，例外指数 `D' = 2p(Kenv+B)+1`。
+**确定性包络** `norm_gloop_le_det : ‖gloop‖ ≤ η_t^{-n}·W^{-(n-1)}`——**无测度、无 ω、无例外集**，对每个 Hermitian 矩阵成立；
+覆盖 `loopMax_le_det`、`loopXi_le_det`、`norm_gloop_sub_le_det`（L−K，K 的逐点界作假设）；多项式增长形式 `norm_gloop_le_rpow` 是交给 T72 的对接点。
+`J*` 未重证：已有的 `RBM.jStar_le` 已把它归约到分子的逐点界，重证会让 `Gauss/` 依赖 `Hierarchy/Step2.lean`（方向不对）。
+假设：`Measurable (Y N u)`（`StochDom` 用外测度不需要，但分割积分需要）、`|Y|^{2p}` 可积、`Φ > 0` 且 `N^{-B} ≤ Φ`、包络 `|Y| ≤ Env N ≤ N^Kenv`（每个 ω）。paper-deltas #51。

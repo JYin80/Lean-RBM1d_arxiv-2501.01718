@@ -1447,6 +1447,20 @@
   $\mathrm{gvar}_\alpha\partial_\alpha$ and the $\sqrt u$ cancels.
 \end{proof}
 
+\begin{lemma}[Reverse bridge $\prec\Rightarrow$ moments, and the deterministic envelope]\label{lem:envelope}
+  \lean{RBM.Gauss.momentDom_of_stochDom, RBM.Gauss.momentDom_of_stochDom_of_nonneg, RBM.Gauss.momentDom_of_normStochDom, RBM.Gauss.abs_im_zt, RBM.Gauss.norm_green_zt_le, RBM.Gauss.norm_gloop_le_det, RBM.Gauss.loopMax_le_det, RBM.Gauss.loopXi_le_det, RBM.Gauss.norm_gloop_sub_le_det, RBM.Gauss.det_envelope_le_rpow, RBM.Gauss.norm_gloop_le_rpow}
+  \leanok\uses{lem:moment-dom, def:2.1-i}
+  With a deterministic envelope of polynomial growth and $N^{-B}\le\Phi$, $Y\prec\Phi$ gives
+  $\mathbb E|Y|^{2p}\le C_p N^{\varepsilon p}\Phi^{2p}$; together with the forward bridge the
+  $\prec$-in/$\prec$-out interfaces keep their signatures. The envelope is free:
+  $\operatorname{Im}z_t=\eta_t>0$ gives $\|G_t\|\le\eta_t^{-1}$ everywhere, so every $n$-loop obeys
+  $\|L\|\le\eta_t^{-n}W^{-n+1}$ pointwise.
+\end{lemma}
+\begin{proof}\leanok
+  Split at $N^\tau\Phi$: the main part is $N^{2p\tau}\Phi^{2p}$, the exceptional part has probability
+  $N^{-D'}$ and is controlled by the envelope with $D'=2p(K+B)+1$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

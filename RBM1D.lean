@@ -6,6 +6,7 @@ import RBM1D.Delocalization
 import RBM1D.Green.EntryBound
 import RBM1D.Green.Minor
 import RBM1D.Gauss.Domination
+import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.Model
 import RBM1D.Hierarchy.Decay

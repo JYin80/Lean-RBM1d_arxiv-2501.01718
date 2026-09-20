@@ -8,6 +8,7 @@ import RBM1D.Green.Minor
 import RBM1D.Green.EntryBound
 import RBM1D.Gauss.LinearForm
 import RBM1D.Gauss.Generator
+import RBM1D.Gauss.Domination
 
 /-!
 # The minor resolvent does not read row `i`
@@ -911,5 +912,77 @@ theorem integral_norm_rowSum_minorCol_pow_le' (hu : 0 ≤ u) (z : ℂ)
       ≤ 2 * dfac p :=
   integral_norm_rowSum_norm_pow_le' hu (minorCol d N u z i j) (measurable_minorCol u z i j)
     (fun ω ω' h => minorCol_congr u z j h)
+
+/-! ### The row LDE as stochastic domination -/
+
+/-- The index set of the row LDE: a row `i` and a column `j ≠ i`. -/
+abbrev LdeIdx (d : Dims) (N : ℕ) : Type := Σ i : d.Idx N, {a : d.Idx N // a ≠ i}
+
+theorem card_LdeIdx_le (N : ℕ) :
+    (Fintype.card (LdeIdx d N) : ℝ) ≤ (d.L N * d.W N : ℕ) * (d.L N * d.W N : ℕ) := by
+  have hcard : Fintype.card (d.Idx N) = d.L N * d.W N := by
+    simp [Dims.Idx, ZMod.card]
+  have : Fintype.card (LdeIdx d N) ≤ Fintype.card (d.Idx N) * Fintype.card (d.Idx N) := by
+    calc Fintype.card (LdeIdx d N) = ∑ i : d.Idx N, Fintype.card {a : d.Idx N // a ≠ i} :=
+          Fintype.card_sigma
+      _ ≤ ∑ _i : d.Idx N, Fintype.card (d.Idx N) :=
+          Finset.sum_le_sum fun i _ => Fintype.card_subtype_le _
+      _ = Fintype.card (d.Idx N) * Fintype.card (d.Idx N) := by
+          rw [Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  rw [hcard] at this
+  exact_mod_cast this
+
+/-- **The linear LDE of T81 as stochastic domination**: for the Gaussian model,
+`|∑_{k ≠ i} H_{ik} G^{(i)}_{kj}| ≺ (∑_k S_{ik} |G^{(i)}_{kj}|²)^{1/2}`, uniformly in `(i, j)`.
+
+The moment input is `integral_norm_rowSum_minorCol_pow_le'` (constant in `p`, so `Φ = 1`), and
+the union bound over the `≤ (LW)² ≤ N²` pairs is `stochDom_of_momentDom`. -/
+theorem stochDom_rowSum_minorCol (hu : 0 ≤ u) (z : ℂ) :
+    StochDom (P d)
+      (fun N (q : LdeIdx d N) ω =>
+        ‖rowSum d N u q.1 (rowCoeffNorm d N u q.1 (minorCol d N u z q.1 q.2)) ω‖)
+      (fun _ _ _ => 1) := by
+  refine stochDom_of_momentDom (Ccard := 2) ?_ (fun N q => zero_lt_one) ?_ ?_
+  · filter_upwards [d.dim, Filter.eventually_ge_atTop 1] with N hN hN1
+    refine (card_LdeIdx_le N).trans ?_
+    have hLW : ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) := by
+      have := hN.1
+      have hcomm : d.W N * d.L N = d.L N * d.W N := Nat.mul_comm _ _
+      rw [hcomm] at this
+      exact_mod_cast this
+    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+    have h0 : (0 : ℝ) ≤ ((d.L N * d.W N : ℕ) : ℝ) := by positivity
+    calc ((d.L N * d.W N : ℕ) : ℝ) * ((d.L N * d.W N : ℕ) : ℝ) ≤ (N : ℝ) * (N : ℝ) := by
+          exact mul_le_mul hLW hLW h0 (le_of_lt hNpos)
+      _ = (N : ℝ) ^ (2 : ℝ) := by
+          rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+          ring
+  · intro p N q
+    have := integrable_norm_rowSum_norm_pow (d := d) (N := N) (u := u) (i := q.1) (p := p) hu
+      (minorCol d N u z q.1 q.2) (measurable_minorCol u z q.1 q.2)
+      (fun ω ω' h => minorCol_congr u z q.2 h)
+    refine this.congr (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [abs_norm]
+  · intro ε hε p
+    have hd0 : (0 : ℝ) ≤ dfac p := by unfold dfac; positivity
+    refine ⟨2 * dfac p + 1, by linarith, ?_⟩
+    filter_upwards [Filter.eventually_ge_atTop 1] with N hN1 q
+    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+    have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+    have hbound := integral_norm_rowSum_minorCol_pow_le' (d := d) (N := N) (u := u) (i := q.1)
+      (p := p) hu z q.2
+    have habs : ∫ ω, |‖rowSum d N u q.1 (rowCoeffNorm d N u q.1 (minorCol d N u z q.1 q.2)) ω‖|
+        ^ (2 * p) ∂(P d)
+        = ∫ ω, ‖rowSum d N u q.1 (rowCoeffNorm d N u q.1 (minorCol d N u z q.1 q.2)) ω‖
+            ^ (2 * p) ∂(P d) := by
+      refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+      simp only [abs_norm]
+    rw [habs]
+    have hpow : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) := Real.one_le_rpow hN1' (by positivity)
+    have hd : (0 : ℝ) ≤ dfac p := by unfold dfac; positivity
+    have : (2 * dfac p) ≤ (2 * dfac p + 1) * ((N : ℝ) ^ (ε * p) * 1 ^ (2 * p)) := by
+      rw [one_pow, mul_one]
+      nlinarith [hpow, hd]
+    linarith [hbound, this]
 
 end RBM.Gauss

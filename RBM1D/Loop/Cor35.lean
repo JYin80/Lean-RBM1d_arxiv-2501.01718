@@ -277,21 +277,6 @@ section Entries
 variable {L : ℕ} [NeZero L]
 
 omit [NeZero L] in
-theorem half_le_ellHat (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) : 1 / 2 ≤ ellHat L ξ := by
-  have h0 : 0 < ‖1 - ξ‖ := by
-    have := norm_sub_norm_le (1 : ℂ) ξ; rw [norm_one] at this; linarith
-  have h4 : ‖1 - ξ‖ ≤ 4 := by
-    have := norm_sub_le (1 : ℂ) ξ; rw [norm_one] at this; linarith
-  unfold ellHat
-  refine le_min ?_ ?_
-  · have hs : Real.sqrt ‖1 - ξ‖ ≤ 2 :=
-      (Real.sqrt_le_sqrt h4).trans_eq
-        (by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)])
-    exact one_div_le_one_div_of_le (Real.sqrt_pos.2 h0) hs
-  · have : (3 : ℝ) ≤ L := by exact_mod_cast hL
-    linarith
-
-omit [NeZero L] in
 theorem ellHat_le_of_gap {ξ : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδξ : δ ≤ ‖1 - ξ‖) :
     ellHat L ξ ≤ 1 / Real.sqrt δ :=
   (min_le_left _ _).trans (one_div_le_one_div_of_le (Real.sqrt_pos.2 hδ) (Real.sqrt_le_sqrt hδξ))
@@ -302,7 +287,7 @@ theorem norm_Theta_apply_le_of_gap (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1
     (hδξ : δ ≤ ‖1 - ξ‖) (x y : ZMod L) :
     ‖Theta L ξ x y‖ ≤ 2 * cTwo52 / δ * exp (-(cZero * Real.sqrt δ * zdist L (x - y))) := by
   have h := norm_Theta_apply_le_complex hL hξ x y
-  have hℓ := half_le_ellHat hL hξ
+  have hℓ := half_le_ellHat L hL hξ
   have hℓ' := ellHat_le_of_gap (L := L) hδ hδξ
   have hℓ0 : 0 < ellHat L ξ := by linarith
   have hsq : 0 < Real.sqrt δ := Real.sqrt_pos.2 hδ

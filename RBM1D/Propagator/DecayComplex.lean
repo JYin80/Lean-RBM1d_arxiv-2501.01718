@@ -320,4 +320,24 @@ theorem norm_Theta_apply_le_exists :
   ⟨cTwo52, cTwo52_pos, cZero, cZero_pos,
     fun _ _ hL _ hξ x y => norm_Theta_apply_le_complex hL hξ x y⟩
 
+/-- `ℓ̂(ξ) ≥ 1/2` for every `‖ξ‖ < 1`: the decay length is never shorter than one block.
+Shared by the `ℓ¹` bounds of `Propagator/Edges.lean` and by Corollary 3.5 (`Loop/Cor35.lean`). -/
+theorem half_le_ellHat (L : ℕ) (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) : 1 / 2 ≤ ellHat L ξ := by
+  have h0 : 0 < ‖1 - ξ‖ := by
+    have := norm_sub_norm_le (1 : ℂ) ξ
+    rw [norm_one] at this
+    linarith
+  have h4 : ‖1 - ξ‖ ≤ 4 := by
+    have := norm_sub_le (1 : ℂ) ξ
+    rw [norm_one] at this
+    linarith
+  unfold ellHat
+  refine le_min ?_ ?_
+  · have hs : Real.sqrt ‖1 - ξ‖ ≤ 2 :=
+      (Real.sqrt_le_sqrt h4).trans_eq
+        (by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)])
+    exact one_div_le_one_div_of_le (Real.sqrt_pos.2 h0) hs
+  · have : (3 : ℝ) ≤ L := by exact_mod_cast hL
+    linarith
+
 end RBM

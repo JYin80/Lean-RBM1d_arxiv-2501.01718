@@ -1517,6 +1517,19 @@
   it (\texttt{emart\_Uker}); then moments in, Gr\"onwall, $\prec$ out.
 \end{proof}
 
+\begin{lemma}[Conditional expectation as row integration, and the minor replacement error]\label{lem:condrow}
+  \lean{RBM.Gauss.IsRowCoord, RBM.Gauss.rowSplit, RBM.Gauss.rowSplit_rowSplit, RBM.Gauss.measurePreserving_rowSplit, RBM.Gauss.condRow, RBM.Gauss.condRow_apply, RBM.Gauss.RowIntegrable, RBM.Gauss.condRow_condRow, RBM.Gauss.condRow_sub_condRow, RBM.Gauss.integral_condRow, RBM.Gauss.condRow_mul_of_finDepOffRow, RBM.Gauss.FinDepOffRow, RBM.Gauss.FinDepOffRow.rowSplit_eq, RBM.Gauss.FinDepOffRow.finDep, RBM.Gauss.condRow_of_finDepOffRow, RBM.Gauss.finDepOffRow_of_minor, RBM.Gauss.greenMinorMat, RBM.Gauss.finDepOffRow_greenMinorMat, RBM.Gauss.greenMinorMat_eq_minorGreen, RBM.Gauss.sub_smul_one_apply, RBM.Gauss.greenMinor_diag_sub, RBM.Gauss.norm_greenMinor_sub_le_sq, RBM.Gauss.stochDom_offdiag_of_localLaw, RBM.Gauss.minorReplace_indicator_stochDom, RBM.Gauss.minorReplace_stochDom, RBM.Gauss.minorReplace_diag_stochDom, RBM.Gauss.minorGreen_localLaw_indicator_stochDom, RBM.Gauss.minorGreen_localLaw_stochDom, RBM.Gauss.minorGreen_localLaw_diag_stochDom}
+  \leanok\uses{def:gauss-model, lem:4.2, lem:4.1}
+  In the product model $\mathbb E_k[\cdot]$ is literally integration over the row-$k$ coordinates
+  (exact Fubini, not \texttt{condExp}), so $\mathbb E_k\circ\mathbb E_k=\mathbb E_k$ and
+  $\mathbb E_k\circ(1-\mathbb E_k)=0$ hold pointwise; $G^{(k)}$ is \texttt{FinDepOffRow}, reading no
+  row-$k$ coordinate. With (4.9) and the local law, $|G_{ll}-G^{(k)}_{ll}|\prec\Psi^2$ for $l\ne k$.
+\end{lemma}
+\begin{proof}\leanok
+  $(\omega,\omega')\mapsto\mathrm{rowSplit}$ pushes $P\otimes P$ to $P$; the replacement error is the
+  exact identity $G^{(k)}_{ll}-G_{ll}=-G_{lk}G_{kl}/G_{kk}$ with $|G_{kk}|\ge1/2$ read off (4.1).
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

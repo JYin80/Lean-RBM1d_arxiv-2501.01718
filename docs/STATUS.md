@@ -1379,3 +1379,25 @@ Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 �
 （对 minor 预解式 `((H^(i) − z)⁻¹` 直接成立，无需可逆性边条件）。(3) 内层用第七块的
 `integral_sq_add_sq_pow_le`，得条件矩界 `≤ (2p−1)!!·σ^{2p}`，其中 `σ² = t ∑_k S_ik |G^(i)_kj|²`。
 (4) 外层用 T73 的 `stochDom_of_momentDom` 落成 `≺`。
+
+### `RBM1D/Gauss/CondRow.lean` — `E_k` 即对行的积分（T84，Claude Code 并行 agent）
+
+全文建在一个小工具上：`rowSplit k ω ω'` 取 `ω'` 的第 k 行坐标、其余取 `ω`；`condRow k X ω := ∫ ω', X (rowSplit k ω ω')`。
+因为 `rowSplit k (rowSplit k ω ω') ω'' = rowSplit k ω ω''`，所有代数恒等式**逐点成立，没有 a.e.**：
+幂等 `condRow_condRow`、**`condRow_sub_condRow`（`E_k∘(1−E_k) = 0`，消失引理的全部依据）**、`integral_condRow`（`E[E_k X] = E[X]`）、`condRow_mul_of_finDepOffRow`（提出不读第 k 行的因子）。
+唯一真正的测度论输入是 `measurePreserving_rowSplit`（`(ω,ω') ↦ rowSplit` 把 `P ⊗ P` 推成 `P`，按盒子用 `Measure.eq_infinitePi` 证）。
+
+**给 T81/T82/T86 的公共引理**：`FinDepOffRow d N k g`（见证集不含第 k 行坐标），主实例 `finDepOffRow_of_minor` —— 任何 `F (H_u 的删行删列子矩阵)` 都满足；
+消费形式 `FinDepOffRow.rowSplit_eq`、`condRow_of_finDepOffRow : E_k[g] = g`、`FinDepOffRow.comp`、`FinDepOffRow.finDep`（可直接喂给 `MatrixStein`）。
+**注意**：`greenMinorMat` 是 ω 的**全函数**（`Matrix.inv` 是全函数），故 `finDepOffRow_greenMinorMat` **不带可逆性边条件**——与 `Gauss/RowIndep.lean` 的 `greenMinor_congr_of_offRow`（需 `hdet`/`hGii` 等四个条件）不同；`greenMinorMat_eq_minorGreen` 在论文假设成立处把两者接回。已复用 Cowork `RowIndep.lean` 的 `Hflow_submatrix_congr`/`AgreeOffRow`，未改动该文件。
+可积性：幂等与提出因子**不需要**任何可积性；`condRow_add/sub` 需逐 ω 的 `RowIntegrable`；`integral_condRow` 只需 `Integrable X`。
+**未做**：`Measurable (condRow k X)` 未证——T84–T88 目前不需要，但若 T87 要在外层积分里迭代 `E_{k₁}E_{k₂}` 就会需要（`StronglyMeasurable.integral_prod_right`，是个小后续）。paper-deltas #56。
+
+### `RBM1D/Gauss/MinorReplace.lean` — 替换误差 `|G_ll − G^(k)_ll| ≺ Ψ²`（T85，Claude Code 并行 agent）
+
+确实如工单所说是便宜活：(4.9) 是**恒等式**且仓库里已有两份（`Green/Minor.lean` 的 `inv_minorMat`、`Green/EntryBound.lean` 的 `greenMinor`/`greenMinor_sub`，已与 p.49 对过），
+确定性估计也已有（`GoodEvent.norm_greenMinor_sub_le_le`：事件 (4.1) 上 `‖G^(k)_{jl} − G_{jl}‖ ≤ 2‖G_{jk}‖‖G_{kl}‖`）。本单只做随机装配。
+**`minorReplace_diag_stochDom`** 即工单陈述；三元组版 `minorReplace_stochDom` 与 Ψ-级版 `minorGreen_localLaw_*` 顺带白得。
+**`|G_kk|` 的下界不是额外假设**——由事件 (4.1) 经 `GoodEvent.half_le_norm_diag` 读出（`≥ 1/2`），与 `EntryBound.lean` 里 Lemma 4.1 的打包方式一致，故 T86 可以复用它**已经需要**的那个 `hΩ`，不必再背一条冗余假设。每条结论都给了 `1_Ω` 指示函数版与 `hΩ` 版两种。
+唯一的假设是 `hoff : |G_{ij}| ≺ Ψ`（`i ≠ j`），即 Step 2 的 (2.75)；`stochDom_offdiag_of_localLaw` 负责形状转换，`Ψ` 留成自由的 `ℕ → ℝ` 供 T86 实例化。
+**未做**：Ψ-级结论右端是 `Ψ² + Ψ` 而非 `Ψ`（收拢需 `∀ᶠ N, Ψ N ≤ 1`，agent 选择不硬塞一条 `hdet` 看不见的假设；`StochDom.mono_right_eventually` 一行可收）。paper-deltas：无新增。

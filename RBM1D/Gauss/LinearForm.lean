@@ -239,4 +239,43 @@ theorem integral_indep_pair_le {U : Ω → α} {V : Ω → β} (hU : Measurable 
 
 end Block
 
+section Glue
+
+variable {ι : Type*} [DecidableEq ι]
+
+/-- Glue two coordinate blocks into a full sample point, filling the rest with `0`. -/
+def glue (S T : Finset ι) (p : (S → ℝ) × (T → ℝ)) : ι → ℝ := fun c =>
+  if h : c ∈ S then p.1 ⟨c, h⟩ else if h' : c ∈ T then p.2 ⟨c, h'⟩ else 0
+
+theorem measurable_glue (S T : Finset ι) : Measurable (glue S T) := by
+  refine Measurable.of_eval fun c => ?_
+  by_cases h : c ∈ S
+  · simpa [glue, h] using (measurable_fst.eval : Measurable fun p : (S → ℝ) × (T → ℝ) => p.1 _)
+  · by_cases h' : c ∈ T
+    · simpa [glue, h, h'] using
+        (measurable_snd.eval : Measurable fun p : (S → ℝ) × (T → ℝ) => p.2 _)
+    · simp only [glue, h, h', ↓reduceDIte]
+      exact measurable_const
+
+/-- Gluing the two blocks of `ω` back together reproduces `ω` on `S ∪ T`. -/
+theorem glue_agree (S T : Finset ι) (ω : ι → ℝ) {c : ι} (hc : c ∈ S ∪ T) :
+    glue S T ((fun c : S => ω c), (fun c : T => ω c)) c = ω c := by
+  simp only [glue]
+  by_cases h : c ∈ S
+  · simp [h]
+  · have h' : c ∈ T := by
+      rcases Finset.mem_union.1 hc with h'' | h''
+      · exact absurd h'' h
+      · exact h''
+    simp [h, h']
+
+/-- **A quantity that reads only `S ∪ T` is a function of the two blocks.**  This is the shape
+required by `integral_indep_pair`. -/
+theorem eq_glue_of_congr {V : Type*} (S T : Finset ι) (g : (ι → ℝ) → V)
+    (hg : ∀ ω ω' : ι → ℝ, (∀ c ∈ S ∪ T, ω c = ω' c) → g ω = g ω') (ω : ι → ℝ) :
+    g ω = (fun p => g (glue S T p)) ((fun c : S => ω c), (fun c : T => ω c)) :=
+  hg _ _ fun _ hc => (glue_agree S T ω hc).symm
+
+end Glue
+
 end RBM.Gauss

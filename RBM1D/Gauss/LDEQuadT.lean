@@ -718,6 +718,210 @@ theorem sq_Arow_le (l : κ) (ω : Ω d) :
   rw [hsplit]
   nlinarith [sq_nonneg (P - Q)]
 
+/-! ### The cross term, bounded -/
+
+variable (C)
+
+/-- The cross term of `∑_l w_l D_l Z_{q,l}`. -/
+noncomputable def crossT (q : ℕ) (ω : Ω d) : ℂ :=
+  ∑ l, (C.w l : ℂ) * (C.Wt l ω * ((q : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ (q - 1) *
+    (2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+      (C.U ω k * (starRingEnd ℂ) (C.B ω k l) + C.B ω l k * (starRingEnd ℂ) (C.V ω k)))))
+
+variable {C}
+
+theorem Vq_nonneg (ω : Ω d) : 0 ≤ C.Vq ω :=
+  Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
+    mul_nonneg (mul_nonneg (C.sg_nonneg k) (by positivity)) (C.sg_nonneg l)
+
+/-- `∑_l w_l D_l Z_{q,l}` splits into the diagonal `2V_qT^q` and the cross term. -/
+theorem sum_w_wirtVal_ZA_ZB (q : ℕ) (ω : Ω d) :
+    ∑ l, (C.w l : ℂ) * C.wirtVal l (C.ZA q l ω) (C.ZB q l ω)
+      = ((2 * C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ) + C.crossT q ω := by
+  rw [← C.sum_w_diag q ω, crossT, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun l _ => by rw [wirtVal_ZA_ZB]; ring
+
+/-- **The cross term is `≤ 4q V_q T^q`.**  Two Cauchy–Schwarz steps: first in `k`
+(`sq_Arow_le`), then the sum over `l` against `σ_l` is `2V_q` (`sum_sg_mul_normSq`). -/
+theorem norm_crossT_le (q : ℕ) (ω : Ω d) :
+    ‖C.crossT q ω‖ ≤ 4 * (q : ℝ) * C.Vq ω * C.Tq ω ^ q := by
+  have hTn := C.Tq_nonneg ω
+  have hTp : (0 : ℝ) ≤ C.Tq ω ^ (q - 1) := by positivity
+  have hterm : ∀ l : κ, ‖(C.w l : ℂ) * (C.Wt l ω * ((q : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ (q - 1) *
+        (2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+          (C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+            + C.B ω l k * (starRingEnd ℂ) (C.V ω k)))))‖
+      ≤ C.sg l * ((q : ℝ) * C.Tq ω ^ (q - 1) * C.Arow l ω ^ 2) := by
+    intro l
+    have hw : ‖(C.w l : ℂ)‖ = C.w l := by
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (C.w_nonneg l)]
+    have hqn : ‖(q : ℂ)‖ = (q : ℝ) := by simp
+    have hT : ‖((C.Tq ω : ℝ) : ℂ) ^ (q - 1)‖ = C.Tq ω ^ (q - 1) := by
+      rw [norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hTn]
+    have hr : ‖(2 : ℂ) * (C.r : ℂ) ^ 2‖ = 2 * C.r ^ 2 := by
+      rw [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs, sq_abs]
+      norm_num
+    have hA := C.Arow_nonneg l ω
+    have hr2 : (0 : ℝ) ≤ 2 * C.r ^ 2 := by positivity
+    calc ‖(C.w l : ℂ) * (C.Wt l ω * ((q : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ (q - 1) *
+          (2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+            (C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+              + C.B ω l k * (starRingEnd ℂ) (C.V ω k)))))‖
+        = C.w l * (‖C.Wt l ω‖ * ((q : ℝ) * C.Tq ω ^ (q - 1) *
+            (2 * C.r ^ 2 * ‖∑ k, ((C.sg k : ℝ) : ℂ) *
+              (C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+                + C.B ω l k * (starRingEnd ℂ) (C.V ω k))‖))) := by
+          simp only [norm_mul, hw, hqn, hT, hr]
+      _ ≤ C.w l * (C.Arow l ω * ((q : ℝ) * C.Tq ω ^ (q - 1) *
+            (2 * C.r ^ 2 * C.Arow l ω))) := by
+          gcongr
+          · exact C.w_nonneg l
+          · exact norm_Wt_le l ω
+          · exact norm_sum_UV_le l ω
+      _ = C.sg l * ((q : ℝ) * C.Tq ω ^ (q - 1) * C.Arow l ω ^ 2) := by
+          show C.w l * _ = 2 * C.r ^ 2 * C.w l * _
+          ring
+  have hstep1 : ‖C.crossT q ω‖
+      ≤ ∑ l, C.sg l * ((q : ℝ) * C.Tq ω ^ (q - 1) * C.Arow l ω ^ 2) :=
+    (norm_sum_le _ _).trans (Finset.sum_le_sum fun l _ => hterm l)
+  have hstep2 : ∑ l, C.sg l * ((q : ℝ) * C.Tq ω ^ (q - 1) * C.Arow l ω ^ 2)
+      = (q : ℝ) * C.Tq ω ^ (q - 1) * ∑ l, C.sg l * C.Arow l ω ^ 2 := by
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun l _ => by ring
+  have hstep3 : ∑ l, C.sg l * C.Arow l ω ^ 2 ≤ 2 * C.Tq ω * (2 * C.Vq ω) := by
+    have hbound : ∀ l : κ, C.sg l * C.Arow l ω ^ 2
+        ≤ 2 * C.Tq ω * (C.sg l * ∑ k, C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2)) := by
+      intro l
+      have h := C.sq_Arow_le l ω
+      have hmerge : ((∑ k, C.sg k * ‖C.B ω k l‖ ^ 2) + ∑ k, C.sg k * ‖C.B ω l k‖ ^ 2)
+          = ∑ k, C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2) := by
+        rw [← Finset.sum_add_distrib]
+        exact Finset.sum_congr rfl fun k _ => by ring
+      rw [hmerge] at h
+      have := mul_le_mul_of_nonneg_left h (C.sg_nonneg l)
+      calc C.sg l * C.Arow l ω ^ 2
+          ≤ C.sg l * (2 * C.Tq ω *
+              ∑ k, C.sg k * (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2)) := this
+        _ = 2 * C.Tq ω * (C.sg l * ∑ k, C.sg k *
+              (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2)) := by ring
+    calc ∑ l, C.sg l * C.Arow l ω ^ 2
+        ≤ ∑ l, 2 * C.Tq ω * (C.sg l * ∑ k, C.sg k *
+            (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2)) := Finset.sum_le_sum fun l _ => hbound l
+      _ = 2 * C.Tq ω * ∑ l, C.sg l * ∑ k, C.sg k *
+            (‖C.B ω k l‖ ^ 2 + ‖C.B ω l k‖ ^ 2) := by rw [Finset.mul_sum]
+      _ = 2 * C.Tq ω * (2 * C.Vq ω) := by rw [C.sum_sg_mul_normSq ω]
+  have hqT : (0 : ℝ) ≤ (q : ℝ) * C.Tq ω ^ (q - 1) := by positivity
+  calc ‖C.crossT q ω‖
+      ≤ (q : ℝ) * C.Tq ω ^ (q - 1) * ∑ l, C.sg l * C.Arow l ω ^ 2 := by
+        rw [← hstep2]; exact hstep1
+    _ ≤ (q : ℝ) * C.Tq ω ^ (q - 1) * (2 * C.Tq ω * (2 * C.Vq ω)) :=
+        mul_le_mul_of_nonneg_left hstep3 hqT
+    _ = 4 * ((q : ℝ) * C.Tq ω ^ (q - 1) * C.Tq ω) * C.Vq ω := by ring
+    _ = 4 * (q : ℝ) * C.Vq ω * C.Tq ω ^ q := by
+        rw [nat_mul_pow_pred (C.Tq ω) q]; ring
+
+/-! ### `E[T^{q+1}] ≤ (4q+2) E[V_q T^q]` -/
+
+variable (C)
+
+theorem tameCrossT (q : ℕ) : Tame d (C.crossT q) :=
+  Tame.sum _ fun l _ => (Tame.const (d := d) ((C.w l : ℂ))).mul
+    ((C.tameWt l).mul (((Tame.const (d := d) ((q : ℂ))).mul (C.tameTq.pow (q - 1))).mul
+      ((Tame.const (d := d) (2 * (C.r : ℂ) ^ 2)).mul
+        (Tame.sum _ fun k _ => (Tame.const (d := d) ((C.sg k : ℝ) : ℂ)).mul
+          (((C.tameU k).mul (C.tameB k l).conj).add
+            ((C.tameB l k).mul (C.tameV k).conj))))))
+
+theorem tameWirt (q : ℕ) (l : κ) :
+    Tame d fun ω => C.wirtVal l (C.ZA q l ω) (C.ZB q l ω) :=
+  (Tame.const (d := d) ((C.r : ℂ))).mul
+    ((C.tameZA q l).sub ((Tame.const (d := d) ((C.eps l : ℂ) * Complex.I)).mul (C.tameZB q l)))
+
+/-- `V_q T^q` is integrable. -/
+theorem integrable_Vq_mul_Tq_pow (hG : GaussIBP d) (q : ℕ) :
+    Integrable (fun ω => C.Vq ω * C.Tq ω ^ q) (P d) := by
+  refine integrable_of_tame_ofReal hG ?_
+  have hfun : (fun ω : Ω d => ((C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ))
+      = fun ω => ((C.Vq ω : ℝ) : ℂ) * ((C.Tq ω : ℝ) : ℂ) ^ q := by
+    funext ω; rw [Complex.ofReal_mul, Complex.ofReal_pow]
+  rw [hfun]
+  exact C.tame_ofReal_Vq.mul (C.tameTq.pow q)
+
+/-- `V_q^q` is integrable. -/
+theorem integrable_Vq_pow (hG : GaussIBP d) (q : ℕ) :
+    Integrable (fun ω => C.Vq ω ^ q) (P d) := by
+  refine integrable_of_tame_ofReal hG ?_
+  have hfun : (fun ω : Ω d => ((C.Vq ω ^ q : ℝ) : ℂ))
+      = fun ω => ((C.Vq ω : ℝ) : ℂ) ^ q := by funext ω; rw [Complex.ofReal_pow]
+  rw [hfun]
+  exact C.tame_ofReal_Vq.pow q
+
+/-- `E[V_q^q]`. -/
+noncomputable def momVpow (q : ℕ) : ℝ := ∫ ω, C.Vq ω ^ q ∂(P d)
+
+theorem momVpow_nonneg (q : ℕ) : 0 ≤ C.momVpow q :=
+  MeasureTheory.integral_nonneg fun ω => pow_nonneg (C.Vq_nonneg ω) q
+
+variable {C}
+
+/-- **The recursion for the positive chaos**: `E[T^{q+1}] ≤ (4q+2) E[V_q T^q]`.  The diagonal
+term of the integration by parts is `2E[V_qT^q]`; the cross term is at most `4qE[V_qT^q]`. -/
+theorem momTpow_succ_le (hG : GaussIBP d) (q : ℕ) :
+    C.momTpow (q + 1) ≤ (4 * (q : ℝ) + 2) * ∫ ω, C.Vq ω * C.Tq ω ^ q ∂(P d) := by
+  set I1 : ℝ := ∫ ω, C.Vq ω * C.Tq ω ^ q ∂(P d) with hI1
+  have hiVT := C.integrable_Vq_mul_Tq_pow hG q
+  have hiCross : Integrable (C.crossT q) (P d) := (C.tameCrossT q).integrable hG
+  have hiW : ∀ l : κ, Integrable (fun ω => (C.w l : ℂ) *
+      C.wirtVal l (C.ZA q l ω) (C.ZB q l ω)) (P d) :=
+    fun l => ((Tame.const (d := d) ((C.w l : ℂ))).mul (C.tameWirt q l)).integrable hG
+  have hiDiag : Integrable (fun ω : Ω d => ((2 * C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ)) (P d) := by
+    have : (fun ω : Ω d => ((2 * C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ))
+        = fun ω => ((2 * (C.Vq ω * C.Tq ω ^ q) : ℝ) : ℂ) := by
+      funext ω; norm_num; ring_nf
+    rw [this]
+    exact (MeasureTheory.Integrable.ofReal (hiVT.const_mul 2))
+  -- the complex identity
+  have hId : ((C.momTpow (q + 1) : ℝ) : ℂ)
+      = ((2 * I1 : ℝ) : ℂ) + ∫ ω, C.crossT q ω ∂(P d) := by
+    have h1 : ((C.momTpow (q + 1) : ℝ) : ℂ) = ∫ ω, ((C.Tq ω : ℝ) : ℂ) ^ (q + 1) ∂(P d) := by
+      rw [momTpow, ← integral_ofReal']
+      exact MeasureTheory.integral_congr_ae
+        (Filter.Eventually.of_forall fun ω => Complex.ofReal_pow _ _)
+    have h2 : ∑ l, (C.w l : ℂ) * ∫ ω, C.wirtVal l (C.ZA q l ω) (C.ZB q l ω) ∂(P d)
+        = ∫ ω, ∑ l, (C.w l : ℂ) * C.wirtVal l (C.ZA q l ω) (C.ZB q l ω) ∂(P d) := by
+      rw [MeasureTheory.integral_finsetSum _ fun l _ => hiW l]
+      exact Finset.sum_congr rfl fun l _ => (MeasureTheory.integral_const_mul _ _).symm
+    have h3 : ∫ ω, ∑ l, (C.w l : ℂ) * C.wirtVal l (C.ZA q l ω) (C.ZB q l ω) ∂(P d)
+        = ∫ ω, (((2 * C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ) + C.crossT q ω) ∂(P d) :=
+      MeasureTheory.integral_congr_ae
+        (Filter.Eventually.of_forall fun ω => sum_w_wirtVal_ZA_ZB q ω)
+    have h4 : ∫ ω, (((2 * C.Vq ω * C.Tq ω ^ q : ℝ) : ℂ) + C.crossT q ω) ∂(P d)
+        = ((2 * I1 : ℝ) : ℂ) + ∫ ω, C.crossT q ω ∂(P d) := by
+      rw [MeasureTheory.integral_add hiDiag hiCross]
+      congr 1
+      rw [integral_ofReal']
+      congr 1
+      rw [hI1, ← MeasureTheory.integral_const_mul]
+      exact MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun ω => by ring)
+    rw [h1, integral_Tq_pow_succ hG, h2, h3, h4]
+  -- the cross term is small
+  have hcross : ‖∫ ω, C.crossT q ω ∂(P d)‖ ≤ 4 * (q : ℝ) * I1 := by
+    refine (MeasureTheory.norm_integral_le_integral_norm _).trans ?_
+    calc ∫ ω, ‖C.crossT q ω‖ ∂(P d)
+        ≤ ∫ ω, 4 * (q : ℝ) * (C.Vq ω * C.Tq ω ^ q) ∂(P d) :=
+          MeasureTheory.integral_mono hiCross.norm (hiVT.const_mul (4 * (q : ℝ)))
+            (fun ω => (norm_crossT_le (C := C) q ω).trans_eq (by ring))
+      _ = 4 * (q : ℝ) * I1 := by
+          rw [hI1, MeasureTheory.integral_const_mul]
+  have hsub : ((C.momTpow (q + 1) - 2 * I1 : ℝ) : ℂ) = ∫ ω, C.crossT q ω ∂(P d) := by
+    rw [Complex.ofReal_sub, hId]; ring
+  have habs : |C.momTpow (q + 1) - 2 * I1| ≤ 4 * (q : ℝ) * I1 := by
+    have := hcross
+    rw [← hsub, Complex.norm_real, Real.norm_eq_abs] at this
+    exact this
+  have := (abs_le.1 habs).2
+  linarith
+
 end RowChaos
 
 end RBM.Gauss

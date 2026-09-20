@@ -2221,3 +2221,43 @@ abs_llMax_sq_sub_le_holder (|E| < 2) (t < 1) (0 ≤ u,u' ≤ t) (|u−u'| ≤ 1)
 **`Lemma41Flow` 的三块现在**：固定时刻版 ✔（T102）、Hölder 模 ✔（T106）、
 时间网桥 ✔（T101，另一边）。**只差 T100 的 `‖X‖ ≺ 1`**（另一边进行中）——
 它一到，把 `K(ω) = (2η_t⁻¹+2)η_t⁻²(‖X‖+1)` 喂进 T101 的 `≺`-常数版即可收口。
+
+**T107 —— 开工前的核对发现两处真障碍，工单重新划分（未写代码）**
+
+原计划：把 T102（固定时刻）+ T106（Hölder 模）+ T101 的
+`stochDom_timeIcc_of_holder_dom` 串起来关掉 `Lemma41Flow`。逐条对签名后，发现两处**结构性**问题。
+
+**障碍一：`Green/EntryBound.lean` 的 Lemma 4.1 只对「固定的谱参数」陈述。**
+
+```
+entry_bound_stochDom … {z : ℂ} (hz : z.im ≠ 0) …
+diag_bound_stochDom  … {E κ t : ℝ} …          -- z = zt E t，t 是一个固定实数
+```
+
+`z` 是一个**固定的复数**，连「随 N 变」都不行，更不要说「随指标集里的时间变」。
+而 `Lemma41Flow` 的指标集是 `TimeIcc s t N × (ZMod L × ZMod L)`，
+时间与谱参数都要随指标走。所以 **T102 的固定时刻版没法直接加时间指标**。
+
+好消息是这**只是接口问题**：`StochDom.of_det`（`Green/EntryBound.lean:1378`）对指标类型
+`U`、`V` 完全一般，而确定性内核 `norm_sq_green_le_blk`、`norm_sq_green_diag_sub_le_blk`
+本来就是逐 `(ω, H, z)` 的。所以可以用**他们的确定性内核 + 自己的 `of_det` 调用**，
+在自己的文件里重做一个带时间指标的版本。一个细节：`of_det` 的 `δ : ℕ → ℝ` 不含 `u`，
+而 `goodEv` 的阈值 `(Wℓ_uη_u)^{-1/6}` 含 `u`；但 `scale` 对 `u` 反单调
+（`flowScale_antitoneOn`），取 `δ N := (scale E N (t N))⁻¹^{1/6}` 即可一致地放大，
+`goodEv_u ⊆ {GoodEvent G_u m δ_N}`，指示函数方向正确。
+
+**障碍二：`Lemma41Flow` 的控制 `Φ N u` 依赖时间，而时间网桥要求控制只依赖 N。**
+
+`stochDom_timeIcc_of_holder_dom`（T101）与 T75 的 `stochDom_timeIcc_of_holder`
+都取 `Φ : ℕ → ℝ`。网论证把 `Y_u ≤ Y_v + mod` 从网点 `v` 传到任意 `u`，结论要的是
+`Y_u ≤ N^τ(Φ_u + W⁻¹)`，而手上是 `Y_v ≤ N^{τ'}(Φ_v + W⁻¹)`——**差一个 `Φ_v ≤ N^ε Φ_u`**。
+`W⁻¹` 那半没问题（`mod` 可以做到 `≤ N^{-D}`，而 `Φ_u + W⁻¹ ≥ W⁻¹ ≥ N⁻¹`），
+问题只在 `Φ` 本身。`Lemma41Flow` 对**任意** `Φ ≥ 0` 量化，所以按字面**证不出来**。
+
+Step1 实际传进去的是 `Φ N u = ℓ_u/ℓ_s · (Wℓ_uη_u)⁻¹`（`Step1.lean:704`），
+它当然是缓变的；但「缓变」要与网距挂钩，而网距是桥内部选的。两条出路：
+(a) 给桥加一个 `Φ` 的缓变假设（要改 T101 的文件，别人的）；
+(b) 在自己的文件里重做网论证，把 `Φ N u` 一并处理。
+
+**据此把 T107 拆成两张**（见 `docs/TASKS.md`）：T107 只做**带时间指标的 Lemma 4.1**
+（障碍一，纯接口重做，可立刻开工）；T108 做最后的总装（障碍二 + T100）。

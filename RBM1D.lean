@@ -20,6 +20,7 @@ import RBM1D.Gauss.LDEQuadInst
 import RBM1D.Gauss.LDEQuadT
 import RBM1D.Gauss.EntryBoundGauss
 import RBM1D.Gauss.Envelope
+import RBM1D.Gauss.FlowHolder
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.IBP
 import RBM1D.Gauss.Hierarchy

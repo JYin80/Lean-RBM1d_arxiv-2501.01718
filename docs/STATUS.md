@@ -2124,3 +2124,27 @@ stochDom_indicator_diag, stochDom_indicator_llMax_sq
 应用层调用时填 `(gaussIBP d)`。`Gauss/LDEQuad.lean` **一字未动**。
 
 全量构建通过，公理审计 6964 条声明全部合规。
+
+**T106 进行中**（`Gauss/FlowHolder.lean`，新建）：`u` 方向的 Hölder 模，**纯确定性**，
+**不依赖 T100**（`‖X‖ ≺ 1` 只在把这里产出的常数喂给时间网时才用到）。
+
+**第一块 ✔**：预解式恒等式，**矩阵与谱参数同时动**的版本。
+
+```
+green_sub_eq      : G_u − G_u' = G_u · ((H_u' − z_u') − (H_u − z_u)) · G_u'
+norm_green_sub_le : ‖G_u − G_u'‖ ≤ ‖G_u‖ · (‖H_u − H_u'‖ + ‖z_u − z_u'‖) · ‖G_u'‖
+```
+
+（`Nonempty n` 是为了 `‖1‖ = 1`。）
+
+**下一步**：代入 `‖G‖ ≤ η⁻¹`（`norm_green_le`）、`‖H_u − H_u'‖ = |√u−√u'|·‖X‖`
+（`Gauss/Model.lean` 的 `norm_Hflow_sub`）、`|√u−√u'| ≤ |u−u'|^{1/2}`、
+`|z_u − z_u'| = |η_u − η_u'| = |u−u'|·Im m(E)`（`etaT_eq`），得到
+
+```
+‖G_u − G_u'‖ ≤ η_t⁻² (‖X‖ + 1) · |u − u'|^{1/2}        （u, u' ∈ [0, t]）
+```
+
+再逐元素传到 `llErr`（`llMax` 的差 ≤ 算子范数差）与 `llMax²`
+（`|a²−b²| = (a+b)|a−b|`，`llMax ≤ η⁻¹ + 1`）。配 T101 的 `≺`-常数版与 T100 即可关掉
+`Lemma41Flow`。

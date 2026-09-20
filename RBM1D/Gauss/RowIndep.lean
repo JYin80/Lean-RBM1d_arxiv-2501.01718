@@ -661,4 +661,23 @@ theorem measurable_minorCol (u : ℝ) (z : ℂ) (i : d.Idx N) (j : {a : d.Idx N 
       (fun a b => (measurable_Hflow d N u a.1 b.1).sub measurable_const) _ _
   · exact measurable_const
 
+/-! ### The row LDE for the Gaussian model -/
+
+/-- **The linear LDE of T81, moment form.**  With the coefficients given by the `j`-th column of
+the minor resolvent `(H^{(i)} - z)^{-1}` — which is independent of row `i` — the normalised row
+sum has a *constant* moment bound:
+
+`E[ (‖∑_{k ≠ i} H_{ik} G^{(i)}_{kj}‖² / (u ∑_k S_{ik} |G^{(i)}_{kj}|²))^p ] ≤ 2 (2p-1)!!`.
+
+Through `stochDom_of_momentDom` (T73) this is `|∑_k H_{ik} G^{(i)}_{kj}|² ≺ ∑_k S_{ik}|G^{(i)}_{kj}|²`,
+the paper's row LDE. -/
+theorem integral_norm_rowSum_minorCol_pow_le (hu : 0 ≤ u) (z : ℂ)
+    (j : {a : d.Idx N // a ≠ i})
+    (hint : Integrable (fun ω => ‖rowSum d N u i
+      (rowCoeffNorm d N u i (minorCol d N u z i j)) ω‖ ^ (2 * p)) (P d)) :
+    ∫ ω, ‖rowSum d N u i (rowCoeffNorm d N u i (minorCol d N u z i j)) ω‖ ^ (2 * p) ∂(P d)
+      ≤ 2 * dfac p :=
+  integral_norm_rowSum_norm_pow_le hu (minorCol d N u z i j) (measurable_minorCol u z i j)
+    (fun ω ω' h => minorCol_congr u z j h) hint
+
 end RBM.Gauss

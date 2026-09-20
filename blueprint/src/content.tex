@@ -1745,6 +1745,29 @@
   $LW\le N$ sites.
 \end{proof}
 
+\begin{lemma}[The Hölder modulus of the flow in the time variable]\label{lem:flow-holder}
+  \lean{RBM.green_sub_eq, RBM.norm_green_sub_le, RBM.abs_sqrt_sub_sqrt_le, RBM.norm_zt_sub,
+    RBM.Gauss.norm_green_flow_sub_le, RBM.Gauss.abs_llErr_sub_le, RBM.Gauss.abs_llMax_sub_le,
+    RBM.Gauss.llMax_le_inv_etaT, RBM.Gauss.abs_llMax_sq_sub_le,
+    RBM.Gauss.etaT_pos_of_lt_one', RBM.Gauss.etaT_le_of_le, RBM.Gauss.self_le_rpow_half,
+    RBM.Gauss.abs_llMax_sq_sub_le_holder}
+  \leanok\uses{def:gauss-model, lem:4.1-fixedtime}
+  For $0\le u,u'\le t<1$ and $|u-u'|\le1$,
+  $\bigl|\,\|G_u-m\|_{\max}^2-\|G_{u'}-m\|_{\max}^2\,\bigr|
+  \le(2\eta_t^{-1}+2)\eta_t^{-2}(\|X\|+1)\,|u-u'|^{1/2}$.
+  Purely deterministic; $\|X\|\prec1$ is not used.
+\end{lemma}
+\begin{proof}\leanok
+  Both the matrix and the spectral parameter move, so
+  $G_u-G_{u'}=G_u\bigl((H_{u'}-z_{u'})-(H_u-z_u)\bigr)G_{u'}$.  The matrix part is
+  $\|H_u-H_{u'}\|=|\sqrt u-\sqrt{u'}|\,\|X\|$, and the parameter part is simply
+  $\|z_u-z_{u'}\|=|u-u'|$, because $z_t=E+(1-t)m(E)$ and $\|m(E)\|=1$.  Entrywise
+  $\le$ operator norm transfers this to $\|G-m\|_{\max}$, and
+  $|a^2-b^2|=(a+b)|a-b|$ with $\|G_u-m\|_{\max}\le\eta_u^{-1}+1$ to its square.  On $[0,t]$
+  both $\eta_u^{-1}$ are at most $\eta_t^{-1}$, and
+  $|\sqrt u-\sqrt{u'}|\le|u-u'|^{1/2}$.
+\end{proof}
+
 \begin{lemma}[Lemma 4.1 at a fixed time, in the language of the flow]\label{lem:4.1-fixedtime}
   \lean{RBM.norm_gloop_pm_eq_Lre, RBM.Sample.llErr_eq,
     RBM.Step1.goodEv_eq_setOf_goodEvent, RBM.StochDom.control_mono,

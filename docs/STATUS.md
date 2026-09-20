@@ -2197,3 +2197,27 @@ abs_llMax_sq_sub_le     : |llMax_u² − llMax_u'²| ≤ (η_u⁻¹+η_u'⁻¹+2
 之后配 T101 的 `≺`-常数版与 T100 的 `‖X‖ ≺ 1` 就能关掉 `Lemma41Flow`。
 
 全量构建通过，公理审计 **7007 条声明**全部合规。
+
+**T106 ✔**（`Gauss/FlowHolder.lean`，零 sorry）：**`u` 方向的 Hölder 模做完了，纯确定性。**
+
+```
+abs_llMax_sq_sub_le_holder (|E| < 2) (t < 1) (0 ≤ u,u' ≤ t) (|u−u'| ≤ 1) :
+  |llMax_u² − llMax_u'²| ≤ (2η_t⁻¹+2)·η_t⁻²·(‖X‖+1)·|u−u'|^{1/2}
+```
+
+正是 `stochDom_timeIcc_of_holder`（T73/T75）与 T101 的高概率版要的 `K(ω)·|u−u'|^γ`，
+γ = 1/2、`K(ω)` 与 `‖X‖` 成正比。**全程没用到 `‖X‖ ≺ 1`**——那只在把 `K(ω)` 喂给时间网时才需要。
+
+几处记一下：
+* **谱参数那一半只有一行**：`zt E t = E + (1−t)·m(E)` ⟹ `z_u − z_u' = (u'−u)·m(E)`，
+  `‖m(E)‖ = 1`（`norm_mE`）⟹ `‖z_u − z_u'‖ = |u−u'|`。不必碰 `etaT` 的表达式。
+* `|√x − √y| ≤ √|x−y|` **Mathlib 里没有**，自己证（比较平方：`(√x−√y)² ≤ x−y ⟺ y ≤ √(xy)`）。
+* `inv_le_inv_of_le` 在这个版本里**不存在**；用 `one_div_le_one_div_of_le` 配 `← one_div`。
+* `rwa [Real.sqrt_eq_rpow] at h` 会**把 `√u`、`√u'` 一起改掉**；要用
+  `rwa [show Real.sqrt |u−u'| = … from Real.sqrt_eq_rpow _] at h` 定住实例。
+
+蓝图新节点 `lem:flow-holder`。全量构建通过，公理审计 **7011 条声明**全部合规。
+
+**`Lemma41Flow` 的三块现在**：固定时刻版 ✔（T102）、Hölder 模 ✔（T106）、
+时间网桥 ✔（T101，另一边）。**只差 T100 的 `‖X‖ ≺ 1`**（另一边进行中）——
+它一到，把 `K(ω) = (2η_t⁻¹+2)η_t⁻²(‖X‖+1)` 喂进 T101 的 `≺`-常数版即可收口。

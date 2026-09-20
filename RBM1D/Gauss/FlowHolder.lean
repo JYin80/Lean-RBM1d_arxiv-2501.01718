@@ -265,4 +265,74 @@ theorem abs_llMax_sq_sub_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {u u' 
   refine mul_le_mul ?_ hdiff (abs_nonneg _) (by positivity)
   linarith
 
+/-! ### The Hölder form on a time interval -/
+
+theorem etaT_pos_of_lt_one' {E : ℝ} (hE : |E| < 2) {u : ℝ} (hu : u < 1) : 0 < etaT E u := by
+  show 0 < (1 - u) * (mE E).im
+  exact mul_pos (by linarith) (mE_im_pos hE)
+
+theorem etaT_le_of_le {E : ℝ} (hE : |E| < 2) {u t : ℝ} (hut : u ≤ t) : etaT E t ≤ etaT E u := by
+  show (1 - t) * (mE E).im ≤ (1 - u) * (mE E).im
+  exact mul_le_mul_of_nonneg_right (by linarith) (mE_im_pos hE).le
+
+/-- `x ≤ x^{1/2}` for `0 ≤ x ≤ 1`. -/
+theorem self_le_rpow_half {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x ≤ 1) : x ≤ x ^ ((1 : ℝ) / 2) := by
+  rcases eq_or_lt_of_le hx0 with h | h
+  · rw [← h]
+    rw [Real.zero_rpow (by norm_num)]
+  · have := Real.rpow_le_rpow_of_exponent_ge h hx1 (by norm_num : (1:ℝ)/2 ≤ 1)
+    rwa [Real.rpow_one] at this
+
+/-- **The Hölder modulus of `‖G_u - m‖²_max` on `[0, t]`**, `γ = 1/2`, with a constant
+proportional to `‖X‖ + 1`.  This is the deterministic input of
+`RBM.stochDom_timeIcc_of_holder` and of its high-probability variant (T101); together with
+`‖X‖ ≺ 1` (T100) it closes the time-uniform half of `RBM.Lemma41Flow`. -/
+theorem abs_llMax_sq_sub_le_holder (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {t : ℝ}
+    (ht1 : t < 1) {u u' : ℝ} (hu0 : 0 ≤ u) (hu'0 : 0 ≤ u') (hut : u ≤ t) (hu't : u' ≤ t)
+    (hlen : |u - u'| ≤ 1) (ω : Ω d) :
+    |Step1.llMax (sample d) E N u ω ^ 2 - Step1.llMax (sample d) E N u' ω ^ 2|
+      ≤ (2 * (etaT E t)⁻¹ + 2) * ((etaT E t)⁻¹ * (etaT E t)⁻¹) * (‖Xmat d N ω‖ + 1)
+        * |u - u'| ^ ((1 : ℝ) / 2) := by
+  have hu1 : u < 1 := lt_of_le_of_lt hut ht1
+  have hu'1 : u' < 1 := lt_of_le_of_lt hu't ht1
+  have hηt : 0 < etaT E t := etaT_pos_of_lt_one' hE ht1
+  have hηu : 0 < etaT E u := etaT_pos_of_lt_one' hE hu1
+  have hηu' : 0 < etaT E u' := etaT_pos_of_lt_one' hE hu'1
+  have hiu : (etaT E u)⁻¹ ≤ (etaT E t)⁻¹ := by
+    rw [← one_div, ← one_div]
+    exact one_div_le_one_div_of_le hηt (etaT_le_of_le hE hut)
+  have hiu' : (etaT E u')⁻¹ ≤ (etaT E t)⁻¹ := by
+    rw [← one_div, ← one_div]
+    exact one_div_le_one_div_of_le hηt (etaT_le_of_le hE hu't)
+  have hX : (0 : ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+  have hp0 : (0 : ℝ) ≤ |u - u'| ^ ((1 : ℝ) / 2) := Real.rpow_nonneg (abs_nonneg _) _
+  -- the middle factor
+  have hmid : |Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|
+      ≤ (‖Xmat d N ω‖ + 1) * |u - u'| ^ ((1 : ℝ) / 2) := by
+    have h1 : |Real.sqrt u - Real.sqrt u'| ≤ |u - u'| ^ ((1 : ℝ) / 2) := by
+      have h := RBM.abs_sqrt_sub_sqrt_le hu0 hu'0
+      rwa [show Real.sqrt |u - u'| = |u - u'| ^ ((1 : ℝ) / 2) from
+        Real.sqrt_eq_rpow _] at h
+    have h2 : |u - u'| ≤ |u - u'| ^ ((1 : ℝ) / 2) :=
+      self_le_rpow_half (abs_nonneg _) hlen
+    nlinarith [h1, h2, hX, hp0]
+  have hm0 : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'| := by
+    have h1 : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ := by positivity
+    linarith [abs_nonneg (u - u')]
+  have hiu0 : (0 : ℝ) < (etaT E u)⁻¹ := by positivity
+  have hiu'0 : (0 : ℝ) < (etaT E u')⁻¹ := by positivity
+  have hit0 : (0 : ℝ) < (etaT E t)⁻¹ := by positivity
+  refine (abs_llMax_sq_sub_le d N hE hu1 hu'1 ω).trans ?_
+  have hstep : (etaT E u)⁻¹ * (|Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|)
+        * (etaT E u')⁻¹
+      ≤ (etaT E t)⁻¹ * ((‖Xmat d N ω‖ + 1) * |u - u'| ^ ((1 : ℝ) / 2)) * (etaT E t)⁻¹ := by
+    gcongr
+  have hc0 : (0 : ℝ) ≤ (etaT E u)⁻¹ *
+      (|Real.sqrt u - Real.sqrt u'| * ‖Xmat d N ω‖ + |u - u'|) * (etaT E u')⁻¹ := by
+    positivity
+  have hb0 : (0 : ℝ) ≤ 2 * (etaT E t)⁻¹ + 2 := by linarith
+  have hfirst : (etaT E u)⁻¹ + (etaT E u')⁻¹ + 2 ≤ 2 * (etaT E t)⁻¹ + 2 := by linarith
+  refine (mul_le_mul hfirst hstep hc0 hb0).trans (le_of_eq ?_)
+  ring
+
 end RBM.Gauss

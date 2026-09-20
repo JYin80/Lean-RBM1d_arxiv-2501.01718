@@ -1436,3 +1436,11 @@ T87 展开 `E|Σₖ tₖZₖ|^{2p} = Σ_{(k₁,…,k_{2p})} (∏t)·E[∏ᵢ Z_{
 把后者变成一致的 `ε` 是指示函数/截断的记账，属 T87/T88。陈述**不空洞**：`Im z > 0` 已使 `B`、`ε` 确定性地有限（Envelope 的 `norm_green_zt_le`），只是不小——小是截断买来的。
 已备好两座桥供 T85 直接插入：`greenMinorMat_apply_eq_greenMinor`（T84 的全函数 `greenMinorMat` = T85 的 `RBM.greenMinor`）与 `norm_flucDiag_sub_flucDiagMinorFam_le`（entry 误差 `e` ⟹ 因子误差 `2e`）。
 **剩余假设**：可测性 `hZmeas`/`hYmeas`（CondRow 有意未证 `Measurable (condRow k X)`，见 paper-deltas #56；仓库也没有 `ω ↦ green (Hflow …) z k k` 的可测性——都很浅但不在本单范围）、`hrow : RowIntegrable`、`hB : 0 ≤ B`。paper-deltas #57。
+
+**T81 第十二块 ✔**：`RowIdx`（(列 k ≠ i, 实/虚标志)）、`rowVar`（该指标上的高斯坐标）、
+系数 `rowRe`/`rowIm`，以及 **`re_row_sum` / `im_row_sum`**——
+`Re(∑_{k≠i} H_ik c_k)` 与 `Im(...)` 都写成了 `rowVar` 上的实线性型（系数显式）。
+**下一步**（T81 的倒数第二块）：`rowVar` 族的独立性（`iIndepFun.precomp`，单射由 `rowCoord_injOn` 给出）
+与各自的律（`P_map_eval` + `gvar_offDiag` 得方差 `S_ik/2`），
+然后 `linVar` 算出 `V_a = V_b = (u/2)∑_k S_ik‖c_k‖²`，套第七块得
+`E‖∑_k H_ik c_k‖^{2p} ≤ 2(2p−1)!!(u ∑_k S_ik‖c_k‖²)^p`（系数 `c` 为常数的冻结版本）。

@@ -872,4 +872,32 @@ theorem lintegral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N �
         rw [← hrow]
     _ ≤ ENNReal.ofReal (2 * dfac p) := hmain
 
+/-- Integrability of the normalised row sum, from the finiteness of the `ℝ≥0∞` bound. -/
+theorem integrable_norm_rowSum_norm_pow (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
+    (hCmeas : Measurable C)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω') :
+    Integrable (fun ω => ‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p)) (P d) := by
+  have hmeas : Measurable fun ω : Ω d =>
+      ‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p) := by
+    unfold rowSum
+    refine (Measurable.norm ?_).pow_const _
+    refine Finset.measurable_sum _ fun k _ => ?_
+    exact (measurable_Hflow d N u i k.1).mul
+      ((measurable_pi_apply k.1).comp (measurable_rowCoeffNorm C hCmeas))
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_enorm]
+  have hnn : ∀ ω : Ω d, ‖‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p)‖ₑ
+      = ENNReal.ofReal (‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p)) :=
+    fun ω => Real.enorm_eq_ofReal (by positivity)
+  simp only [hnn]
+  exact lt_of_le_of_lt (lintegral_norm_rowSum_norm_pow_le hu C hCmeas hC) ENNReal.ofReal_lt_top
+
+/-- **The row LDE, Bochner form, no side conditions**: `E‖Z/√V‖^{2p} ≤ 2 (2p-1)!!`. -/
+theorem integral_norm_rowSum_norm_pow_le' (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
+    (hCmeas : Measurable C)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω') :
+    ∫ ω, ‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p) ∂(P d) ≤ 2 * dfac p :=
+  integral_norm_rowSum_norm_pow_le hu C hCmeas hC
+    (integrable_norm_rowSum_norm_pow hu C hCmeas hC)
+
 end RBM.Gauss

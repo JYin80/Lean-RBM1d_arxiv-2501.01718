@@ -1678,6 +1678,33 @@
   $\mathtt{co}/\mathtt{eps}$ is the parametrisation already built for the linear estimate.
 \end{proof}
 
+\begin{lemma}[The quadratic LDE as stochastic domination]\label{lem:lde-quad-dom}
+  \lean{RBM.Gauss.vqM, RBM.Gauss.sqVq, RBM.Gauss.modelChaosEps,
+    RBM.Gauss.chaos_modelChaosEps, RBM.Gauss.Vq_modelChaosEps,
+    RBM.Gauss.Vq_modelChaosEps_le_one, RBM.Gauss.hwConst, RBM.Gauss.mom_modelChaosEps_le,
+    RBM.Gauss.norm_chaos_modelChaosEps, RBM.Gauss.meas_lt_normSq_chaos_le_eps,
+    RBM.Gauss.meas_lt_normSq_chaos_le, RBM.Gauss.chaos_modelChaos_zero,
+    RBM.Gauss.stochDom_ldeQuad}
+  \leanok\uses{lem:lde-quad-inst, lem:lde-quad-T, lem:4.1}
+  For the Gaussian flow with $0\le u\le1$ and $\operatorname{Im}z\ne0$,
+  $\mathtt{ldeQuadLHS}\prec\mathtt{ldeQuadRHS}$ uniformly in $i$: the hypothesis
+  \texttt{hLquad} of \texttt{diag\_bound\_stochDom}.
+\end{lemma}
+\begin{proof}\leanok
+  The moment bound has a \emph{random} control, which \texttt{stochDom\_of\_momentDom} does not
+  accept, and Markov cannot be applied directly because the threshold $N^\tau\zeta(\omega)$ moves
+  with $\omega$.  Rescaling the matrix by the off-row-measurable factor $(V_q+\varepsilon)^{-1/2}$
+  --- constant in $(k,l)$, so it divides the chaos too --- makes the control $V_q/(V_q+\varepsilon)
+  \le1$ and keeps the matrix globally bounded (by $\mathtt{Bbd}/\sqrt\varepsilon$), which is what
+  \texttt{RowChaos} requires.  Hence
+  $\mathbb E[(|Q|^2/(V_q+\varepsilon))^{p}]\le A_{p}$ for every $\varepsilon>0$, with $A_p$ free of
+  $\varepsilon$, and Markov now has a deterministic threshold.  Finally
+  $\{|Q|^2>\lambda V_q\}=\bigcup_n\{|Q|^2>\lambda(V_q+\tfrac1{n+1})\}$ is an increasing union, so
+  continuity of the measure from below removes $\varepsilon$ --- with no integral limit theorem and
+  no separate treatment of $\{V_q=0\}$.  The union bound over the $LW\le N$ sites and the choice
+  $p$ large finish it; $u=0$ is separate, the chaos vanishing there.
+\end{proof}
+
 \begin{lemma}[Diagonal LDE: $|H_{ii}|^2\prec S_{ii}$]\label{lem:lde-diag}
   \lean{RBM.Sblk_diag_pos, RBM.Gauss.integral_pow_coord, RBM.Gauss.integrable_pow_coord,
     RBM.Gauss.normSq_Hflow_diag, RBM.Gauss.integral_norm_Hflow_diag_pow,

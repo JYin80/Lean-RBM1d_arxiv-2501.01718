@@ -185,7 +185,7 @@
 | T93 | **正混沌矩界 `E[T^p] ≤ C_p E[Vq^p]`**：T82 留下的唯一数学缺口（`LDEQuad.lean` 文件头「What is not done here」第 1 条）。做法：对 `E[T^p]` 再跑一次行 IBP，用导子 `D_l = r(∂_{a_l} − ε_l i ∂_{b_l})`（`D_l U_k = 0`、`D_l V̄_k = 0`、`D_l Ū_k = 2r²B̄_{kl}`、`D_l V_k = 2r²B_{lk}`），交叉项用 Cauchy–Schwarz 压成 `Vq·T`，再用 `young_pow` 闭合。**不碰 `Gauss/LDEQuad.lean`** | `Gauss/LDEQuadT.lean`（新建） | **Claude Code #2** | 已完成 |
 | T94 | **把 `FlucVanish` 的机器迭代到 `2p` 阶**：卸掉 T88 隔离出来的 `hsmall`，让 (4.12) 真正成为定理 | `Gauss/FlucIter.lean`（新建） | Claude Code | 进行中 |
 | T95 | **为高斯模型造 `RowChaos` 实例**（T82/T93 的 `LDEQuad.lean` 文件头「What is not done here」第 2 条）。关键：`B` 取**小方阵预解式** `(H^{(i)} − z)⁻¹` 而不是 `greenMinor`——它由 `norm_green_le` 全局有界 `η⁻¹`、连续、且只读 off-row 坐标（`Hflow_submatrix_congr_offRowCoord`），而 `greenMinor` 因 `G_ii` 无全局下界而无界；两者对**每个 ω** 相等，由 `inv_minor_resolvent` + T91 的 `green_diag_ne_zero`。`co`/`eps` 由 `Xentry` 的 `idxKey` 分支读出（同 T81）。**不碰 `Gauss/LDEQuad.lean`** | `Gauss/LDEQuadInst.lean`（新建） | **Claude Code #2** | 已完成 |
-| T96 | **`hLquad` 的最后一段**：把 T95 的矩不等式 `E[ldeQuadLHS^p] ≤ C_p u^{2p} E[ldeQuadRHS^p]` 翻成 `diag_bound_stochDom` 要的 `StochDom P ldeQuadLHS ldeQuadRHS`。难点：控制 `ldeQuadRHS` 是**随机**的，`stochDom_of_momentDom`（T73）只接受确定性控制；走 `StochDom.of_det` 或先用好事件上的确定性控制夹住。**不碰 `Gauss/LDEQuad.lean`、`Green/EntryBound.lean`** | `Gauss/LDEQuadDom.lean`（新建） | **Claude Code #2** | 进行中 |
+| T96 | **`hLquad` 的最后一段**：把 T95 的矩不等式 `E[ldeQuadLHS^p] ≤ C_p u^{2p} E[ldeQuadRHS^p]` 翻成 `diag_bound_stochDom` 要的 `StochDom P ldeQuadLHS ldeQuadRHS`。难点：控制 `ldeQuadRHS` 是**随机**的，`stochDom_of_momentDom`（T73）只接受确定性控制；走 `StochDom.of_det` 或先用好事件上的确定性控制夹住。**不碰 `Gauss/LDEQuad.lean`、`Green/EntryBound.lean`** | `Gauss/LDEQuadDom.lean`（新建） | **Claude Code #2** | 已完成 |
 
 ---
 

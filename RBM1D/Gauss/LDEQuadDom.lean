@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.LDEQuadInst
+import RBM1D.Gauss.LDEDiag
 
 /-!
 # From the moment bound to `≺`, for the quadratic estimate — T96
@@ -282,5 +283,159 @@ theorem meas_lt_normSq_chaos_le_eps (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 
   have hpow : Real.sqrt lam ^ (2 * (q + 1)) = lam ^ (q + 1) := by
     rw [pow_mul, Real.sq_sqrt hlam.le]
   rw [hpow]
+
+/-- **The tail bound with the true control.**  `{λV_q < |Q|²} = ⋃_n {λ(V_q + 1/(n+1)) < |Q|²}`
+is an increasing union, so continuity of the measure from below removes `ε`: no integral limit
+theorem, and no separate treatment of `{V_q = 0}`. -/
+theorem meas_lt_normSq_chaos_le (hG : GaussIBP d) (hz : z.im ≠ 0) (hu : 0 ≤ u) (i : d.Idx N)
+    {lam : ℝ} (hlam : 0 < lam) (q : ℕ) :
+    (P d) {ω | lam * vqM d N u z i ω < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2}
+      ≤ ENNReal.ofReal (hwConst q / lam ^ (q + 1)) := by
+  set S : ℕ → Set (Ω d) := fun n =>
+    {ω | lam * (vqM d N u z i ω + 1 / ((n : ℝ) + 1))
+      < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2} with hS
+  have hmono : Monotone S := by
+    intro m n hmn ω hω
+    simp only [hS, Set.mem_ofPred_eq] at hω ⊢
+    have h1 : (1 : ℝ) / ((n : ℝ) + 1) ≤ 1 / ((m : ℝ) + 1) := by
+      have hm : (0 : ℝ) < (m : ℝ) + 1 := by positivity
+      have hmn' : ((m : ℝ) + 1) ≤ ((n : ℝ) + 1) := by
+        have : (m : ℝ) ≤ (n : ℝ) := by exact_mod_cast hmn
+        linarith
+      exact one_div_le_one_div_of_le hm hmn'
+    nlinarith [hω, h1, hlam]
+  have hunion : (⋃ n, S n)
+      = {ω | lam * vqM d N u z i ω < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2} := by
+    ext ω
+    simp only [Set.mem_iUnion, hS, Set.mem_ofPred_eq]
+    constructor
+    · rintro ⟨n, hn⟩
+      have hpos : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+      nlinarith [hn, hlam, hpos]
+    · intro h
+      obtain ⟨n, hn⟩ := exists_nat_one_div_lt
+        (show (0 : ℝ) < (‖(modelChaos d N u hz i).chaos ω‖ ^ 2
+          - lam * vqM d N u z i ω) / lam by
+          apply div_pos _ hlam; linarith)
+      refine ⟨n, ?_⟩
+      rw [lt_div_iff₀ hlam] at hn
+      nlinarith [hn]
+  rw [← hunion]
+  refine le_of_tendsto (tendsto_measure_iUnion_atTop (μ := P d) hmono)
+    (Filter.Eventually.of_forall fun n => ?_)
+  exact meas_lt_normSq_chaos_le_eps hG hz hu i hlam q (by positivity)
+
+/-! ### The hypothesis `hLquad` of `RBM.diag_bound_stochDom` -/
+
+/-- With `u = 0` the flow is the zero matrix, so the chaos vanishes. -/
+theorem chaos_modelChaos_zero (hz : z.im ≠ 0) (i : d.Idx N) (ω : Ω d) :
+    (modelChaos d N 0 hz i).chaos ω = 0 := by
+  have hh : ∀ k : {a : d.Idx N // a ≠ i}, (modelChaos d N 0 hz i).h ω k = 0 := by
+    intro k
+    rw [modelChaos_h hz i ω k, Hflow_apply, Real.sqrt_zero]
+    simp
+  have hsg : ∀ k : {a : d.Idx N // a ≠ i}, (modelChaos d N 0 hz i).sg k = 0 := by
+    intro k
+    rw [modelChaos_sg hz i le_rfl k]
+    ring
+  show (∑ k, ∑ l, _) - (∑ k, _) = 0
+  rw [show (∑ k : {a : d.Idx N // a ≠ i}, ∑ l : {a : d.Idx N // a ≠ i},
+        (modelChaos d N 0 hz i).h ω k * (modelChaos d N 0 hz i).B ω k l *
+          (starRingEnd ℂ) ((modelChaos d N 0 hz i).h ω l)) = 0 from by
+      refine Finset.sum_eq_zero fun k _ => Finset.sum_eq_zero fun l _ => ?_
+      rw [hh k]; ring,
+    show (∑ k : {a : d.Idx N // a ≠ i},
+        (((modelChaos d N 0 hz i).sg k : ℝ) : ℂ) * (modelChaos d N 0 hz i).B ω k k) = 0 from by
+      refine Finset.sum_eq_zero fun k _ => ?_
+      rw [hsg k]; simp]
+  ring
+
+/-- **The hypothesis `hLquad` of `RBM.diag_bound_stochDom`, for the Gaussian flow.**
+`|∑_{k,l≠i}H_{ik}G^{(i)}_{kl}H_{li} − u∑_kS_{ik}G^{(i)}_{kk}|² ≺ ∑_{k,l}S_{ik}|G^{(i)}_{kl}|²S_{li}`,
+uniformly in `i`, for `0 ≤ u ≤ 1` and `Im z ≠ 0`. -/
+theorem stochDom_ldeQuad (hG : GaussIBP d) (hz : z.im ≠ 0) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
+    StochDom (P d)
+      (fun N (i : BIdx d.L d.W N) ω =>
+        ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) z) (Sblk (d.L N) (d.W N)) u i)
+      (fun N (i : BIdx d.L d.W N) ω =>
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i) := by
+  refine StochDom.of_forall_le (eventually_card_Idx_le d) ?_
+  intro τ hτ D hD
+  have hrhs : ∀ (N : ℕ) (i : d.Idx N) (ω : Ω d),
+      0 ≤ ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i := by
+    intro N i ω
+    exact Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
+      mul_nonneg (mul_nonneg (Sblk_nonneg _ _) (by positivity)) (Sblk_nonneg _ _)
+  rcases eq_or_lt_of_le hu0 with hu | hupos
+  · -- `u = 0`: the chaos vanishes, so the failure event is empty
+    subst hu
+    filter_upwards with N i
+    have hempty : {ω : Ω d | (N : ℝ) ^ τ *
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N 0 ω) z) i
+        < ldeQuadLHS (Hflow d N 0 ω) (green (Hflow d N 0 ω) z)
+          (Sblk (d.L N) (d.W N)) 0 i} = ∅ := by
+      ext ω
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      have hz0 : ldeQuadLHS (Hflow d N 0 ω) (green (Hflow d N 0 ω) z)
+          (Sblk (d.L N) (d.W N)) 0 i = 0 := by
+        rw [← modelChaos_normSq_chaos hz i le_rfl ω, chaos_modelChaos_zero hz i ω]
+        simp
+      rw [hz0]
+      have := hrhs N i ω
+      have hp : (0 : ℝ) ≤ (N : ℝ) ^ τ := Real.rpow_nonneg (Nat.cast_nonneg N) τ
+      positivity
+    rw [hempty, measure_empty]
+    exact zero_le
+  · -- `0 < u`
+    obtain ⟨q, hq⟩ := exists_nat_ge ((D + 1) / τ)
+    have hDq : D + 1 ≤ τ * (q : ℝ) := by rw [div_le_iff₀ hτ] at hq; linarith
+    have hexpand : τ * ((q : ℝ) + 1) = τ * (q : ℝ) + τ := by ring
+    have hexp : 0 < τ * ((q : ℝ) + 1) - D := by rw [hexpand]; linarith
+    filter_upwards [eventually_le_rpow (hwConst q) hexp, Filter.eventually_ge_atTop 1]
+      with N hCN hN1 i
+    have hN0 : (0 : ℝ) < N := by exact_mod_cast hN1
+    have hNτ : (0 : ℝ) < (N : ℝ) ^ τ := Real.rpow_pos_of_pos hN0 τ
+    set lam : ℝ := (N : ℝ) ^ τ / u ^ 2 with hlamdef
+    have hlam : 0 < lam := by rw [hlamdef]; positivity
+    have hu2 : u ^ 2 ≤ 1 := by nlinarith [hupos, hu1]
+    have hlamge : (N : ℝ) ^ τ ≤ lam := by
+      rw [hlamdef, le_div_iff₀ (by positivity)]
+      nlinarith [hNτ, hu2]
+    -- the failure event is the tail event of the chaos
+    have hset : {ω : Ω d | (N : ℝ) ^ τ *
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i
+        < ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) z) (Sblk (d.L N) (d.W N)) u i}
+        = {ω | lam * vqM d N u z i ω < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2} := by
+      ext ω
+      have hL := modelChaos_normSq_chaos hz i hu0 ω
+      have hV : vqM d N u z i ω
+          = u ^ 2 * ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i := by
+        rw [← vqM_eq hz hu0 i ω]; exact modelChaos_Vq hz i hu0 ω
+      have hune : u ≠ 0 := ne_of_gt hupos
+      simp only [Set.mem_ofPred_eq, ← hL, hV, hlamdef]
+      rw [show (N : ℝ) ^ τ / u ^ 2 * (u ^ 2 *
+          ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i)
+          = (N : ℝ) ^ τ * ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i from by
+        field_simp]
+    rw [hset]
+    refine (meas_lt_normSq_chaos_le hG hz hu0 i hlam q).trans
+      (ENNReal.ofReal_le_ofReal ?_)
+    have hpow : (N : ℝ) ^ (τ * ((q : ℝ) + 1)) = ((N : ℝ) ^ τ) ^ (q + 1) := by
+      rw [← Real.rpow_natCast ((N : ℝ) ^ τ) (q + 1), ← Real.rpow_mul hN0.le]
+      push_cast
+      ring_nf
+    have hden : ((N : ℝ) ^ τ) ^ (q + 1) ≤ lam ^ (q + 1) :=
+      pow_le_pow_left₀ hNτ.le hlamge (q + 1)
+    have hd1 : (0 : ℝ) < ((N : ℝ) ^ τ) ^ (q + 1) := by positivity
+    calc hwConst q / lam ^ (q + 1)
+        ≤ hwConst q / ((N : ℝ) ^ τ) ^ (q + 1) :=
+          div_le_div_of_nonneg_left (hwConst_pos q).le hd1 hden
+      _ = hwConst q / (N : ℝ) ^ (τ * ((q : ℝ) + 1)) := by rw [hpow]
+      _ ≤ (N : ℝ) ^ (τ * ((q : ℝ) + 1) - D) / (N : ℝ) ^ (τ * ((q : ℝ) + 1)) := by
+          gcongr
+      _ = (N : ℝ) ^ (-D) := by
+          rw [← Real.rpow_sub hN0]
+          congr 1
+          ring
 
 end RBM.Gauss

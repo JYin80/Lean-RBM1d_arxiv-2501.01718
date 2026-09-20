@@ -1784,3 +1784,46 @@ integral_ldeQuadLHS_pow_le :
 `stochDom_of_momentDom`（T73）只接受确定性控制。所以要走 `StochDom.of_det` 那条路
 （`Green/EntryBound.lean` 里 `entry_bound_stochDom`/`diag_bound_stochDom` 本身就是这么用的），
 或者先把 `ldeQuadRHS` 用好事件上的确定性控制夹住。这是下一张工单。
+
+**T96 ✔**（`Gauss/LDEQuadDom.lean`，新建，零 sorry）：`diag_bound_stochDom` 的第四条假设
+`hLquad` 落地。
+
+```
+stochDom_ldeQuad (hG : GaussIBP d) (hz : z.im ≠ 0) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
+  StochDom (P d)
+    (fun N i ω => ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) z) (Sblk (d.L N) (d.W N)) u i)
+    (fun N i ω => ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) z) i)
+```
+
+取 `z := zt E t`、`u := t` 就是 `diag_bound_stochDom` 的 `hLquad` 逐字形状。
+
+**难点与解法**。T95 的矩不等式的控制 `ldeQuadRHS` 是**随机的**，`stochDom_of_momentDom`（T73）
+只吃确定性控制；而 Markov 也不能直接用，因为阈值 `N^τ·ζ(ω)` 随 ω 变。解法是**归一化**：
+
+1. 把矩阵整体除以 `(Vq + ε)^{1/2}`（`modelChaosEps`）。这个因子**与 (k,l) 无关**，所以
+   混沌也被同样地除；它只读 off-row 坐标，所以 `B_free` 保住；而且它让矩阵**仍然全局有界**
+   （`Bbd/√ε`）——这正是 `RowChaos` 要的。归一化后控制 `Vq/(Vq+ε) ≤ 1`，于是
+   `E[(|Q|²/(Vq+ε))^p] ≤ A_p`，**常数与 ε 无关**（`mom_modelChaosEps_le`）；
+2. 此时 Markov 的阈值是确定性的（`meas_lt_normSq_chaos_le_eps`）；
+3. 去掉 ε 不用任何积分极限定理：
+   `{|Q|² > λVq} = ⋃_n {|Q|² > λ(Vq + 1/(n+1))}` 是**递增并**，测度的下连续性直接给出
+   `P{λVq < |Q|²} ≤ A_p/λ^p`（`meas_lt_normSq_chaos_le`）。**`{Vq = 0}` 不需要单独处理**
+   ——它自动落在并集的补里（这比 T91 那边的 a.s. 论证省事）；
+4. 最后 `StochDom.of_forall_le` 的 union bound（`LW ≤ N` 个格点）+ 取 `p` 大。
+   `u = 0` 单独一支：那时 `h = 0`、`σ = 0`，混沌恒为 0（`chaos_modelChaos_zero`），坏事件是空集。
+
+蓝图新节点 `lem:lde-quad-dom`。全量构建通过，公理审计 **6769 条声明**全部合规。
+
+**`diag_bound_stochDom` 的四条假设现在全部落地**：
+
+| | |
+|---|---|
+| `hLrow` | ✔ T91 `stochDom_ldeRow` |
+| `hLcol` | ✔ T91 `stochDom_ldeCol` |
+| `hLdiag` | ✔ T92 `stochDom_normSq_Hflow_diag` |
+| `hLquad` | ✔ T96 `stochDom_ldeQuad` |
+
+`entry_bound_stochDom`（(4.2)）的两条也齐了（T91）。**下一步**：把这四条喂进
+`Green/EntryBound.lean` 的 `entry_bound_stochDom` / `diag_bound_stochDom`，得到 (4.2)(4.3)
+对高斯模型的无假设版本——那是个纯粹的对接工单（需要核对 `zt E t` 的 `im ≠ 0`、
+`0 ≤ t < 1` 与各处 `Sblk` 参数一致），**不碰 `Green/EntryBound.lean` 本身**，新开文件即可。

@@ -162,7 +162,7 @@
 | T68 | §2.3 + §7.2 的出口：**Theorem 2.5（QUE）与 Theorem 2.6（普适性）** | `Flow/Universality.lean`（新建） | Claude Code | **完成** |
 | T69 | 固定高斯带矩阵 `X`、流 `H_u := √u·X`、实例化 `Sample`、确定性 Lipschitz | `Gauss/Model.lean`（新建） | Claude Code | **完成**（`Sample` 三字段为定理；`‖X‖ ≺ 1` 与 `Dims` 实例两处缺口见 STATUS） |
 | T70 | **Stein 分部积分**：`E[x·f(x)] = v·E[f′(x)]`，一维 → 乘积 → 矩阵 | `Gauss/Stein.lean`（新建） | **Cowork** | 进行中 ← **⭐ 整条线的地基** |
-| T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | Claude Code | 进行中（T70 的矩阵版 Stein 先作假设，一维版已由 Cowork 落地） |
+| T71 | **生成元恒等式** `∂_u E[Φ(H_u)] = ½ Σ S_ij E[∂_ij∂_ji Φ(H_u)]` | `Gauss/Generator.lean`（新建） | Claude Code | **完成**（`MatrixStein` 为单字段假设待 T70 卸；含全局导数界） |
 | T72 | 对矩的 Grönwall：`φ′ ≤ aφ + b` ⟹ 界；**二阶项 = (5.25) 的二次变差** | `Gauss/MomentGronwall.lean`（新建） | 待认领 | 未开工（等 T71） |
 | T73 | `≺` ↔ 矩 的桥；`N^{-C}` 时间网 + Lipschitz ⟹ `u` 一致的 `≺` | `Gauss/Domination.lean`（新建） | Claude Code | **完成**（Hölder-γ 接口，T69 对接取 γ=1/2；`hmom` 待 T72） |
 | T74 | 卸掉 Lemma 5.5（BDG）那个假设字段 | `Gauss/DischargeBDG.lean`（新建） | 待认领 | 未开工（等 T72） |

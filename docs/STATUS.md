@@ -1227,3 +1227,13 @@ T70 的入口是 `P_map_eval`（单坐标律）与 `P_map_restrict`（任意有�
 1. `‖X‖ ≺ 1`（算子范数的高斯尾）未证，现为假设结构 `OpNormBound`；Mathlib 既无矩方法也无矩阵范数的高斯集中。
 2. **`Dims` 尚无实例**——整条矩路线在形式上以「`Dims` 非空」为前提。给出 `L=3, W=N/3, c=1/4` 之类的实例，唯一不平凡处是 (2.2)：`N^{3/4} ≤ ⌊N/3⌋` 终于成立（实 `rpow` 的活）。
 另：本文件 import `Green.EntryBound` 仅为 `RBM.Sblk`；若不想要这个依赖方向，应把 `Sblk` 下沉到 `RBM1D/Defs/`。paper-deltas #49。
+
+### `RBM1D/Gauss/Generator.lean` — 生成元恒等式（T71，Claude Code 并行 agent）
+
+矩路线的核心。**`hasDerivAt_integral_Phi`**（坐标形式，右端**就是** (5.25) 的二次变差，T72 要的是这一版）与 **`hasDerivAt_integral_Phi_pairs`**（论文字面的 `½ Σ_i Σ_j S_ij E[∂_ij∂_ji Φ]`，`∂_ij∂_ji = wirtSecond`）。
+证法即工单所述：在 `s ∈ Ioi (u/2)` 上 `hasDerivAt_integral_of_dominated_loc_of_deriv_le`，被积函数导数 `(2√s)^{-1} Σ_α ω_α ∂_α Φ`，逐坐标用 Stein，`√u` 相消。常数在两个算例上验过（标量 `Φ=M²`、2×2 的 `Φ=|M₁₂|²`，都恰好给出 `S`）。
+**全局导数界**（工单要求，下游每处都用）：`norm_green_le : ‖G‖ ≤ η⁻¹`、`norm_iteratedDeriv_green_le : ‖∂^k G‖ ≤ k!·η^{-(k+1)}‖A‖^k`，都在**全空间**成立，故下游的 dominated 条件全是常数。
+**一个坑已排掉**：`(M−z)^{-1}` 不是处处有定义，`Φ = |F(G(M))|^{2p}` 并非全局 `C²`、无法满足 `TestFun`；解法是先与 Hermitian 投影 `hermCLM` 复合（所有基点 `Hflow` 与方向 `Bmat` 都已 Hermitian，值不变）。
+
+**⚠ 给 Cowork（T70）的接口**：矩阵版 Stein 作假设 `MatrixStein`（单字段），假设刻意取强以让 T70 的活尽量小——`FinDep`（有限依赖）让 `P_map_restrict` 把无穷乘积塌成 `Measure.pi`，之后就是对其余坐标 Fubini + 已落地的一维 `RBM.integral_mul_gaussianReal`。未碰 `Stein.lean`，也未写乘积版，无冲突。
+**剩余**：`MatrixStein` 待 T70 卸掉；为具体的 `|F|^{2p}` 造 `TestFun` 是 T72 的活。paper-deltas #50。

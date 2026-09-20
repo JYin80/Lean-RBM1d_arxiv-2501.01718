@@ -1433,6 +1433,20 @@
   $\|H_u-H_{u'}\|=|\sqrt u-\sqrt{u'}|\,\|X\|$ feeds the time net.
 \end{definition}
 
+\begin{theorem}[Generator identity for $H_u=\sqrt u\,X$ (moment route)]\label{thm:generator}
+  \lean{RBM.Gauss.MatrixStein, RBM.Gauss.TestFun, RBM.Gauss.usedCoord, RBM.Gauss.Bmat, RBM.Gauss.Xmat_eq_sum, RBM.Gauss.Xmat_update, RBM.Gauss.hasDerivAt_coordD1_update, RBM.Gauss.coordD2, RBM.Gauss.wirtSecond, RBM.Gauss.sum_used_eq_sum_pairs, RBM.Gauss.sum_used_eq_sum_pairs_coordD2, RBM.Gauss.hasDerivAt_integral_Phi, RBM.Gauss.deriv_integral_Phi, RBM.Gauss.hasDerivAt_integral_Phi_pairs, RBM.Gauss.hermCLM, RBM.Gauss.isHermitian_hermCLM, RBM.Gauss.norm_green_le, RBM.Gauss.iteratedDeriv_lineInverse, RBM.Gauss.norm_iteratedDeriv_green_le, RBM.Gauss.norm_lineInversePow_le}
+  \leanok\uses{def:gauss-model, lem:moment-dom}
+  $\partial_u\mathbb E[\Phi(H_u)]=\tfrac12\sum_{ij}S_{ij}\mathbb E[\partial_{ij}\partial_{ji}\Phi(H_u)]$
+  for $u>0$, from Stein's identity coordinatewise; plus the global resolvent bounds
+  $\|G\|\le\eta^{-1}$ and $\|\partial^k G\|\le k!\,\eta^{-(k+1)}\|A\|^k$ that make every
+  domination hypothesis a constant.
+\end{theorem}
+\begin{proof}\leanok
+  Differentiate under the integral on $s\in(u/2,\infty)$; the integrand's derivative is
+  $(2\sqrt s)^{-1}\sum_\alpha\omega_\alpha\partial_\alpha\Phi$; Stein turns $\omega_\alpha$ into
+  $\mathrm{gvar}_\alpha\partial_\alpha$ and the $\sqrt u$ cancels.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

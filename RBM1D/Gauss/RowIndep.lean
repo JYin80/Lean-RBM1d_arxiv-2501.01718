@@ -761,21 +761,17 @@ theorem lintegral_norm_row_sum_pow_le {u : ℝ} (hu : 0 ≤ u) (i : d.Idx N) (c 
 
 /-! ### The row LDE without integrability hypotheses -/
 
-/-- **The row LDE, `ℝ≥0∞` form, no side conditions.**  Tonelli across the independent blocks:
-conditionally on the off-row block the normalised row sum is a centred complex Gaussian of
-variance `≤ 1`, so `∫⁻ ‖Z/√V‖^{2p} ≤ 2 (2p-1)!!` with no integrability hypothesis. -/
-theorem lintegral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
-    (hCmeas : Measurable C)
-    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω') :
-    ∫⁻ ω, ENNReal.ofReal (‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p)) ∂(P d)
-      ≤ ENNReal.ofReal (2 * dfac p) := by
+/-- **Tonelli assembly, constant-bound form.**  If the coefficients `D` read only the off-row
+block and their (random) variance obeys a uniform bound after the frozen estimate, then
+`∫⁻ ‖Z‖^{2p}` obeys that bound — with no integrability hypothesis. -/
+theorem lintegral_norm_rowSum_pow_le_of_const (hu : 0 ≤ u) (D : Ω d → d.Idx N → ℂ)
+    (hDmeas : Measurable D)
+    (hDC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → D ω = D ω') {c : ℝ≥0∞}
+    (hb : ∀ ω : Ω d, ENNReal.ofReal (2 * (dfac p * rowVarSum d N u i D ω ^ p)) ≤ c) :
+    ∫⁻ ω, ENNReal.ofReal (‖rowSum d N u i D ω‖ ^ (2 * p)) ∂(P d) ≤ c := by
   classical
   set S := rowSet d N i with hS
   set T := offRowCoord d N i with hT
-  set D := rowCoeffNorm d N u i C with hD
-  have hDmeas : Measurable D := measurable_rowCoeffNorm C hCmeas
-  have hDC : ∀ ω ω' : Ω d, (∀ c ∈ T, ω c = ω' c) → D ω = D ω' :=
-    fun ω ω' h => rowCoeffNorm_congr C hC ω ω' h
   set U : Ω d → ({c // c ∈ S} → ℝ) := fun ω c => ω c.1 with hU
   set V : Ω d → ({c // c ∈ T} → ℝ) := fun ω c => ω c.1 with hV
   have hUmeas : Measurable U := Measurable.of_eval fun c => measurable_pi_apply c.1
@@ -794,8 +790,7 @@ theorem lintegral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N �
     intro ω
     refine row_sum_congr u D hDC fun c hc => ?_
     exact (glue_agree S T ω hc).symm
-  have hinner : ∀ y : {c // c ∈ T} → ℝ,
-      (∫⁻ x, F (x, y) ∂((P d).map U)) ≤ ENNReal.ofReal (2 * dfac p) := by
+  have hinner : ∀ y : {c // c ∈ T} → ℝ, (∫⁻ x, F (x, y) ∂((P d).map U)) ≤ c := by
     intro y
     have hFy : Measurable fun x : {c // c ∈ S} → ℝ => F (x, y) :=
       hFmeas.comp (measurable_id.prodMk measurable_const)
@@ -819,30 +814,36 @@ theorem lintegral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N �
         rw [this]
       rw [hHe, hDe]
     simp only [hval]
-    refine (lintegral_norm_row_sum_pow_le hu i (D (glue S T (0, y))) p).trans ?_
-    refine ENNReal.ofReal_le_ofReal ?_
-    have hvar : rowVarSum d N u i D (glue S T (0, y))
-        = if 0 < rowVarSum d N u i C (glue S T (0, y)) then 1 else 0 :=
-      rowVarSum_rowCoeffNorm hu C _
-    have hle : (u * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 *
-        ‖D (glue S T (0, y)) k.1‖ ^ 2) ^ p ≤ 1 := by
-      have : (u * ∑ k : {k : d.Idx N // k ≠ i}, Sblk (d.L N) (d.W N) i k.1 *
-          ‖D (glue S T (0, y)) k.1‖ ^ 2) = rowVarSum d N u i D (glue S T (0, y)) := rfl
-      rw [this, hvar]
-      by_cases h : 0 < rowVarSum d N u i C (glue S T (0, y))
-      · simp [h]
-      · rcases Nat.eq_zero_or_pos p with rfl | hp
-        · simp [h]
-        · simp [h, zero_pow hp.ne']
-    have hd : (0 : ℝ) ≤ dfac p := by unfold dfac; positivity
-    nlinarith [hle, hd]
+    exact (lintegral_norm_row_sum_pow_le hu i (D (glue S T (0, y))) p).trans
+      (hb (glue S T (0, y)))
   have hmain := lintegral_indep_pair_le hUmeas hVmeas hindep hFmeas hinner
   calc ∫⁻ ω, ENNReal.ofReal (‖rowSum d N u i D ω‖ ^ (2 * p)) ∂(P d)
       = ∫⁻ ω, F (U ω, V ω) ∂(P d) := by
         refine lintegral_congr fun ω => ?_
         simp only [hF]
         rw [← hrow]
-    _ ≤ ENNReal.ofReal (2 * dfac p) := hmain
+    _ ≤ c := hmain
+
+/-- **The row LDE, `ℝ≥0∞` form, no side conditions.**  Conditionally on the off-row block the
+normalised row sum is a centred complex Gaussian of variance `≤ 1`. -/
+theorem lintegral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
+    (hCmeas : Measurable C)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω') :
+    ∫⁻ ω, ENNReal.ofReal (‖rowSum d N u i (rowCoeffNorm d N u i C) ω‖ ^ (2 * p)) ∂(P d)
+      ≤ ENNReal.ofReal (2 * dfac p) := by
+  refine lintegral_norm_rowSum_pow_le_of_const hu (rowCoeffNorm d N u i C)
+    (measurable_rowCoeffNorm C hCmeas) (fun ω ω' h => rowCoeffNorm_congr C hC ω ω' h)
+    (fun ω => ENNReal.ofReal_le_ofReal ?_)
+  have hvar := rowVarSum_rowCoeffNorm (d := d) (N := N) (u := u) (i := i) hu C ω
+  have hd0 : (0 : ℝ) ≤ dfac p := by unfold dfac; positivity
+  have hle : rowVarSum d N u i (rowCoeffNorm d N u i C) ω ^ p ≤ 1 := by
+    rw [hvar]
+    by_cases h : 0 < rowVarSum d N u i C ω
+    · simp [h]
+    · rcases Nat.eq_zero_or_pos p with rfl | hp
+      · simp [h]
+      · simp [h, zero_pow hp.ne']
+  nlinarith [hle, hd0]
 
 /-- Integrability of the normalised row sum, from the finiteness of the `ℝ≥0∞` bound. -/
 theorem integrable_norm_rowSum_norm_pow (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
@@ -1032,5 +1033,61 @@ theorem stochDom_rowSum_minorRowConj (hu : 0 ≤ u) (z : ℂ) :
     (fun N q => q.1) (fun N q => minorRowConj d N u z q.1 q.2)
     (fun N q => measurable_minorRowConj u z q.1 q.2)
     (fun N q ω ω' h => minorRowConj_congr u z q.2 h)
+
+/-- **The degenerate case.**  Where the conditional variance vanishes, so does the row sum,
+almost surely: freezing the coefficients to `0` off that event gives a family whose variance is
+identically `0`, hence whose second moment vanishes. -/
+theorem rowSum_ae_eq_zero_of_varSum_eq_zero (hu : 0 ≤ u) (C : Ω d → d.Idx N → ℂ)
+    (hCmeas : Measurable C)
+    (hC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → C ω = C ω') :
+    ∀ᵐ ω ∂(P d), rowVarSum d N u i C ω = 0 → rowSum d N u i C ω = 0 := by
+  classical
+  set D : Ω d → d.Idx N → ℂ :=
+    fun ω k => if rowVarSum d N u i C ω = 0 then C ω k else 0 with hD
+  have hVmeas : Measurable (rowVarSum d N u i C) := measurable_rowVarSum C hCmeas
+  have hDmeas : Measurable D := by
+    refine Measurable.of_eval fun k => ?_
+    exact Measurable.ite (measurableSet_eq_fun hVmeas measurable_const)
+      ((measurable_pi_apply k).comp hCmeas) measurable_const
+  have hDC : ∀ ω ω' : Ω d, (∀ c ∈ offRowCoord d N i, ω c = ω' c) → D ω = D ω' := by
+    intro ω ω' h
+    have hCe := hC ω ω' h
+    funext k
+    simp only [hD, rowVarSum, hCe]
+    rfl
+  have hDvar : ∀ ω : Ω d, rowVarSum d N u i D ω = 0 := by
+    intro ω
+    by_cases h : rowVarSum d N u i C ω = 0
+    · have : D ω = C ω := by funext k; simp [hD, h]
+      simp only [rowVarSum] at h ⊢
+      rw [this]
+      exact h
+    · have : D ω = fun _ => (0 : ℂ) := by funext k; simp [hD, h]
+      simp [rowVarSum, this]
+  -- the second moment of the frozen family vanishes
+  have hzero : ∫⁻ ω, ENNReal.ofReal (‖rowSum d N u i D ω‖ ^ (2 * 1)) ∂(P d) = 0 := by
+    refine le_antisymm ?_ (zero_le)
+    refine lintegral_norm_rowSum_pow_le_of_const hu D hDmeas hDC fun ω => ?_
+    simp [hDvar ω]
+  have hae : ∀ᵐ ω ∂(P d), ENNReal.ofReal (‖rowSum d N u i D ω‖ ^ (2 * 1)) = 0 := by
+    rw [lintegral_eq_zero_iff'] at hzero
+    · exact hzero
+    · refine (ENNReal.measurable_ofReal.comp (Measurable.pow_const (Measurable.norm ?_) _)).aemeasurable
+      unfold rowSum
+      exact Finset.measurable_sum _ fun k _ =>
+        (measurable_Hflow d N u i k.1).mul ((measurable_pi_apply k.1).comp hDmeas)
+  filter_upwards [hae] with ω hω hV
+  have hDC' : D ω = C ω := by funext k; simp [hD, hV]
+  have : ‖rowSum d N u i D ω‖ ^ (2 * 1) = 0 := by
+    have := ENNReal.ofReal_eq_zero.1 hω
+    have hnn : (0 : ℝ) ≤ ‖rowSum d N u i D ω‖ ^ (2 * 1) := by positivity
+    linarith
+  have hnorm : ‖rowSum d N u i D ω‖ = 0 := by
+    have hp : ‖rowSum d N u i D ω‖ ^ (2 * 1) = ‖rowSum d N u i D ω‖ ^ 2 := by norm_num
+    rw [hp, pow_eq_zero_iff (by norm_num)] at this
+    exact this
+  have : rowSum d N u i D ω = 0 := by simpa using hnorm
+  rwa [show rowSum d N u i D ω = rowSum d N u i C ω by
+    unfold rowSum; simp only [hDC']] at this
 
 end RBM.Gauss

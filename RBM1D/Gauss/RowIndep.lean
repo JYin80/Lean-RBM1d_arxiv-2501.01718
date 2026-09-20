@@ -598,4 +598,67 @@ theorem integral_norm_rowSum_norm_pow_le (hu : 0 ≤ u) (C : Ω d → d.Idx N �
     positivity
   nlinarith [hle, hd]
 
+/-! ### Measurability of the minor resolvent -/
+
+section MatrixMeasurable
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {Θ : Type*} [MeasurableSpace Θ]
+  {A : Θ → Matrix n n ℂ}
+
+theorem measurable_det_entries (hA : ∀ k l, Measurable fun ω => A ω k l) :
+    Measurable fun ω => (A ω).det := by
+  simp_rw [Matrix.det_apply]
+  refine Finset.measurable_sum _ fun σ _ => ?_
+  refine Measurable.const_smul ?_ _
+  exact Finset.measurable_prod _ fun k _ => hA (σ k) k
+
+theorem measurable_adjugate_entries (hA : ∀ k l, Measurable fun ω => A ω k l) (k l : n) :
+    Measurable fun ω => (A ω).adjugate k l := by
+  simp_rw [Matrix.adjugate_apply]
+  refine measurable_det_entries fun a b => ?_
+  by_cases h : a = l
+  · subst h
+    simp only [Matrix.updateRow_self]
+    exact measurable_const
+  · simp only [Matrix.updateRow_ne h]
+    exact hA a b
+
+theorem measurable_inv_entries (hA : ∀ k l, Measurable fun ω => A ω k l) (k l : n) :
+    Measurable fun ω => (A ω)⁻¹ k l := by
+  simp_rw [Matrix.inv_def, Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv']
+  exact ((measurable_det_entries hA).inv).mul (measurable_adjugate_entries hA k l)
+
+end MatrixMeasurable
+
+/-- The `j`-th column of the minor resolvent `(H^{(i)} - z)^{-1}`, as coefficients indexed by
+all of `Idx N` (zero at `i`). -/
+noncomputable def minorCol (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ) (i : d.Idx N)
+    (j : {a : d.Idx N // a ≠ i}) (ω : Ω d) (k : d.Idx N) : ℂ :=
+  if h : k ≠ i then
+    (((Hflow d N u ω).submatrix (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+        (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+      - z • (1 : Matrix {a : d.Idx N // a ≠ i} {a : d.Idx N // a ≠ i} ℂ))⁻¹) ⟨k, h⟩ j
+  else 0
+
+/-- **The minor resolvent column reads only the off-row block.** -/
+theorem minorCol_congr (u : ℝ) (z : ℂ) {i : d.Idx N} (j : {a : d.Idx N // a ≠ i})
+    {ω ω' : Ω d} (h : ∀ c ∈ offRowCoord d N i, ω c = ω' c) :
+    minorCol d N u z i j ω = minorCol d N u z i j ω' := by
+  funext k
+  unfold minorCol
+  rw [Hflow_submatrix_congr_offRowCoord u h]
+
+theorem measurable_minorCol (u : ℝ) (z : ℂ) (i : d.Idx N) (j : {a : d.Idx N // a ≠ i}) :
+    Measurable (minorCol d N u z i j) := by
+  refine Measurable.of_eval fun k => ?_
+  unfold minorCol
+  split
+  · exact measurable_inv_entries
+      (A := fun ω : Ω d => (Hflow d N u ω).submatrix
+        (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+        (Subtype.val : {a : d.Idx N // a ≠ i} → d.Idx N)
+        - z • (1 : Matrix {a : d.Idx N // a ≠ i} {a : d.Idx N // a ≠ i} ℂ))
+      (fun a b => (measurable_Hflow d N u a.1 b.1).sub measurable_const) _ _
+  · exact measurable_const
+
 end RBM.Gauss

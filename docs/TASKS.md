@@ -182,6 +182,7 @@
 | T90 | 维护：全库重复扫描 + 下沉 `half_le_ellHat`（`Propagator/Edges.lean` 与 `Loop/Cor35.lean` 各一份）；其余重复项列入 STATUS 交各自负责人 | `Propagator/DecayComplex.lean` | Claude Code #2 | **完成**（`half_le_ellHat` 已下沉；其余 4 处列在 STATUS，归各自负责人） |
 | T91 | 把 T81 的 `≺` 落成 `EntryBound` 需要的假设形式：高概率下的 `LDERow`/`LDECol`（含 `V = 0` 退化分支的 a.s. 论证） | `Gauss/LDEHyp.lean`（新建） | **Claude Code #2** | 已完成 |
 | T92 | **对角 LDE**：`‖H_ii‖² ≺ S_ii`，即 `diag_bound_stochDom` 的 `hLdiag`（高斯情形，`H_ii = √u·ω⟨N,i,i,tt⟩` 是一维实高斯，直接用 T81 的矩机器 + `stochDom_of_momentDom`） | `Gauss/LDEDiag.lean`（新建） | **Claude Code #2** | 已完成 |
+| T93 | **正混沌矩界 `E[T^p] ≤ C_p E[Vq^p]`**：T82 留下的唯一数学缺口（`LDEQuad.lean` 文件头「What is not done here」第 1 条）。做法：对 `E[T^p]` 再跑一次行 IBP，用导子 `D_l = r(∂_{a_l} − ε_l i ∂_{b_l})`（`D_l U_k = 0`、`D_l V̄_k = 0`、`D_l Ū_k = 2r²B̄_{kl}`、`D_l V_k = 2r²B_{lk}`），交叉项用 Cauchy–Schwarz 压成 `Vq·T`，再用 `young_pow` 闭合。**不碰 `Gauss/LDEQuad.lean`** | `Gauss/LDEQuadT.lean`（新建） | **Claude Code #2** | 进行中 |
 
 ---
 

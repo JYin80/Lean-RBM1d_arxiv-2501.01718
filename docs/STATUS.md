@@ -1287,3 +1287,22 @@ capstone `hasDerivAt_momentIntegral_greenObs` **除 `MatrixStein` 外假设全�
 2. 表示问题：支点这边是**矩阵的函数**，`EE`/`bdg` 活在 `LoopArg`/`LoopIdx` 上——就是 STATUS 里 T58 那条表示桥。
 另：论文 (5.25) 的字面形式在 Schwarz 拆出 `Σ_k` 之后，本文件是拆分之前。**矩阵这一侧已经做完**；T74 要补的是 (i) 把 `L_{u,σ,a}` 写成 `H` 的函数并按 Def 5.4 定义 `EE`，(ii) `LoopIdx ↔ Fin n → ZMod L` 的桥。
 **未做**：`BddC2` 对乘积封闭（故只实例化了一次的观测量 `φ(G)`，真正的预解式乘积还没有）；`Σ_k` 的 Schwarz 步；把 `genMomentPt_le` 变成 Grönwall 的前提（需 Hölder + loop 界，在下游）。paper-deltas #53。
+
+### `RBM1D/Gauss/Moments.lean` — T81 进行中（Claude Code #2）
+
+高斯矩的确定性输入，T81 与 T82 共用：
+
+| Lean | 内容 |
+|---|---|
+| `RBM.integrable_pow_gaussianReal` | 多项式矩存在（由 `memLp_id_gaussianReal'`） |
+| `RBM.integrable_mul_gaussianPDFReal` | 测度形式 ⟹ 密度形式的可积性桥（`withDensity`） |
+| `RBM.integral_pow_gaussianReal_succ` | Stein 递推 `E[X^{2p+2}] = (2p+1)v·E[X^{2p}]` |
+| **`RBM.integral_pow_gaussianReal`** | `E[X^{2p}] = (2p−1)!!·v^p`（`v = 0` 也成立） |
+| `RBM.dfac` / `RBM.sum_choose_dfac` | `(2p−1)!!`；卷积恒等式 `Σ_k C(p,k)(2k−1)!!(2(p−k)−1)!! = 2^p p!`（Pascal 拆分 ⟹ `S(p+1) = (2p+2)S(p)`） |
+| **`RBM.integral_add_sq_pow_gaussian_prod`** | 复中心高斯的绝对矩 `E[(X²+Y²)^p] = p!(2w)^p = p!σ^{2p}` |
+
+Mathlib 没有高斯矩公式，这里是用我们自己的一维 Stein（T70 已落地部分）做递推得到的。
+**下一步**：独立性引理（`G^(i)` 只依赖第 `i` 行以外的坐标，`FinDep` 见证集不含该行），
+条件化后 `∑_k H_ik X_k` 是中心复高斯 ⟹ 用上面的矩公式 ⟹ 经 T73 的 Markov 桥落成 `≺`。
+**插曲**：期间 `Gauss/Stein.lean` 一度编不过（Cowork 的 T70 在改，未提交），我用 HEAD 快照
+（`.lake/packages` 软链 + `.lake/build` 复制到 scratchpad）离线验证，等对面提交后再在主工作区编译通过才提交。

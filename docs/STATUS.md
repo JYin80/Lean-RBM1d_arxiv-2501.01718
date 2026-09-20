@@ -1515,3 +1515,12 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 
 **不是我这边的文件**，我没有改它。我这一批（T82/T84/T85/T86/T87）各文件的 `lake env lean` 与全局的 `Replayed` 行都是绿的。
 按 CLAUDE.md「build 红着的时候」那一节：这期间两边判断自己的文件是否通过，要看 `build.log` 里自己文件的 `Built/Replayed` 行，而不是末尾的 `errors:`。
+
+**T81 第十九、二十块 ✔**：`measurable_det_entries`/`measurable_adjugate_entries`/`measurable_inv_entries`
+（逐元素可测 ⟹ 行列式、伴随、逆的元素可测）、`minorCol`（`(H^{(i)} − z)⁻¹` 的第 `j` 列）及其可测性与
+「只读 off-row 块」（`minorCol_congr`），最后接成
+**`integral_norm_rowSum_minorCol_pow_le`**：归一化后的行和满足常数矩界 `≤ 2(2p−1)!!`。
+**这就是 T81 的核心分析结论**（论文的线性 LDE 的矩形式）。
+**T81 收尾还需**：(a) 可积性假设的消除（由 `‖G^{(i)}‖ ≤ η⁻¹` 的确定性包络给出，接 T77）；
+(b) 与 `Green/EntryBound.lean` 的 `ldeRowLHS`/`ldeRowRHS` 对齐（`greenMinor` = minor 预解式，
+即 T40 的 `inv_minor_resolvent`，带可逆性前提）；(c) 经 T73 的 `stochDom_of_momentDom` 落成 `≺`。

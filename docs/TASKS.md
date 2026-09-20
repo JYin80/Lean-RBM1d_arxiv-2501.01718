@@ -195,6 +195,7 @@
 | T103 | 审计：全库**仍被携带的假设**清点（`Flow/Hypotheses.lean` 的 structure 字段、各文件的 `Prop` 参数），逐条标注「已被高斯层卸掉 / 可卸但没人做 / 真缺口（缺什么）」，产出下一批工单 | `docs/STATUS.md`（审计记录） | **Claude Code #2** | 已完成 |
 | T104 | **卸掉 `GaussIBP`**（`Gauss/LDEQuad.lean` 的两个字段，T103 审计出的唯一「可卸未卸」项）。`stein`：把 `SteinMatrix.matrixStein` 的逐坐标 Fubini 论证从「全局有界」换成「多项式增长」——一维的 `integral_mul_gaussianReal`（`Gauss/Stein.lean:94`）本来就只要三条可积性，**不需要光滑截断**；`polyInt`：初等高斯矩。卸掉后 T93/T95/T96/T97 全链无携带假设 | `Gauss/IBPPoly.lean`（新建） | **Claude Code #2** | 已完成 |
 | T105 | 维护：`GaussIBP` 已由 T104 卸掉，把 `hG : GaussIBP d` 从**我自己那几个文件**的签名里删掉（`LDEQuadInst.lean`、`LDEQuadDom.lean`、`EntryBoundGauss.lean`、`Lemma41Glue.lean`），内部改填 `gaussIBP d`。**不碰 `Gauss/LDEQuad.lean`**（那是别人的，接口保持不变） | 上述五个文件 | **Claude Code #2** | 已完成 |
+| T106 | **`u ↦ ‖G_u − m‖²_max` 的 Hölder 模**（T99 的 (C) 里唯一还没人做的一块，且**不依赖 T100**）：纯确定性。预解式恒等式 + `norm_Hflow_sub`（`‖H_u−H_u'‖ = \|√u−√u'\|·‖X‖`）+ `\|√u−√u'\| ≤ \|u−u'\|^{1/2}` + `z_u` 的 Lipschitz 性，给出 `\|llMax_u² − llMax_u'²\| ≤ C·η_t⁻²(‖X‖+1)·\|u−u'\|^{1/2}`。配 T101 的 `≺`-常数版与 T100 的 `‖X‖ ≺ 1` 即可关掉 `Lemma41Flow` | `Gauss/FlowHolder.lean`（新建） | **Claude Code #2** | 进行中 |
 
 ---
 

@@ -1273,3 +1273,17 @@ T70 的入口是 `P_map_eval`（单坐标律）与 `P_map_restrict`（任意有�
 `Bounds`/`Thm221`/`Steps`/`Transfer` 里没有与本文件同形状的字段。
 **剩余假设**：`MatrixStein`（欠 T70）、`TestFun`（需矩阵求逆的 Fréchet `C²` + `List.foldr` 乘积的 Leibniz；Generator.lean 只有逐线的 `iteratedDeriv` 版）、`LoopIto`（纯确定性的 cut-and-glue 代数）。
 **未做**：动 `z_u` 的全导数——需「偏导连续 ⟹ 可微」，Mathlib 没有可直接用的引理；这是冻结陈述与 (2.45) 字面期望之间唯一缺的分析步骤。paper-deltas #52。
+
+### `RBM1D/Gauss/MomentGronwall.lean` — 对矩的 Grönwall 与支点恒等式（T72，Claude Code 并行 agent）
+
+**支点 `secondOrder_eq_quadVar`**：`Σ_{α∈usedCoord} S_α‖∂_αF‖² = Σ_{i,j} ‖E^{(M)}_{ij}‖²`（`EmartCoeff = √S_ij · wirtFirst`）。
+非对角的记账就是平行四边形恒等式 `‖½(x−iy)‖²+‖½(x+iy)‖² = ½(‖x‖²+‖y‖²)`——这正是论文按**有序对**加权 `S_ij` 与坐标按**一个代表**加权 `S_ij/2` 之间的那个因子 2。
+`hasDerivAt_momentIntegral`：`d/du E|F(H_u)|^{2p} = E[𝓛(|F|^{2p})]`（u > 0）；`genMomentPt_le` 给出工单那个展开式，**但它是不等式**（见 paper-deltas #53；已用 p=3、p=1 两个 `norm_num` 算例核过）；`momentIntegral_le_gronwallBound` 收口。
+`TestFun` 已为观测量 `φ(G)` 卸掉：`resH`（与 `hermCLM` 复合的预解式）的全局界 `η⁻¹`、`η⁻²`、`2η⁻³` ⟹ `bddC2_greenObs` ⟹ `testFun_momentFun_greenObs`；
+capstone `hasDerivAt_momentIntegral_greenObs` **除 `MatrixStein` 外假设全部卸掉**。
+
+**⚠ 支点与仓库现有 BDG 写法对不上（T74 需要知道的两件事）**：
+1. `SumZeroDyn.Hierarchy.EE` 是**未解释的结构字段**，仓库里没有任何地方按 Def 5.4 把它定义成 `Σ_α E^{(M)}(α,k)·E^{(M)}(α,k)`——没有可等同的 Lean 对象，硬写等式就是凭空假设，agent 拒绝这么做（正确）。
+2. 表示问题：支点这边是**矩阵的函数**，`EE`/`bdg` 活在 `LoopArg`/`LoopIdx` 上——就是 STATUS 里 T58 那条表示桥。
+另：论文 (5.25) 的字面形式在 Schwarz 拆出 `Σ_k` 之后，本文件是拆分之前。**矩阵这一侧已经做完**；T74 要补的是 (i) 把 `L_{u,σ,a}` 写成 `H` 的函数并按 Def 5.4 定义 `EE`，(ii) `LoopIdx ↔ Fin n → ZMod L` 的桥。
+**未做**：`BddC2` 对乘积封闭（故只实例化了一次的观测量 `φ(G)`，真正的预解式乘积还没有）；`Σ_k` 的 Schwarz 步；把 `genMomentPt_le` 变成 Grönwall 的前提（需 Hölder + loop 界，在下游）。paper-deltas #53。

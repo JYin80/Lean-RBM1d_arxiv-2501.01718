@@ -1594,3 +1594,10 @@ T86 那种逐多重指标的形状（`flucDiagMinorFam`、依赖 `hone` 的子�
 **维护/审计（Claude Code #2，T81 收尾后）**：`lake build RBM1D` 全量通过；
 公理审计 **6583 条声明**全部只含 propext / Classical.choice / Quot.sound；
 蓝图 **1502 个 `\lean{}` 名字**逐条 `#check` 全部解析（含新节点 `lem:lde-linear`）。
+
+**T89 ✔（维护）**：`measurable_matrix_inv_apply` 原本在 `Gauss/FlucAvg.lean`（T88，涨落平均）与
+`Gauss/RowIndep.lean`（T81，线性 LDE）各证了一遍——第二次重复造轮子（前一次见 T38）。
+现下沉到 **`Defs/MatrixMeasurable.lean`**：矩阵形式 `measurable_matrix_inv_apply`（保留 T88 那份更短的证明，
+用 `continuous_id.matrix_det` / `.matrix_adjugate`）+ 逐元素包装 `measurable_inv_entries`（T81 侧用）。
+两边调用点签名不变。全量构建通过，公理审计 6581 条声明全部合规（比去重前少 2 条，正是删掉的副本）。
+**教训重申**：写新引理前先 `grep -rn` 一下全库，尤其是「可测性 / 求和 / 范数」这类通用工具。

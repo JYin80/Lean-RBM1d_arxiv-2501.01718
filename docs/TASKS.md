@@ -178,7 +178,7 @@
 | T87 | **计数**：按不同指标个数分层 ⟹ 额外一个 `Ψ` | `Gauss/FlucCount.lean`（新建） | Claude Code | **完成**（任意权重的分层矩界 + 两组均匀权重的计数；≺ 截断留给 T88） |
 | T88 | 组装 ⟹ 卸掉 `EntryBound` 的 `hFA`（(4.12)），进而得 (4.5) | `Gauss/FlucAvg.lean`（新建） | Claude Code | **完成**（`hFA` 原签名卸掉、(4.5) 得证、可测性补齐；但 **(4.12) 有真实数学缺口**：T86 只迭代一阶，见 STATUS） |
 | T78 | 连续归纳（bootstrap）原理：`φ` 连续 + 自改进 `φ ≤ C → φ ≤ B` ⟹ `φ ≤ B`；T75 卸停时 (5.43) 的分析内核，**不依赖 T72** | `Analysis/Bootstrap.lean`（新建） | Claude Code #2 | **完成**（`le_of_bootstrap`；T75 直接调用即可） |
-| T89 | 维护：下沉矩阵可测性（`measurable_matrix_inv_apply` 在 `Gauss/FlucAvg.lean` 与 `Gauss/RowIndep.lean` 各证了一遍） | `Defs/MatrixMeasurable.lean`（新建） | **Claude Code #2** | 进行中 |
+| T89 | 维护：下沉矩阵可测性（`measurable_matrix_inv_apply` 在 `Gauss/FlucAvg.lean` 与 `Gauss/RowIndep.lean` 各证了一遍） | `Defs/MatrixMeasurable.lean`（新建） | Claude Code #2 | **完成** |
 
 ---
 

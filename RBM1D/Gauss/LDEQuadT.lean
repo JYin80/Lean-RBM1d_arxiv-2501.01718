@@ -403,6 +403,100 @@ theorem wirtVal_Wt (l : κ) (ω : Ω d) :
   rw [wirtVal_smul, wirtVal_termW]
   ring
 
+/-! ### The partials of `W_l` -/
+
+variable (C)
+
+/-- `∂W_l/∂a_l`. -/
+noncomputable def WA (l : κ) (ω : Ω d) : ℂ :=
+  ∑ k, ((C.sg k : ℝ) : ℂ) * (C.B ω k l * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+    + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.B ω l k))
+
+/-- `∂W_l/∂b_l`. -/
+noncomputable def WB (l : κ) (ω : Ω d) : ℂ :=
+  ∑ k, ((C.sg k : ℝ) : ℂ) *
+    (C.B ω k l * (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+      + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) * (starRingEnd ℂ) (C.B ω l k))
+
+theorem tameWA (l : κ) : Tame d (C.WA l) :=
+  Tame.sum _ fun k _ => (Tame.const (d := d) ((C.sg k : ℝ) : ℂ)).mul
+    (((C.tameB k l).mul ((C.tameB k l).mul (Tame.const (d := d) ((C.r : ℂ)))).conj).add
+      (((Tame.const (d := d) ((C.r : ℂ))).mul (C.tameB l k)).mul (C.tameB l k).conj))
+
+theorem tameWB (l : κ) : Tame d (C.WB l) :=
+  Tame.sum _ fun k _ => (Tame.const (d := d) ((C.sg k : ℝ) : ℂ)).mul
+    (((C.tameB k l).mul ((C.tameB k l).mul (Tame.const (d := d)
+        (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))).conj).add
+      (((Tame.const (d := d) ((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)).mul
+        (C.tameB l k)).mul (C.tameB l k).conj))
+
+theorem hasDerivAt_Wt_true (l : κ) (ω : Ω d) :
+    HasDerivAt (fun s : ℝ => C.Wt l (Function.update ω (C.co l true) s)) (C.WA l ω)
+      (ω (C.co l true)) := by
+  have hself := Function.update_eq_self (C.co l true) ω
+  have hterm : ∀ k : κ, HasDerivAt
+      (fun s : ℝ => ((C.sg k : ℝ) : ℂ) *
+        (C.B (Function.update ω (C.co l true) s) k l *
+            (starRingEnd ℂ) (C.U (Function.update ω (C.co l true) s) k)
+          + C.V (Function.update ω (C.co l true) s) k *
+            (starRingEnd ℂ) (C.B (Function.update ω (C.co l true) s) l k)))
+      (((C.sg k : ℝ) : ℂ) * (C.B ω k l * (starRingEnd ℂ) (C.B ω k l * (C.r : ℂ))
+        + ((C.r : ℂ) * C.B ω l k) * (starRingEnd ℂ) (C.B ω l k)))
+      (ω (C.co l true)) := by
+    intro k
+    have hB1 := C.hasDerivAt_B_const l true k l ω
+    have hB2 := C.hasDerivAt_B_const l true l k ω
+    have hUc := hasDerivAt_conj' (C.hasDerivAt_U_true l k ω)
+    have hVc := hasDerivAt_conj' hB2
+    have h1 := hB1.fun_mul hUc
+    have h2 := (C.hasDerivAt_V_true l k ω).fun_mul hVc
+    have hadd := (h1.add h2).const_mul (((C.sg k : ℝ) : ℂ))
+    simp only [hself] at hadd
+    convert hadd using 1
+    simp only [map_zero]
+    ring
+  exact HasDerivAt.fun_sum (u := (Finset.univ : Finset κ)) fun k _ => hterm k
+
+theorem hasDerivAt_Wt_false (l : κ) (ω : Ω d) :
+    HasDerivAt (fun s : ℝ => C.Wt l (Function.update ω (C.co l false) s)) (C.WB l ω)
+      (ω (C.co l false)) := by
+  have hself := Function.update_eq_self (C.co l false) ω
+  have hterm : ∀ k : κ, HasDerivAt
+      (fun s : ℝ => ((C.sg k : ℝ) : ℂ) *
+        (C.B (Function.update ω (C.co l false) s) k l *
+            (starRingEnd ℂ) (C.U (Function.update ω (C.co l false) s) k)
+          + C.V (Function.update ω (C.co l false) s) k *
+            (starRingEnd ℂ) (C.B (Function.update ω (C.co l false) s) l k)))
+      (((C.sg k : ℝ) : ℂ) *
+        (C.B ω k l *
+            (starRingEnd ℂ) (C.B ω k l * (-((C.r : ℂ) * (C.eps l : ℂ) * Complex.I)))
+          + (((C.r : ℂ) * (C.eps l : ℂ) * Complex.I) * C.B ω l k) *
+            (starRingEnd ℂ) (C.B ω l k)))
+      (ω (C.co l false)) := by
+    intro k
+    have hB1 := C.hasDerivAt_B_const l false k l ω
+    have hB2 := C.hasDerivAt_B_const l false l k ω
+    have hUc := hasDerivAt_conj' (C.hasDerivAt_U_false l k ω)
+    have hVc := hasDerivAt_conj' hB2
+    have h1 := hB1.fun_mul hUc
+    have h2 := (C.hasDerivAt_V_false l k ω).fun_mul hVc
+    have hadd := (h1.add h2).const_mul (((C.sg k : ℝ) : ℂ))
+    simp only [hself] at hadd
+    convert hadd using 1
+    simp only [map_zero]
+    ring
+  exact HasDerivAt.fun_sum (u := (Finset.univ : Finset κ)) fun k _ => hterm k
+
+variable {C}
+
+/-- `D_l W_l = 2r² ∑_k σ_k(‖B_{kl}‖² + ‖B_{lk}‖²)`, in terms of `WA`/`WB`. -/
+theorem wirtVal_WA_WB (l : κ) (ω : Ω d) :
+    C.wirtVal l (C.WA l ω) (C.WB l ω)
+      = 2 * (C.r : ℂ) ^ 2 * ∑ k, ((C.sg k : ℝ) : ℂ) *
+          (C.B ω k l * (starRingEnd ℂ) (C.B ω k l)
+            + C.B ω l k * (starRingEnd ℂ) (C.B ω l k)) :=
+  C.wirtVal_Wt l ω
+
 end RowChaos
 
 end RBM.Gauss

@@ -1744,3 +1744,43 @@ paper-deltas **#64**。全量构建通过，公理审计 **6698 条声明**全�
 `hLquad` —— 矩界已齐，**只差把矩翻成 `StochDom`**（`LDEQuad.lean` 文件头「What is not done
 here」的第 2、3 条：为模型造一个 `RowChaos` 实例，再用 `StochDom.of_det`，因为 `ldeQuadRHS`
 是随机控制）。这是下一张工单。
+
+**T95 ✔**（`Gauss/LDEQuadInst.lean`，新建，零 sorry，**不碰 `Gauss/LDEQuad.lean`**）：
+`LDEQuad.lean` 文件头「What is not done here」第 2 条（实例）做完了。
+
+**我上一条 STATUS 里说的「全局有界性是结构性障碍」是错的，这里更正**：
+`RowChaos.B` 确实要求**全局**有界连续，而 `greenMinor G i = G_kl − G_ki G_il / G_ii`
+因 `G_ii` 无全局下界而无界（只有 `Im G_ii = Im z·‖Ge_i‖² > 0`）。但**换一边取就没事**：
+
+```
+B := minorRes = (H^{(i)} − z)⁻¹        -- 小方阵预解式，不是 greenMinor
+```
+
+* **全局有界 `|Im z|⁻¹`**：Hermitian 的子方阵还是 Hermitian，`norm_green_le` + `norm_apply_le_l2_opNorm`；
+* **连续**：`continuous_green_of_isHermitian`（在本文件写的一般指标版；
+  `Gauss/Hierarchy.lean` 的 `continuous_green_comp` 是它在 `d.Idx N` 上的特例，证明一字不差，
+  **待合并**，归该文件负责人）；
+* **只读 off-row 坐标**：`Hflow_submatrix_congr_offRowCoord`（T81 已有）。
+
+而且两者**对每个 ω 相等**（`modelChaos_B_eq`）：`inv_minor_resolvent` 的两个边条件
+（`H − z` 可逆、`G_ii ≠ 0`）在 `Im z ≠ 0` 时**无条件成立**——后者正是 T91 的
+`green_diag_ne_zero`。所以这不是近似，是恒等。paper-deltas **#65**。
+
+`co`/`eps` 直接用 T81 的 `rowCoord`/`rowSign`，`r = √u`，于是
+
+```
+modelChaos_h  : h_k = (H_u)_{ik}
+modelChaos_sg : σ_k = u·S_{ik}
+modelChaos_normSq_chaos : ‖Q‖² = ldeQuadLHS (Hflow) (green) (Sblk) u i
+modelChaos_Vq           : Vq   = u²·ldeQuadRHS (Sblk) (green) i
+integral_ldeQuadLHS_pow_le :
+  E[(ldeQuadLHS)^p] ≤ ((2p−1)(4p−2))^p · u^{2p} · E[(ldeQuadRHS)^p]     （p ≥ 1，只要 0 ≤ u、Im z ≠ 0）
+```
+
+蓝图新节点 `lem:lde-quad-inst`。全量构建通过，公理审计 **6723 条声明**全部合规。
+
+**下一步（`hLquad` 的最后一段）**：上面是矩不等式，而 `diag_bound_stochDom` 要的是
+`StochDom P ldeQuadLHS ldeQuadRHS`，其控制 `ldeQuadRHS` 是**随机**的，
+`stochDom_of_momentDom`（T73）只接受确定性控制。所以要走 `StochDom.of_det` 那条路
+（`Green/EntryBound.lean` 里 `entry_bound_stochDom`/`diag_bound_stochDom` 本身就是这么用的），
+或者先把 `ldeQuadRHS` 用好事件上的确定性控制夹住。这是下一张工单。

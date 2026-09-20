@@ -1652,6 +1652,32 @@
   exponent stays a natural number.
 \end{proof}
 
+\begin{lemma}[The row chaos of the Gaussian model]\label{lem:lde-quad-inst}
+  \lean{RBM.Gauss.continuous_green_of_isHermitian, RBM.Gauss.minorRes,
+    RBM.Gauss.isHermitian_Hflow_submatrix, RBM.Gauss.norm_minorRes_le,
+    RBM.Gauss.continuous_minorRes, RBM.Gauss.minorRes_congr, RBM.Gauss.modelChaos,
+    RBM.Gauss.modelChaos_h, RBM.Gauss.modelChaos_sg, RBM.Gauss.modelChaos_B_eq,
+    RBM.Gauss.modelChaos_normSq_chaos, RBM.Gauss.modelChaos_Vq,
+    RBM.Gauss.integral_ldeQuadLHS_pow_le}
+  \leanok\uses{lem:lde-quad, lem:lde-quad-T, def:gauss-model, lem:4.1}
+  The abstract row chaos is instantiated at the Gaussian model: at row $i$ the row is
+  $h_k=(H_u)_{ik}$, the variance is $\sigma_k=uS_{ik}$ and the matrix is $G^{(i)}$.  Hence,
+  for every $p\ge1$, $0\le u$ and $\operatorname{Im}z\ne0$,
+  $\mathbb E[(\mathtt{ldeQuadLHS})^p]\le\bigl((2p-1)(4p-2)\bigr)^p u^{2p}\,
+  \mathbb E[(\mathtt{ldeQuadRHS})^p]$.
+\end{lemma}
+\begin{proof}\leanok
+  \texttt{RowChaos} demands a \emph{globally} bounded, continuous matrix that reads no row
+  coordinate.  $\mathtt{greenMinor}\,G\,i=G_{kl}-G_{ki}G_{il}/G_{ii}$ is not globally bounded,
+  because $G_{ii}$ has no global lower bound.  Taking instead the minor resolvent
+  $(H^{(i)}-z)^{-1}$ gives all three: it is bounded by $|\operatorname{Im}z|^{-1}$ (a submatrix
+  of a Hermitian matrix is Hermitian), continuous off the real axis, and a function of the
+  off-row block alone.  It coincides with $\mathtt{greenMinor}$ for \emph{every} $\omega$,
+  since the two side conditions of \texttt{inv\_minor\_resolvent} --- invertibility and
+  $G_{ii}\ne0$ --- hold unconditionally when $\operatorname{Im}z\ne0$.  The row data
+  $\mathtt{co}/\mathtt{eps}$ is the parametrisation already built for the linear estimate.
+\end{proof}
+
 \begin{lemma}[Diagonal LDE: $|H_{ii}|^2\prec S_{ii}$]\label{lem:lde-diag}
   \lean{RBM.Sblk_diag_pos, RBM.Gauss.integral_pow_coord, RBM.Gauss.integrable_pow_coord,
     RBM.Gauss.normSq_Hflow_diag, RBM.Gauss.integral_norm_Hflow_diag_pow,

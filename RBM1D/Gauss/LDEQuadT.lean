@@ -636,6 +636,88 @@ theorem sum_w_diag (q : ℕ) (ω : Ω d) :
   rw [Finset.sum_congr rfl fun l _ => hterm l, ← Finset.sum_mul, ← Complex.ofReal_sum,
     C.sum_sg_mul_normSq ω, ← Complex.ofReal_pow, ← Complex.ofReal_mul]
 
+/-! ### The cross term -/
+
+/-- Weighted Cauchy–Schwarz: `(∑ σ x y)² ≤ (∑ σ x²)(∑ σ y²)`. -/
+theorem weighted_cauchy {ι : Type*} (s : Finset ι) (σ x y : ι → ℝ) (hσ : ∀ i, 0 ≤ σ i) :
+    (∑ i ∈ s, σ i * (x i * y i)) ^ 2
+      ≤ (∑ i ∈ s, σ i * x i ^ 2) * ∑ i ∈ s, σ i * y i ^ 2 :=
+  Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul s (fun i _ => mul_nonneg (hσ i) (sq_nonneg _))
+    (fun i _ => mul_nonneg (hσ i) (sq_nonneg _)) (fun i _ => le_of_eq (by ring))
+
+/-- `q·x^{q-1}·x = q·x^q`, valid also at `q = 0`. -/
+theorem nat_mul_pow_pred (x : ℝ) (q : ℕ) : (q : ℝ) * x ^ (q - 1) * x = (q : ℝ) * x ^ q := by
+  cases q with
+  | zero => simp
+  | succ n => simp [pow_succ]; ring
+
+variable (C)
+
+/-- The common majorant of `‖W_l‖` and of `‖D_l T‖/(2r²)`. -/
+noncomputable def Arow (l : κ) (ω : Ω d) : ℝ :=
+  ∑ k, C.sg k * (‖C.B ω k l‖ * ‖C.U ω k‖ + ‖C.V ω k‖ * ‖C.B ω l k‖)
+
+variable {C}
+
+theorem Arow_nonneg (l : κ) (ω : Ω d) : 0 ≤ C.Arow l ω :=
+  Finset.sum_nonneg fun k _ => mul_nonneg (C.sg_nonneg k) (by positivity)
+
+theorem norm_Wt_le (l : κ) (ω : Ω d) : ‖C.Wt l ω‖ ≤ C.Arow l ω := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+  rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (C.sg_nonneg k)]
+  refine mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans ?_) (C.sg_nonneg k)
+  rw [norm_mul, norm_mul, RCLike.norm_conj, RCLike.norm_conj]
+
+theorem norm_sum_UV_le (l : κ) (ω : Ω d) :
+    ‖∑ k, ((C.sg k : ℝ) : ℂ) * (C.U ω k * (starRingEnd ℂ) (C.B ω k l)
+      + C.B ω l k * (starRingEnd ℂ) (C.V ω k))‖ ≤ C.Arow l ω := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+  rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (C.sg_nonneg k)]
+  refine mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans ?_) (C.sg_nonneg k)
+  rw [norm_mul, norm_mul, RCLike.norm_conj, RCLike.norm_conj]
+  have h1 : ‖C.U ω k‖ * ‖C.B ω k l‖ = ‖C.B ω k l‖ * ‖C.U ω k‖ := mul_comm _ _
+  have h2 : ‖C.B ω l k‖ * ‖C.V ω k‖ = ‖C.V ω k‖ * ‖C.B ω l k‖ := mul_comm _ _
+  rw [h1, h2]
+
+theorem sum_sg_normSq_U_le (ω : Ω d) : ∑ k, C.sg k * ‖C.U ω k‖ ^ 2 ≤ C.Tq ω := by
+  refine Finset.sum_le_sum fun k _ => ?_
+  have := mul_le_mul_of_nonneg_left
+    (by nlinarith [sq_nonneg ‖C.V ω k‖] : ‖C.U ω k‖ ^ 2 ≤ ‖C.U ω k‖ ^ 2 + ‖C.V ω k‖ ^ 2)
+    (C.sg_nonneg k)
+  exact this
+
+theorem sum_sg_normSq_V_le (ω : Ω d) : ∑ k, C.sg k * ‖C.V ω k‖ ^ 2 ≤ C.Tq ω := by
+  refine Finset.sum_le_sum fun k _ => ?_
+  exact mul_le_mul_of_nonneg_left
+    (by nlinarith [sq_nonneg ‖C.U ω k‖] : ‖C.V ω k‖ ^ 2 ≤ ‖C.U ω k‖ ^ 2 + ‖C.V ω k‖ ^ 2)
+    (C.sg_nonneg k)
+
+/-- `A_l² ≤ 2T(∑_kσ_k‖B_{kl}‖² + ∑_kσ_k‖B_{lk}‖²)`, by Cauchy–Schwarz in `k`. -/
+theorem sq_Arow_le (l : κ) (ω : Ω d) :
+    C.Arow l ω ^ 2
+      ≤ 2 * C.Tq ω * ((∑ k, C.sg k * ‖C.B ω k l‖ ^ 2) + ∑ k, C.sg k * ‖C.B ω l k‖ ^ 2) := by
+  set P : ℝ := ∑ k, C.sg k * (‖C.B ω k l‖ * ‖C.U ω k‖) with hP
+  set Q : ℝ := ∑ k, C.sg k * (‖C.V ω k‖ * ‖C.B ω l k‖) with hQ
+  have hsplit : C.Arow l ω = P + Q := by
+    rw [hP, hQ, Arow, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  have hPc : P ^ 2 ≤ (∑ k, C.sg k * ‖C.B ω k l‖ ^ 2) * ∑ k, C.sg k * ‖C.U ω k‖ ^ 2 :=
+    weighted_cauchy _ _ _ _ (fun k => C.sg_nonneg k)
+  have hQc : Q ^ 2 ≤ (∑ k, C.sg k * ‖C.V ω k‖ ^ 2) * ∑ k, C.sg k * ‖C.B ω l k‖ ^ 2 :=
+    weighted_cauchy _ _ _ _ (fun k => C.sg_nonneg k)
+  have hB1 : (0 : ℝ) ≤ ∑ k, C.sg k * ‖C.B ω k l‖ ^ 2 :=
+    Finset.sum_nonneg fun k _ => mul_nonneg (C.sg_nonneg k) (by positivity)
+  have hB2 : (0 : ℝ) ≤ ∑ k, C.sg k * ‖C.B ω l k‖ ^ 2 :=
+    Finset.sum_nonneg fun k _ => mul_nonneg (C.sg_nonneg k) (by positivity)
+  have hU := C.sum_sg_normSq_U_le ω
+  have hV := C.sum_sg_normSq_V_le ω
+  have hP2 : P ^ 2 ≤ (∑ k, C.sg k * ‖C.B ω k l‖ ^ 2) * C.Tq ω := by
+    refine hPc.trans (mul_le_mul_of_nonneg_left hU hB1)
+  have hQ2 : Q ^ 2 ≤ C.Tq ω * ∑ k, C.sg k * ‖C.B ω l k‖ ^ 2 := by
+    refine hQc.trans (mul_le_mul_of_nonneg_right hV hB2)
+  rw [hsplit]
+  nlinarith [sq_nonneg (P - Q)]
+
 end RowChaos
 
 end RBM.Gauss

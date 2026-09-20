@@ -1966,3 +1966,23 @@ Step1 那边是 `Cond272` + `hreg`）。**时间一致性（T99 的 (C)）仍不
 ——管道的退出码是 `tail` 的。单文件 `lake env lean` 通过**不等于**全量通过：
 跨文件重名只有根文件 import 全部时才暴露，这次就是 `RBM.Gauss.sample_G` 与
 `Gauss/Hierarchy.lean` 撞名。已 push 修复。）
+
+### `RBM1D/Gauss/FlucIter.lean` — (4.12) 的 `2p` 阶迭代（T94，Claude Code 并行 agent）
+
+**关键结论：`hsmall` 不可能被卸掉，因为它按字面是假的。** 它是关于 T87 那个界的**算术**陈述：
+`(2p−1)ε_N B_N^{2p−1} + c_N^p p^{2p} B_N^{2p} ≤ C N^{εp} Φ_N^{2p}`；在目标 `Φ = Ψ²` 下，第一项 `Ψ^{2p+1}` 对目标 `Ψ^{4p}`，p=1 即 `Ψ³` vs `Ψ⁴`——**对任何预期尺度的参数都不成立**。
+所以要换掉的是 **T87 的界本身**，而不是补一条假设。agent 在新文件里另起一条无 `hsmall` 的路线到 (4.12)/(4.5)，
+**`FlucCount.lean`、`FlucAvg.lean`、`Green/EntryBound.lean` 一字未动**（工单硬性要求）。
+
+**迭代怎么做的**：对「还剩几个 pivot」归纳（`norm_integral_prod_applyOps_le`）；状态是每个 slot 一个字 `List (Bool × Idx)`（`applyOps` 施加，head 最外层）。
+「某指标仍只出现一次」由两处追踪：pivot 假设（T86 的 `hone`，现在对**一整个** pivot 集合）与不变量 `OpsOkOut`（字里的行两两不同、来自 `R` 之外的 slot、且异于本 slot 的行）。
+单步：`Finset.prod_add` 在非 pivot slot 展开 `1 = Q + P`，全 `P` 项由 T86 的 `integral_mul_prod_eq_zero` 杀掉，其余每项多一个 `Q`。
+**使这一切成立的新事实**：**`condRow_condRow_comm`——`E_k` 与 `E_κ` 对任意两行都交换**（无论是否共享 `H_{kκ}`）。
+证法是把 `rowSplit` 推广成对任意坐标谓词的 `predSplit`，证 `measurePreserving_predSplit` 与 `predSplit_predSplit`，得 `condPred_condPred : E_q ∘ E_p = E_{p∪q}`。没有这条，pivot 因子最里层的 `Q_k` 活不过不断变长的字。
+**残项求和**：单个 pivot 花 `(2M)^{n−1}` 买一个 `ρ`；满深度后 `ρ^{#lone}·B^n`。再由**计数** `two_mul_card_image_le_add_card_loneSlots`（`2·#image v ≤ n + #lone v`，T87 那条的加细）与 `sum_weighted_le`：
+有 `a` 个 lone slot 的多重指标至多 `(n+a)/2` 个不同值，在 `c ≤ ρ²` 下其层权重 `≤ n^n ρ^{n−a}`，配上迭代买到的 `ρ^a`，**每一层都给出 `ρ^n`**。
+结论 `integral_norm_flucAvg_pow_le_iter` ⟹ `stochDom_flucAvg_iter`：`≺ ρB`，在 `ρ, B ≍ Ψ` 时就是 **(4.12)**。
+
+**当前状态**：(4.12) 除一条具名接口 `FlucGain` 外无假设；**(4.5) 还差 `hIBP`（T83，堵在 T70）与确定性控制 `ρB` 与论文随机控制 `Lmax` 的比较**（那是局部律，不属涨落平均）。
+`FlucGain`（高阶小行展开：再作用 `m` 个 `Q_{κ_i}` 得 `ρ^m`）已证 `m = 0` 与 **`m = 1`**（`norm_qRow_flucDiag_le`：`Q_κ` 湮灭 `Z^{(κ)}_k`，后者与 `Z_k` 相差 T85 的 `ε`，故 `‖Q_κ Z_k‖ ≤ 2ε ≍ Ψ²`）；
+**`m ≥ 2` 需要迭代小行 `G^{(κ₁κ₂)}` 及其 `≺ Ψ^{m+1}` 估计，仓库里还没有**。`flucGain_env` 是无条件的（无增益，`ρ = 2`）实例，故接口不空洞。paper-deltas #61。

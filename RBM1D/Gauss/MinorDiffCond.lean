@@ -1061,7 +1061,7 @@ theorem unifDomIcc_flucAvg_iter_budget {V : ℕ → Type*} (d : Dims) (hE : |E| 
     (ht1 : ∀ N, t N < 1)
     {Tw : ∀ N, V N → d.Idx N → ℝ} {cw : ℕ → ℝ} {Aw : ∀ N, V N → Finset (d.Idx N)}
     {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
-    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+    (hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p) (2 * p))
     (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
     (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1) (hcρ : ∀ N, cw N ≤ ep N ^ 2)
@@ -1081,16 +1081,16 @@ theorem unifDomIcc_flucAvg_iter_budget {V : ℕ → Type*} (d : Dims) (hE : |E| 
         * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) := mul_nonneg hc1 hK0
     refine ⟨((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
       * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) + 1, by linarith, ?_⟩
-    filter_upwards [hcardA p, eventually_ge_atTop 1] with N h2 hN1 u hu a
+    filter_upwards [hcardA p, hg p, eventually_ge_atTop 1] with N h2 hgN hN1 u hu a
     have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
     have hrw : (fun ω => |‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖| ^ (2 * p))
         = fun ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖ ^ (2 * p) := by
       funext ω; rw [abs_norm]
     rw [hrw]
-    have hmain := integral_norm_flucAvg_pow_le_iter_budget hE hu1 (hg p N u hu) le_rfl le_rfl
+    have hmain := integral_norm_flucAvg_pow_le_iter_budget hE hu1 (hgN u hu) le_rfl le_rfl
       (hρ1 N) (hcρ N) (hw N a) (h2 a)
-    have hep0 : (0 : ℝ) ≤ ep N := (hg p N u hu).rho_nonneg
-    have hBp0 : (0 : ℝ) ≤ Bp p N := (hg p N u hu).B_nonneg
+    have hep0 : (0 : ℝ) ≤ ep N := (hgN u hu).rho_nonneg
+    have hBp0 : (0 : ℝ) ≤ Bp p N := (hgN u hu).B_nonneg
     have hstep1 : ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
         ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p) := by
       rw [← mul_pow]
@@ -1119,7 +1119,7 @@ theorem unifDomIcc_flucAvg_iter_budget {V : ℕ → Type*} (d : Dims) (hE : |E| 
 /-- **(4.12) for the block average, from the budgeted gain.** -/
 theorem unifDomIcc_flucAvg_blockAvg_iter_budget (d : Dims) (hE : |E| < 2)
     (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
-    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+    (hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p) (2 * p))
     (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
     (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
@@ -1137,7 +1137,7 @@ theorem unifDomIcc_flucAvg_blockAvg_iter_budget (d : Dims) (hE : |E| < 2)
 /-- **(4.12) for the variance-profile row, from the budgeted gain.** -/
 theorem unifDomIcc_flucAvg_Sblk_iter_budget (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
     {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
-    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+    (hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p) (2 * p))
     (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
     (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
@@ -1157,7 +1157,7 @@ theorem unifDomIcc_flucAvg_Sblk_iter_budget (d : Dims) (hE : |E| < 2) (ht1 : ∀
 `RBM.Gauss.unifDomIcc_flucRow_condExpDiag_psi`; the conclusion is literally the same. -/
 theorem unifDomIcc_flucRow_condExpDiag_psi_budget (d : Dims) {δ Ψ : ℕ → ℝ} (hE : |E| < 2)
     (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
-    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+    (hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p) (2 * p))
     (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
     (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
@@ -1191,7 +1191,7 @@ theorem unifDomIcc_flucRow_condExpDiag_psi_budget (d : Dims) {δ Ψ : ℕ → �
 /-- **`hfixBlk` from the budgeted gain, at the paper's size.** -/
 theorem unifDomIcc_flucBlk_condExpDiag_psi_budget (d : Dims) {δ Ψ : ℕ → ℝ} (hE : |E| < 2)
     (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
-    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+    (hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p) (2 * p))
     (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
     (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
@@ -1242,7 +1242,7 @@ theorem eq45Flow_of_localLaw_gain_budget (d : Dims) {δ Ψ : ℕ → ℝ} {Kenv 
       4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ)
     (hll : LocalLawUnifIcc d E s t Ψ)
     {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
-    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+    (hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p) (2 * p))
     (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
     (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
@@ -1311,10 +1311,11 @@ theorem eq45Flow_of_goodSetFlow_budget (d : Dims) {δ : ℕ → ℝ} {Kenv Bx κ
     (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
       4 * ((d.W N : ℕ) : ℝ) * ((2 * δ N) * (2 * δ N)) ≤ (N : ℝ) ^ τ)
     (hll : LocalLawUnifIcc d E s t (fun N => 2 * δ N))
-    (hMδ : ∀ p N : ℕ, 8 * (2 * p) * δ N ≤ 1)
-    (hδC : ∀ p N : ℕ, 2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N ≤ 1)
+    (hMδ : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, 8 * (2 * p) * δ N ≤ 1)
+    (hδC : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop,
+      2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N ≤ 1)
     (hWδ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * (2 * δ N) ^ 2)
-    (hsmall : ∀ p N : ℕ, ∀ u ∈ Set.Icc (s N) (t N),
+    (hsmall : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       condEnv E u (2 * p) ^ (2 * p)
           * (P d).real (badTower d N (condEps E u (2 * p) (2 * δ N))
               (badBase d E s t δ N) (2 * p + 1))
@@ -1351,11 +1352,12 @@ theorem eq45Flow_of_goodSetFlow_budget (d : Dims) {δ : ℕ → ℝ} {Kenv Bx κ
   have hδ0 : ∀ N, 0 ≤ δ N := fun N => (hδpos N).le
   have hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2 :=
     Filter.Eventually.of_forall fun N => by linarith [hδ4 N]
-  have hg : ∀ p N : ℕ, ∀ u ∈ Set.Icc (s N) (t N),
+  have hg : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
       FlucGainUpTo' d N u (zt E u) (mE E)
         (2 * (2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N)) (2 * (2 * δ N))
         (2 * p) (2 * p) := by
-    intro p N u hu
+    intro p
+    filter_upwards [hsmall p, hMδ p, hδC p] with N hsmallN hMδN hδCN u hu
     have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
     have hΨ : (0 : ℝ) < 2 * δ N := by linarith [hδpos N]
     have hcc : condCost E u (2 * p) (2 * δ N) (condEps E u (2 * p) (2 * δ N)) = 2 * δ N :=
@@ -1363,8 +1365,8 @@ theorem eq45Flow_of_goodSetFlow_budget (d : Dims) {δ : ℕ → ℝ} {Kenv Bx κ
     have h := flucGainUpTo'_goodSetFlow (E := E) (s := s) (t := t) (δ := δ)
       (M := 2 * p) (n := 2 * p)
       hE hu1 hu (condEps_nonneg hE hu1 (2 * p) hΨ.le) (hδpos N) (hδ4 N)
-      (by push_cast; linarith [hMδ p N])
-      (by rw [hcc]; exact hδC p N) (by rw [hcc]; exact hsmall p N u hu)
+      (by push_cast; linarith [hMδN])
+      (by rw [hcc]; exact hδCN) (by rw [hcc]; exact hsmallN u hu)
     rwa [hcc] at h
   exact eq45Flow_of_localLaw_gain_budget (Ψ := fun N => 2 * δ N)
     (Bp := fun p N => 2 * (2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N))

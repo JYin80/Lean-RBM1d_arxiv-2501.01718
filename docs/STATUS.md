@@ -4928,3 +4928,111 @@ docstring 同时写清：`hg` 槽要的正是 `B ≍ Ψ`；已编译的证据链
 * `RBM.mul_Eblk_mul_apply` 已在 `Loop/ChainExpand.lean:1262`，但 `Lemma57` **不能 import 它**（会拖进 `Green/Minor`，方向不对），故新条改名 `mul_Eblk_mul_apply_ite` 并注明。
 * `Gauss.sq_sum_weighted_le` 从 `Lemma57` **不可见**（已编译验证），只好重写 4 行，docstring 注明是同一个轮子。
 * 顺带发现既有重复（未动）：`Lemma57.blkW` 与 `ChainExpand.eblkW` 是同一个块权。
+
+## ⭐ T188：`hsmall` 已由高概率推出；顺带修掉 T177 端到端定理的**空真**（`Gauss/Eq45Small.lean`，新文件，2026-09-21）
+
+`lake build RBM1D` **exit=0**，`RBM1D.lean:159` 审计 **9475** 条全在
+`[propext, Classical.choice, Quot.sound]` 内。**只读文件（`CondDom` / `FlucIter*` /
+`CondStableFlow` / `Eq45FlowInputs`）一个字没动**；改动只在 `Gauss/MinorDiffCond.lean`
+（量词放宽）、新文件 `Gauss/Eq45Small.lean`、以及 `RBM1D.lean` 加一行 import。
+
+### 1. `hsmall` 现在是定理
+
+`RBM.Gauss.hsmall_of_highProb`（及一般预算版 `..._aux`）把 T177 留下的
+`condEnv^n · P(badTower) ≤ B₀^n (2Ψ)^{nM}` 从假设变成结论，**唯一的概率输入是 (4.1) 本身**
+（`HighProb (P d) (goodSetFlow …)`）。端到端定理
+`RBM.Gauss.eq45Flow_of_goodSetFlow_highProb` 的假设表里**没有 `hsmall`**。
+
+**实际用到的区制界只有两条，而且两条原本就是该定理的假设**——没有新增任何前提：
+
+| 需要的界 | 由哪条现成假设给出 | 桥 |
+|---|---|---|
+| `δ_N ≥ N^{-(2K+6)}`（`Ψ = 2δ` 不是超多项式小） | `hδnet` | `polyLo_of_one_div_rpow_le` |
+| `η_{t_N}⁻¹ + 1 ≤ N^{Kenv}` | `hEnv`（`(η⁻¹+1)^2 ≤ N^{Kenv}`，配 `η⁻¹+1 ≥ 1`） | `polyHi_of_sq_le` |
+| `#rows ≤ N` | `Dims.dim` | 既有的 `card_Idx_le` |
+| `u` 一致性（`u ∈ [s_N,t_N]`） | `η` 关于时间反单调 | 既有的 `etaT_le_of_le` |
+
+记账工具是两条一行谓词 `PolyLo f`（`∃C>0 ∃D, ∀ᶠN, C·N^{-D} ≤ f N`）与 `PolyHi f`，
+加上乘/幂/和/逆/商/单调的闭包引理，和**唯一用到 `HighProb` 的那一条**
+`measureReal_compl_le_of_polyLo`：高概率事件的补集最终被**任何** `PolyLo` 函数压住
+（`∀ D` 量词就花在这里，`ℝ≥0∞ → ℝ` 的转换因为 `P d` 是概率测度而免费）。
+**这两条谓词是通用轮子**，若出现第二个消费者应下沉到 `RBM1D/Defs/`。
+
+`#ι = 0` 不需要特判：`M = n = 2p`，`p = 0` 时包络幂为 `1`、目标为 `1`，一般论证照走
+（T177 提醒的那个「`1 + P(Bad) ≤ 1`」是 `minorDiffGainUpTo'_of_le_on` 内部的事，早已分情况）。
+
+### 2. ⚠⚠ 顺带查出：T177 的端到端定理原本是**空真**的
+
+按工单要求查可满足性时发现，`eq45Flow_of_goodSetFlow_budget` 的两条 `p`-指标假设
+
+```
+hMδ : ∀ p N, 8 * (2p) * δ N ≤ 1
+hδC : ∀ p N, 2 * minorDiffC (2p) * (2 δ N) + 2 δ N ≤ 1
+```
+
+与 `hδpos : ∀ N, 0 < δ N` **不可满足**：固定 `N`，左边关于 `p` 无界
+（`minorDiffC (2p) = 4^{2p} atomC(2p)^3` 更快）。论文的量词次序是另一个：**`p` 固定、`N → ∞`、
+`δ_N → 0`**。已把 `hg` / `hsmall` / `hMδ` / `hδC` 四条统一改成 `∀ p, ∀ᶠ N in atTop, …`
+（**假设变弱 ⇒ 定理变强**，结论一字未改），并在 `MinorDiffCond.lean` 里顺着 `hg` 的消费链
+把 `unifDomIcc_flucAvg_iter_budget` 的 `filter_upwards` 多收一项，其余四处只改签名。
+
+正反两向都入库：
+* **反向** `not_forall_mul_le_one`：`0 < δ N → ¬ ∀ p, 8(2p) δ_N ≤ 1`。
+* **正向** `eq45Flow_delta_hyps_consistent`：显式 `s = t = 0`、`δ_N = (N+4)^{-28}`、`K = 12`
+  （净化指数 `(K+2+1)/(1/2) = 30`），使 `hδpos`/`hδ4`/`hδnet`/`hfine`/`hMδ`/`hδC` 同时成立。
+  **这里真正要验的是 `hδnet`（下界）与 `hfine`（上界，逼 `δ_N ≤ η⁶/(16N⁶)`）打不打架**：
+  它们相容**只因为 `K` 自由**——`K = 0` 时净化条件要 `η⁶ ≥ 16`，而 `η ≤ 1`，无解。
+
+### 3. P1 的 (4.5) 槽已经换掉
+
+探针（scratchpad，未入库）`steps45_glue_no_eq45Flow`：`Step2PP.flow_steps45_glue_flowAs`
+在 `X = sample d` 上，`h45 : StepGlue.Eq45Flow` **从假设表里消失**，现场由
+`eq45Flow_of_goodSetFlow_highProb` 产出；`#print axioms` 干净。
+（六步链里 `Eq45Flow` 只出现在 `flow_steps45_glue{,'}` / `flow_steps45_glue_flowAs{,'}` 这一处，
+`sharpExpect_step6_driftE` 不收它，所以这就是 STATUS「T176 假设 #6」的全部。）
+
+### 还欠的一件（工单的可选项 (4)，没做）
+
+`‖Z_k‖_∞ ≥ 64/65` 的 `L^n → L^∞` 一步仍未入库——它需要 `ω ↦ Z_k(ω)` 的连续性，
+T171/T172/T177 都没写出这一步。它只影响「旧接口不可满足」这一结论的**完整性**，
+不在任何活路径上（活路径已全部改吃带预算的接口）。
+
+**蓝图**：这一簇（T171/T177/T188 的 `MinorDiffCond` + `Eq45Small`）在
+`blueprint/src/content.tex` 里**没有对应节点**（T171/T177 当时也没加），
+新声明因此无处挂 `\lean{}`。补节点需要给它一个与论文编号对应的名字，属于范围决定，留给 Cowork。
+
+## ⚠⚠ T188 的附带发现：T177 的端到端定理**原本是空真的**（2026-09-21）
+
+按「先查可满足性」的规矩查时发现，`eq45Flow_of_goodSetFlow_budget` 的
+`hMδ : ∀ p N, 8(2p)·δ_N ≤ 1` 与 `hδC : ∀ p N, 2·minorDiffC(2p)·(2δ_N) + 2δ_N ≤ 1`
+配 `hδpos : ∀ N, 0 < δ N` **不可满足**——固定 `N`、令 `p → ∞` 即破（`minorDiffC(2p) = 4^{2p}·atomC(2p)³` 破得更快）。
+**论文的量词次序是「`p` 固定、`N → ∞`、`δ_N → 0`」，而 Lean 写成了对 `p` 与 `N` 同时全称。**
+
+**已修**：`hg`/`hsmall`/`hMδ`/`hδC` 四条统一改成 `∀ p, ∀ᶠ N in atTop, …`——**假设变弱 ⇒ 定理变强，结论一字未改**；
+`MinorDiffCond.lean` 只改 5 处签名 + 一行 `filter_upwards`。
+**正反两向都入库**：反向 `not_forall_mul_le_one`；正向 `eq45Flow_delta_hyps_consistent`（显式 `δ_N = (N+4)^{−28}`、`K = 12`）。
+**真正要验的是 `hδnet`（下界）与 `hfine`（上界，逼 `δ_N ≤ η⁶/(16N⁶)`）打不打架：它们相容只因为 `K` 自由**
+——`K = 0` 时净化条件要 `η⁶ ≥ 16` 而 `η ≤ 1`，无解。
+
+**这是今天第六次同类事故**（T145、T132b、T154、T164/T172、T180，现在 T177）。
+前五次是「对所有矩阵/所有样本点过度量化」，**这次是量词次序**——形式不同，症状相同：
+**假设不可满足 ⇒ 定理空真 ⇒ 编译器永远不报。**
+
+## T188：`hsmall` 已由 (4.1) 推出，(4.5) 槽在六步探针里消失（`Gauss/Eq45Small.lean`，706 行）
+
+`lake build RBM1D` exit=0。`hsmall_of_highProb` 把 T177 留下的假设变成结论，**唯一的概率输入是 (4.1) 本身**；
+`eq45Flow_of_goodSetFlow_highProb` 端到端 (4.1) → `StepGlue.Eq45Flow`，**假设表里没有 `hsmall`**。
+
+**没有新增任何假设**——四条区制界全部来自**原本就在的** `hδnet`/`hEnv`/`Dims.dim`/`etaT_le_of_le`。
+记账工具是两条一行谓词 `PolyLo`/`PolyHi` 加闭包引理；**`HighProb` 只在一处用到**
+（`measureReal_compl_le_of_polyLo`：高概率事件的补集最终被**任何** `PolyLo` 函数压住，`∀ D` 量词花在这里）。
+**若出现第二个消费者，这两条通用轮子应下沉 `Defs/`。**
+
+**接进六步探针**：`flow_steps45_glue_flowAs` 的 `h45` 从假设表里消失、现场产出。
+**六步链里 `Eq45Flow` 只出现在 `flow_steps45_glue{,'}`/`..._flowAs{,'}` 这一处**（`sharpExpect_step6_driftE` 不收它），
+所以这就是 T176 清单第 6 条的全部。
+
+**未做**：`‖Z_k‖_∞ ≥ 64/65` 的 `L^n → L^∞` 一步仍未入库（需 `ω ↦ Z_k(ω)` 连续性），
+它只影响「旧接口不可满足」这一结论的完整性，**不在活路径上**。
+⚠ **蓝图缺节点**：T171/T177/T188 这一簇在 `content.tex` 里**没有对应节点**，新声明无处挂 `\lean{}`；
+补节点要给它一个与论文编号对应的名字，属范围决定，留给 Cowork。

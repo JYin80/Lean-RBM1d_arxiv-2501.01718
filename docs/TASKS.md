@@ -1,6 +1,6 @@
 # 任务队列
 
-> ## ⭐⭐ 当前优先级：T122 > T123 > T124 > T125 > T58（2026-09-21，Cowork）
+> ## ⭐⭐ 当前优先级：T122 > T123 > T124 > T125 > T126 > T127 > T58（2026-09-21，Cowork）
 >
 > **Jun 已裁 paper-deltas #72（原 #66）：论文不缺数学，走 (c) 收窄引用，(2.76) 陈述不改。**
 > `(+,+)` 的来源是 **Lemma 5.11 在 `n = 2`**（非交错电荷，(7.16) 情形 1），p.70 只是把出处写成了 (2.76)。
@@ -222,7 +222,7 @@
 | T55 | Steps 4 与 5：(5.125) ⟹ (2.78)；两段劈分 ⟹ (2.79) | `Hierarchy/Step45.lean`（新建） | Claude Code | **完成** |
 | T56 | Step 6：(5.126)–(5.136) ⟹ (2.80) | `Hierarchy/Step6.lean`（新建） | Claude Code | **完成** |
 | T57 | Lemma 2.18/2.19/2.20 由 Theorem 2.21 推出（§2.7 p.24 的时间网格归纳） | `Flow/Iteration.lean`（新建） | Claude Code | **完成** |
-| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | 待认领（优先级已下调，非主定理阻塞） | 规格见下文「T58 交接：表示桥的设计决定」（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上） |
+| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | 待认领（优先级已下调，非主定理阻塞） | 规格见下文「T58 交接：表示桥的设计决定」（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上）；**T118 (iii) 并入**：把 `F` **具体定义**为 `Decay` 的 `couplingLen + primBil + eG`，届时 `Lemma510` 其余部分**逐路径可证**。⚠ 不许按定义造一个任意 `F` 让 `duhamel` 平凡成立（`Gauss/DischargeBDG.lean:70ff` 的 fiat 警告；`Lemma510` 是唯一护栏，**不得弱化**） |
 | T59 | §5.4：Def 5.8 快衰减、Lemma 5.9、Lemma 5.10 (5.77) 的幂计数、Lemma 5.11 (5.83) | `Hierarchy/Decay.lean`（新建） | Claude Code | **完成**（E⊗E 仅抽象形式，待 T58 Def 5.4） |
 | T60 | §5.5 的动力学半边：(5.88)(5.91)、**Lemma 5.14 (5.92)**、(5.95)–(5.101) | `Hierarchy/SumZeroDyn.lean`（新建） | Claude Code | **完成**（`lemma514_flow′` 给出 `Step3.Lemma514`；(5.77)(5.75) 仍为占位假设，见 STATUS） |
 | T61 | §5.3 Step 2：Lemma 5.6、Lemma 5.7 (5.34)(5.35)(5.36)、(5.39)–(5.48) 的自改进不等式 | `Hierarchy/Step2.lean`（新建） | Claude Code | **完成**（`step2` 给出 (2.75)(2.76)；(2.72) 需 `N^c` 增益，见 STATUS；(5.35) 为 T58 占位假设） |
@@ -288,6 +288,8 @@
 | T123 | **一阶矩反向桥**（T117 拆单 B，不依赖 T58）：`\|Y\| ≺ Φ` + 确定性包络 + 多项式下界 ⟹ `∫\|Y\| ≺ Φ`，卸 Step 6 的 `hq11`/`hq13`。**第 0 步：先看它是不是 `momentDom_of_stochDom`（p = 1）+ Jensen/Hölder 的两行推论**，是就别造新轮子 | `Gauss/Envelope.lean`（加定理）+ `Gauss/Step6Hyp.lean` | Claude Code | 进行中 |
 | T124 | **(4.5) 的三个带时间指标输入**（T121 余项）：`IBPFlow`/`FlucRowFlow`/`FlucBlkFlow` 的生产者。**照 T107 的做法**——固定时刻的证明若对 `(N, ω, u)` 逐点，就把 `StochDom.of_det` 在放大的指标集上重做，不用网。**第 0 步：逐条查 T119 `CondStableInst` 与 `Lemma41Glue.trace_green_sub_mul_Eblk_stochDom` 的证明是否逐点**；哪条不是就报告，别上网 | `Gauss/Eq45FlowInputs.lean`（新建） | Claude Code | 进行中 |
 | T125 | **`Step1.Hyp.lift` 的余项**（T116 余项，paper-deltas #74）：四样里 (1)–(3) 是确定性的（`gloop` 对 u 的连续模、`aprioriRhs` 的缓变区制、多项式下界）；(4) Lemma 5.1 在阈值 `2 + o(1)` 处的版本。**第 0 步：看 `Loop/ContinuityAssembly.lean` 的 `lemma_5_1`/`lemma_5_1'` 里阈值 2 是不是写死的**；若只是证明里的常数，就加一个阈值参数 `C ≥ 2` 的推广版，旧定理作为特例保留，**不改旧签名** | `Gauss/Step1Hyp.lean` + `Loop/ContinuityAssembly.lean`（加推广版） | Claude Code | 进行中 |
+| T126 | **无条件的 `SumZeroDyn.LKDecay`**（T118 拆单 (i)）：把 `DecayBridge.lkDecay_of_highProb` 的输入——`LKDecayEvent` 对每个 `m, τ, D` 高概率——定量闭合。`Decay.lemma59` 是确定性内核、`loopDecay_lk_of_event` 已是纯重述，缺的只是**它的前提事件沿流高概率**。**第 0 步：把 `Decay.lemma59` 的前提逐条列出，逐条对到现有生产者**（`Steps.localLaw`/`aprioriDecay`、T108 `lemma41Flow`、T107 的带时间指标 Lemma 4.1），列不上的报告。**Cowork 裁：`LKDecay` 的定义不改**（19 条签名穿过它）；paper-deltas #78 的 `|L|` 那一半另立 `LDecay`（同文件、同证法顺手产出），不并进 `LKDecay` | `Hierarchy/DecayBridge.lean`（续） | 待认领 | 未开工 |
+| T127 | **`Lemma510.EE_le` 由 `Decay.norm_eTens_le` 解锁**（T118 拆单 (ii)）：三块小管道——(a) `glueLoop = gloop (J k b b')`（T74 的遗留项）；(b) `Gauss.eeTens : LoopIdx → LoopIdx → ℂ` 与 `Hierarchy.EE : … → LoopArg L ((n+2)+(n+2)) → ℂ` 的类型适配；(c) `Band → Dims` 转换（全仓库没有；以后每次 `Gauss → Hierarchy` 交接都要用，**做成通用的**）。**只做 `EE` 这一半，不定义 `F`**（`F` 归 T58，见 T118 的 fiat 警告）| `Hierarchy/EEBridge.lean`（新建） | 待认领 | 未开工 |
 
 ---
 

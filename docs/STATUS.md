@@ -2564,3 +2564,30 @@ T108 的障碍之所以消失，是因为 `Lemma41Flow` 是两个**本已时间�
 `η_t⁻²` 不再是常数，`stochDom_Lmax_inv_W` 作为 `≺` **失效**。agent 保留了一般接口 `LmaxRowProxy`（不读第 i 行的双边 proxy）+ `condStable_Lmax_of_rowProxy`，只是当前用常数 proxy `Λ_i := W⁻¹` 实例化；
 **时间依赖区制下 proxy 要取小行的 `L^max`，那时比较才真的成为局部律输入。**
 **剩余**：`hΩ`；`hFArow`/`hFAblk`（T88 的 `stochDom_flucAvg` 是确定性控制 `Ψ²`，`Ψ² → L_max` 的桥是另一件事）。paper-deltas #75、#76。
+
+### `RBM1D/Gauss/Step6Hyp.lean` — T117：Step 6 七条假设的逐条勘察（Claude Code 并行 agent，2026-09-21）
+
+| # | 假设 | 判定 | 依据 |
+|---|---|---|---|
+| 1 | `hH : Step6.Hierarchy` | **需新工作** | 即 **T58 的第四项交付物**。T76 的 `hasDerivAt_integral_Lval_hierarchy` **达不到**：那是**导数**陈述（`∂_v E[L]`），右端是 `primRhs`、不减 `K`、谱参数冻结；而 `Step6.Hierarchy` 是**积分形式**的 (5.20)@长度 2，用 `Uker` 写、漂移拆成 `DLK+DG`、且已取期望。缺口 = Duhamel + 漂移拆分 + 鞅项期望为零 |
+| 2 | `hFD : FastDecayHyp` | **需新工作，且与 #1 绑定** | 它对 `DLK`/`DG` 量化，而这两者在 #1 产出前**根本不存在**，无法独立陈述 |
+| 3 | `h5133` | 同上 | 对 `‖DLK‖` 的 `UnifDetDom` 界 |
+| 4 | `h527 : Eq527` | **可达，已完成** | 见下 |
+| 5 | `hq11` | **仅条件可达**，卡在一件缺失的**通用工具**上 | 由 `Steps.sharpLmK 1`（Step 4 的产出，Step 6 之前就有）**加一条一阶矩的反向桥** `\|Y\| ≺ Φ` + 确定性包络 ⟹ `∫\|Y\| ≺ Φ`。T77 的 `momentDom_of_stochDom` 只给**偶数矩** `∫\|Y\|^{2p}`，从不给 `∫\|Y\|`。该桥全仓库没有（已 grep） |
+| 6 | `hG` | 需新工作，与 #1 绑定 | (5.134) 对 `DG` 的结构界 |
+| 7 | `hq13` | 同 #5 | 经 `sharpLmK 1` 与 `sharpLmK 3` |
+
+**已卸掉的**：`h527` = **(5.127)，且是精确恒等式——无误差项、无 `≺`、不带 `GaussIBP` 假设**（用的是 T104 已证的 `gaussIBP`）。
+路线：`green_sub_smul_one_eq`(T83) 块平均 → 逐元素高斯分部积分 `integral_Hflow_mul_green_diag`(T83) → **块塌缩**（本单的承重新想法）：
+因为 `Sblk L W i j = sbKre L (i.1−j.1)/W` **不依赖块内偏移**，`∑_k S_{pk} E[G_{pp}G_{kk}]`（**对角元**之积）**精确**塌成 `∑_b S^(B)_{ba} E[⟨GE_a⟩⟨GE_b⟩]`（**块平均**之积），无任何近似；再由 `∑_b S^(B)_{ba} = 1` 精确消掉 `m³` 项。
+另卸 `hint2`（`int2_gauss`），并给出 `hq11`/`hq13` 的确定性第一步 `norm_quad11_le_integral`/`norm_quad13_le_integral`（对一般 `Sample B` 陈述，供将来造桥者直接用）。
+**编译验证**：临时探针调用 `Step6.sharpExpect_step6 … hb.expect ?_ (eq527_gauss …) ?_ ?_ (integrable_sample_Lval …) (int2_gauss …) ?_`，恰好剩四个 `?_`——`eq527_gauss`/`int2_gauss`/`integrable_sample_Lval`/`hb.expect` 填的都是**真实槽位**且无搬运。探针已删。
+
+**`sharpExpect_step6` 现状：7 条里还缺 6 条**（`hH`/`hFD`/`h5133`/`hq11`/`hG`/`hq13`）。
+
+**agent 对拆单的建议（不是我写工单，是转述其结论）**：按**两个独立堵点**拆成两张，而不是拆六张。
+**A：`hH`/`hFD`/`h5133`/`hG` 一张**——四者对 `DLK`/`DG` 量化，必须由造层级者存在性地产出，**其中三条在第一条完成前连陈述都写不出来**，不可分割；应路由给 **T58 作为第四项交付物**，并附上那条警告（按定义造出的 `duhamel` 会使 `Lemma510` 为假；绑定义务是三元组）。
+**B：`hq11`/`hq13` 一张**——其真实内容是一件**属于 T77 `Gauss/Envelope.lean` 而非 Step-6 文件**的通用工具：一阶矩反向桥。
+按 CLAUDE.md「造轮子之前先查」，agent **有意没有**在 `Step6Hyp.lean` 里就地造它（那会是个等着被重复的轮子）。B 的范围应是：(i) 给 T77 加 `unifDetDom_integral_of_stochDom`；(ii) 为 `lkErr` 之积供其两个输入（确定性包络 + 多项式下界）；(iii) 经 `norm_quad11_le_integral`/`norm_quad13_le_integral` 从 `Steps.sharpLmK` 收口。
+**B 完全不依赖 T58，现在就能开工。** 一个勘察时发现的注意点：(ii) 需要 `η_u ≥ N^{-c}`，**这不是免费的**，来自 `Wℓ_uη_u ≥ 1`（由 (2.72) 推出），故该桥会带上这条假设。
+**paper-deltas：本文件无新增**——(5.127) 与论文陈述完全一致；两条可积性是论文在 `‖G_u‖ ≤ η_u⁻¹` 下略去的 Lean 记账。

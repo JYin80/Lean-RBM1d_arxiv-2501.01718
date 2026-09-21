@@ -2015,6 +2015,19 @@
   $L^{\max}$, bypassing any $\Psi^2\asymp L^{\max}$ identification.
 \end{proof}
 
+\begin{lemma}[(5.127) exactly, and Step 6's integrability]\label{lem:eq527}
+  \lean{RBM.Gauss.trace_green_mul_Eblk_sub_mE, RBM.Gauss.sum_Sblk_eq_sum_SB_blkCoef, RBM.Gauss.sum_blkCoef_sum_Sblk, RBM.Gauss.eq527_at, RBM.Gauss.eq527_gauss, RBM.Gauss.integrable_sample_lkErr_mul, RBM.Gauss.int2_gauss, RBM.Gauss.norm_quad11_le_integral, RBM.Gauss.norm_quad13_le_integral}
+  \leanok\uses{thm:step6, lem:ibp, def:gauss-model}
+  (5.127) holds as an \emph{exact} identity, with no error term and no $\prec$: block-averaging
+  $G-m=m(-H-tm)G$, one Gaussian integration by parts, and the block collapse
+  $\sum_kS_{pk}\mathbb E[G_{pp}G_{kk}]=\sum_bS^{(B)}_{ba}\mathbb E[\langle GE_a\rangle\langle
+  GE_b\rangle]$, which is exact because $S$ does not depend on the offsets; $\sum_bS^{(B)}_{ba}=1$
+  then cancels the cubic terms.
+\end{lemma}
+\begin{proof}\leanok
+  Products of diagonal entries collapse into products of block averages with no approximation.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

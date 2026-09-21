@@ -1,5 +1,14 @@
 # 任务队列
 
+> ## ⭐⭐ 当前优先级：T122 > T123 > T58（2026-09-21，Cowork）
+>
+> **Jun 已裁 paper-deltas #72（原 #66）：论文不缺数学，走 (c) 收窄引用，(2.76) 陈述不改。**
+> `(+,+)` 的来源是 **Lemma 5.11 在 `n = 2`**（非交错电荷，(7.16) 情形 1），p.70 只是把出处写成了 (2.76)。
+> T115/T120 写进文件头的「旁证：Lemma 5.14 排除常值 σ」是**误读**，由 T122 顺手更正。
+> **T122 是主定理总装路上唯一剩下的「论文侧」缺口**，下一个空出来的 agent 去接它；规格见下文「T122 规格」。
+>
+> ---
+>
 > ## ⚠ T58 的优先级已下调（2026-09-21，Cowork 据 T114 第 1 步的勘察改判）
 >
 > **Jun 当时把 T58 提到最高，依据的是我的判断「它是 Theorem 2.21 的唯一阻塞」。
@@ -273,8 +282,10 @@
 | T117 | **Step 6 的七条随机层假设**在高斯实现下逐条落地（T114 勘察列为总装路上的一批）。**第 0 步：先把七条逐条列进 STATUS，标明哪几条已由现有定理供给**，再决定要不要拆单 | `Gauss/Step6Hyp.lean`（新建） | Claude Code | **勘察完成 + 部分落地**（七条表见 STATUS；`h527`(5.127) **精确恒等式**已证、`hint2` 已卸；余 6 条建议拆两张：A 归 T58，B（一阶矩反向桥）现在可开工） |
 | T118 | **`SumZeroDyn.Lemma510` / `LKDecay` 与 T59 的形状不匹配**（`SumZeroDyn.lean:62` 自己记了「对不上」）。**第 0 步：说清楚是哪一侧该改**，不要两边硬凑；结论报 Cowork 裁 | `Hierarchy/SumZeroDyn.lean` 侧或新文件 | Claude Code | 进行中（先做第 0 步：判定哪一侧该改） |
 | T119 | **`hIBP` 终定理的局部律侧输入**：`hstabP`/`hstabM`（`CondStable`）、`hrepl`、`hloc`、`hΩ`。这些是 `trace_green_sub_mul_Eblk_stochDom_of_localLaw` 现在带的假设，**目前不属于任何工单** | `Gauss/CondStableInst.lean`（新建） | Claude Code | **完成**（`hloc`/`hrepl`/`hstab*` 全卸，8→3 条假设；**发现固定 t 下 `L^max ≍ W⁻¹` 是确定性的**，T112 的判断被推翻，但时间依赖区制下失效，见 STATUS） |
-| T120 | **`AprioriDecayAll`（四电荷版的 (2.76)）** —— T115 查出的**论文缺口**，`(+,+)` 无来源且便宜补法差一个 `A_u`。**不要硬证**：先把三条归约（循环性、共轭）落成定理，把缺口精确收缩到 `(+,+)` 一个电荷，写进 STATUS 等 Jun 裁 | `Hierarchy/ChargeReduce.lean`（新建） | Claude Code | **完成**（三条归约全通，缺口收缩为单一陈述 `AprioriDecayPP`；`K` 侧四电荷本就齐备，缺的只在 `L` 侧。**等 Jun 裁**，见 STATUS） |
+| T120 | **`AprioriDecayAll`（四电荷版的 (2.76)）** —— T115 查出的**论文缺口**，`(+,+)` 无来源且便宜补法差一个 `A_u`。**不要硬证**：先把三条归约（循环性、共轭）落成定理，把缺口精确收缩到 `(+,+)` 一个电荷，写进 STATUS 等 Jun 裁 | `Hierarchy/ChargeReduce.lean`（新建） | Claude Code | **完成**（三条归约全通，缺口收缩为单一陈述 `AprioriDecayPP`；`K` 侧四电荷本就齐备，缺的只在 `L` 侧。**Jun 已裁（2026-09-21）：走 (c)，`(+,+)` 由 Lemma 5.11@n=2 供给 → T122**） |
 | T121 | **`Eq45Flow`**：(4.5) 对 `u ∈ [s,t]` 一致。(4.5) 本身已证（`avg_bound_stochDom`），差 p.51 的一致化 | `Gauss/Eq45Flow.lean`（新建） | Claude Code | **完成**（是 T108 的情形：不需要时间网；`Eq45Flow` 已卸，条件为三个带时间指标的输入，见 STATUS） |
+| T122 | **⭐⭐ 卸掉 `AprioriDecayPP`：Lemma 5.11 在 `n = 2` + 连续性自举**（Jun 裁 #72）。`(+,+)` 是非交错电荷，`SumZeroDyn.bound_nonAlt` 已覆盖；缺的只是 `n = 2` 自二次项的自举收口（`Step2Moment` 那一套）。**第 0 步：判定自举挂在 `≺` 层（前缀区间重新实例化）还是矩层（`MomentHypPP`）**，报告后再动手 | `Hierarchy/Step2PP.lean`（新建） | 待认领 | 未开工 |
+| T123 | **一阶矩反向桥**（T117 拆单 B，不依赖 T58）：`\|Y\| ≺ Φ` + 确定性包络 + 多项式下界 ⟹ `∫\|Y\| ≺ Φ`，卸 Step 6 的 `hq11`/`hq13`。**第 0 步：先看它是不是 `momentDom_of_stochDom`（p = 1）+ Jensen/Hölder 的两行推论**，是就别造新轮子 | `Gauss/Envelope.lean`（加定理）+ `Gauss/Step6Hyp.lean` | 待认领 | 未开工 |
 
 ---
 
@@ -2323,14 +2334,14 @@ T114 第 1 步用四个探针 + 一个负对照做了编译级对账，结论是
 
 ## T120 规格：把四电荷缺口收缩到 `(+,+)` 一个（Cowork，2026-09-21）
 
-**背景**：T115 查出 paper-deltas #66——(5.76) 对**所有** `σ` 取 max，(2.76) 只证 `σ = (+,−)`，
+**背景**：T115 查出 paper-deltas #72（原误编 #66）——(5.76) 对**所有** `σ` 取 max，(2.76) 只证 `σ = (+,−)`，
 而 p.70 按四个电荷用它。`Hierarchy/StepGlue.lean` 的文件头已经把来龙去脉写清楚了，
 缺口也已具名为 `AprioriDecayAll`，**没有被默默假设**。
 
 ### 这张单只做一件事：把缺口从「四个电荷」精确收缩到「`(+,+)` 一个」
 
 **不要试图证 `(+,+)`**。已经确认便宜补法差整整一个 `A_u`，那是 Jun 要裁的事
-（paper-deltas #66 标了「需 Jun 确认」）。这张单要交付的是**归约**：
+（paper-deltas #72，已由 Jun 裁：走 (c)，见 T122）。这张单要交付的是**归约**：
 
 1. **`(−,+)` ⟸ `(+,−)`**：迹的循环性。`Hierarchy/Decay.lean:1459` 的 `gloop_rotate_eq` 就是它，
    注意它要 `σ.length = a.length`。
@@ -2349,3 +2360,78 @@ T114 第 1 步用四个探针 + 一个负对照做了编译级对账，结论是
 
 **为什么值得单独做**：它把一条「论文缺口」从模糊的四电荷问题变成一句可以直接拿去问作者的话——
 「(2.76) 对常值电荷 `(+,+)` 成立吗？」Jun 裁决前，这是能做的全部。
+
+---
+
+## T122 规格：用 Lemma 5.11（`n = 2`）+ 自举卸掉 `AprioriDecayPP`（Cowork，2026-09-21）
+
+**裁决（Jun 确认，Cowork 核对 PDF pp.64–72）**：paper-deltas #72 走 (c)——**(2.76) 的陈述不改**。
+常值电荷 `(+,+)` 的来源是 **Lemma 5.11（p.65）在 `n = 2`**：`(+,+)` 满足 (5.82)（`σ₁ = σ₂`），
+(7.16) 情形 1 的演化核直接收缩，不需要 Ward、sum-zero、尾函数；p.70 只是把出处写成了 (2.76)。
+T115/T120 写的「旁证：Lemma 5.14（p.68）排除常值 σ」是**误读**——(5.96) 的「非常值」只出现在**交错**分支内部。
+**顺手改掉**：`StepGlue.lean` 文件头「The two remaining inputs」一段与 `AprioriDecayAll` 的 docstring、
+`ChargeReduce.lean` 文件头若有同样的话、STATUS 里 T115/T120 两节的「旁证」句（在原句后加一行更正，不删原文）。
+
+### 数学（照这个做，不要另找路）
+
+记 `A_u = Wℓ_uη_u`、`R = ℓ_t/ℓ_s`、`Ξ_{u,m} = Ξ^{(L−K)}_{u,m}`（四电荷 max）。
+
+1. **`n = 2` 的 (5.83)**：`Ξ_{u,2} ≺ Λ^{1/2} + Ξ_{u,1} + Ξ_{u,2}·Ξ_{u,2}·A_u^{−1} + Ξ^{(L)}_{u,3}`，`Λ ≥ max_u Ξ^{(L)}_{u,6}`。
+   二次项里**两个因子都是被估计的量自己**（`n = 2` 的剪切粘合 `k = 1, l = 2` 两侧都保留 `(σ₁,σ₂)`）。
+   自举**直接对四电荷 max `Ξ_{u,2}` 做**即可：`(±,∓)` 那两个已 `≺ (η_s/η_u)^4`，不碍事。
+2. **先验**：`Λ^{1/2} ≺ R^{5/2}`、`Ξ^{(L)}_{u,3} ≺ R^2`（(2.73)，`Steps.apriori`）；`Ξ_{u,1} ≺ A_u^{1/2}`（(2.75)，`flow_S_one` 已用过）。
+3. **自举**：门槛 `A_u^{3/4}`。门槛内二次项 `≤ A_u^{1/2}`，故 `Ξ_{u,2} ≺ A_u^{1/2} + R^{5/2}`，由 `hregS` 严格低于门槛；
+   起点 `Ξ_{s,2} ≺ 1`（`hLmK`，即 (2.68)/(5.110)）。闭合 ⇒ 全段 `Ξ_{u,2} ≺ A_u^{1/2} + R^{5/2}`。
+   这已足够 `S(2,l)`：`A_u ≤ A_s`（`sc.A_le_As`）且 `R^{5/2} ≤ (Wℓ_sη_s)^{1/2}`（`hregS`）。
+4. **Step 4 基例 `hs2`**（要 `≺ A_u^{1/4}`）：再代一次 (5.83)，这次用 `Ξ_{u,1} ≺ 1`（`flow_hs1` 的路子，或 `Eq45Flow` + `(+,−)` 的 (2.76)），
+   二次项已 `≺ 1`，**不需要再自举**，得 `≺ R^{5/2} ≤ A_u^{1/4}`（`hregS`，`eventually_R4_le_rpow_quarter` 同款计算）。
+
+### Lean 的现成零件
+
+* `SumZeroDyn.bound_nonAlt`（`SumZeroDyn.lean:4982`）—— (5.84)，非交错电荷（含 `(+,+)`），在 `lemma514_flow'` 内对所有 `n ≥ 2` 生效。
+  **但** `Step3.Lemma514` 的打包把 `n = 2` 的二次项列为假设 `hX2`（`X 2 * X 2 * A⁻¹ ≺ Φ`）——**直接喂 `Lemma514` 会循环**，这正是要自举的原因。
+* `Step2Moment`：`le_of_bootstrap_weight`（变门槛连续归纳）、`continuousOn_phi`（逐样本连续 + 确定性包络 ⇒ 矩连续）、
+  `stochDom_timeIcc_of_holder`（矩一致 + 确定性连续模 ⇒ 不可数并下的 `≺`）。**同一形状的自举 `(+,−)` 已走通过一次**，照抄结构。
+* `ChargeReduce.aprioriDecayAll_of_pp`（T120），`StepGlue.flow_S_one`/`flow_hs1`/`eventually_R4_le_rpow_quarter`（T115）。
+
+### 第 0 步（必做，先写进 STATUS 再动手）
+
+判定自举在 Lean 里挂在哪一层：
+* **(a) `≺` 层**：`bound_nonAlt` 及其输入（`Hierarchy`/`Lemma510`/`LKDecay`/`hLmK`）都对 `TimeIcc s t` 陈述。
+  换成前缀 `TimeIcc s v` 是否**只是重新实例化**？若是，自举需要的是「对每个前缀、门槛内 ⇒ 改进」，
+  而 `≺` 是对 `N → ∞` 的序列陈述的——**确认这在 `≺` 层能否表达**，大概率不能（这正是 T78 改走矩路线的原因）。
+* **(b) 矩层**：仿 `Step2Moment.MomentHyp` 开 `MomentHypPP`，`step` 字段恰为「门槛内一步改进」= Lemma 5.11@`n = 2` 的矩版本。
+  **(b) 是可接受的中间交付**：它把「论文缺口」变成和 `(+,−)` 同类的随机层接口——缺口的**性质**就变了，这本身就是进展。
+  若走 (b)，再看 `step` 能否由 `SumZeroDyn.Hierarchy.bdg`（BDG + 二次变差）在 `good := 非交错` 上导出；导不出就留作字段，写明为什么。
+
+**形状对不上就报告，不要硬凑。**
+
+### 目标形状：以消费者为准
+
+`flow_S_two` 只要 `Ξ_2 ≺ (Wℓ_sη_s)^{1/2}`，`flow_hs2` 只要 `≺ (Wℓ_uη_u)^{1/4}`。自举天然给的是 `≺ A_u^{1/2} + R^{5/2}`（不带 `(η_s/η_u)^4`），
+**多半凑不回 `AprioriDecayPP` 的原形状**（`u = s` 处原形状要 `Ξ_{s,2} ≺ 1`，这个倒是有；但 `u` 靠近 `s` 时 `R^{5/2}` 不随 `u` 变小）。
+若凑不回：新增弱化陈述（建议名 `AprioriBoundPP` 或直接陈述 `Ξ_{u,2}` 的界），给 `flow_S_two`/`flow_S_le_two`/`flow_hs2`/
+`flow_sharpLoop_glue`/`flow_steps45_glue` 加**带撇变体**，**旧签名一律不动**。
+
+### 验收
+
+* `S(2,l)`（全部 `l`）与 `hs2` 由定理给出，剩余假设只属 `lemma514_flow'` 已有的随机层接口 + 自举所需的确定性连续性输入（或 (b) 的 `MomentHypPP`）；
+* 零 `sorry`、零 `axiom`，`#assert_rbm_axioms` 通过；**全量 `lake build`**（CLAUDE.md：单文件查不出跨文件重名）；
+* 「旁证」更正落地；STATUS 记录；paper-deltas #72 的「处理」栏补上最终定理名。
+
+---
+
+## T123 规格：一阶矩反向桥（T117 拆单 B；Cowork，2026-09-21）
+
+**来源**：T117 勘察（STATUS「`Gauss/Step6Hyp.lean` — T117」）。Step 6 的 `hq11`/`hq13` 真实内容是一件**通用工具**：
+`|Y| ≺ Φ` + 确定性包络 + 多项式下界 ⟹ `∫|Y| ≺ Φ`（`UnifDetDom` 形）。T77 的 `momentDom_of_stochDom` 只给偶数矩 `∫|Y|^{2p}`。
+
+**第 0 步**：先看它是不是**两行推论**——概率测度上 `∫|Y| ≤ (∫|Y|²)^{1/2}`（Jensen / Hölder；Mathlib 查
+`integral_mul_le_Lp_mul_Lq`、`eLpNorm_le_eLpNorm_of_exponent_le` 一类），配 `momentDom_of_stochDom` 的 `p = 1`。
+是就**不要造新轮子**，只加一条 `unifDetDom_integral_of_stochDom` 包一下。
+
+**范围**：(i) 上面那条通用定理，放 `Gauss/Envelope.lean`；(ii) 为 `lkErr` 之积供两个输入——确定性包络与多项式下界
+（后者要 `η_u ≥ N^{-c}`，**不免费**，来自 `Wℓ_uη_u ≥ 1` ⇐ (2.72)，故桥带这条假设）；(iii) 经 T117 已给的
+`norm_quad11_le_integral`/`norm_quad13_le_integral` 从 `Steps.sharpLmK 1`/`sharpLmK 3` 收口，卸掉 `hq11`/`hq13`。
+
+**验收**：`sharpExpect_step6` 的七条假设只剩 A 组（`hH`/`hFD`/`h5133`/`hG`，归 T58）；零 `sorry`/`axiom`；全量 `lake build`；STATUS 记录。

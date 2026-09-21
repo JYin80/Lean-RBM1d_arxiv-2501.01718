@@ -242,8 +242,8 @@
 | T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`。**规格见下文「T109 规格」：建议用已证的 `gaussIBP` 跑矩递推绕开 Wick 与走计数，第 0 步先验因子**。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | Claude Code | **完成**（`‖X‖ ≺ 1` 无条件，`OpNormBound` 已卸，paper-deltas #49 关闭；收口改用对数凸性，见 STATUS） |
 | T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证）。**规格见下文「T110 规格」，第 0 步先手算 m = 2** | `Gauss/FlucIterHigh.lean`（新建） | Claude Code | **完成**（第 0 步：增益**乘性**，且机制是恒等式；`FlucGain` 对所有 m 由 `MinorDiffGain` 得出，m=2 已无条件） |
 | T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。**规格见下文「T111 规格」：先查是不是同一个 `X` 的确定性标度；真换律就走 `gaussianReal_map_const_mul` + `infinitePi_map_pi`** | `Gauss/DistEq.lean`（新建） | Claude Code | **完成**（三条全部为定理；全是逐点相等，不需要任何分布论证） |
-| T112 | **`≺` 在条件期望下的保持** + T83 剩下的两个输入 `hprod`/`hminor`。**规格见下文「T112 规格」** | `Gauss/CondDom.lean`（新建） | 待认领 | 未开工 ← **T83 的收尾，也是一块公共工具** |
-| T113 | **`MinorDiffGain` (m ≥ 3)**：迭代小行差的大小，(4.12) 的最后一条输入。承 T110（`m ≤ 2` 已无条件，且已证增益是**乘性且由恒等式给出**）。**纯 Green 函数 + 局部律，概率那一半已卸干净** | `Gauss/MinorDiffGain.lean`（新建） | 待认领 | 未开工 ← **[40] 的最后一块** |
+| T112 | **`≺` 在条件期望下的保持** + T83 剩下的两个输入 `hprod`/`hminor`。**规格见下文「T112 规格」** | `Gauss/CondDom.lean`（新建） | Claude Code | 进行中 |
+| T113 | **`MinorDiffGain` (m ≥ 3)**：迭代小行差的大小，(4.12) 的最后一条输入。承 T110（`m ≤ 2` 已无条件，且已证增益是**乘性且由恒等式给出**）。**纯 Green 函数 + 局部律，概率那一半已卸干净** | `Gauss/MinorDiffGain.lean`（新建） | Claude Code | 进行中 |
 
 ---
 

@@ -2540,6 +2540,19 @@ T74/T76 之后**没有任何工单接手这堵墙**。这张单接手。
 * **T132b（等 T133/T134）**：高斯卸载——带显式时间的生成元恒等式 + `(z,M)` 联合 `C²` ⟹ `MomentDuhamel` 的实例。
 * **T132c（等 T132a）**：`Step2Moment.MomentHyp.step` 与 `Step2PP` 的 `(+,+)` 一步改进，由矩 Duhamel + (5.39)–(5.41)(5.45) 的矩形式给出。
 
+
+### Cowork 中途抽查 T132a（2026-09-21 04:25，读的是未提交的 `Gauss/MomentDuhamel.lean` 与 `Analysis/MomentClosing.lean`）
+
+**通过**：收口引理是「积分 + 取上确界 + 解二次不等式」（`le_two_mul_add_sqrt_of_sq_le`、`sqrt_le_of_integral_le`），**没有**常系数 Grönwall，文件头把理由写清楚了；
+`drift` 字段逐点钉死 `F`（`F_unique`）；`momentDuhamel(Q)` 的量词序是「固定目标时刻 `v`、`∫_s^v`」，`Q_t` 版五项齐全；`cMD` 只依赖 `p`、不依赖 `N`，不会让不等式变空。
+
+**两处要改（提交前）**：
+1. **`EE` 仍是无约束的数据字段**——它只出现在 `momentDuhamel` 右端，取成随 `N` 增长的巨大值，不等式就空了；护栏又回到只有 `Lemma510.EE_le` 一条。
+   **把 `EE` 钉死**：直接用 T127 的 `eeField`（类型与 `Hierarchy.EE` 逐字相同，Def 5.4 的具体张量）作定义，或加字段 `EE_eq : EE = eeField …`。
+   这样 `F`、`EE` 两个数据都被钉死，T135 证的 `EE_le` 就是关于确定对象的命题。
+2. **`drift` 对**所有** `M : Matrix … ℂ` 量化，范围太大**：非 Hermitian 的 `M` 可能使 `M − z_u` 不可逆（Lean 的逆在那里取 0），恒等式可能不成立，T132b 会卸不掉。
+   **改成只对 Hermitian `M`**（高斯流的支撑就在那里，`Im z_u > 0` 保证可逆），并说明 `genLK` 里的 `∂_ij∂_ji` 是沿 Hermitian 方向的二阶导。
+
 ---
 
 ## T133 规格：loop 观测量的 `C²` 界（T76 的 `TestFun` 缺口；Cowork，2026-09-21）

@@ -1098,6 +1098,681 @@ theorem highProb_eeDecay_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 
 
 end GLoopDecay
 
+/-! ### T160: the large deviation bounds (4.2) with an additive floor
+
+T148 (`RBM1D/Gauss/LDENetClose.lean`) proved that `RBM.LKDecayQuant.LDEFlowDom` is **not
+available in its literal form**: after the deterministic modulus of (4.2) along the flow, it
+is *equivalent* to a polynomial lower bound `N^{-B} ≤ ζ(u)` on its own control, and the
+control `ldeRowRHS` is exponentially small in the band distance of the pair — which is what
+(2.76)/(4.3) say.  What T148 delivers unconditionally instead is the same domination with an
+**additive floor**, `RBM.Gauss.ldeFlowDom_floor`:
+
+  `ldeRowLHS(u) ≺ ldeRowRHS(u) + N^{-B}` for every `B ≥ 0`, uniformly in `u ∈ [s_N, t_N]`
+  and in the off-diagonal pair.
+
+This section shows that the floor is **harmless for every consumer in this file**.  The floor
+enters the entry bound (4.10)/(4.11) exactly the way the (2.76) error `δ₂` does — additively,
+inside the same bracket — so Lemma 5.9's error `27 Φ √δ₂ max(1,|Im z|⁻¹)^m` becomes
+`27 Φ √(δ₂ + f)`, and the requirement `Φ_N √(ε_N) ≤ N^{-D'}` of
+`RBM.LKDecayQuant.FlowInputs` becomes `Φ_N √(2 ε_N) ≤ N^{-D'}`, which the *same* explicit
+choice `δ_N = N^{-1}`, `Φ_N = N`, `ε_N = N^{-2(D'+2)}` meets.
+
+Concretely, the floor is taken **equal to the (2.76) error** `ε_N`, and `ε_N` is chosen as
+small a power of `N` as the target `D'` requires; the downstream decay target always carries
+a `W^{-D}` floor of its own, so nothing is lost.
+
+Nothing in the unprimed development changes: every declaration below is new.
+-/
+
+section EntryFloor
+
+open Finset
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+variable {H G : Matrix n n ℂ} {z m : ℂ} {δ Φ fl : ℝ} {S : n → n → ℝ}
+
+/-- **The row large deviation bound (4.2) with an additive floor `fl` in the control.**
+This is `RBM.LDERow` with `ldeRowRHS` replaced by `ldeRowRHS + fl`; it is what
+`RBM.Gauss.ldeFlowDom_floor` produces at `fl = N^{-B}`. -/
+def LDERowFloor (H G : Matrix n n ℂ) (S : n → n → ℝ) (Φ fl : ℝ) : Prop :=
+  ∀ i j, i ≠ j → ldeRowLHS H G i j ≤ Φ * (ldeRowRHS S G i j + fl)
+
+/-- **The column large deviation bound (4.2) with an additive floor `fl` in the control.** -/
+def LDEColFloor (H G : Matrix n n ℂ) (S : n → n → ℝ) (Φ fl : ℝ) : Prop :=
+  ∀ k j, k ≠ j → ldeColLHS H G k j ≤ Φ * (ldeColRHS S G k j + fl)
+
+/-- The floor is a weakening: `RBM.LDERow` implies `RBM.LKDecayQuant.LDERowFloor` for every
+non-negative floor. -/
+theorem LDERowFloor.of_lderow (hΦ : 0 ≤ Φ) (hfl : 0 ≤ fl) (h : LDERow H G S Φ) :
+    LDERowFloor H G S Φ fl := fun i j hij =>
+  (h i j hij).trans (mul_le_mul_of_nonneg_left (by linarith) hΦ)
+
+/-- The floor is a weakening: `RBM.LDECol` implies `RBM.LKDecayQuant.LDEColFloor`. -/
+theorem LDEColFloor.of_ldecol (hΦ : 0 ≤ Φ) (hfl : 0 ≤ fl) (h : LDECol H G S Φ) :
+    LDEColFloor H G S Φ fl := fun k j hkj =>
+  (h k j hkj).trans (mul_le_mul_of_nonneg_left (by linarith) hΦ)
+
+/-- **(4.10) with a floor**: `|G_{ij}|² ≤ 9 Φ (∑_k S_{ik} |G_{kj}|² + fl)` for `i ≠ j`.
+The proof of `RBM.norm_sq_green_le_row` with `fl` carried through the absorption. -/
+theorem norm_sq_green_le_row_floor (hMG : (H - z • (1 : Matrix n n ℂ)) * G = 1) (hm : ‖m‖ = 1)
+    (hΩ : GoodEvent G m δ) (hδ : δ ≤ 1 / 2) (hS0 : ∀ i k, 0 ≤ S i k)
+    (hS1 : ∀ i, ∑ k, S i k ≤ 1) (hΦ : 0 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) (hfl : 0 ≤ fl)
+    (hLDE : LDERowFloor H G S Φ fl) {i j : n} (hij : i ≠ j) :
+    ‖G i j‖ ^ 2 ≤ 9 * Φ * (∑ k, S i k * ‖G k j‖ ^ 2 + fl) := by
+  have hGii := hΩ.diag_ne_zero hm hδ i
+  have h48 := green_eq_neg_mul_sum_row hMG hGii hij
+  rw [sum_erase_sub_smul_row] at h48
+  have hnorm := congrArg norm h48
+  rw [norm_mul, norm_neg] at hnorm
+  have hsq : ‖G i j‖ ^ 2 ≤ 9 / 4 * ldeRowLHS H G i j := by
+    rw [hnorm, ldeRowLHS, mul_pow]
+    exact mul_le_mul_of_nonneg_right (hΩ.norm_sq_diag_le hm hδ i) (sq_nonneg _)
+  have hrhs : ldeRowRHS S G i j ≤ 2 * ∑ k, S i k * ‖G k j‖ ^ 2 + 2 * (2 * δ * ‖G i j‖) ^ 2 := by
+    refine sum_mul_sq_le_of_le_add _ (hS0 i) (hS1 i) (fun _ => norm_nonneg _) ?_
+    intro k hk
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    have h1 := hΩ.norm_greenMinor_sub_le hm hδ i k j
+    have h2 := hΩ.norm_offdiag_le hki
+    have h3 : ‖greenMinor G i k j‖ ≤ ‖G k j‖ + ‖greenMinor G i k j - G k j‖ := by
+      calc ‖greenMinor G i k j‖ = ‖G k j + (greenMinor G i k j - G k j)‖ := by
+            rw [add_sub_cancel]
+        _ ≤ _ := norm_add_le _ _
+    have h4 : ‖G k i‖ * ‖G i j‖ ≤ δ * ‖G i j‖ :=
+      mul_le_mul_of_nonneg_right h2 (norm_nonneg _)
+    linarith
+  have hlde := hLDE i j hij
+  have key : ‖G i j‖ ^ 2 ≤ 9 * Φ * (∑ k, S i k * ‖G k j‖ ^ 2 + fl / 2) := by
+    refine absorb_le (sq_nonneg _) hΦδ ?_
+    calc ‖G i j‖ ^ 2 ≤ 9 / 4 * ldeRowLHS H G i j := hsq
+      _ ≤ 9 / 4 * (Φ * (ldeRowRHS S G i j + fl)) := by linarith
+      _ ≤ 9 / 4 * (Φ * ((2 * ∑ k, S i k * ‖G k j‖ ^ 2 + 2 * (2 * δ * ‖G i j‖) ^ 2) + fl)) := by
+          gcongr
+      _ = 9 / 4 * (Φ * (2 * (∑ k, S i k * ‖G k j‖ ^ 2 + fl / 2)
+            + 8 * δ ^ 2 * ‖G i j‖ ^ 2)) := by ring
+  nlinarith [mul_nonneg hΦ hfl]
+
+/-- **(4.10), column form, with a floor.** -/
+theorem norm_sq_green_le_col_floor (hGM : G * (H - z • (1 : Matrix n n ℂ)) = 1) (hm : ‖m‖ = 1)
+    (hΩ : GoodEvent G m δ) (hδ : δ ≤ 1 / 2) (hS0 : ∀ i k, 0 ≤ S i k)
+    (hS1 : ∀ j, ∑ l, S l j ≤ 1) (hΦ : 0 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) (hfl : 0 ≤ fl)
+    (hLDE : LDEColFloor H G S Φ fl) {k j : n} (hkj : k ≠ j) :
+    ‖G k j‖ ^ 2 ≤ 9 * Φ * (∑ l, S l j * ‖G k l‖ ^ 2 + fl) := by
+  have hGjj := hΩ.diag_ne_zero hm hδ j
+  have h48 := green_eq_neg_mul_sum_col hGM hGjj hkj
+  rw [sum_erase_sub_smul_col] at h48
+  have hnorm := congrArg norm h48
+  rw [norm_mul, norm_neg] at hnorm
+  have hsq : ‖G k j‖ ^ 2 ≤ 9 / 4 * ldeColLHS H G k j := by
+    rw [hnorm, ldeColLHS, mul_pow]
+    exact mul_le_mul_of_nonneg_right (hΩ.norm_sq_diag_le hm hδ j) (sq_nonneg _)
+  have hrhs : ldeColRHS S G k j ≤ 2 * ∑ l, S l j * ‖G k l‖ ^ 2 + 2 * (2 * δ * ‖G k j‖) ^ 2 := by
+    have hre : ldeColRHS S G k j = ∑ l ∈ univ.erase j, S l j * ‖greenMinor G j k l‖ ^ 2 := by
+      rw [ldeColRHS]
+      exact Finset.sum_congr rfl fun l _ => mul_comm _ _
+    rw [hre]
+    refine sum_mul_sq_le_of_le_add _ (fun l => hS0 l j) (hS1 j) (fun _ => norm_nonneg _) ?_
+    intro l hl
+    have hlj : l ≠ j := Finset.ne_of_mem_erase hl
+    have h1 := hΩ.norm_greenMinor_sub_le hm hδ j k l
+    have h2 := hΩ.norm_offdiag_le hlj.symm
+    have h3 : ‖greenMinor G j k l‖ ≤ ‖G k l‖ + ‖greenMinor G j k l - G k l‖ := by
+      calc ‖greenMinor G j k l‖ = ‖G k l + (greenMinor G j k l - G k l)‖ := by
+            rw [add_sub_cancel]
+        _ ≤ _ := norm_add_le _ _
+    have h4 : ‖G k j‖ * ‖G j l‖ ≤ ‖G k j‖ * δ :=
+      mul_le_mul_of_nonneg_left h2 (norm_nonneg _)
+    linarith
+  have hlde := hLDE k j hkj
+  have key : ‖G k j‖ ^ 2 ≤ 9 * Φ * (∑ l, S l j * ‖G k l‖ ^ 2 + fl / 2) := by
+    refine absorb_le (sq_nonneg _) hΦδ ?_
+    calc ‖G k j‖ ^ 2 ≤ 9 / 4 * ldeColLHS H G k j := hsq
+      _ ≤ 9 / 4 * (Φ * (ldeColRHS S G k j + fl)) := by linarith
+      _ ≤ 9 / 4 * (Φ * ((2 * ∑ l, S l j * ‖G k l‖ ^ 2 + 2 * (2 * δ * ‖G k j‖) ^ 2) + fl)) := by
+          gcongr
+      _ = 9 / 4 * (Φ * (2 * (∑ l, S l j * ‖G k l‖ ^ 2 + fl / 2)
+            + 8 * δ ^ 2 * ‖G k j‖ ^ 2)) := by ring
+  nlinarith [mul_nonneg hΦ hfl]
+
+/-- **(4.11) with a floor**: the floor survives the two iterations as `2 fl` inside the same
+bracket, `|G_{ij}|² ≤ 81 Φ² (∑_{k,l} S_{ik}|G_{kl}|²S_{lj} + S_{ij} + 2 fl)`. -/
+theorem norm_sq_green_le_two_sided_floor (hGM : G * (H - z • (1 : Matrix n n ℂ)) = 1)
+    (hMG : (H - z • (1 : Matrix n n ℂ)) * G = 1) (hm : ‖m‖ = 1)
+    (hΩ : GoodEvent G m δ) (hδ : δ ≤ 1 / 2) (hS0 : ∀ i k, 0 ≤ S i k)
+    (hSrow : ∀ i, ∑ k, S i k ≤ 1) (hScol : ∀ j, ∑ l, S l j ≤ 1) (hΦ1 : 1 ≤ Φ)
+    (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) (hfl : 0 ≤ fl) (hLrow : LDERowFloor H G S Φ fl)
+    (hLcol : LDEColFloor H G S Φ fl) {i j : n} (hij : i ≠ j) :
+    ‖G i j‖ ^ 2 ≤ 81 * Φ ^ 2 * ((∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + S i j + 2 * fl) := by
+  have hΦ : 0 ≤ Φ := by linarith
+  have h1 := norm_sq_green_le_row_floor hMG hm hΩ hδ hS0 hSrow hΦ hΦδ hfl hLrow hij
+  have hk : ∀ k, ‖G k j‖ ^ 2
+      ≤ 9 * Φ * ((∑ l, S l j * ‖G k l‖ ^ 2) + fl) + (if k = j then 9 / 4 else 0) := by
+    intro k
+    by_cases hkj : k = j
+    · subst hkj
+      rw [ite_eq_left rfl]
+      have h2 := hΩ.norm_sq_diag_le hm hδ k
+      have h3 : 0 ≤ 9 * Φ * ((∑ l, S l k * ‖G k l‖ ^ 2) + fl) :=
+        mul_nonneg (by linarith) (by
+          have : 0 ≤ ∑ l, S l k * ‖G k l‖ ^ 2 :=
+            Finset.sum_nonneg fun l _ => mul_nonneg (hS0 l k) (sq_nonneg _)
+          linarith)
+      linarith
+    · rw [ite_eq_right hkj, add_zero]
+      exact norm_sq_green_le_col_floor hGM hm hΩ hδ hS0 hScol hΦ hΦδ hfl hLcol hkj
+  have e1 : ∀ k : n, S i k * (9 * Φ * ((∑ l, S l j * ‖G k l‖ ^ 2) + fl)
+        + (if k = j then 9 / 4 else 0))
+      = 9 * Φ * (∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl * S i k
+        + S i k * (if k = j then 9 / 4 else 0) := by
+    intro k
+    have hterm : ∑ l, S i k * ‖G k l‖ ^ 2 * S l j = S i k * ∑ l, S l j * ‖G k l‖ ^ 2 := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun l _ => by ring
+    rw [hterm]; ring
+  have hs : ∑ k, S i k * (if k = j then 9 / 4 else 0) = 9 / 4 * S i j := by
+    simp only [mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+    ring
+  have hsum : ∑ k, S i k * ‖G k j‖ ^ 2
+      ≤ 9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl + 9 / 4 * S i j := by
+    have hrow := hSrow i
+    have hrow0 : 0 ≤ ∑ k, S i k := Finset.sum_nonneg fun k _ => hS0 i k
+    have hfl9 : 0 ≤ 9 * Φ * fl := by positivity
+    calc ∑ k, S i k * ‖G k j‖ ^ 2
+        ≤ ∑ k, S i k * (9 * Φ * ((∑ l, S l j * ‖G k l‖ ^ 2) + fl)
+            + (if k = j then 9 / 4 else 0)) :=
+          Finset.sum_le_sum fun k _ => mul_le_mul_of_nonneg_left (hk k) (hS0 i k)
+      _ = ∑ k, (9 * Φ * (∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl * S i k
+            + S i k * (if k = j then 9 / 4 else 0)) := Finset.sum_congr rfl fun k _ => e1 k
+      _ = 9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j)
+            + 9 * Φ * fl * (∑ k, S i k) + ∑ k, S i k * (if k = j then 9 / 4 else 0) := by
+          rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
+      _ ≤ 9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl + 9 / 4 * S i j := by
+          rw [hs]
+          nlinarith
+  have hX : 0 ≤ ∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j :=
+    Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
+      mul_nonneg (mul_nonneg (hS0 i k) (sq_nonneg _)) (hS0 l j)
+  have hSij := hS0 i j
+  have hΦ2 : Φ ≤ Φ ^ 2 := by nlinarith
+  have hstep : ‖G i j‖ ^ 2
+      ≤ 9 * Φ * ((9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl
+          + 9 / 4 * S i j) + fl) := by
+    refine h1.trans (mul_le_mul_of_nonneg_left ?_ (by linarith))
+    linarith
+  nlinarith [mul_le_mul_of_nonneg_right hΦ2 hSij, mul_le_mul_of_nonneg_right hΦ2 hfl,
+    mul_nonneg hΦ hfl, sq_nonneg Φ]
+
+end EntryFloor
+
+section BlkFloor
+
+open Finset
+
+variable (L : ℕ) [NeZero L] {W : ℕ} [NeZero W]
+  {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
+
+/-- **(4.2) in the block model, with a floor** — `RBM.norm_sq_green_le_blk` with `2 fl`
+added inside the bracket. -/
+theorem norm_sq_green_le_blk_floor (hL : 3 ≤ L) (hH : H.IsHermitian) (hz : z.im ≠ 0) {m : ℂ}
+    (hm : ‖m‖ = 1) {δ : ℝ} (hΩ : GoodEvent (green H z) m δ) (hδ : δ ≤ 1 / 2) {Φ : ℝ}
+    (hΦ1 : 1 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) {fl : ℝ} (hfl : 0 ≤ fl)
+    (hLrow : LDERowFloor H (green H z) (Sblk L W) Φ fl)
+    (hLcol : LDEColFloor H (green H z) (Sblk L W) Φ fl)
+    {i j : ZMod L × Fin W} (hij : i ≠ j) :
+    ‖green H z i j‖ ^ 2 ≤ 81 * Φ ^ 2 * ((∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L,
+        Lre H z (j.1 + v) (i.1 + u))
+      + (if i.1 - j.1 ∈ sbSupport L then (W : ℝ)⁻¹ else 0) + 2 * fl) := by
+  have h := norm_sq_green_le_two_sided_floor (green_mul_sub_of_im hH hz)
+    (sub_mul_green_of_im hH hz) hm hΩ hδ Sblk_nonneg (fun i => (sum_Sblk_row hL i).le)
+    (fun j => (sum_Sblk_col hL j).le) hΦ1 hΦδ hfl hLrow hLcol hij
+  rw [sum_sum_Sblk_eq_nbr hH] at h
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  have h1 : 0 ≤ ∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L, Lre H z (j.1 + v) (i.1 + u) :=
+    Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => Lre_nonneg hH _ _
+  have h2 := Sblk_le (L := L) (W := W) i j
+  linarith
+
+/-- **Lemma 5.9, first step, with a floor**: the floor and the (2.76) error `δ₂` enter the
+entry decay in exactly the same place, `|G_{ij}|² ≤ 729 Φ² (δ₂ + fl)` for far pairs. -/
+theorem norm_sq_green_le_of_far_floor (hL : 3 ≤ L) (hH : H.IsHermitian) (hz : z.im ≠ 0) {m : ℂ}
+    (hm : ‖m‖ = 1) {δ : ℝ} (hΩ : GoodEvent (green H z) m δ) (hδ : δ ≤ 1 / 2) {Φ : ℝ}
+    (hΦ1 : 1 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) {fl : ℝ} (hfl : 0 ≤ fl)
+    (hLrow : LDERowFloor H (green H z) (Sblk L W) Φ fl)
+    (hLcol : LDEColFloor H (green H z) (Sblk L W) Φ fl)
+    {ℓ δ₂ : ℝ} (hℓ : 0 ≤ ℓ)
+    (hdec : ∀ a b : ZMod L, ℓ ≤ (zdist L (a - b) : ℝ) → Lre H z a b ≤ δ₂)
+    {i j : ZMod L × Fin W} (hij : ℓ + 2 ≤ (zdist L (i.1 - j.1) : ℝ)) :
+    ‖green H z i j‖ ^ 2 ≤ 729 * Φ ^ 2 * (δ₂ + fl) := by
+  have hne : i ≠ j := by
+    rintro rfl
+    rw [sub_self, zdist_zero] at hij
+    push_cast at hij
+    linarith
+  have h := norm_sq_green_le_blk_floor L hL hH hz hm hΩ hδ hΦ1 hΦδ hfl hLrow hLcol hne
+  have hind : (if i.1 - j.1 ∈ sbSupport L then (W : ℝ)⁻¹ else 0) = 0 := by
+    rw [ite_eq_right_iff]
+    intro hmem
+    have := zdist_le_one_of_mem_sbSupport L hL hmem
+    have : (zdist L (i.1 - j.1) : ℝ) ≤ 1 := by exact_mod_cast this
+    linarith
+  have hsum : ∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L, Lre H z (j.1 + v) (i.1 + u) ≤ 9 * δ₂ := by
+    have hterm : ∀ u ∈ sbSupport L, ∀ v ∈ sbSupport L, Lre H z (j.1 + v) (i.1 + u) ≤ δ₂ := by
+      intro u hu v hv
+      refine hdec _ _ ?_
+      have h1 := Decay.zdist_le_add_two L hL (u := j.1 - i.1) hv hu
+      have e : j.1 - i.1 + v - u = j.1 + v - (i.1 + u) := by ring
+      rw [e] at h1
+      have h2 : zdist L (i.1 - j.1) = zdist L (j.1 - i.1) := by rw [← zdist_neg L, neg_sub]
+      have : (zdist L (i.1 - j.1) : ℝ) ≤ zdist L (j.1 + v - (i.1 + u)) + 2 := by
+        rw [h2]; exact_mod_cast h1
+      linarith
+    calc ∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L, Lre H z (j.1 + v) (i.1 + u)
+        ≤ ∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L, δ₂ :=
+          Finset.sum_le_sum fun u hu => Finset.sum_le_sum fun v hv => hterm u hu v hv
+      _ = 9 * δ₂ := by
+          simp only [Finset.sum_const, card_sbSupport L hL, nsmul_eq_mul]; ring
+  rw [hind, add_zero] at h
+  have hΦ2 : (0 : ℝ) ≤ Φ ^ 2 := sq_nonneg _
+  nlinarith [h, hsum, mul_nonneg hΦ2 hfl]
+
+/-- **Lemma 5.9, loop side, with a floor**: the error is `27 Φ √(δ₂ + fl)` in place of
+`27 Φ √δ₂`. -/
+theorem loopDecay_gloop_of_event_floor (hL : 3 ≤ L) (hH : H.IsHermitian) (hz : z.im ≠ 0)
+    {m : ℂ} (hm : ‖m‖ = 1) {δ : ℝ} (hΩ : GoodEvent (green H z) m δ) (hδ : δ ≤ 1 / 2) {Φ : ℝ}
+    (hΦ1 : 1 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) {fl : ℝ} (hfl : 0 ≤ fl)
+    (hLrow : LDERowFloor H (green H z) (Sblk L W) Φ fl)
+    (hLcol : LDEColFloor H (green H z) (Sblk L W) Φ fl)
+    {ℓ δ₂ : ℝ} (hℓ : 0 ≤ ℓ) (hδ₂ : 0 ≤ δ₂)
+    (hdec : ∀ a b : ZMod L, ℓ ≤ (zdist L (a - b) : ℝ) → Lre H z a b ≤ δ₂) (N : ℕ) :
+    Decay.LoopDecay L N (2 * N * (ℓ + 2))
+      (27 * Φ * Real.sqrt (δ₂ + fl) * max 1 |z.im|⁻¹ ^ N) (gloop L W H z) := by
+  have hsum0 : 0 ≤ δ₂ + fl := by linarith
+  have hG : ∀ x y : ZMod L × Fin W, ℓ + 2 ≤ (zdist L (x.1 - y.1) : ℝ) →
+      ‖green H z x y‖ ≤ 27 * Φ * Real.sqrt (δ₂ + fl) := by
+    intro x y hxy
+    have h := norm_sq_green_le_of_far_floor L hL hH hz hm hΩ hδ hΦ1 hΦδ hfl hLrow hLcol hℓ
+      hdec hxy
+    have h0 : 0 ≤ 27 * Φ * Real.sqrt (δ₂ + fl) := by positivity
+    have e : (27 * Φ * Real.sqrt (δ₂ + fl)) ^ 2 = 729 * Φ ^ 2 * (δ₂ + fl) := by
+      rw [mul_pow, mul_pow, Real.sq_sqrt hsum0]; ring
+    exact (pow_le_pow_iff_left₀ (norm_nonneg _) h0 two_ne_zero).1 (by rw [e]; exact h)
+  exact Decay.loopDecay_gloop L hH hz (by linarith) (by positivity)
+    (Decay.norm_Gsig_apply_le L hH hG) N
+
+/-- **`RBM.Decay.lemma59` with a floor in the large deviation bounds.**  Identical to
+`RBM.Decay.lemma59` except that the (2.76) error `δ₂` is replaced by `δ₂ + fl` in the
+`L`-side error; the `K` side is untouched. -/
+theorem lemma59_floor (hL : 3 ≤ L) (hH : H.IsHermitian) (hz : z.im ≠ 0) {m₀ : ℂ}
+    (hm₀ : ‖m₀‖ = 1) {δ : ℝ} (hΩ : GoodEvent (green H z) m₀ δ) (hδ : δ ≤ 1 / 2) {Φ : ℝ}
+    (hΦ1 : 1 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) {fl : ℝ} (hfl : 0 ≤ fl)
+    (hLrow : LDERowFloor H (green H z) (Sblk L W) Φ fl)
+    (hLcol : LDEColFloor H (green H z) (Sblk L W) Φ fl)
+    {ℓ δ₂ : ℝ} (hℓ : 0 ≤ ℓ) (hδ₂ : 0 ≤ δ₂)
+    (hdec : ∀ a b : ZMod L, ℓ ≤ (zdist L (a - b) : ℝ) → Lre H z a b ≤ δ₂)
+    {m : Bool → ℂ} (hm1 : ∀ s, ‖m s‖ ≤ 1) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) {N : ℕ}
+    (hN : 1 ≤ N) :
+    Decay.LoopDecay L N (2 * N * (ℓ + 2))
+        (27 * Φ * Real.sqrt (δ₂ + fl) * max 1 |z.im|⁻¹ ^ N) (gloop L W H z) ∧
+      Decay.LoopDecay L N (2 * N * (ℓ + 2))
+        (27 * Φ * Real.sqrt (δ₂ + fl) * max 1 |z.im|⁻¹ ^ N
+          + Decay.cKdecay N (1 - t) * exp (-(cor35Rate (1 - t) * (2 * N * (ℓ + 2)))))
+        (gloop L W H z - Kgen L W m t) := by
+  have hGL := loopDecay_gloop_of_event_floor L hL hH hz hm₀ hΩ hδ hΦ1 hΦδ hfl hLrow hLcol
+    hℓ hδ₂ hdec N
+  have hN' : (1 : ℝ) ≤ N := by exact_mod_cast hN
+  have hK := Decay.loopDecay_Kgen L hL W hm1 ht0 ht1 (δ := 1 - t) (by linarith)
+    (Decay.one_sub_le_norm_one_sub hm1 ht0) N (ℓ := 2 * N * (ℓ + 2)) (by positivity)
+  exact ⟨hGL, hGL.sub L hK⟩
+
+end BlkFloor
+
+section Flow'
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **The event of Lemma 4.1 with the two large deviation bounds floored**, at every
+`u ∈ [s_N, t_N]`.  This is `RBM.LKDecayQuant.FlowGoodSet` with `RBM.LDERow`/`RBM.LDECol`
+replaced by `RBM.LKDecayQuant.LDERowFloor`/`LDEColFloor` at the floor `ε_N` — the *same*
+`ε_N` that bounds the (2.76) two-point function, since both enter Lemma 5.9's error
+additively and in the same place. -/
+def FlowGoodSet' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (gdel Phi eps : ℕ → ℝ) (τ : ℝ)
+    (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N,
+      GoodEvent (X.G E N (u : ℝ) ω) (mE E) (gdel N)
+    ∧ LDERowFloor (X.H N (u : ℝ) ω) (X.G E N (u : ℝ) ω) (Sblk (B.L N) (B.W N))
+        (Phi N) (eps N)
+    ∧ LDEColFloor (X.H N (u : ℝ) ω) (X.G E N (u : ℝ) ω) (Sblk (B.L N) (B.W N))
+        (Phi N) (eps N)
+    ∧ ∀ a b : ZMod (B.L N), B.ell N (u : ℝ) * (N : ℝ) ^ (τ / 2) ≤ (zdist (B.L N) (a - b) : ℝ) →
+        Lre (X.H N (u : ℝ) ω) (zt E (u : ℝ)) a b ≤ eps N}
+
+/-- **Obligation (3) of `RBM.DecayBridge.lkDecay_of_highProb`, floored form.**  The only
+change from `RBM.LKDecayQuant.FlowInputs` is that the numerical smallness is asked for at
+`2 ε_N` instead of `ε_N` — the floor doubles the error inside the square root, nothing
+else. -/
+def FlowInputs' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∀ τ > (0 : ℝ), ∀ D' > (0 : ℝ), ∃ gdel Phi eps : ℕ → ℝ,
+    (∀ᶠ N : ℕ in atTop, gdel N ≤ 1 / 2 ∧ 1 ≤ Phi N ∧ 36 * Phi N * gdel N ^ 2 ≤ 1
+        ∧ 0 ≤ eps N ∧ Phi N * Real.sqrt (2 * eps N) ≤ (N : ℝ) ^ (-D'))
+      ∧ HighProb B.P (FlowGoodSet' X E s t gdel Phi eps τ)
+
+variable {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **Lemma 5.9's conclusion from the floored obligation (3).**  Word for word the proof of
+`RBM.LKDecayQuant.highProb_loopDecay_pair`, with `RBM.Decay.lemma59` replaced by
+`RBM.LKDecayQuant.lemma59_floor` and the error `√(ε_N)` by `√(ε_N + ε_N)`. -/
+theorem highProb_loopDecay_pair' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : FlowInputs' X E s t) {m : ℕ} (hm : 1 ≤ m) {τ : ℝ} (hτ : 0 < τ) {D : ℝ} (hD : 0 < D) :
+    HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N,
+        Decay.LoopDecay (B.L N) m (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+            (fun I => X.Lval E N (u : ℝ) ω I)
+      ∧ Decay.LoopDecay (B.L N) m (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+            (fun I => X.Lval E N (u : ℝ) ω I - B.Kval E N (u : ℝ) I)}) := by
+  classical
+  set CE : ℝ := max 1 ((mE E).im)⁻¹ with hCEdef
+  have hCE1 : (1 : ℝ) ≤ CE := le_max_left _ _
+  have hmr : (1 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  obtain ⟨gdel, Phi, eps, hnum, hhp⟩ := h τ hτ (D + 2 * (m : ℝ) + 1) (by positivity)
+  refine hhp.mono ?_
+  have h6m : ∀ᶠ N : ℕ in atTop, 6 * (m : ℝ) ≤ (N : ℝ) ^ (τ / 2) := by
+    filter_upwards [SumZeroDyn.eventually_const_mul_rpow_le (6 * (m : ℝ))
+      (show (0 : ℝ) < τ / 2 by linarith)] with N hN
+    simpa using hN
+  have hCEb : ∀ᶠ N : ℕ in atTop, 54 * CE ^ m ≤ (N : ℝ) :=
+    tendsto_natCast_atTop_atTop.eventually_ge_atTop _
+  have hexp := SumZeroDyn.eventually_exp_small (2 * cKbound m)
+    (((2 * cKexp m : ℕ) : ℝ) + D) (cZero / 2) (by have := cZero_pos; linarith)
+    (show (0 : ℝ) < τ / 2 by linarith)
+  filter_upwards [hnum, eventually_L_le (B := B), h6m, hCEb, hexp, eventually_ge_atTop 1]
+    with N hnumN hLN h6mN hCEbN hexpN hN1
+  obtain ⟨hgd, hPhi1, hPhid, heps0, hPhieps⟩ := hnumN
+  rw [show 2 * eps N = eps N + eps N by ring] at hPhieps
+  intro ω hω u
+  obtain ⟨hΩ, hLrow, hLcol, hdec⟩ := hω u
+  have hNr : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+  have hNr1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hA1 : (1 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := by
+    calc (1 : ℝ) = (N : ℝ) ^ (0 : ℝ) := (Real.rpow_zero _).symm
+      _ ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_le_rpow_of_exponent_le hNr1 (by linarith)
+  set uu : ℝ := (u : ℝ) with huu
+  have hu0 : 0 ≤ uu := le_trans (hs0 N) u.2.1
+  have hu1 : uu < 1 := lt_of_le_of_lt u.2.2 (ht1 N)
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have hL0 : (0 : ℝ) < (B.L N : ℝ) := by exact_mod_cast (by omega : 0 < B.L N)
+  by_cases hcut : 1 ≤ (B.L N : ℝ) * Real.sqrt (1 - uu)
+  · have hell : B.ell N uu * Real.sqrt (1 - uu) = 1 :=
+      ellHat_mul_sqrt_eq_one _ hu1 hcut
+    have hsqrt0 : 0 < Real.sqrt (1 - uu) := Real.sqrt_pos.2 (by linarith)
+    have hell1 : (1 : ℝ) ≤ B.ell N uu :=
+      one_le_ellHat_of_nonneg (by omega : 1 ≤ B.L N) hu0 hu1
+    have hell0 : 0 < B.ell N uu := lt_of_lt_of_le one_pos hell1
+    have hsqN : 1 / (N : ℝ) ≤ Real.sqrt (1 - uu) := by
+      rw [div_le_iff₀ hNr]
+      nlinarith
+    have hv0 : (0 : ℝ) < 1 - uu := by linarith
+    have hv1 : (1 : ℝ) - uu ≤ 1 := by linarith
+    have hvN : 1 / (1 - uu) ≤ (N : ℝ) ^ 2 := by
+      have hsq : Real.sqrt (1 - uu) * Real.sqrt (1 - uu) = 1 - uu :=
+        Real.mul_self_sqrt (by linarith)
+      have hm2 : 1 / (N : ℝ) * (1 / (N : ℝ)) ≤ 1 - uu := by
+        rw [← hsq]
+        exact mul_le_mul hsqN hsqN (by positivity) (Real.sqrt_nonneg _)
+      rw [div_le_iff₀ hv0]
+      calc (1 : ℝ) = (N : ℝ) ^ 2 * (1 / (N : ℝ) * (1 / (N : ℝ))) := by field_simp
+        _ ≤ (N : ℝ) ^ 2 * (1 - uu) := mul_le_mul_of_nonneg_left hm2 (by positivity)
+    have hzim : (zt E uu).im = (1 - uu) * (mE E).im := zt_im E uu
+    have hmim : 0 < (mE E).im := mE_im_pos hE
+    have hz : (zt E uu).im ≠ 0 := by rw [hzim]; positivity
+    have h59 := lemma59_floor (B.L N) hL3 (X.hermitian N uu ω) hz (norm_mE hE.le) hΩ hgd
+      hPhi1 hPhid heps0 hLrow hLcol (by positivity) heps0 hdec
+      (fun σ => (norm_mSigma hE.le σ).le) hu0 hu1 hm
+    have hT : (N : ℝ) ^ τ = (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) := by
+      rw [← Real.rpow_add hNr]; ring_nf
+    have hR : 2 * (m : ℝ) * (B.ell N uu * (N : ℝ) ^ (τ / 2) + 2)
+        ≤ B.ell N uu * (N : ℝ) ^ τ := radius_le hell1 hA1 hT h6mN
+    have hMC : max 1 |(zt E uu).im|⁻¹ ≤ CE * (N : ℝ) ^ (2 : ℝ) := by
+      have hr2 : (N : ℝ) ^ (2 : ℝ) = (N : ℝ) ^ 2 := by
+        rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+      rw [hr2]
+      refine max_le ?_ ?_
+      · nlinarith [sq_nonneg ((N : ℝ) - 1)]
+      · have habs : |(zt E uu).im| = (1 - uu) * (mE E).im := by
+          rw [hzim, abs_of_pos (by positivity)]
+        rw [habs, mul_inv]
+        have h1 : (1 - uu)⁻¹ ≤ (N : ℝ) ^ 2 := by rw [← one_div]; exact hvN
+        have h2 : ((mE E).im)⁻¹ ≤ CE := le_max_right _ _
+        have h3 : (0 : ℝ) ≤ (1 - uu)⁻¹ := by positivity
+        have h4 : (0 : ℝ) ≤ ((mE E).im)⁻¹ := by positivity
+        calc (1 - uu)⁻¹ * ((mE E).im)⁻¹ ≤ (N : ℝ) ^ 2 * CE :=
+              mul_le_mul h1 h2 h4 (by positivity)
+          _ = CE * (N : ℝ) ^ 2 := by ring
+    have hterm1 : 27 * Phi N * Real.sqrt (eps N + eps N) * max 1 |(zt E uu).im|⁻¹ ^ m
+        ≤ 1 / 2 * (N : ℝ) ^ (-D) :=
+      term1_le (by linarith) (le_trans zero_le_one (le_max_left _ _))
+        (by linarith) hNr hMC hPhieps hCEbN
+    have hexpo : cZero / 2 * (N : ℝ) ^ (τ / 2)
+        ≤ cor35Rate (1 - uu) * (2 * (m : ℝ) * (B.ell N uu * (N : ℝ) ^ (τ / 2) + 2)) := by
+      have hid : cor35Rate (1 - uu) * (2 * (m : ℝ) * (B.ell N uu * (N : ℝ) ^ (τ / 2) + 2))
+          = cZero * (m : ℝ) * (N : ℝ) ^ (τ / 2) * (B.ell N uu * Real.sqrt (1 - uu)) / 2
+            + cZero * (m : ℝ) * Real.sqrt (1 - uu) := by
+        unfold cor35Rate; ring
+      rw [hid, hell]
+      have hc0 := cZero_pos
+      nlinarith [mul_nonneg (mul_nonneg hc0.le (sub_nonneg.2 hmr))
+          (by linarith : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2)),
+        mul_nonneg (mul_nonneg hc0.le (by linarith : (0 : ℝ) ≤ (m : ℝ))) hsqrt0.le]
+    have hterm2 : Decay.cKdecay m (1 - uu)
+        * exp (-(cor35Rate (1 - uu) * (2 * (m : ℝ) * (B.ell N uu * (N : ℝ) ^ (τ / 2) + 2))))
+        ≤ 1 / 2 * (N : ℝ) ^ (-D) :=
+      term2_le hNr hv0 hv1 hvN hexpo hexpN
+    have hrp : (0 : ℝ) ≤ (N : ℝ) ^ (-D) := Real.rpow_nonneg hNr.le _
+    refine ⟨h59.1.mono (B.L N) le_rfl hR (by linarith), h59.2.mono (B.L N) le_rfl hR ?_⟩
+    linarith
+  · push Not at hcut
+    have hellL : B.ell N uu = (B.L N : ℝ) := ellHat_eq_L _ hu1 hcut
+    have hhalf : (B.L N : ℝ) / 2 < B.ell N uu * (N : ℝ) ^ τ := by
+      have hNt : (1 : ℝ) ≤ (N : ℝ) ^ τ := by
+        calc (1 : ℝ) = (N : ℝ) ^ (0 : ℝ) := (Real.rpow_zero _).symm
+          _ ≤ (N : ℝ) ^ τ := Real.rpow_le_rpow_of_exponent_le hNr1 hτ.le
+      rw [hellL]
+      nlinarith
+    exact ⟨loopDecay_of_half_lt hhalf _, loopDecay_of_half_lt hhalf _⟩
+
+/-- **`RBM.SumZeroDyn.LKDecay` from the floored obligation (3).** -/
+theorem lkDecay_of_flowInputs' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : FlowInputs' X E s t) : SumZeroDyn.LKDecay X E s t :=
+  DecayBridge.lkDecay_of_highProb fun _m hm _τ hτ _D hD =>
+    (highProb_loopDecay_pair' hE hs0 ht1 h hm hτ hD).mono
+      (Filter.Eventually.of_forall fun _ _ hω u => (hω u).2)
+
+/-- The `|L|` half of (5.75) from the floored obligation (3). -/
+theorem lDecay_of_flowInputs' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : FlowInputs' X E s t) : LDecay X E s t :=
+  lDecay_of_highProb fun _m hm _τ hτ _D hD =>
+    (highProb_loopDecay_pair' hE hs0 ht1 h hm hτ hD).mono
+      (Filter.Eventually.of_forall fun _ _ hω u => (hω u).1)
+
+/-- Clauses (ii)–(iii) of `RBM.LKDecayQuant.FlowGoodSet'`: the two large deviation bounds
+(4.2) with factor `Φ_N` **and floor `fl_N`**, at every `u ∈ [s_N, t_N]`. -/
+def FlowLDE' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (Phi fl : ℕ → ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N,
+      LDERowFloor (X.H N (u : ℝ) ω) (X.G E N (u : ℝ) ω) (Sblk (B.L N) (B.W N)) (Phi N) (fl N)
+    ∧ LDEColFloor (X.H N (u : ℝ) ω) (X.G E N (u : ℝ) ω) (Sblk (B.L N) (B.W N)) (Phi N)
+        (fl N)}
+
+/-- The four clauses are exactly `RBM.LKDecayQuant.FlowGoodSet'`. -/
+theorem flowGoodSet'_of_pieces (gdel Phi eps : ℕ → ℝ) (τ : ℝ) (N : ℕ) :
+    FlowGoodEv X E s t gdel N ∩ (FlowLDE' X E s t Phi eps N ∩ FlowDec X E s t eps τ N)
+      ⊆ FlowGoodSet' X E s t gdel Phi eps τ N :=
+  fun _ hω u => ⟨hω.1 u, (hω.2.1 u).1, (hω.2.1 u).2, hω.2.2 u⟩
+
+/-- Three high-probability clauses give the high-probability event of `FlowInputs'`. -/
+theorem highProb_flowGoodSet' {gdel Phi eps : ℕ → ℝ} {τ : ℝ}
+    (hΩ : HighProb B.P (FlowGoodEv X E s t gdel))
+    (hlde : HighProb B.P (FlowLDE' X E s t Phi eps))
+    (hdec : HighProb B.P (FlowDec X E s t eps τ)) :
+    HighProb B.P (FlowGoodSet' X E s t gdel Phi eps τ) :=
+  (hΩ.inter (hlde.inter hdec)).mono
+    (Filter.Eventually.of_forall fun N => flowGoodSet'_of_pieces gdel Phi eps τ N)
+
+/-- **The `u`-uniform form of (4.2) with an additive floor in the control** — the shape that
+T148's `RBM.Gauss.ldeFlowDom_floor` produces, quantified over the floor exponent.
+
+Unlike `RBM.LKDecayQuant.LDEFlowDom`, this is a **theorem** for the Gaussian flow
+(`RBM.Gauss.ldeFlowDom_floor`, under `|E| < 2`, `0 ≤ s_N ≤ t_N < 1` and `N^{-K} ≤ η_{t_N}`
+only): the net engine of T143 needs a polynomial lower bound on the control, which
+`ldeRowRHS` does not have, and adding `N^{-B}` to the control supplies that lower bound for
+free.  T148 also proved that the floor cannot be removed — without it the statement is
+equivalent to the (false) lower bound `N^{-B} ≤ ldeRowRHS`.  See `docs/paper-deltas.md`
+#111. -/
+def LDEFlowDom' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∀ Bex : ℝ, 0 ≤ Bex →
+    (StochDom B.P
+      (fun N (p : TimeIcc s t N × OffPair B.L B.W N) ω =>
+        ldeRowLHS (X.H N (p.1 : ℝ) ω) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2)
+      (fun N p ω =>
+        ldeRowRHS (Sblk (B.L N) (B.W N)) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2
+          + (N : ℝ) ^ (-Bex)))
+    ∧ StochDom B.P
+      (fun N (p : TimeIcc s t N × OffPair B.L B.W N) ω =>
+        ldeColLHS (X.H N (p.1 : ℝ) ω) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2)
+      (fun N p ω =>
+        ldeColRHS (Sblk (B.L N) (B.W N)) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2
+          + (N : ℝ) ^ (-Bex))
+
+/-- **Clauses (ii)–(iii) of `FlowInputs'` from `RBM.LKDecayQuant.LDEFlowDom'`**, at the factor
+`Φ_N = N^b` and the floor `N^{-B}`.  This is `RBM.StochDom.highProb` read off the two index
+sets. -/
+theorem highProb_flowLDE_of_dom' (h : LDEFlowDom' X E s t) {b : ℝ} (hb : 0 < b) {Bex : ℝ}
+    (hBex : 0 ≤ Bex) :
+    HighProb B.P (FlowLDE' X E s t (fun N => (N : ℝ) ^ b) (fun N => (N : ℝ) ^ (-Bex))) := by
+  refine (((h Bex hBex).1.highProb hb).inter ((h Bex hBex).2.highProb hb)).mono
+    (Filter.Eventually.of_forall fun N ω hω u => ⟨fun i j hij => ?_, fun k j hkj => ?_⟩)
+  · exact hω.1 (u, ⟨(i, j), hij⟩)
+  · exact hω.2 (u, ⟨(k, j), hkj⟩)
+
+/-- **The numerical bundle of `RBM.LKDecayQuant.FlowInputs'` at an explicit choice.**
+
+`δ_N = N^{-1}`, `Φ_N = N`, `ε_N = N^{-2(D'+2)}`: the extra `N^{-2}` over
+`RBM.LKDecayQuant.flowNum_choice` pays for the `√2` of the floor, since
+`Φ_N √(2 ε_N) = √2 · N^{-(D'+1)} ≤ N^{-D'}`. -/
+theorem flowNum_choice' {D' : ℝ} :
+    ∀ᶠ N : ℕ in atTop,
+      (N : ℝ) ^ (-(1 : ℝ)) ≤ 1 / 2 ∧ 1 ≤ (N : ℝ) ^ (1 : ℝ)
+        ∧ 36 * (N : ℝ) ^ (1 : ℝ) * ((N : ℝ) ^ (-(1 : ℝ))) ^ 2 ≤ 1
+        ∧ 0 ≤ (N : ℝ) ^ (-(2 * (D' + 2)))
+        ∧ (N : ℝ) ^ (1 : ℝ) * Real.sqrt (2 * (N : ℝ) ^ (-(2 * (D' + 2))))
+            ≤ (N : ℝ) ^ (-D') := by
+  filter_upwards [eventually_ge_atTop 36] with N hN36
+  have hN36' : (36 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN36
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have h1 : (N : ℝ) ^ (1 : ℝ) = (N : ℝ) := Real.rpow_one _
+  have hm1 : (N : ℝ) ^ (-(1 : ℝ)) = (N : ℝ)⁻¹ := Real.rpow_neg_one _
+  refine ⟨?_, ?_, ?_, Real.rpow_nonneg hN0.le _, ?_⟩
+  · rw [hm1, inv_eq_one_div]
+    exact one_div_le_one_div_of_le (by norm_num) (by linarith)
+  · rw [h1]; linarith
+  · rw [h1, hm1]
+    have he : 36 * (N : ℝ) * ((N : ℝ)⁻¹) ^ 2 = 36 / (N : ℝ) := by field_simp
+    rw [he, div_le_one hN0]; linarith
+  · have hsq : Real.sqrt ((N : ℝ) ^ (-(2 * (D' + 2)))) = (N : ℝ) ^ (-(D' + 2)) := by
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_mul hN0.le]
+      congr 1
+      ring
+    have hsq2 : Real.sqrt (2 * (N : ℝ) ^ (-(2 * (D' + 2))))
+        = Real.sqrt 2 * (N : ℝ) ^ (-(D' + 2)) := by
+      rw [Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2), hsq]
+    have hs2 : Real.sqrt 2 ≤ 2 := by
+      nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg 2]
+    have hexp : (N : ℝ) ^ (-(D' + 2)) = (N : ℝ) ^ (-D') * ((N : ℝ) ^ (2 : ℝ))⁻¹ := by
+      rw [← Real.rpow_neg hN0.le, ← Real.rpow_add hN0]
+      congr 1
+      ring
+    have hr2 : (N : ℝ) ^ (2 : ℝ) = (N : ℝ) ^ 2 := by
+      rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+    have hDnn : (0 : ℝ) ≤ (N : ℝ) ^ (-D') := Real.rpow_nonneg hN0.le _
+    rw [h1, hsq2, hexp, hr2]
+    have hfac : (N : ℝ) * (Real.sqrt 2 * ((N : ℝ) ^ (-D') * ((N : ℝ) ^ 2)⁻¹))
+        = ((N : ℝ) * Real.sqrt 2 * ((N : ℝ) ^ 2)⁻¹) * (N : ℝ) ^ (-D') := by ring
+    rw [hfac]
+    have hcoef : (N : ℝ) * Real.sqrt 2 * ((N : ℝ) ^ 2)⁻¹ ≤ 1 := by
+      rw [mul_inv_le_iff₀ (by positivity)]
+      nlinarith
+    nlinarith
+
+/-- **`RBM.LKDecayQuant.FlowInputs'` from its three clauses.** -/
+theorem flowInputs'_of_highProb
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : ∀ b : ℝ, 0 < b → ∀ Bex : ℝ, 0 ≤ Bex →
+      HighProb B.P (FlowLDE' X E s t (fun N => (N : ℝ) ^ b) (fun N => (N : ℝ) ^ (-Bex))))
+    (hdec : ∀ τ > (0 : ℝ), ∀ c > (0 : ℝ),
+      HighProb B.P (FlowDec X E s t (fun N => (N : ℝ) ^ (-c)) τ)) :
+    FlowInputs' X E s t := fun τ hτ D' hD' =>
+  ⟨_, _, _, flowNum_choice',
+    highProb_flowGoodSet' (hΩ 1 one_pos) (hlde 1 one_pos (2 * (D' + 2)) (by linarith))
+      (hdec τ hτ (2 * (D' + 2)) (by linarith))⟩
+
+/-- **`RBM.LKDecayQuant.FlowInputs'` from the good event, the *floored* large deviations and
+(2.76).**  The substitute hypotheses that T148 had to leave in place
+(`RBM.Gauss.LDENetClose`, or the explicit lower bound `hlow` with its event `hΞ`/`hΞX`) are
+gone: `hlde` is now discharged by `RBM.Gauss.ldeFlowDom_floor`, which is unconditional apart
+from the regime. -/
+theorem flowInputs'_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom' X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    FlowInputs' X E s t :=
+  flowInputs'_of_highProb hΩ (fun _b hb _Bex hBex => highProb_flowLDE_of_dom' hlde hb hBex)
+    (fun _τ hτ _c hc => highProb_flowDec_of_aprioriDecay hE hs0 ht1 hτ hc hdecay)
+
+/-- **`RBM.SumZeroDyn.LKDecay` from the good event, the *floored* large deviations and
+(2.76)** — the primed form of `RBM.LKDecayQuant.lkDecay_of_inputs`, with `LDEFlowDom`
+replaced by the theorem `RBM.LKDecayQuant.LDEFlowDom'`. -/
+theorem lkDecay_of_inputs' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom' X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    SumZeroDyn.LKDecay X E s t :=
+  lkDecay_of_flowInputs' hE hs0 ht1 (flowInputs'_of_inputs hE hs0 ht1 hΩ hlde hdecay)
+
+/-- The `|L|` half of (5.75) under the same three inputs, floored form. -/
+theorem lDecay_of_inputs' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom' X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    LDecay X E s t :=
+  lDecay_of_flowInputs' hE hs0 ht1 (flowInputs'_of_inputs hE hs0 ht1 hΩ hlde hdecay)
+
+/-- **T144(a) from the floored inputs**: the `hdec` slot of
+`RBM.EEBridge.stochDom_norm_eeField`, with `LDEFlowDom` replaced by `LDEFlowDom'`. -/
+theorem highProb_eeDecay_of_inputs' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom' X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) (n : ℕ) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ),
+      HighProb B.P (GLoopDecayEvent X E s t (2 * (n + 2) + 2) τ D) :=
+  fun _τ hτ _D hD =>
+    (highProb_loopDecay_pair' hE hs0 ht1 (flowInputs'_of_inputs hE hs0 ht1 hΩ hlde hdecay)
+      (by omega : 1 ≤ 2 * (n + 2) + 2) hτ hD).mono
+      (Filter.Eventually.of_forall fun _ _ hω u => (hω u).1)
+
+end Flow'
+
 end LKDecayQuant
 
 end RBM

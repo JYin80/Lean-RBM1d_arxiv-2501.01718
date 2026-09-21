@@ -3602,3 +3602,54 @@ cFar · (r·√r·(√A)⁻¹·J)  +  169 · (r·A⁻¹·(J·√J))
 `t = 0` 处 `Θ_0 = I`，界本身平凡为真，但现有证明全部经过 `ρ(t)`，要单独分情况。
 **这值得单开一张工单**（估计：`Propagator/Decay.lean` + `LongDiff.lean` 的 `ht0` 一族，
 再加 `KernelDecay.lean` 的三条 `Uker` 引理）。
+
+## T160：带地板的 (4.2) 接上了，**`LKDecay` 现在只剩两条实质假设**（`Hierarchy/LKDecayQuant.lean`，2026-09-21）
+
+新增 `LKDecayQuant.LDEFlowDom'`（旧的 `LDEFlowDom` 一字未动）：T148 的 `Gauss.ldeFlowDom_floor` 的逐字形状，
+**外加对地板指数 `Bex` 的全称量化**——地板必须**在消费者选定目标指数之后**再选，这是它被吸收的关键。
+
+**地板不是被「吸收引理」消掉的**，而是顺着 (4.10)→(4.11)→(4.2)→Lemma 5.9 推下去的：
+**它进入的位置与 (2.76) 的误差 `δ₂` 完全相同**（同一个括号里的加项）。于是新证了一条平行链，
+全部是**新增**声明（`Green/EntryBound.lean` 与 `Hierarchy/Decay.lean` 一个字没碰）：
+`LDERowFloor`/`LDEColFloor`、`norm_sq_green_le_{row,col,two_sided,blk,of_far}_floor`、
+`loopDecay_gloop_of_event_floor`、`lemma59_floor`，以及 `FlowGoodSet'`/`FlowInputs'`/`FlowLDE'` 那一整套带撇版。
+
+地板取成**与 (2.76) 误差同一个 `ε_N`**，所以 `FlowInputs'` 与 `FlowInputs` 唯一的差别是数值束由
+`Φ√ε ≤ N^{−D'}` 变成 `Φ√(2ε) ≤ N^{−D'}`；`flowNum_choice'` 照样满足（多付一个 `N^{−2}`）。
+**`lkDecay_of_inputs'` 的结论是原样的 `SumZeroDyn.LKDecay`，不带任何地板——地板没有传到下游，`LKDecay` 的消费者一个都不用改。**
+
+**探针验证**（`ProbeT160.lean`，import `Gauss.LDENetClose` + `Hierarchy.LKDecayQuant`，exit=0、公理干净）：
+`hlow`/`hΞ`/`hΞX` **全部消失**，`LDENetClose` 不再出现，`LKDecay` 只剩 `hΩ`（T130）与 `hdecay`（`Steps.aprioriDecay`）。
+`LDEFlowDom'` 由 `ldeFlowDom_floor` 以**裸 `fun`** 填满，无 `convert`。
+
+**一处必须说清楚的代价**：`ldeFlowDom_floor` 比原来的 `lkDecay_of_inputs` 多要三条**确定性区制条件**——
+`hst : ∀ N, s N ≤ t N`、`hK : 0 ≤ K`、`hη : ∀ᶠ N, N^{−K} ≤ η_{t_N}`。它们是确定性的、属于区制本身
+（消费者本来就有 `s ≤ t`），不是概率性假设，但签名里确实多了三个参数，**转派时别说成「零代价」**。
+
+**`B ≥ 2D·log W/log N + 1` 的算术成立**（`N^{−2D log W/log N} = W^{−2D}`），且由 `W·L ≤ N`、`L ≥ 3` 得
+`log W/log N ≤ 1`，所以 `B = 2D+1` 就够，Cowork 的式子是安全放大版。**但落地时没用到它**——
+地板落进 (2.76) 那条本来就自由的误差预算里，不需要下游的 `W^{−D}` 地板来兜。
+**Cowork 的判断（地板无害）对，理由比他说的更强。**
+
+### 据此收紧 T148 那节与 paper-deltas #111 的措辞
+「地板吸不掉、消费者要改形状」应读成：**形状只在 `LDEFlowDom` 这一层改**（新增 `LDEFlowDom'`），
+`FlowInputs'` 只把数值束从 `Φ√ε` 换成 `Φ√(2ε)`，**`SumZeroDyn.LKDecay` 的陈述未变，下游零改动**。
+
+### T107 的现状与计划（只报告，未动 `Lemma41FlowGauss.lean`）
+
+**T107 确实早已停滞，而且目标文件 `RBM1D/Gauss/EntryBoundTime.lean` 从未存在过**
+（`git log --all` 对该路径为空，全仓只有三处 docstring 指向它）。
+
+* **`EntryBoundFlow` 能用同一个输入解掉，而且地板是白送吸收的**：它唯一的消费者
+  `stochDom_indicator_offdiag_flow` 立刻把它与 `stochDom_indicator_entryControl_flow` 复合，
+  而后者的控制带**无条件的** `W⁻¹`；由 `W·L ≤ N`、`L ≥ 3` 得 `N^{−1} ≤ W⁻¹`，取 `Bex := 1` 即可。
+  只需一条约 15 行的常数吸收小引理，**`lemma41Flow`/`Step1.Lemma41Flow` 的陈述一个字都不用改**。
+* **⚠ `DiagBoundFlow` 有一个真缺口，不能同法接上**：`diag_bound_stochDom` 除 row/col 外还要
+  **`hLquad`（(4.7) 的二次型 LDE）** 与 `hLdiag`，而 **T148 只交付了 row 和 col 的带地板时间一致版**——
+  `Gauss/LDENetClose.lean` 里没有任何 `ldeQuad`。补它需要 `stochDom_ldeQuad_flow_floor`
+  与 `norm_sq_green_diag_sub_le_blk` 的带地板版，**是一张独立工单的量**，不该塞进 T107 的「纯接口重做」。
+
+### 结构建议（待定）
+本单新证的 6 条确定性带地板核是**纯矩阵引理、与 `Hierarchy/` 无关**，现在住在 `RBM.LKDecayQuant` 里。
+`Gauss/` 可以 import `Hierarchy/`（已有五处先例），所以技术上能直接复用；但更干净的是
+**下沉到新建的 `RBM1D/Green/EntryBoundFloor.lean`**，让 `LKDecayQuant` 与将来的 `Gauss/EntryBoundTime.lean` 都从那里取。

@@ -920,6 +920,209 @@ theorem flow_steps45_glue_flowAs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1
   flow_steps45_glue_flowAs' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hSteps.apriori hSteps.localLaw
     hSteps.sharpLoop h45 hΘ h514 h548
 
+
+/-! ### The same glue from the **bare** (2.72) plus the regime bound (T209)
+
+D13 fixes the step condition of Theorem 2.21 to `RBM.Cond272Reg` — (2.72) exactly as printed
+plus `N^c ≤ W ℓ_t η_t` — while the primed glue above consumes `hregS = RBM.Cond272'`, i.e.
+(2.72) *with* an `N^c` gain.  T186 showed no bridge exists (`a = 1`, `b = 30` forces `e ≤ 0`
+in `RBM.rpow_mul_rpow_le_of_pow_thirty`), so the glue has to be restated.
+
+Where does `hregS` actually go?  In `RBM.Step2PP.flow_sharpLoop_glue_of'` and
+`RBM.Step2PP.flow_steps45_glue_of'` it is used **only** through
+`RBM.Step2.cond272_of_strict`, i.e. only `RBM.Cond272` was ever needed; the sole genuine
+consumer is `RBM.Step2PP.harith_flowAs`, which wants `Q^{30} ≤ W ℓ_t η_t` (the bare (2.72),
+inverted) *and* `4 ≤ (W ℓ_t η_t)^{1/12}` (the regime bound).  Both are components of
+`RBM.Cond272Reg`, so the bare route costs nothing here.
+
+Since `RBM.Cond272Reg` is defined downstream (`Flow/Thm221Bare.lean`), the statements below
+take its two components separately; `Flow/Thm221NoEL.lean` supplies them as `h.1` and `h.2`.
+The `RBM.Cond272'` versions above are left untouched. -/
+
+/-- **`RBM.Step2PP.harith_flowAs` from the bare (2.72) plus the regime bound.**  Identical
+conclusion, and the proof is the original with its two uses of `hregS` split: `Q^{30} ≤ W ℓ_t
+η_t` now comes from `RBM.Cond272` inverted, and `N^c ≤ W ℓ_t η_t` — which supplies the leftover
+factor `4 ≤ (W ℓ_t η_t)^{1/12}` — is the regime bound itself. -/
+theorem harith_flowAs_of_reg (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c) (hcond : Cond272 B E s t)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N)) :
+    ∀ᶠ N : ℕ in atTop,
+      (Step3.flowR B s t N ^ 5) ^ ((1 : ℝ) / 2) +
+        (1 + (Step3.flowAs B E s N ^ ((1 : ℝ) / 2)) ^ 2 * (B.scale E N (t N))⁻¹ +
+          Step3.flowR B s t N ^ 2) ≤ B.scale E N (t N) ^ ((1 : ℝ) / 4) := by
+  filter_upwards [hcond, hreg, eventually_le_rpow 4 (show (0 : ℝ) < c / 12 by positivity),
+    eventually_ge_atTop 1] with N hN hNcAt h4 hN1
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hW0 : (0 : ℝ) ≤ B.W N := by positivity
+  have hs1 : s N < 1 := (hst N).trans_lt (ht1 N)
+  have h1t : 0 < 1 - t N := by linarith [ht1 N]
+  set Q : ℝ := (1 - s N) / (1 - t N) with hQdef
+  have hQ1 : (1 : ℝ) ≤ Q := by rw [hQdef, le_div_iff₀ h1t]; linarith [hst N]
+  have hQ0 : (0 : ℝ) < Q := by linarith
+  have hAt0 : 0 < B.scale E N (t N) :=
+    B.scale_pos' hE N ((hs0 N).trans (hst N)) (ht1 N)
+  have hQ301 : (1 : ℝ) ≤ Q ^ 30 := one_le_pow₀ hQ1
+  have hQ30 : Q ^ 30 ≤ B.scale E N (t N) := by
+    have hinv := inv_anti₀ (inv_pos.2 hAt0) hN
+    rw [inv_inv] at hinv
+    have heq : Q ^ 30 = (((1 - t N) / (1 - s N)) ^ 30)⁻¹ := by
+      rw [hQdef, ← inv_pow, inv_div]
+    rw [heq]; exact hinv
+  have hAt1 : (1 : ℝ) ≤ B.scale E N (t N) := le_trans hQ301 hQ30
+  -- the four summands are each at most `Q^5`
+  have hR1 : (1 : ℝ) ≤ Step3.flowR B s t N := one_le_flowR hst ht1 N
+  have hR0 : (0 : ℝ) ≤ Step3.flowR B s t N := by linarith
+  have hRQ : Step3.flowR B s t N ≤ Q := flowR_le_ratio hst ht1 N
+  have hQQ5 : Q ≤ Q ^ 5 := by
+    calc Q = Q ^ 1 := (pow_one Q).symm
+      _ ≤ Q ^ 5 := pow_le_pow_right₀ hQ1 (by norm_num)
+  have hQ5 : (1 : ℝ) ≤ Q ^ 5 := one_le_pow₀ hQ1
+  have e1 : (Step3.flowR B s t N ^ 5) ^ ((1 : ℝ) / 2) ≤ Q ^ 5 := by
+    have h1 : (1 : ℝ) ≤ Step3.flowR B s t N ^ 5 := one_le_pow₀ hR1
+    calc (Step3.flowR B s t N ^ 5) ^ ((1 : ℝ) / 2)
+        ≤ (Step3.flowR B s t N ^ 5) ^ (1 : ℝ) :=
+          Real.rpow_le_rpow_of_exponent_le h1 (by norm_num)
+      _ = Step3.flowR B s t N ^ 5 := Real.rpow_one _
+      _ ≤ Q ^ 5 := pow_le_pow_left₀ hR0 hRQ 5
+  have e3 : (Step3.flowAs B E s N ^ ((1 : ℝ) / 2)) ^ 2 * (B.scale E N (t N))⁻¹ ≤ Q ^ 5 := by
+    have hAs0 : 0 < Step3.flowAs B E s N := B.scale_pos' hE N (hs0 N) hs1
+    have hsq : (Step3.flowAs B E s N ^ ((1 : ℝ) / 2)) ^ 2 = Step3.flowAs B E s N := by
+      rw [← Real.rpow_natCast (Step3.flowAs B E s N ^ ((1 : ℝ) / 2)) 2,
+        ← Real.rpow_mul hAs0.le]
+      norm_num
+    rw [hsq]
+    have hAsQ : Step3.flowAs B E s N ≤ Q * B.scale E N (t N) :=
+      Step3.flowScale_le_mul hW0 (hst N) (ht1 N)
+    have : Step3.flowAs B E s N * (B.scale E N (t N))⁻¹ ≤ Q := by
+      rw [mul_inv_le_iff₀ hAt0]
+      linarith
+    linarith
+  have e4 : Step3.flowR B s t N ^ 2 ≤ Q ^ 5 := by
+    calc Step3.flowR B s t N ^ 2 ≤ Q ^ 2 := pow_le_pow_left₀ hR0 hRQ 2
+      _ ≤ Q ^ 5 := pow_le_pow_right₀ hQ1 (by norm_num)
+  -- `Q^5 ≤ (W ℓ_t η_t)^{1/6}` and `4 ≤ (W ℓ_t η_t)^{1/12}`
+  have hE6 : (Q ^ (30 : ℕ)) ^ ((1 : ℝ) / 6) = Q ^ (5 : ℕ) := by
+    rw [← Real.rpow_natCast Q 30, ← Real.rpow_mul hQ0.le, ← Real.rpow_natCast Q 5]
+    norm_num
+  have hQ5At : Q ^ 5 ≤ B.scale E N (t N) ^ ((1 : ℝ) / 6) := by
+    have := Real.rpow_le_rpow (by positivity) hQ30 (show (0 : ℝ) ≤ 1 / 6 by norm_num)
+    rwa [hE6] at this
+  have h12 : (4 : ℝ) ≤ B.scale E N (t N) ^ ((1 : ℝ) / 12) := by
+    have hcast : ((N : ℝ) ^ c) ^ ((1 : ℝ) / 12) = (N : ℝ) ^ (c / 12) := by
+      rw [← Real.rpow_mul (by positivity)]; ring_nf
+    calc (4 : ℝ) ≤ (N : ℝ) ^ (c / 12) := h4
+      _ = ((N : ℝ) ^ c) ^ ((1 : ℝ) / 12) := hcast.symm
+      _ ≤ B.scale E N (t N) ^ ((1 : ℝ) / 12) :=
+          Real.rpow_le_rpow (Real.rpow_nonneg (by positivity) c) hNcAt (by norm_num)
+  have hd : B.scale E N (t N) ^ ((1 : ℝ) / 4)
+      = B.scale E N (t N) ^ ((1 : ℝ) / 6) * B.scale E N (t N) ^ ((1 : ℝ) / 12) := by
+    rw [← Real.rpow_add hAt0]; norm_num
+  have h16 : (0 : ℝ) ≤ B.scale E N (t N) ^ ((1 : ℝ) / 6) := Real.rpow_nonneg hAt0.le _
+  rw [hd]
+  nlinarith
+
+/-- **(2.77) with `h0`, `h12` discharged, from `RBM.Cond272` alone.**  Verbatim
+`RBM.Step2PP.flow_sharpLoop_glue_of'`, whose hypotheses `hc0`/`hregS` are used only to produce
+`RBM.Cond272` — so this is the same theorem with that step removed, and is strictly more
+general. -/
+theorem flow_sharpLoop_glue_of_cond272' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hcond : Cond272 B E s t)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t) {Θ : ℕ → ℝ}
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Θ N))
+    (hΘle : ∀ᶠ N : ℕ in atTop, Θ N ≤ Step3.flowAs B E s N ^ ((1 : ℝ) / 2))
+    (h514 : ∀ n, 3 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    {n : ℕ} (hn : 1 ≤ n) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => ‖X.Lval E N p.1 ω p.2.idx‖)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ (n - 1)) := by
+  have hE : |E| < 2 := by linarith
+  exact Step3.flow_sharpLoop X hκ0 hκ1 hEκ hs0 hst ht1 hcond h514
+    (StepGlue.flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
+    (fun m l hm1 hm2 =>
+      flow_S_le_two_of' X hE hs0 hst ht1 hcond hll hΘ hΘle m l hm1 hm2) hn
+
+/-- **(2.78) and (2.79) with `h0`, `h12`, `h1`, `h2` discharged, from `RBM.Cond272` alone.**
+Verbatim `RBM.Step2PP.flow_steps45_glue_of'`; there too `hregS` only ever produced
+`RBM.Cond272`, the arithmetic side condition being the separate hypothesis `harith`. -/
+theorem flow_steps45_glue_of_cond272' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hcond : Cond272 B E s t)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hsharp : SharpLoopFlow X E s t) (h45 : StepGlue.Eq45Flow X E s t) {Θ : ℕ → ℝ}
+    (hΘ0 : ∀ N, 0 ≤ Θ N)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Θ N))
+    (hΘle : ∀ᶠ N : ℕ in atTop, Θ N ≤ Step3.flowAs B E s N ^ ((1 : ℝ) / 2))
+    (harith : ∀ᶠ N : ℕ in atTop,
+      (Step3.flowR B s t N ^ 5) ^ ((1 : ℝ) / 2) +
+        (1 + Θ N ^ 2 * (B.scale E N (t N))⁻¹ + Step3.flowR B s t N ^ 2) ≤
+      B.scale E N (t N) ^ ((1 : ℝ) / 4))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h548 : Step45.FlowEq548 X E s t) :
+    (∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) ∧
+    (∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) := by
+  have hE : |E| < 2 := by linarith
+  have hone := StepGlue.flow_hs1 X hE hs0 ht1 h45 (hsharp 2 (by norm_num))
+  exact Step45.flow_steps45 X hκ0 hκ1 hEκ hs0 hst ht1 hcond h514
+    (StepGlue.flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
+    (fun m l hm1 hm2 => flow_S_le_two_of' X hE hs0 hst ht1 hcond hll hΘ hΘle m l hm1 hm2)
+    hone
+    (flow_hs2_of' X hE hs0 hst ht1 hcond hapriori (h514 2 le_rfl) hΘ0 hΘ hone harith) h548
+
+/-- **(2.77) at `Θ = (W ℓ_s η_s)^{1/2}`, from `RBM.Cond272` alone.** -/
+theorem flow_sharpLoop_glue_flowAs_of_cond272' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hcond : Cond272 B E s t)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 3 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    {n : ℕ} (hn : 1 ≤ n) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => ‖X.Lval E N p.1 ω p.2.idx‖)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ (n - 1)) :=
+  flow_sharpLoop_glue_of_cond272' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori hll hΘ
+    (Eventually.of_forall fun _ => le_rfl) h514 hn
+
+/-- **(2.78) and (2.79) at `Θ = (W ℓ_s η_s)^{1/2}`, from the bare (2.72) plus the regime
+bound** — the D13 shape.  This is `RBM.Step2PP.flow_steps45_glue_flowAs'` with `hregS` replaced
+by the two components of `RBM.Cond272Reg`; the arithmetic side condition is discharged by
+`RBM.Step2PP.harith_flowAs_of_reg`. -/
+theorem flow_steps45_glue_flowAs_of_reg' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hcond : Cond272 B E s t)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N))
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hsharp : SharpLoopFlow X E s t) (h45 : StepGlue.Eq45Flow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h548 : Step45.FlowEq548 X E s t) :
+    (∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) ∧
+    (∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) := by
+  have hE : |E| < 2 := by linarith
+  exact flow_steps45_glue_of_cond272' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori hll hsharp h45
+    (fun N => Real.rpow_nonneg (B.scale_pos' hE N (hs0 N) ((hst N).trans_lt (ht1 N))).le _)
+    hΘ (Eventually.of_forall fun _ => le_rfl)
+    (harith_flowAs_of_reg hE hs0 hst ht1 hc0 hcond hreg) h514 h548
+
+
 end Step2PP
 
 end RBM

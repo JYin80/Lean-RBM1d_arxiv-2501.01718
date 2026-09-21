@@ -37,10 +37,15 @@ already carries and that the grid `1 - s_k = W^{-kτ'}` of p. 24 supplies for fr
 that the bare `RBM.Cond272` alone is *not* enough (`RBM.exists_cond272_not_rpow_le_scale`), so
 `RBM.Thm221NoEL` below is the strongest form available.
 
-`RBM.Thm221NoEL'` is the same with the gained `RBM.Cond272'` (T179), which is what the six-step
-assembly of §2.7 currently produces; `RBM.Thm221NoEL.toThm221NoEL'` goes one way and the
-converse is not available, for the same reason as in T186.  The induction is proved from the weaker
-`RBM.Thm221NoEL'`, so both forms reach Lemmas 2.18–2.20.
+`RBM.Thm221NoEL'` is the same with the gained `RBM.Cond272'` (T179);
+`RBM.Thm221NoEL.toThm221NoEL'` goes one way and the converse is not available, for the same
+reason as in T186.  The induction is proved from the weaker `RBM.Thm221NoEL'`, so both forms
+reach Lemmas 2.18–2.20.
+
+**T209**: the six-step assembly now produces the `RBM.Cond272Reg` form directly
+(`RBM.thm221NoEL_of_inputs`), so `RBM.Thm221NoEL` — D13's shape — has a producer and
+`RBM.Cond272'` no longer occurs anywhere in the chain.  §5b below records where each of the
+three `hregS`-consumers went.
 
 ## Main results
 
@@ -61,6 +66,11 @@ converse is not available, for the same reason as in T186.  The induction is pro
 * `RBM.BoundsCore_of_flow`, `RBM.boundsCore_step_of_flow`, `RBM.boundsCore_step_of_inputs`,
   `RBM.thm221NoEL'_of_inputs` — Steps 1–5 chained into the step of `RBM.Thm221NoEL'`, with no
   Step 6 datum anywhere.
+* `RBM.boundsCore_step_of_flow_reg`, `RBM.boundsCore_step_of_inputs_reg`,
+  `RBM.thm221NoEL_of_inputs`, `RBM.Thm221NoEL.step_boundsCore_reg`,
+  `RBM.cond272Reg_grid_step_domain` — **T209**: the same chain with D13's step condition
+  `RBM.Cond272Reg`, i.e. **`RBM.Thm221NoEL` itself**, plus the joint-satisfiability check of a
+  whole step on the grid of p. 24.
 * `RBM.SpecSeq.boundsCore`, `RBM.localLaw_of_boundsCore`, `RBM.loop1_of_boundsCore`,
   `RBM.partialTrace_of_boundsCore`, `RBM.trace_of_boundsCore`, `RBM.loop2_of_boundsCore`,
   `RBM.quantumDiffusion_pm_of_boundsCore`, `RBM.quantumDiffusion_pp_of_boundsCore`,
@@ -70,19 +80,15 @@ converse is not available, for the same reason as in T186.  The induction is pro
 
 ## What this file does **not** close
 
-* `RBM.Thm221NoEL` itself — the `RBM.Cond272Reg` shape D13 fixes — is **not** produced by
-  `RBM.thm221NoEL'_of_inputs`; that produces `RBM.Thm221NoEL'`.  The gap is exactly the one
-  T186 left open: Steps 2–5 consume `hregS = RBM.Cond272'` verbatim
-  (`RBM.MomentDuhamelCut.step2_cut`, `RBM.Step2PP.flow_sharpLoop_glue_flowAs'`,
-  `RBM.Step2PP.flow_steps45_glue_flowAs'`), and no route from `RBM.Cond272Reg` to
-  `RBM.Cond272'` is available: in `RBM.rpow_mul_rpow_le_of_pow_thirty` the exponents `a = 1`,
-  `b = 30` force `e ≤ 0`, i.e. the arithmetic bridge of T186 yields no gain at all at `b = 30`.
-  (That the implication is outright *false* is plausible — take `W ℓ_t η_t = (η_s/η_t)^{30}`
-  exactly — but is not compiled here.)  Closing it means re-stating those three glue theorems with
-  `RBM.Cond272Reg.hA_phi` / `RBM.Cond272Reg.hA_betaStar` in place of `hregS`, inside
-  `Hierarchy/Step2PP.lean` and `Gauss/MomentDuhamelCut.lean`.  Step 1 is already fine: its
-  `RBM.Step1.step1` takes `RBM.Cond272` plus `N^c ≤ W ℓ_t η_t`, i.e. `RBM.Cond272Reg` on the
-  nose.
+* **Closed by T209** (kept for the record): `RBM.Thm221NoEL` — the `RBM.Cond272Reg` shape D13
+  fixes — used to have no producer, because Steps 2–5 consumed `hregS = RBM.Cond272'` verbatim
+  and no route from `RBM.Cond272Reg` to `RBM.Cond272'` is available (in
+  `RBM.rpow_mul_rpow_le_of_pow_thirty` the exponents `a = 1`, `b = 30` force `e ≤ 0`).  The fix
+  was to restate the three consumers rather than to bridge: see §5b and
+  `RBM.thm221NoEL_of_inputs`.  Note that `RBM.Cond272Reg.hA_phi` and
+  `RBM.Cond272Reg.hA_betaStar` were **not** needed on this path — they are the side conditions
+  of the *moment* route, i.e. of the hypothesis `RBM.MomentDuhamelCut.MomentHypCut`, and the
+  chain below consumes that as a black box.
 * Theorem 2.2 is not assembled anywhere in the tree yet (`RBM.sq_norm_eigenvector_le_of_norm_
   green_le` is its deterministic core, `RBM.localSemicircleLaw_of_Thm221N_of_z` the local law
   it needs), so there is nothing here to convert; the `RBM.BoundsCoreN` version of the latter
@@ -403,11 +409,10 @@ The five statements (2.73), (2.75), (2.76), (2.77), (2.78)/(2.79) of §2.7 are e
 `RBM.Step2PP.flow_sharpLoop_glue_flowAs'`, `RBM.Step2PP.flow_steps45_glue_flowAs'`.  So the
 chain below never mentions (2.71) or (2.80).
 
-**The (2.72) shape here is `RBM.Cond272'`, not `RBM.Cond272Reg`.**  Steps 2–5 consume `hregS`
-verbatim; T186 produced the two side conditions of Step 2 from `RBM.Cond272Reg`
-(`RBM.Cond272Reg.hA_phi`, `RBM.Cond272Reg.hA_betaStar`) but the primed glue in
-`Hierarchy/Step2PP.lean` that would use them does not exist yet.  Hence what the chain produces
-is `RBM.Thm221NoEL'`, and `RBM.Thm221NoEL` (D13's shape) is still one step away. -/
+**The (2.72) shape in this section is `RBM.Cond272'`**, the form T204 could reach.  §5b
+repeats the chain with D13's `RBM.Cond272Reg` (T209) and produces `RBM.Thm221NoEL` itself; this
+section is kept because `RBM.BoundsCore_of_Thm221NoEL'` — the induction of p. 24 — runs on the
+weaker `RBM.Thm221NoEL'`, which the grid supplies directly. -/
 
 section Assembly
 
@@ -517,6 +522,179 @@ theorem thm221NoEL'_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : 
       (h45 E hE s t hs0 hst ht1 c hc0 hregS) (h548 E hE s t hs0 hst ht1 c hc0 hregS)
 
 end Assembly
+
+/-! ### 5b. The same chain with the **D13** step condition `RBM.Cond272Reg` (T209)
+
+T204 left exactly one gap: `RBM.thm221NoEL'_of_inputs` produces `RBM.Thm221NoEL'`, the
+`RBM.Cond272'` form, because Steps 2–5 consumed `hregS` verbatim while D13 fixes the step
+condition to `RBM.Cond272Reg`.  T186 had shown that no bridge `RBM.Cond272Reg → RBM.Cond272'`
+can be built from the arithmetic of `RBM.rpow_mul_rpow_le_of_pow_thirty` (at `a = 1`, `b = 30`
+the gain `e` is forced to `≤ 0`).
+
+T209 closes it by restating the three consumers instead.  Where `hregS` actually went:
+
+* **Step 1** — `RBM.Step1.step1` already takes `RBM.Cond272` plus `N^c ≤ W ℓ_t η_t`, i.e.
+  `RBM.Cond272Reg` on the nose.  Nothing to do.
+* **Step 2** — `RBM.MomentDuhamelCut.step2_cut_of_reg`.  Of its three uses of `hregS`, (2.76)
+  only ever wanted `RBM.Cond272`, the weak law already wanted `RBM.Cond272Reg`, and (2.75)
+  wanted only the two scale facts `(η_s/η_u)^4 ≤ W ℓ_u η_u`, `N^c ≤ W ℓ_u η_u`
+  (`RBM.StepGlue.eventually_R4_le_scale_of_cond272`) — the exponent `4` is far below `30`.
+* **Steps 3–5** — `RBM.Step2PP.flow_sharpLoop_glue_flowAs_of_cond272'` and
+  `RBM.Step2PP.flow_steps45_glue_flowAs_of_reg'`.  The glue used `hregS` only through
+  `RBM.Step2.cond272_of_strict`; the one genuine consumer is
+  `RBM.Step2PP.harith_flowAs_of_reg`, which wants `((1-s)/(1-t))^{30} ≤ W ℓ_t η_t` — the bare
+  (2.72) inverted — together with `4 ≤ (W ℓ_t η_t)^{1/12}`, supplied by the regime bound.
+
+No exponent anywhere in Steps 1–5 needed a gain, so the `δ`-budget is untouched: the `4δ ≤ c`
+of `RBM.Cond272Reg.hA_phi` / `RBM.Cond272Reg.hA_betaStar` is not consumed on this path at all
+(those two are the side conditions of the *moment* route, i.e. of the hypothesis
+`RBM.MomentDuhamelCut.MomentHypCut`, not of the chain below).
+
+**`RBM.Thm221NoEL` now has a producer**, and `RBM.Cond272'` does not occur in its hypothesis
+list. -/
+
+section AssemblyReg
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **Steps 3, 4 and 5 chained into (2.68)–(2.70) at `t`, from `RBM.Cond272Reg`.**  Verbatim
+`RBM.boundsCore_step_of_flow` with the (2.72) side moved to D13's shape. -/
+theorem boundsCore_step_of_flow_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    BoundsCore X E t := by
+  have hsharp : SharpLoopFlow X E s t := fun n hn =>
+    Step2PP.flow_sharpLoop_glue_flowAs_of_cond272' X hκ0 hκ1 hEκ hs0 hst ht1 hreg.1 hapriori hll
+      hΘ (fun m hm => h514 m (by omega)) hn
+  obtain ⟨hLmK, hdec⟩ :=
+    Step2PP.flow_steps45_glue_flowAs_of_reg' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg.1 hreg.2
+      hapriori hll hsharp h45 hΘ h514 h548
+  exact BoundsCore_of_flow hst hll hLmK hdec
+
+/-- **Steps 1–5 chained: the step of the (2.71)-free Theorem 2.21, in D13's shape.**
+
+`RBM.BoundsCore X E s` in, `RBM.BoundsCore X E t` out, along
+`RBM.Step1.step1 → RBM.MomentDuhamelCut.step2_cut_of_reg →
+RBM.Step2PP.flow_sharpLoop_glue_flowAs_of_cond272' →
+RBM.Step2PP.flow_steps45_glue_flowAs_of_reg'`.  The remaining named hypotheses are the same six
+as in `RBM.boundsCore_step_of_inputs`; the only change is that the (2.72) side is
+`RBM.Cond272Reg`, i.e. (2.72) **exactly as printed** plus the regime bound. -/
+theorem boundsCore_step_of_inputs_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s)
+    (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    BoundsCore X E t := by
+  have hapriori : AprioriFlow X E s t :=
+    (Step1.step1 X hκ0 hEκ hB hs0 hst ht1 hreg.1 hc0 hreg.2 h1).1
+  have hll : LocalLawFlow X E s t :=
+    (MomentDuhamelCut.step2_cut_of_reg X hκ0 hκ1 hEκ Hy h1 hB hs0 hst ht1 hc0 hreg.1 hreg.2).1
+  exact boundsCore_step_of_flow_reg X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hapriori hll hΘ h514
+    h45 h548
+
+/-- **The (2.71)-free Theorem 2.21 in D13's shape, from the inputs Steps 1–5 still take.**
+
+This is `RBM.thm221NoEL'_of_inputs` with `RBM.Cond272'` replaced by `RBM.Cond272Reg`
+everywhere — in the conclusion *and* in the domain on which the six inputs are demanded, so
+the inputs are asked for on a **larger** domain than before (`RBM.Cond272'` implies
+`RBM.Cond272Reg`, `RBM.Cond272'.toCond272Reg`, and the converse fails,
+`RBM.exists_cond272_not_rpow_le_scale`).
+
+Together with `RBM.Thm221NoEL.toThm221NoEL'` this makes `RBM.Thm221NoEL'` a corollary of what
+is produced here, so nothing downstream of T204 loses a producer. -/
+theorem thm221NoEL_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step45.FlowEq548 X E s t) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_reg X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hΘ E hE s t hs0 hst ht1 c hc0 hreg) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45 E hE s t hs0 hst ht1 c hc0 hreg) (h548 E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **The acceptance probe of T209**: `RBM.BoundsCore X E s` in, `RBM.BoundsCore X E t` out,
+with the (2.72) side `RBM.Cond272Reg` and **no `RBM.Cond272'` anywhere** in the hypothesis
+list.  Compare `RBM.Thm221NoEL'.step`, which is the same statement with `RBM.Cond272'`. -/
+theorem Thm221NoEL.step_boundsCore_reg {κ : ℝ} (hT : Thm221NoEL X κ) (hE : |E| ≤ 2 - κ)
+    {c : ℝ} (hc0 : 0 < c) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s) : BoundsCore X E t :=
+  hT.step E hE c hc0 s t hs0 hst ht1 hreg hB
+
+/-- The two routes end at the *same* statement: `Eq` forces the conclusions of the
+`RBM.Cond272'` chain and of the `RBM.Cond272Reg` chain to be one and the same
+`RBM.BoundsCore X E t` (T107's technique).  Only the (2.72) hypothesis differs. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    boundsCore_step_of_flow X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45 h548 =
+      boundsCore_step_of_flow_reg X hκ0 hκ1 hEκ hs0 hst ht1 hc0
+        (hregS.toCond272Reg (by linarith [abs_nonneg E]) hst ht1 hc0.le)
+        hapriori hll hΘ h514 h45 h548 := rfl
+
+/-- **Joint satisfiability of a whole step, on the paper's own grid** (T209).
+
+The check the ticket asks for: on the truncated grid `u_k = min(1 - W^{-kτ'}, t)` of p. 24,
+with `τ'`, `c` and `n₀` chosen from `κ, τ` alone and **before** `E` and `t`, *all four* domain
+conditions of `RBM.Thm221NoEL.step` — `0 ≤ u_k`, `u_k ≤ u_{k+1}`, `u_{k+1} < 1` and
+`RBM.Cond272Reg … c` — hold simultaneously at every `k`, inside the window
+`t ≤ 1 - N^{-1+τ}` that D13 added.  So the step condition consumed by
+`RBM.boundsCore_step_of_inputs_reg` is not vacuous, and it is not satisfied only by a
+degenerate (collapsed) window: `RBM.Band.cond272Reg_grid`'s last conjunct also pins the grid to
+`t` at `k = n₀`.
+
+The quantifier order is the paper's: `c` is chosen before `E` and `t` but the step of
+`RBM.Thm221NoEL` quantifies `c` *inside*, because the grid caps the `c` it supplies at roughly
+`τ/16` (paper-deltas #125). -/
+theorem cond272Reg_grid_step_domain (B : Band Ω) {κ τ : ℝ} (hκ : 0 < κ) (hτ : 0 < τ) :
+    ∃ τ' : ℝ, 0 < τ' ∧ ∃ c : ℝ, 0 < c ∧ ∃ n₀ : ℕ, ∀ E : ℝ, |E| ≤ 2 - κ → ∀ t : ℕ → ℝ,
+      (∀ N, 0 ≤ t N) → (∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) →
+      (∀ᶠ N : ℕ in atTop, gridT (B.W N) τ' (t N) n₀ = t N) ∧
+      ∀ k : ℕ, (∀ N, 0 ≤ gridT (B.W N) τ' (t N) k) ∧
+        (∀ N, gridT (B.W N) τ' (t N) k ≤ gridT (B.W N) τ' (t N) (k + 1)) ∧
+        (∀ N, gridT (B.W N) τ' (t N) (k + 1) < 1) ∧
+        Cond272Reg B E (fun N => gridT (B.W N) τ' (t N) k)
+          (fun N => gridT (B.W N) τ' (t N) (k + 1)) c := by
+  obtain ⟨τ', hτ'0, c, hc0, n₀, hgrid⟩ := B.cond272Reg_grid hκ hτ
+  refine ⟨τ', hτ'0, c, hc0, n₀, fun E hE t ht0 ht => ?_⟩
+  obtain ⟨hlast, hstep⟩ := hgrid E hE t ht0 ht
+  refine ⟨hlast, fun k => ⟨fun N => ?_, fun N => ?_, fun N => ?_, hstep k⟩⟩
+  · exact le_min (gridS_nonneg (B.one_le_W N) hτ'0.le k) (ht0 N)
+  · exact gridT_mono (B.one_le_W N) hτ'0.le (t N) (Nat.le_succ k)
+  · exact (min_le_left _ _).trans_lt (gridS_lt_one (by linarith [B.one_le_W N]) _)
+
+end AssemblyReg
 
 
 /-! ### 6. Downstream: Theorem 2.3 and (2.6)/(2.7) of Theorem 2.4 on `RBM.BoundsCore`

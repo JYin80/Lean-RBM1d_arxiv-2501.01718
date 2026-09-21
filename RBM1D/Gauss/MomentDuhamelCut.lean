@@ -1013,6 +1013,70 @@ theorem step2_cut {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2
 
 end Consumers
 
+
+/-! ### Step 2 from the **bare** (2.72) plus the regime bound (T209)
+
+D13 fixes the step condition of Theorem 2.21 to `RBM.Cond272Reg`, while
+`RBM.MomentDuhamelCut.step2_cut` above consumes `hregS = RBM.Cond272'` and T186 showed there is
+no bridge between them.  The two statements here are `RBM.MomentDuhamelCut.aprioriDecay_cut`
+and `RBM.MomentDuhamelCut.step2_cut` with that hypothesis replaced; the conclusions are
+unchanged, and nothing above is modified. -/
+
+section Reg
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(2.76) along the truncated route, from the bare (2.72)** (T209).  Verbatim
+`RBM.MomentDuhamelCut.aprioriDecay_cut`, with `hregS` replaced by `RBM.Cond272`: the passage
+from (5.47) to (2.76) never used the `N^c` gain
+(`RBM.StepGlue.aprioriDecay_of_jS_of_cond272`). -/
+theorem aprioriDecay_cut_of_cond272 (X : Sample B)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentHypCut X E s t D) (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hcond : Cond272 B E s t) :
+    ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2) :=
+  StepGlue.aprioriDecay_of_jS_of_cond272 X hE hs0 hst ht1 hcond
+    fun D hD => jS_stochDom_cut (Hy D hD) hE hst ht1
+
+/-- **Step 2 of Theorem 2.21 along the truncated route, from `RBM.Cond272Reg`** (T209) — the
+step condition D13 fixes.
+
+The conclusion is *literally* that of `RBM.MomentDuhamelCut.step2_cut`; what changed is the
+(2.72) side, from `hregS = RBM.Cond272'` to the two components of `RBM.Cond272Reg` — (2.72)
+exactly as printed, plus the regime bound `N^c ≤ W ℓ_t η_t` that Step 1 already carries.
+`RBM.Cond272Reg` itself lives downstream (`Flow/Thm221Bare.lean`), so the two components are
+taken separately and `Flow/Thm221NoEL.lean` supplies them as `h.1` and `h.2`.
+
+Three places consumed `hregS` here, and none of them needed the gain:
+(2.76) only wanted `RBM.Cond272` (`RBM.StepGlue.aprioriDecay_of_jS_of_cond272`); the weak law
+(2.74) of Step 1 already takes `RBM.Cond272` plus the regime bound on the nose
+(`RBM.Step1.weakLaw`); and (2.75) only wanted the scale facts
+(`RBM.StepGlue.eventually_R4_le_scale_of_cond272`, `RBM.StepGlue.localLaw_of_scale_facts`). -/
+theorem step2_cut_of_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentHypCut X E s t D) (h1 : Step1.Hyp X E s t)
+    (hB : BoundsCore X E s) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hcond : Cond272 B E s t)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N)) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) ∧
+    ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2) := by
+  have hE : |E| < 2 := by linarith
+  have h276 := aprioriDecay_cut_of_cond272 X Hy hE hs0 hst ht1 hcond
+  have hfacts := StepGlue.eventually_R4_le_scale_of_cond272 hE hs0 hst ht1 hcond hreg
+  have h274 := Step1.weakLaw X hκ0 hEκ hB hs0 hst ht1 hcond hc0 hreg h1
+  exact ⟨StepGlue.localLaw_of_scale_facts X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hfacts h276 h274
+      h1.lemma41, h276⟩
+end Reg
+
 end MomentDuhamelCut
 
 end RBM

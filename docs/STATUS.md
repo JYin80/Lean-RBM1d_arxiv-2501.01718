@@ -5943,9 +5943,86 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 
 **⚠ Theorem 2.2 全仓没有组装**：`Delocalization.lean` 只有确定性内核，概率一半的输入是 `EnergyUniform.lean` 的 `localSemicircleLaw_of_Thm221N_of_z`。所以 T204 对下游「改吃 `Bounds″`」这一条**无事可做**——真正的组装归 T199。
 
+## ⭐⭐ T209：Steps 2–5 改吃 `Cond272Reg`，`Thm221NoEL`（不带撇）落地（2026-09-21）
+
+**`RBM.Thm221NoEL` 有生产者了**：`RBM.thm221NoEL_of_inputs`（`Flow/Thm221NoEL.lean` §5b）。
+`lake build RBM1D` exit=0，审计 `10780 declarations in RBM, all within [propext, Classical.choice, Quot.sound]`。
+
+### 桥确实不存在，但根本不需要桥
+
+T204/T186 记的缺口是「`Cond272Reg → Cond272'` 的桥在 `(a,b) = (1,30)` 处零增益」。**桥确实造不出来，这一点没变**
+（`rpow_mul_rpow_le_of_pow_thirty` 要 `e/c + b/30 ≤ a`，`a = 1, b = 30` ⇒ `e ≤ 0`）。
+本单的做法是**不造桥**，而是把三个消费者里 `hregS` 的**实际用途**逐个拆开——结果是**一处都不需要增益**：
+
+| 消费者 | `hregS` 实际用在哪 | 替代 |
+|---|---|---|
+| Step 1 `Step1.step1` | 本来就是 `Cond272` + `N^c ≤ A_t` | 无需改动，`Cond272Reg` 逐字 |
+| Step 2 (2.76) `aprioriDecay_cut` | 只经 `Step2.cond272_of_strict` 取 `Cond272` | `StepGlue.aprioriDecay_of_jS_of_cond272` |
+| Step 2 弱律 (2.74) | 本来就是 `Cond272` + `N^c ≤ A_t` | 无需改动 |
+| Step 2 局部律 (2.75) `Step2.localLaw` | 只经 `Step2.eventually_R4_le_scale` 取两条标度事实 `(η_s/η_u)^4 ≤ A_u`、`N^c ≤ A_u`——**指数是 4，不是 30** | `StepGlue.eventually_R4_le_scale_of_cond272` + `StepGlue.localLaw_of_scale_facts` |
+| Steps 3–5 胶水 `flow_sharpLoop_glue_of'` / `flow_steps45_glue_of'` | 只经 `cond272_of_strict` 取 `Cond272` | `Step2PP.flow_sharpLoop_glue_of_cond272'` / `flow_steps45_glue_of_cond272'` |
+| Steps 3–5 算术侧条件 `harith_flowAs` | `Q^{30} ≤ A_t`（裸 (2.72) 取逆）**加** `4 ≤ A_t^{1/12}`（区制界）——两条都是 `Cond272Reg` 的分量 | `Step2PP.harith_flowAs_of_reg` |
+
+⚠ **更正 T209 工单**：工单写「把三个消费者改成吃 `Cond272Reg.hA_phi` / `hA_betaStar`」。
+**那两条在这条链上一次也没被用到**——它们是**矩路线**的侧条件（`phi_arith'` / `beta_star_margin`，
+即假设 `MomentDuhamelCut.MomentHypCut` **内部**的事），而 Steps 1–5 的装配把 `MomentHypCut` 当黑箱吃。
+所以 **T209 不消耗 `δ` 预算**（T186 的 `δ ≤ c/4` 仍只是矩路线生产者的事，归 T212/T214）。
+T207 的 `phi_arith_second_pass` 同理不在本链上。
+
+### 新增声明（15 条，全部 `[propext, Classical.choice, Quot.sound]`）
+
+* `Hierarchy/StepGlue.lean`：`StepGlue.eventually_R4_le_scale_of_cond272`、
+  `StepGlue.aprioriDecay_of_jS_of_cond272`、`StepGlue.localLaw_of_scale_facts`
+* `Hierarchy/Step2PP.lean`：`Step2PP.harith_flowAs_of_reg`、`flow_sharpLoop_glue_of_cond272'`、
+  `flow_steps45_glue_of_cond272'`、`flow_sharpLoop_glue_flowAs_of_cond272'`、
+  `flow_steps45_glue_flowAs_of_reg'`
+* `Gauss/MomentDuhamelCut.lean`（**只追加**，T210 只读，一个字没删）：
+  `MomentDuhamelCut.aprioriDecay_cut_of_cond272`、`MomentDuhamelCut.step2_cut_of_reg`
+* `Flow/Thm221NoEL.lean` §5b：`boundsCore_step_of_flow_reg`、`boundsCore_step_of_inputs_reg`、
+  **`thm221NoEL_of_inputs`**、`Thm221NoEL.step_boundsCore_reg`、`cond272Reg_grid_step_domain`，
+  外加一条 `rfl` 探针（`Eq` 逼两条路线的结论是同一条陈述，T107 技法）
+
+**旧签名一字未动**：`Cond272'` 形的 `step2_cut`、`flow_sharpLoop_glue_flowAs'`、
+`flow_steps45_glue_flowAs'`、`thm221NoEL'_of_inputs` 全部原样保留（`Thm221NoEL'` 仍由它们产出，
+`BoundsCore_of_Thm221NoEL'` 的归纳仍跑在带撇版上——网格直接给 `Cond272'`）。
+
+### 验收探针
+
+* **假设表无 `Cond272'`**：`#check @RBM.boundsCore_step_of_inputs_reg` 与
+  `#check @RBM.thm221NoEL_of_inputs` 打印出的类型里 `Cond272` 只出现 `Cond272Reg` 一种形式（7 处），
+  `Cond272'` **0 处**。从 `BoundsCore X E s` 到 `BoundsCore X E t`，六条具名假设与 T204 完全相同
+  （`Step1.Hyp`、`MomentHypCut`、`hΘ`、`Lemma514`、`Eq45Flow`、`FlowEq548`）。
+* **可满足性见证**：`RBM.cond272Reg_grid_step_domain`（新增）。走**论文自己的网格**
+  `u_k = min(1 − W^{−kτ′}, t)`（`Band.cond272Reg_grid`，即 `1 − s_k = W^{−kτ′}`），
+  把一个 step 的**四条**域条件 `0 ≤ u_k`、`u_k ≤ u_{k+1}`、`u_{k+1} < 1`、`Cond272Reg … c`
+  **同时**证出来，`τ′, c, n₀` 在 `E, t` **之前**选定，且带 `gridT … n₀ = t` 那一条
+  （窗口不塌缩，网格真的走到 `t`）。
+* **反向对照保留**：`Cond272'` 形的 `Thm221NoEL'` 与链 `Cond272' → Cond272Reg → Cond272` 仍在树里；
+  `exists_cond272_not_rpow_le_scale`（T186）证 `Cond272Reg` 严格强于 `Cond272`，
+  `Cond272'.toCond272Reg` 证它严格弱于 `Cond272'`——三档没有一档塌成同一个。
+* **量词次序**：`c` 量化在 `Thm221NoEL.step` **内部**（paper-deltas #125：网格给的 `c` 上界约 `τ/16`），
+  每条假设内部的渐近条件都是 `∀ᶠ N in atTop`。
+* **退化检查**：`s = t` 时 `Cond272Reg` 仍要 `N^c ≤ A_t`，不塌成平凡（`cond272Reg_zero` 是 `s = t = 0`
+  处的非退化见证，`A_0 = W·Im m ≥ N^{1/2}`）。`BoundsCore` 三个字段全是 `StochDom` 型，无 `∀ ω` 字段。
+
+### 本单没做的
+
+* **`Hierarchy/Step2.lean` / `Hierarchy/Step2Moment.lean` 的原版没改成一行推论**：不在 T209 的可写文件集里。
+  `StepGlue.localLaw_of_scale_facts` 与 `StepGlue.aprioriDecay_of_jS_of_cond272` 是
+  `Step2.localLaw` / `Step2Moment.aprioriDecay_of_jS` 的**严格更一般**重述，证明脚本逐字照抄。
+  下次动那两个文件的单应把原版改成一行推论（纯机械，**无主**）。
+* **`Thm221NoEL` 的六条具名假设仍无生产者**——与 T204 相同，归 T210/T212/T213/T214/T215/T216。
+* `Flow/EnergyUniform.lean` 的 `Cond272N` 侧没有对应的 `Reg` 形（归 T199 续单，**无主**）。
+* blueprint 节点未补 `\lean{}`（本单新增的全是 Lean 内部重述，无对应论文编号节点）。
+
+### paper-delta
+
+`T209a`（临时号）：**更正 #125** 的「§2.7 六步全链要 `N^c` 增益」那半句——六步只要 (2.72) 逐字
+加区制界（= `Cond272Reg`，#132/D13）。#125 的「`c` 必须量化在 `step` 内部」仍成立。
+
 ## ⚠ 无主的活（T204 交出，点名到字段级）
 
-1. **`Thm221NoEL`（`Cond272Reg` 形）产不出来，只产得出 `Thm221NoEL'`。** 这是 T186 留下的缺口：Step 2–5 **逐字**吃 `hregS = Cond272'`（`Gauss/MomentDuhamelCut.step2_cut`、`Hierarchy/Step2PP.flow_sharpLoop_glue_flowAs'`、`flow_steps45_glue_flowAs'`），而 `rpow_mul_rpow_le_of_pow_thirty` 在 `a = 1, b = 30` 处逼出 `e ≤ 0`，桥**一点增益都不给**。**Step 1 已经逐字对上**（`Step1.step1` 收的就是 `Cond272 + N^c ≤ A_t` = `Cond272Reg`）。收口要把那两个文件里的三个消费者改成吃 `Cond272Reg.hA_phi` / `hA_betaStar`。**没有单负责。**
+1. ~~**`Thm221NoEL`（`Cond272Reg` 形）产不出来**~~ **已由 T209 收口（2026-09-21）**：见下面「T209」一节。`RBM.thm221NoEL_of_inputs` 产出不带撇的 `Thm221NoEL`，假设表里无 `Cond272'`（`#check` 探针验过）。**更正原记载**：收口**不是**改成吃 `Cond272Reg.hA_phi`/`hA_betaStar`——那两条是**矩路线**（假设 `MomentHypCut`）的侧条件，本链一次也没用到；真正要做的是把三个消费者里 `hregS` 的**实际用途**拆开（见下节）。
 2. **`Flow/Consequences.lean` 的改吃 `BoundsCore`**（机械：`hB : Bounds …` → `hB : BoundsCore …`，**证明脚本一字不动**；T204 文件里已有逐字副本 + `rfl` 探针作模板）。应改的：`localLaw_of_bounds`、`loop1_of_bounds`、`partialTrace_of_bounds`、`trace_of_bounds`、`loop2_of_bounds`、`quantumDiffusion_pm/pp_of_bounds`、四条 `*_prob_of_bounds`、`localSemicircleLaw_of_Thm221` 整条，以及把 `quantumDiffusion_of_Thm221` 的**前两个合取**拆成独立定理。**不许动**：`expect_loop2_of_bounds`、`expect_quantumDiffusion_*`、`QDExpect.of_Thm221*`、`theorem2_5_of_Thm221*`（都要 (2.71)，归 T205）。**没有单负责。**
 3. **`Flow/EnergyUniform.lean` 的 `BoundsCoreN` 版**（`localSemicircleLaw_of_Thm221N*` 与 `*_of_z`）——Theorem 2.2 路线 (ii) 将来要吃的。归 T199 或其续单。
 4. **`RBM.Bounds` 在 `s > 0` 处仍无居民**（T202 查出；只有 `Flow/Iteration.lean:165 Bounds_zero`）。`BoundsCore` 这一侧已由 `boundsCore_gauss_witness` 解决，**带 `expect` 的那一侧没有**。归 T205。

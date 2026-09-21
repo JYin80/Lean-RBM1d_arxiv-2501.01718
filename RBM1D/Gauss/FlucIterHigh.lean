@@ -268,6 +268,42 @@ theorem measurable_greenSetMat_apply (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ)
   rw [h]
   exact (measurable_Hflow d N u p.1 q.1).sub measurable_const
 
+/-! ### The entries of the iterated minor, extended by `0`
+
+`RBM.Gauss.greenSetMat` lives on the subtype `{a // a ∉ S}`, so its entries carry a proof that
+the index has not been removed.  `RBM.Gauss.gEnt` erases that proof by extending the entry by
+`0` to the levels that *have* removed `a` or `b`.  This is what makes the difference calculus of
+`RBM1D/Gauss/MinorDiffGain.lean` total: no side condition travels with the recursion.
+
+It is stated here, below both `RBM1D/Gauss/MinorDiffGain.lean` and
+`RBM1D/Gauss/MinorGoodLe.lean`, so that the latter — which needs `gEnt` to phrase the
+level-budgeted good event — does not have to import the former, which consumes that event. -/
+
+section GEnt
+
+variable {u : ℝ} {z : ℂ} {ω : Ω d} {a b : d.Idx N} {S : Finset (d.Idx N)}
+
+/-- `G^{(S)}_{ab}`, extended by `0` to the levels that have removed `a` or `b`.  The extension is
+what makes the difference calculus total: no side condition is carried along the recursion. -/
+noncomputable def gEnt (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ) (ω : Ω d) (a b : d.Idx N)
+    (S : Finset (d.Idx N)) : ℂ :=
+  if ha : a ∉ S then (if hb : b ∉ S then greenSetMat d N u z S ω ⟨a, ha⟩ ⟨b, hb⟩ else 0) else 0
+
+theorem gEnt_apply (ha : a ∉ S) (hb : b ∉ S) :
+    gEnt d N u z ω a b S = greenSetMat d N u z S ω ⟨a, ha⟩ ⟨b, hb⟩ := by
+  rw [gEnt, dite_eq_left ha, dite_eq_left hb]
+
+theorem gEnt_eq_zero_left (h : a ∈ S) : gEnt d N u z ω a b S = 0 := by
+  rw [gEnt, dite_eq_right (not_not_intro h)]
+
+theorem gEnt_eq_zero_right (h : b ∈ S) : gEnt d N u z ω a b S = 0 := by
+  rw [gEnt]
+  by_cases ha : a ∉ S
+  · rw [dite_eq_left ha, dite_eq_right (not_not_intro h)]
+  · rw [dite_eq_right ha]
+
+end GEnt
+
 /-! ### The `m`-fold minor difference
 
 The gain comes from the *iterated* difference operator `Δ_{κ_1} ⋯ Δ_{κ_m}`, where

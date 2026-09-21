@@ -3,7 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.MinorDiffGain
+import RBM1D.Gauss.FlucIterHigh
 
 /-!
 # The level-budgeted minor good event: `RBM.Gauss.MinorGoodLe`
@@ -38,8 +38,9 @@ assumed for all `ω`.  The produced event is therefore exactly as likely as (4.1
 
 * `RBM.Gauss.isUnit_det_Hflow_submatrix_sub` — **invertibility of every minor is free**: it is
   `RBM.isUnit_det_sub_smul_one` applied to the (Hermitian) submatrix of `H_u`, and needs
-  neither a good event nor a level restriction.  In `RBM.Gauss.MinorGood` it is a field, and
-  in `RBM.Gauss.minorGood_of_half_le` an assumption `hdet`; here it is discharged.
+  neither a good event nor a level restriction.  In `RBM.Gauss.MinorGood` it is a field; it used
+  to be an assumption `hdet` in `RBM.Gauss.minorGood_of_half_le` as well, which T170 deleted in
+  favour of this theorem.
 * `RBM.Gauss.gEnt_insert_of_ne` — (4.9) at a general level, with the two hypotheses it really
   needs (`hdet` at level `S`, and `G^{(S)}_{κκ} ≠ 0`) rather than the whole of
   `RBM.Gauss.MinorGood`.  This is what makes the induction below possible: at the inductive

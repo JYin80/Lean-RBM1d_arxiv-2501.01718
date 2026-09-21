@@ -3,7 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.FlucIterHigh
+import RBM1D.Gauss.MinorGoodLe
 
 /-!
 # The size of the iterated minor differences: the Leibniz calculus for `Δ_κ`
@@ -50,24 +50,50 @@ Both are proved from `RBM1D/Green/Minor.lean` (T40) through T110's
 `RBM.Gauss.greenSetMat_insert_apply`, and both hold at *every* level, including the degenerate
 ones where an index has already been removed.
 
-The size is tracked by `RBM.Gauss.DiffBd Ψ I n c p Y`: "`m ≤ n` further differences along rows
-outside `I` leave `‖Δ_{κ_1} ⋯ Δ_{κ_m} Y^{(S)}‖ ≤ c Ψ^{p+m}`", i.e. *each difference gains one
-power of `Ψ`*.  Its closure properties — `RBM.Gauss.DiffBd.delta` (a difference raises the order
-by one and locks the row out), `RBM.Gauss.DiffBd.shift`, and the product rule
-`RBM.Gauss.DiffBd.mul` (orders add; the `2^m` terms of the Leibniz expansion cost `2^n`) — feed
-the simultaneous induction `RBM.Gauss.diffBd_atom`, which grades the entries at order `1` and
-the inverse diagonals at order `0`.
+The size is tracked by `RBM.Gauss.DiffBd Ψ I M n c p Y`: "`m ≤ n` further differences along rows
+outside `I`, **never leaving the level budget `M`**, leave
+`‖Δ_{κ_1} ⋯ Δ_{κ_m} Y^{(S)}‖ ≤ c Ψ^{p+m}`", i.e. *each difference gains one power of `Ψ`*.  Its
+closure properties — `RBM.Gauss.DiffBd.delta` (a difference raises the order by one, locks the
+row out, and spends one unit of budget), `RBM.Gauss.DiffBd.shift`, `RBM.Gauss.DiffBd.congr`, and
+the product rule `RBM.Gauss.DiffBd.mul` (orders add; the `2^m` terms of the Leibniz expansion
+cost `2^n`) — feed the simultaneous induction `RBM.Gauss.diffBd_atom`, which grades the entries
+at order `1` and the inverse diagonals at order `0`.
 
 The rows must be distinct from each other and from every index the atom mentions: `Δ_κ` applied
 to an entry that carries the index `κ` has *no* gain, since the shifted entry is the extension
 by `0`.  That is exactly the `Nodup` hypothesis of `RBM.Gauss.MinorDiffGain`.
 
+## The level budget (T170)
+
+`Δ_{κ_1} ⋯ Δ_{κ_m} Y^{(S)}` is the signed sum of `Y^{(S ∪ T)}` over `T ⊆ {κ_1, …, κ_m}`, so it
+never reads a minor of level higher than `S.card + m`.  `RBM.Gauss.DiffBd` therefore quantifies
+only over `S` and `l` with `S.card + l.length ≤ M`.
+
+This is what makes the whole branch stand on a *satisfiable* hypothesis.  Without the budget the
+only good event that can feed the recursion is one asserted at **every** level, and that is
+false, not merely strong (T164, `docs/STATUS.md`).  With the budget, `RBM.Gauss.MinorGoodLe`
+(`RBM1D/Gauss/MinorGoodLe.lean`) suffices, and that one is *derived* — at a fixed sample point —
+from the level-`0` good event (4.1) by `RBM.Gauss.minorGoodLe_of_goodEvent`.
+
+The budget costs nothing.  `RBM.Gauss.minorDiff_eq_iterDeltaFam` evaluates at the base level `∅`,
+so the levels actually reached are subsets of the differenced rows, and
+`card ≤ word length ≤ M = 2p` — the same `M` that already bounds the word length in
+`RBM.Gauss.integral_prod_applyOps_minorDiff_le`.  In `RBM.Gauss.diffBd_atom` the bookkeeping is
+the invariant `B + T.card ≤ M`, where `B` is the estimate's own budget and `T` the base level of
+the atom: a difference spends one unit of `B`, a shift moves one row from `B` into `T`.
+
+`RBM.Gauss.MinorGood` and `RBM.Gauss.MinorGood'` are kept below, together with the unbudgeted
+identities `RBM.Gauss.deltaFam_gFam` / `RBM.Gauss.deltaFam_gInvFam`, but nothing depends on them
+any more; `RBM.Gauss.MinorGood'.toMinorGoodLe` records that the move only weakened the
+hypotheses.
+
 ## What is proved
 
 1. **The general estimate** `RBM.Gauss.norm_minorDiff_greenSetDiagCentered_le`:
-   `‖Δ_{κ_1} ⋯ Δ_{κ_m}(G^{(·)}_{kk} - m)‖ ≤ C_m Ψ^{m+1}` on the good event, for every `m ≥ 1`.
-   The first difference is the (4.9) triple product (order `2`) and each further difference
-   gains one more `Ψ` — the gain is multiplicative at every order, as T110's identity requires.
+   `‖Δ_{κ_1} ⋯ Δ_{κ_m}(G^{(·)}_{kk} - m)‖ ≤ C_m Ψ^{m+1}` on the good event, for every `m ≥ 1`
+   within the budget (`m ≤ M`).  The first difference is the (4.9) triple product (order `2`)
+   and each further difference gains one more `Ψ` — the gain is multiplicative at every order,
+   as T110's identity requires.
 2. **`m = 3`** `RBM.Gauss.norm_minorDiff_triple_le`: `≤ 2^91 Ψ⁴`, to be read against T110's
    `10 Ψ³` at `m = 2` and T85's `Ψ²` at `m = 1`.  The power is the point; the constant is not.
 3. **The fluctuation passes through** `RBM.Gauss.minorDiff_qRow` /
@@ -84,37 +110,43 @@ by `0`.  That is exactly the `Nodup` hypothesis of `RBM.Gauss.MinorDiffGain`.
    `RBM.Gauss.flucGainUpTo_of_minorDiff` / `RBM.Gauss.flucGainUpTo_of_minorDiff'` into the
    graded consumers of `RBM1D/Gauss/FlucIter.lean`.  See below.
 
-## (4.2), and the size of (4.12)
+## (4.3), and the size of (4.12)
 
-`RBM.Gauss.MinorGood` carries (4.1) and (4.3), which is everything the `Δ_κ` calculus needs:
-every atom it differences is an off-diagonal entry or an inverse diagonal entry.  It says
-nothing about the *undifferenced* `G^{(S)}_{kk} - m`, which is the `m = 0` grade of the
-expansion — the empty word — and that grade therefore had to be bounded by the deterministic
-envelope `2(η_u⁻¹ + 1)`.  The gain `ρ B` delivered to (4.12) was then `Ψ η_u⁻¹`, not the
-paper's `Ψ²`.
+The paper's (4.2) is the bound `Ψ` on a *general* entry `G_{ab}`, `a ≠ b`; its (4.3) is the
+bound on the *centred diagonal* entry `G_{aa} - m`.  (The comments in this file used to have
+the two numbers the other way round.)
 
-`RBM.Gauss.MinorGood'` adds the missing field, which is (4.2):
-`|G^{(S)}_{aa} - m| ≤ Ψ` at every minor level.  It enters at exactly one place —
-`RBM.Gauss.norm_flucDiagSet_le`, the empty-word branch of
+The `Δ_κ` calculus needs only (4.2) and the lower bound (4.1) on the diagonal: every atom it
+differences is an off-diagonal entry or an inverse diagonal entry.  It says nothing about the
+*undifferenced* `G^{(S)}_{kk} - m`, which is the `m = 0` grade of the expansion — the empty word
+— and that grade therefore had to be bounded by the deterministic envelope `2(η_u⁻¹ + 1)`.  The
+gain `ρ B` delivered to (4.12) was then `Ψ η_u⁻¹`, not the paper's `Ψ²`.
+
+The `diag_sub_le` field of `RBM.Gauss.MinorGoodLe` supplies the missing (4.3),
+`|G^{(S)}_{aa} - m| ≤ Ψ` at every minor level inside the budget.  It enters at exactly one place
+— `RBM.Gauss.norm_flucDiagSet_le`, the empty-word branch of
 `RBM.Gauss.integral_prod_applyOps_minorDiff_le'` — and turns `B` into `2Ψ + 2 C_M Ψ`.  The
 `2p`-th moment iteration of `RBM1D/Gauss/FlucIter.lean` then delivers (4.12) with control
-`ρ B ≍ Ψ²`, uniformly in `u`, with no `η_u⁻¹` anywhere.  (4.2) is not an extra burden on the
+`ρ B ≍ Ψ²`, uniformly in `u`, with no `η_u⁻¹` anywhere.  (4.3) is not an extra burden on the
 producer: at `Ψ ≤ 1/2` it *implies* (4.1), since `|m_E| = 1`
-(`RBM.Gauss.minorGood'_of_local_law`).
+(`RBM.Gauss.minorGood'_of_local_law`, `RBM.Gauss.minorGoodLe_of_goodEvent`).
 
 ## What is *not* proved, and why
 
 `RBM.Gauss.MinorDiffGain` is **not** discharged, so (4.12) is **not** yet hypothesis-free.  Two
 inputs are carried by `RBM.Gauss.integral_prod_applyOps_minorDiff_le` and neither is cosmetic:
 
-* **The exceptional set.**  The estimate is conditional on `RBM.Gauss.MinorGood` holding at
+* **The exceptional set.**  The estimate is conditional on `RBM.Gauss.MinorGoodLe` holding at
   *every* sample point: the local law (4.2)–(4.3) and the lower bound (4.1) on the diagonal
-  entries, at every minor level.  It holds only off an exceptional event.  Removing that
-  hypothesis means splitting the integral and paying the deterministic envelope `η_t⁻¹` on the
-  exceptional part — legitimate here (there are no conditional expectations left inside
-  `RBM.Gauss.MinorDiffGain`, so no indicator is ever multiplied into a `Q_κ`), but it needs a
-  quantitative local law, which the repository does not yet have in this form.  No indicator is
-  introduced in this file.
+  entries, at every minor level within the budget.  It holds only off an exceptional event.
+  Removing that hypothesis is **not** a matter of splitting the integral and paying the
+  deterministic envelope `η_t⁻¹` on the exceptional part: this file's integrand is *not* free of
+  conditional expectations.  `RBM.Gauss.flucDiagSet` *is* `RBM.Gauss.qRow`, and
+  `RBM.Gauss.applyOps` stacks further `E_κ`'s on top of it, so an indicator multiplied into the
+  integrand is multiplied into a `Q_κ` and does not commute past it.  (T164 found this; an
+  earlier version of this docstring asserted the opposite.)  Repairing it is T171's job — by
+  conditioning on the good event, with the row-conditional tools of
+  `RBM1D/Gauss/CondDom.lean`, not by a naive split.  No indicator is introduced in this file.
 * **Uniformity in `m`.**  `RBM.Gauss.MinorDiffGain` asks for a *single* `ρ` valid for every
   word, and the constants produced here grow with `m`: the recursion of `RBM.Gauss.atomC` is
   `c_{m+1} = 16^m c_m^5`.  This is not merely a lazy bound — differencing a reciprocal `m`
@@ -128,15 +160,14 @@ inputs are carried by `RBM.Gauss.integral_prod_applyOps_minorDiff_le` and neithe
 
 * The constants are not the paper's `C^m`; see above.  Only their finiteness at each fixed `m`
   is used.
-* The good event is packaged as `RBM.Gauss.MinorGood`, a hypothesis at *all* levels `S` rather
-  than at the levels actually reached (subsets of the differenced rows).  This is stronger than
-  needed but is what the local law gives for all minors simultaneously.
-* `RBM.Gauss.MinorGood.inv_le` fixes the constant `2` for `|G^{(S)}_{aa}|⁻¹`, matching T110's
+* The good event is packaged as `RBM.Gauss.MinorGoodLe`, a hypothesis at the levels `S` with
+  `S.card ≤ M`.  The paper states (4.1)–(4.3) at level `0` only and raises the level one step
+  at a time by (4.9); the iteration to `|S| ≤ M`, and the budget `M` itself, are Lean's
+  construction (T169, T170).  Recorded in `docs/paper-deltas.md`.
+* `RBM.Gauss.MinorGoodLe.inv_le` fixes the constant `2` for `|G^{(S)}_{aa}|⁻¹`, matching T110's
   `RBM.Gauss.norm_minorDiff_pair_greenSetDiagCentered_le`.
-* (4.1)–(4.3) are split across two structures: `RBM.Gauss.MinorGood` (what the difference
-  calculus uses) and `RBM.Gauss.MinorGood'` (that plus (4.2), what the size of (4.12) uses).
-  The paper states them together.  Both bounds are written with the *same* `Ψ`; the paper's
-  (4.2) and (4.3) have the same order but are not literally the same quantity.
+* Both bounds are written with the *same* `Ψ`; the paper's (4.2) and (4.3) have the same order
+  but are not literally the same quantity.
 -/
 
 namespace RBM.Gauss
@@ -224,6 +255,29 @@ theorem deltaFam_inv_apply (κ : α) (Y : Finset α → ℂ) (S : Finset α)
   field_simp
   ring
 
+/-- **`Δ_{κ_1} ⋯ Δ_{κ_m} Y^{(S)}` only looks at the levels of card at most `S.card + m`.**
+
+Unfolded, the iterated difference is the signed sum of `Y (S ∪ T)` over the subsets `T` of the
+differenced rows, so two families that agree below a level budget have the same iterated
+differences inside that budget.  This is what lets the identities (4.9) and the reciprocal rule
+— which are available only at the levels the good event covers — be substituted into a
+`RBM.Gauss.DiffBd` estimate. -/
+theorem iterDeltaFam_congr : ∀ (l : List α) {M : ℕ} {Y Z : Finset α → ℂ},
+    (∀ U : Finset α, U.card ≤ M → Y U = Z U) →
+    ∀ S : Finset α, S.card + l.length ≤ M → iterDeltaFam l Y S = iterDeltaFam l Z S := by
+  intro l
+  induction l with
+  | nil => intro M Y Z h S hS; exact h S (by simpa using hS)
+  | cons κ l ih =>
+      intro M Y Z h S hS
+      simp only [List.length_cons] at hS
+      obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
+      simp only [iterDeltaFam_cons]
+      refine ih (M := M') (fun U hU => ?_) S (by omega)
+      have h1 := h U (by omega)
+      have h2 := h (insert κ U) (le_trans (Finset.card_insert_le κ U) (by omega))
+      simp only [deltaFam_apply, h1, h2]
+
 end Calculus
 
 
@@ -233,59 +287,85 @@ section Graded
 
 variable {α : Type*} [DecidableEq α]
 
-/-- **`Y` is of order `p` with constant `c`, up to `n` differences.**  Taking `m ≤ n` further
-differences along rows *outside* `I` gains `m` powers of `Ψ`:
+/-- **`Y` is of order `p` with constant `c`, up to `n` differences, inside the level budget `M`.**
+Taking `m ≤ n` further differences along rows *outside* `I` gains `m` powers of `Ψ`:
 
   `‖Δ_{κ_1} ⋯ Δ_{κ_m} Y^{(S)}‖ ≤ c Ψ^{p + m}`.
 
 The rows must be distinct (`l.Nodup`) and must avoid `I`, the set of indices the family already
-mentions: `Δ_κ` applied to a Green's function entry carrying the index `κ` has no gain. -/
-def DiffBd (Ψ : ℝ) (I : Finset α) (n : ℕ) (c : ℝ) (p : ℕ) (Y : Finset α → ℂ) : Prop :=
+mentions: `Δ_κ` applied to a Green's function entry carrying the index `κ` has no gain.
+
+**The budget.**  `Δ_{κ_1} ⋯ Δ_{κ_m} Y^{(S)}` reads `Y` at the levels `S ∪ T`, `T ⊆ {κ_1, …, κ_m}`,
+so it never looks above level `S.card + m`; the hypothesis `S.card + l.length ≤ M` is exactly
+"this estimate never leaves the budget".  Without it the definition quantifies over *all* levels
+`S`, and the only hypothesis that can supply such a bound — `RBM.Gauss.MinorGood'` at every level
+— is unsatisfiable (T164).  With it, `RBM.Gauss.MinorGoodLe` suffices, and that *is* satisfiable:
+it follows from the level-`0` good event (4.1).  The budget costs nothing, because
+`RBM.Gauss.minorDiff_eq_iterDeltaFam` evaluates at the base level `∅`, so the levels actually
+reached are subsets of the differenced rows and `card ≤ word length ≤ 2p`. -/
+def DiffBd (Ψ : ℝ) (I : Finset α) (M n : ℕ) (c : ℝ) (p : ℕ) (Y : Finset α → ℂ) : Prop :=
   ∀ (l : List α) (S : Finset α), l.Nodup → (∀ κ ∈ l, κ ∉ I) → l.length ≤ n →
-    ‖iterDeltaFam l Y S‖ ≤ c * Ψ ^ (p + l.length)
+    S.card + l.length ≤ M → ‖iterDeltaFam l Y S‖ ≤ c * Ψ ^ (p + l.length)
 
-theorem DiffBd.le_self {Ψ : ℝ} {I : Finset α} {n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) (S : Finset α) : ‖Y S‖ ≤ c * Ψ ^ p := by
-  simpa using h [] S (by simp) (by simp) (by simp)
+theorem DiffBd.le_self {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (S : Finset α) (hS : S.card ≤ M) : ‖Y S‖ ≤ c * Ψ ^ p := by
+  simpa using h [] S (by simp) (by simp) (by simp) (by simpa using hS)
 
-/-- No differences at all: a plain bound. -/
-theorem diffBd_zero {Ψ : ℝ} {I : Finset α} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : ∀ S, ‖Y S‖ ≤ c * Ψ ^ p) : DiffBd Ψ I 0 c p Y := by
-  intro l S _ _ hlen
+/-- No differences at all: a plain bound inside the budget. -/
+theorem diffBd_zero {Ψ : ℝ} {I : Finset α} {M : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : ∀ S : Finset α, S.card ≤ M → ‖Y S‖ ≤ c * Ψ ^ p) : DiffBd Ψ I M 0 c p Y := by
+  intro l S _ _ hlen hcard
   have hl : l = [] := List.eq_nil_of_length_eq_zero (Nat.le_zero.1 hlen)
   subst hl
-  simpa using h S
+  simpa using h S (by simpa using hcard)
 
-theorem DiffBd.mono_I {Ψ : ℝ} {I I' : Finset α} {n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) (hII : I ⊆ I') : DiffBd Ψ I' n c p Y :=
-  fun l S hnd hav hlen => h l S hnd (fun κ hκ => fun hmem => hav κ hκ (hII hmem)) hlen
+theorem DiffBd.mono_I {Ψ : ℝ} {I I' : Finset α} {M n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (hII : I ⊆ I') : DiffBd Ψ I' M n c p Y :=
+  fun l S hnd hav hlen hcard =>
+    h l S hnd (fun κ hκ => fun hmem => hav κ hκ (hII hmem)) hlen hcard
 
-theorem DiffBd.mono_n {Ψ : ℝ} {I : Finset α} {n n' : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) (hn : n' ≤ n) : DiffBd Ψ I n' c p Y :=
-  fun l S hnd hav hlen => h l S hnd hav (le_trans hlen hn)
+theorem DiffBd.mono_n {Ψ : ℝ} {I : Finset α} {M n n' : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (hn : n' ≤ n) : DiffBd Ψ I M n' c p Y :=
+  fun l S hnd hav hlen hcard => h l S hnd hav (le_trans hlen hn) hcard
 
-theorem DiffBd.mono_c {Ψ : ℝ} {I : Finset α} {n : ℕ} {c c' : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) (hΨ : 0 ≤ Ψ) (hc : c ≤ c') : DiffBd Ψ I n c' p Y := by
-  intro l S hnd hav hlen
-  exact le_trans (h l S hnd hav hlen) (by
+/-- A smaller budget is a weaker statement. -/
+theorem DiffBd.mono_M {Ψ : ℝ} {I : Finset α} {M M' n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (hM : M' ≤ M) : DiffBd Ψ I M' n c p Y :=
+  fun l S hnd hav hlen hcard => h l S hnd hav hlen (le_trans hcard hM)
+
+theorem DiffBd.mono_c {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c c' : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (hΨ : 0 ≤ Ψ) (hc : c ≤ c') : DiffBd Ψ I M n c' p Y := by
+  intro l S hnd hav hlen hcard
+  exact le_trans (h l S hnd hav hlen hcard) (by
     have : (0:ℝ) ≤ Ψ ^ (p + l.length) := pow_nonneg hΨ _
     nlinarith)
 
 /-- A lower order is a weaker statement, as `Ψ ≤ 1`. -/
-theorem DiffBd.mono_p {Ψ : ℝ} {I : Finset α} {n : ℕ} {c : ℝ} {p p' : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hc : 0 ≤ c) (hp : p' ≤ p) :
-    DiffBd Ψ I n c p' Y := by
-  intro l S hnd hav hlen
-  refine le_trans (h l S hnd hav hlen) ?_
+theorem DiffBd.mono_p {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c : ℝ} {p p' : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hc : 0 ≤ c) (hp : p' ≤ p) :
+    DiffBd Ψ I M n c p' Y := by
+  intro l S hnd hav hlen hcard
+  refine le_trans (h l S hnd hav hlen hcard) ?_
   have : Ψ ^ (p + l.length) ≤ Ψ ^ (p' + l.length) :=
     pow_le_pow_of_le_one hΨ0 hΨ1 (by omega)
   nlinarith
 
-/-- **One difference raises the order by one** (and locks the row out of later differences). -/
-theorem DiffBd.delta {Ψ : ℝ} {I : Finset α} {n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    {κ : α} (hκ : κ ∉ I) (h : DiffBd Ψ I (n + 1) c p Y) :
-    DiffBd Ψ (insert κ I) n c (p + 1) (deltaFam κ Y) := by
-  intro l S hnd hav hlen
+/-- **The estimate only sees the family inside the budget.**  This is what lets (4.9) and the
+reciprocal rule — identities that `RBM.Gauss.MinorGoodLe` supplies only below level `M` — be
+substituted into a `RBM.Gauss.DiffBd` bound. -/
+theorem DiffBd.congr {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c : ℝ} {p : ℕ} {Y Z : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) (hYZ : ∀ S : Finset α, S.card ≤ M → Y S = Z S) :
+    DiffBd Ψ I M n c p Z := by
+  intro l S hnd hav hlen hcard
+  rw [← iterDeltaFam_congr l hYZ S hcard]
+  exact h l S hnd hav hlen hcard
+
+/-- **One difference raises the order by one** (and locks the row out of later differences).  It
+costs one unit of the level budget: `Δ_κ Y` reads `Y` one level higher than `Y` itself. -/
+theorem DiffBd.delta {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    {κ : α} (hκ : κ ∉ I) (h : DiffBd Ψ I (M + 1) (n + 1) c p Y) :
+    DiffBd Ψ (insert κ I) M n c (p + 1) (deltaFam κ Y) := by
+  intro l S hnd hav hlen hcard
   have hκl : κ ∉ l := fun hm => (hav κ hm) (Finset.mem_insert_self κ I)
   have hnd' : (κ :: l).Nodup := List.nodup_cons.2 ⟨hκl, hnd⟩
   have hav' : ∀ κ' ∈ (κ :: l), κ' ∉ I := by
@@ -294,37 +374,42 @@ theorem DiffBd.delta {Ψ : ℝ} {I : Finset α} {n : ℕ} {c : ℝ} {p : ℕ} {Y
     · exact h1 ▸ hκ
     · exact fun hm => hav κ' h1 (Finset.mem_insert_of_mem hm)
   have := h (κ :: l) S hnd' hav' (by simp [List.length_cons]; omega)
+    (by simp only [List.length_cons]; omega)
   rw [iterDeltaFam_cons] at this
   have hexp : p + (κ :: l).length = p + 1 + l.length := by simp [List.length_cons]; omega
   rwa [hexp] at this
 
-/-- The shift is free: it only moves the level. -/
-theorem DiffBd.shift {Ψ : ℝ} {I : Finset α} {n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) (κ : α) : DiffBd Ψ I n c p (shiftFam κ Y) := by
-  intro l S hnd hav hlen
+/-- The shift only moves the level -- and therefore costs exactly one unit of the budget. -/
+theorem DiffBd.shift {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I (M + 1) n c p Y) (κ : α) : DiffBd Ψ I M n c p (shiftFam κ Y) := by
+  intro l S hnd hav hlen hcard
   rw [iterDeltaFam_shiftFam, shiftFam_apply]
   exact h l (insert κ S) hnd hav hlen
+    (by have := Finset.card_insert_le κ S; omega)
 
-theorem DiffBd.neg {Ψ : ℝ} {I : Finset α} {n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
-    (h : DiffBd Ψ I n c p Y) : DiffBd Ψ I n c p (fun S => -Y S) := by
-  intro l S hnd hav hlen
+theorem DiffBd.neg {Ψ : ℝ} {I : Finset α} {M n : ℕ} {c : ℝ} {p : ℕ} {Y : Finset α → ℂ}
+    (h : DiffBd Ψ I M n c p Y) : DiffBd Ψ I M n c p (fun S => -Y S) := by
+  intro l S hnd hav hlen hcard
   rw [iterDeltaFam_neg]
-  simpa using h l S hnd hav hlen
+  simpa using h l S hnd hav hlen hcard
 
 /-- **The product rule for the graded bound.**  Orders add; the price of the `2^{m}` terms of
-the `m`-fold Leibniz expansion is the factor `2^n`. -/
+the `m`-fold Leibniz expansion is the factor `2^n`.  The budget is untouched: the Leibniz
+expansion splits `Δ_κ` into `Δ_κ` on one factor and the shift on the other, and both cost one
+level, which is the level the product's own difference has already paid for. -/
 theorem DiffBd.mul {Ψ : ℝ} (hΨ : 0 ≤ Ψ) :
-    ∀ (n : ℕ) {I : Finset α} {c₁ c₂ : ℝ} {p q : ℕ} {Y Z : Finset α → ℂ},
-      0 ≤ c₁ → 0 ≤ c₂ → DiffBd Ψ I n c₁ p Y → DiffBd Ψ I n c₂ q Z →
-      DiffBd Ψ I n (2 ^ n * (c₁ * c₂)) (p + q) (fun S => Y S * Z S) := by
+    ∀ (n : ℕ) {I : Finset α} {M : ℕ} {c₁ c₂ : ℝ} {p q : ℕ} {Y Z : Finset α → ℂ},
+      0 ≤ c₁ → 0 ≤ c₂ → DiffBd Ψ I M n c₁ p Y → DiffBd Ψ I M n c₂ q Z →
+      DiffBd Ψ I M n (2 ^ n * (c₁ * c₂)) (p + q) (fun S => Y S * Z S) := by
   intro n
   induction n with
   | zero =>
-      intro I c₁ c₂ p q Y Z hc₁ hc₂ hY hZ l S hnd hav hlen
+      intro I M c₁ c₂ p q Y Z hc₁ hc₂ hY hZ l S hnd hav hlen hcard
       have hl : l = [] := List.eq_nil_of_length_eq_zero (Nat.le_zero.1 hlen)
       subst hl
-      have h1 := hY.le_self S
-      have h2 := hZ.le_self S
+      have hS : S.card ≤ M := by simpa using hcard
+      have h1 := hY.le_self S hS
+      have h2 := hZ.le_self S hS
       have hp1 : (0:ℝ) ≤ Ψ ^ p := pow_nonneg hΨ _
       have hp2 : (0:ℝ) ≤ Ψ ^ q := pow_nonneg hΨ _
       have : ‖Y S * Z S‖ ≤ (c₁ * Ψ ^ p) * (c₂ * Ψ ^ q) := by
@@ -332,11 +417,12 @@ theorem DiffBd.mul {Ψ : ℝ} (hΨ : 0 ≤ Ψ) :
         exact mul_le_mul h1 h2 (norm_nonneg _) (by positivity)
       simpa [pow_add] using le_trans this (le_of_eq (by ring))
   | succ n ih =>
-      intro I c₁ c₂ p q Y Z hc₁ hc₂ hY hZ l S hnd hav hlen
+      intro I M c₁ c₂ p q Y Z hc₁ hc₂ hY hZ l S hnd hav hlen hcard
       match l with
       | [] =>
-          have h1 := hY.le_self S
-          have h2 := hZ.le_self S
+          have hS : S.card ≤ M := by simpa using hcard
+          have h1 := hY.le_self S hS
+          have h2 := hZ.le_self S hS
           have hp1 : (0:ℝ) ≤ Ψ ^ p := pow_nonneg hΨ _
           have hp2 : (0:ℝ) ≤ Ψ ^ q := pow_nonneg hΨ _
           have hmul : ‖Y S * Z S‖ ≤ (c₁ * Ψ ^ p) * (c₂ * Ψ ^ q) := by
@@ -351,6 +437,9 @@ theorem DiffBd.mul {Ψ : ℝ} (hΨ : 0 ≤ Ψ) :
           have hnn : (0:ℝ) ≤ (c₁ * c₂) * Ψ ^ (p + q) := by positivity
           nlinarith [pow_nonneg hΨ (p + q)]
       | κ :: l' =>
+          have hcard' : S.card + l'.length + 1 ≤ M := by
+            simp only [List.length_cons] at hcard; omega
+          obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
           have hκI : κ ∉ I := hav κ (List.mem_cons_self ..)
           have hnd' : l'.Nodup := (List.nodup_cons.1 hnd).2
           have hκl' : κ ∉ l' := (List.nodup_cons.1 hnd).1
@@ -361,14 +450,16 @@ theorem DiffBd.mul {Ψ : ℝ} (hΨ : 0 ≤ Ψ) :
             · exact hav κ' (List.mem_cons_of_mem _ hκ') h1
           have hlen' : l'.length ≤ n := by
             simp only [List.length_cons] at hlen; omega
-          have hδY : DiffBd Ψ (insert κ I) n c₁ (p + 1) (deltaFam κ Y) := hY.delta hκI
-          have hδZ : DiffBd Ψ (insert κ I) n c₂ (q + 1) (deltaFam κ Z) := hZ.delta hκI
-          have hYs : DiffBd Ψ (insert κ I) n c₁ p (shiftFam κ Y) :=
+          have hcardl' : S.card + l'.length ≤ M' := by omega
+          have hδY : DiffBd Ψ (insert κ I) M' n c₁ (p + 1) (deltaFam κ Y) := hY.delta hκI
+          have hδZ : DiffBd Ψ (insert κ I) M' n c₂ (q + 1) (deltaFam κ Z) := hZ.delta hκI
+          have hYs : DiffBd Ψ (insert κ I) M' n c₁ p (shiftFam κ Y) :=
             ((hY.mono_n (Nat.le_succ n)).mono_I (Finset.subset_insert κ I)).shift κ
-          have hZ' : DiffBd Ψ (insert κ I) n c₂ q Z :=
-            (hZ.mono_n (Nat.le_succ n)).mono_I (Finset.subset_insert κ I)
-          have hA := ih hc₁ hc₂ hδY hZ' l' S hnd' hav' hlen'
-          have hB := ih hc₁ hc₂ hYs hδZ l' S hnd' hav' hlen'
+          have hZ' : DiffBd Ψ (insert κ I) M' n c₂ q Z :=
+            ((hZ.mono_n (Nat.le_succ n)).mono_I (Finset.subset_insert κ I)).mono_M
+              (Nat.le_succ M')
+          have hA := ih hc₁ hc₂ hδY hZ' l' S hnd' hav' hlen' hcardl'
+          have hB := ih hc₁ hc₂ hYs hδZ l' S hnd' hav' hlen' hcardl'
           have hsplit : iterDeltaFam (κ :: l') (fun S => Y S * Z S) S
               = iterDeltaFam l' (fun S => deltaFam κ Y S * Z S) S
                 + iterDeltaFam l' (fun S => shiftFam κ Y S * deltaFam κ Z S) S := by
@@ -408,26 +499,7 @@ theorem minorDiff_eq_iterDeltaFam (l : List (d.Idx N)) (Y : Finset (d.Idx N) →
 
 section Atoms
 
-/-- `G^{(S)}_{ab}`, extended by `0` to the levels that have removed `a` or `b`.  The extension is
-what makes the difference calculus total: no side condition is carried along the recursion. -/
-noncomputable def gEnt (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ) (ω : Ω d) (a b : d.Idx N)
-    (S : Finset (d.Idx N)) : ℂ :=
-  if ha : a ∉ S then (if hb : b ∉ S then greenSetMat d N u z S ω ⟨a, ha⟩ ⟨b, hb⟩ else 0) else 0
-
-variable {u : ℝ} {z : ℂ} {ω : Ω d} {a b κ : d.Idx N} {S T : Finset (d.Idx N)}
-
-theorem gEnt_apply (ha : a ∉ S) (hb : b ∉ S) :
-    gEnt d N u z ω a b S = greenSetMat d N u z S ω ⟨a, ha⟩ ⟨b, hb⟩ := by
-  rw [gEnt, dite_eq_left ha, dite_eq_left hb]
-
-theorem gEnt_eq_zero_left (h : a ∈ S) : gEnt d N u z ω a b S = 0 := by
-  rw [gEnt, dite_eq_right (not_not_intro h)]
-
-theorem gEnt_eq_zero_right (h : b ∈ S) : gEnt d N u z ω a b S = 0 := by
-  rw [gEnt]
-  by_cases ha : a ∉ S
-  · rw [dite_eq_left ha, dite_eq_right (not_not_intro h)]
-  · rw [dite_eq_right ha]
+variable {u : ℝ} {z m : ℂ} {ω : Ω d} {a b κ : d.Idx N} {S T : Finset (d.Idx N)} {M : ℕ}
 
 /-- The family `S ↦ G^{(S ∪ T)}_{ab}`: an *atom* of the calculus.  Carrying the base level `T`
 is what makes the class of atoms closed under the shift `Y ↦ Y^{(κ)}`. -/
@@ -468,20 +540,20 @@ structure MinorGood (d : Dims) (N : ℕ) (u : ℝ) (z : ℂ) (ω : Ω d) (Ψ : �
   diag_ne : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S → gEnt d N u z ω a a S ≠ 0
   /-- `|G^{(S)}_{aa}|⁻¹ ≤ 2` -- the quantitative form of (4.1). -/
   inv_le : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), ‖(gEnt d N u z ω a a S)⁻¹‖ ≤ 2
-  /-- `|G^{(S)}_{ab}| ≤ Ψ` for `a ≠ b` -- (4.3). -/
+  /-- `|G^{(S)}_{ab}| ≤ Ψ` for `a ≠ b` -- (4.2). -/
   off_le : ∀ (S : Finset (d.Idx N)) (a b : d.Idx N), a ≠ b → ‖gEnt d N u z ω a b S‖ ≤ Ψ
 
 /-- **The shape in which the good event (4.1) actually arrives.**  `1/2 ≤ |G^{(S)}_{aa}|` is
 `RBM.GoodEvent.half_le_norm_diag` applied to every minor; it gives both the non-vanishing and
-the bound `2` on the inverse. -/
-theorem minorGood_of_half_le
-    (hdet : ∀ S : Finset (d.Idx N), IsUnit ((Hflow d N u ω).submatrix
-      (Subtype.val : {x : d.Idx N // x ∉ S} → d.Idx N) Subtype.val
-      - z • (1 : Matrix {x : d.Idx N // x ∉ S} {x : d.Idx N // x ∉ S} ℂ)).det)
+the bound `2` on the inverse.
+
+Invertibility of the minors is *not* assumed: it is the free theorem
+`RBM.Gauss.isUnit_det_Hflow_submatrix_sub`, which needs only `z.im ≠ 0`. -/
+theorem minorGood_of_half_le (hz : z.im ≠ 0)
     (hhalf : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S → 1 / 2 ≤ ‖gEnt d N u z ω a a S‖)
     (hoff : ∀ (S : Finset (d.Idx N)) (a b : d.Idx N), a ≠ b → ‖gEnt d N u z ω a b S‖ ≤ Ψ) :
     MinorGood d N u z ω Ψ where
-  det := hdet
+  det := isUnit_det_Hflow_submatrix_sub d N u ω hz
   diag_ne := by
     intro S a ha h0
     have := hhalf S a ha
@@ -499,13 +571,13 @@ theorem minorGood_of_half_le
       norm_num
   off_le := hoff
 
-/-- **`RBM.Gauss.MinorGood` together with the diagonal half of the local law, (4.2).**
+/-- **`RBM.Gauss.MinorGood` together with the diagonal half of the local law, (4.3).**
 
-`RBM.Gauss.MinorGood` carries (4.1) and (4.3) only, which is all the Leibniz calculus of the
+`RBM.Gauss.MinorGood` carries (4.1) and (4.2) only, which is all the Leibniz calculus of the
 `Δ_κ`'s needs: every atom it differences is either an off-diagonal entry or an inverse
 diagonal entry.  The *undifferenced* entry `G^{(S)}_{aa} - m` — the `m = 0` grade of the
 expansion, i.e. the empty word — is not an atom of that calculus, and `RBM.Gauss.MinorGood`
-says nothing about it beyond `|G^{(S)}_{aa}|⁻¹ ≤ 2`.  Adding (4.2) is what turns the constant
+says nothing about it beyond `|G^{(S)}_{aa}|⁻¹ ≤ 2`.  Adding (4.3) is what turns the constant
 `B` of the gain from the deterministic envelope `2(η_u⁻¹ + 1)` into `≍ Ψ`, and hence (4.12)
 from `Ψ η_u⁻¹` into the paper's `Ψ²`.
 
@@ -513,7 +585,7 @@ The extra field is stated only at the levels `S` that do not remove `a`; at the 
 `RBM.Gauss.gEnt` is `0` by convention and `‖0 - m‖ = |m|` is of course not `≤ Ψ`. -/
 structure MinorGood' (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (ω : Ω d) (Ψ : ℝ)
     : Prop extends MinorGood d N u z ω Ψ where
-  /-- `|G^{(S)}_{aa} - m| ≤ Ψ` at every minor level -- (4.2). -/
+  /-- `|G^{(S)}_{aa} - m| ≤ Ψ` at every minor level -- (4.3). -/
   diag_sub_le : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S →
     ‖gEnt d N u z ω a a S - m‖ ≤ Ψ
 
@@ -521,16 +593,13 @@ structure MinorGood' (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (ω : Ω d) (Ψ 
 bound `2` on `|G^{(S)}_{aa}|⁻¹` is not assumed separately: it follows from
 `|G^{(S)}_{aa} - m| ≤ Ψ` and `1/2 ≤ |G^{(S)}_{aa}|`, exactly as in
 `RBM.Gauss.minorGood_of_half_le`. -/
-theorem minorGood'_of_half_le {m : ℂ}
-    (hdet : ∀ S : Finset (d.Idx N), IsUnit ((Hflow d N u ω).submatrix
-      (Subtype.val : {x : d.Idx N // x ∉ S} → d.Idx N) Subtype.val
-      - z • (1 : Matrix {x : d.Idx N // x ∉ S} {x : d.Idx N // x ∉ S} ℂ)).det)
+theorem minorGood'_of_half_le (hz : z.im ≠ 0)
     (hhalf : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S → 1 / 2 ≤ ‖gEnt d N u z ω a a S‖)
     (hoff : ∀ (S : Finset (d.Idx N)) (a b : d.Idx N), a ≠ b → ‖gEnt d N u z ω a b S‖ ≤ Ψ)
     (hdiag : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S →
       ‖gEnt d N u z ω a a S - m‖ ≤ Ψ) :
     MinorGood' d N u z m ω Ψ where
-  toMinorGood := minorGood_of_half_le hdet hhalf hoff
+  toMinorGood := minorGood_of_half_le hz hhalf hoff
   diag_sub_le := hdiag
 
 /-- **(4.9) for the extended entries.** -/
@@ -617,6 +686,97 @@ theorem deltaFam_gInvFam (hg : MinorGood d N u z ω Ψ) (a κ : d.Idx N) (hak : 
     rw [hinv, hdel]
     simp only [shiftFam_apply, gInvFam_apply, gFam_apply, Finset.insert_union]
 
+/-! #### The same two rules on the level-budgeted good event
+
+`RBM.Gauss.MinorGood` is unsatisfiable (T164), so the two identities above cannot be used as
+stated.  `RBM.Gauss.MinorGoodLe` (T169) *is* satisfiable, but it only covers the levels of card
+at most `M`, so the identities become **pointwise**: they hold at the levels the budget reaches
+rather than as equalities of families.  `RBM.Gauss.DiffBd.congr` is what turns that back into a
+usable substitution. -/
+
+/-- **Every level-budgeted good event is implied by the unrestricted one.**  So moving the
+consumers below from `RBM.Gauss.MinorGood'` to `RBM.Gauss.MinorGoodLe` only weakens them. -/
+theorem MinorGood'.toMinorGoodLe (hg : MinorGood' d N u z m ω Ψ) (M : ℕ) :
+    MinorGoodLe d N u z m ω Ψ M where
+  det := hg.det
+  diag_ne := fun S _ a ha => hg.diag_ne S a ha
+  inv_le := fun S _ a => hg.inv_le S a
+  off_le := fun S _ a b hab => hg.off_le S a b hab
+  diag_sub_le := fun S _ a ha => hg.diag_sub_le S a ha
+
+/-- **(4.9) for an entry atom, at one level inside the budget** — the pointwise form of
+`RBM.Gauss.deltaFam_gFam`.  The hypothesis is the card of the *larger* of the two levels the
+identity mentions, which is the one the difference reaches. -/
+theorem deltaFam_gFam_apply (hg : MinorGoodLe d N u z m ω Ψ M) (a b κ : d.Idx N)
+    (T S : Finset (d.Idx N)) (hcard : (insert κ (S ∪ T)).card ≤ M) :
+    deltaFam κ (gFam d N u z ω a b T) S
+      = gFam d N u z ω a κ T S * gFam d N u z ω κ b T S * gInvFam d N u z ω κ T S := by
+  have hU : (S ∪ T).card ≤ M :=
+    le_trans (Finset.card_le_card (Finset.subset_insert κ (S ∪ T))) hcard
+  have hins : insert κ S ∪ T = insert κ (S ∪ T) := Finset.insert_union κ S T
+  simp only [deltaFam_apply, gFam_apply, gInvFam_apply, hins]
+  by_cases hκU : κ ∈ S ∪ T
+  · rw [Finset.insert_eq_self.2 hκU, gEnt_eq_zero_right hκU]
+    ring
+  · by_cases haU : a ∈ S ∪ T
+    · rw [gEnt_eq_zero_left haU, gEnt_eq_zero_left (Finset.mem_insert_of_mem haU),
+        gEnt_eq_zero_left haU]
+      ring
+    · by_cases hbU : b ∈ S ∪ T
+      · rw [gEnt_eq_zero_right hbU, gEnt_eq_zero_right (Finset.mem_insert_of_mem hbU),
+          gEnt_eq_zero_right hbU]
+        ring
+      · have hdiag : gEnt d N u z ω κ κ (S ∪ T) ≠ 0 := hg.diag_ne (S ∪ T) hU κ hκU
+        by_cases hak : a = κ
+        · subst hak
+          rw [gEnt_eq_zero_left (Finset.mem_insert_self a (S ∪ T)), sub_zero]
+          field_simp
+        · by_cases hbk : b = κ
+          · subst hbk
+            rw [gEnt_eq_zero_right (Finset.mem_insert_self b (S ∪ T)), sub_zero]
+            field_simp
+          · have ha' : a ∉ insert κ (S ∪ T) := by
+              simp only [Finset.mem_insert, not_or]
+              exact ⟨hak, haU⟩
+            have hb' : b ∉ insert κ (S ∪ T) := by
+              simp only [Finset.mem_insert, not_or]
+              exact ⟨hbk, hbU⟩
+            rw [hg.gEnt_insert hU hκU ha' hb']
+            ring
+
+/-- **The reciprocal rule at one level inside the budget** — the pointwise form of
+`RBM.Gauss.deltaFam_gInvFam`.  The fifth atom is written as the inverse diagonal at the base
+level `insert κ T` rather than as `shiftFam κ`, which is the same family
+(`RBM.Gauss.shiftFam_gInvFam`) and keeps the level bookkeeping inside one budget. -/
+theorem deltaFam_gInvFam_apply (hg : MinorGoodLe d N u z m ω Ψ M) (a κ : d.Idx N) (hak : a ≠ κ)
+    (T S : Finset (d.Idx N)) (hcard : (insert κ (S ∪ T)).card ≤ M) :
+    deltaFam κ (gInvFam d N u z ω a T) S
+      = -(gFam d N u z ω a κ T S * gFam d N u z ω κ a T S
+          * gInvFam d N u z ω κ T S * gInvFam d N u z ω a T S
+          * gInvFam d N u z ω a (insert κ T) S) := by
+  have hU : (S ∪ T).card ≤ M :=
+    le_trans (Finset.card_le_card (Finset.subset_insert κ (S ∪ T))) hcard
+  have hUκ : (insert κ S ∪ T).card ≤ M := by rwa [Finset.insert_union]
+  by_cases haU : a ∈ S ∪ T
+  · have h1 : gEnt d N u z ω a a (S ∪ T) = 0 := gEnt_eq_zero_left haU
+    have h2 : gEnt d N u z ω a a (insert κ S ∪ T) = 0 := by
+      rw [Finset.insert_union]
+      exact gEnt_eq_zero_left (Finset.mem_insert_of_mem haU)
+    have h3 : gEnt d N u z ω a κ (S ∪ T) = 0 := gEnt_eq_zero_left haU
+    simp only [deltaFam_apply, gInvFam_apply, gFam_apply, h1, h2, h3]
+    simp
+  · have haU' : a ∉ insert κ S ∪ T := by
+      rw [Finset.insert_union]
+      simp only [Finset.mem_insert, not_or]
+      exact ⟨hak, haU⟩
+    have h1 : gFam d N u z ω a a T S ≠ 0 := hg.diag_ne _ hU a haU
+    have h2 : gFam d N u z ω a a T (insert κ S) ≠ 0 := hg.diag_ne _ hUκ a haU'
+    have hinv := deltaFam_inv_apply κ (gFam d N u z ω a a T) S h1 h2
+    have hdel := deltaFam_gFam_apply hg a a κ T S hcard
+    show deltaFam κ (fun S => (gFam d N u z ω a a T S)⁻¹) S = _
+    rw [hinv, hdel]
+    simp only [gInvFam_apply, gFam_apply, Finset.insert_union, Finset.union_insert]
+
 end Atoms
 
 
@@ -648,7 +808,7 @@ theorem one_le_atomC (n : ℕ) : (1 : ℝ) ≤ atomC n := le_trans (by norm_num)
 
 theorem atomC_nonneg (n : ℕ) : (0 : ℝ) ≤ atomC n := le_trans (by norm_num) (one_le_atomC n)
 
-variable {u : ℝ} {z : ℂ} {ω : Ω d} {Ψ : ℝ}
+variable {u : ℝ} {z m : ℂ} {ω : Ω d} {Ψ : ℝ} {M : ℕ}
 
 /-- **The `n`-fold difference estimate for the two kinds of atom, proved together.**
 
@@ -658,38 +818,56 @@ For rows `κ_1, …, κ_m` distinct from each other and from every index the ato
   `‖Δ_{κ_1} ⋯ Δ_{κ_m} (G^{(·)}_{aa})⁻¹‖ ≤ c_m Ψ^{m}`.
 
 Each difference gains a power of `Ψ`; the two rules that drive the induction are (4.9)
-(`RBM.Gauss.deltaFam_gFam`, three atoms, order `2`) and the reciprocal rule
-(`RBM.Gauss.deltaFam_gInvFam`, five atoms, order `2`), combined by the Leibniz product rule
-`RBM.Gauss.DiffBd.mul`. -/
-theorem diffBd_atom (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) :
-    ∀ (n : ℕ) (I T : Finset (d.Idx N)),
+(`RBM.Gauss.deltaFam_gFam_apply`, three atoms, order `2`) and the reciprocal rule
+(`RBM.Gauss.deltaFam_gInvFam_apply`, five atoms, order `2`), combined by the Leibniz product rule
+`RBM.Gauss.DiffBd.mul`.
+
+**The budget.**  The good event is `RBM.Gauss.MinorGoodLe … M`, which covers the levels of card
+at most `M`; the atom carries the base level `T` and the estimate is granted the budget `B`, so
+the levels it reaches have card at most `B + T.card` and the hypothesis is exactly
+`B + T.card ≤ M`.  Each difference spends one unit of `B` and each shift moves one row from `B`
+into `T`, so the sum is an invariant of the induction. -/
+theorem diffBd_atom (hg : MinorGoodLe d N u z m ω Ψ M) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) :
+    ∀ (n : ℕ) (I T : Finset (d.Idx N)) (B : ℕ), B + T.card ≤ M →
       (∀ a b : d.Idx N, a ∈ I → b ∈ I → a ≠ b →
-        DiffBd Ψ I n (atomC n) 1 (gFam d N u z ω a b T))
-      ∧ (∀ a : d.Idx N, a ∈ I → DiffBd Ψ I n (atomC n) 0 (gInvFam d N u z ω a T)) := by
+        DiffBd Ψ I B n (atomC n) 1 (gFam d N u z ω a b T))
+      ∧ (∀ a : d.Idx N, a ∈ I → DiffBd Ψ I B n (atomC n) 0 (gInvFam d N u z ω a T)) := by
   intro n
   induction n with
   | zero =>
-      intro I T
-      refine ⟨fun a b _ _ hab => diffBd_zero fun S => ?_, fun a _ => diffBd_zero fun S => ?_⟩
-      · have h := hg.off_le (S ∪ T) a b hab
+      intro I T B hB
+      refine ⟨fun a b _ _ hab => diffBd_zero fun S hS => ?_,
+        fun a _ => diffBd_zero fun S hS => ?_⟩
+      · have hU : (S ∪ T).card ≤ M :=
+          le_trans (Finset.card_union_le S T) (by omega)
+        have h := hg.off_le (S ∪ T) hU a b hab
         simp only [gFam_apply, atomC_zero, pow_one]
         linarith
-      · have h := hg.inv_le (S ∪ T) a
+      · have hU : (S ∪ T).card ≤ M :=
+          le_trans (Finset.card_union_le S T) (by omega)
+        have h := hg.inv_le (S ∪ T) hU a
         simpa using h
   | succ n ih =>
-      intro I T
+      intro I T B hB
       have hc0 : (0 : ℝ) ≤ atomC n := atomC_nonneg n
       have hc1 : (1 : ℝ) ≤ atomC n := one_le_atomC n
       have hCsucc : (1 : ℝ) ≤ atomC (n + 1) := one_le_atomC (n + 1)
       have hCsucc0 : (0 : ℝ) ≤ atomC (n + 1) := atomC_nonneg (n + 1)
       constructor
-      · intro a b ha hb hab l S hnd hav hlen
+      · intro a b ha hb hab l S hnd hav hlen hcard
         match l with
         | [] =>
-            have h := hg.off_le (S ∪ T) a b hab
+            have hU : (S ∪ T).card ≤ M := by
+              refine le_trans (Finset.card_union_le S T) ?_
+              simp only [List.length_nil, Nat.add_zero] at hcard
+              omega
+            have h := hg.off_le (S ∪ T) hU a b hab
             simp only [iterDeltaFam_nil, List.length_nil, gFam_apply, Nat.add_zero, pow_one]
             nlinarith
         | κ :: l' =>
+            have hcardl : S.card + l'.length + 1 ≤ B := by
+              simp only [List.length_cons] at hcard; omega
+            obtain ⟨B', rfl⟩ : ∃ B', B = B' + 1 := ⟨B - 1, by omega⟩
             have hκI : κ ∉ I := hav κ List.mem_cons_self
             have hnd' : l'.Nodup := (List.nodup_cons.1 hnd).2
             have hκl' : κ ∉ l' := (List.nodup_cons.1 hnd).1
@@ -700,13 +878,13 @@ theorem diffBd_atom (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ 
               · exact hav κ' (List.mem_cons_of_mem _ hκ') h1
             have hlen' : l'.length ≤ n := by
               simp only [List.length_cons] at hlen; omega
-            obtain ⟨ihoff, ihinv⟩ := ih (insert κ I) T
+            obtain ⟨ihoff, ihinv⟩ := ih (insert κ I) T B' (by omega)
             have haκ : a ≠ κ := fun h => hκI (h ▸ ha)
             have hκb : κ ≠ b := fun h => hκI (h ▸ hb)
             have hA := ihoff a κ (Finset.mem_insert_of_mem ha) (Finset.mem_insert_self κ I) haκ
-            have hB := ihoff κ b (Finset.mem_insert_self κ I) (Finset.mem_insert_of_mem hb) hκb
+            have hB2 := ihoff κ b (Finset.mem_insert_self κ I) (Finset.mem_insert_of_mem hb) hκb
             have hC := ihinv κ (Finset.mem_insert_self κ I)
-            have hAB := DiffBd.mul hΨ0 n hc0 hc0 hA hB
+            have hAB := DiffBd.mul hΨ0 n hc0 hc0 hA hB2
             have hABC := DiffBd.mul hΨ0 n (by positivity) hc0 hAB hC
             have hle : (2 : ℝ) ^ n * (2 ^ n * (atomC n * atomC n) * atomC n) ≤ atomC (n + 1) := by
               have hexp : (2 : ℝ) ^ n * (2 ^ n * (atomC n * atomC n) * atomC n)
@@ -716,23 +894,33 @@ theorem diffBd_atom (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ 
               have h416 : (4 : ℝ) ^ n ≤ 16 ^ n := pow_le_pow_left₀ (by norm_num) (by norm_num) n
               rw [hexp, h4, atomC_succ]
               exact mul_le_mul h416 hc3 (pow_nonneg hc0 3) (pow_nonneg (by norm_num) n)
-            have hkey : DiffBd Ψ (insert κ I) n (atomC (n + 1)) 2
+            have hkey : DiffBd Ψ (insert κ I) B' n (atomC (n + 1)) 2
                 (deltaFam κ (gFam d N u z ω a b T)) := by
-              rw [deltaFam_gFam hg a b κ T]
-              exact hABC.mono_c hΨ0 hle
-            have hres := hkey l' S hnd' hav' hlen'
+              refine (hABC.mono_c hΨ0 hle).congr fun U hU => ?_
+              refine (deltaFam_gFam_apply hg a b κ T U ?_).symm
+              refine le_trans (Finset.card_insert_le κ (U ∪ T)) ?_
+              have := Finset.card_union_le U T
+              omega
+            have hres := hkey l' S hnd' hav' hlen' (by omega)
             rw [iterDeltaFam_cons]
             have hexp2 : 2 + l'.length = 1 + (κ :: l').length := by
               simp only [List.length_cons]; omega
             rwa [hexp2] at hres
-      · intro a ha l S hnd hav hlen
+      · intro a ha l S hnd hav hlen hcard
         match l with
         | [] =>
-            have h := hg.inv_le (S ∪ T) a
+            have hU : (S ∪ T).card ≤ M := by
+              refine le_trans (Finset.card_union_le S T) ?_
+              simp only [List.length_nil, Nat.add_zero] at hcard
+              omega
+            have h := hg.inv_le (S ∪ T) hU a
             simp only [iterDeltaFam_nil, List.length_nil, gInvFam_apply, Nat.add_zero, pow_zero,
               mul_one]
             exact le_trans h (two_le_atomC (n + 1))
         | κ :: l' =>
+            have hcardl : S.card + l'.length + 1 ≤ B := by
+              simp only [List.length_cons] at hcard; omega
+            obtain ⟨B', rfl⟩ : ∃ B', B = B' + 1 := ⟨B - 1, by omega⟩
             have hκI : κ ∉ I := hav κ List.mem_cons_self
             have hnd' : l'.Nodup := (List.nodup_cons.1 hnd).2
             have hκl' : κ ∉ l' := (List.nodup_cons.1 hnd).1
@@ -743,15 +931,18 @@ theorem diffBd_atom (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ 
               · exact hav κ' (List.mem_cons_of_mem _ hκ') h1
             have hlen' : l'.length ≤ n := by
               simp only [List.length_cons] at hlen; omega
-            obtain ⟨ihoff, ihinv⟩ := ih (insert κ I) T
+            obtain ⟨ihoff, ihinv⟩ := ih (insert κ I) T B' (by omega)
+            have hTκ : B' + (insert κ T).card ≤ M :=
+              le_trans (by have := Finset.card_insert_le κ T; omega) hB
+            obtain ⟨_, ihinv'⟩ := ih (insert κ I) (insert κ T) B' hTκ
             have haκ : a ≠ κ := fun h => hκI (h ▸ ha)
             have hA := ihoff a κ (Finset.mem_insert_of_mem ha) (Finset.mem_insert_self κ I) haκ
-            have hB := ihoff κ a (Finset.mem_insert_self κ I) (Finset.mem_insert_of_mem ha)
+            have hB2 := ihoff κ a (Finset.mem_insert_self κ I) (Finset.mem_insert_of_mem ha)
               (fun h => haκ h.symm)
             have hC := ihinv κ (Finset.mem_insert_self κ I)
             have hD := ihinv a (Finset.mem_insert_of_mem ha)
-            have hE := hD.shift κ
-            have h1 := DiffBd.mul hΨ0 n hc0 hc0 hA hB
+            have hE := ihinv' a (Finset.mem_insert_of_mem ha)
+            have h1 := DiffBd.mul hΨ0 n hc0 hc0 hA hB2
             have h2 := DiffBd.mul hΨ0 n (by positivity) hc0 h1 hC
             have h3 := DiffBd.mul hΨ0 n (by positivity) hc0 h2 hD
             have h4 := DiffBd.mul hΨ0 n (by positivity) hc0 h3 hE
@@ -762,11 +953,15 @@ theorem diffBd_atom (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ 
               have h16 : (2 : ℝ) ^ n * 2 ^ n * 2 ^ n * 2 ^ n = 16 ^ n := by
                 rw [← mul_pow, ← mul_pow, ← mul_pow]; norm_num
               rw [hexp, h16, atomC_succ]
-            have hkey : DiffBd Ψ (insert κ I) n (atomC (n + 1)) 1
+            have hkey : DiffBd Ψ (insert κ I) B' n (atomC (n + 1)) 1
                 (deltaFam κ (gInvFam d N u z ω a T)) := by
-              rw [deltaFam_gInvFam hg a κ haκ T]
-              exact ((h4.mono_c hΨ0 hle).neg).mono_p hΨ0 hΨ1 hCsucc0 (by norm_num)
-            have hres := hkey l' S hnd' hav' hlen'
+              refine (((h4.mono_c hΨ0 hle).neg).mono_p hΨ0 hΨ1 hCsucc0
+                (by norm_num)).congr fun U hU => ?_
+              refine (deltaFam_gInvFam_apply hg a κ haκ T U ?_).symm
+              refine le_trans (Finset.card_insert_le κ (U ∪ T)) ?_
+              have := Finset.card_union_le U T
+              omega
+            have hres := hkey l' S hnd' hav' hlen' (by omega)
             rw [iterDeltaFam_cons]
             have hexp2 : 1 + l'.length = 0 + (κ :: l').length := by
               simp only [List.length_cons]; omega
@@ -779,7 +974,28 @@ end AtomInduction
 
 section TopLevel
 
-variable {u : ℝ} {z m : ℂ} {ω : Ω d} {Ψ : ℝ}
+variable {u : ℝ} {z m : ℂ} {ω : Ω d} {Ψ : ℝ} {M : ℕ}
+
+/-- **The first difference of `G^{(·)}_{kk} - m` is the (4.9) triple product, at one level
+inside the budget.**  The centring constant `m` cancels, and the extension by `0` at the levels
+containing `k` is harmless.  Pointwise form of
+`RBM.Gauss.deltaFam_greenSetDiagCentered`, on the satisfiable good event. -/
+theorem deltaFam_greenSetDiagCentered_apply (hg : MinorGoodLe d N u z m ω Ψ M) (k κ : d.Idx N)
+    (hkκ : k ≠ κ) (S : Finset (d.Idx N)) (hcard : (insert κ S).card ≤ M) :
+    deltaFam κ (fun S => greenSetDiagCentered d N u z m k S ω) S
+      = gFam d N u z ω k κ ∅ S * gFam d N u z ω κ k ∅ S * gInvFam d N u z ω κ ∅ S := by
+  rw [← deltaFam_gFam_apply hg k k κ ∅ S (by simpa using hcard)]
+  simp only [deltaFam_apply, gFam_apply, Finset.union_empty, greenSetDiagCentered]
+  by_cases hk : k ∉ S
+  · have hk' : k ∉ insert κ S := by
+      simp only [Finset.mem_insert, not_or]
+      exact ⟨hkκ, hk⟩
+    rw [dite_eq_left hk, dite_eq_left hk', gEnt_apply hk hk, gEnt_apply hk' hk']
+    ring
+  · have hkS : k ∈ S := not_not.1 hk
+    have hk' : k ∈ insert κ S := Finset.mem_insert_of_mem hkS
+    rw [dite_eq_right hk, dite_eq_right (not_not_intro hk'), gEnt_eq_zero_left hkS,
+      gEnt_eq_zero_left hk']
 
 /-- **The first difference of `G^{(·)}_{kk} - m` is the (4.9) triple product.**  The centring
 constant `m` cancels, and the extension by `0` at the levels containing `k` is harmless. -/
@@ -851,15 +1067,15 @@ on the good event, for distinct rows `κ_i ≠ k`.  The first difference is the 
 product (order `2`), and each of the remaining `m - 1` differences gains one more power of `Ψ`
 by `RBM.Gauss.diffBd_atom`.  At `m = 1` this is T85's replacement error `Ψ²`, at `m = 2` it is
 T110's `Ψ³`, and the exponent `m + 1` is the multiplicativity of the gain at every order. -/
-theorem norm_minorDiff_greenSetDiagCentered_le (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ)
+theorem norm_minorDiff_greenSetDiagCentered_le (hg : MinorGoodLe d N u z m ω Ψ M) (hΨ0 : 0 ≤ Ψ)
     (hΨ1 : Ψ ≤ 1) (k κ : d.Idx N) (l : List (d.Idx N)) (hkκ : k ≠ κ)
-    (hnd : (κ :: l).Nodup) (hkl : ∀ x ∈ l, x ≠ k) :
+    (hnd : (κ :: l).Nodup) (hkl : ∀ x ∈ l, x ≠ k) (hM : l.length + 1 ≤ M) :
     ‖minorDiff d N (κ :: l) (greenSetDiagCentered d N u z m k) ω‖
       ≤ minorDiffC l.length * Ψ ^ (l.length + 2) := by
   classical
-  rw [minorDiff_eq_iterDeltaFam, iterDeltaFam_cons, deltaFam_greenSetDiagCentered hg k κ hkκ]
+  rw [minorDiff_eq_iterDeltaFam, iterDeltaFam_cons]
   obtain ⟨ihoff, ihinv⟩ :=
-    diffBd_atom hg hΨ0 hΨ1 l.length ({k, κ} : Finset (d.Idx N)) ∅
+    diffBd_atom hg hΨ0 hΨ1 l.length ({k, κ} : Finset (d.Idx N)) ∅ l.length (by simp; omega)
   have hkI : k ∈ ({k, κ} : Finset (d.Idx N)) := Finset.mem_insert_self _ _
   have hκI : κ ∈ ({k, κ} : Finset (d.Idx N)) := by simp
   have hA := ihoff k κ hkI hκI hkκ
@@ -868,12 +1084,15 @@ theorem norm_minorDiff_greenSetDiagCentered_le (hg : MinorGood d N u z ω Ψ) (h
   have hAB := DiffBd.mul hΨ0 l.length (atomC_nonneg _) (atomC_nonneg _) hA hB
   have hABC := DiffBd.mul hΨ0 l.length
     (by have := atomC_nonneg l.length; positivity) (atomC_nonneg _) hAB hC
+  have hkey := hABC.congr fun U hU =>
+    (deltaFam_greenSetDiagCentered_apply hg k κ hkκ U
+      (le_trans (Finset.card_insert_le κ U) (by omega))).symm
   have hav : ∀ κ' ∈ l, κ' ∉ ({k, κ} : Finset (d.Idx N)) := by
     intro κ' hκ' hmem
     rcases Finset.mem_insert.1 hmem with h1 | h1
     · exact hkl κ' hκ' h1
     · exact (List.nodup_cons.1 hnd).1 (by rw [← Finset.mem_singleton.1 h1]; exact hκ')
-  have hres := hABC l ∅ (List.nodup_cons.1 hnd).2 hav le_rfl
+  have hres := hkey l ∅ (List.nodup_cons.1 hnd).2 hav le_rfl (by simp)
   refine le_trans hres (le_of_eq ?_)
   unfold minorDiffC
   have hexp : 1 + 1 + 0 + l.length = l.length + 2 := by omega
@@ -888,16 +1107,17 @@ theorem norm_minorDiff_greenSetDiagCentered_le (hg : MinorGood d N u z ω Ψ) (h
 the `Ψ³` of `m = 2` (T110) and two better than the `Ψ²` of a single replacement (T85).  The
 constant `2^91` is the crude one produced by the recursion of `RBM.Gauss.atomC`; the paper's is
 `C^m`, and no attempt is made here to recover it. -/
-theorem norm_minorDiff_triple_le (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1)
+theorem norm_minorDiff_triple_le (hg : MinorGoodLe d N u z m ω Ψ M) (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1)
     (k κ₁ κ₂ κ₃ : d.Idx N) (hkκ : k ≠ κ₁) (hnd : [κ₁, κ₂, κ₃].Nodup)
-    (hk2 : κ₂ ≠ k) (hk3 : κ₃ ≠ k) :
+    (hk2 : κ₂ ≠ k) (hk3 : κ₃ ≠ k) (hM : 3 ≤ M) :
     ‖minorDiff d N [κ₁, κ₂, κ₃] (greenSetDiagCentered d N u z m k) ω‖ ≤ 2 ^ 91 * Ψ ^ 4 := by
-  have h := norm_minorDiff_greenSetDiagCentered_le (m := m) hg hΨ0 hΨ1 k κ₁ [κ₂, κ₃] hkκ hnd
+  have h := norm_minorDiff_greenSetDiagCentered_le hg hΨ0 hΨ1 k κ₁ [κ₂, κ₃] hkκ hnd
     (by intro x hx; rcases List.mem_cons.1 hx with h1 | h1
         · exact h1 ▸ hk2
         · rcases List.mem_cons.1 h1 with h2 | h2
           · exact h2 ▸ hk3
           · exact absurd h2 (by simp))
+    (by simpa using hM)
   have hC : minorDiffC 2 = 2 ^ 91 := by
     unfold minorDiffC
     rw [atomC_succ, atomC_succ, atomC_zero]
@@ -907,33 +1127,33 @@ theorem norm_minorDiff_triple_le (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ
 /-! #### The undifferenced entry: the `m = 0` grade
 
 The empty word is the one grade of the expansion that the `Δ_κ` calculus never touches, and it
-is where the deterministic envelope `η_u⁻¹ + 1` used to enter.  (4.2), carried by
-`RBM.Gauss.MinorGood'`, replaces it by `Ψ`. -/
+is where the deterministic envelope `η_u⁻¹ + 1` used to enter.  (4.3), carried by
+`RBM.Gauss.MinorGoodLe`, replaces it by `Ψ`. -/
 
-/-- **(4.2) at every minor level**: `|G^{(S)}_{kk} - m| ≤ Ψ`, including the levels that remove
-`k`, where the family is `0` by convention. -/
-theorem norm_greenSetDiagCentered_le (hg : MinorGood' d N u z m ω Ψ) (hΨ0 : 0 ≤ Ψ)
-    (k : d.Idx N) (S : Finset (d.Idx N)) :
+/-- **(4.3) at every minor level inside the budget**: `|G^{(S)}_{kk} - m| ≤ Ψ`, including the
+levels that remove `k`, where the family is `0` by convention. -/
+theorem norm_greenSetDiagCentered_le (hg : MinorGoodLe d N u z m ω Ψ M) (hΨ0 : 0 ≤ Ψ)
+    (k : d.Idx N) (S : Finset (d.Idx N)) (hS : S.card ≤ M) :
     ‖greenSetDiagCentered d N u z m k S ω‖ ≤ Ψ := by
   show ‖if h : k ∉ S then greenSetMat d N u z S ω ⟨k, h⟩ ⟨k, h⟩ - m else 0‖ ≤ Ψ
   by_cases hk : k ∉ S
   · rw [dite_eq_left hk, ← gEnt_apply hk hk]
-    exact hg.diag_sub_le S k hk
+    exact hg.diag_sub_le S hS k hk
   · rw [dite_eq_right hk, norm_zero]
     exact hΨ0
 
 /-- **The `m = 0` grade of the gain is `Ψ`, not the deterministic envelope.**  `Z^{(S)}_k` is a
-fluctuation of `G^{(S)}_{kk} - m`, so (4.2) bounds it up to the factor `2` that `1 - E_k` costs.
-This is the one place where `RBM.Gauss.MinorGood'` is stronger than `RBM.Gauss.MinorGood`, and
-it is what upgrades (4.12) from `Ψ η_u⁻¹` to `Ψ²`. -/
-theorem norm_flucDiagSet_le (hg : ∀ ω' : Ω d, MinorGood' d N u z m ω' Ψ) (hΨ0 : 0 ≤ Ψ)
-    (k : d.Idx N) (S : Finset (d.Idx N)) :
+fluctuation of `G^{(S)}_{kk} - m`, so (4.3) bounds it up to the factor `2` that `1 - E_k` costs.
+This is the one place where the `diag_sub_le` field of `RBM.Gauss.MinorGoodLe` is used, and it
+is what upgrades (4.12) from `Ψ η_u⁻¹` to `Ψ²`. -/
+theorem norm_flucDiagSet_le (hg : ∀ ω' : Ω d, MinorGoodLe d N u z m ω' Ψ M) (hΨ0 : 0 ≤ Ψ)
+    (k : d.Idx N) (S : Finset (d.Idx N)) (hS : S.card ≤ M) :
     ‖flucDiagSet d N u z m k S ω‖ ≤ 2 * Ψ := by
   have hrw : flucDiagSet d N u z m k S ω
       = greenSetDiagCentered d N u z m k S ω
         - condRow d N k (greenSetDiagCentered d N u z m k S) ω := qRow_apply _ _ _
   rw [hrw]
-  exact norm_sub_condRow_le (fun ω' => norm_greenSetDiagCentered_le (hg ω') hΨ0 k S) ω
+  exact norm_sub_condRow_le (fun ω' => norm_greenSetDiagCentered_le (hg ω') hΨ0 k S hS) ω
 
 end TopLevel
 
@@ -973,15 +1193,15 @@ theorem minorDiff_flucDiagSet_eq (hE : |E| < 2) (ht : t < 1) (u : ℝ) (k : d.Id
 
 /-- The `m`-fold difference of the fluctuation is `Ψ^{m+1}` on the good event, at the price of
 one further factor `2` for the conditional expectation. -/
-theorem norm_minorDiff_flucDiagSet_le (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hg : ∀ ω, MinorGood d N u (zt E t) ω Ψ)
+theorem norm_minorDiff_flucDiagSet_le (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ} {M : ℕ}
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hg : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M)
     (k κ : d.Idx N) (l : List (d.Idx N)) (hkκ : k ≠ κ) (hnd : (κ :: l).Nodup)
-    (hkl : ∀ x ∈ l, x ≠ k) (ω : Ω d) :
+    (hkl : ∀ x ∈ l, x ≠ k) (hM : l.length + 1 ≤ M) (ω : Ω d) :
     ‖minorDiff d N (κ :: l) (flucDiagSet d N u (zt E t) (mE E) k) ω‖
       ≤ 2 * (minorDiffC l.length * Ψ ^ (l.length + 2)) := by
   rw [minorDiff_flucDiagSet_eq hE ht u k (κ :: l), qRow_apply]
   exact norm_sub_condRow_le
-    (fun ω' => norm_minorDiff_greenSetDiagCentered_le (hg ω') hΨ0 hΨ1 k κ l hkκ hnd hkl) ω
+    (fun ω' => norm_minorDiff_greenSetDiagCentered_le (hg ω') hΨ0 hΨ1 k κ l hkκ hnd hkl hM) ω
 
 theorem qList_nodup {L : List (Bool × d.Idx N)} (h : (L.map Prod.snd).Nodup) :
     (qList L).Nodup :=
@@ -1018,7 +1238,8 @@ Two inputs are carried: the local law holds at *every* sample point (`hgood`), a
 short (`hM`).  Neither can be dropped in the form `RBM.Gauss.MinorDiffGain` demands -- see the
 module docstring. -/
 theorem integral_prod_applyOps_minorDiff_le (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood d N u (zt E t) ω Ψ) (M : ℕ)
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) {M : ℕ}
+    (hgood : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M)
     (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N))
     (h1 : ∀ i, ((L i).map Prod.snd).Nodup) (h2 : ∀ i, ∀ x ∈ L i, x.2 ≠ k i)
     (hM : ∀ i, (L i).length ≤ M) :
@@ -1066,17 +1287,18 @@ theorem integral_prod_applyOps_minorDiff_le (hE : |E| < 2) (ht : t < 1) (u : ℝ
           exact hne x (by rw [hqs]; exact List.mem_cons_of_mem _ hx)
         have hm : numQ (L i) = l'.length + 1 := by
           rw [← hlenq, hqs]; simp [List.length_cons]
-        have hlM : l'.length ≤ M := by
+        have hlM1 : l'.length + 1 ≤ M := by
           have h3 : numQ (L i) ≤ (L i).length := List.countP_le_length
           have := hM i
           omega
+        have hlM : l'.length ≤ M := by omega
         have hpt : ∀ ω' : Ω d,
             ‖minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i)) ω'‖
               ≤ 2 * (minorDiffC M * Ψ ^ (l'.length + 2)) := by
           intro ω'
           rw [hqs]
           refine le_trans (norm_minorDiff_flucDiagSet_le hE ht u hΨ0 hΨ1 hgood (k i) κ l'
-            hkκ hnd' hkl ω') ?_
+            hkκ hnd' hkl hlM1 ω') ?_
           have hmono := minorDiffC_mono hlM
           have hpow : (0 : ℝ) ≤ Ψ ^ (l'.length + 2) := pow_nonneg hΨ0 _
           nlinarith
@@ -1098,21 +1320,21 @@ theorem integral_prod_applyOps_minorDiff_le (hE : |E| < 2) (ht : t < 1) (u : ℝ
   refine le_trans (integral_prod_norm_le_of_bounds hbm hb) (le_of_eq ?_)
   rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.prod_pow_eq_pow_sum, Finset.card_univ]
 
-/-- **(4.2) subsumes (4.1)**, so the extra field of `RBM.Gauss.MinorGood'` does not have to be
+/-- **(4.3) subsumes (4.1)**, so the extra field of `RBM.Gauss.MinorGood'` does not have to be
 produced alongside a separate lower bound on the diagonal: `|m_E| = 1`
 (`RBM.norm_mE`), so `|G^{(S)}_{aa} - m| ≤ Ψ ≤ 1/2` already gives `1/2 ≤ |G^{(S)}_{aa}|`, which
 is the shape `RBM.Gauss.minorGood_of_half_le` consumes.  Only (4.2) and (4.3) are assumed
 here. -/
-theorem minorGood'_of_local_law (hE : |E| < 2) {u : ℝ} {ω : Ω d} {Ψ : ℝ} (hΨ : Ψ ≤ 1 / 2)
-    (hdet : ∀ S : Finset (d.Idx N), IsUnit ((Hflow d N u ω).submatrix
-      (Subtype.val : {x : d.Idx N // x ∉ S} → d.Idx N) Subtype.val
-      - (zt E t) • (1 : Matrix {x : d.Idx N // x ∉ S} {x : d.Idx N // x ∉ S} ℂ)).det)
+theorem minorGood'_of_local_law (hE : |E| < 2) (ht : t < 1) {u : ℝ} {ω : Ω d} {Ψ : ℝ}
+    (hΨ : Ψ ≤ 1 / 2)
     (hoff : ∀ (S : Finset (d.Idx N)) (a b : d.Idx N), a ≠ b →
       ‖gEnt d N u (zt E t) ω a b S‖ ≤ Ψ)
     (hdiag : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S →
       ‖gEnt d N u (zt E t) ω a a S - mE E‖ ≤ Ψ) :
     MinorGood' d N u (zt E t) (mE E) ω Ψ := by
-  refine minorGood'_of_half_le hdet (fun S a ha => ?_) hoff hdiag
+  have hz : (zt E t).im ≠ 0 := by
+    rw [← etaT_eq_zt_im]; exact ne_of_gt (etaT_pos_of_lt_one hE ht)
+  refine minorGood'_of_half_le hz (fun S a ha => ?_) hoff hdiag
   have h1 := hdiag S a ha
   have h2 : ‖mE E‖ - ‖gEnt d N u (zt E t) ω a a S‖
       ≤ ‖mE E - gEnt d N u (zt E t) ω a a S‖ := norm_sub_norm_le _ _
@@ -1124,7 +1346,7 @@ theorem minorGood'_of_local_law (hE : |E| < 2) {u : ℝ} {ω : Ω d} {Ψ : ℝ} 
 (4.12).
 
 Identical to `RBM.Gauss.integral_prod_applyOps_minorDiff_le` except in the *empty-word* branch,
-where `RBM.Gauss.norm_flucDiagSet_le` (i.e. (4.2), carried by `RBM.Gauss.MinorGood'`) replaces
+where `RBM.Gauss.norm_flucDiagSet_le` (i.e. (4.3), carried by `RBM.Gauss.MinorGoodLe`) replaces
 the deterministic envelope `RBM.Gauss.norm_flucDiagSet_le_env`.  The constant therefore drops
 from `2(η_u⁻¹ + 1) + 2 C_M Ψ` to `2Ψ + 2 C_M Ψ`, and the `2p`-th moment iteration converts
 `B ρ` into (4.12)'s control: `2Ψ · (2Ψ + 2 C_M Ψ) ≍ Ψ²` instead of `2Ψ · η_u⁻¹`.
@@ -1132,7 +1354,8 @@ from `2(η_u⁻¹ + 1) + 2 C_M Ψ` to `2Ψ + 2 C_M Ψ`, and the `2p`-th moment i
 No other branch changes: for a non-empty word the estimate already came from the `Δ_κ`
 calculus, which never sees the undifferenced entry. -/
 theorem integral_prod_applyOps_minorDiff_le' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood' d N u (zt E t) (mE E) ω Ψ) (M : ℕ)
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) {M : ℕ}
+    (hgood : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M)
     (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N))
     (h1 : ∀ i, ((L i).map Prod.snd).Nodup) (h2 : ∀ i, ∀ x ∈ L i, x.2 ≠ k i)
     (hM : ∀ i, (L i).length ≤ M) :
@@ -1161,7 +1384,7 @@ theorem integral_prod_applyOps_minorDiff_le' (hE : |E| < 2) (ht : t < 1) (u : �
               ≤ 2 * Ψ := by
           intro ω'
           rw [hqs]
-          simpa using norm_flucDiagSet_le (ω := ω') hgood hΨ0 (k i) ∅
+          simpa using norm_flucDiagSet_le (ω := ω') hgood hΨ0 (k i) ∅ (by simp)
         have happ := norm_applyOps_le (L i) hpt ω
         rw [hqs] at happ
         rw [hzero] at happ ⊢
@@ -1177,17 +1400,18 @@ theorem integral_prod_applyOps_minorDiff_le' (hE : |E| < 2) (ht : t < 1) (u : �
           exact hne x (by rw [hqs]; exact List.mem_cons_of_mem _ hx)
         have hm : numQ (L i) = l'.length + 1 := by
           rw [← hlenq, hqs]; simp [List.length_cons]
-        have hlM : l'.length ≤ M := by
+        have hlM1 : l'.length + 1 ≤ M := by
           have h3 : numQ (L i) ≤ (L i).length := List.countP_le_length
           have := hM i
           omega
+        have hlM : l'.length ≤ M := by omega
         have hpt : ∀ ω' : Ω d,
             ‖minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i)) ω'‖
               ≤ 2 * (minorDiffC M * Ψ ^ (l'.length + 2)) := by
           intro ω'
           rw [hqs]
-          refine le_trans (norm_minorDiff_flucDiagSet_le hE ht u hΨ0 hΨ1
-            (fun ω'' => (hgood ω'').toMinorGood) (k i) κ l' hkκ hnd' hkl ω') ?_
+          refine le_trans (norm_minorDiff_flucDiagSet_le hE ht u hΨ0 hΨ1 hgood (k i) κ l'
+            hkκ hnd' hkl hlM1 ω') ?_
           have hmono := minorDiffC_mono hlM
           have hpow : (0 : ℝ) ≤ Ψ ^ (l'.length + 2) := pow_nonneg hΨ0 _
           nlinarith
@@ -1212,45 +1436,52 @@ theorem integral_prod_applyOps_minorDiff_le' (hE : |E| < 2) (ht : t < 1) (u : �
 /-! ### The graded interface, and the bridge to (4.12) -/
 
 /-- **T113 packaged as `RBM.Gauss.MinorDiffGainUpTo`**: the bounded-length estimate *is* the
-graded reduced interface, with `B` the deterministic envelope. -/
+graded reduced interface, with `B` the deterministic envelope.  The word-length budget `M` is
+also the level budget of the good event; nothing more is needed, because a word of length `M`
+reaches only the levels of card at most `M`. -/
 theorem minorDiffGainUpTo_of_minorGood (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood d N u (zt E t) ω Ψ) (M : ℕ) :
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (M : ℕ)
+    (hgood : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M) :
     MinorDiffGainUpTo d N u (zt E t) (mE E)
       (2 * ((etaT E t)⁻¹ + 1) + 2 * minorDiffC M * Ψ) (2 * Ψ) M := by
   have hη : 0 < etaT E t := etaT_pos_of_lt_one hE ht
   have hC := minorDiffC_nonneg M
   exact ⟨by positivity, by positivity,
-    fun ι _ k L h1 h2 h3 => integral_prod_applyOps_minorDiff_le hE ht u hΨ0 hΨ1 hgood M
+    fun ι _ k L h1 h2 h3 => integral_prod_applyOps_minorDiff_le hE ht u hΨ0 hΨ1 hgood
       ι k L h1 h2 h3⟩
 
-/-- **The same, with (4.2): `B ≍ Ψ`.** -/
+/-- **The same, with (4.3): `B ≍ Ψ`.** -/
 theorem minorDiffGainUpTo_of_minorGood' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood' d N u (zt E t) (mE E) ω Ψ) (M : ℕ) :
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (M : ℕ)
+    (hgood : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M) :
     MinorDiffGainUpTo d N u (zt E t) (mE E)
       (2 * Ψ + 2 * minorDiffC M * Ψ) (2 * Ψ) M := by
   have hC := minorDiffC_nonneg M
   exact ⟨by positivity, by positivity,
-    fun ι _ k L h1 h2 h3 => integral_prod_applyOps_minorDiff_le' hE ht u hΨ0 hΨ1 hgood M
+    fun ι _ k L h1 h2 h3 => integral_prod_applyOps_minorDiff_le' hE ht u hΨ0 hΨ1 hgood
       ι k L h1 h2 h3⟩
 
 /-- **T113 feeds the graded consumers of (4.12) directly** (T137's bridge).  The gain interface
 of `RBM1D/Gauss/FlucIter.lean` at word length `≤ M` is a *theorem* on the good event; the
-constant is the deterministic envelope, because `RBM.Gauss.MinorGood` does not carry (4.2). -/
+constant is the deterministic envelope, the `diag_sub_le` field of `RBM.Gauss.MinorGoodLe`
+being left unused here. -/
 theorem flucGainUpTo_of_minorDiff (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood d N u (zt E t) ω Ψ) (M : ℕ) :
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (M : ℕ)
+    (hgood : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M) :
     FlucGainUpTo d N u (zt E t) (mE E)
       (2 * ((etaT E t)⁻¹ + 1) + 2 * minorDiffC M * Ψ) (2 * Ψ) M :=
   flucGainUpTo_of_minorDiffGainUpTo hE ht u
-    (minorDiffGainUpTo_of_minorGood hE ht u hΨ0 hΨ1 hgood M)
+    (minorDiffGainUpTo_of_minorGood hE ht u hΨ0 hΨ1 M hgood)
 
-/-- **The same bridge at the paper's size.**  With (4.2) the constant is `≍ Ψ`, so the
+/-- **The same bridge at the paper's size.**  With (4.3) the constant is `≍ Ψ`, so the
 `2p`-th moment iteration of `RBM1D/Gauss/FlucIter.lean` delivers (4.12) with control
 `ρ B ≍ Ψ²` — see `RBM.Gauss.stochDom_flucAvg_blockAvg_iter_graded`. -/
 theorem flucGainUpTo_of_minorDiff' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
-    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood' d N u (zt E t) (mE E) ω Ψ) (M : ℕ) :
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (M : ℕ)
+    (hgood : ∀ ω, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M) :
     FlucGainUpTo d N u (zt E t) (mE E) (2 * Ψ + 2 * minorDiffC M * Ψ) (2 * Ψ) M :=
   flucGainUpTo_of_minorDiffGainUpTo hE ht u
-    (minorDiffGainUpTo_of_minorGood' hE ht u hΨ0 hΨ1 hgood M)
+    (minorDiffGainUpTo_of_minorGood' hE ht u hΨ0 hΨ1 M hgood)
 
 /-- **Pointwise bounds on the words give `RBM.Gauss.MinorDiffGain`.**  This is the only step of
 the interface that is still probabilistic, and it is Jensen plus Fubini: the integrand is a

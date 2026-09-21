@@ -4226,3 +4226,36 @@ noncomputable def driftE (X : Sample B) (E : ℝ) : Step6.DriftTensor B :=
 （`hcont`/`hintL`/`hintF`/`hEL`/`hintU`，**都没证，是调用方义务**）。
 **可满足性**：`hEL` 在高斯模型上正是 T140 的结论，但那条仍挂 `MatrixStein`(T70) 与 `hjoint`(T141)，
 且**自带 `0 < u`**——这就是必须走 `_Ioo` 的原因，与 T152 的发现一致。
+
+## T170：`DiffBd` 加层级预算，消费点改吃 `MinorGoodLe`（2026-09-21）
+
+`lake build RBM1D` exit=0，审计 8986 → **9042**。改动落在 `Gauss/FlucIterHigh.lean`（+36）、
+`Gauss/MinorDiffGain.lean`（+671/−223）、`Gauss/MinorGoodLe.lean`（+7）。
+
+**解环**：`gEnt` 及三条基本引理整块从 `MinorDiffGain.lean` **下沉到 `FlucIterHigh.lean`**，名字与签名逐字不变、同命名空间，
+下游无感；import 方向随之翻转（`MinorGoodLe` 只 import `FlucIterHigh`，`MinorDiffGain` import `MinorGoodLe`）。
+
+**预算的确切形式**：`DiffBd Ψ I M n c p Y` 的量词加 `S.card + l.length ≤ M`。闭包性质的记账是本单最实质的设计决定：
+* `DiffBd.delta` / `.shift` **各花掉一格**（`M+1 → M`）。**不用 ℕ 截断减法**——`M = 0` 时那是假命题；
+  `mul` 的 `κ :: l'` 分支里由 `hcard` 直接 `obtain ⟨M', rfl⟩`，因为 `M = 0` 时该分支前提本身不成立。
+* `DiffBd.mul` 预算不变（Leibniz 两支各花一格，正好是乘积自己那次差分已付的），需要新的 `DiffBd.mono_M`。
+* `diffBd_atom` 的不变量是 **`B + T.card ≤ M`**（`B` 是估计自身的预算，`T` 是原子的基层级）：
+  一次差分花 `B` 一格，一次 shift 把一行从 `B` 挪进 `T`，**和守恒**。
+
+**两件必需品**：`iterDeltaFam_congr`（迭代差分只读 `card ≤ S.card + l.length` 的层级）与 `DiffBd.congr`。
+**这是绕不开的**——`MinorGoodLe` 只在预算内成立，`deltaFam_gFam` 那种 `funext` **全局族等式再也拿不到**，
+必须降级成逐点版（`deltaFam_gFam_apply` 等，都带层级条件），于是 `rw` 路线整条作废。
+
+**⭐ 关键核对：预算够用，没有偷偷抬高。** `norm_minorDiff_greenSetDiagCentered_le` 需要的恰好是 `(κ :: l).length ≤ M`，
+而 `integral_prod_applyOps_minorDiff_le` 里 `numQ (L i) ≤ (L i).length ≤ M` 本来就有。
+**所以字长预算与层级预算可以是同一个 `M`，签名里没有多出第二个预算参数**，也没有任何消费点要求预算外的层级。
+13 个消费点全部改吃 `MinorGoodLe`；四个桥的名字保持不变。旧链（`MinorGood(')` 等）原样保留但已无人依赖，
+新增 `MinorGood'.toMinorGoodLe` 把「这次改动只是减弱前提」写成定理。
+
+**顺手三项**：删 `hdet`（本文件实际只有**三处**，不是工单说的四处；代价是各自多一个 `hz : z.im ≠ 0`）；
+**(4.2)/(4.3) 的标签全文对调**（模块头、两个字段注释、8 处正文；`MinorGoodLe.lean` 原本就是对的）；
+**删掉文件头那句假话**（「`MinorDiffGain` 里已无条件期望，所以拆积分是合法的」），
+改成明写 `flucDiagSet` **就是** `qRow`、`applyOps` 还在上面叠 `E_κ`、指示函数乘进去过不了 `Q_κ`，修法归 T171。
+
+**有点顶的地方（留给后来人）**：`shift` 也要花预算，所以 **`M` 与 `n` 不能合并成一个参数**；
+`diffBd_atom` 的 gInv 分支若照搬 `hD.shift κ`，`B` 会多掉一格导致归纳不闭合，须改走 `ih` 在基层级 `insert κ T` 上的实例。

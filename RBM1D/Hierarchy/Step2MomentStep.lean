@@ -37,6 +37,7 @@ Matrices*, §5.3, (5.39)–(5.48), for the **(2.73)-reduced** shape of Lemma 5.7
 | 8 | `eq548_of_near_far`, `flowEq548_of_near_far` | **(5.48)** `RBM.Step45.FlowEq548` from its near and far halves |
 | 9 | `bnd_poly_excludes_pow`, `detrunc_remainder_ge_thr`, `detrunc_order_needed`, `phi_lt_threshold` | why the frozen `RBM.Step2Moment.MomentHyp.step` is *not* the right target |
 | 10 | `sat_*` | compiled satisfiability witnesses for every hypothesis bundle introduced here |
+| 11 | `norm_Uker_supp_far_le`, `norm_Uker_far_le_of_tail`, `step_bound_far`, `flowEq548_of_near_farInputs` | **(5.48)'s far half**: the indicators of (5.39)/(5.41)/(5.44) carried through one step, so that `RBM.Step45.FlowEq548` no longer takes `hfar` |
 
 ## What is **not** proved here
 
@@ -47,10 +48,12 @@ Matrices*, §5.3, (5.39)–(5.48), for the **(2.73)-reduced** shape of Lemma 5.7
   (`detrunc_remainder_ge_thr`), needing the order multiplied by `(K+δ)/δ`
   (`detrunc_order_needed`).  Both are exactly the obstructions the T132c spec records, and
   both are removed by putting the de-truncation at the probability level (§5, §6).
-* the fixed-time inputs `hev` of `bootPP_of_net` / `bootPP_of_modulus`, and the far half
-  `hfar` of `eq548_of_near_far`.  `hev` is what the truncated moment Duhamel (T132b) must
-  produce; `hfar` is (5.48)'s far field, which needs the indicators of (5.39), (5.41), (5.44)
-  carried through the one-step bound — `RBM.Step2.step_bound` discards them.
+* the fixed-time inputs `hev` of `bootPP_of_net` / `bootPP_of_modulus`.  `hev` is what the
+  truncated moment Duhamel (T132b) must produce.
+  The far half `hfar` of `eq548_of_near_far` is **no longer open**: §11 proves it from the
+  one-step inputs (`FarInputs`), so `flowEq548_of_near_farInputs` produces
+  `RBM.Step45.FlowEq548` without it.  What §11 does *not* do is supply `FarInputs` itself —
+  that is (5.21), (2.69), (5.35) and (5.45), the same inputs the near half consumes.
 
 ## Deviations from the paper (to report)
 
@@ -776,7 +779,7 @@ is exactly the conjunction of
 states it carries `(η_s/η_u)^4` at every distance, whereas (5.48) asks for `1` beyond `6ℓ*_u`.
 It comes from keeping the indicators of (5.39), (5.41) and (5.44) through the one-step bound
 (the paper's `1(|a₁-a₂| ≤ ℓ*_t)`, `1(≤ 3ℓ*_t)`, `1(≤ 6ℓ*_t)`), which
-`RBM.Step2.step_bound` discards. -/
+`RBM.Step2.step_bound` discards; §11 (`stochDom_far_of_farInputs`) proves it. -/
 theorem eq548_of_near_far {ξ : ∀ N, U N → Ω → ℝ} (hW : ∀ N, 0 ≤ W N)
     (hpref : ∀ N u, 0 ≤ pref N u)
     (hnear : ∀ D : ℝ, 0 < D → StochDom P ξ
@@ -993,6 +996,897 @@ end Sat
 
 
 
+
+/-! ### 11. The far field of (5.48): the indicators of (5.39)/(5.41)/(5.44), carried through
+
+§8 reduces (5.48) to a near half and a far half `hfar`, and leaves `hfar` open because
+`RBM.Step2.step_bound` discards the paper's indicators `1(≤ ℓ*_t)`, `1(≤ 3ℓ*_t)`,
+`1(≤ 6ℓ*_t)`.  This section closes it.
+
+Two estimates do the work, and neither exists elsewhere in the repository:
+
+* `norm_Uker_supp_far_le` / `norm_Uker_supp_ellStar_le` — **the support estimate**: a tensor
+  living on the diagonal band `‖b₁ - b₂‖ ≤ ℓ*_u` cannot produce a far field.  At
+  `‖a₁ - a₂‖ ≥ 6ℓ*_v` its image under `U_{u,v}` is at most
+  `128 e³ (η_u/η_v)² e^{-(5/4)(log W)^{3/2}}` times its sup norm, because the edge kernel
+  `Θ` decays like `e^{-‖x-c‖/ℓ_v}` and the mass has to move `≥ (5/2)ℓ*_v`.  This is the
+  paper's "from the decay of `U_{u,t}`, `(U_{u,t,σ} ∘ f₂)_a` is exponentially small", made
+  quantitative; `exp_neg_ellStar_le_rpow_neg` turns it into `W^{-D}` for every fixed `D`.
+* `norm_Uker_far_le_of_tail` — **the sharp far field of (7.2)**.
+  `RBM.Step2.norm_Uker_le_of_tail` folds the expansion factor `(η_u/η_v)²` into the main term
+  at every distance; beyond `ℓ*_v` (7.2) has no such factor, and the expansion survives only
+  on the `W^{-D}` residue.  This is *the* reason (5.48)'s far field is `O(1)`.
+
+`step_bound_far` then runs one step of (5.21) at `‖a₁ - a₂‖ ≥ 6ℓ*_v` with the drift split as
+`F = Fn + (F - Fn)`, `Fn` supported on the diagonal band — exactly the near-field term of
+`RBM.Lemma57.eG_le_reduced`.  `lkErr_far_le`, `far_le_of_farInputs`,
+`stochDom_far_of_farInputs` and `flowEq548_of_near_farInputs` carry it to
+`RBM.Step45.FlowEq548`, **which no longer takes `hfar`**.
+
+### What the indicators cost
+
+Nothing against the exponent budget.  The far-field constant is `cFarStep = Ξ(M_i+M_f)+M_m+1`
+and carries **no** power of `η_s/η_v`: the `R²` of the two residues is paid by the *tail
+level*, i.e. by taking the one-step inputs at `D' ≥ D` and by the extra `P` of
+`far_residue_of_bounds`, both of which are free largeness parameters of `T_{·,D}`.  The
+`β* = 4` zero-margin accounting of §2 is untouched — the far field never enters `phi_arith'`.
+
+### What is still an input
+
+`FarInputs` — the Duhamel identity (5.21), the initial bound (2.69), (5.35) **with** its
+indicator, and the martingale bound (5.45), all at level `D'` — together with `cFarStep ≺ 1`.
+These are the same one-step inputs the near half needs; `farInputs_of_remainder` certifies
+that the bundle is realizable, and `far_residue_of_bounds` that the residue condition is.
+-/
+
+section Supp
+
+variable (L : ℕ) [NeZero L]
+
+/-- Tail of the row sum of the edge kernel beyond distance `Δ > 0`. -/
+theorem sum_far_norm_edgeKer_le (hL : 3 ≤ L) {u v : ℝ} (huv : u ≤ v) (hv0 : 0 ≤ v)
+    (hv1 : v < 1) {Δ : ℝ} (hΔ : 0 < Δ) (x : ZMod L) :
+    ∑ c : ZMod L, ‖edgeKer L 1 (u : ℂ) (v : ℂ) x c‖ *
+        (if Δ ≤ (zdist L (x - c) : ℝ) then 1 else 0)
+      ≤ 64 * exp 3 * ((v - u) / (1 - v)) * exp (-(Δ / ellHat L (v : ℂ) / 2)) := by
+  have hℓ2 : (1:ℝ)/2 ≤ ellHat L (v : ℂ) := half_le_ellHat_real L hL hv0 hv1
+  have hℓ0 : 0 < ellHat L (v : ℂ) := by linarith
+  have h1v : 0 < 1 - v := by linarith
+  set ℓ := ellHat L (v : ℂ) with hℓdef
+  set κ := 8 * exp 3 * (v - u) / ((1 - v) * ℓ) with hκ
+  have hκ0 : 0 ≤ κ := by rw [hκ]; positivity
+  have key : ∀ c : ZMod L, ‖edgeKer L 1 (u : ℂ) (v : ℂ) x c‖ *
+      (if Δ ≤ (zdist L (x - c) : ℝ) then 1 else 0)
+      ≤ κ * exp (-(Δ / ℓ / 2)) * exp (-((zdist L (x - c) : ℝ) / ℓ / 2)) := by
+    intro c
+    by_cases hc : Δ ≤ (zdist L (x - c) : ℝ)
+    · rw [show (if Δ ≤ (zdist L (x - c) : ℝ) then (1:ℝ) else 0) = 1 by simp [hc], mul_one]
+      have hone : ‖(1 : Matrix (ZMod L) (ZMod L) ℂ) x c‖ = 0 := by
+        have hxc : x ≠ c := by
+          rintro rfl; simp [zdist] at hc; linarith
+        simp [Matrix.one_apply_ne hxc]
+      have he : edgeKer L 1 (u : ℂ) (v : ℂ) x c
+          = (1 : Matrix (ZMod L) (ZMod L) ℂ) x c + (edgeKer L 1 (u : ℂ) (v : ℂ) - 1) x c := by
+        rw [Matrix.sub_apply]; ring
+      rw [he]
+      refine (norm_add_le _ _).trans ?_
+      rw [hone, zero_add]
+      refine (norm_edgeKer_one_sub_one_le L hL huv hv0 hv1 x c).trans ?_
+      have e1 : 8 * exp 3 * (v - u) / ((1 - v) * ℓ) = κ := rfl
+      rw [e1]
+      have hsplit : exp (-((zdist L (x - c) : ℝ) / ℓ))
+          = exp (-((zdist L (x - c) : ℝ) / ℓ / 2)) * exp (-((zdist L (x - c) : ℝ) / ℓ / 2)) := by
+        rw [← exp_add]; ring_nf
+      rw [hsplit, ← mul_assoc]
+      refine mul_le_mul_of_nonneg_right ?_ (exp_pos _).le
+      refine mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hκ0
+      have : Δ / ℓ ≤ (zdist L (x - c) : ℝ) / ℓ := by
+        exact div_le_div_of_nonneg_right hc hℓ0.le
+      linarith
+    · rw [show (if Δ ≤ (zdist L (x - c) : ℝ) then (1:ℝ) else 0) = 0 by simp [hc], mul_zero]
+      positivity
+  calc ∑ c : ZMod L, ‖edgeKer L 1 (u : ℂ) (v : ℂ) x c‖ *
+        (if Δ ≤ (zdist L (x - c) : ℝ) then 1 else 0)
+      ≤ ∑ c : ZMod L, κ * exp (-(Δ / ℓ / 2)) * exp (-((zdist L (x - c) : ℝ) / ℓ / 2)) :=
+        Finset.sum_le_sum fun c _ => key c
+    _ = κ * exp (-(Δ / ℓ / 2)) * ∑ c : ZMod L, exp (-((zdist L (x - c) : ℝ) / ℓ / 2)) := by
+        rw [← Finset.mul_sum]
+    _ ≤ κ * exp (-(Δ / ℓ / 2)) * (8 * ℓ) := by
+        refine mul_le_mul_of_nonneg_left (sum_exp_neg_zdist_half_le L hℓ2 x) (by positivity)
+    _ = 64 * exp 3 * ((v - u) / (1 - v)) * exp (-(Δ / ℓ / 2)) := by
+        rw [hκ]; field_simp; ring
+
+
+/-- Row bound of the edge kernel at `ξ = 1`: `∑_c |K_{xc}| ≤ (1-u)/(1-v)`. -/
+theorem sum_norm_edgeKer_one_row_le (hL : 3 ≤ L) {u v : ℝ} (huv : u ≤ v) (hv0 : 0 ≤ v)
+    (hv1 : v < 1) (x : ZMod L) :
+    ∑ c : ZMod L, ‖edgeKer L 1 (u : ℂ) (v : ℂ) x c‖ ≤ (1 - u) / (1 - v) := by
+  have hξ : ‖(1 : ℂ)‖ ≤ 1 := by simp
+  have h := sum_norm_edgeKer_row_le L hL (ξ := 1) (s := (u : ℂ)) (t := (v : ℂ))
+    (norm_ofReal_mul_lt_one hv0 hv1 hξ) x
+  have e1 : ‖((u : ℂ) - (v : ℂ)) * 1‖ = v - u := by
+    rw [mul_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonpos (by linarith)]; ring
+  have e2 : ‖(v : ℂ) * 1‖ = v := by
+    rw [mul_one, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hv0]
+  rw [e1, e2, one_add_row_eq hv1] at h
+  exact h
+
+/-- **The far field of a near-diagonal tensor.**  If `A` is supported on `‖b₁ - b₂‖ ≤ ρ` and
+bounded by `M` there, then at distance `‖a₁ - a₂‖ ≥ ρ + 2Δ` the image `U_{u,v} ∘ A` is
+exponentially small in `Δ/ℓ_v`.  This is the estimate behind the indicator `1(≤ 3ℓ*)` of
+(5.41): a tensor living on the diagonal band cannot produce a far-field contribution. -/
+theorem norm_Uker_supp_far_le (hL : 3 ≤ L) {u v : ℝ} (hu0 : 0 ≤ u) (huv : u ≤ v)
+    (hv1 : v < 1) {ρ Δ M : ℝ} (hM : 0 ≤ M) (hΔ : 0 < Δ) {A : LoopArg L 2 → ℂ}
+    (hA : ∀ b, ‖A b‖ ≤ M * (if (zdist L (b 0 - b 1) : ℝ) ≤ ρ then 1 else 0))
+    (a : LoopArg L 2) (hd : ρ + 2 * Δ ≤ (zdist L (a 0 - a 1) : ℝ)) :
+    ‖Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a‖
+      ≤ 128 * exp 3 * M * ((1 - u) / (1 - v)) ^ 2 *
+        exp (-(Δ / ellHat L (v : ℂ) / 2)) := by
+  have hv0 : 0 ≤ v := hu0.trans huv
+  have h1v : 0 < 1 - v := by linarith
+  have h1u : 0 < 1 - u := by linarith
+  set K := edgeKer L 1 (u : ℂ) (v : ℂ) with hK
+  set R := (1 - u) / (1 - v) with hR
+  have hR0 : 0 ≤ R := by rw [hR]; positivity
+  set g : ZMod L → ℝ := fun x => if Δ ≤ (zdist L (a 0 - x) : ℝ) then 1 else 0 with hg
+  set h : ZMod L → ℝ := fun y => if Δ ≤ (zdist L (a 1 - y) : ℝ) then 1 else 0 with hh
+  have hg0 : ∀ x, 0 ≤ g x := fun x => by
+    show (0:ℝ) ≤ if Δ ≤ (zdist L (a 0 - x) : ℝ) then 1 else 0
+    split_ifs <;> norm_num
+  have hh0 : ∀ y, 0 ≤ h y := fun y => by
+    show (0:ℝ) ≤ if Δ ≤ (zdist L (a 1 - y) : ℝ) then 1 else 0
+    split_ifs <;> norm_num
+  have hgh : ∀ b : LoopArg L 2, ‖A b‖ ≤ M * (g (b 0) + h (b 1)) := by
+    intro b
+    by_cases hb : (zdist L (b 0 - b 1) : ℝ) ≤ ρ
+    · have h3 := zdist_triangle_three L (a 0) (a 1) (b 0) (b 1)
+      have hor : Δ ≤ (zdist L (a 0 - b 0) : ℝ) ∨ Δ ≤ (zdist L (a 1 - b 1) : ℝ) := by
+        by_contra hno
+        push Not at hno
+        obtain ⟨h1, h2⟩ := hno
+        linarith
+      have h1 : (1 : ℝ) ≤ g (b 0) + h (b 1) := by
+        rcases hor with hc | hc
+        · have : g (b 0) = 1 := by
+            show (if Δ ≤ (zdist L (a 0 - b 0) : ℝ) then (1:ℝ) else 0) = 1
+            simp [hc]
+          linarith [hh0 (b 1)]
+        · have : h (b 1) = 1 := by
+            show (if Δ ≤ (zdist L (a 1 - b 1) : ℝ) then (1:ℝ) else 0) = 1
+            simp [hc]
+          linarith [hg0 (b 0)]
+      calc ‖A b‖ ≤ M * (if (zdist L (b 0 - b 1) : ℝ) ≤ ρ then 1 else 0) := hA b
+        _ = M := by rw [show (if (zdist L (b 0 - b 1) : ℝ) ≤ ρ then (1:ℝ) else 0) = 1 by
+              simp [hb], mul_one]
+        _ ≤ M * (g (b 0) + h (b 1)) := le_mul_of_one_le_right hM h1
+    · have : ‖A b‖ ≤ 0 := by
+        have := hA b
+        rwa [show (if (zdist L (b 0 - b 1) : ℝ) ≤ ρ then (1:ℝ) else 0) = 0 by simp [hb],
+          mul_zero] at this
+      have hge : 0 ≤ M * (g (b 0) + h (b 1)) := by
+        have := hg0 (b 0); have := hh0 (b 1); positivity
+      linarith
+  have hstart : ‖Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a‖
+      ≤ M * (∑ x : ZMod L, ∑ y : ZMod L,
+        ‖K (a 0) x‖ * ‖K (a 1) y‖ * (g x + h y)) := by
+    rw [Uker_apply]
+    refine (norm_sum_le _ _).trans ?_
+    rw [← sum_fin_two_fun L (fun x y => ‖K (a 0) x‖ * ‖K (a 1) y‖ * (g x + h y)),
+      Finset.mul_sum]
+    refine Finset.sum_le_sum fun b _ => ?_
+    rw [norm_mul, Fin.prod_univ_two, norm_mul]
+    have hkk : 0 ≤ ‖K (a 0) (b 0)‖ * ‖K (a 1) (b 1)‖ := by positivity
+    calc ‖K (a 0) (b 0)‖ * ‖K (a 1) (b 1)‖ * ‖A b‖
+        ≤ ‖K (a 0) (b 0)‖ * ‖K (a 1) (b 1)‖ * (M * (g (b 0) + h (b 1))) :=
+          mul_le_mul_of_nonneg_left (hgh b) hkk
+      _ = M * (‖K (a 0) (b 0)‖ * ‖K (a 1) (b 1)‖ * (g (b 0) + h (b 1))) := by ring
+  have hexpand : ∑ x : ZMod L, ∑ y : ZMod L, ‖K (a 0) x‖ * ‖K (a 1) y‖ * (g x + h y)
+      = (∑ x : ZMod L, ‖K (a 0) x‖ * g x) * (∑ y : ZMod L, ‖K (a 1) y‖)
+        + (∑ x : ZMod L, ‖K (a 0) x‖) * (∑ y : ZMod L, ‖K (a 1) y‖ * h y) := by
+    rw [Finset.sum_mul_sum, Finset.sum_mul_sum, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun y _ => by ring
+  set T := 64 * exp 3 * ((v - u) / (1 - v)) * exp (-(Δ / ellHat L (v : ℂ) / 2)) with hT
+  have hT0 : 0 ≤ T := by rw [hT]; have : 0 ≤ v - u := by linarith
+                         positivity
+  have hS0 := sum_far_norm_edgeKer_le L hL huv hv0 hv1 hΔ (a 0)
+  have hS1 := sum_far_norm_edgeKer_le L hL huv hv0 hv1 hΔ (a 1)
+  have hR0' := sum_norm_edgeKer_one_row_le L hL huv hv0 hv1 (a 0)
+  have hR1' := sum_norm_edgeKer_one_row_le L hL huv hv0 hv1 (a 1)
+  have hsum0 : (0:ℝ) ≤ ∑ x : ZMod L, ‖K (a 0) x‖ * g x :=
+    Finset.sum_nonneg fun x _ => mul_nonneg (norm_nonneg _) (hg0 x)
+  have hsum1 : (0:ℝ) ≤ ∑ y : ZMod L, ‖K (a 1) y‖ * h y :=
+    Finset.sum_nonneg fun y _ => mul_nonneg (norm_nonneg _) (hh0 y)
+  have hrow0 : (0:ℝ) ≤ ∑ x : ZMod L, ‖K (a 0) x‖ := Finset.sum_nonneg fun _ _ => norm_nonneg _
+  have hrow1 : (0:ℝ) ≤ ∑ y : ZMod L, ‖K (a 1) y‖ := Finset.sum_nonneg fun _ _ => norm_nonneg _
+  have hTR : T ≤ 64 * exp 3 * R * exp (-(Δ / ellHat L (v : ℂ) / 2)) := by
+    have hle : (v - u) / (1 - v) ≤ R := by rw [hR]; gcongr
+    have hE : (0:ℝ) ≤ exp (-(Δ / ellHat L (v : ℂ) / 2)) := (exp_pos _).le
+    have h64 : (0:ℝ) ≤ 64 * exp 3 := by positivity
+    rw [hT]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hle h64) hE
+  have hfin : ∑ x : ZMod L, ∑ y : ZMod L, ‖K (a 0) x‖ * ‖K (a 1) y‖ * (g x + h y)
+      ≤ 128 * exp 3 * R ^ 2 * exp (-(Δ / ellHat L (v : ℂ) / 2)) := by
+    rw [hexpand]
+    have hE0 : (0:ℝ) < exp (-(Δ / ellHat L (v : ℂ) / 2)) := exp_pos _
+    have h1 : (∑ x : ZMod L, ‖K (a 0) x‖ * g x) * (∑ y : ZMod L, ‖K (a 1) y‖)
+        ≤ (64 * exp 3 * R * exp (-(Δ / ellHat L (v : ℂ) / 2))) * R :=
+      mul_le_mul (hS0.trans hTR) hR1' hrow1 (by positivity)
+    have h2 : (∑ x : ZMod L, ‖K (a 0) x‖) * (∑ y : ZMod L, ‖K (a 1) y‖ * h y)
+        ≤ R * (64 * exp 3 * R * exp (-(Δ / ellHat L (v : ℂ) / 2))) :=
+      mul_le_mul hR0' (hS1.trans hTR) hsum1 hR0
+    nlinarith
+  calc ‖Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a‖
+      ≤ M * (∑ x : ZMod L, ∑ y : ZMod L, ‖K (a 0) x‖ * ‖K (a 1) y‖ * (g x + h y)) := hstart
+    _ ≤ M * (128 * exp 3 * R ^ 2 * exp (-(Δ / ellHat L (v : ℂ) / 2))) :=
+        mul_le_mul_of_nonneg_left hfin hM
+    _ = 128 * exp 3 * M * R ^ 2 * exp (-(Δ / ellHat L (v : ℂ) / 2)) := by ring
+
+
+/-- `e^{-(5/4)(log W)^{3/2}} ≤ W^{-D}` once `log W ≥ (4D/5)²`: the stretched-exponential gain
+of the support estimate beats any fixed power of `W`. -/
+theorem exp_neg_ellStar_le_rpow_neg {W D : ℝ} (hW : exp 1 ≤ W) (hD : 0 ≤ D)
+    (hlog : (4 * D / 5) ^ 2 ≤ log W) :
+    exp (-(5 / 4 * log W ^ ((3:ℝ) / 2))) ≤ W ^ (-D) := by
+  have hW0 : 0 < W := lt_of_lt_of_le (exp_pos 1) hW
+  have hl1 : 1 ≤ log W := by rw [← log_exp 1]; exact log_le_log (exp_pos 1) hW
+  have hl0 : 0 < log W := by linarith
+  have hsplit : log W ^ ((3:ℝ) / 2) = log W * √(log W) := by
+    rw [show ((3:ℝ)/2) = 1 + 1/2 by norm_num, Real.rpow_add hl0, Real.rpow_one,
+      ← Real.sqrt_eq_rpow]
+  have hsq : 4 * D / 5 ≤ √(log W) := by
+    have h := Real.sqrt_le_sqrt hlog
+    rwa [Real.sqrt_sq (by positivity)] at h
+  have hkey : D * log W ≤ 5 / 4 * log W ^ ((3:ℝ) / 2) := by
+    rw [hsplit]; nlinarith [Real.sqrt_nonneg (log W)]
+  rw [Real.rpow_def_of_pos hW0]
+  exact exp_le_exp.2 (by nlinarith)
+
+
+/-- **(5.41)'s indicator, carried through `U`.**  A tensor supported on the diagonal band
+`‖b₁ - b₂‖ ≤ ρ ≤ ℓ*_v` contributes, at distances `‖a₁ - a₂‖ ≥ 6 ℓ*_v`, at most
+`e^{-(5/4)(log W)^{3/2}}` times its size and `(η_u/η_v)²`.  Together with
+`RBM.exp_neg_ellStar_le_rpow_neg` this is `O(W^{-D})` for every fixed `D`. -/
+theorem norm_Uker_supp_ellStar_le (hL : 3 ≤ L) {u v : ℝ} (hu0 : 0 ≤ u) (huv : u ≤ v)
+    (hv1 : v < 1) {W ρ M : ℝ} (hW : exp 1 ≤ W) (hM : 0 ≤ M)
+    (hρ : ρ ≤ ellStar W (ellHat L (v : ℂ))) {A : LoopArg L 2 → ℂ}
+    (hA : ∀ b, ‖A b‖ ≤ M * (if (zdist L (b 0 - b 1) : ℝ) ≤ ρ then 1 else 0))
+    (a : LoopArg L 2)
+    (hd : 6 * ellStar W (ellHat L (v : ℂ)) ≤ (zdist L (a 0 - a 1) : ℝ)) :
+    ‖Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a‖
+      ≤ 128 * exp 3 * M * ((1 - u) / (1 - v)) ^ 2 *
+        exp (-(5 / 4 * log W ^ ((3:ℝ) / 2))) := by
+  have hv0 : 0 ≤ v := hu0.trans huv
+  have hℓ2 : (1:ℝ)/2 ≤ ellHat L (v : ℂ) := half_le_ellHat_real L hL hv0 hv1
+  have hℓ0 : 0 < ellHat L (v : ℂ) := by linarith
+  have hl1 : 1 ≤ log W := by rw [← log_exp 1]; exact log_le_log (exp_pos 1) hW
+  set ℓ := ellHat L (v : ℂ) with hℓdef
+  set st := ellStar W ℓ with hst
+  have hstv : st = log W ^ ((3:ℝ) / 2) * ℓ := rfl
+  have hlog32 : 1 ≤ log W ^ ((3:ℝ) / 2) := Real.one_le_rpow hl1 (by norm_num)
+  have hst0 : 0 < st := by rw [hstv]; positivity
+  set d : ℝ := (zdist L (a 0 - a 1) : ℝ) with hd'
+  set Δ := (d - ρ) / 2 with hΔdef
+  have hΔ : 0 < Δ := by rw [hΔdef]; linarith
+  have hsum : ρ + 2 * Δ ≤ d := by rw [hΔdef]; linarith
+  have hkey := norm_Uker_supp_far_le L hL hu0 huv hv1 hM hΔ hA a hsum
+  refine hkey.trans ?_
+  have hexp : exp (-(Δ / ℓ / 2)) ≤ exp (-(5 / 4 * log W ^ ((3:ℝ) / 2))) := by
+    refine exp_le_exp.2 (neg_le_neg ?_)
+    rw [hΔdef]
+    have h1 : 5 / 2 * st ≤ (d - ρ) / 2 := by linarith
+    have h2 : 5 / 4 * log W ^ ((3:ℝ) / 2) = 5 / 2 * st / ℓ / 2 := by
+      rw [hstv]; field_simp; ring
+    rw [h2]
+    gcongr
+  have hc : 0 ≤ 128 * exp 3 * M * ((1 - u) / (1 - v)) ^ 2 := by
+    have h1v : 0 < 1 - v := by linarith
+    positivity
+  exact mul_le_mul_of_nonneg_left hexp hc
+
+
+/-- **The sharp far field of (7.2).**  `RBM.Step2.norm_Uker_le_of_tail` folds the expansion
+factor `(η_u/η_v)²` into the main term at *every* distance.  Beyond `ℓ*_v` that factor is not
+there: (7.2) gives `Ξ T_{v,D}(d)` with no `(η_u/η_v)²`, and the expansion survives only on the
+`W^{-D}` residue.  This is the reason (5.48)'s far field is `O(1)`. -/
+theorem norm_Uker_far_le_of_tail (hL : 3 ≤ L) {m : ℝ} (hm0 : 0 < m) (hm1 : m ≤ 1) {u v : ℝ}
+    (hu0 : 0 ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1) {W D M : ℝ} (hW : exp 1 ≤ W)
+    (hM : 0 ≤ M) {A : LoopArg L 2 → ℂ}
+    (hA : ∀ b, ‖A b‖ ≤ M * tailT W (ellHat L (u : ℂ)) ((1 - u) * m) D (zdist L (b 0 - b 1)))
+    (a : LoopArg L 2) (hd : ellStar W (ellHat L (v : ℂ)) ≤ (zdist L (a 0 - a 1) : ℝ)) :
+    ‖Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a‖ ≤
+      M * (Step2.xiK L W m * tailT W (ellHat L (v : ℂ)) ((1 - v) * m) D (zdist L (a 0 - a 1))
+        + (m ^ 2)⁻¹ * ((1 - u) / (1 - v)) ^ 2 * W ^ (-D)) := by
+  have hW0 : 0 < W := lt_of_lt_of_le (exp_pos 1) hW
+  have hW1 : 1 ≤ W := le_trans (Real.one_le_exp (by norm_num)) hW
+  have hL1 : 1 ≤ L := by omega
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓu : 1 ≤ ellHat L (u : ℂ) := one_le_ellHat_of_nonneg hL1 hu0 hu1
+  have hℓv : 1 ≤ ellHat L (v : ℂ) := one_le_ellHat_of_nonneg hL1 hv0 hv1
+  set ℓu := ellHat L (u : ℂ) with hℓudef
+  set ℓv := ellHat L (v : ℂ) with hℓvdef
+  have h1u : 0 < 1 - u := by linarith
+  have h1v : 0 < 1 - v := by linarith
+  set r := (1 - u) / (1 - v) with hr
+  have hr1 : 1 ≤ r := by rw [hr, le_div_iff₀ h1v]; linarith
+  set d : ℝ := (zdist L (a 0 - a 1) : ℝ) with hdd
+  set Av := W * ℓv * ((1 - v) * m) with hAv
+  have hAv0 : 0 < Av := by positivity
+  have hε : 0 ≤ W ^ (-D) := Real.rpow_nonneg hW0.le _
+  set Tv := tailT W ℓv ((1 - v) * m) D d with hTv
+  have hTv0 : 0 ≤ Tv := tailT_nonneg hW0.le _
+  have hcT := cTail_nonneg
+  have hxi1 : cTail * (1 + 2 * L * exp (-(log W ^ (3 / 2 : ℝ) / 8))) ≤ Step2.xiK L W m := by
+    unfold Step2.xiK; have := exp_pos (log W ^ (3 / 4 : ℝ)); have : 0 ≤ (m ^ 2)⁻¹ := by positivity
+    linarith
+  by_cases hM0 : M = 0
+  · have hA0 : A = 0 := by
+      funext b
+      have := hA b
+      rw [hM0, zero_mul] at this
+      simpa using norm_le_zero_iff.1 this
+    have he : Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a = 0 := by
+      simp [Uker_apply, hA0]
+    rw [he, norm_zero, hM0, zero_mul]
+  have hMpos : 0 < M := lt_of_le_of_ne hM (Ne.symm hM0)
+  set c : ℝ := M * (m ^ 2)⁻¹ with hc
+  have hcpos : 0 < c := by positivity
+  set A' : LoopArg L 2 → ℂ := ((c : ℂ)⁻¹) • A with hA'def
+  have hAA' : A = (c : ℂ) • A' := by
+    rw [hA'def, smul_smul, mul_inv_cancel₀ (by exact_mod_cast hcpos.ne'), one_smul]
+  have hA' : ∀ b, ‖A' b‖ ≤ tailT W ℓu (1 - u) D (zdist L (b 0 - b 1)) := by
+    intro b
+    have hb := hA b
+    have hnc : ‖((c : ℂ)⁻¹)‖ = c⁻¹ := by
+      rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg hcpos.le]
+    rw [hA'def, Pi.smul_apply, smul_eq_mul, norm_mul, hnc]
+    rw [inv_mul_le_iff₀ hcpos]
+    refine hb.trans ?_
+    unfold tailT
+    set e := exp (-√((zdist L (b 0 - b 1) : ℝ) / ℓu))
+    have he0 : 0 ≤ e := (exp_pos _).le
+    have hm2 : 0 < m ^ 2 := by positivity
+    have hm21 : m ^ 2 ≤ 1 := by nlinarith
+    have e1 : ((W * ℓu * ((1 - u) * m)) ^ 2)⁻¹ = (m ^ 2)⁻¹ * ((W * ℓu * (1 - u)) ^ 2)⁻¹ := by
+      rw [← mul_inv]; congr 1; ring
+    rw [e1, hc]
+    have hP : 0 ≤ ((W * ℓu * (1 - u)) ^ 2)⁻¹ := by positivity
+    have hmi : 1 ≤ (m ^ 2)⁻¹ := one_le_inv₀ hm2 |>.2 hm21
+    nlinarith [mul_le_mul_of_nonneg_left hmi (mul_nonneg hMpos.le hε)]
+  have key := norm_Uker_tail_le_ellStar L hL hu0 huv hv0 hv1 hW hA' a hd
+  have hU : Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A a
+      = (c : ℂ) * Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A' a := by
+    rw [hAA', Uker_smul]; rfl
+  rw [hU, norm_mul, Complex.norm_real, Real.norm_of_nonneg hcpos.le]
+  set X := cTail * (1 + 2 * L * exp (-(log W ^ (3 / 2 : ℝ) / 8))) with hXdef
+  set e := exp (-√(d / ℓv)) with he
+  have he0 : 0 ≤ e := (exp_pos _).le
+  have hPv : ((W * ℓv * (1 - v)) ^ 2)⁻¹ = m ^ 2 * (Av ^ 2)⁻¹ := by
+    rw [hAv]; field_simp
+  have hTveq : Tv = (Av ^ 2)⁻¹ * e + W ^ (-D) := rfl
+  have hX0 : 0 ≤ X := by positivity
+  have hQ : 0 ≤ (Av ^ 2)⁻¹ := by positivity
+  have hm2 : 0 < m ^ 2 := by positivity
+  calc c * ‖Uker L (fun _ => (1 : ℂ)) (u : ℂ) (v : ℂ) A' a‖
+      ≤ c * (X * (((W * ℓv * (1 - v)) ^ 2)⁻¹ * e) + r ^ 2 * W ^ (-D)) :=
+        mul_le_mul_of_nonneg_left key hcpos.le
+    _ = M * (X * ((Av ^ 2)⁻¹ * e) + (m ^ 2)⁻¹ * r ^ 2 * W ^ (-D)) := by
+        rw [hPv, hc]; field_simp
+    _ ≤ M * (Step2.xiK L W m * Tv + (m ^ 2)⁻¹ * r ^ 2 * W ^ (-D)) := by
+        refine mul_le_mul_of_nonneg_left (add_le_add ?_ le_rfl) hM
+        have hxi0 : 0 ≤ Step2.xiK L W m := Step2.xiK_nonneg _ _ _
+        calc X * ((Av ^ 2)⁻¹ * e) ≤ Step2.xiK L W m * ((Av ^ 2)⁻¹ * e) :=
+              mul_le_mul_of_nonneg_right hxi1 (by positivity)
+          _ ≤ Step2.xiK L W m * Tv := by
+              refine mul_le_mul_of_nonneg_left ?_ hxi0
+              rw [hTveq]; linarith
+
+end Supp
+
+section FarStep
+
+open MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s : ℕ → ℝ}
+
+/-- `RBM.norm_Uker_far_le_of_tail` in flow notation (`σ = (+,-)`). -/
+theorem norm_Uker_far_flow (hE : |E| < 2) {N : ℕ} {u v : ℝ} (hu0 : 0 ≤ u) (huv : u ≤ v)
+    (hv0 : 0 ≤ v) (hv1 : v < 1) (hW : exp 1 ≤ (B.W N : ℝ)) {D M : ℝ} (hM : 0 ≤ M)
+    {A : LoopArg (B.L N) 2 → ℂ}
+    (hA : ∀ b, ‖A b‖ ≤ M * Step2.tT B E N D u (zdist (B.L N) (b 0 - b 1)))
+    (a : LoopArg (B.L N) 2)
+    (hd : ellStar (B.W N : ℝ) (B.ell N v) ≤ (zdist (B.L N) (a 0 - a 1) : ℝ)) :
+    ‖Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) A a‖
+      ≤ M * (Step2.xiK (B.L N) (B.W N) (mE E).im
+              * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+            + ((mE E).im ^ 2)⁻¹ * (etaT E u / etaT E v) ^ 2 * (B.W N : ℝ) ^ (-D)) := by
+  rw [Step2.sigPM_xi hE.le, Step2.etaT_ratio hE]
+  exact norm_Uker_far_le_of_tail (B.L N) (B.three_le_L N) (mE_im_pos hE) (mE_im_le_one hE)
+    hu0 huv hv0 hv1 hW hM hA a hd
+
+/-- `RBM.norm_Uker_supp_ellStar_le` in flow notation (`σ = (+,-)`). -/
+theorem norm_Uker_supp_flow (hE : |E| < 2) {N : ℕ} {u v : ℝ} (hu0 : 0 ≤ u) (huv : u ≤ v)
+    (hv1 : v < 1) (hW : exp 1 ≤ (B.W N : ℝ)) {M : ℝ} (hM : 0 ≤ M)
+    {A : LoopArg (B.L N) 2 → ℂ}
+    (hA : ∀ b, ‖A b‖ ≤ M * (if (zdist (B.L N) (b 0 - b 1) : ℝ)
+        ≤ ellStar (B.W N : ℝ) (B.ell N u) then 1 else 0))
+    (a : LoopArg (B.L N) 2)
+    (hd : 6 * ellStar (B.W N : ℝ) (B.ell N v) ≤ (zdist (B.L N) (a 0 - a 1) : ℝ)) :
+    ‖Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) A a‖
+      ≤ 128 * exp 3 * M * (etaT E u / etaT E v) ^ 2
+          * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2))) := by
+  have hlogW : 0 ≤ log (B.W N : ℝ) :=
+    Real.log_nonneg (le_trans (Real.one_le_exp (by norm_num)) hW)
+  have hρ : ellStar (B.W N : ℝ) (B.ell N u) ≤ ellStar (B.W N : ℝ) (B.ell N v) := by
+    unfold ellStar
+    have h := Step3.ellHat_mono (L := B.L N) huv hv1
+    have hp : (0:ℝ) ≤ log (B.W N : ℝ) ^ (3 / 2 : ℝ) := Real.rpow_nonneg hlogW _
+    have : B.ell N u ≤ B.ell N v := h
+    nlinarith
+  rw [Step2.sigPM_xi hE.le, Step2.etaT_ratio hE]
+  exact norm_Uker_supp_ellStar_le (B.L N) (B.three_le_L N) hu0 huv hv1 hW hM hρ hA a hd
+
+/-- **The far field of one step, pathwise.**  This is `RBM.Step2.step_bound` at distances
+`‖a₁ - a₂‖ ≥ 6ℓ*_v`, with the indicator of (5.35)/(5.41) **kept**: the drift is split as
+`F = Fn + (F - Fn)` with `Fn` supported on the diagonal band `‖b₁ - b₂‖ ≤ ℓ*_u`, exactly the
+near-field term of `RBM.Lemma57.eG_le_reduced`.  The conclusion carries **no** `(η_s/η_v)²`
+on the `T_{v,D}` term: the expansion factor survives only on the two residues, which are
+`W^{-D}` and `e^{-(5/4)(log W)^{3/2}}`. -/
+theorem step_bound_far (hE : |E| < 2) {N : ℕ} {ω : Ω} (hs0 : 0 ≤ s N) {v : ℝ}
+    (hsv : s N ≤ v) (hv1 : v < 1) (hW : exp 1 ≤ (B.W N : ℝ))
+    {D Mi Mn Mf Mm : ℝ} (hMi : 0 ≤ Mi) (hMn : 0 ≤ Mn) (hMf : 0 ≤ Mf)
+    {F Fn : ℝ → LoopArg (B.L N) 2 → ℂ} {Mrt : LoopArg (B.L N) 2 → ℂ}
+    (hdu : ∀ a, Step2.lk X E N v ω a
+      = Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (s N : ℂ) (v : ℂ)
+            (Step2.lk X E N (s N) ω) a
+        + (∫ u in (s N)..v,
+            Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) (F u) a)
+        + Mrt a)
+    (hinit : ∀ b, ‖Step2.lk X E N (s N) ω b‖
+      ≤ Mi * Step2.tT B E N D (s N) (zdist (B.L N) (b 0 - b 1)))
+    (hFn : ∀ u ∈ Set.Ico (s N) v, ∀ b, ‖Fn u b‖
+      ≤ Mn * (if (zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u)
+              then 1 else 0))
+    (hFr : ∀ u ∈ Set.Ico (s N) v, ∀ b, ‖F u b - Fn u b‖
+      ≤ Mf * Step2.tT B E N D u (zdist (B.L N) (b 0 - b 1)))
+    (hmart : ∀ a, ‖Mrt a‖ ≤ Mm * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1)))
+    (a : LoopArg (B.L N) 2)
+    (hfar : 6 * ellStar (B.W N : ℝ) (B.ell N v) ≤ (zdist (B.L N) (a 0 - a 1) : ℝ)) :
+    ‖Step2.lk X E N v ω a‖
+      ≤ (Step2.xiK (B.L N) (B.W N) (mE E).im * (Mi + Mf) + Mm)
+          * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+        + ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (Mi + Mf)
+            * (B.W N : ℝ) ^ (-D)
+        + 128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+            * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2))) := by
+  have hL3 := B.three_le_L N
+  have hL1 : 1 ≤ B.L N := by omega
+  have hW0 : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+  have hv0 : 0 ≤ v := hs0.trans hsv
+  have hm0 := mE_im_pos hE
+  have hm1 := mE_im_le_one hE
+  have hlogW : 0 ≤ log (B.W N : ℝ) :=
+    Real.log_nonneg (le_trans (Real.one_le_exp (by norm_num)) hW)
+  have h1v : 0 < 1 - v := by linarith
+  have h1s : 0 < 1 - s N := by linarith
+  have hTv0 : (0:ℝ) ≤ Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1)) :=
+    tailT_nonneg hW0.le _
+  have hΞ0 : (0:ℝ) ≤ Step2.xiK (B.L N) (B.W N) (mE E).im := Step2.xiK_nonneg _ _ _
+  have hWD : (0:ℝ) ≤ (B.W N : ℝ) ^ (-D) := Real.rpow_nonneg hW0.le _
+  have hmi : (0:ℝ) ≤ ((mE E).im ^ 2)⁻¹ := by positivity
+  have hE5 : (0:ℝ) ≤ exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2))) := (exp_pos _).le
+  have hR0 : (0:ℝ) ≤ etaT E (s N) / etaT E v := by
+    rw [Step2.etaT_ratio hE]; positivity
+  have hellv : 1 ≤ B.ell N v := one_le_ellHat_of_nonneg hL1 hv0 hv1
+  have hstv : 0 ≤ ellStar (B.W N : ℝ) (B.ell N v) := by
+    unfold ellStar
+    have hp : (0:ℝ) ≤ log (B.W N : ℝ) ^ (3 / 2 : ℝ) := Real.rpow_nonneg hlogW _
+    nlinarith
+  have hd1 : ellStar (B.W N : ℝ) (B.ell N v) ≤ (zdist (B.L N) (a 0 - a 1) : ℝ) := by linarith
+  -- the initial term (5.39)
+  have hI := norm_Uker_far_flow hE hs0 hsv hv0 hv1 hW hMi hinit a hd1
+  -- the drift, pointwise in `u ∈ [s, v)`
+  have hdrift : ∀ u ∈ Set.Ico (s N) v,
+      ‖Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) (F u) a‖
+        ≤ 128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+              * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+          + Mf * (Step2.xiK (B.L N) (B.W N) (mE E).im
+              * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+            + ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (B.W N : ℝ) ^ (-D)) := by
+    intro u hu
+    have hu0 : 0 ≤ u := hs0.trans hu.1
+    have huv : u ≤ v := hu.2.le
+    have hu1 : u < 1 := hu.2.trans hv1
+    have hru : etaT E u / etaT E v ≤ etaT E (s N) / etaT E v := by
+      rw [Step2.etaT_ratio hE, Step2.etaT_ratio hE]
+      gcongr
+      linarith [hu.1]
+    have hru0 : (0:ℝ) ≤ etaT E u / etaT E v := by rw [Step2.etaT_ratio hE]; positivity
+    have hsplit : F u = Fn u + (fun b => F u b - Fn u b) := by funext b; simp
+    rw [hsplit, Uker_add, Pi.add_apply]
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · -- the near-diagonal part of the drift: killed by the support estimate
+      refine (norm_Uker_supp_flow hE hu0 huv hv1 hW hMn (hFn u hu) a hfar).trans ?_
+      have he3 : (0:ℝ) ≤ exp 3 := (exp_pos _).le
+      gcongr
+    · -- the rest of the drift: the sharp far field of (7.2)
+      refine (norm_Uker_far_flow hE hu0 huv hv0 hv1 hW hMf (hFr u hu) a hd1).trans ?_
+      refine mul_le_mul_of_nonneg_left (add_le_add le_rfl ?_) hMf
+      gcongr
+  have hint : ‖∫ u in (s N)..v,
+      Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) (F u) a‖
+      ≤ (128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+              * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+          + Mf * (Step2.xiK (B.L N) (B.W N) (mE E).im
+              * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+            + ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (B.W N : ℝ) ^ (-D)))
+          * |v - s N| := by
+    refine intervalIntegral.norm_integral_le_of_norm_le_const_ae ?_
+    filter_upwards [MeasureTheory.Measure.ae_ne MeasureTheory.volume v] with u hne hu
+    rw [Set.uIoc_of_le hsv] at hu
+    exact hdrift u ⟨hu.1.le, lt_of_le_of_ne hu.2 hne⟩
+  have hCint0 : (0:ℝ) ≤ 128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+              * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+          + Mf * (Step2.xiK (B.L N) (B.W N) (mE E).im
+              * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+            + ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (B.W N : ℝ) ^ (-D)) := by
+    positivity
+  have hvs : |v - s N| ≤ 1 := by rw [abs_of_nonneg (by linarith)]; linarith
+  have hint' := hint.trans (by nlinarith : (128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+              * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+          + Mf * (Step2.xiK (B.L N) (B.W N) (mE E).im
+              * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+            + ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (B.W N : ℝ) ^ (-D)))
+          * |v - s N|
+        ≤ 128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+              * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+          + Mf * (Step2.xiK (B.L N) (B.W N) (mE E).im
+              * Step2.tT B E N D v (zdist (B.L N) (a 0 - a 1))
+            + ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (B.W N : ℝ) ^ (-D)))
+  have hM := hmart a
+  have htri : ‖Step2.lk X E N v ω a‖
+      ≤ ‖Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (s N : ℂ) (v : ℂ)
+            (Step2.lk X E N (s N) ω) a‖
+        + ‖∫ u in (s N)..v,
+            Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) (F u) a‖
+        + ‖Mrt a‖ := by
+    rw [hdu a]
+    exact (norm_add_le _ _).trans (add_le_add (norm_add_le _ _) le_rfl)
+  refine htri.trans ?_
+  nlinarith
+
+
+/-- **(5.48)'s far half, pathwise.**  `RBM.step_bound_far` at the loop-error level, with the
+two residues absorbed into `W^{-D} ≤ T_{v,D}`.  The inputs are taken at a level `D' ≥ D`: the
+`W^{-D'}` residue of (7.2) carries the expansion factor `(η_s/η_v)²`, which is exactly what
+the extra `D' - D` pays for.  The conclusion has **no** `(η_s/η_v)²`. -/
+theorem lkErr_far_le (hE : |E| < 2) {N : ℕ} {ω : Ω} (hs0 : 0 ≤ s N) {v : ℝ}
+    (hsv : s N ≤ v) (hv1 : v < 1) (hW : exp 1 ≤ (B.W N : ℝ))
+    {D D' Mi Mn Mf Mm : ℝ} (hDD : D ≤ D') (hMi : 0 ≤ Mi) (hMn : 0 ≤ Mn) (hMf : 0 ≤ Mf)
+    (hMm : 0 ≤ Mm)
+    {F Fn : ℝ → LoopArg (B.L N) 2 → ℂ} {Mrt : LoopArg (B.L N) 2 → ℂ}
+    (hdu : ∀ a, Step2.lk X E N v ω a
+      = Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (s N : ℂ) (v : ℂ)
+            (Step2.lk X E N (s N) ω) a
+        + (∫ u in (s N)..v,
+            Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) (v : ℂ) (F u) a)
+        + Mrt a)
+    (hinit : ∀ b, ‖Step2.lk X E N (s N) ω b‖
+      ≤ Mi * Step2.tT B E N D' (s N) (zdist (B.L N) (b 0 - b 1)))
+    (hFn : ∀ u ∈ Set.Ico (s N) v, ∀ b, ‖Fn u b‖
+      ≤ Mn * (if (zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u)
+              then 1 else 0))
+    (hFr : ∀ u ∈ Set.Ico (s N) v, ∀ b, ‖F u b - Fn u b‖
+      ≤ Mf * Step2.tT B E N D' u (zdist (B.L N) (b 0 - b 1)))
+    (hmart : ∀ a, ‖Mrt a‖ ≤ Mm * Step2.tT B E N D' v (zdist (B.L N) (a 0 - a 1)))
+    (hres : ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E v) ^ 2 * (Mi + Mf)
+          * (B.W N : ℝ) ^ (-D')
+        + 128 * exp 3 * Mn * (etaT E (s N) / etaT E v) ^ 2
+            * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+        ≤ (B.W N : ℝ) ^ (-D))
+    (x y : ZMod (B.L N))
+    (hfar : 6 * ellStar (B.W N : ℝ) (B.ell N v) ≤ (zdist (B.L N) (x - y) : ℝ)) :
+    X.lkErr E N v ω (pmLoop x y)
+      ≤ (Step2.xiK (B.L N) (B.W N) (mE E).im * (Mi + Mf) + Mm + 1)
+          * Step2.tT B E N D v (zdist (B.L N) (x - y)) := by
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := le_trans (Real.one_le_exp (by norm_num)) hW
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := by linarith
+  set a : LoopArg (B.L N) 2 := ![x, y] with hadef
+  have ha0 : a 0 = x := rfl
+  have ha1 : a 1 = y := rfl
+  have hfar' : 6 * ellStar (B.W N : ℝ) (B.ell N v) ≤ (zdist (B.L N) (a 0 - a 1) : ℝ) := by
+    rw [ha0, ha1]; exact hfar
+  have key := step_bound_far X hE hs0 hsv hv1 hW hMi hMn hMf hdu hinit hFn hFr hmart a hfar'
+  rw [ha0, ha1] at key
+  have heq : X.lkErr E N v ω (pmLoop x y) = ‖Step2.lk X E N v ω a‖ := by
+    rw [Step2.norm_lk_eq, ha0, ha1]
+  rw [heq]
+  refine key.trans ?_
+  -- `T_{v,D'} ≤ T_{v,D}` and the residues are `≤ W^{-D} ≤ T_{v,D}`
+  have hDW : (B.W N : ℝ) ^ (-D') ≤ (B.W N : ℝ) ^ (-D) :=
+    Real.rpow_le_rpow_of_exponent_le hW1 (by linarith)
+  have hTmono : Step2.tT B E N D' v (zdist (B.L N) (x - y))
+      ≤ Step2.tT B E N D v (zdist (B.L N) (x - y)) := by
+    unfold Step2.tT tailT
+    have : (0:ℝ) ≤ (((B.W N : ℝ) * B.ell N v * etaT E v) ^ 2)⁻¹
+        * exp (-√((zdist (B.L N) (x - y) : ℝ) / B.ell N v)) := by positivity
+    linarith
+  have hWT : (B.W N : ℝ) ^ (-D) ≤ Step2.tT B E N D v (zdist (B.L N) (x - y)) :=
+    rpow_neg_le_tailT _
+  have hΞ0 : (0:ℝ) ≤ Step2.xiK (B.L N) (B.W N) (mE E).im := Step2.xiK_nonneg _ _ _
+  have hcoef : (0:ℝ) ≤ Step2.xiK (B.L N) (B.W N) (mE E).im * (Mi + Mf) + Mm := by
+    have : (0:ℝ) ≤ Mi + Mf := by linarith
+    nlinarith
+  have hmul := mul_le_mul_of_nonneg_left hTmono hcoef
+  nlinarith
+
+
+variable {t : ℕ → ℝ}
+
+/-- **The pathwise inputs of the far half of one step**, at a fixed `(N, ω)`: the Duhamel
+identity (5.21), the initial bound (2.69), the drift split into the near-diagonal part of
+(5.35) and the rest, and the martingale bound (5.45).  The drift and martingale fields are
+existentially quantified, so this is a statement about `(L-K)` alone. -/
+def FarInputs (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D' : ℝ) (Mi Mn Mf Mm : ℕ → ℝ)
+    (N : ℕ) (ω : Ω) : Prop :=
+  ∀ v : TimeIcc s t N, ∃ F Fn : ℝ → LoopArg (B.L N) 2 → ℂ,
+    ∃ Mrt : LoopArg (B.L N) 2 → ℂ,
+      (∀ a, Step2.lk X E N (v : ℝ) ω a
+        = Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (s N : ℂ) ((v : ℝ) : ℂ)
+              (Step2.lk X E N (s N) ω) a
+          + (∫ u in (s N)..(v : ℝ),
+              Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) ((v : ℝ) : ℂ) (F u) a)
+          + Mrt a)
+      ∧ (∀ b, ‖Step2.lk X E N (s N) ω b‖
+          ≤ Mi N * Step2.tT B E N D' (s N) (zdist (B.L N) (b 0 - b 1)))
+      ∧ (∀ u ∈ Set.Ico (s N) (v : ℝ), ∀ b, ‖Fn u b‖
+          ≤ Mn N * (if (zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u)
+                    then 1 else 0))
+      ∧ (∀ u ∈ Set.Ico (s N) (v : ℝ), ∀ b, ‖F u b - Fn u b‖
+          ≤ Mf N * Step2.tT B E N D' u (zdist (B.L N) (b 0 - b 1)))
+      ∧ (∀ a, ‖Mrt a‖ ≤ Mm N * Step2.tT B E N D' (v : ℝ) (zdist (B.L N) (a 0 - a 1)))
+
+/-- The constant of the far half: `Ξ (M_i + M_f) + M_m + 1`, all of them `≺ 1`. -/
+noncomputable def cFarStep (B : Band Ω) (E : ℝ) (Mi Mf Mm : ℕ → ℝ) (N : ℕ) : ℝ :=
+  Step2.xiK (B.L N) (B.W N) (mE E).im * (Mi N + Mf N) + Mm N + 1
+
+/-- The far half of (5.48), uniformly in `(v, a₁, a₂)`, at a fixed `(N, ω)`. -/
+theorem far_le_of_farInputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (_hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {N : ℕ} (hW : exp 1 ≤ (B.W N : ℝ)) {D D' : ℝ} (hDD : D ≤ D')
+    {Mi Mn Mf Mm : ℕ → ℝ} (hMi : 0 ≤ Mi N) (hMn : 0 ≤ Mn N) (hMf : 0 ≤ Mf N)
+    (hMm : 0 ≤ Mm N)
+    (hres : ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E (t N)) ^ 2 * (Mi N + Mf N)
+          * (B.W N : ℝ) ^ (-D')
+        + 128 * exp 3 * Mn N * (etaT E (s N) / etaT E (t N)) ^ 2
+            * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+        ≤ (B.W N : ℝ) ^ (-D))
+    {ω : Ω} (hin : FarInputs X E s t D' Mi Mn Mf Mm N ω)
+    (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) :
+    (if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1)
+        then 0 else X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      ≤ cFarStep B E Mi Mf Mm N *
+        tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D (zdist (B.L N) (p.2.1 - p.2.2)) := by
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := lt_of_lt_of_le (exp_pos 1) hW
+  have hT0 : (0:ℝ) ≤ tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+      (zdist (B.L N) (p.2.1 - p.2.2)) := tailT_nonneg hW0.le _
+  have hΞ0 : (0:ℝ) ≤ Step2.xiK (B.L N) (B.W N) (mE E).im := Step2.xiK_nonneg _ _ _
+  have hC0 : (0:ℝ) ≤ cFarStep B E Mi Mf Mm N := by
+    unfold cFarStep; nlinarith
+  by_cases hnear : (zdist (B.L N) (p.2.1 - p.2.2) : ℝ)
+      ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1)
+  · rw [show (if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ)
+        ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1) then (0:ℝ)
+        else X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2)) = 0 by simp [hnear]]
+    positivity
+  · rw [show (if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ)
+        ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1) then (0:ℝ)
+        else X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+        = X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2) by simp [hnear]]
+    push Not at hnear
+    obtain ⟨F, Fn, Mrt, hdu, hinit, hFn, hFr, hmart⟩ := hin p.1
+    have hv1 : (p.1 : ℝ) < 1 := lt_of_le_of_lt p.1.2.2 (ht1 N)
+    have hsv : s N ≤ (p.1 : ℝ) := p.1.2.1
+    -- the residue condition transported from `t N` to `v`
+    have h1v : 0 < 1 - (p.1 : ℝ) := by linarith
+    have h1t : 0 < 1 - t N := by linarith [ht1 N]
+    have hRv : etaT E (s N) / etaT E p.1 ≤ etaT E (s N) / etaT E (t N) := by
+      rw [Step2.etaT_ratio hE, Step2.etaT_ratio hE]
+      gcongr
+      · linarith [hs0 N]
+      · exact p.1.2.2
+    have hRv0 : (0:ℝ) ≤ etaT E (s N) / etaT E p.1 := by
+      rw [Step2.etaT_ratio hE]
+      have h1s : (0:ℝ) < 1 - s N := by linarith
+      positivity
+    have hmi : (0:ℝ) ≤ ((mE E).im ^ 2)⁻¹ := by positivity
+    have hWD : (0:ℝ) ≤ (B.W N : ℝ) ^ (-D') := Real.rpow_nonneg hW0.le _
+    have hE5 : (0:ℝ) ≤ exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2))) := (exp_pos _).le
+    have hresv : ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E p.1) ^ 2 * (Mi N + Mf N)
+          * (B.W N : ℝ) ^ (-D')
+        + 128 * exp 3 * Mn N * (etaT E (s N) / etaT E p.1) ^ 2
+            * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+        ≤ (B.W N : ℝ) ^ (-D) := by
+      refine le_trans ?_ hres
+      have hsq : (etaT E (s N) / etaT E p.1) ^ 2 ≤ (etaT E (s N) / etaT E (t N)) ^ 2 := by
+        gcongr
+      have he3 : (0:ℝ) ≤ exp 3 := (exp_pos _).le
+      have h1 : (0:ℝ) ≤ Mi N + Mf N := by linarith
+      gcongr
+    have key := lkErr_far_le X hE (hs0 N) hsv hv1 hW hDD hMi hMn hMf hMm hdu hinit hFn hFr
+      hmart hresv p.2.1 p.2.2 hnear.le
+    exact key
+
+
+/-- The residue condition of the far half at `N`: the two errors left by `RBM.step_bound_far`
+— the `W^{-D'}` of (7.2), which carries `(η_s/η_t)²`, and the `e^{-(5/4)(log W)^{3/2}}` of the
+support estimate — fit inside one `W^{-D}`.  Both are satisfiable for `D' > D` large and `N`
+large, see `RBM.farResidue_of_bounds`. -/
+def FarResidue (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (D D' : ℝ) (Mi Mn Mf : ℕ → ℝ)
+    (N : ℕ) : Prop :=
+  ((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E (t N)) ^ 2 * (Mi N + Mf N) * (B.W N : ℝ) ^ (-D')
+    + 128 * exp 3 * Mn N * (etaT E (s N) / etaT E (t N)) ^ 2
+        * exp (-(5 / 4 * log (B.W N : ℝ) ^ ((3:ℝ) / 2)))
+    ≤ (B.W N : ℝ) ^ (-D)
+
+/-- **(5.48)'s far half, `≺`.**  The far field of `(L-K)` is dominated by `T_{u,D}` with **no**
+prefactor, uniformly in `u ∈ [s,t]` and in `(a₁, a₂)` with `‖a₁ - a₂‖ > 6ℓ*_u`. -/
+theorem stochDom_far_of_farInputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {D D' : ℝ} (hDD : D ≤ D') {Mi Mn Mf Mm : ℕ → ℝ}
+    (hMi : ∀ N, 0 ≤ Mi N) (hMn : ∀ N, 0 ≤ Mn N) (hMf : ∀ N, 0 ≤ Mf N) (hMm : ∀ N, 0 ≤ Mm N)
+    (hfacts : ∀ᶠ N : ℕ in Filter.atTop,
+      exp 1 ≤ (B.W N : ℝ) ∧ FarResidue B E s t D D' Mi Mn Mf N)
+    (hpoly : ∀ τ > (0:ℝ), ∀ᶠ N : ℕ in Filter.atTop, cFarStep B E Mi Mf Mm N ≤ (N : ℝ) ^ τ)
+    (hHP : HighProb B.P (fun N => {ω | FarInputs X E s t D' Mi Mn Mf Mm N ω})) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1)
+          then 0 else X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+        (zdist (B.L N) (p.2.1 - p.2.2))) := by
+  have hC0 : ∀ N, 0 ≤ cFarStep B E Mi Mf Mm N := by
+    intro N
+    have h1 := Step2.xiK_nonneg (B.L N) (B.W N) (mE E).im
+    have h2 := hMi N; have h3 := hMf N; have h4 := hMm N
+    unfold cFarStep; nlinarith
+  have hstep : HighProb B.P (fun N => {ω | ∀ p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)),
+      (if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1)
+        then 0 else X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+        ≤ cFarStep B E Mi Mf Mm N *
+          tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+            (zdist (B.L N) (p.2.1 - p.2.2))}) := by
+    refine hHP.mono ?_
+    filter_upwards [hfacts] with N hN ω hω p
+    exact far_le_of_farInputs X hE hs0 hst ht1 hN.1 hDD (hMi N) (hMn N) (hMf N) (hMm N)
+      hN.2 hω p
+  have hmain := Step1.stochDom_of_highProb (P := B.P) (fun N p ω => by
+    have := hC0 N
+    have hW0 : (0:ℝ) ≤ (B.W N : ℝ) := by positivity
+    exact mul_nonneg this (tailT_nonneg hW0 _)) hstep
+  refine hmain.trans (StochDom.of_unifDetDom ?_)
+  intro τ hτ
+  filter_upwards [hpoly τ hτ, hfacts] with N hp hN p
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := lt_of_lt_of_le (exp_pos 1) hN.1
+  exact mul_le_mul_of_nonneg_right hp (tailT_nonneg hW0.le _)
+
+/-- **(5.48) with no `hfar` left.**  `RBM.flowEq548_of_near_far`'s far-field
+slot is discharged from the pathwise one-step inputs `FarInputs` — (5.21), (2.69), (5.35) with
+its indicator, (5.45) — together with the residue condition and the fact that the one-step
+constants are `≺ 1`. -/
+theorem flowEq548_of_near_farInputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {Mi Mn Mf Mm : ℝ → ℕ → ℝ}
+    (hMi : ∀ D' N, 0 ≤ Mi D' N) (hMn : ∀ D' N, 0 ≤ Mn D' N) (hMf : ∀ D' N, 0 ≤ Mf D' N)
+    (hMm : ∀ D' N, 0 ≤ Mm D' N)
+    (hpoly : ∀ D' : ℝ, ∀ τ > (0:ℝ), ∀ᶠ N : ℕ in Filter.atTop,
+      cFarStep B E (Mi D') (Mf D') (Mm D') N ≤ (N : ℝ) ^ τ)
+    (hHP : ∀ D' : ℝ, HighProb B.P
+      (fun N => {ω | FarInputs X E s t D' (Mi D') (Mn D') (Mf D') (Mm D') N ω}))
+    (hres : ∀ D : ℝ, 0 < D → ∃ D' : ℝ, D ≤ D' ∧ ∀ᶠ N : ℕ in Filter.atTop,
+      exp 1 ≤ (B.W N : ℝ) ∧ FarResidue B E s t D D' (Mi D') (Mn D') (Mf D') N)
+    (hnear : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+        tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+          (zdist (B.L N) (p.2.1 - p.2.2)))) :
+    Step45.FlowEq548 X E s t := by
+  refine flowEq548_of_near_far X hnear fun D hD => ?_
+  obtain ⟨D', hDD, hfacts⟩ := hres D hD
+  exact stochDom_far_of_farInputs X hE hs0 hst ht1 hDD (hMi D') (hMn D') (hMf D') (hMm D')
+    hfacts (hpoly D') (hHP D')
+
+
+/-! ### Satisfiability of the far-field hypotheses -/
+
+section FarSat
+
+/-- **`FarResidue` is satisfiable, and by the mechanism it is meant to have.**  The `W^{-D'}`
+residue is paid by the gap `D' - D`, the stretched-exponential residue by an extra `P`; both
+are free largeness parameters of the *tail level*, and neither touches the exponent budget
+`A_u ≥ x^{17} R^{10}` of `RBM.Step2MomentStep.phi_arith'`.  In particular the far field costs
+**nothing** in `R`: the `R²` appears only here. -/
+theorem far_residue_of_bounds {W R Mi Mn Mf m D D' P : ℝ}
+    (hW : exp 1 ≤ W) (hMn : 0 ≤ Mn) (hD0 : 0 ≤ D) (hP : 0 ≤ P)
+    (hlog : (4 * (D + P) / 5) ^ 2 ≤ log W)
+    (h1 : 2 * ((m ^ 2)⁻¹ * R ^ 2 * (Mi + Mf)) ≤ W ^ (D' - D))
+    (h2 : 2 * (128 * exp 3 * Mn * R ^ 2) ≤ W ^ P) :
+    (m ^ 2)⁻¹ * R ^ 2 * (Mi + Mf) * W ^ (-D')
+      + 128 * exp 3 * Mn * R ^ 2 * exp (-(5 / 4 * log W ^ ((3:ℝ) / 2))) ≤ W ^ (-D) := by
+  have hW0 : 0 < W := lt_of_lt_of_le (exp_pos 1) hW
+  have hWD' : (0:ℝ) < W ^ (-D') := Real.rpow_pos_of_pos hW0 _
+  have he1 : W ^ (D' - D) * W ^ (-D') = W ^ (-D) := by
+    rw [← Real.rpow_add hW0]; ring_nf
+  have he2 : W ^ P * W ^ (-(D + P)) = W ^ (-D) := by
+    rw [← Real.rpow_add hW0]; ring_nf
+  have hterm1 : (m ^ 2)⁻¹ * R ^ 2 * (Mi + Mf) * W ^ (-D') ≤ W ^ (-D) / 2 := by
+    have := mul_le_mul_of_nonneg_right h1 hWD'.le
+    rw [he1] at this
+    linarith
+  have hexp := exp_neg_ellStar_le_rpow_neg hW (by linarith : (0:ℝ) ≤ D + P) hlog
+  have hY : (0:ℝ) ≤ 128 * exp 3 * Mn * R ^ 2 := by
+    have := exp_pos (3:ℝ); positivity
+  have hterm2 : 128 * exp 3 * Mn * R ^ 2 * exp (-(5 / 4 * log W ^ ((3:ℝ) / 2)))
+      ≤ W ^ (-D) / 2 := by
+    have hstep : 128 * exp 3 * Mn * R ^ 2 * exp (-(5 / 4 * log W ^ ((3:ℝ) / 2)))
+        ≤ 128 * exp 3 * Mn * R ^ 2 * W ^ (-(D + P)) :=
+      mul_le_mul_of_nonneg_left hexp hY
+    have hWP : (0:ℝ) < W ^ (-(D + P)) := Real.rpow_pos_of_pos hW0 _
+    have := mul_le_mul_of_nonneg_right h2 hWP.le
+    rw [he2] at this
+    linarith
+  linarith
+
+/-- `FarResidue` for the flow from `RBM.far_residue_of_bounds`. -/
+theorem farResidue_of_bounds (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) {D D' P : ℝ}
+    {Mi Mn Mf : ℕ → ℝ} {N : ℕ} (hW : exp 1 ≤ (B.W N : ℝ)) (hMn : 0 ≤ Mn N)
+    (hD0 : 0 ≤ D) (hP : 0 ≤ P)
+    (hlog : (4 * (D + P) / 5) ^ 2 ≤ log (B.W N : ℝ))
+    (h1 : 2 * (((mE E).im ^ 2)⁻¹ * (etaT E (s N) / etaT E (t N)) ^ 2 * (Mi N + Mf N))
+      ≤ (B.W N : ℝ) ^ (D' - D))
+    (h2 : 2 * (128 * exp 3 * Mn N * (etaT E (s N) / etaT E (t N)) ^ 2)
+      ≤ (B.W N : ℝ) ^ P) :
+    FarResidue B E s t D D' Mi Mn Mf N :=
+  far_residue_of_bounds hW hMn hD0 hP hlog h1 h2
+
+/-- **`FarInputs` is realizable for every sample.**  Taking the whole Duhamel remainder as the
+martingale term (`F = Fn = 0`) satisfies the bundle; what the far field actually needs is not
+realizability but `RBM.cFarStep ≺ 1`, i.e. that `M_i`, `M_f`, `M_m` are `N^{o(1)}`, which this
+witness does **not** provide.  The lemma is here to certify that the hypothesis is not
+vacuous. -/
+theorem farInputs_of_remainder {D' : ℝ} {Mi Mm : ℕ → ℝ} {N : ℕ} {ω : Ω}
+    (hinit : ∀ b, ‖Step2.lk X E N (s N) ω b‖
+      ≤ Mi N * Step2.tT B E N D' (s N) (zdist (B.L N) (b 0 - b 1)))
+    (hrem : ∀ (v : TimeIcc s t N) (a : LoopArg (B.L N) 2),
+      ‖Step2.lk X E N (v : ℝ) ω a
+        - Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (s N : ℂ) ((v : ℝ) : ℂ)
+            (Step2.lk X E N (s N) ω) a‖
+      ≤ Mm N * Step2.tT B E N D' (v : ℝ) (zdist (B.L N) (a 0 - a 1))) :
+    FarInputs X E s t D' Mi (fun _ => 0) (fun _ => 0) Mm N ω := by
+  intro v
+  refine ⟨fun _ _ => 0, fun _ _ => 0,
+    fun a => Step2.lk X E N (v : ℝ) ω a
+      - Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (s N : ℂ) ((v : ℝ) : ℂ)
+          (Step2.lk X E N (s N) ω) a, ?_, hinit, ?_, ?_, hrem v⟩
+  · intro a
+    have hU : ∀ u : ℝ, Uker (B.L N) (xiOf (mSigma E) Step2.sigPM) (u : ℂ) ((v : ℝ) : ℂ)
+        (fun _ => (0 : ℂ)) a = 0 := by
+      intro u; simp [Uker_apply]
+    simp only [hU, intervalIntegral.integral_zero]
+    ring
+  · intro u _ b; simp
+  · intro u _ b; simp
+
+/-- A degenerate but non-empty instance of the support estimate's geometry: `ρ = 0`, `Δ = 1`,
+`d = 2`. -/
+theorem sat_supp_geometry : (0 : ℝ) + 2 * 1 ≤ 2 := by norm_num
+
+/-- The residue arithmetic at its own boundary: `D = P = 0` forces only `log W ≥ 0`. -/
+theorem sat_far_residue_boundary : (4 * ((0:ℝ) + 0) / 5) ^ 2 = 0 := by norm_num
+
+end FarSat
+
+end FarStep
 
 end Step2MomentStep
 

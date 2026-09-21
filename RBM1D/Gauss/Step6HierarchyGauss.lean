@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.Step6
 import RBM1D.Gauss.MomentDuhamel
+import RBM1D.Hierarchy.DriftDef
 
 /-!
 # T152: the Step 6 hierarchy (5.129)–(5.131) from a pointwise drift identity
@@ -96,6 +97,17 @@ closed-interval hypothesis of `hierarchy_of_hasDerivAt` is unsatisfiable at `s N
 `Ioo` variant is the one to use; it costs a continuity hypothesis at the left endpoint in
 exchange.  This is the same `0 ≤ s` versus `0 < s` seam that `docs/STATUS.md` records for the
 assembly of Theorem 2.21, arriving here from the analytic side.
+
+## Update (T173)
+
+The section `T173: the drift tensor of Step 6, pinned` at the end of this file closes the
+first of the two gaps just described.  `RBM.driftE` is the drift tensor, **as a definition**
+`D_v = E[F_v]` with `F = RBM.DriftDef.driftF` (T58/T118(iii)); `RBM.hasDerivAt_lkT_thetaOp_driftE`
+is the expectation drift identity, the quadratic half included; `RBM.hierarchy_driftE` produces
+`RBM.Step6.Hierarchy X E s t (driftE X E) 0` through the `Ioo` variant above; and
+`RBM.sharpExpect_step6_driftE` is `sharpExpect_step6_single` with no tensor variable left.
+The size obligations `h5133` and the `DLK` half of `hFD` are reduced to pathwise statements
+about `driftF` (`RBM.fastDecay_driftE`, `RBM.norm_driftE_le_integral`) but are **not** proved.
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/
@@ -535,9 +547,9 @@ theorem sharpExpect_step6_single (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (h�
     (hq11 : UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
       ‖quad11 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 2))
     (hint1 : ∀ N (v : TimeIcc s t N) (a₁ : ZMod (B.L N)),
-      Integrable (fun ω => X.Lval E N v ω (oneLoop a₁)) B.P)
+      Integrable (fun ω => X.Lval E N v ω (Step6.oneLoop a₁)) B.P)
     (hint2 : ∀ N (v : TimeIcc s t N) (a₁ : ZMod (B.L N)) (w : LoopData (B.L N) 3),
-      Integrable (fun ω => (X.Lval E N v ω (oneLoop a₁) - B.Kval E N v (oneLoop a₁)) *
+      Integrable (fun ω => (X.Lval E N v ω (Step6.oneLoop a₁) - B.Kval E N v (Step6.oneLoop a₁)) *
         (X.Lval E N v ω w.idx - B.Kval E N v w.idx)) B.P)
     (hq13 : UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
       ‖quad13 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 4)) :
@@ -553,5 +565,341 @@ theorem sharpExpect_step6_single (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (h�
   exact ⟨(hN σ).1, fun v hv => ⟨(hN σ).2 v hv, fastDecay_zero (B.L N) hδ⟩⟩
 
 end Step6
+
+/-! ### T173: the drift tensor of Step 6, pinned to `RBM.DriftDef.driftF`
+
+The reduction `sharpExpect_step6_single` leaves three obligations on a *single* tensor.  They
+are obligations about *some* tensor only as long as the tensor is free, so the first thing to
+do is to remove that freedom: `RBM.driftE` below is a **definition**,
+`D_{v,σ,a} = E[F_{v,σ,a}]` with `F` the drift `RBM.DriftDef.driftF` that T58/T118(iii) proved
+`RBM.MomentDuhamel.Hyp.F` to be.  Nothing in it can be chosen. -/
+
+section DriftE
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **(5.15) with the time derivative removed**, i.e. the purely algebraic content of
+`RBM.DriftDef.drift_split_gen`:
+
+`Ẽ + (primRhs(L) - primRhs(K)) = Θ_u (L - K) + F_u`.
+
+`RBM.DriftDef.drift_split_gen` states this with `∂_u(L-K)` and `𝓛(L-K)` in place of the two
+left-hand summands and therefore needs `M` Hermitian and `Im z_u ≠ 0`; the algebra behind it
+needs neither, and it is the algebra that survives the passage to expectations.  The three
+inputs are `RBM.primRhs_sub` (5.12)/(5.13), `RBM.Decay.sum_couplingLen` (5.14) truncated by
+`RBM.DriftDef.sum_couplingLen_erase_two`, and (5.19)
+(`RBM.Gauss.couplingLen_two_eq_thetaGenLoop`), which identifies the `l_K = 2` grade of the
+coupling with the generator. -/
+theorem eGterm_add_primRhs_sub_eq (B : Band Ω) (E : ℝ) (N : ℕ) (u : ℝ)
+    (M : Matrix (B.Idx N) (B.Idx N) ℂ) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (B.L N) (n + 2))
+    (hm : ∀ b b' : Bool, ‖(u : ℂ) * (mSigma E b * mSigma E b')‖ < 1) :
+    Gauss.eGterm (B.L N) (B.W N) (mSigma E) M (zt E u) (LoopData.idx (σ, a))
+        + (primRhs (B.L N) (B.W N) (gloop (B.L N) (B.W N) M (zt E u)) (LoopData.idx (σ, a))
+          - primRhs (B.L N) (B.W N) (B.Kval E N u) (LoopData.idx (σ, a)))
+      = ThetaOp (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          (MomentDuhamel.lkFun B E N u M σ) a
+        + DriftDef.driftF B E N u M σ a := by
+  set I : LoopIdx (ZMod (B.L N)) := LoopData.idx (σ, a) with hI
+  have hwf : I.WF := LoopData.idx_wf _
+  have hlen : I.length = n + 2 := LoopData.idx_length _
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  set D : LoopIdx (ZMod (B.L N)) → ℂ :=
+    gloop (B.L N) (B.W N) M (zt E u) - B.Kval E N u with hD
+  have hgen : ThetaOp (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+      (MomentDuhamel.lkFun B E N u M σ) a
+      = SumZeroDyn.genS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          (MomentDuhamel.lkFun B E N u M σ) a := rfl
+  rw [hgen, DriftDef.genS_eq_thetaGenLoop_gen B E N u σ a, DriftDef.driftF]
+  have hK : ∀ σ₁ σ₂ a₁ a₂, B.Kval E N u ⟨[σ₁, σ₂], [a₁, a₂]⟩
+      = kTwo (B.L N) (B.W N) (mSigma E) u σ₁ σ₂ a₁ a₂ := by
+    intro σ₁ σ₂ a₁ a₂; rw [Band.Kval, Kgen_two]
+  have hξ : ‖(u : ℂ) * Gauss.xiLoop (mSigma E) I (I.length - 1)‖ < 1 := by
+    rw [Gauss.xiLoop]; exact hm _ _
+  have hcoup := Gauss.couplingLen_two_eq_thetaGenLoop (L := B.L N) (B.W N) (mSigma E) u
+    (B.Kval E N u) D hL3 hK I hwf (by omega) hξ
+  have hsum : Decay.couplingLen (B.L N) (B.W N) 2 (B.Kval E N u) D I
+        + ∑ lK ∈ Finset.Icc 3 (n + 2), Decay.couplingLen (B.L N) (B.W N) lK (B.Kval E N u) D I
+      = primBil (B.L N) (B.W N) (B.Kval E N u) D I
+        + primBil (B.L N) (B.W N) D (B.Kval E N u) I := by
+    have hN : I.length + 2 ≤ n + 4 := by omega
+    have h2mem : (2 : ℕ) ∈ Finset.range (n + 4) := Finset.mem_range.mpr (by omega)
+    have hstep := Finset.add_sum_erase (Finset.range (n + 4))
+      (fun lK => Decay.couplingLen (B.L N) (B.W N) lK (B.Kval E N u) D I) h2mem
+    rw [← hlen, ← DriftDef.sum_couplingLen_erase_two (B.L N) (B.W N) (B.Kval E N u) D I hN,
+      hstep, Decay.sum_couplingLen (B.L N) (B.W N) (B.Kval E N u) D I hN]
+  have hps := primRhs_sub (B.L N) (B.W N) (gloop (B.L N) (B.W N) M (zt E u)) (B.Kval E N u) I
+  rw [← hD] at hps
+  linear_combination hps - hsum + hcoup
+
+/-- **The drift tensor of Step 6, as a definition**: `D_{v,σ,a} = E[F_{v,σ,a}]`.
+
+`F` is `RBM.DriftDef.driftF`, which T58/T118(iii) proved to be the drift of (5.15)
+(`RBM.DriftDef.F_eq_driftF`, via `RBM.MomentDuhamel.Hyp.F_unique`) — every summand of it is a
+definition in the Green function of the matrix.  So `driftE` has **no free data at all**, and
+`RBM.Step6.sharpExpect_step6_single` applied to it (`sharpExpect_step6_driftE` below)
+quantifies over no tensor.  `driftE_eq_integral_Fpath` records that it is literally
+`E[H.Fpath]` for any `RBM.MomentDuhamel.Hyp`. -/
+noncomputable def driftE (X : Sample B) (E : ℝ) : Step6.DriftTensor B :=
+  fun N v σ a => ∫ ω, DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ a ∂B.P
+
+/-- **`driftE` is `E[F]` for the `F` of the moment interface**, on the window and for
+`|E| < 2`, `0 ≤ v < 1`.  `RBM.MomentDuhamel.Hyp.Fpath` is pinned by `Hyp.drift`, so this is a
+statement about a determined object, not about a choice. -/
+theorem driftE_eq_integral_Fpath {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+    (H : MomentDuhamel.Hyp X E s t 0) {N : ℕ} {v : ℝ} (hE : |E| < 2) (hv0 : 0 ≤ v)
+    (hv1 : v < 1) (hsv : s N ≤ v) (hvt : v ≤ t N) (σ : Fin 2 → Bool)
+    (a : LoopArg (B.L N) 2) :
+    driftE X E N v σ a = ∫ ω, H.Fpath N v ω σ a ∂B.P := by
+  refine (integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)).symm
+  exact DriftDef.Fpath_eq_driftF_of_lt_one H hE hv0 hv1 hsv hvt ω σ a
+
+/-! #### The expectation-form drift identity -/
+
+theorem integrable_lkFun (X : Sample B) (E : ℝ) (N : ℕ) (v : ℝ) {m : ℕ}
+    (σ : Fin m → Bool) (b : LoopArg (B.L N) m)
+    (h : Integrable (fun ω => X.Lval E N v ω (LoopData.idx (σ, b))) B.P) :
+    Integrable (fun ω => MomentDuhamel.lkFun B E N v (X.H N v ω) σ b) B.P := by
+  have := B.isProbabilityMeasure
+  exact h.sub (integrable_const _)
+
+theorem integral_lkFun (X : Sample B) (E : ℝ) (N : ℕ) (v : ℝ) {m : ℕ}
+    (σ : Fin m → Bool) (b : LoopArg (B.L N) m)
+    (h : Integrable (fun ω => X.Lval E N v ω (LoopData.idx (σ, b))) B.P) :
+    ∫ ω, MomentDuhamel.lkFun B E N v (X.H N v ω) σ b ∂B.P
+      = X.ELval E N v (LoopData.idx (σ, b)) - B.Kval E N v (LoopData.idx (σ, b)) := by
+  have := B.isProbabilityMeasure
+  rw [show (fun ω => MomentDuhamel.lkFun B E N v (X.H N v ω) σ b)
+      = (fun ω => X.Lval E N v ω (LoopData.idx (σ, b))
+          - B.Kval E N v (LoopData.idx (σ, b))) from rfl,
+    integral_sub h (integrable_const _), integral_const]
+  simp [Sample.ELval]
+
+/-- `RBM.ThetaOp` of an integrable family is integrable: it is a finite `ℂ`-linear combination
+of entries.  The companion of `RBM.integral_ThetaOp`. -/
+theorem integrable_ThetaOp (L : ℕ) [NeZero L] {P : Measure Ω} {n : ℕ}
+    (ξ : Fin n → ℂ) (t : ℂ) (Y : Ω → LoopArg L n → ℂ)
+    (hY : ∀ b, Integrable (fun ω => Y ω b) P) (a : LoopArg L n) :
+    Integrable (fun ω => ThetaOp L ξ t (Y ω) a) P := by
+  classical
+  simp only [ThetaOp]
+  exact integrable_finsetSum _ fun i _ =>
+    integrable_finsetSum _ fun c _ => (hY (Function.update a i c)).const_mul _
+
+/-- **The expectation-form drift identity**
+`∂_v E(L-K)_{v,σ,a} = (Θ_v ∘ E(L-K)_v)_a + D_{v,σ,a}`, with `D = RBM.driftE`.
+
+This is the input `RBM.Step6.hierarchy_of_hasDerivAt_Ioo` consumes, and it is the step T152
+left open.  Two things happen in it.  The *linear* half is `RBM.integral_ThetaOp`: `Θ_v`
+commutes with `E`.  The *quadratic* half does not commute — `RBM.primRhs` is quadratic in the
+loop values, so `E[primRhs(L_v)] ≠ primRhs(E L_v)` — and what survives is exactly the
+`RBM.primBil (L-K) (L-K)` summand of `RBM.DriftDef.driftF`, i.e. the paper's
+`E E^{((L-K)×(L-K))}`.  That summand is inside `D`, where the paper puts it.
+
+`hEL` is the conclusion of `RBM.Gauss.hasDerivAt_sample_ELval_hierarchy_gauss` (T140) read on
+an abstract `RBM.Sample`; it is the only analytic input, and it carries `0 < v` there, which
+is why the hierarchy can only be produced on the **open** interval. -/
+theorem hasDerivAt_lkT_thetaOp_driftE (X : Sample B) (E : ℝ) {N : ℕ} {v : ℝ}
+    (σ : Fin 2 → Bool) (a : LoopArg (B.L N) 2)
+    (hm : ∀ b b' : Bool, ‖(v : ℂ) * (mSigma E b * mSigma E b')‖ < 1)
+    (hintL : ∀ b : LoopArg (B.L N) 2,
+      Integrable (fun ω => X.Lval E N v ω (LoopData.idx (σ, b))) B.P)
+    (hintF : Integrable (fun ω => DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ a) B.P)
+    (hEL : HasDerivAt (fun q : ℝ => X.ELval E N q (LoopData.idx (σ, a)))
+      (∫ ω, (Gauss.eGterm (B.L N) (B.W N) (mSigma E) (X.H N v ω) (zt E v) (LoopData.idx (σ, a))
+        + primRhs (B.L N) (B.W N) (X.Lval E N v ω) (LoopData.idx (σ, a))) ∂B.P) v) :
+    HasDerivAt (fun q : ℝ => Step6.lkT X E N q σ a)
+      (ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) (Step6.lkT X E N v σ) a
+        + driftE X E N v σ a) v := by
+  have hP := B.isProbabilityMeasure
+  have hL3 := B.three_le_L N
+  have hK : HasDerivAt (fun q : ℝ => B.Kval E N q (LoopData.idx (σ, a)))
+      (primRhs (B.L N) (B.W N) (B.Kval E N v) (LoopData.idx (σ, a))) v :=
+    hasDerivAt_Kgen_all (L := B.L N) (B.W N) (mSigma E) hL3 hm _ (LoopData.idx_wf _) (by simp)
+  refine (hEL.sub hK).congr_deriv ?_
+  have hptw : ∀ ω : Ω,
+      Gauss.eGterm (B.L N) (B.W N) (mSigma E) (X.H N v ω) (zt E v) (LoopData.idx (σ, a))
+        + primRhs (B.L N) (B.W N) (X.Lval E N v ω) (LoopData.idx (σ, a))
+      = (ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.lkFun B E N v (X.H N v ω) σ) a
+          + DriftDef.driftF B E N v (X.H N v ω) σ a)
+        + primRhs (B.L N) (B.W N) (B.Kval E N v) (LoopData.idx (σ, a)) := by
+    intro ω
+    have h := eGterm_add_primRhs_sub_eq B E N v (X.H N v ω) (n := 0) σ a hm
+    have hLv : X.Lval E N v ω = gloop (B.L N) (B.W N) (X.H N v ω) (zt E v) := rfl
+    rw [hLv]
+    linear_combination h
+  have hintTh : Integrable (fun ω =>
+      ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (MomentDuhamel.lkFun B E N v (X.H N v ω) σ) a) B.P :=
+    integrable_ThetaOp (B.L N) _ _ _ (fun b => integrable_lkFun X E N v σ b (hintL b)) a
+  have hintSum : Integrable (fun ω : Ω =>
+      ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.lkFun B E N v (X.H N v ω) σ) a
+        + DriftDef.driftF B E N v (X.H N v ω) σ a) B.P := hintTh.add hintF
+  calc (∫ ω, (Gauss.eGterm (B.L N) (B.W N) (mSigma E) (X.H N v ω) (zt E v)
+            (LoopData.idx (σ, a))
+          + primRhs (B.L N) (B.W N) (X.Lval E N v ω) (LoopData.idx (σ, a))) ∂B.P)
+        - primRhs (B.L N) (B.W N) (B.Kval E N v) (LoopData.idx (σ, a))
+      = ((∫ ω, (ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+              (MomentDuhamel.lkFun B E N v (X.H N v ω) σ) a
+            + DriftDef.driftF B E N v (X.H N v ω) σ a) ∂B.P)
+          + primRhs (B.L N) (B.W N) (B.Kval E N v) (LoopData.idx (σ, a)))
+        - primRhs (B.L N) (B.W N) (B.Kval E N v) (LoopData.idx (σ, a)) := by
+        congr 1
+        rw [show (fun ω : Ω => Gauss.eGterm (B.L N) (B.W N) (mSigma E) (X.H N v ω) (zt E v)
+              (LoopData.idx (σ, a))
+            + primRhs (B.L N) (B.W N) (X.Lval E N v ω) (LoopData.idx (σ, a)))
+          = (fun ω : Ω => (ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+                (MomentDuhamel.lkFun B E N v (X.H N v ω) σ) a
+              + DriftDef.driftF B E N v (X.H N v ω) σ a)
+            + primRhs (B.L N) (B.W N) (B.Kval E N v) (LoopData.idx (σ, a)))
+          from funext hptw,
+          integral_add hintSum (integrable_const _), integral_const]
+        simp
+    _ = (∫ ω, ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.lkFun B E N v (X.H N v ω) σ) a ∂B.P)
+          + driftE X E N v σ a := by
+        rw [integral_add hintTh hintF,
+          show driftE X E N v σ a
+            = ∫ ω, DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ a ∂B.P from rfl]
+        ring
+    _ = ThetaOp (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) (Step6.lkT X E N v σ) a
+          + driftE X E N v σ a := by
+        congr 1
+        rw [integral_ThetaOp (B.L N) (P := B.P) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+          (fun ω b => MomentDuhamel.lkFun B E N v (X.H N v ω) σ b)
+          (fun b => integrable_lkFun X E N v σ b (hintL b)) a]
+        congr 1
+        funext b
+        exact integral_lkFun X E N v σ b (hintL b)
+
+/-! #### `RBM.Step6.Hierarchy` for the single tensor -/
+
+theorem Uker_zero (L : ℕ) [NeZero L] {n : ℕ} (ξ : Fin n → ℂ) (s t : ℂ)
+    (a : LoopArg L n) : Uker L ξ s t (0 : LoopArg L n → ℂ) a = 0 := by
+  rw [Uker_apply]
+  exact Finset.sum_eq_zero fun b _ => by simp
+
+theorem norm_time_mul_mSigma_lt_one {E : ℝ} (hE : |E| ≤ 2) {v : ℝ} (hv0 : 0 ≤ v)
+    (hv1 : v < 1) (b b' : Bool) : ‖(v : ℂ) * (mSigma E b * mSigma E b')‖ < 1 := by
+  rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hv0,
+    norm_mSigma hE, norm_mSigma hE, mul_one, mul_one]
+  exact hv1
+
+/-- **(5.129)-(5.131) with the single tensor `RBM.driftE`.**
+
+The second drift is `0`, which is legitimate by `RBM.Step6.hG_zero_right` and
+`RBM.Step6.fastDecay_zero` (T152): the paper's split of the drift buys nothing in Lean.  The
+derivative is required only on the **open** interval, and that is forced, not convenient:
+every route to `hEL` factors through the chain rule along `H_v = √v X`, which carries `0 < v`,
+while `RBM.Step6.sharpExpect_step6` admits `s N = 0`.
+
+This is the first producer of `RBM.Step6.Hierarchy` in the tree whose tensor is a definition
+rather than a bound variable. -/
+theorem hierarchy_driftE (X : Sample B) {E : ℝ} (hE : |E| ≤ 2) {s t : ℕ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hcont : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (b : LoopArg (B.L N) 2),
+      ContinuousOn (fun q : ℝ => Step6.lkT X E N q σ b) (Set.Icc (s N) ((u : ℝ))))
+    (hintL : ∀ N (v : ℝ), 0 < v → v < 1 → ∀ (σ : Fin 2 → Bool) (b : LoopArg (B.L N) 2),
+      Integrable (fun ω => X.Lval E N v ω (LoopData.idx (σ, b))) B.P)
+    (hintF : ∀ N (v : ℝ), 0 < v → v < 1 → ∀ (σ : Fin 2 → Bool) (b : LoopArg (B.L N) 2),
+      Integrable (fun ω => DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ b) B.P)
+    (hEL : ∀ N (v : ℝ), 0 < v → v < 1 → ∀ (σ : Fin 2 → Bool) (b : LoopArg (B.L N) 2),
+      HasDerivAt (fun q : ℝ => X.ELval E N q (LoopData.idx (σ, b)))
+        (∫ ω, (Gauss.eGterm (B.L N) (B.W N) (mSigma E) (X.H N v ω) (zt E v)
+            (LoopData.idx (σ, b))
+          + primRhs (B.L N) (B.W N) (X.Lval E N v ω) (LoopData.idx (σ, b))) ∂B.P) v)
+    (hintU : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (a : LoopArg (B.L N) 2),
+      IntervalIntegrable (fun v : ℝ => Uker (B.L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (((u : ℝ)) : ℂ) (driftE X E N v σ) a) volume (s N) (u : ℝ)) :
+    Step6.Hierarchy X E s t (driftE X E) 0 := by
+  refine Step6.hierarchy_of_hasDerivAt_Ioo X hE hs0 ht1 hcont ?_ hintU ?_
+  · intro N u σ v hv b
+    have hv0 : 0 < v := lt_of_le_of_lt (hs0 N) hv.1
+    have hv1 : v < 1 := hv.2.trans (u.2.2.trans_lt (ht1 N))
+    have hm := norm_time_mul_mSigma_lt_one hE hv0.le hv1
+    refine (hasDerivAt_lkT_thetaOp_driftE X E σ b hm (hintL N v hv0 hv1 σ)
+      (hintF N v hv0 hv1 σ b) (hEL N v hv0 hv1 σ b)).congr_deriv ?_
+    simp
+  · intro N u σ a
+    have h0 : ∀ r : ℝ, Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) (((u : ℝ)) : ℂ)
+        ((0 : Step6.DriftTensor B) N r σ) a = 0 := fun _ => Uker_zero (B.L N) _ _ _ a
+    simp only [h0]
+    exact intervalIntegrable_const
+
+/-! #### The size obligations on `RBM.driftE`
+
+Both remaining obligations of `RBM.Step6.sharpExpect_step6_single` are bounds on `D`, and
+taking the expectation is *not* what makes them hard: an expectation of a uniformly
+fast-decaying family is fast-decaying (`fastDecay_driftE`), and the norm of an expectation is
+at most the first moment of the norm (`norm_driftE_le_integral`).  What is left after these
+two reductions is the pathwise estimate of Lemma 5.10 for `RBM.DriftDef.driftF`
+(`RBM.DriftDef.fastDecay_driftF` already gives the decay half from Lemma 5.9's inputs), and
+for (5.133) the first-moment version of it.  See `docs/STATUS.md`. -/
+
+theorem fastDecay_integral {L : ℕ} [NeZero L] {P : Measure Ω} [IsProbabilityMeasure P] {n : ℕ}
+    {ℓ δ : ℝ} {A : Ω → LoopArg L n → ℂ} (h : ∀ ω, FastDecay L ℓ δ (A ω)) :
+    FastDecay L ℓ δ (fun b => ∫ ω, A ω b ∂P) := by
+  intro b hb
+  have := norm_integral_le_of_norm_le_const (μ := P) (C := δ) (f := fun ω => A ω b)
+    (Filter.Eventually.of_forall fun ω => h ω b hb)
+  simpa using this
+
+/-- **The `DLK` half of `RBM.Step6.FastDecayHyp` for `RBM.driftE`, reduced to the pathwise
+statement.**  With `RBM.DriftDef.fastDecay_driftF` this makes the fast decay of the drift a
+consequence of Lemma 5.9, with no stochastic step. -/
+theorem fastDecay_driftE (X : Sample B) (E : ℝ) (N : ℕ) (v : ℝ) (σ : Fin 2 → Bool)
+    {ℓ δ : ℝ}
+    (h : ∀ ω, FastDecay (B.L N) ℓ δ
+      (fun b : LoopArg (B.L N) 2 => DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ b)) :
+    FastDecay (B.L N) ℓ δ (driftE X E N v σ) := by
+  have := B.isProbabilityMeasure
+  exact fastDecay_integral (P := B.P) h
+
+/-- **(5.133) for `RBM.driftE` is a first-moment bound on `F`.**  Note that it is *not* a
+pathwise deterministic bound: `‖F‖` is only controlled with high probability, so the route to
+`h5133` is a bound on `E‖F‖`, not on `sup_ω ‖F‖`. -/
+theorem norm_driftE_le_integral (X : Sample B) (E : ℝ) (N : ℕ) (v : ℝ) (σ : Fin 2 → Bool)
+    (a : LoopArg (B.L N) 2) :
+    ‖driftE X E N v σ a‖
+      ≤ ∫ ω, ‖DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ a‖ ∂B.P :=
+  norm_integral_le_integral_norm _
+
+/-- **`RBM.Step6.sharpExpect_step6_single` with the drift tensor pinned**: the probe call the
+ticket asks for.  There is no tensor variable left anywhere in the statement — the `D` of
+`sharpExpect_step6_single` is `RBM.driftE`, a definition — so `hH`, `hFD` and `h5133` are
+statements about a determined object and none of them can be satisfied by choosing `D`. -/
+theorem sharpExpect_step6_driftE (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hH : Step6.Hierarchy X E s t (driftE X E) 0)
+    (hFD : ∀ τ > (0 : ℝ), ∀ Dd > (0 : ℝ), ∀ᶠ N : ℕ in Filter.atTop, ∀ σ : Fin 2 → Bool,
+      FastDecay (B.L N) (B.ell N (s N) * (B.W N : ℝ) ^ τ) ((B.W N : ℝ) ^ (-Dd))
+          (Step6.lkT X E N (s N) σ) ∧
+        ∀ v ∈ Set.Icc (s N) (t N),
+          FastDecay (B.L N) (B.ell N v * (B.W N : ℝ) ^ τ) ((B.W N : ℝ) ^ (-Dd))
+            (driftE X E N v σ))
+    (h5132 : UnifDetDom (fun N (u : LoopData (B.L N) 2) => X.expErr E N (s N) u.idx)
+      (fun N _ => (B.scale E N (s N))⁻¹ ^ 3))
+    (h5133 : UnifDetDom (fun N (p : TimeIcc s t N × LoopData (B.L N) 2) =>
+      ‖driftE X E N p.1 p.2.1 p.2.2‖)
+      (fun N p => (B.W N : ℝ) * B.ell N p.1 * (B.scale E N p.1)⁻¹ ^ 4))
+    (h527 : Step6.Eq527 X E s t)
+    (hq11 : UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
+      ‖Step6.quad11 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 2))
+    (hint1 : ∀ N (v : TimeIcc s t N) (a₁ : ZMod (B.L N)),
+      Integrable (fun ω => X.Lval E N v ω (Step6.oneLoop a₁)) B.P)
+    (hint2 : ∀ N (v : TimeIcc s t N) (a₁ : ZMod (B.L N)) (w : LoopData (B.L N) 3),
+      Integrable (fun ω => (X.Lval E N v ω (Step6.oneLoop a₁) - B.Kval E N v (Step6.oneLoop a₁)) *
+        (X.Lval E N v ω w.idx - B.Kval E N v w.idx)) B.P)
+    (hq13 : UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
+      ‖Step6.quad13 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 4)) :
+    UnifDetDom (fun N (p : TimeIcc s t N × LoopData (B.L N) 2) => X.expErr E N p.1 p.2.idx)
+      (fun N _ => (B.scale E N (t N))⁻¹ ^ 3) :=
+  Step6.sharpExpect_step6_single X hκ0 hκ1 hEκ hs0 hst ht1 hc hH hFD h5132 h5133 h527 hq11
+    hint1 hint2 hq13
+
+end DriftE
 
 end RBM

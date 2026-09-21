@@ -4191,3 +4191,38 @@ T164 的反例在这里表现为**前提不成立**，不构成矛盾。
 `TestFun`/`TestFunT`/`MatrixStein` 等量化的是**矩阵/函数**不是样本点。
 `SumZeroDyn.Hierarchy.duhamel/duhamelQ` **不是空真而是 fiat**（`mart` 自由字段取残差即满足）——T118 的禁令是对的。
 端点型只有 `Step6.hierarchy_of_hasDerivAt` / `Uker_duhamel` 在 `s N = 0` 不可满足，**但爆炸半径为 0**（T152 已给 `_Ioo` 版，且无外部消费者）。
+
+## T173：Step 6 的单张量漂移钉死（`Gauss/Step6HierarchyGauss.lean` 557 → 905 行，2026-09-21）
+
+单文件 `lake env lean` exit=0（全量构建此刻红在 `MinorDiffGain.lean`——T170 的 agent 正在改那个文件，与本单无关）。
+
+**(1) 钉死单张量：落地。**
+```lean
+noncomputable def driftE (X : Sample B) (E : ℝ) : Step6.DriftTensor B :=
+  fun N v σ a => ∫ ω, DriftDef.driftF B E N v (X.H N v ω) (n := 0) σ a ∂B.P
+```
+**是 `def`，不是字段**；被积函数是 T58 的 `driftF`（本身已 unfold 到 Green 函数与 `Kgen`）。
+**与 `E[Fpath]` 的等价是定理而非定义**（`driftE_eq_integral_Fpath`，走 `Fpath_eq_driftF_of_lt_one` → `Hyp.F_unique`）。
+`sharpExpect_step6_driftE` 把 `Step6.sharpExpect_step6_single` 的 `D` 槽填满，
+**陈述里没有任何自由张量变量**——T152 警告的那条 fiat 路径被堵死。
+
+**(2) 期望形漂移恒等式（开区间）：落地。**
+`eGterm_add_primRhs_sub_eq` 把 `drift_split_gen` 里**纯代数的一半**剥出来（去掉时间导数后不再需要 `M` Hermitian、
+不再需要 `Im z_u ≠ 0`）；`hasDerivAt_lkT_thetaOp_driftE` 给出 `∂_v E(L−K)_v = Θ_v∘E(L−K)_v + driftE`。
+**T152 指出的二次半边确实出现并被正确安置**：线性半边走 `integral_ThetaOp`，
+二次半边 `E[primBil(L−K,L−K)]` **不能与期望交换，原样留在 `driftF` 的第三个加项里**——即论文的 `E E^{((L−K)×(L−K))}`，
+**所以 `D` 里装的就是论文装的东西**。
+`hierarchy_driftE` 经 T152 的 **`_Ioo` 版**交出 `Step6.Hierarchy … (driftE X E) 0`（`0 < v` 由 `hs0` + `Ioo` 左端自动得到）；
+第二张量取 `0`，其 `Uker` 积分项由新证的 `Uker_zero` 化为常值 0（合法性来自 T152 的 `hG_zero_right`/`fastDecay_zero`）。
+
+**(3) `hFD` 的 `DLK` 半边与 `h5133`：未落地，只落地了「取期望不是障碍」。**
+`fastDecay_integral`/`fastDecay_driftE`（逐路径一致快衰减 ⟹ 期望快衰减）配上 `DriftDef.fastDecay_driftF`，
+把 `hFD` 的有内容半边归约为 Lemma 5.9 的确定性输入、**没有随机步**；
+`norm_driftE_le_integral` 把 (5.133) 归约为 `F` 的**一阶矩**界。
+**短的是**：`Decay` 给的是逐项 `≺` 形状，要变成 `UnifDetDom` 形状还差整段 Ξ-记账（**正是 T165 的第 (2) 项**）＋好集外包络的一阶矩记账。
+**没有为了凑出 `h5133` 去改 `D` 的定义。**
+
+**fiat 审计**：`driftE` 无任何可赋值结构字段；`hierarchy_driftE` 的假设全是关于**已确定对象**的命题
+（`hcont`/`hintL`/`hintF`/`hEL`/`hintU`，**都没证，是调用方义务**）。
+**可满足性**：`hEL` 在高斯模型上正是 T140 的结论，但那条仍挂 `MatrixStein`(T70) 与 `hjoint`(T141)，
+且**自带 `0 < u`**——这就是必须走 `_Ioo` 的原因，与 T152 的发现一致。

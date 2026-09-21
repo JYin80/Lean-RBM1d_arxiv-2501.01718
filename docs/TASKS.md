@@ -1,6 +1,6 @@
 # 任务队列
 
-> ## ⭐⭐ 当前优先级：T122 > T123 > T124 > T125 > T126 > T127 > T58（2026-09-21，Cowork）
+> ## ⭐⭐ 当前优先级：T122 > T126 > T127 > T128 > T130 > T129 > T131 > T58（2026-09-21，Cowork；T123/T124 已完成）
 >
 > **Jun 已裁 paper-deltas #72（原 #66）：论文不缺数学，走 (c) 收窄引用，(2.76) 陈述不改。**
 > `(+,+)` 的来源是 **Lemma 5.11 在 `n = 2`**（非交错电荷，(7.16) 情形 1），p.70 只是把出处写成了 (2.76)。
@@ -290,6 +290,10 @@
 | T125 | **`Step1.Hyp.lift` 的余项**（T116 余项，paper-deltas #74）：四样里 (1)–(3) 是确定性的（`gloop` 对 u 的连续模、`aprioriRhs` 的缓变区制、多项式下界）；(4) Lemma 5.1 在阈值 `2 + o(1)` 处的版本。**第 0 步：看 `Loop/ContinuityAssembly.lean` 的 `lemma_5_1`/`lemma_5_1'` 里阈值 2 是不是写死的**；若只是证明里的常数，就加一个阈值参数 `C ≥ 2` 的推广版，旧定理作为特例保留，**不改旧签名** | `Gauss/Step1Hyp.lean` + `Loop/ContinuityAssembly.lean`（加推广版） | Claude Code | 进行中 |
 | T126 | **无条件的 `SumZeroDyn.LKDecay`**（T118 拆单 (i)）：把 `DecayBridge.lkDecay_of_highProb` 的输入——`LKDecayEvent` 对每个 `m, τ, D` 高概率——定量闭合。`Decay.lemma59` 是确定性内核、`loopDecay_lk_of_event` 已是纯重述，缺的只是**它的前提事件沿流高概率**。**第 0 步：把 `Decay.lemma59` 的前提逐条列出，逐条对到现有生产者**（`Steps.localLaw`/`aprioriDecay`、T108 `lemma41Flow`、T107 的带时间指标 Lemma 4.1），列不上的报告。**Cowork 裁：`LKDecay` 的定义不改**（19 条签名穿过它）；paper-deltas #78 的 `|L|` 那一半另立 `LDecay`（同文件、同证法顺手产出），不并进 `LKDecay` | `Hierarchy/DecayBridge.lean`（续） | 待认领 | 未开工 |
 | T127 | **`Lemma510.EE_le` 由 `Decay.norm_eTens_le` 解锁**（T118 拆单 (ii)）：三块小管道——(a) `glueLoop = gloop (J k b b')`（T74 的遗留项）；(b) `Gauss.eeTens : LoopIdx → LoopIdx → ℂ` 与 `Hierarchy.EE : … → LoopArg L ((n+2)+(n+2)) → ℂ` 的类型适配；(c) `Band → Dims` 转换（全仓库没有；以后每次 `Gauss → Hierarchy` 交接都要用，**做成通用的**）。**只做 `EE` 这一半，不定义 `F`**（`F` 归 T58，见 T118 的 fiat 警告）| `Hierarchy/EEBridge.lean`（新建） | 待认领 | 未开工 |
+| T128 | **(4.5) 的三个 `hfix`（固定时刻）**（T124 余项 (2)）：`FlucRowFlow`/`FlucBlkFlow` 的固定时刻输入目前走 `stochDom_flucAvg_*`，带未卸的 `hsmall`。**第 0 步：改走 `FlucIter.stochDom_flucAvg_blockAvg_iter` 那条 `FlucGain` 路线**（T110：m ≤ 2 无条件；T113：有界字长版）——它**没有** `hsmall`，只要 `W⁻¹ ≤ ρ²`。逐条对：哪个 `hfix` 能由 `_iter` 供给、哪个不能、`Sblk` 权重是否也有 `_iter` 版。`IBPFlow` 那条的 `hfix` 走 `condExpDiag_stochDom_of_highProb`，其 `hΩ` 并入 T130。**不要去硬证 `hsmall`**（T87 已写明确定性包络给不出它） | `Gauss/Eq45FlowInputs.lean`（续） | 待认领 | 未开工 |
+| T129 | **`condExpDiag` 对 u 的模**（T124 余项 (3) 里真正新的那半，paper-deltas #79）：Green 函数那半已有（T106 `norm_green_flow_sub_le`）；`condExpDiag` 那半的难点是随机常数 `‖X‖` 落在**行条件期望的积分内部**，不是逐点模的推论。**第 0 步：判定能否把模写成「随机常数 `C(ω) = E_i[‖X‖+1]` × `|u−v|^{1/2}`」并证 `C ≺ 1`**（`‖X‖ ≺ 1` 是 T109；条件期望下 `≺` 的保持是 T112 `CondDom` 的主题——**它不是自动的**），再看 T124 的 `stochDom_timeIcc_of_unifDom` 是否接受**随机**的 Hölder 常数；不接受就报告需要的引擎形状，别硬凑 | `Gauss/CondExpModulus.lean`（新建） | 待认领 | 未开工 |
+| T130 | **`hΩ` 的 u-一致版**（T124 余项 (1) + T119 留下的 `hΩ`）：(4.4) 在**每个** `u ∈ [s,t]` 上成立的高概率事件。这是一条网命题，用 T124 刚补的网引擎（`UnifDomIcc`/`stochDom_timeIcc_of_unifDom`）+ T109 `‖X‖ ≺ 1`。**第 0 步：先写清 (4.4) 在 Lean 里的事件是什么、固定时刻由谁产出**；若事件含 `1(‖G_u‖_max ≤ 2)` 这类对 u 不连续的指示函数，照 T116 的**放宽阈值**做法（`netLift_of_relaxed`），并写 paper-delta | `Gauss/Eq45FlowInputs.lean` 或新文件 | 待认领 | 未开工 |
+| T131 | **小单：T123 的 `hint` 尾巴**。`quad11_unifDetDom`/`quad13_unifDetDom` 仍带可积性假设 `hint`；现成的 `integrable_sample_lkErr_mul` 是 **ℂ 值乘积**，桥要 **ℝ 值** `lkErr · lkErr`。补一条 ℝ 值版的可积性（由 ℂ 版取范数，或直接由确定性包络 `‖G‖ ≤ η⁻¹`），**对一般 `Sample` 陈述**，保持 T123 的普适性 | `Gauss/Envelope.lean` 或 `Gauss/Step6Hyp.lean` | 待认领 | 未开工 |
 
 ---
 

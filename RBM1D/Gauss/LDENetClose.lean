@@ -72,7 +72,15 @@ tool: the union bound over a polynomial net already beats the Gaussian tail `e^{
 Dudley / generic chaining is not needed.
 
 What the consumer would need in order to use the floored form is `RBM.LKDecayQuant.LDEFlowDom`
-restated with `+ N^{-B}` in the control (a `RBM1D/Hierarchy/` change, not made here).
+restated with `+ N^{-B}` in the control (done by T160, as
+`RBM.LKDecayQuant.LDEFlowDom'`).
+
+## T166: the same for the quadratic estimate (4.7)
+
+`RBM.Gauss.stochDom_ldeQuad_flow_floor` — for every `B ≥ 0`,
+`ldeQuadLHS(u) ≺ ldeQuadRHS(u) + N^{-B}` uniformly in `u ∈ [s_N, t_N]` and in `i`, under the
+same regime hypotheses.  It is the third large deviation input of (4.3), and the one
+`RBM.Gauss.DiagBoundFlow` was missing.  See the section at the end of this file.
 -/
 
 namespace RBM.Gauss
@@ -988,5 +996,689 @@ theorem ldeNetClose_of_lower_bound (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N <
   exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
 
 end Assemble
+
+
+/-! ## T166: the quadratic estimate (4.7) along the flow
+
+`RBM.diag_bound_stochDom` — (4.3) — needs, besides the row and column halves of (4.2), the
+large deviation estimate (4.7) for the **quadratic form**
+`∑_{k,l≠i} H_{ik} G^{(i)}_{kl} H_{li} − t ∑_{k≠i} S_{ik} G^{(i)}_{kk}`, and that estimate was
+missing in its time-uniform form.  The recipe of T148 goes through verbatim: a deterministic
+Hölder-`1/2` modulus in the time for both sides, a polynomially fine net, the unconditional
+event `{‖X‖ ≤ N}`, and the same additive floor `N^{-B}`.
+
+The only arithmetic difference is the size of the modulus.  The quadratic form carries one more
+`H`-factor and one more summation than the row sum, so its constant is `28 R^14` instead of
+`6 R^10` and the net spacing becomes `δ_N = (N^{-(14K+16+B)})²`.  As in T148 the whole chain is
+entrywise, which is what the exponent `14` (rather than `10`) pays for.
+
+The deterministic (4.3) kernel that consumes the three floored estimates is
+`RBM.norm_sq_green_diag_sub_le_blk_floor` in `RBM1D/Green/EntryBoundFloor.lean`.
+-/
+
+section QuadModulus
+
+variable {d : Dims} {N : ℕ} {E : ℝ}
+
+/-- The bridge: for `k, l ≠ i` the `(4.9)` expression `greenMinor` is the entry of the minor
+resolvent `greenMinorMat`. -/
+theorem greenMinor_eq_greenMinorMat (d : Dims) (N : ℕ) (u : ℝ) {z : ℂ} {i : d.Idx N} {ω : Ω d}
+    (hdet : IsUnit (Hflow d N u ω - z • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)).det)
+    (hGii : green (Hflow d N u ω) z i i ≠ 0) {k l : d.Idx N} (hk : k ≠ i) (hl : l ≠ i) :
+    greenMinor (green (Hflow d N u ω) z) i k l
+      = greenMinorMat d N u z i ω ⟨k, hk⟩ ⟨l, hl⟩ := by
+  rw [show greenMinorMat d N u z i ω = minorGreen (green (Hflow d N u ω) z) i from
+    inv_minor_resolvent hdet i hGii]
+  rfl
+
+/-- A sum over `univ.erase i`, bounded termwise, costs one factor of `|Idx|`. -/
+theorem sum_erase_le_card (d : Dims) (N : ℕ) (i : d.Idx N) (f : d.Idx N → ℝ)
+    {b : ℝ} (hb : 0 ≤ b) (hf : ∀ k ∈ Finset.univ.erase i, f k ≤ b) :
+    ∑ k ∈ Finset.univ.erase i, f k ≤ (Fintype.card (d.Idx N) : ℝ) * b := by
+  calc ∑ k ∈ Finset.univ.erase i, f k
+      ≤ ∑ _k ∈ Finset.univ.erase i, b := Finset.sum_le_sum hf
+    _ = ((Finset.univ.erase i).card : ℝ) * b := by
+        simp [Finset.sum_const, nsmul_eq_mul]
+    _ ≤ (Fintype.card (d.Idx N) : ℝ) * b := by
+        refine mul_le_mul_of_nonneg_right ?_ hb
+        have h : (Finset.univ.erase i).card ≤ Fintype.card (d.Idx N) := by
+          simp [Finset.card_erase_of_mem]
+        exact_mod_cast h
+
+/-- `RBM.Gauss.sum_erase_le_card` with the cardinality already replaced by `R`. -/
+theorem sum_erase_le_mul (d : Dims) (N : ℕ) (i : d.Idx N) (f : d.Idx N → ℝ) {b R : ℝ}
+    (hb : 0 ≤ b) (hf : ∀ k ∈ Finset.univ.erase i, f k ≤ b)
+    (hRn : (Fintype.card (d.Idx N) : ℝ) ≤ R) :
+    ∑ k ∈ Finset.univ.erase i, f k ≤ R * b :=
+  (sum_erase_le_card d N i f hb hf).trans (mul_le_mul_of_nonneg_right hRn hb)
+
+/-- The entries `G^{(i)}_{kl}` of (4.9), for `k, l ≠ i`, are bounded by `η_u⁻¹`. -/
+theorem norm_greenMinor_flow_le (d : Dims) (N : ℕ) (hE : |E| < 2) {u R : ℝ} (hu1 : u < 1)
+    (hRu : (etaT E u)⁻¹ ≤ R) (ω : Ω d) {i k l : d.Idx N} (hk : k ≠ i) (hl : l ≠ i) :
+    ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ≤ R := by
+  have hzu : (zt E u).im ≠ 0 := zt_im_ne_zero_of_lt_one hE hu1
+  rw [greenMinor_eq_greenMinorMat d N u (isUnit_det_Hflow_sub d N u ω hzu)
+    (green_Hflow_diag_ne_zero d N u ω hzu i) hk hl]
+  exact (norm_greenMinorMat_apply_le_etaT hE hu1 u _ _ ω).trans hRu
+
+/-- The modulus of continuity in the time of the entries `G^{(i)}_{kl}` of (4.9). -/
+theorem norm_greenMinor_flow_sub_le (d : Dims) (N : ℕ) (hE : |E| < 2) {u v R : ℝ}
+    (hu1 : u < 1) (hv1 : v < 1) (hR1 : 1 ≤ R) (hRu : (etaT E u)⁻¹ ≤ R)
+    (hRv : (etaT E v)⁻¹ ≤ R) (hRn : (Fintype.card (d.Idx N) : ℝ) ≤ R) (ω : Ω d)
+    (hRx : ‖Xmat d N ω‖ ≤ R) {i k l : d.Idx N} (hk : k ≠ i) (hl : l ≠ i) :
+    ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+        - greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖
+      ≤ 2 * R ^ 5 * (|Real.sqrt u - Real.sqrt v| + |u - v|) := by
+  have hR0 : (0 : ℝ) ≤ R := by linarith
+  have hε0 : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt v| + |u - v| := by positivity
+  have hzu : (zt E u).im ≠ 0 := zt_im_ne_zero_of_lt_one hE hu1
+  have hzv : (zt E v).im ≠ 0 := zt_im_ne_zero_of_lt_one hE hv1
+  rw [greenMinor_eq_greenMinorMat d N u (isUnit_det_Hflow_sub d N u ω hzu)
+      (green_Hflow_diag_ne_zero d N u ω hzu i) hk hl,
+    greenMinor_eq_greenMinorMat d N v (isUnit_det_Hflow_sub d N v ω hzv)
+      (green_Hflow_diag_ne_zero d N v ω hzv i) hk hl]
+  refine (norm_greenMinorMat_flow_sub_apply_le d N hE hu1 hv1 hRu hRv ω i _ _).trans ?_
+  have h0 : (0 : ℝ) ≤ (Fintype.card (d.Idx N) : ℝ) := Nat.cast_nonneg _
+  have hn2 : (Fintype.card (d.Idx N) : ℝ) ^ 2 ≤ R ^ 2 := by nlinarith
+  have hx1 : ‖Xmat d N ω‖ + 1 ≤ 2 * R := by linarith
+  have h1 : (Fintype.card (d.Idx N) : ℝ) ^ 2 * (‖Xmat d N ω‖ + 1) ≤ R ^ 2 * (2 * R) :=
+    mul_le_mul hn2 hx1 (by positivity) (by positivity)
+  calc R ^ 2 * ((Fintype.card (d.Idx N) : ℝ) ^ 2 * (‖Xmat d N ω‖ + 1))
+          * (|Real.sqrt u - Real.sqrt v| + |u - v|)
+      ≤ R ^ 2 * (R ^ 2 * (2 * R)) * (|Real.sqrt u - Real.sqrt v| + |u - v|) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left h1 (by positivity)) hε0
+    _ = 2 * R ^ 5 * (|Real.sqrt u - Real.sqrt v| + |u - v|) := by ring
+
+/-- **The control of the quadratic estimate (4.7) is Hölder-`1/2` in the time.** -/
+theorem abs_ldeQuadRHS_flow_sub_le (d : Dims) (N : ℕ) (hE : |E| < 2) {u v R : ℝ}
+    (hu1 : u < 1) (hv1 : v < 1) (hR1 : 1 ≤ R)
+    (hRu : (etaT E u)⁻¹ ≤ R) (hRv : (etaT E v)⁻¹ ≤ R)
+    (hRn : (Fintype.card (d.Idx N) : ℝ) ≤ R) (ω : Ω d) (hRx : ‖Xmat d N ω‖ ≤ R)
+    (i : d.Idx N) :
+    |ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i
+        - ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N v ω) (zt E v)) i|
+      ≤ 28 * R ^ 14 * (|Real.sqrt u - Real.sqrt v| + |u - v|) := by
+  have hR0 : (0 : ℝ) ≤ R := by linarith
+  have h814 : R ^ 8 ≤ R ^ 14 := pow_le_pow_right₀ hR1 (by norm_num)
+  set ε : ℝ := |Real.sqrt u - Real.sqrt v| + |u - v| with hεdef
+  have hε0 : (0 : ℝ) ≤ ε := by rw [hεdef]; positivity
+  have heq : ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i
+      - ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N v ω) (zt E v)) i
+      = ∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+          (Sblk (d.L N) (d.W N) i k
+              * ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ^ 2
+              * Sblk (d.L N) (d.W N) l i
+            - Sblk (d.L N) (d.W N) i k
+              * ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ^ 2
+              * Sblk (d.L N) (d.W N) l i) := by
+    unfold ldeQuadRHS
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun k _ => by rw [← Finset.sum_sub_distrib]
+  rw [heq]
+  have hstep : |∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+      (Sblk (d.L N) (d.W N) i k
+          * ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ^ 2
+          * Sblk (d.L N) (d.W N) l i
+        - Sblk (d.L N) (d.W N) i k
+          * ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ^ 2
+          * Sblk (d.L N) (d.W N) l i)| ≤ R * (R * (4 * R ^ 6 * ε)) := by
+    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun k hk => ?_) hRn
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun l hl => ?_) hRn
+    have hli : l ≠ i := Finset.ne_of_mem_erase hl
+    have hsq : |‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ^ 2
+        - ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ^ 2| ≤ 4 * R ^ 6 * ε := by
+      refine (abs_norm_sq_sub_le _ _).trans ?_
+      have hsum : ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖
+          + ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ≤ 2 * R := by
+        linarith [norm_greenMinor_flow_le d N hE hu1 hRu ω hki hli,
+          norm_greenMinor_flow_le d N hE hv1 hRv ω hki hli]
+      calc (‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖
+            + ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖)
+            * ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+              - greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖
+          ≤ (2 * R) * (2 * R ^ 5 * ε) :=
+            mul_le_mul hsum
+              (norm_greenMinor_flow_sub_le d N hE hu1 hv1 hR1 hRu hRv hRn ω hRx hki hli)
+              (norm_nonneg _) (by positivity)
+        _ = 4 * R ^ 6 * ε := by ring
+    have hS1n := Sblk_nonneg (L := d.L N) (W := d.W N) i k
+    have hS2n := Sblk_nonneg (L := d.L N) (W := d.W N) l i
+    have hrw : Sblk (d.L N) (d.W N) i k
+            * ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ^ 2
+            * Sblk (d.L N) (d.W N) l i
+          - Sblk (d.L N) (d.W N) i k
+            * ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ^ 2
+            * Sblk (d.L N) (d.W N) l i
+        = Sblk (d.L N) (d.W N) i k * Sblk (d.L N) (d.W N) l i
+          * (‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ^ 2
+            - ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ^ 2) := by ring
+    rw [hrw, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ Sblk (d.L N) (d.W N) i k
+      * Sblk (d.L N) (d.W N) l i)]
+    calc Sblk (d.L N) (d.W N) i k * Sblk (d.L N) (d.W N) l i
+          * |‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ^ 2
+            - ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ^ 2|
+        ≤ 1 * (4 * R ^ 6 * ε) := by
+          refine mul_le_mul ?_ hsq (abs_nonneg _) zero_le_one
+          nlinarith [Sblk_le_one d N i k, Sblk_le_one d N l i]
+      _ = 4 * R ^ 6 * ε := one_mul _
+  refine hstep.trans ?_
+  have hre : R * (R * (4 * R ^ 6 * ε)) = 4 * R ^ 8 * ε := by ring
+  rw [hre]
+  nlinarith [pow_nonneg hR0 8, pow_nonneg hR0 14]
+
+/-- **The chaos of the quadratic estimate (4.7) is Hölder-`1/2` in the time.** -/
+theorem abs_ldeQuadLHS_flow_sub_le (d : Dims) (N : ℕ) (hE : |E| < 2) {u v R : ℝ}
+    (hu0 : 0 ≤ u) (hv0 : 0 ≤ v) (hu1 : u < 1) (hv1 : v < 1) (hR1 : 1 ≤ R)
+    (hRu : (etaT E u)⁻¹ ≤ R) (hRv : (etaT E v)⁻¹ ≤ R)
+    (hRn : (Fintype.card (d.Idx N) : ℝ) ≤ R) (ω : Ω d) (hRx : ‖Xmat d N ω‖ ≤ R)
+    (i : d.Idx N) :
+    |ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) (zt E u)) (Sblk (d.L N) (d.W N)) u i
+        - ldeQuadLHS (Hflow d N v ω) (green (Hflow d N v ω) (zt E v))
+          (Sblk (d.L N) (d.W N)) v i|
+      ≤ 28 * R ^ 14 * (|Real.sqrt u - Real.sqrt v| + |u - v|) := by
+  have hR0 : (0 : ℝ) ≤ R := by linarith
+  have hRp : ∀ m n : ℕ, m ≤ n → R ^ m ≤ R ^ n := fun m n h => pow_le_pow_right₀ hR1 h
+  set ε : ℝ := |Real.sqrt u - Real.sqrt v| + |u - v| with hεdef
+  have hε0 : (0 : ℝ) ≤ ε := by rw [hεdef]; positivity
+  have hεs : |Real.sqrt u - Real.sqrt v| ≤ ε := by
+    rw [hεdef]; linarith [abs_nonneg (u - v)]
+  have hεu : |u - v| ≤ ε := by
+    rw [hεdef]; linarith [abs_nonneg (Real.sqrt u - Real.sqrt v)]
+  have hGb : ∀ k l : d.Idx N, k ≠ i → l ≠ i →
+      ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l‖ ≤ R :=
+    fun k l hk hl => norm_greenMinor_flow_le d N hE hu1 hRu ω hk hl
+  have hGb' : ∀ k l : d.Idx N, k ≠ i → l ≠ i →
+      ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ≤ R :=
+    fun k l hk hl => norm_greenMinor_flow_le d N hE hv1 hRv ω hk hl
+  have hGd : ∀ k l : d.Idx N, k ≠ i → l ≠ i →
+      ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+        - greenMinor (green (Hflow d N v ω) (zt E v)) i k l‖ ≤ 2 * R ^ 5 * ε :=
+    fun k l hk hl => norm_greenMinor_flow_sub_le d N hE hu1 hv1 hR1 hRu hRv hRn ω hRx hk hl
+  have hHb : ∀ a b : d.Idx N, ‖Hflow d N u ω a b‖ ≤ R :=
+    fun a b => (norm_Hflow_apply_le_opNorm d N hu1.le ω a b).trans hRx
+  have hHb' : ∀ a b : d.Idx N, ‖Hflow d N v ω a b‖ ≤ R :=
+    fun a b => (norm_Hflow_apply_le_opNorm d N hv1.le ω a b).trans hRx
+  have hHd : ∀ a b : d.Idx N, ‖Hflow d N u ω a b - Hflow d N v ω a b‖ ≤ R * ε := by
+    intro a b
+    rw [← Matrix.sub_apply, norm_Hflow_sub_apply]
+    have h1 : ‖Xmat d N ω a b‖ ≤ R := (norm_entry_le_l2_opNorm _ _ _).trans hRx
+    calc |Real.sqrt u - Real.sqrt v| * ‖Xmat d N ω a b‖
+        ≤ ε * R := mul_le_mul hεs h1 (norm_nonneg _) hε0
+      _ = R * ε := by ring
+  have hLu : ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) (zt E u))
+        (Sblk (d.L N) (d.W N)) u i
+      = ‖(∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+            Hflow d N u ω i k * greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+              * Hflow d N u ω l i)
+          - (u : ℂ) * ∑ k ∈ Finset.univ.erase i,
+            ((Sblk (d.L N) (d.W N) i k : ℝ) : ℂ)
+              * greenMinor (green (Hflow d N u ω) (zt E u)) i k k‖ ^ 2 := rfl
+  have hLv : ldeQuadLHS (Hflow d N v ω) (green (Hflow d N v ω) (zt E v))
+        (Sblk (d.L N) (d.W N)) v i
+      = ‖(∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+            Hflow d N v ω i k * greenMinor (green (Hflow d N v ω) (zt E v)) i k l
+              * Hflow d N v ω l i)
+          - (v : ℂ) * ∑ k ∈ Finset.univ.erase i,
+            ((Sblk (d.L N) (d.W N) i k : ℝ) : ℂ)
+              * greenMinor (green (Hflow d N v ω) (zt E v)) i k k‖ ^ 2 := rfl
+  rw [hLu, hLv]
+  set Pu : ℂ := ∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+    Hflow d N u ω i k * greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+      * Hflow d N u ω l i with hPu
+  set Pv : ℂ := ∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+    Hflow d N v ω i k * greenMinor (green (Hflow d N v ω) (zt E v)) i k l
+      * Hflow d N v ω l i with hPv
+  set Su : ℂ := ∑ k ∈ Finset.univ.erase i,
+    ((Sblk (d.L N) (d.W N) i k : ℝ) : ℂ)
+      * greenMinor (green (Hflow d N u ω) (zt E u)) i k k with hSu
+  set Sv : ℂ := ∑ k ∈ Finset.univ.erase i,
+    ((Sblk (d.L N) (d.W N) i k : ℝ) : ℂ)
+      * greenMinor (green (Hflow d N v ω) (zt E v)) i k k with hSv
+  clear_value Pu Pv Su Sv
+  have hPub : ‖Pu‖ ≤ R ^ 5 := by
+    rw [hPu]
+    refine (norm_sum_le _ _).trans ?_
+    refine (sum_erase_le_mul d N i _ (b := R * (R * R * R)) (by positivity)
+      (fun k hk => ?_) hRn).trans (le_of_eq (by ring))
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun l hl => ?_) hRn
+    have hli : l ≠ i := Finset.ne_of_mem_erase hl
+    rw [norm_mul, norm_mul]
+    exact mul_le_mul (mul_le_mul (hHb i k) (hGb k l hki hli) (norm_nonneg _) hR0)
+      (hHb l i) (norm_nonneg _) (by positivity)
+  have hPvb : ‖Pv‖ ≤ R ^ 5 := by
+    rw [hPv]
+    refine (norm_sum_le _ _).trans ?_
+    refine (sum_erase_le_mul d N i _ (b := R * (R * R * R)) (by positivity)
+      (fun k hk => ?_) hRn).trans (le_of_eq (by ring))
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun l hl => ?_) hRn
+    have hli : l ≠ i := Finset.ne_of_mem_erase hl
+    rw [norm_mul, norm_mul]
+    exact mul_le_mul (mul_le_mul (hHb' i k) (hGb' k l hki hli) (norm_nonneg _) hR0)
+      (hHb' l i) (norm_nonneg _) (by positivity)
+  have hSub : ‖Su‖ ≤ R * R := by
+    rw [hSu]
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ hR0 (fun k hk => ?_) hRn
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    rw [norm_mul, Complex.norm_of_nonneg (Sblk_nonneg _ _)]
+    calc Sblk (d.L N) (d.W N) i k
+            * ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k k‖
+        ≤ 1 * R :=
+          mul_le_mul (Sblk_le_one d N i k) (hGb k k hki hki) (norm_nonneg _) zero_le_one
+      _ = R := one_mul _
+  have hSvb : ‖Sv‖ ≤ R * R := by
+    rw [hSv]
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ hR0 (fun k hk => ?_) hRn
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    rw [norm_mul, Complex.norm_of_nonneg (Sblk_nonneg _ _)]
+    calc Sblk (d.L N) (d.W N) i k
+            * ‖greenMinor (green (Hflow d N v ω) (zt E v)) i k k‖
+        ≤ 1 * R :=
+          mul_le_mul (Sblk_le_one d N i k) (hGb' k k hki hki) (norm_nonneg _) zero_le_one
+      _ = R := one_mul _
+  have hSd : ‖Su - Sv‖ ≤ R * (2 * R ^ 5 * ε) := by
+    have hdiff : Su - Sv = ∑ k ∈ Finset.univ.erase i,
+        ((Sblk (d.L N) (d.W N) i k : ℝ) : ℂ)
+          * (greenMinor (green (Hflow d N u ω) (zt E u)) i k k
+            - greenMinor (green (Hflow d N v ω) (zt E v)) i k k) := by
+      rw [hSu, hSv, ← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun k _ => by ring
+    rw [hdiff]
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun k hk => ?_) hRn
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    rw [norm_mul, Complex.norm_of_nonneg (Sblk_nonneg _ _)]
+    calc Sblk (d.L N) (d.W N) i k
+            * ‖greenMinor (green (Hflow d N u ω) (zt E u)) i k k
+              - greenMinor (green (Hflow d N v ω) (zt E v)) i k k‖
+        ≤ 1 * (2 * R ^ 5 * ε) :=
+          mul_le_mul (Sblk_le_one d N i k) (hGd k k hki hki) (norm_nonneg _) zero_le_one
+      _ = 2 * R ^ 5 * ε := one_mul _
+  have hPd : ‖Pu - Pv‖ ≤ R * (R * (4 * R ^ 7 * ε)) := by
+    have hdiff : Pu - Pv = ∑ k ∈ Finset.univ.erase i, ∑ l ∈ Finset.univ.erase i,
+        (Hflow d N u ω i k * greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+            * Hflow d N u ω l i
+          - Hflow d N v ω i k * greenMinor (green (Hflow d N v ω) (zt E v)) i k l
+            * Hflow d N v ω l i) := by
+      rw [hPu, hPv, ← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun k _ => by rw [← Finset.sum_sub_distrib]
+    rw [hdiff]
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun k hk => ?_) hRn
+    have hki : k ≠ i := Finset.ne_of_mem_erase hk
+    refine (norm_sum_le _ _).trans ?_
+    refine sum_erase_le_mul d N i _ (by positivity) (fun l hl => ?_) hRn
+    have hli : l ≠ i := Finset.ne_of_mem_erase hl
+    have hsplit : Hflow d N u ω i k * greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+            * Hflow d N u ω l i
+          - Hflow d N v ω i k * greenMinor (green (Hflow d N v ω) (zt E v)) i k l
+            * Hflow d N v ω l i
+        = (Hflow d N u ω i k - Hflow d N v ω i k)
+            * greenMinor (green (Hflow d N u ω) (zt E u)) i k l * Hflow d N u ω l i
+          + Hflow d N v ω i k
+            * (greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+              - greenMinor (green (Hflow d N v ω) (zt E v)) i k l)
+            * Hflow d N u ω l i
+          + Hflow d N v ω i k * greenMinor (green (Hflow d N v ω) (zt E v)) i k l
+            * (Hflow d N u ω l i - Hflow d N v ω l i) := by ring
+    rw [hsplit]
+    set A1 : ℂ := (Hflow d N u ω i k - Hflow d N v ω i k)
+      * greenMinor (green (Hflow d N u ω) (zt E u)) i k l * Hflow d N u ω l i with hA1
+    set A2 : ℂ := Hflow d N v ω i k
+      * (greenMinor (green (Hflow d N u ω) (zt E u)) i k l
+        - greenMinor (green (Hflow d N v ω) (zt E v)) i k l)
+      * Hflow d N u ω l i with hA2
+    set A3 : ℂ := Hflow d N v ω i k * greenMinor (green (Hflow d N v ω) (zt E v)) i k l
+      * (Hflow d N u ω l i - Hflow d N v ω l i) with hA3
+    clear_value A1 A2 A3
+    have t1 : ‖A1‖ ≤ R * ε * R * R := by
+      rw [hA1, norm_mul, norm_mul]
+      exact mul_le_mul (mul_le_mul (hHd i k) (hGb k l hki hli) (norm_nonneg _)
+        (by positivity)) (hHb l i) (norm_nonneg _) (by positivity)
+    have t2 : ‖A2‖ ≤ R * (2 * R ^ 5 * ε) * R := by
+      rw [hA2, norm_mul, norm_mul]
+      exact mul_le_mul (mul_le_mul (hHb' i k) (hGd k l hki hli) (norm_nonneg _) hR0)
+        (hHb l i) (norm_nonneg _) (by positivity)
+    have t3 : ‖A3‖ ≤ R * R * (R * ε) := by
+      rw [hA3, norm_mul, norm_mul]
+      exact mul_le_mul (mul_le_mul (hHb' i k) (hGb' k l hki hli) (norm_nonneg _) hR0)
+        (hHd l i) (norm_nonneg _) (by positivity)
+    have h37 : R ^ 3 ≤ R ^ 7 := hRp 3 7 (by norm_num)
+    have hadd : ‖A1 + A2 + A3‖ ≤ ‖A1‖ + ‖A2‖ + ‖A3‖ := by
+      calc ‖A1 + A2 + A3‖ ≤ ‖A1 + A2‖ + ‖A3‖ := norm_add_le _ _
+        _ ≤ ‖A1‖ + ‖A2‖ + ‖A3‖ := by linarith [norm_add_le A1 A2]
+    nlinarith [hadd, t1, t2, t3, h37, hε0]
+  have hAu : ‖Pu - (u : ℂ) * Su‖ ≤ 2 * R ^ 5 := by
+    have h1 : ‖(u : ℂ) * Su‖ ≤ R ^ 2 := by
+      rw [norm_mul, Complex.norm_of_nonneg hu0]
+      have h2 : u * ‖Su‖ ≤ 1 * (R * R) :=
+        mul_le_mul hu1.le hSub (norm_nonneg _) zero_le_one
+      nlinarith
+    have h25 : R ^ 2 ≤ R ^ 5 := hRp 2 5 (by norm_num)
+    calc ‖Pu - (u : ℂ) * Su‖ ≤ ‖Pu‖ + ‖(u : ℂ) * Su‖ := norm_sub_le _ _
+      _ ≤ 2 * R ^ 5 := by linarith
+  have hAv : ‖Pv - (v : ℂ) * Sv‖ ≤ 2 * R ^ 5 := by
+    have h1 : ‖(v : ℂ) * Sv‖ ≤ R ^ 2 := by
+      rw [norm_mul, Complex.norm_of_nonneg hv0]
+      have h2 : v * ‖Sv‖ ≤ 1 * (R * R) :=
+        mul_le_mul hv1.le hSvb (norm_nonneg _) zero_le_one
+      nlinarith
+    have h25 : R ^ 2 ≤ R ^ 5 := hRp 2 5 (by norm_num)
+    calc ‖Pv - (v : ℂ) * Sv‖ ≤ ‖Pv‖ + ‖(v : ℂ) * Sv‖ := norm_sub_le _ _
+      _ ≤ 2 * R ^ 5 := by linarith
+  have hAd : ‖(Pu - (u : ℂ) * Su) - (Pv - (v : ℂ) * Sv)‖ ≤ 7 * R ^ 9 * ε := by
+    have hD : ‖(u : ℂ) * Su - (v : ℂ) * Sv‖ ≤ R ^ 2 * ε + 2 * R ^ 6 * ε := by
+      have hsp : (u : ℂ) * Su - (v : ℂ) * Sv
+          = ((u : ℂ) - (v : ℂ)) * Su + (v : ℂ) * (Su - Sv) := by ring
+      rw [hsp]
+      have e1 : ‖((u : ℂ) - (v : ℂ)) * Su‖ ≤ R ^ 2 * ε := by
+        rw [norm_mul, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+        have h2 : |u - v| * ‖Su‖ ≤ ε * (R * R) :=
+          mul_le_mul hεu hSub (norm_nonneg _) hε0
+        nlinarith
+      have e2 : ‖(v : ℂ) * (Su - Sv)‖ ≤ 2 * R ^ 6 * ε := by
+        rw [norm_mul, Complex.norm_of_nonneg hv0]
+        have h2 : v * ‖Su - Sv‖ ≤ 1 * (R * (2 * R ^ 5 * ε)) :=
+          mul_le_mul hv1.le hSd (norm_nonneg _) zero_le_one
+        nlinarith
+      linarith [norm_add_le (((u : ℂ) - (v : ℂ)) * Su) ((v : ℂ) * (Su - Sv))]
+    have hsp2 : (Pu - (u : ℂ) * Su) - (Pv - (v : ℂ) * Sv)
+        = (Pu - Pv) - ((u : ℂ) * Su - (v : ℂ) * Sv) := by ring
+    rw [hsp2]
+    have h29 : R ^ 2 ≤ R ^ 9 := hRp 2 9 (by norm_num)
+    have h69 : R ^ 6 ≤ R ^ 9 := hRp 6 9 (by norm_num)
+    have hP : ‖Pu - Pv‖ ≤ 4 * R ^ 9 * ε := by
+      rw [show (4 : ℝ) * R ^ 9 * ε = R * (R * (4 * R ^ 7 * ε)) by ring]
+      exact hPd
+    calc ‖(Pu - Pv) - ((u : ℂ) * Su - (v : ℂ) * Sv)‖
+        ≤ ‖Pu - Pv‖ + ‖(u : ℂ) * Su - (v : ℂ) * Sv‖ := norm_sub_le _ _
+      _ ≤ 7 * R ^ 9 * ε := by nlinarith [hP, hD, h29, h69, hε0]
+  refine (abs_norm_sq_sub_le _ _).trans ?_
+  calc (‖Pu - (u : ℂ) * Su‖ + ‖Pv - (v : ℂ) * Sv‖)
+          * ‖(Pu - (u : ℂ) * Su) - (Pv - (v : ℂ) * Sv)‖
+      ≤ (2 * R ^ 5 + 2 * R ^ 5) * (7 * R ^ 9 * ε) :=
+        mul_le_mul (by linarith) hAd (norm_nonneg _) (by positivity)
+    _ = 28 * R ^ 14 * ε := by ring
+
+/-- **Both sides of the quadratic estimate (4.7) are Hölder-`1/2` in the time**, with a constant
+polynomial in `η_u⁻¹`, `|Idx|` and `‖X‖`. -/
+theorem abs_ldeQuad_flow_sub_le (d : Dims) (N : ℕ) (hE : |E| < 2) {u v R : ℝ}
+    (hu0 : 0 ≤ u) (hv0 : 0 ≤ v) (hu1 : u < 1) (hv1 : v < 1) (hR1 : 1 ≤ R)
+    (hRu : (etaT E u)⁻¹ ≤ R) (hRv : (etaT E v)⁻¹ ≤ R)
+    (hRn : (Fintype.card (d.Idx N) : ℝ) ≤ R) (ω : Ω d) (hRx : ‖Xmat d N ω‖ ≤ R)
+    (i : d.Idx N) :
+    |ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i
+        - ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N v ω) (zt E v)) i|
+        ≤ 28 * R ^ 14 * (|Real.sqrt u - Real.sqrt v| + |u - v|)
+      ∧ |ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) (zt E u))
+            (Sblk (d.L N) (d.W N)) u i
+          - ldeQuadLHS (Hflow d N v ω) (green (Hflow d N v ω) (zt E v))
+            (Sblk (d.L N) (d.W N)) v i|
+        ≤ 28 * R ^ 14 * (|Real.sqrt u - Real.sqrt v| + |u - v|) :=
+  ⟨abs_ldeQuadRHS_flow_sub_le d N hE hu1 hv1 hR1 hRu hRv hRn ω hRx i,
+    abs_ldeQuadLHS_flow_sub_le d N hE hu0 hv0 hu1 hv1 hR1 hRu hRv hRn ω hRx i⟩
+
+end QuadModulus
+
+
+section QuadFixed
+
+variable {d : Dims} {s t : ℕ → ℝ} {E : ℝ}
+
+/-- **The quadratic large deviation estimate (4.7) at every time of the flow interval.**
+
+This is `RBM.Gauss.stochDom_ldeQuad` with the time universally quantified instead of fixed: the
+Hanson–Wright moment bound `RBM.Gauss.mom_modelChaosEps_le` behind it has the constant
+`hwConst q` at every time, and `RBM.Gauss.UnifDomIcc` takes no union over the index set, so no
+cardinality hypothesis is needed either.  It is the `hfix` of
+`RBM.Gauss.stochDom_timeIcc_of_unifDom_relative` for (4.7). -/
+theorem unifDomIcc_ldeQuad (d : Dims) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (ht1 : ∀ N, t N < 1) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : BIdx d.L d.W N) ω =>
+        ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) (zt E u))
+          (Sblk (d.L N) (d.W N)) u i)
+      (fun N u (i : BIdx d.L d.W N) ω =>
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i) := by
+  intro τ hτ D hD
+  obtain ⟨q, hq⟩ := exists_nat_ge ((D + 1) / τ)
+  have hDq : D + 1 ≤ τ * (q : ℝ) := by rw [div_le_iff₀ hτ] at hq; linarith
+  have hexpand : τ * ((q : ℝ) + 1) = τ * (q : ℝ) + τ := by ring
+  have hexp : 0 < τ * ((q : ℝ) + 1) - D := by rw [hexpand]; linarith
+  filter_upwards [eventually_le_rpow (hwConst q) hexp, Filter.eventually_ge_atTop 1]
+    with N hCN hN1 u hu i
+  have hu0 : 0 ≤ u := le_trans (hs0 N) hu.1
+  have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+  have hN0 : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hNτ : (0 : ℝ) < (N : ℝ) ^ τ := Real.rpow_pos_of_pos hN0 τ
+  have hz : (zt E u).im ≠ 0 := zt_im_ne_zero_of_lt_one hE hu1
+  have hrhs : ∀ ω : Ω d,
+      0 ≤ ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i :=
+    fun ω => Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
+      mul_nonneg (mul_nonneg (Sblk_nonneg _ _) (by positivity)) (Sblk_nonneg _ _)
+  rcases eq_or_lt_of_le hu0 with hzero | hupos
+  · -- `u = 0`: the chaos vanishes, so the failure event is empty
+    subst hzero
+    have hempty : {ω : Ω d | (N : ℝ) ^ τ *
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N 0 ω) (zt E 0)) i
+        < ldeQuadLHS (Hflow d N 0 ω) (green (Hflow d N 0 ω) (zt E 0))
+          (Sblk (d.L N) (d.W N)) 0 i} = ∅ := by
+      ext ω
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      have hz0 : ldeQuadLHS (Hflow d N 0 ω) (green (Hflow d N 0 ω) (zt E 0))
+          (Sblk (d.L N) (d.W N)) 0 i = 0 := by
+        rw [← modelChaos_normSq_chaos hz i le_rfl ω, chaos_modelChaos_zero hz i ω]
+        simp
+      rw [hz0]
+      have h1 := hrhs ω
+      have hp : (0 : ℝ) ≤ (N : ℝ) ^ τ := Real.rpow_nonneg hN0.le τ
+      positivity
+    rw [hempty, measure_empty]
+    exact zero_le
+  · -- `0 < u`
+    set lam : ℝ := (N : ℝ) ^ τ / u ^ 2 with hlamdef
+    have hlam : 0 < lam := by rw [hlamdef]; positivity
+    have hu2 : u ^ 2 ≤ 1 := by nlinarith [hupos, hu1]
+    have hlamge : (N : ℝ) ^ τ ≤ lam := by
+      rw [hlamdef, le_div_iff₀ (by positivity)]
+      nlinarith [hNτ, hu2]
+    have hset : {ω : Ω d | (N : ℝ) ^ τ *
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i
+        < ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) (zt E u))
+          (Sblk (d.L N) (d.W N)) u i}
+        = {ω | lam * vqM d N u (zt E u) i ω
+            < ‖(modelChaos d N u hz i).chaos ω‖ ^ 2} := by
+      ext ω
+      have hL := modelChaos_normSq_chaos hz i hu0 ω
+      have hV : vqM d N u (zt E u) i ω
+          = u ^ 2 * ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i := by
+        rw [← vqM_eq hz hu0 i ω]; exact modelChaos_Vq hz i hu0 ω
+      have hune : u ≠ 0 := ne_of_gt hupos
+      simp only [Set.mem_ofPred_eq, ← hL, hV, hlamdef]
+      rw [show (N : ℝ) ^ τ / u ^ 2 * (u ^ 2 *
+          ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i)
+          = (N : ℝ) ^ τ
+            * ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i from by
+        field_simp]
+    rw [hset]
+    refine (meas_lt_normSq_chaos_le hz hu0 i hlam q).trans
+      (ENNReal.ofReal_le_ofReal ?_)
+    have hpow : (N : ℝ) ^ (τ * ((q : ℝ) + 1)) = ((N : ℝ) ^ τ) ^ (q + 1) := by
+      rw [← Real.rpow_natCast ((N : ℝ) ^ τ) (q + 1), ← Real.rpow_mul hN0.le]
+      push_cast
+      ring_nf
+    have hden : ((N : ℝ) ^ τ) ^ (q + 1) ≤ lam ^ (q + 1) :=
+      pow_le_pow_left₀ hNτ.le hlamge (q + 1)
+    have hd1 : (0 : ℝ) < ((N : ℝ) ^ τ) ^ (q + 1) := by positivity
+    calc hwConst q / lam ^ (q + 1)
+        ≤ hwConst q / ((N : ℝ) ^ τ) ^ (q + 1) :=
+          div_le_div_of_nonneg_left (hwConst_pos q).le hd1 hden
+      _ = hwConst q / (N : ℝ) ^ (τ * ((q : ℝ) + 1)) := by rw [hpow]
+      _ ≤ (N : ℝ) ^ (τ * ((q : ℝ) + 1) - D) / (N : ℝ) ^ (τ * ((q : ℝ) + 1)) := by
+          gcongr
+      _ = (N : ℝ) ^ (-D) := by
+          rw [← Real.rpow_sub hN0]
+          congr 1
+          ring
+
+end QuadFixed
+
+section QuadFloor
+
+variable {d : Dims} {s t : ℕ → ℝ} {E : ℝ}
+
+/-- **The net spacing for (4.7) is chosen so that the deterministic modulus sits below the
+floor.**  The quadratic companion of `RBM.Gauss.eventually_mod_le_floor`: the constant is
+`28 R^14` instead of `6 R^10`, so the spacing is `δ_N = (N^{-(14K+16+B)})²`. -/
+theorem eventually_mod_le_floor_quad {K B : ℝ} (hK : 0 ≤ K) (hB : 0 ≤ B) :
+    ∀ᶠ N : ℕ in atTop, ∀ u v : ℝ,
+      |u - v| ≤ ((N : ℝ) ^ (-(14 * K + 16 + B))) ^ 2 →
+        28 * ((N : ℝ) ^ (K + 1)) ^ 14 * (|Real.sqrt u - Real.sqrt v| + |u - v|)
+          ≤ (N : ℝ) ^ (-B) := by
+  filter_upwards [eventually_ge_atTop 1, eventually_le_rpow 56 (by norm_num : (0:ℝ) < 2)]
+    with N hN1 h56 u v huv
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  set a : ℝ := 14 * K + 16 + B with ha
+  have ha0 : (0 : ℝ) ≤ a := by rw [ha]; linarith
+  have h1a : (1 : ℝ) ≤ (N : ℝ) ^ a := Real.one_le_rpow hN1' ha0
+  have hpa : (0 : ℝ) < (N : ℝ) ^ a := by linarith
+  have hna : (N : ℝ) ^ (-a) = ((N : ℝ) ^ a)⁻¹ := Real.rpow_neg hN0.le a
+  have hna0 : (0 : ℝ) ≤ (N : ℝ) ^ (-a) := Real.rpow_nonneg hN0.le _
+  have hna1 : (N : ℝ) ^ (-a) ≤ 1 := by
+    rw [hna, ← one_div, div_le_one hpa]; linarith
+  have hx0 : (0 : ℝ) ≤ |u - v| := abs_nonneg _
+  have hx1 : |u - v| ≤ 1 := by nlinarith
+  have hsq : Real.sqrt |u - v| ≤ (N : ℝ) ^ (-a) := by
+    have h := Real.sqrt_le_sqrt huv
+    rwa [Real.sqrt_sq hna0] at h
+  have hxs : |u - v| ≤ Real.sqrt |u - v| := by
+    have hs0 : (0 : ℝ) ≤ Real.sqrt |u - v| := Real.sqrt_nonneg _
+    have hss : Real.sqrt |u - v| * Real.sqrt |u - v| = |u - v| := Real.mul_self_sqrt hx0
+    nlinarith
+  have hdiff : |Real.sqrt u - Real.sqrt v| ≤ Real.sqrt |u - v| := abs_sqrt_sub_sqrt_le u v
+  have hε : |Real.sqrt u - Real.sqrt v| + |u - v| ≤ 2 * (N : ℝ) ^ (-a) := by linarith
+  have hε0 : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt v| + |u - v| := by positivity
+  have hR14 : ((N : ℝ) ^ (K + 1)) ^ (14 : ℕ) = (N : ℝ) ^ (14 * K + 14) := by
+    rw [← Real.rpow_natCast ((N : ℝ) ^ (K + 1)) 14, ← Real.rpow_mul hN0.le]
+    congr 1
+    push_cast
+    ring
+  have hR0 : (0 : ℝ) ≤ ((N : ℝ) ^ (K + 1)) ^ (14 : ℕ) := by positivity
+  have hp2 : (0 : ℝ) < (N : ℝ) ^ (2 : ℝ) := Real.rpow_pos_of_pos hN0 _
+  have hinv : 56 * ((N : ℝ) ^ (2 : ℝ))⁻¹ ≤ 1 := by
+    rw [← div_eq_mul_inv, div_le_one hp2]; exact h56
+  have hBnn : (0 : ℝ) ≤ (N : ℝ) ^ (-B) := Real.rpow_nonneg hN0.le _
+  calc 28 * ((N : ℝ) ^ (K + 1)) ^ 14 * (|Real.sqrt u - Real.sqrt v| + |u - v|)
+      ≤ 28 * ((N : ℝ) ^ (K + 1)) ^ 14 * (2 * (N : ℝ) ^ (-a)) := by
+        refine mul_le_mul_of_nonneg_left hε (by positivity)
+    _ = 56 * ((N : ℝ) ^ (14 * K + 14) * (N : ℝ) ^ (-a)) := by rw [hR14]; ring
+    _ = 56 * ((N : ℝ) ^ (-(2 : ℝ)) * (N : ℝ) ^ (-B)) := by
+        rw [← Real.rpow_add hN0, ← Real.rpow_add hN0]
+        congr 2
+        rw [ha]; ring
+    _ = 56 * (((N : ℝ) ^ (2 : ℝ))⁻¹ * (N : ℝ) ^ (-B)) := by
+        rw [Real.rpow_neg hN0.le]
+    _ ≤ 1 * (N : ℝ) ^ (-B) := by nlinarith
+    _ = (N : ℝ) ^ (-B) := one_mul _
+
+/-- **The quadratic large deviation estimate (4.7), uniformly in the time, with an additive
+floor.**  The (4.7) companion of `RBM.Gauss.stochDom_ldeRow_flow_floor`: for every `B ≥ 0`,
+
+`ldeQuadLHS(u) ≺ ldeQuadRHS(u) + N^{-B}` uniformly in `u ∈ [s_N, t_N]` and in `i`,
+
+unconditional apart from the standing regime hypotheses.  Together with T148's row and column
+halves this is the third large deviation input of `RBM.norm_sq_green_diag_sub_le_blk_floor`
+(`RBM1D/Green/EntryBoundFloor.lean`), i.e. of (4.3) along the flow. -/
+theorem stochDom_ldeQuad_flow_floor (d : Dims) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {K : ℝ} (hK : 0 ≤ K)
+    (hη : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-K) ≤ etaT E (t N)) {B : ℝ} (hB : 0 ≤ B) :
+    StochDom (P d) (U := fun N => RBM.TimeIcc s t N × BIdx d.L d.W N)
+      (fun N p ω =>
+        ldeQuadLHS (Hflow d N (p.1 : ℝ) ω) (green (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ)))
+          (Sblk (d.L N) (d.W N)) (p.1 : ℝ) p.2)
+      (fun N p ω =>
+        ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ))) p.2
+          + (N : ℝ) ^ (-B)) := by
+  refine stochDom_timeIcc_of_unifDom_relative (card_Idx_le d) hst one_pos
+    (fun N => by have := hs0 N; have := (ht1 N).le; linarith)
+    (A := 2 * (14 * K + 16 + B)) (by linarith)
+    (ξ := fun N u (i : BIdx d.L d.W N) ω =>
+      ldeQuadLHS (Hflow d N u ω) (green (Hflow d N u ω) (zt E u)) (Sblk (d.L N) (d.W N)) u i)
+    (ζ := fun N u (i : BIdx d.L d.W N) ω =>
+      ldeQuadRHS (Sblk (d.L N) (d.W N)) (green (Hflow d N u ω) (zt E u)) i
+        + (N : ℝ) ^ (-B)) ?_
+    (δ := fun N => ((N : ℝ) ^ (-(14 * K + 16 + B))) ^ 2) ?_
+    (highProb_norm_Xmat_le d) ?_
+    ((unifDomIcc_ldeQuad d hE hs0 ht1).mono_control fun N u i ω => by
+      have h2 : (0 : ℝ) ≤ (N : ℝ) ^ (-B) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+      linarith)
+  · intro N u i ω
+    have h1 : (0 : ℝ) ≤ ldeQuadRHS (Sblk (d.L N) (d.W N))
+        (green (Hflow d N u ω) (zt E u)) i :=
+      Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
+        mul_nonneg (mul_nonneg (Sblk_nonneg _ _) (by positivity)) (Sblk_nonneg _ _)
+    have h2 : (0 : ℝ) ≤ (N : ℝ) ^ (-B) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+    linarith
+  · filter_upwards [eventually_ge_atTop 1] with N hN1
+    have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+    have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+    refine le_of_eq ?_
+    rw [← Real.rpow_natCast ((N : ℝ) ^ (-(14 * K + 16 + B))) 2, ← Real.rpow_mul hN0.le,
+      one_div, ← Real.rpow_neg hN0.le]
+    congr 1
+    push_cast
+    ring
+  · filter_upwards [hη, card_Idx_le d, eventually_mod_le_floor_quad hK hB,
+      eventually_ge_atTop 1] with N hηN hcardN hmodN hN1 ω hω i u hu v hv huv
+    have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+    have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+    have hu0 : 0 ≤ u := le_trans (hs0 N) hu.1
+    have hv0 : 0 ≤ v := le_trans (hs0 N) hv.1
+    have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+    have hv1 : v < 1 := lt_of_le_of_lt hv.2 (ht1 N)
+    have hR1 : (1 : ℝ) ≤ (N : ℝ) ^ (K + 1) := Real.one_le_rpow hN1' (by linarith)
+    have hN11 : (N : ℝ) ≤ (N : ℝ) ^ (K + 1) := by
+      calc (N : ℝ) = (N : ℝ) ^ (1 : ℝ) := (Real.rpow_one _).symm
+        _ ≤ (N : ℝ) ^ (K + 1) := Real.rpow_le_rpow_of_exponent_le hN1' (by linarith)
+    have hRη : ∀ w : ℝ, w ≤ t N → (etaT E w)⁻¹ ≤ (N : ℝ) ^ (K + 1) := by
+      intro w hw
+      have hηt : 0 < etaT E (t N) := etaT_pos_of_lt_one' hE (ht1 N)
+      have hle : etaT E (t N) ≤ etaT E w := etaT_le_of_le hE hw
+      have hNKpos : (0 : ℝ) < (N : ℝ) ^ (-K) := Real.rpow_pos_of_pos hN0 _
+      have h1 : (etaT E w)⁻¹ ≤ (etaT E (t N))⁻¹ := by
+        rw [inv_eq_one_div, inv_eq_one_div]
+        exact one_div_le_one_div_of_le hηt hle
+      have h2 : (etaT E (t N))⁻¹ ≤ ((N : ℝ) ^ (-K))⁻¹ := by
+        rw [inv_eq_one_div, inv_eq_one_div]
+        exact one_div_le_one_div_of_le hNKpos hηN
+      have h3 : ((N : ℝ) ^ (-K))⁻¹ = (N : ℝ) ^ K := by rw [Real.rpow_neg hN0.le, inv_inv]
+      have h4 : (N : ℝ) ^ K ≤ (N : ℝ) ^ (K + 1) :=
+        Real.rpow_le_rpow_of_exponent_le hN1' (by linarith)
+      rw [h3] at h2
+      linarith
+    have hRn : (Fintype.card (d.Idx N) : ℝ) ≤ (N : ℝ) ^ (K + 1) := by
+      rw [Real.rpow_one] at hcardN; linarith
+    have hRx : ‖Xmat d N ω‖ ≤ (N : ℝ) ^ (K + 1) := le_trans hω hN11
+    have key := abs_ldeQuad_flow_sub_le d N hE hu0 hv0 hu1 hv1 hR1 (hRη u hu.2) (hRη v hv.2)
+      hRn ω hRx i
+    have hfl := hmodN u v huv
+    obtain ⟨hlo1, hhi1⟩ := abs_le.1 (key.1.trans hfl)
+    obtain ⟨hlo2, hhi2⟩ := abs_le.1 (key.2.trans hfl)
+    have hζ0 : (0 : ℝ) ≤ ldeQuadRHS (Sblk (d.L N) (d.W N))
+        (green (Hflow d N u ω) (zt E u)) i :=
+      Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
+        mul_nonneg (mul_nonneg (Sblk_nonneg _ _) (by positivity)) (Sblk_nonneg _ _)
+    exact ⟨by linarith, by linarith⟩
+
+end QuadFloor
 
 end RBM.Gauss

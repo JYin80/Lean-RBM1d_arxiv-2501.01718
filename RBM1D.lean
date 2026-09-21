@@ -5,6 +5,7 @@ import RBM1D.Analysis.MomentClosing
 import RBM1D.Defs.Block
 import RBM1D.Delocalization
 import RBM1D.Green.EntryBound
+import RBM1D.Green.EntryBoundFloor
 import RBM1D.Green.Minor
 import RBM1D.Gauss.Domination
 import RBM1D.Gauss.DominationHolder

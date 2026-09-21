@@ -4429,3 +4429,36 @@ T74 的 `Gauss.eeEdge_eq_sum_SB` 经 T127 的 `EEBridge.eeEdge_eq_sum_gloop` 就
 ### 一处未能复现（如实）
 旧审计 `BootPP` 那行的 `β* = 1` 从 `harith_flowAs` 的陈述复现不出来：`Step3.flowR = r ≤ √R`（不是 `R`），
 三项分别要 `R^5/R^4/R^4 ≤ A`，最坏 **`β* = 5`**。无论 1 还是 5 都不影响结论。
+
+## T166：(4.7) 二次型 LDE 的带地板时间一致版 + (4.3) 的确定性带地板链（2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9189** 条。`Gauss/LDENetClose.lean` 992 → 1684 行（纯新增，旧声明一字未动）；
+新建 `Green/EntryBoundFloor.lean`（794 行）。
+
+**主交付 `stochDom_ldeQuad_flow_floor`**：假设表与 T148 的 row/col 版**逐字相同**（`|E|<2`、`0 ≤ s ≤ t < 1`、`N^{−K} ≤ η_{t_N}`），
+**没有额外概率输入**。配方原样复用 T148 的「网点高斯尾 + 并界 / 网点之间确定性 Hölder / 不单位化 / 地板」。
+模同样是**逐元**证的：二次型比行和多一个 `H` 因子与一重求和，指数 `10 → 14`、常数 `6 → 28`。
+唯一的缺口是新证的桥 `greenMinor_eq_greenMinorMat`（`k,l ≠ i` 时 (4.9) 的 `greenMinor` 就是小方阵预解式的元素）。
+另外 `unifDomIcc_ldeQuad` 无条件（Hanson–Wright 的常数与时间无关，`UnifDomIcc` 不取指标并集，故**基数假设也一并掉了**）。
+
+**`Green/EntryBoundFloor.lean` 的关键观察**：地板只经 `LDE*Floor` 进入，而 (4.11) 以下每一步都由「界住 `∑∑S|G|²S` 与 `S_{ij}` 的 `Λ`」
+参数化——**只要多要一条 `fl ≤ Λ`，所有带地板陈述与无地板版形状完全相同，只是常数翻倍**（162→324、…、4320→8280）；
+块模型里取 `Λ = 2·L^max + fl` 自动满足。`hLdiag` **没有加地板**——其生产者 `stochDom_normSq_Hflow_diag` 本来就无条件。
+
+### `DiagBoundFlow` 的现状：墙倒了，剩下全是 `Gauss/` 侧的接线
+`diag_bound_stochDom_floor_idx`（时间进指标集的版本）就是 `DiagBoundFlow` 要的形状，`hLrow`/`hLcol`/`hLquad` 三条**结论逐字吻合**。
+还缺三件，**没有新数学**：
+1. **`hLdiag` 的带时间版**——仓库只有固定 `u` 的。数学上白送（`‖H_{u,ii}‖² = u‖X_ii‖² ≤ ‖X_ii‖²`，控制与 `u` 无关），
+   但要写在 `Gauss/`。**T160 说「可以直接用」在控制这一侧对，在指标并集这一侧还欠一步。**
+2. **地板落地**：控制是 `L^max + N^{−B}` 而 `DiagBoundFlow` 要裸 `L^max`。唯一消费者 `stochDom_indicator_diag_flow`
+   立刻与无条件的 `W⁻¹` 复合，取 `B := 1` 即吸收——**与 T160 给 `EntryBoundFlow` 记的那条约 15 行引理是同一条**。
+   所以 `Step1.Lemma41Flow` 的结论拿得到，但中间 `def` 本身拿不到，**需要一个 `DiagBoundFlow'`**（与 `LDEFlowDom'` 同手法）。
+3. `hδ`：`entry_bound_stochDom` 一侧本来就需要同一条，不是新负担。
+
+**没有出现 T148/T172 那种「目标本身为假」的情况**——二次型的模确实闭合，每一步都编译过，没有任何因子短缺。
+
+### ⚠ 下沉内核：被迫重证了六条
+`norm_sq_green_offdiag_le_floor` 依赖 `norm_sq_green_le_two_sided_floor`，而后者住在 `Hierarchy/LKDecayQuant.lean`，
+**`Green/` 不能 import `Hierarchy/`**。所以在新文件里重证了 T160 六条中的六条（加新的 `LDEQuadFloor`）。
+命名空间 `RBM` 与 `RBM.LKDecayQuant` 的副本全名不同、不冲突。
+**`LKDecayQuant` 里的重复副本应删除并改指到这里，由该文件的所有者做。**

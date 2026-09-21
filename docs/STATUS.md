@@ -5764,3 +5764,74 @@ T174 / T132c 的「走 shape 2 后所有行 `β* < 30` 严格成立」是对的�
   (2.71) 经 (2.62)（`|E L − K| ≺ (Wℓη)^{−3}`）给出 **Theorem 2.4 的期望界 (2.8)(2.9)**（「Together with (2.66) and (2.57), it yields the expectation bounds (2.8) and (2.9) in Theorem 2.4」；「(2.8) and (2.9) follow from (2.62)」），而 **Theorem 2.5 (QUE) 的证明直接用 (2.8)(2.9)**；Lean 里 `Flow/Consequences.lean` 的 `expect_loop2_of_bounds`/`expect_quantumDiffusion_*` 也正是吃 `hB.expect`。
   **所以 Step 6 不能推迟到 Theorem 2.6 阶段**，否则丢掉 Theorem 2.4 的 (2.8)(2.9) 与 Theorem 2.5。
 * **Cowork 的执行方案（两遍归纳，不丢任何定理）**：第一遍 = 不含 (2.71) 的 `Thm221` 变体（T204），给出 Theorems 2.2、2.3 与 2.4 的 (2.6)(2.7)；第二遍 = 在第一遍结论之上单独对 (2.71) 做一次归纳（Step 6 的样本侧，T205），给出 (2.8)(2.9) 与 Theorem 2.5。论文注记保证第一遍不需要 (2.71)，第二遍每步只用第一遍的结论 + 上一步的 (2.71)。**Jun 16:15 确认：可以。**
+
+## ⭐⭐ T196：`TestFunT₁` 对矩路线的 `Ψ` **七个字段全部闭合**（`Gauss/MomentDuhamelBddT.lean`，新文件，2026-09-21）
+
+`lake env lean RBM1D/Gauss/MomentDuhamelBddT.lean` exit=0、零 warning；本文件 56 条声明逐条
+`#print axioms` 全是 `propext / Classical.choice / Quot.sound`（跑完即删）。
+**新文件**；`Gauss/MomentDuhamel*.lean`、`Gauss/TestFunHerm.lean`、`Hierarchy/*` 一个字没动
+（`RBM1D.lean` 的 import 由协调者加）。56 个新顶层名逐个全仓 grep，**零冲突**。
+
+### 交付：`testFunT₁_momentObsT`
+
+`Ψ(u,M) = |(U_{u,v}∘(L−K)_u)_a|^{2p}` 落地为 `momentObsT`（内层 `ukerObsT u M = ukerObs d N (zt Ev u) σ ξ (u:ℂ) t (K u) a M`）。
+`testFunT₁_momentObsT` 给出 **`TestFunT₁ d N (Icc u₀ u₁) (momentObsT …)` 的完整实例**，
+假设只有：`0 < η`、`hzim : ∀ u ∈ 窗口, η ≤ |Im z_u|`（窗口上由 `le_abs_im_zt_of_le` 从 `|E| < 2`、`u₁ < 1` 直接给出）、
+以及 `K` 的可导性与 `K`、`∂_u K` 的界（三条里没有任何矩阵、没有任何预解式）。
+
+**T191 点名的四条**：`contDiffM`、`diffJoint`、`contT`、`bddT` 全部落地；
+另外三条一致界 `bdd₀`/`bdd₁`/`bdd₂` 也落地（见下，它们**原本也短**，T191 没点名）。
+
+收口件 `hasDerivAt_integral_momentObsT`：把 `hasDerivAt_integral_Psi_pairs₁` 喂上去，
+**对 `Ψ` 再无任何假设**的 (T132b) 生成元恒等式。
+
+### `bddT`：T187/T191 的判断成立，但"缺口"不是 `∂_z G = G²`
+
+`z`-导数**仓库里已经有**：`hasDerivAt_gloop_zt`（T134）+ 确定性包络 `norm_zMotion_le`。
+真正要做的是**组装**：`u` 同时出现在三处（`z_u`、传播子的运行时间、`K_u`），
+`hasDerivAt_Uker_arg`（`Uker` 的 Leibniz，**带动的自变量**，`hasDerivAt_Uker_apply` 只动核）
++ `hasDerivAt_momentFun_path`（`(f·conj f)^p` 沿实路径求导，`conj` 只是 `ℝ`-线性，用 `Complex.conjCLE`）
+给出闭式 `ukerObsTDeriv`，再取界。
+**窗口一致性的来源分两块**：矩阵那一半由 `η⁻¹` 包络（对 `∀ M` 一致，因为 `loopObs` 自带 `hermCLM`），
+`u` 那一半由 `ukerCoefBd`（**只含 `u`、不含矩阵**）在紧窗口上的连续性 + `IsCompact.exists_bound_of_continuousOn`。
+**按「常数不求最优」没有写显式常数**。
+
+### `diffJoint`：`contDiffAt_gloopProd_zt_pair` 就是 T191 说的 pair 版归纳
+
+`contDiffAt_Gsig_zt_pair`（把 `Gsig (hermCLM M) (zt Ev u) σ` 认成 `resH ((E)+(1−u)m(σ)) M`，
+再用现成的 `contDiffAt_resH_path`）+ 对 (2.41) 的 `n` 个因子归纳。结论是**联合 `C²`**，
+但下游只用一阶（T191 已证二阶时间正则性是过度要求）。
+**没有 Hermitian 边条件**——`loopObs` 复合 `hermCLM`，所以在**每个**矩阵处成立。
+
+### ⚠ `bdd₀`/`bdd₁`/`bdd₂` 的一致版原本也是缺口（T191 未点名）
+
+T133 的 `testFun_momentFun_ukerObs` 给的是**固定 `u`** 的三条界，而 `TestFunT₁` 要**窗口一致**，
+`∃ C` 不能穿过 `∀ u`。`bddC2_momentFun` 恰恰是存在量化的，用不上。
+落地 `exists_bddC2C_momentFun`：**常数不依赖于函数**的 `momentFun` 版，
+由 `BddC2C` 对乘积（`bddC2C_mul_cx`，经 `ContinuousLinearMap.mul ℝ ℂ` + 现成的 `bddC2C_clm_apply`）
+与幂（`exists_bddC2C_pow`，对 `p` 归纳）的封闭性得到。
+这样 `u` 的依赖只剩 `ukerRow`（传播子行的 `ℓ¹` 大小，只含 `u`），紧窗口取 sup 即得。
+
+### 可满足性检查（三条，都编译过）
+
+1. `testFunT₁_momentObsT_zero`：取 `K = 0`，**所有假设由 `|E| < 2` 与 `u₁ < 1` 直接卸掉，无自由数据**。
+2. `exists_not_isHermitian_green_eq_zero`：显式造出 `M = z·1 + (单个非对角 1)`——**非 Hermitian 且 `M − z` 奇异**，
+   故**原始**预解式 `green M z = 0`（Mathlib 的 `nonsing_inv` 在奇异处给 0），整块信息坍塌。
+3. `bddT_momentObsT_at_singular`：`bddT` 的一致界**确实在这个点上被取值**。
+   —— 这正是 T180 那次空洞事故的同形检查：`∀ M` 不是伪装的 `∀ M, M.IsHermitian →`。
+   它能成立的**唯一**理由由 `ukerObsT_hermCLM` 写明：`Ψ` 经 `hermCLM` 分解，
+   所以界讲的**不是**原始预解式（T187 关于 `bdd₁/₂` 要全方向算子范数的结论没有被绕过）。
+
+### 还短什么（如实）
+
+**`MomentDuhamel.Hyp` 的两条字段仍未闭合。** T191 之后剩下的、本单**没有**做的：
+
+1. **`φ'` 的识别**：`hasDerivAt_integral_momentObsT` 只给了 `φ'` 的**存在**与右端的形状；
+   把 `∫∂₁Ψ` 与 `genS` 项对消（`Hyp.drift` + `hasDerivAt_Uker_path` + `hasDerivAt_Uker_thetaOp`）、
+   二阶项过 `genMomentPt_le'`、二次变差认成 `quadVarPairs_Uker` + T127 —— 一条都没做。
+2. **边条件**：`φ'`、`f`、`g`、`ψ·f` 的区间可积性与 `ψ` 的窗口一致上界（应由 `‖G‖ ≤ η⁻¹` 给，同 `integrable_lkT_pow`）。
+3. **桥**：`momentObsT u (Hflow d N u ω)` 与 `Uker … (SumZeroDyn.lkT X E N u ω σ) a` 的逐字对齐
+   （`⟨σ, List.ofFn b⟩` 与 `LoopData.idx (σ, b)` 的记账，外加 `K u b = B.Kval E N u …`）。**本单把 `K` 保持抽象**，
+   只要 `HasDerivAt` + 两条界；在高斯模型上这两条由 `hasDerivAt_Kgen_all` 与 `norm_primRhs_le`（见 `norm_Kgen_sub_le`）给出，**本单没有接线**。
+
+因此 `momentDuhamelHyp_gauss`（工单验收里点名的那个实例）**仍然不存在**，本单没有制造它。

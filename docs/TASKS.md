@@ -273,6 +273,8 @@
 | T117 | **Step 6 的七条随机层假设**在高斯实现下逐条落地（T114 勘察列为总装路上的一批）。**第 0 步：先把七条逐条列进 STATUS，标明哪几条已由现有定理供给**，再决定要不要拆单 | `Gauss/Step6Hyp.lean`（新建） | Claude Code | 进行中 |
 | T118 | **`SumZeroDyn.Lemma510` / `LKDecay` 与 T59 的形状不匹配**（`SumZeroDyn.lean:62` 自己记了「对不上」）。**第 0 步：说清楚是哪一侧该改**，不要两边硬凑；结论报 Cowork 裁 | `Hierarchy/SumZeroDyn.lean` 侧或新文件 | 待认领 | 未开工 |
 | T119 | **`hIBP` 终定理的局部律侧输入**：`hstabP`/`hstabM`（`CondStable`）、`hrepl`、`hloc`、`hΩ`。这些是 `trace_green_sub_mul_Eblk_stochDom_of_localLaw` 现在带的假设，**目前不属于任何工单** | `Gauss/CondStableInst.lean`（新建） | Claude Code | 进行中 |
+| T120 | **`AprioriDecayAll`（四电荷版的 (2.76)）** —— T115 查出的**论文缺口**，`(+,+)` 无来源且便宜补法差一个 `A_u`。**不要硬证**：先把三条归约（循环性、共轭）落成定理，把缺口精确收缩到 `(+,+)` 一个电荷，写进 STATUS 等 Jun 裁 | `Hierarchy/ChargeReduce.lean`（新建） | 待认领 ⭐ | 未开工 ← **paper-deltas #66，需 Jun 裁决** |
+| T121 | **`Eq45Flow`**：(4.5) 对 `u ∈ [s,t]` 一致。(4.5) 本身已证（`avg_bound_stochDom`），差 p.51 的一致化 | `Gauss/Eq45Flow.lean`（新建） | 待认领 | 未开工 |
 
 ---
 

@@ -1219,5 +1219,78 @@ theorem eq45Flow_of_localLaw_gain (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : 
     (unifDomIcc_flucRow_condExpDiag d hE ht1 hg hpos hρ1 hcρ3 hδ1 hΩ hΦW) hHolBlk
     (unifDomIcc_flucBlk_condExpDiag d hE ht1 hg hpos hρ1 hcρ1 hδ1 hΩ hΦW)
 
+/-- **(4.5) along the flow, against the *graded* gain interface** — T151.
+
+The word-for-word analogue of `RBM.Gauss.eq45Flow_of_localLaw_gain`, with the one interface
+that was mismatched replaced: `RBM.Gauss.FlucGain` at the paper's size `ρ ≍ Ψ` is not a
+theorem and T137/T142 do not prove it — what they prove is the word-length-graded
+`RBM.Gauss.FlucGainUpTo` (`RBM.Gauss.flucGainUpTo_of_minorDiff'`, at `ρ = 2Ψ`).  The `2p`-th
+moment of (4.12) only ever builds words of length `≤ 2p`, so the gain is asked for only at
+`M = 2 * p` for each `p`; the grade-dependence of the size is carried by the factorization
+`Bp p N ≤ Kp p * Ψ N`, whose `p`-dependent factor the constant of
+`RBM.Gauss.unifDomIcc_of_moment` absorbs.
+
+**The conclusion is verbatim that of the unprimed version**, `RBM.StepGlue.Eq45Flow`, and the
+unprimed version is untouched (`RBM.Gauss.FlucGain.upTo` still connects the two).
+
+**`hΦW` is gone.**  At T142's size the control is `ρ B = 2Ψ²`, and
+`RBM.Gauss.flucPhiW_of_psiW` derives `4 W ρ B ≤ N^τ` from the `hΨW` this theorem already
+carries; likewise the two size conditions `(3W)⁻¹ ≤ ρ²` and `W⁻¹ ≤ ρ²` collapse into the
+single `hΨW'`, `W⁻¹ ≤ 4Ψ²`.  So moving to the graded interface *removes* hypotheses. -/
+theorem eq45Flow_of_localLaw_gain' (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
+    (hK : 0 ≤ K) (hδ0 : ∀ N, 0 ≤ δ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΨ0 : ∀ N, 0 ≤ Ψ N) (hKenv : 0 ≤ Kenv) (hB : 0 ≤ B)
+    (hEnv : ∀ᶠ N : ℕ in atTop, ((etaT E (t N))⁻¹ + 1) ^ 2 ≤ (N : ℝ) ^ Kenv)
+    (hΨlow : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-B) ≤ Ψ N * Ψ N)
+    (hΨ1 : ∀ᶠ N : ℕ in atTop, Ψ N * Ψ N ≤ 1)
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ)
+    (hll : LocalLawUnifIcc d E s t Ψ)
+    {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
+    (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
+    (hΨW' : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * Ψ N ^ 2)
+    (hHolIBP : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖condExpDiag d N u (zt E u) (mE E) i ω
+              - (u : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N u ω) (zt E u) k k - mE E)‖
+          - ‖condExpDiag d N v (zt E v) (mE E) i ω
+              - (v : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N v ω) (zt E v) k k - mE E)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hHolRow : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hHolBlk : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    StepGlue.Eq45Flow (sample d) E s t :=
+  eq45Flow_of_unifDom_ibp d hκ0 hκ1 hEκ hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hΨ0 hKenv hB
+    hEnv hΨlow hΨ1 hΨW hll hHolIBP hHolRow
+    (unifDomIcc_flucRow_condExpDiag_psi d hE ht1 hg hKp hBK hΨpos hΨhalf hΨW' hδ1 hΩ hΨW)
+    hHolBlk
+    (unifDomIcc_flucBlk_condExpDiag_psi d hE ht1 hg hKp hBK hΨpos hΨhalf hΨW' hδ1 hΩ hΨW)
+
 end Slot
 

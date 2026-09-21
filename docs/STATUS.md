@@ -3456,8 +3456,10 @@ T146 报「唯一真正缺的引理」是 Lyapunov `‖·‖_p ≤ ‖·‖_{2p}
 
 **⚠ 只剩一个文件边界问题**：`eq45Flow_of_localLaw_gain` 在 `CondStableFlow.lean`，而 `CondStableFlow` import `Eq45FlowInputs`，
 方向反了，带撇消费者写不进生产者那个文件。**但它只有三行**——中间层 `eq45Flow_of_unifDom_ibp`（`CondStableFlow.lean:1097`）
-本来就把两个槽当**裸 `UnifDomIcc` 假设**收，生产者原样插进去即可。该三行已在探针里整条写出并编译（`exit 0`、公理干净、
-无 `convert` 无强制转换），**结论一字未弱**（仍是 `StepGlue.Eq45Flow`）。
+本来就把两个槽当**裸 `UnifDomIcc` 假设**收，生产者原样插进去即可。**已落地**：`eq45Flow_of_localLaw_gain'`（`CondStableFlow.lean:1240`，纯新增，不带撇版一字节未动），
+`lake env lean` exit 0、零 warning，公理干净，证明体是裸应用、无 `convert` 无强制转换，**结论一字未弱**（仍是 `StepGlue.Eq45Flow`）。
+假设表的净变化：`hg` 换成分级形式；`hpos`/`hρ1`/`hcρ3`/`hcρ1`/`hΦW` 五条换成 `hKp`/`hBK`/`hΨpos`/`hΨhalf`/`hΨW'` 五条，
+其中 **`hΦW` 整条消失**、两条 `hcρ` 合成一条 `W⁻¹ ≤ 4Ψ²`。
 
 **2. `flucGainUpTo_of_minorDiff` 早就是定理了——T147 审计的 §6(b)⑤「只存在于探针里」是过时的。**
 那是 T137 时代的状态；**T142 已经落地**：`MinorDiffGain.lean:1239` `flucGainUpTo_of_minorDiff`、

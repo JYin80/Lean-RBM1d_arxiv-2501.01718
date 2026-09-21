@@ -4584,6 +4584,18 @@ paper-deltas #47/#54/#73 记过这条偏差，**但没人记它把 `Thm221` 的�
 
 </details>
 
+## D9 ⭐ `TestFun`/`TestFunT` 对**所有**矩阵量化，而矩 Duhamel 的 `Ψ` 只在 Hermitian 集上合格（T180）
+`Hyp.momentDuhamel`/`momentDuhamelQ` 的最后一步要 T132b 的 `hasDerivAt_integral_Psi_pairs`，它收 `Gauss.TestFunT`。
+但 `Ψ(u,M) = |(U_{u,v}∘(L−K)(u,M))_a|^{2p}` **不在该类里**：`bdd₀/₁/₂` 对所有矩阵量化而 `(M−z_u)⁻¹` 在非 Hermitian `M` 上无界；
+`TestFunT.slice` 要全局 `ContDiff ℝ 2`，而在奇异的非 Hermitian `M` 处 `Ψ` 连连续都不是。**在 Hermitian 集上两条都成立**，
+而整个论证本来就待在那里（流是 Hermitian，流值之间的线段也是）。**两条路，需裁定**：
+* **(i)** 把 `TestFun`/`TestFunT` 从 `∀ M` 放松到 `∀ M, M.IsHermitian →`——**就是 T145 对 `Hyp.drift` 做过的同一处修补**；
+  代价是把 `hasDerivAt_integral_Psi` 的控制收敛改写到流上重证。
+* **(ii)** 截断 `Ψ`，即 T158 的光滑截断方案，连带「三个真实缺口」。
+**agent 的判断（我同意）**：`Hyp.momentDuhamel` 是**结构性**不等式（右端摆着 `F` 与 `E⊗E`），
+**本身不需要截断给的尺寸估计**，只需要生成元恒等式 + Hölder。**所以 (i) 若可行，代价明显小于 (ii)。**
+⚠ 这是第五次撞上「字段对所有矩阵/所有样本点过度量化」（T145、T132b、T154、T164/T172，现在 T180）。
+
 ## D2 ⭐ 基数预算的工单必须把 `FlucGainUpTo` 一并写进规格（T171 + T176，探针 P5）
 T171 已编译证明 `MinorDiffGainUpTo` 在 `B ≍ Ψ` 处不可满足（其 `B` 支配 `Z_k` 的所有 `L^n` 范数，配 `‖Z_k‖_∞ ≥ 64/65`）。
 **T176 的探针 P5 表明同一堵墙高一层、且在活路径上**：`FlucGainUpTo` 自己的 `B` 也支配所有 `L^n` 范数，
@@ -4694,3 +4706,35 @@ Lean 里留了 `RBM.figure_four`（`decide`）作为可编译的锚点。
 
 **四条 `rfl` 探针全过**（`have : h_unprimed = h_primed := rfl`，编译验证不是目测），
 覆盖 `stochDom_indicator_diag_flow`、`llMax_sq_flow`、`lemma41Flow`、`step1Hyp_gauss_of_scale`(′/″)。
+
+## ⭐ T180：`MomentDuhamel.Hyp` 的生产者——六个字段里四个已产（`Gauss/MomentDuhamelHyp.lean`，633 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9409** 条。产出 `hypOfMoments`（一般 `Band`）与 `gaussHypOfMoments`（高斯，连 `integrable` 都不用给）。
+
+| 字段 | 状态 |
+|---|---|
+| `F` | **已产**，钉死为 `DriftDef.driftF`（`hypOfMoments_F` 以 `rfl` 闭合） |
+| `drift` | **已产**——**工单说它是唯一障碍，这条现在不成立了**：T163 + T58 之后 `drift` 是免费的（`drift_split_gen` + 窗口 `[0,1)` 卸掉 `hz`/`hm`） |
+| `cMD`/`cMD_nonneg` | 已产（唯一自由度，类型 `ℕ → ℝ` **禁止依赖 `N`**，且同一个 `cMD p` 也出现在消费者的 `hrhs` 里——**闭合的一对**） |
+| `integrable` | **已产**（高斯，经 T132b 的 `integrable_lkT_pow`） |
+| `momentDuhamel` / `momentDuhamelQ` | **未产**，已归约成一句关于 `ψ'` 的话，见下 |
+
+**收口那一半做完了**：`momNorm_le_of_integral_le`（T132a 的 `sqrt_le_of_integral_le` 代入 `ψ = (E|Y|^{2p})^{1/p}`）、
+两个字段的本体、以及 `momentIneq_of_diffIneq`（**整条 `MomentIneq` 由逐点的 `hdu` 推出**）。
+**常数定死了**：生成元给 `ψ' ≤ 2√ψ·‖U∘F‖_{2p} + (2p−1)·‖(U⊗U)∘(E⊗E)‖_p`，故 **`cMD p = 2p−1`**，
+与字段里 `momNorm B.P p`（不是 `2p`）的指数正好对上（Hölder 共轭指数是 `p`）。
+
+### ⚠ 查到一处过度量化（按要求报告而不是绕开）→ 见「待 Jun 定夺」D9
+`hdu` 要用 T132b 的 `hasDerivAt_integral_Psi_pairs`，它要求 `TestFunT`；而 `Ψ(u,M) = |(U_{u,v}∘(L−K)(u,M))_a|^{2p}` **不在那个类里**：
+① `bdd₀/₁/₂` 对**所有**矩阵量化，而 `(M − z_u)⁻¹` 在非 Hermitian `M` 上无界；
+② `TestFunT.slice` 要**全局** `ContDiff ℝ 2`，而在奇异的非 Hermitian `M` 处 `Ψ` 连连续都不是（Lean 的 `Ring.inverse` 在那儿是 `0`）。
+**在 Hermitian 集上两条都成立**，而整个论证本来就待在那里（流是 Hermitian，流值之间的线段也是）。
+
+### 可满足性检查（逐字段，都是编译过的）
+* **`drift` 在 `[s_N,t_N] ⊆ [0,1)` 上成立，含 `u = 0`**——**这里没有 T152 的 `0 < u` 接缝**：
+  导数是对**冻结矩阵** `M` 的 `v ↦ gloop(M,z_v)` 与 `v ↦ K_v`，**`√u` 根本不出现**。`u = 1` 处不可满足，这正是论文的 `t_N < 1`。
+* `MomentIneq`/`MomentIneqQ` 在**退化点 `v = s_N`** 取等号成立（两个时间积分为 0、`U_{s,s} = 1`）——字段在窗口塌缩处不是恒假。
+* **`F` 根本不是接口的自由度**：`F_eq_driftF_of_window` 证了**任何** `Hyp`（不止这里造的）在 `[0,1)` 上都有 `F = driftF`。
+
+**另记两处会被重新踩的接缝**：`hasDerivAt_integral_Psi` 带 `0 < u`，故 `hdu` 只能由**开区间**导数 + 连续性得到（同 T161/T173）；
+T72 的 `genMomentPt_le` 同样要全局 `ContDiff ℝ 2`。

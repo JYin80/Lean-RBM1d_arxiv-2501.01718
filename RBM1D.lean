@@ -28,6 +28,7 @@ import RBM1D.Gauss.LoopIto
 import RBM1D.Gauss.MomentDuhamel
 import RBM1D.Gauss.MomentDuhamelRhs
 import RBM1D.Gauss.MomentDuhamelGauss
+import RBM1D.Gauss.MomentDuhamelHyp
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.CondRow
 import RBM1D.Gauss.MinorReplace

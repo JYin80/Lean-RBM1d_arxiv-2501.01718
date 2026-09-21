@@ -2986,3 +2986,17 @@ STATUS 里指向第二组的 7 处引用（1988/2073/2295/2332/2347/2856/2890）
 * **`cMD : ℕ → ℝ`** 是唯一残留的自由度，agent 判断它**确实**无害而非仅仅「相信无害」：(a) 类型上它只能依赖 `p`、**不能依赖 `N`**，而与 `N` 无关的常数是 `≺` 免费吸收的；(b) 同一个 `H.cMD p` 也出现在唯一消费者 `stochDom_of_momentDuhamel` 的 `hrhs` 里，故放大它同时把消费者的义务变难——**这一对是闭合的**。
   **存档一句**：没有任何东西把 `cMD` 与其 docstring 所提的 `sqrt_le_of_integral_le` 的 `C_p/p` 绑定，约束它的只有 `cMD_nonneg`。
 * 其余字段都是关于 `Hyp` 之前就已固定的对象的 `Prop`。唯一剩下的空洞路径是退化窗口 `t_N < s_N`，与仓库里每个带时间的接口相同。paper-deltas #101、#102。
+
+### T142：(4.12) 做到论文尺寸 `Ψ²`（Claude Code 并行 agent，2026-09-21）
+
+**探针在 `MinorDiffGain.lean` 内部（对活源码而非可能过期的 olean）验证**：`≺ 6Ψ²`，对 `u` 一致，**控制里不再有任何 `η_t⁻¹`**；`stochDom_flucAvg_Sblk_iter_graded` 与 `2p`-矩形式同样成立。此前是 `2Ψ·(2(η_t⁻¹+1) + Ψ)`。
+机制正如 T137 的诊断：`B` 从 `2(η_t⁻¹+1) + 2·minorDiffC M·Ψ` 降到 `2Ψ + 2·minorDiffC M·Ψ`，`ρ = 2Ψ` 不变；**只有空字那一支改了**（新的 `norm_flucDiagSet_le` 取代 `norm_flucDiagSet_le_env`）。
+
+**新字段对消费者的代价：零。** `MinorGood` **逐字节未动**，8 个既有消费者全不受影响、没有任何陈述被弱化；新增 `MinorGood'` 继承它并加 (4.2)（见 paper-deltas #103），锐链在需要演算处用 `.toMinorGood`。
+**而且生产者的代价是负的**：`minorGood'_of_local_law` 表明 `Ψ ≤ 1/2` 时 (4.2)+(4.3)+可逆性就给出整个 `MinorGood'`，(4.1) 由 `|m_E| = 1` 推出——**供给方要给的比以前更少**。
+
+**T137 那个「8 行桥该放 `FlucIterHigh.lean`」的判断只对了一半**：探针里的桥用到 `MinorGood` 与 `integral_prod_applyOps_minorDiff_le`，两者都在 `MinorDiffGain.lean`，而该文件**import** `FlucIterHigh.lean`，故放不进去。
+能放进去的是**无 import 依赖的那一半**（`MinorDiffGainUpTo`、`MinorDiffGain.upTo`、`flucGainUpTo_of_minorDiffGainUpTo`），具体的桥落在 `MinorDiffGain.lean`（旧强度与锐强度各一条）。**`Gauss/FlucIter.lean` 一行都不用改**，其 `_graded` 消费者原样接受新 gain。
+
+**剩余**：`MinorGood'` 本身的生产（例外集，仍是对**每个**样本点的假设，需要仓库没有的那种形状的定量局部律——与 T113/T137 时相同）；无分级的 `MinorDiffGain` 在 `ρ ≍ Ψ` 处仍非定理，但**消费者只需要分级形式**。
+**下游待办**：paper-deltas #85 的 `hΦW`（`4·W·ρB ≤ N^τ`）是把包络尺寸的确定性控制换成 (4.5) 随机控制的装置，现在 `ρB ≍ Ψ²` 了，该数值桥要在 `Eq45FlowInputs.lean` 里重推（本单未碰该文件）。

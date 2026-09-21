@@ -3945,3 +3945,58 @@ H.F N u M ![true,false] ![a₁,a₂] = eGpm … + primBil … (gloop − Kval) �
 
 **两条 paper-delta**：#114（(5.51) 的两个下标次序印反了，实际是 `(a₂,b₂,a₁)`；同一条共轭关系正是「`+ c.c.`」的严格含义）、
 #115（`+ c.c.` 的那个 2 在锐不等式里要显式安置为 `hκ : 2κ ≤ ℓ_u/ℓ_s`）。
+
+## T153 第 0 步：固定 `E` 的假设**在 `Thm221` 以上完全是参数化的**（只读调查 + 编译探针，2026-09-21）
+
+**结论**：`Flow/` 层把 `E : ℝ` 换成 `E : ℕ → ℝ`，**证明脚本一个字都不用改**——探针把
+`BoundsCore`/`Bounds`/`Cond272`/`Thm221`/`Bounds_zero`/`Bounds.congr`/`eventually_flow_grid`/`Bounds_of_Thm221`
+全部按 `E N` 重述，逐字照抄原证明，`lake env lean` exit=0、0 sorry。
+一致性的来源在读码里也看得见：`Flow/Scales.lean:326` `flow_grid_2_72` 是 `∃ W₀, ∀ W … ∀ E, |E| ≤ 2−κ → …`，
+**`W₀` 在 `E` 之前选定、常数只含 `κ`**；`Flow/Iteration.lean:234` 同样把 `τ'`、`n₀` 选在 `E` 前，
+其 `filter_upwards` 用的四个 `∀ᶠ N` 事实**一个都不含 `E`**。
+
+**⭐ 副作用：`SpecSeq` 的能量切片条件可以直接删掉。** `lemE_eq : ∀ N, lemE (z N) = E`（`Flow/Consequences.lean:162`）
+是唯一的切片约束，它的五个消费者全是**逐 `N`** 用的；换成 `E : ℕ → ℝ` 后取 `E N := lemE (z N)`，
+**`lemE_eq` 变成 `rfl`、条件消失**。探针把 `SpecSeqN` + `localLaw_of_boundsN` + `localLaw_prob_of_Thm221N`
+（(2.3) 对**任意**谱参数列）整条编出来了。**这直接销掉 paper-deltas #38 与 #5 的一半。**
+
+**而且只有 `Bounds`/`Thm221` 一家卡着**：`Transfer`/`TransferLoop1` 的字段写的本来就是 `X.G (lemE (z N)) N …`，
+能量已随 `N` 走；`Flow/Universality.lean` 的 `Band.queZ (τ) (E : ℕ → ℝ)` 也早就是 `N` 依赖的。
+`Thm221` 今天**没有生产者**（全树只作假设出现），且 `Thm221.step` 已经是 `∀ E : ℝ, |E| ≤ 2−κ → …`，
+换成 `∀ E : ℕ → ℝ` 是**严格加强**，代价全部落在将来的六步生产者身上，今天不破坏任何东西。
+
+### 一处真实的非一致（负面发现）
+`∀ E → ∃ C`（`C` 可依赖 `E`）全树 35 处；与能量有关的一支同根同源，链条
+`Flow/Iteration.norm_Kval_le ← KBound.norm_Kgen_le ← norm_Kpi_le ← sum_norm_innerId_le ← norm_Kpi_empty_*_le
+← SumZero.sum_zero ← **SumZero.norm_Alayer_le**`，根在 `Loop/SumZero.lean:842` 的 `ι = (mE E).im`。
+**但不是障碍**：`|E| ≤ 2−k ⟹ (mE E).im ≥ √(2k)/2`（`Flow/Scales.lean:315`），
+且 `Loop/SumZero.lean` 经 `Loop/WardKgen.lean:9` **已经传递 import 了 `Propagator/Edges`**，把 `∃ C` 提到 `∀ E` 之前即可，
+**不需要搬文件**。这一支的消费者是 (2.61) 与 Steps 内部，**不在 `Bounds_of_Thm221` 的路径上**。
+⚠ 余下 34 处 `∀E ∃C` **未逐条核**，是本报告的已知盲区。
+
+### 路线判定：**(ii) 单独走不通，必须接在 (i) 后面**
+要「以 ≥ 1−N^{−D} 的概率对网上所有能量同时成立」，必须把能量塞进 `StochDom` 的指标集
+（现在只有 `(x,y)`，能量在概率**外面**）——按 STATUS 的老结论这是 **T116 情形：生产必须用网**。
+而网点 `E_j(N)` **本来就是 `N` 依赖的能量**，所以 **(ii) 的输入恰好是 (i) 的输出**。
+
+**引擎现成且可一字不改复用**：`Gauss.stochDom_reindex_of_forall_seq`（`Gauss/Step1Hyp.lean:269`，
+docstring 明说 generic、非高斯特有）+ `StochDom.of_forall_le`；而 **`RBM.TimeIcc s t N` 就是 `↥(Set.Icc (s N) (t N))`**，
+取 `s ≡ −2+κ`、`t ≡ 2−κ` 它**就是能量区间**。探针已编出 `localLaw_energy_seq` 与 `localLaw_net_of_Thm221N`
+（网上一致、并集在 `P` 里面），exit=0、0 sorry。
+从网点到随机点 `λ_k(ω)` 的最后一跳也编过：`‖G(z)_{ij} − G(w)_{ij}‖ ≤ ‖z−w‖η⁻²`
+（`green_sub_green` + `norm_green_le` + `norm_apply_le_l2_opNorm`）。
+**不需要任何概率型连续性模（T101/T106 都用不上）**——随机点的 `ω` 依赖在好事件上逐点处理即可。
+
+### 改动量
+**(i) 建议走新文件**（探针已是骨架，约 170 行全绿）：`BoundsCoreN`/`BoundsN`/`Cond272N`/`Thm221N` 及其五条引理
++ `SpecSeqN` + `localLaw_of_boundsN`/`localLaw_prob_of_Thm221N`，再加 `Thm221N → Thm221`（常数列特化，一行）保证向后兼容，
+**0 个现有签名改动**。就地泛化更干净但要动 `Bounds`/`BoundsCore` 9 个文件、`Cond272` 14 个文件，**与并行车道正面冲突**，
+建议等六步定型后再合并。
+**(ii)** 约 150–250 行、无新数学；网点构造用已有的 `Gauss/Domination.netSize/netPt/exists_netPt_close/card_net_le`。
+⚠ `stochDom_reindex_of_forall_seq` 现住在 `Gauss/Step1Hyp.lean`，让 `Delocalization.lean` 依赖 `Gauss/` **方向不对**，
+按 CLAUDE.md 应**下沉到 `RBM1D/Defs/`**（它本来就 generic）。
+
+### 做完之后还剩
+`Thm221N` 依然无生产者（负担转嫁给六步）；**谱边缘**——局部律只在 `|E| ≤ 2−κ` 上有，(2.10) 对边缘的 `λ_k` 要么排除、
+要么另记一条 paper-delta，**论文 Theorem 2.2 的措辞待确认**；特征值编号沿用 #5；
+`norm_apply_le_l2_opNorm` 要 `[Nonempty n]`，`Band.Idx N` 的实例待确认。

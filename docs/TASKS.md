@@ -256,6 +256,7 @@
 | T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。**规格见下文「T111 规格」：先查是不是同一个 `X` 的确定性标度；真换律就走 `gaussianReal_map_const_mul` + `infinitePi_map_pi`** | `Gauss/DistEq.lean`（新建） | Claude Code | **完成**（三条全部为定理；全是逐点相等，不需要任何分布论证） |
 | T112 | **`≺` 在条件期望下的保持** + T83 剩下的两个输入 `hprod`/`hminor`。**规格见下文「T112 规格」** | `Gauss/CondDom.lean`（新建） | Claude Code | 进行中 |
 | T113 | **`MinorDiffGain` (m ≥ 3)**：迭代小行差的大小，(4.12) 的最后一条输入。承 T110（`m ≤ 2` 已无条件，且已证增益是**乘性且由恒等式给出**）。**纯 Green 函数 + 局部律，概率那一半已卸干净** | `Gauss/MinorDiffGain.lean`（新建） | Claude Code | 进行中 |
+| T114 | **Theorem 2.21 的总装**：由六步产出 `Steps`，再经已有的 `Bounds_of_Steps` 得 `Thm221`。**规格见下文「T114 规格」。等 T58** | `Flow/Thm221.lean`（新建） | 待认领（等 T58） | 未开工 ← **主定理的最后一步** |
 
 ---
 
@@ -2209,3 +2210,53 @@ Cowork 手上原有的 T1、T58、T83 已全部交回队列，规格见下文。
   T110 的高阶小行展开大概率也要用它。
 * 复用：`condRow`/`FinDepOffRow`（T84）、`Envelope`（T77）、`MinorReplace`（T85）、
   `norm_green_apply_le_etaT`（T88）。
+
+---
+
+## T114 规格：Theorem 2.21 的总装（Cowork 勘察，2026-09-21）
+
+**这张单是 T58 之后的那一张，现在先把地图画好，等桥一通就能直接开工。**
+
+### 已经存在的部分（不要重做）
+
+* **最后一段链条已经有了**：`RBM.Bounds_of_Steps`（`Flow/Hypotheses.lean:349`）——
+  由 `Steps X E s t` 加 `∀ N, s N ≤ t N` 直接给出 `Bounds X E t`，也就是 Theorem 2.21 的结论。
+  `BoundsCore_of_Steps` 是它不用 Step 6 的版本。
+* **六步各自的顶层定理都在**：
+  `Hierarchy/Step1.lean:859` `step1`、`Hierarchy/Step2.lean:2015` `step2`、
+  `Hierarchy/Step3.lean:1062` `flow_sharpLoop`、`Hierarchy/Step45.lean:458` `flow_steps45`、
+  `Hierarchy/Step6.lean:779` `sharpExpect_step6`。
+
+### 所以这一单真正要做的只有一件事
+
+**把六步的顶层定理拼成 `Steps` 的八个字段**（`apriori`/`weakLaw`/`localLaw`/`aprioriDecay`/
+`sharpLoop`/`sharpLmK`/`sharpDecay`/`sharpExpect`），然后
+
+    theorem thm221_gauss ... : Thm221 (sample d) κ
+
+其 `step` 字段 = 「给定 `Cond272` 与 `Bounds X E s`，造出 `Steps X E s t`，再喂 `Bounds_of_Steps`」。
+
+### T58 在哪里被消费（这就是为什么要等桥）
+
+`Hierarchy/Step2.lean` 的 `step2` 要一个 `Hyp X E s t`，而 `Hyp.H : SumZeroDyn.Hierarchy X E s t 0`
+**就是 (5.20) 的积分形式** —— T58 的四条目标之一。Step 3 的 `hyp_flow` 同理。
+所以顺序是：**T58 先把 (5.19)(5.20)(5.21) 与 Def 5.4 的 `E⊗E` 在 `LoopIdx` 一侧证出来，
+本单再把它们组装成 `Hyp`。**
+
+### 建议的做法
+
+1. **先把 `Steps` 的八个字段逐个对账**：哪个字段由哪个步的哪条定理给出、量词次序差在哪、
+   指标集是否要 `precomp_param` 搬一下（`Bounds_of_Steps` 里已有这种用法，照抄）。
+   **这一步先只写成一张表放进 STATUS**，不写 Lean——对账对不上的地方才是真问题。
+2. `Hyp` 的另外两个字段 `eG`（5.35）与 `mart`（5.44)–(5.46)）来自 `Step2Moment.lean`（T75，
+   停时已换成连续归纳），确认它们的现有形状能直接填。
+3. 全部对上之后再写 `Flow/Thm221.lean`。
+
+### 硬性约束
+
+* **不许改** `Flow/Hypotheses.lean` 的 `Steps`/`Thm221`/`Bounds` 定义，也不许改六个 step 文件——
+  全是冻结接口。只在新文件里组装。
+* 对不上的地方**不要改陈述去凑**，写进 STATUS 报告，由 Cowork 判断是改哪一侧。
+
+**做完之后**：`Thm221` 从假设变成定理，`Bounds_of_Thm221`、`theorem2_5_of_Thm221`、
+`Flow/Consequences.lean` 的 Theorem 2.3/2.4 全部接上，主定理链条闭合。

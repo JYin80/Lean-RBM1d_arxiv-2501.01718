@@ -4618,3 +4618,34 @@ T171 已编译证明 `MinorDiffGainUpTo` 在 `B ≍ Ψ` 处不可满足（其 `B
 它要求 `‖(L−K)_J‖ ≤ Φ·A^{−|J|}` 对**所有** `|J| < m`，含 `|J| = 0`；而 `L_∅ = LW`、`K_∅ = 0`，**逼出 `Φ ≥ LW`、主项直接废掉**。
 耦合本身看不到这种圈（cut-and-glue 两边长度都 ≥ 2）。T165 用 `dTrunc` 绕过、**未改 `Decay.lean`**。
 **要定的**：是否开一张单把 `hD` 收紧成 `2 ≤ J.length → …`（那样 `dTrunc` 那一段就能删掉）。
+
+## T168：Lemma 3.2 的组合模型（`Loop/CanonicalPartition.lean`，815 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9309** 条。蓝图里最后一个「引用未证」节点现在是**部分形式化**（**没有加 `\leanok`**）。
+
+**建模步**（唯一一处，已写进文件头、`IsCanonicalTree` 与蓝图节点）：典范划分 **:=** 它的树 `Γ`——
+有限带叶标树、叶子恰为 `a_0..a_{n−1}`、内点度 `≥ 3`、**每条边恰落在 `n` 条区域路径中的两条上**。
+平面性条款不是随手写的：已证它等价于 **`leafSide_eq_Ico`（每条边的叶侧是循环区间）**，这也是整份文件的枢纽。
+
+**⭐ 小规模自检：跑了，但在 Lean 外面跑的——理由充分。**
+`Sep` 的判定走 Mathlib 的 `finsetWalkLength` 枚举，**实测 9 点树的无环性 `decide` 就要 85 秒**，平面性还要贵一个量级，
+不能放进仓库。改为 Python 穷举（Prüfer 枚举 + 按叶标同构去重 + 平面性过滤）：
+
+| n | 模型里的树数 | `|TSP n|` |
+|---|---|---|
+| 3–7 | 1, 3, 11, 45, 197 | 1, 3, 11, 45, 197 |
+
+**完全对上**（小 Schröder 数），且 `n = 3..7` 上 Lemma 3.2 的 (1)(2)(3) 对该模型逐条成立；
+Figure 4 的树算出 `F = {{1,4},{4,6}}`，与论文字面一致。**模型没有抄错。**
+Lean 里留了 `RBM.figure_four`（`decide`）作为可编译的锚点。
+
+**证了**：(0) `R_i ∩ R_j ∈ E(Γ)`（`edge_unique_of_paired`——**真正用到内点度 `≥ 3` 的地方**）、
+(1) `F(Γ)` 无交叉（`crossingFree_FGamma`、`FGamma_mem_TSP`）。
+支撑件：`exists_leaf_sep`（有限树的每条分支都够到一个叶标点，按分支大小强归纳）、`sep_unique_neighbor`、
+`quadrant_empty`（两条不同边的劈分相容：四象限有一个空）、`interval_of_two_cycChange`。
+
+**没证**：实现性（每个无交叉 `F*` 都是某个 `F(Γ)`）、唯一性、等价 II 与同构一致、像**恰为** `TSP n`（只证了 `⊆`）。
+**所以 `Loop/Crossing.lean` 的 `TSP` 仍是定义而非定理，paper-deltas #8 不能撤。**
+实现性要一个从 laminar 族到 `SimpleGraph` 的显式构造（`Loop/TreeRepGeneral.lean` 已有 laminar 编码可复用），
+唯一性要劈分系统等价定理——各自独立的一大块。
+**没有发现论文哪一条按字面为假**：外部穷举里 (1)(2)(3) 在 `n ≤ 7` 上全部成立。

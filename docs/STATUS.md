@@ -2786,3 +2786,20 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 
 **(3) 按指示作具名假设 `FlowInputs`**：它把 T130 负责的 `GoodEvent` 高概率一致性，与 `LDERow`/`LDECol`/(2.76) 的条款打包成**同一个事件**，外加数值束 `Φ_N√(ε_N) ≤ N^{-D'}`（paper-deltas #86）。
 **`LDecay`（(5.75) 的 `|L|` 半）也顺手出来了**，按 Cowork 的裁定作**独立谓词**、不并进 `LKDecay`；确实是同一个证明——`Decay.lemma59` 返回合取，两条结论取自同一事件的 `.1`/`.2`。`SumZeroDyn.LKDecay` 一字未动。paper-deltas #78 已改写。
+
+### `RBM1D/Gauss/CondExpMod.lean` — T129：`condExpDiag` 的 u-模（Claude Code 并行 agent，2026-09-21）
+
+**第 0 步：随机常数路线成立，常数就是 `E_k[‖X‖]`，且 `E_k[‖X‖] ≺ 1`（`stochDom_condRow_norm_Xmat`，对 `k` 一致）。**
+模本身 `norm_condExpDiag_flow_sub_le` **除 `|E| < 2`、`u,v < 1` 外无任何假设**。
+
+**但走的不是 T112 的路，这是本单最有意思的一点**：`stochDom_condRow_of_envelope` **用不了**——它要被支配量有**确定性包络**，而 `‖X‖` 没有（高斯坐标无界）。
+替代它的是「**`E_k` 只重采一行**」这个结构事实：`X(rowSplit k ω ω')` 与 `X(ω)` 只在第 k 行/列不同，于是
+`‖X(σ)−X(ω)‖² ≤ 2·rowFrobSq_k(ω') + 2·rowFrobSq_k(ω)`，其中 `ω` 那半**逐点确定性**（`rowFrobSq_k(ω) ≤ 2‖X(ω)‖²`），`ω'` 那半有**精确期望** `≤ ∑_j S_{kj} + ∑_i S_{ik} = 2`；
+平方根用 `x ≤ (1+x²)/2` 去掉，不需要 `∫√· ≤ √∫·`。
+**关键细节**：`rowFrobSq_k(ω) ≤ 2‖X‖²` 用的是**锐的** `∑_i |M_{ik}|² ≤ ‖M‖²`（由 `(MᴴM)_{kk}` 加 C\*-恒等式证出）——**粗的 Frobenius 界会多花一个 `N`，`≺ 1` 就没了**。
+于是 `E_k[‖X‖]` 被 `‖X(ω)‖` 的**逐点**多项式支配，T109 一条就够，**完全绕开 T112**。
+
+**T124 的引擎接受随机 Hölder 常数，不需要新引擎**：`stochDom_timeIcc_of_unifDom` 的 `hHol` 虽写成确定性 `N^K`，但限制在高概率事件 `Ξ` 上，而 T124 取的 `Ξ = flowNetEvent` 已含 `{‖X‖ ≤ N}`——
+其 docstring 本来就预见了这种用法。交付的 `norm_condExpDiag_flow_sub_le_rpow` 就是 `hHol` 的形状（指数 `1/2`、常数 `N^K`、在 `flowNetEvent` 上），代价是一条区制假设（paper-deltas #87）。
+**未做（有意）**：没有组装 `ibpFlow_of_unifDom` 的完整 `hHolIBP`——那要混入 Green 函数那半与 `u·m²·∑_k S_{ik}(G_{kk}−m)` 的前因子，而 T128 正在改那个文件、拥有其形状；
+组装方法（三角不等式 + 两个额外项，总常数 `η⁻²(2N²+2N+9/2) + η⁻¹ + 1`）写在 `norm_condExpDiag_flow_sub_le_rpow` 的 docstring 里。

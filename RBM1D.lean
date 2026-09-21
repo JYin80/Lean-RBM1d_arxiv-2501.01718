@@ -14,6 +14,7 @@ import RBM1D.Gauss.Step6Hyp
 import RBM1D.Gauss.Eq45Flow
 import RBM1D.Gauss.Eq45FlowInputs
 import RBM1D.Gauss.GoodSetFlow
+import RBM1D.Gauss.CondExpMod
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.CondRow
 import RBM1D.Gauss.MinorReplace

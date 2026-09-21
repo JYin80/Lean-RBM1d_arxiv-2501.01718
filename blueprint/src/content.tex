@@ -2174,6 +2174,20 @@
   input the repository lacked.
 \end{proof}
 
+\begin{lemma}[A modulus in $u$ for $\mathbb E_k[G_{kk}]$]\label{lem:condexpmod}
+  \lean{RBM.Gauss.Xentry_rowSplit_of_row, RBM.Gauss.sum_normSq_col_le, RBM.Gauss.sum_row_ite_le, RBM.Gauss.rowFrobSq, RBM.Gauss.rowFrobSq_rowSplit, RBM.Gauss.rowFrobSq_le, RBM.Gauss.integrable_rowFrobSq, RBM.Gauss.integral_rowFrobSq_le, RBM.Gauss.norm_Xmat_rowSplit_le, RBM.Gauss.integral_norm_Xmat_rowSplit_le, RBM.Gauss.stochDom_condRow_norm_Xmat, RBM.Gauss.norm_condExpDiag_flow_sub_le, RBM.Gauss.norm_condExpDiag_flow_sub_le_rpow}
+  \leanok\uses{lem:condrow, thm:trace-moment, lem:eq45inputs, thm:conddom}
+  $\mathbb E_k$ resamples one row only, so $\|X\|$ under the row integral is dominated
+  \emph{pointwise} by a polynomial in $\|X(\omega)\|$: hence $\mathbb E_k[\|X\|]\prec1$ from the
+  operator-norm bound alone, and the modulus holds with that random constant. The sharp
+  $\sum_i|M_{ik}|^2\le\|M\|^2$ is essential -- the crude Frobenius bound would cost a factor $N$.
+\end{lemma}
+\begin{proof}\leanok
+  Split the resampled row from the original, bound the original half pointwise and the resampled
+  half in expectation by $\sum_jS_{kj}+\sum_iS_{ik}=2$; remove the square root by
+  $x\le(1+x^2)/2$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -74,6 +74,7 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 - 卡住时在里面写清楚「卡在 X，试过 Y 和 Z，失败原因是 W」，另一边才接得上
 
 `docs/paper-deltas.md` 同理：偏离论文字面陈述的地方，谁发现谁记，不要只在对话里说。
+**取号纪律（2026-09-21，一天撞号三次）**：并行 agent 各自取 max+1 会撞。**提交前最后一步**再执行 `grep -oE "^\| *[0-9]+ *\|" docs/paper-deltas.md | tr -dc "0-9\n" | sort -n | tail -1` 取当前最大号 +1；已提交的号**不许再改**（改号由 Cowork 统一做），在 STATUS/提交信息里引用编号时写成「#N（T编号）」便于追查。
 
 ### 常设授权
 

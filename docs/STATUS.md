@@ -2732,3 +2732,17 @@ agent 没有复制粘贴，而是**从现有 `C₀ = 2` 的机器重标度推出
 `integrable_sample_lkErr_mul_real`（ℝ 值版，由 ℂ 值的 `integrable_sample_lkErr_mul` 经 `Integrable.norm` + `norm_mul` 一行得出——`Sample.lkErr` 按定义就展开成 `‖Lval − Kval‖`，陈述不用改写），
 据此给出 **`quad11_unifDetDom_gauss`/`quad13_unifDetDom_gauss`**：与一般版签名相同但**去掉了 `hint`**。一般 `Sample B` 版逐字未动，仍带 `hint`（T123 有意保留的普适性）。
 一个放置上的判断：`FirstMoment` 节绑了 section variable `Ω`，会遮蔽高斯的 `RBM.Gauss.Ω d`，故两条特化另起一节。paper-deltas 无新增。
+
+### `RBM1D/Gauss/GoodSetFlow.lean` — T130：(4.4) 的 u-一致版（Claude Code 并行 agent，2026-09-21）
+
+**给 T126 对接用的确切陈述**：`highProb_goodSetFlow_of_localLaw : … → HighProb (P d) (goodSetFlow d E s t δ)`——
+结论**逐字**就是 T124 的 `hΩ` 类型，可直接喂；若 T126 想要 `≺` 形式而非事件，中间结果 `stochDom_timeIcc_localLaw` 更合适。
+输入的弱局部律写成 `LocalLawUnifIcc d E s t Ψ`（即 `UnifDomIcc` 形式的 (2.74)/(2.75)）。
+
+**`hΩ` 已有生产者**，条件只有：`hll`（弱局部律，Steps 1/2 的 (2.74)/(2.75)，工单说明不在此单范围）、`hmargin`（T119 那条桥的多项式余量）、以及两条纯确定性的区制边条件 `hKbig`/`hΨlow`（网的代价，非新数学）。
+核心是 `stochDom_timeIcc_localLaw`：**把弱局部律的时间搬进 `≺` 的指标集**——用 T124 的引擎（`γ = 1/2`、事件 `{‖X‖ ≤ N}`、网距取引擎自带的最小值，故**不需要额外的 `hδ` 假设**）。
+
+**`t_N → 1` 的坑在这里不咬人，而且不是碰巧**：弱局部律的控制 `Ψ_N` 是**确定性且不依赖时间**的，故引擎的 `hslow` 退化成 `Ψ_N ≤ N^ε Ψ_N`。
+**全文件没有出现 `L^max`**，`stochDom_Lmax_inv_W` 一次都没被提及；`η_{t_N}` 只出现在**确定性** Hölder 常数里（单边，`K` 自由）。
+另：**这里没有指示函数不连续的问题**（`GoodEvent` 是闭条件），故 T116 的 `netLift_of_relaxed` 不需要。
+**探针验证**：`eq45Flow_of_unifDom (hΩ := highProb_goodSetFlow_of_localLaw …)` 以及 `ibpFlow_of_unifDom`/`flucRowFlow_of_unifDom`/`flucBlkFlow_of_unifDom` 用同一具名参数全部 elaborate，无强制转换、无 `convert`。paper-deltas #83。

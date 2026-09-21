@@ -2286,4 +2286,259 @@ end GradedAvg
 
 end Graded
 
+/-! ### The missing budget: the cardinality of the index type — T177
+
+`RBM.Gauss.FlucGainUpTo` budgets the *length* of the words and leaves the index type `ι`
+free.  That is one budget too few, and the omission is fatal rather than cosmetic.  Take
+`ι = Fin j`, every word empty and every pivot equal to a single `k`: the words are admissible,
+of length `0 ≤ M`, the gain exponent is `0`, and the conclusion reads
+
+  `∫ ‖Z_k‖^j ≤ B^j`,  i.e.  `‖Z_k‖_{L^j} ≤ B`  for **every** `j`
+
+(`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo` below, the T176 probe P5, and its
+reduced-interface twin `RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` in
+`RBM1D/Gauss/MinorDiffCond.lean`).  Letting `j → ∞` the left side is `‖Z_k‖_∞`, and T172's
+two-point configuration exhibits a sample point with `‖Z_k‖ ≥ 64/65`.  So `RBM.Gauss.FlucGain`
+and `RBM.Gauss.FlucGainUpTo` at the paper's size `B ≍ Ψ` are **unsatisfiable**, and every
+consumer of them — including the flow form of (4.5) — stands on a false hypothesis.
+
+`RBM.Gauss.FlucGainUpTo'` adds the missing budget `#ι ≤ n`.  **Nothing is lost**: the `2p`-th
+moment expansion instantiates the interface at `ι = Fin p ⊕ Fin p` and nowhere else
+(`RBM.Gauss.norm_integral_prod_epsHom_flucDiag_le_graded`), so `#ι = 2p` there, exactly as
+`RBM.Gauss.OpsOkOut.length_le` makes the words have length `≤ 2p`.  Both budgets are therefore
+`2p`, and the primed consumers below ask for `M = n = 2p` — the same `p` that was already
+there.
+
+With the budget in place the degenerate instantiation only gives `‖Z_k‖_{L^j} ≤ B` for
+`j ≤ n` (`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo'`), the `j → ∞` limit is
+unavailable, and `B ≍ Ψ` is no longer contradicted: `‖Z_k‖_{L^{2p}} ≍ Ψ` is exactly what the
+local law asserts.  The unbudgeted declarations are kept — they are true statements, and
+`RBM.Gauss.FlucGainUpTo.budget` derives the budgeted one from them — but they are not
+satisfiable at `B ≍ Ψ` and must not be used as hypotheses there. -/
+
+section Budget
+
+open Filter
+
+/-- **The gain interface with both budgets** — `RBM.Gauss.FlucGainUpTo` with the extra
+hypothesis `#ι ≤ n` on the index type.  `M` budgets the length of the words, `n` the number of
+slots; the `2p`-th moment expansion has `M = n = 2p`.
+
+The second budget is what makes the interface satisfiable at the paper's size: without it the
+same `B` dominates *every* `L^j` norm of `Z_k`, hence `‖Z_k‖_∞ ≥ 64/65`. -/
+def FlucGainUpTo' (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (B ρ : ℝ) (M n : ℕ) : Prop :=
+  0 ≤ B ∧ 0 ≤ ρ ∧
+    ∀ (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N)),
+      (∀ i, ((L i).map Prod.snd).Nodup) → (∀ i, ∀ x ∈ L i, x.2 ≠ k i) →
+      (∀ i, (L i).length ≤ M) → Fintype.card ι ≤ n →
+      ∫ ω, ∏ i, ‖applyOps d N (L i) (flucDiag d N u z m (k i)) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)
+
+theorem FlucGainUpTo'.B_nonneg {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M n : ℕ}
+    (h : FlucGainUpTo' d N u z m B ρ M n) : 0 ≤ B := h.1
+
+theorem FlucGainUpTo'.rho_nonneg {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M n : ℕ}
+    (h : FlucGainUpTo' d N u z m B ρ M n) : 0 ≤ ρ := h.2.1
+
+theorem FlucGainUpTo'.gain {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M n : ℕ}
+    (h : FlucGainUpTo' d N u z m B ρ M n) (ι : Type) [Fintype ι] (k : ι → d.Idx N)
+    (L : ι → List (Bool × d.Idx N)) (h1 : ∀ i, ((L i).map Prod.snd).Nodup)
+    (h2 : ∀ i, ∀ x ∈ L i, x.2 ≠ k i) (h3 : ∀ i, (L i).length ≤ M)
+    (h4 : Fintype.card ι ≤ n) :
+    ∫ ω, ∏ i, ‖applyOps d N (L i) (flucDiag d N u z m (k i)) ω‖ ∂(P d)
+      ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i) := h.2.2 ι k L h1 h2 h3 h4
+
+/-- **The unbudgeted interface implies the budgeted one, at every `n`.**  So nothing that was
+already available is lost by moving to `RBM.Gauss.FlucGainUpTo'`; in particular
+`RBM.Gauss.flucGain_env` still witnesses non-vacuity through
+`RBM.Gauss.FlucGain.upTo`. -/
+theorem FlucGainUpTo.budget {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M : ℕ}
+    (h : FlucGainUpTo d N u z m B ρ M) (n : ℕ) : FlucGainUpTo' d N u z m B ρ M n :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 h3 _ => h.2.2 ι k L h1 h2 h3⟩
+
+/-- The ungraded interface implies every doubly budgeted one. -/
+theorem FlucGain.upTo' {u : ℝ} {z m : ℂ} {B ρ : ℝ} (h : FlucGain d N u z m B ρ) (M n : ℕ) :
+    FlucGainUpTo' d N u z m B ρ M n := (h.upTo M).budget n
+
+/-- Both budgets may be lowered. -/
+theorem FlucGainUpTo'.mono {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M M' n n' : ℕ} (hM : M' ≤ M)
+    (hn : n' ≤ n) (h : FlucGainUpTo' d N u z m B ρ M n) :
+    FlucGainUpTo' d N u z m B ρ M' n' :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 hlen hcard =>
+    h.2.2 ι k L h1 h2 (fun i => le_trans (hlen i) hM) (le_trans hcard hn)⟩
+
+/-- Relaxing the size parameters. -/
+theorem FlucGainUpTo'.mono_params {u : ℝ} {z m : ℂ} {B ρ B' ρ' : ℝ} {M n : ℕ}
+    (hB : B ≤ B') (hρ : ρ ≤ ρ') (h : FlucGainUpTo' d N u z m B ρ M n) :
+    FlucGainUpTo' d N u z m B' ρ' M n := by
+  refine ⟨le_trans h.1 hB, le_trans h.2.1 hρ, fun ι _ k L h1 h2 hlen hcard => ?_⟩
+  refine le_trans (h.2.2 ι k L h1 h2 hlen hcard) ?_
+  exact mul_le_mul (pow_le_pow_left₀ h.1 hB _) (pow_le_pow_left₀ h.2.1 hρ _)
+    (pow_nonneg h.2.1 _) (pow_nonneg (le_trans h.1 hB) _)
+
+/-! #### The degenerate instantiation, before and after the budget
+
+These two statements are the whole point of the budget, and they are stated side by side so
+that the difference is a compiled fact rather than a remark. -/
+
+/-- **Without the cardinality budget, `B` dominates every `L^j` norm of `Z_k`** — the T176
+probe P5, now in the repository.
+
+Take `ι = Fin j`, every word empty, every pivot equal to `k`.  Since `j` is arbitrary the
+left-hand side tends to `‖Z_k‖_∞^j`, and T172's two-point configuration gives
+`‖Z_k‖_∞ ≥ 64/65`; so `RBM.Gauss.FlucGainUpTo` is unsatisfiable at `B ≍ Ψ`.  This is the same
+wall as `RBM.Gauss.FlucBound`'s, one level up from
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo`, and it sits on the live path:
+`RBM.Gauss.eq45Flow_of_localLaw_gain'` consumes exactly this interface. -/
+theorem integral_pow_norm_flucDiag_le_of_flucGainUpTo {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M : ℕ}
+    (h : FlucGainUpTo d N u z m B ρ M) (k : d.Idx N) (j : ℕ) :
+    ∫ ω, ‖flucDiag d N u z m k ω‖ ^ j ∂(P d) ≤ B ^ j := by
+  classical
+  have hkey := h.2.2 (Fin j) (fun _ => k) (fun _ => ([] : List (Bool × d.Idx N)))
+    (by intro i; simp) (by intro i x hx; simp at hx) (by intro i; simp)
+  simpa only [applyOps_nil, numQ_nil, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    smul_eq_mul, mul_zero, pow_zero, mul_one, Finset.prod_const] using hkey
+
+/-- **With the budget, the same instantiation stops at `j = n`.**  The hypothesis `hj : j ≤ n`
+is not removable — it is what the budget buys — so the `j → ∞` limit that produced
+`‖Z_k‖_∞ ≤ B` is unavailable, and `B ≍ Ψ` is consistent with the interface: for `j ≤ n = 2p`
+the conclusion is `‖Z_k‖_{L^{2p}} ≤ B`, which is what the local law asserts. -/
+theorem integral_pow_norm_flucDiag_le_of_flucGainUpTo' {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M n : ℕ}
+    (h : FlucGainUpTo' d N u z m B ρ M n) (k : d.Idx N) {j : ℕ} (hj : j ≤ n) :
+    ∫ ω, ‖flucDiag d N u z m k ω‖ ^ j ∂(P d) ≤ B ^ j := by
+  classical
+  have hkey := h.2.2 (Fin j) (fun _ => k) (fun _ => ([] : List (Bool × d.Idx N)))
+    (by intro i; simp) (by intro i x hx; simp at hx) (by intro i; simp)
+    (by simpa using hj)
+  simpa only [applyOps_nil, numQ_nil, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    smul_eq_mul, mul_zero, pow_zero, mul_one, Finset.prod_const] using hkey
+
+/-! #### The consumers, against the doubly budgeted interface
+
+Each is the graded statement with `#ι ≤ n` added to the interface and `2 * p ≤ n` added to the
+hypotheses; the budget is discharged at the single point where the interface is used, from
+`Fintype.card (Fin p ⊕ Fin p) = 2 * p`. -/
+
+section BudgetFluc
+
+variable {E t : ℝ} {p : ℕ}
+
+/-- **`RBM.Gauss.norm_integral_prod_epsHom_flucDiag_le_graded` against the budgeted gain.** -/
+theorem norm_integral_prod_epsHom_flucDiag_le_budget (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {B ρ : ℝ} {M n : ℕ} (hg : FlucGainUpTo' d N u (zt E t) (mE E) B ρ M n) (hM : 2 * p ≤ M)
+    (hn : 2 * p ≤ n)
+    (v : (Fin p ⊕ Fin p) → d.Idx N) (R : Finset (Fin p ⊕ Fin p))
+    (hlone : ∀ i₀ ∈ R, ∀ j, j ≠ i₀ → v j ≠ v i₀) :
+    ‖∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖
+      ≤ (2 * max 1 ρ) ^ ((2 * p - 1) * R.card) * ρ ^ R.card * B ^ (2 * p) := by
+  classical
+  have hcard : Fintype.card (Fin p ⊕ Fin p) = 2 * p := by
+    simp [Fintype.card_sum, two_mul]
+  set X : (Fin p ⊕ Fin p) → Ω d → ℂ :=
+    fun i ω => epsHom p i (greenDiagCentered d N u (zt E t) (mE E) (v i) ω) with hXdef
+  have hXb : ∀ i, BddMeas d (X i) := by
+    intro i
+    obtain ⟨C, hC⟩ := (bddMeas_greenDiagCentered hE ht u (v i)).bdd
+    refine ⟨((measurable_epsHom p i).comp
+      (bddMeas_greenDiagCentered (E := E) (t := t) hE ht u (v i)).meas), C, fun ω => ?_⟩
+    rw [hXdef]
+    simpa only [norm_epsHom] using hC ω
+  have hXd : ∀ i, FinDep d (X i) :=
+    fun i => (finDep_greenDiagCentered d N u (zt E t) (mE E) (v i)).imp
+      (fun _ h ω ω' hω => by rw [hXdef]; exact congrArg (epsHom p i) (h ω ω' hω))
+  have hq : ∀ i, qRow d N (v i) (X i)
+      = fun ω => epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) := by
+    intro i
+    have := applyOps_epsHom d N p i [] (greenDiagCentered d N u (zt E t) (mE E) (v i))
+    cases i with
+    | inl j => simp only [hXdef, epsHom_inl]; rfl
+    | inr j =>
+        simp only [hXdef, epsHom_inr]
+        exact qRow_conj d N (v (Sum.inr j)) (greenDiagCentered d N u (zt E t) (mE E) _)
+  have hgain : ∀ L : (Fin p ⊕ Fin p) → List (Bool × d.Idx N), (∀ i, OpsOk v i (L i)) →
+      (∀ i, (L i).length ≤ Fintype.card (Fin p ⊕ Fin p)) →
+      ∫ ω, ∏ i, ‖applyOps d N (L i) (qRow d N (v i) (X i)) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card (Fin p ⊕ Fin p) * ρ ^ ∑ i, numQ (L i) := by
+    intro L hL hlen
+    have hrw : ∀ ω : Ω d, ∏ i, ‖applyOps d N (L i) (qRow d N (v i) (X i)) ω‖
+        = ∏ i, ‖applyOps d N (L i) (flucDiag d N u (zt E t) (mE E) (v i)) ω‖ := by
+      intro ω
+      refine Finset.prod_congr rfl fun i _ => ?_
+      rw [hq i, applyOps_epsHom d N p i (L i) (flucDiag d N u (zt E t) (mE E) (v i)),
+        norm_epsHom]
+    rw [integral_congr_ae (Filter.Eventually.of_forall hrw)]
+    exact hg.gain (Fin p ⊕ Fin p) v L (fun i => (hL i).1) (fun i => (hL i).2)
+      (fun i => le_trans (hlen i) (by rw [hcard]; exact hM)) (by rw [hcard]; exact hn)
+  have h := norm_integral_prod_qRow_le_graded (k := v) R hlone hXb hXd hg.B_nonneg
+    hg.rho_nonneg hgain
+  rw [hcard] at h
+  simpa only [hq] using h
+
+/-- **`RBM.Gauss.integral_norm_flucAvg_pow_le_iter_graded` against the budgeted gain.**  The
+`2p`-th moment of (4.12) uses the interface at `#ι = 2p` slots and words of length `≤ 2p`, so
+`M = n = 2p` suffices. -/
+theorem integral_norm_flucAvg_pow_le_iter_budget (hE : |E| < 2) (ht : t < 1) {u : ℝ}
+    {B ρ c : ℝ} {M n : ℕ} {A : Finset (d.Idx N)} {T : d.Idx N → ℝ}
+    (hg : FlucGainUpTo' d N u (zt E t) (mE E) B ρ M n) (hM : 2 * p ≤ M) (hn : 2 * p ≤ n)
+    (hρ1 : ρ ≤ 1) (hcρ : c ≤ ρ ^ 2)
+    (hw : UniformWeight T c A) (hp : 2 * p ≤ A.card) :
+    ∫ ω, ‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) ∂(P d)
+      ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+        * ((2 : ℝ) ^ (2 * p - 1) * ρ * B) ^ (2 * p) := by
+  classical
+  have hcardι : Fintype.card (Fin p ⊕ Fin p) = 2 * p := by
+    simp [Fintype.card_sum, two_mul]
+  have hB := hg.B_nonneg
+  have hρ0 := hg.rho_nonneg
+  have hbm : ∀ (v : (Fin p ⊕ Fin p) → d.Idx N),
+      BddMeas d fun ω => ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) :=
+    fun v => bddMeas_prod _ fun i _ => bddMeas_epsHom_flucDiag hE ht u p i (v i)
+  have hI : ∫ ω, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ) ∂(P d)
+      = ∑ v : (Fin p ⊕ Fin p) → d.Idx N, (∏ i, (T (v i) : ℂ))
+          * ∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d) := by
+    have hexp : ∀ ω : Ω d, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ)
+        = ∑ v : (Fin p ⊕ Fin p) → d.Idx N, (∏ i, (T (v i) : ℂ))
+            * ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) :=
+      fun ω => prod_epsHom_sum_eq p T fun k => flucDiag d N u (zt E t) (mE E) k ω
+    simp_rw [hexp]
+    rw [integral_finsetSum _ fun v _ =>
+      ((bddMeas_const d (∏ i, (T (v i) : ℂ))).mul (hbm v)).integrable]
+    exact Finset.sum_congr rfl fun v _ => integral_const_mul _ _
+  have hf : ∀ v : (Fin p ⊕ Fin p) → d.Idx N,
+      ‖∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖
+        ≤ ((2 : ℝ) ^ (2 * p - 1)) ^ (loneSlots v).card * ρ ^ (loneSlots v).card
+          * B ^ (2 * p) := by
+    intro v
+    have hlone : ∀ i₀ ∈ loneSlots v, ∀ j, j ≠ i₀ → v j ≠ v i₀ :=
+      fun i₀ hi₀ => mem_loneSlots.1 hi₀
+    have key := norm_integral_prod_epsHom_flucDiag_le_budget hE ht u hg hM hn v
+      (loneSlots v) hlone
+    rwa [max_eq_left hρ1, mul_one, pow_mul] at key
+  have hK : (1 : ℝ) ≤ (2 : ℝ) ^ (2 * p - 1) := one_le_pow₀ (by norm_num)
+  have hsum := sum_weighted_le (ι := Fin p ⊕ Fin p) hw hcardι hp hρ0 hρ1 hK hB hcρ hf
+  have hofR : (∫ ω, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ) ∂(P d))
+      = ((∫ ω, ‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) ∂(P d) : ℝ) : ℂ) :=
+    integral_complex_ofReal
+  have hreal : ∫ ω, ‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) ∂(P d)
+      = ‖∫ ω, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ) ∂(P d)‖ := by
+    rw [hofR, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (integral_nonneg fun ω => by positivity)]
+  rw [hreal, hI]
+  refine le_trans (norm_sum_le _ _) ?_
+  have hterm : ∀ v : (Fin p ⊕ Fin p) → d.Idx N,
+      ‖(∏ i, (T (v i) : ℂ))
+          * ∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖
+        = (∏ i, |T (v i)|)
+          * ‖∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖ := by
+    intro v
+    rw [norm_mul, norm_prod]
+    congr 1
+    exact Finset.prod_congr rfl fun i _ => by rw [Complex.norm_real, Real.norm_eq_abs]
+  simp_rw [hterm]
+  exact le_trans hsum (le_of_eq (by push_cast; ring))
+
+end BudgetFluc
+
+end Budget
+
 end RBM.Gauss

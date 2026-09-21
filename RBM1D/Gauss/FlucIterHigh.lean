@@ -965,6 +965,82 @@ theorem flucGainUpTo_of_minorDiffGainUpTo (hE : |E| < 2) (ht : t < 1) (u : ℝ) 
   simp only [hrw]
   exact h.2.2 ι k L h1 h2 h3
 
+/-! #### The cardinality budget on the reduced interface — T177
+
+`RBM.Gauss.MinorDiffGainUpTo` has the same defect as `RBM.Gauss.FlucGainUpTo`: its index type
+`ι` is unbudgeted, so `RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo`
+(`RBM1D/Gauss/MinorDiffCond.lean`) derives `‖Z_k‖_{L^j} ≤ B` for every `j`, hence
+`‖Z_k‖_∞ ≤ B`, which T172 contradicts at `B ≍ Ψ`.  `RBM.Gauss.MinorDiffGainUpTo'` adds the
+budget `#ι ≤ n`, and `RBM.Gauss.flucGainUpTo'_of_minorDiffGainUpTo'` carries it across the
+annihilation identity, which does not touch the index type.
+
+The budget is what lets the conditionalized estimate of `RBM1D/Gauss/MinorDiffCond.lean` be
+*packaged* as an interface rather than carried with its additive remainder forever: with
+`#ι ≤ n` the remainder `condEnv^{#ι} P(Bad)` is dominated by `B₀^{#ι} (2Ψ)^{∑ q}` as soon as
+`condEnv^n P(Bad) ≤ B₀^n (2Ψ)^{n M}`, a condition on the *measure of the exceptional set* that
+`RBM.Gauss.HighProb` makes true for every fixed pair of budgets. -/
+
+/-- **`RBM.Gauss.MinorDiffGainUpTo` with the cardinality budget `#ι ≤ n`.** -/
+def MinorDiffGainUpTo' (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (B ρ : ℝ) (M n : ℕ) : Prop :=
+  0 ≤ B ∧ 0 ≤ ρ ∧
+    ∀ (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N)),
+      (∀ i, ((L i).map Prod.snd).Nodup) → (∀ i, ∀ x ∈ L i, x.2 ≠ k i) →
+      (∀ i, (L i).length ≤ M) → Fintype.card ι ≤ n →
+      ∫ ω, ∏ i, ‖applyOps d N (L i)
+          (minorDiff d N (qList (L i)) (flucDiagSet d N u z m (k i))) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)
+
+theorem MinorDiffGainUpTo'.B_nonneg {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M n : ℕ}
+    (h : MinorDiffGainUpTo' d N u z m B ρ M n) : 0 ≤ B := h.1
+
+theorem MinorDiffGainUpTo'.rho_nonneg {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M n : ℕ}
+    (h : MinorDiffGainUpTo' d N u z m B ρ M n) : 0 ≤ ρ := h.2.1
+
+/-- The unbudgeted graded interface implies the budgeted one at every `n`. -/
+theorem MinorDiffGainUpTo.budget {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M : ℕ}
+    (h : MinorDiffGainUpTo d N u z m B ρ M) (n : ℕ) :
+    MinorDiffGainUpTo' d N u z m B ρ M n :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 h3 _ => h.2.2 ι k L h1 h2 h3⟩
+
+/-- The ungraded reduced interface implies every budgeted one. -/
+theorem MinorDiffGain.upTo' {u : ℝ} {z m : ℂ} {B ρ : ℝ} (h : MinorDiffGain d N u z m B ρ)
+    (M n : ℕ) : MinorDiffGainUpTo' d N u z m B ρ M n := (h.upTo M).budget n
+
+/-- Both budgets may be lowered. -/
+theorem MinorDiffGainUpTo'.mono {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M M' n n' : ℕ} (hM : M' ≤ M)
+    (hn : n' ≤ n) (h : MinorDiffGainUpTo' d N u z m B ρ M n) :
+    MinorDiffGainUpTo' d N u z m B ρ M' n' :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 hlen hcard =>
+    h.2.2 ι k L h1 h2 (fun i => le_trans (hlen i) hM) (le_trans hcard hn)⟩
+
+/-- Relaxing the size parameters. -/
+theorem MinorDiffGainUpTo'.mono_params {u : ℝ} {z m : ℂ} {B ρ B' ρ' : ℝ} {M n : ℕ}
+    (hB : B ≤ B') (hρ : ρ ≤ ρ') (h : MinorDiffGainUpTo' d N u z m B ρ M n) :
+    MinorDiffGainUpTo' d N u z m B' ρ' M n := by
+  refine ⟨le_trans h.1 hB, le_trans h.2.1 hρ, fun ι _ k L h1 h2 hlen hcard => ?_⟩
+  refine le_trans (h.2.2 ι k L h1 h2 hlen hcard) ?_
+  exact mul_le_mul (pow_le_pow_left₀ h.1 hB _) (pow_le_pow_left₀ h.2.1 hρ _)
+    (pow_nonneg h.2.1 _) (pow_nonneg (le_trans h.1 hB) _)
+
+/-- **`RBM.Gauss.FlucGainUpTo'` from `RBM.Gauss.MinorDiffGainUpTo'`** — the budgeted analogue
+of `RBM.Gauss.flucGainUpTo_of_minorDiffGainUpTo`, with the same proof: the rewriting step is
+the exact identity `RBM.Gauss.applyOps_eq_applyOps_minorDiff`, which touches neither the words
+nor the index type, so both budgets are handed on unchanged. -/
+theorem flucGainUpTo'_of_minorDiffGainUpTo' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {B ρ : ℝ}
+    {M n : ℕ} (h : MinorDiffGainUpTo' d N u (zt E t) (mE E) B ρ M n) :
+    FlucGainUpTo' d N u (zt E t) (mE E) B ρ M n := by
+  refine ⟨h.1, h.2.1, fun ι _ k L h1 h2 h3 h4 => ?_⟩
+  have hrw : ∀ i : ι, applyOps d N (L i) (flucDiag d N u (zt E t) (mE E) (k i))
+      = applyOps d N (L i)
+        (minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i))) := by
+    intro i
+    rw [← flucDiagSet_empty d N u (zt E t) (mE E) (k i)]
+    exact applyOps_eq_applyOps_minorDiff (L i) _
+      (fun S => bddMeas_flucDiagSet hE ht u (k i) S)
+      (fun S κ hκ => finDepOffRow_flucDiagSet d N u (zt E t) (mE E) (k i) S hκ)
+  simp only [hrw]
+  exact h.2.2 ι k L h1 h2 h3 h4
+
 /-- **The reduced interface is not vacuous**: the deterministic envelope gives it
 unconditionally with `ρ = 4` (no gain), exactly as `RBM.Gauss.flucGain_env` does for
 `RBM.Gauss.FlucGain`.  The content of §4 is the same statement with `ρ ≍ Ψ`. -/

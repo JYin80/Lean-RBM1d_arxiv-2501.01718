@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.MinorDiffGain
 import RBM1D.Gauss.Eq45FlowInputs
+import RBM1D.Gauss.CondStableFlow
 
 /-!
 # Conditionalizing the minor-difference gain on the good event
@@ -65,15 +66,24 @@ letter, which is `N^{O(1)}` against a super-polynomially small base, i.e. free f
 * `RBM.Gauss.integral_prod_applyOps_minorDiff_le_goodSetFlow` — the same with every hypothesis
   discharged from `RBM.Gauss.goodSetFlow`, the flow form of (4.1).
 
-## The ceiling this does *not* break
+## The ceiling, and how T177 breaks it
 
 `RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` shows that the `B` of
 `RBM.Gauss.MinorDiffGainUpTo` dominates every `L^n` norm of `Z_k`, since the index type `ι` of
 that interface is unrestricted.  By T172's two-point argument `‖Z_k‖_∞ ≥ 64/65`, so
-`B ≍ Ψ` is unattainable there — exactly the ceiling T172 found for `RBM.Gauss.FlucBound`.  The
-additive remainder above is therefore **not** an artefact of this proof: it cannot be absorbed
-into `RBM.Gauss.MinorDiffGainUpTo`, and (4.12) at `B ρ ≍ Ψ²` needs either a budget on `#ι` in
-that interface too, or the remainder carried explicitly.
+`B ≍ Ψ` is unattainable there — exactly the ceiling T172 found for `RBM.Gauss.FlucBound`, and
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo` (`RBM1D/Gauss/FlucIter.lean`) is the
+same statement one level up, for the interface the flow form of (4.5) actually consumes.
+
+**T177 supplies the missing budget** `#ι ≤ n`: `RBM.Gauss.MinorDiffGainUpTo'` and
+`RBM.Gauss.FlucGainUpTo'`.  With it the degenerate instantiation stops at `j = n`
+(`RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo'`), so `B ≍ Ψ` is no longer
+contradicted, and the additive remainder of this file **is** absorbable:
+`RBM.Gauss.minorDiffGainUpTo'_of_le_on` packages the conditionalized estimate as an interface,
+`RBM.Gauss.flucGainUpTo'_goodSetFlow` produces it from (4.1) alone, and
+`RBM.Gauss.eq45Flow_of_goodSetFlow_budget` carries it to `RBM.StepGlue.Eq45Flow`.
+`RBM.Gauss.minorDiffGain_budget_hyps_consistent` exhibits explicit parameters at which every
+numeric side condition holds at once, at `B ≍ Ψ`.
 -/
 
 namespace RBM.Gauss
@@ -721,6 +731,651 @@ theorem integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo
   rw [flucDiagSet_empty] at hkey
   exact hkey
 
+/-- **With the cardinality budget the same instantiation stops at `j = n`** — T177.
+
+`RBM.Gauss.MinorDiffGainUpTo'` restricts the index type to `#ι ≤ n`, so the degenerate
+instantiation above is only available for `j ≤ n`.  The hypothesis `hj` is not removable: it
+is precisely what the budget buys, and without the `j → ∞` limit the conclusion
+`‖Z_k‖_{L^j} ≤ B` for `j ≤ n = 2p` is what the local law asserts, not a contradiction with
+it.  Compare `RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` above and
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo` /
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo'` in `RBM1D/Gauss/FlucIter.lean`,
+which are the same pair one level up, on the live path. -/
+theorem integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo' {n : ℕ}
+    (h : MinorDiffGainUpTo' d N u z m B ρ M n) (k : d.Idx N) {j : ℕ} (hj : j ≤ n) :
+    ∫ ω, ‖flucDiag d N u z m k ω‖ ^ j ∂(P d) ≤ B ^ j := by
+  classical
+  have hkey := h.2.2 (Fin j) (fun _ => k) (fun _ => ([] : List (Bool × d.Idx N)))
+    (by intro i; simp) (by intro i x hx; simp at hx) (by intro i; simp) (by simpa using hj)
+  simp only [qList_nil, minorDiff_nil, applyOps_nil, numQ_nil, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, smul_eq_mul, mul_zero, pow_zero, mul_one,
+    Finset.prod_const] at hkey
+  rw [flucDiagSet_empty] at hkey
+  exact hkey
+
 end Ceiling
+
+/-! ### The conditionalized estimate, packaged as a budgeted interface — T177
+
+With the cardinality budget `#ι ≤ n` the additive remainder of
+`RBM.Gauss.integral_prod_applyOps_minorDiff_le_on` **is** absorbable, and the conditionalized
+(4.12) input becomes an interface again rather than an inequality with a tail.  The arithmetic
+is the one the budget was introduced for:
+
+  `condEnv^{#ι} P(Bad) ≤ condEnv^n P(Bad) ≤ B₀^n (2Ψ)^{nM} ≤ B₀^{#ι} (2Ψ)^{∑ q}`,
+
+using `1 ≤ condEnv`, `#ι ≤ n`, `B₀ ≤ 1`, `2Ψ ≤ 1` and `∑ q ≤ #ι M ≤ n M`; the middle step is
+the one genuine hypothesis, a smallness condition on the measure of the tower.  Adding the
+remainder to the main term then costs a factor `2 ≤ 2^{#ι}`, i.e. `B = 2 B₀`, and the gain
+`ρ = 2Ψ` is untouched.
+
+At `#ι = 0` the bound `1 + P(Bad) ≤ 1` would be false, so that case is not routed through the
+remainder at all: the integrand is an empty product, the integral of `1` against a probability
+measure, and the conclusion is `1 ≤ 1`.
+
+`RBM.Gauss.minorDiffGain_budget_hyps_consistent` exhibits explicit parameters satisfying the
+whole numeric bundle at `B ≍ Ψ` with a *strictly positive* exceptional measure, which is what
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` shows to be impossible without
+the budget. -/
+
+section Budget
+
+variable {E t : ℝ}
+
+theorem one_le_condEnv (hE : |E| < 2) (ht : t < 1) (M : ℕ) : 1 ≤ condEnv E t M := by
+  have hη : 0 < etaT E t := etaT_pos_of_lt_one hE ht
+  have h1 : (1 : ℝ) ≤ 2 ^ (2 * M + 1) := one_le_pow₀ (by norm_num)
+  have h2 : (1 : ℝ) ≤ (etaT E t)⁻¹ + 1 := by
+    have := inv_nonneg.2 hη.le
+    linarith
+  calc (1 : ℝ) = 1 * 1 := by ring
+    _ ≤ 2 ^ (2 * M + 1) * ((etaT E t)⁻¹ + 1) := by
+        exact mul_le_mul h1 h2 zero_le_one (by positivity)
+    _ = condEnv E t M := rfl
+
+/-- **The row-section threshold that makes the conditionalization cost exactly `Ψ`.**
+
+`RBM.Gauss.condCost` is linear in `ε`, so there is one choice of the `RBM.Gauss.BadFamily`
+threshold for which the price of conditionalizing is the same `Ψ` as the gain itself; with it
+the constant of the budgeted interface is `2(2 minorDiffC M + 1) Ψ`, i.e. `≍ Ψ`, which is the
+paper's size. -/
+noncomputable def condEps (E t : ℝ) (M : ℕ) (Ψ : ℝ) : ℝ :=
+  Ψ * (2 * Ψ) ^ M * (((M : ℝ) + 1) * condEnv E t M)⁻¹
+
+theorem condEps_nonneg (hE : |E| < 2) (ht : t < 1) (M : ℕ) {Ψ : ℝ} (hΨ : 0 ≤ Ψ) :
+    0 ≤ condEps E t M Ψ := by
+  have hEnv0 : 0 < condEnv E t M := lt_of_lt_of_le zero_lt_one (one_le_condEnv hE ht M)
+  unfold condEps
+  positivity
+
+theorem condCost_condEps (hE : |E| < 2) (ht : t < 1) (M : ℕ) {Ψ : ℝ} (hΨ : 0 < Ψ) :
+    condCost E t M Ψ (condEps E t M Ψ) = Ψ := by
+  have hEnv0 : 0 < condEnv E t M := lt_of_lt_of_le zero_lt_one (one_le_condEnv hE ht M)
+  have hMEnv : (0 : ℝ) < ((M : ℝ) + 1) * condEnv E t M := by positivity
+  have h1 : ((2 * Ψ) ^ M : ℝ) ≠ 0 := by positivity
+  have h2 : (((M : ℝ) + 1) * condEnv E t M) ≠ 0 := ne_of_gt hMEnv
+  unfold condCost condEps
+  calc ((M : ℝ) + 1) * condEnv E t M
+          * (Ψ * (2 * Ψ) ^ M * (((M : ℝ) + 1) * condEnv E t M)⁻¹) * ((2 * Ψ) ^ M)⁻¹
+      = (((M : ℝ) + 1) * condEnv E t M * (((M : ℝ) + 1) * condEnv E t M)⁻¹)
+          * ((2 * Ψ) ^ M * ((2 * Ψ) ^ M)⁻¹) * Ψ := by ring
+    _ = Ψ := by rw [mul_inv_cancel₀ h2, mul_inv_cancel₀ h1, mul_one, one_mul]
+
+/-- **The conditionalized (4.12) input, as a budgeted interface.**
+
+The hypotheses are those of `RBM.Gauss.integral_prod_applyOps_minorDiff_le_on` plus the two
+that the absorption needs: `hB1`, that the per-factor constant is at most `1` (automatic at
+`B₀ ≍ Ψ → 0`), and `hsmall`, that the tower is small enough at the two budgets.  Neither is a
+`∀ ω` hypothesis, and neither involves the index type: the interface is now satisfiable at the
+paper's size — see `RBM.Gauss.minorDiffGain_budget_hyps_consistent`.
+
+The constant doubles, `B = 2 B₀`; the gain is exactly the `ρ = 2Ψ` of
+`RBM.Gauss.integral_prod_applyOps_minorDiff_le_on`, unchanged. -/
+theorem minorDiffGainUpTo'_of_le_on
+    (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ ε : ℝ} (hΨ0 : 0 < Ψ) (hΨhalf : 2 * Ψ ≤ 1)
+    (hε : 0 ≤ ε) {M n : ℕ} {Bad : ℕ → Set (Ω d)} (hfam : BadFamily d N ε Bad)
+    (hgood : ∀ ω ∉ Bad 0, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M)
+    (hB1 : 2 * minorDiffC M * Ψ + condCost E t M Ψ ε ≤ 1)
+    (hsmall : condEnv E t M ^ n * (P d).real (Bad (M + 1))
+      ≤ (2 * minorDiffC M * Ψ + condCost E t M Ψ ε) ^ n * (2 * Ψ) ^ (n * M)) :
+    MinorDiffGainUpTo' d N u (zt E t) (mE E)
+      (2 * (2 * minorDiffC M * Ψ + condCost E t M Ψ ε)) (2 * Ψ) M n := by
+  classical
+  have hΨ0' : (0 : ℝ) ≤ Ψ := hΨ0.le
+  have h2Ψ0 : (0 : ℝ) < 2 * Ψ := by linarith
+  have hcost0 : 0 ≤ condCost E t M Ψ ε := condCost_nonneg hE ht M hΨ0' hε
+  have hC := minorDiffC_nonneg M
+  set B₀ : ℝ := 2 * minorDiffC M * Ψ + condCost E t M Ψ ε with hB₀def
+  have hB₀0 : 0 ≤ B₀ := by
+    have : (0 : ℝ) ≤ 2 * minorDiffC M * Ψ := by positivity
+    rw [hB₀def]; linarith
+  refine ⟨by positivity, by positivity, fun ι _ k L h1 h2 hlen hcard => ?_⟩
+  rcases Nat.eq_zero_or_pos (Fintype.card ι) with h0 | hpos
+  · have hemp : IsEmpty ι := Fintype.card_eq_zero_iff.1 h0
+    simp [Finset.univ_eq_empty]
+  · have hmain := integral_prod_applyOps_minorDiff_le_on hE ht u hΨ0 hΨhalf hε hfam hgood
+      ι k L h1 h2 hlen
+    refine hmain.trans ?_
+    -- the sum of the gain exponents is at most `n * M`
+    have hq : (∑ i, numQ (L i)) ≤ n * M := by
+      have hstep : (∑ i, numQ (L i)) ≤ ∑ _i : ι, M :=
+        Finset.sum_le_sum fun i _ => le_trans List.countP_le_length (hlen i)
+      rw [Finset.sum_const, Finset.card_univ, smul_eq_mul] at hstep
+      exact le_trans hstep (Nat.mul_le_mul_right M hcard)
+    have hEnv1 : 1 ≤ condEnv E t M := one_le_condEnv hE ht M
+    have hPnn : 0 ≤ (P d).real (Bad (M + 1)) := measureReal_nonneg
+    have hmainnn : 0 ≤ B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i) := by positivity
+    -- the remainder is dominated by the main term
+    have hrem : condEnv E t M ^ Fintype.card ι * (P d).real (Bad (M + 1))
+        ≤ B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i) := by
+      calc condEnv E t M ^ Fintype.card ι * (P d).real (Bad (M + 1))
+          ≤ condEnv E t M ^ n * (P d).real (Bad (M + 1)) :=
+            mul_le_mul_of_nonneg_right (pow_le_pow_right₀ hEnv1 hcard) hPnn
+        _ ≤ B₀ ^ n * (2 * Ψ) ^ (n * M) := hsmall
+        _ ≤ B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i) := by
+            refine mul_le_mul (pow_le_pow_of_le_one hB₀0 hB1 hcard)
+              (pow_le_pow_of_le_one h2Ψ0.le hΨhalf hq) (by positivity) (by positivity)
+    -- and the doubling is paid by `2 ≤ 2 ^ #ι`
+    have hdouble : (2 : ℝ) ≤ 2 ^ Fintype.card ι := by
+      calc (2 : ℝ) = 2 ^ 1 := by norm_num
+        _ ≤ 2 ^ Fintype.card ι := pow_le_pow_right₀ one_le_two hpos
+    calc B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i)
+            + condEnv E t M ^ Fintype.card ι * (P d).real (Bad (M + 1))
+        ≤ B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i)
+            + B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i) := by linarith
+      _ = 2 * (B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i)) := by ring
+      _ ≤ 2 ^ Fintype.card ι * (B₀ ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i)) :=
+          mul_le_mul_of_nonneg_right hdouble hmainnn
+      _ = (2 * B₀) ^ Fintype.card ι * (2 * Ψ) ^ ∑ i, numQ (L i) := by
+          rw [mul_pow (2 : ℝ) B₀ (Fintype.card ι)]; ring
+
+/-- **The budgeted gain interface of `RBM1D/Gauss/FlucIter.lean`, from the same input.**
+The annihilation identity carries both budgets across
+(`RBM.Gauss.flucGainUpTo'_of_minorDiffGainUpTo'`), so this is the form
+`RBM.Gauss.integral_norm_flucAvg_pow_le_iter_budget` consumes, with `M = n = 2p`. -/
+theorem flucGainUpTo'_of_le_on
+    (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ ε : ℝ} (hΨ0 : 0 < Ψ) (hΨhalf : 2 * Ψ ≤ 1)
+    (hε : 0 ≤ ε) {M n : ℕ} {Bad : ℕ → Set (Ω d)} (hfam : BadFamily d N ε Bad)
+    (hgood : ∀ ω ∉ Bad 0, MinorGoodLe d N u (zt E t) (mE E) ω Ψ M)
+    (hB1 : 2 * minorDiffC M * Ψ + condCost E t M Ψ ε ≤ 1)
+    (hsmall : condEnv E t M ^ n * (P d).real (Bad (M + 1))
+      ≤ (2 * minorDiffC M * Ψ + condCost E t M Ψ ε) ^ n * (2 * Ψ) ^ (n * M)) :
+    FlucGainUpTo' d N u (zt E t) (mE E)
+      (2 * (2 * minorDiffC M * Ψ + condCost E t M Ψ ε)) (2 * Ψ) M n :=
+  flucGainUpTo'_of_minorDiffGainUpTo' hE ht u
+    (minorDiffGainUpTo'_of_le_on hE ht u hΨ0 hΨhalf hε hfam hgood hB1 hsmall)
+
+end Budget
+
+/-! ### The budgeted interface, produced from (4.1) — T177
+
+The composition of `RBM.Gauss.minorDiffGainUpTo'_of_le_on` with the bridge of the previous
+section: the *only* probabilistic input is the flow good event `RBM.Gauss.goodSetFlow`
+(the paper's `Ω(t,c)` of (4.1)), there is **no** hypothesis quantified over all sample points,
+and the exceptional set charged is the explicit tower `RBM.Gauss.badTower` over the measurable
+hull of its complement.  The residual hypothesis `hsmall` is a statement about the *measure* of
+that tower, which `RBM.Gauss.meas_badTower_le` bounds by `((ε + #rows)/ε)^{M+1} P(Ω(t,c)ᶜ)` —
+super-polynomially small for each fixed pair of budgets. -/
+
+section BudgetFlow
+
+variable {E : ℝ} {s t δ : ℕ → ℝ}
+
+/-- **`RBM.Gauss.MinorDiffGainUpTo'` from the flow good event (4.1).** -/
+theorem minorDiffGainUpTo'_goodSetFlow {N : ℕ} (hE : |E| < 2) {v : ℝ} (hv1 : v < 1)
+    (hv : v ∈ Set.Icc (s N) (t N)) {ε : ℝ} (hε : 0 ≤ ε) {M n : ℕ}
+    (hδ0 : 0 < δ N) (hδ4 : δ N ≤ 1 / 4) (hMδ : 8 * M * δ N ≤ 1)
+    (hB1 : 2 * minorDiffC M * (2 * δ N) + condCost E v M (2 * δ N) ε ≤ 1)
+    (hsmall : condEnv E v M ^ n
+        * (P d).real (badTower d N ε (badBase d E s t δ N) (M + 1))
+      ≤ (2 * minorDiffC M * (2 * δ N) + condCost E v M (2 * δ N) ε) ^ n
+          * (2 * (2 * δ N)) ^ (n * M)) :
+    MinorDiffGainUpTo' d N v (zt E v) (mE E)
+      (2 * (2 * minorDiffC M * (2 * δ N) + condCost E v M (2 * δ N) ε))
+      (2 * (2 * δ N)) M n := by
+  have hz : (zt E v).im ≠ 0 := by
+    rw [← etaT_eq_zt_im]; exact ne_of_gt (etaT_pos_of_lt_one hE hv1)
+  exact minorDiffGainUpTo'_of_le_on (E := E) (t := v) hE hv1 v (Ψ := 2 * δ N)
+    (by linarith) (by linarith) hε
+    (badFamily_badTower d N ε (measurableSet_badBase d E s t δ N))
+    (fun ω hω => minorGoodLe_of_notMem_badBase hE.le hv hz hδ0.le hδ4 hMδ hω) hB1 hsmall
+
+/-- **`RBM.Gauss.FlucGainUpTo'` from the flow good event (4.1)** — the interface that
+`RBM.Gauss.eq45Flow_of_localLaw_gain_budget` consumes, with every hypothesis produced from
+(4.1) and explicit numeric side conditions. -/
+theorem flucGainUpTo'_goodSetFlow {N : ℕ} (hE : |E| < 2) {v : ℝ} (hv1 : v < 1)
+    (hv : v ∈ Set.Icc (s N) (t N)) {ε : ℝ} (hε : 0 ≤ ε) {M n : ℕ}
+    (hδ0 : 0 < δ N) (hδ4 : δ N ≤ 1 / 4) (hMδ : 8 * M * δ N ≤ 1)
+    (hB1 : 2 * minorDiffC M * (2 * δ N) + condCost E v M (2 * δ N) ε ≤ 1)
+    (hsmall : condEnv E v M ^ n
+        * (P d).real (badTower d N ε (badBase d E s t δ N) (M + 1))
+      ≤ (2 * minorDiffC M * (2 * δ N) + condCost E v M (2 * δ N) ε) ^ n
+          * (2 * (2 * δ N)) ^ (n * M)) :
+    FlucGainUpTo' d N v (zt E v) (mE E)
+      (2 * (2 * minorDiffC M * (2 * δ N) + condCost E v M (2 * δ N) ε))
+      (2 * (2 * δ N)) M n :=
+  flucGainUpTo'_of_minorDiffGainUpTo' (E := E) (t := v) hE hv1 v
+    (minorDiffGainUpTo'_goodSetFlow hE hv1 hv hε hδ0 hδ4 hMδ hB1 hsmall)
+
+end BudgetFlow
+
+/-! ### The numeric bundle is satisfiable — T177's acceptance check
+
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` shows that the *unbudgeted*
+interface forces `B ≥ ‖Z_k‖_{L^j}` for every `j`, hence `B ≥ 64/65` by T172: no choice of
+parameters makes it hold at `B ≍ Ψ`.  The budgeted one has no such obstruction, and the
+statement below is the positive check: for every `E`, `t`, and every pair of budgets `M`, `n`,
+there are explicit `Ψ`, `ε` and an exceptional measure `pBad` — **strictly positive**, so the
+witness is not the degenerate one — satisfying simultaneously every numeric hypothesis of
+`RBM.Gauss.minorDiffGainUpTo'_of_le_on`, together with `B = K Ψ` for the explicit
+`K = 2(2 minorDiffC M + 1)`, i.e. at the paper's size. -/
+
+section Consistency
+
+variable {E t : ℝ}
+
+/-- **All the numeric hypotheses of `RBM.Gauss.minorDiffGainUpTo'_of_le_on` hold at once, at
+`B ≍ Ψ`, with a strictly positive exceptional measure.** -/
+theorem minorDiffGain_budget_hyps_consistent (hE : |E| < 2) (ht : t < 1) (M n : ℕ) :
+    ∃ Ψ > (0 : ℝ), ∃ ε > (0 : ℝ), ∃ pBad > (0 : ℝ),
+      2 * Ψ ≤ 1 ∧ pBad ≤ 1 ∧
+      2 * minorDiffC M * Ψ + condCost E t M Ψ ε ≤ 1 ∧
+      condEnv E t M ^ n * pBad
+        ≤ (2 * minorDiffC M * Ψ + condCost E t M Ψ ε) ^ n * (2 * Ψ) ^ (n * M) ∧
+      2 * (2 * minorDiffC M * Ψ + condCost E t M Ψ ε)
+        = (2 * (2 * minorDiffC M + 1)) * Ψ := by
+  have hC := minorDiffC_nonneg M
+  have hEnv1 : 1 ≤ condEnv E t M := one_le_condEnv hE ht M
+  have hEnv0 : 0 < condEnv E t M := lt_of_lt_of_le zero_lt_one hEnv1
+  have hEnvne : (condEnv E t M : ℝ) ≠ 0 := ne_of_gt hEnv0
+  -- `Ψ` small enough that `2 minorDiffC M Ψ ≤ 1/4` and `2 Ψ ≤ 1`
+  set Ψ : ℝ := (8 * (minorDiffC M + 1))⁻¹ with hΨdef
+  have hden : (0 : ℝ) < 8 * (minorDiffC M + 1) := by positivity
+  have hΨpos : 0 < Ψ := by rw [hΨdef]; positivity
+  have hmul : (8 * (minorDiffC M + 1)) * Ψ = 1 := by
+    rw [hΨdef]; exact mul_inv_cancel₀ (ne_of_gt hden)
+  have hCΨ0 : 0 ≤ minorDiffC M * Ψ := mul_nonneg hC hΨpos.le
+  have hΨle : Ψ ≤ 1 / 8 := by nlinarith
+  have hΨhalf : 2 * Ψ ≤ 1 := by linarith
+  have h2Ψpos : (0 : ℝ) < 2 * Ψ := by linarith
+  have hCΨ : 2 * minorDiffC M * Ψ ≤ 1 / 4 := by nlinarith
+  -- `ε` chosen so that the conditionalization cost is exactly `Ψ`
+  set ε : ℝ := Ψ * (2 * Ψ) ^ M * (((M : ℝ) + 1) * condEnv E t M)⁻¹ with hεdef
+  have hMEnv : (0 : ℝ) < ((M : ℝ) + 1) * condEnv E t M := by positivity
+  have hεpos : 0 < ε := by rw [hεdef]; positivity
+  have hcost : condCost E t M Ψ ε = Ψ := by
+    have h1 : ((2 * Ψ) ^ M : ℝ) ≠ 0 := by positivity
+    have h2 : (((M : ℝ) + 1) * condEnv E t M) ≠ 0 := ne_of_gt hMEnv
+    unfold condCost
+    rw [hεdef]
+    calc ((M : ℝ) + 1) * condEnv E t M
+            * (Ψ * (2 * Ψ) ^ M * (((M : ℝ) + 1) * condEnv E t M)⁻¹) * ((2 * Ψ) ^ M)⁻¹
+        = (((M : ℝ) + 1) * condEnv E t M * (((M : ℝ) + 1) * condEnv E t M)⁻¹)
+            * ((2 * Ψ) ^ M * ((2 * Ψ) ^ M)⁻¹) * Ψ := by ring
+      _ = Ψ := by rw [mul_inv_cancel₀ h2, mul_inv_cancel₀ h1, mul_one, one_mul]
+  refine ⟨Ψ, hΨpos, ε, hεpos,
+    (2 * minorDiffC M * Ψ + Ψ) ^ n * (2 * Ψ) ^ (n * M) / condEnv E t M ^ n,
+    by positivity, hΨhalf, ?_, ?_, ?_, ?_⟩
+  · -- `pBad ≤ 1`
+    have h1 : (2 * minorDiffC M * Ψ + Ψ) ^ n ≤ 1 :=
+      pow_le_one₀ (by positivity) (by linarith)
+    have h2 : ((2 : ℝ) * Ψ) ^ (n * M) ≤ 1 := pow_le_one₀ (by positivity) hΨhalf
+    have h3 : (1 : ℝ) ≤ condEnv E t M ^ n := one_le_pow₀ hEnv1
+    have hnum : (2 * minorDiffC M * Ψ + Ψ) ^ n * (2 * Ψ) ^ (n * M) ≤ 1 := by
+      nlinarith [pow_nonneg (by positivity : (0:ℝ) ≤ 2 * minorDiffC M * Ψ + Ψ) n,
+        pow_nonneg h2Ψpos.le (n * M)]
+    rw [div_le_one (by positivity)]
+    linarith
+  · rw [hcost]; linarith
+  · rw [hcost, ← mul_div_assoc, mul_div_cancel_left₀ _ (pow_ne_zero n hEnvne)]
+  · rw [hcost]; ring
+
+end Consistency
+
+/-! ### (4.12) and (4.5) along the flow, against the budgeted interface — T177
+
+`RBM.Gauss.eq45Flow_of_localLaw_gain'` (`RBM1D/Gauss/CondStableFlow.lean`) consumes
+`RBM.Gauss.FlucGainUpTo` in its `hg` slot, and by
+`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo` that interface is unsatisfiable at
+`B ≍ Ψ`: the theorem is true but vacuous, so (4.5) had no supply.  This block re-derives the
+whole chain from `RBM.Gauss.FlucGainUpTo'`, whose budgets `M = n = 2p` are exactly what the
+`2p`-th moment expansion provides.
+
+Every statement below has **verbatim** the conclusion of its unprimed ancestor in
+`RBM1D/Gauss/Eq45FlowInputs.lean` / `RBM1D/Gauss/CondStableFlow.lean`, and the hypothesis
+lists differ in one place only: `RBM.Gauss.FlucGainUpTo` becomes
+`RBM.Gauss.FlucGainUpTo' … (2 * p) (2 * p)`.  The unprimed versions are untouched and remain
+reachable through `RBM.Gauss.FlucGainUpTo.budget`, so nothing that already had a supply loses
+it; what changes is that the budgeted chain *can* be supplied, by
+`RBM.Gauss.flucGainUpTo'_of_le_on` above. -/
+
+section Eq45Budget
+
+open Filter
+
+variable {E K : ℝ} {s t : ℕ → ℝ}
+
+/-- **(4.12) at every time of the flow interval, from the budgeted gain.**  The budgeted form
+of `RBM.Gauss.unifDomIcc_flucAvg_iter'`. -/
+theorem unifDomIcc_flucAvg_iter_budget {V : ℕ → Type*} (d : Dims) (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1)
+    {Tw : ∀ N, V N → d.Idx N → ℝ} {cw : ℕ → ℝ} {Aw : ∀ N, V N → Finset (d.Idx N)}
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1) (hcρ : ∀ N, cw N ≤ ep N ^ 2)
+    (hw : ∀ N (a : V N), UniformWeight (Tw N a) (cw N) (Aw N a))
+    (hcardA : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ a : V N, 2 * p ≤ (Aw N a).card) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : V N) ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖)
+      (fun N _ _ _ => ep N * Bm N) := by
+  refine unifDomIcc_of_moment (fun N => hpos N) (fun p N u hu a => ?_) ?_
+  · exact integrable_norm_flucAvg_pow
+      (flucBound_env hE (lt_of_le_of_lt hu.2 (ht1 N)) d N u).flucDiag_le p
+  · intro ε hε p
+    have hK0 : (0 : ℝ) ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) :=
+      pow_nonneg (mul_nonneg (by positivity) (hKp p)) _
+    have hc1 : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p) := by positivity
+    have hcoef : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+        * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) := mul_nonneg hc1 hK0
+    refine ⟨((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+      * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) + 1, by linarith, ?_⟩
+    filter_upwards [hcardA p, eventually_ge_atTop 1] with N h2 hN1 u hu a
+    have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+    have hrw : (fun ω => |‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖| ^ (2 * p))
+        = fun ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖ ^ (2 * p) := by
+      funext ω; rw [abs_norm]
+    rw [hrw]
+    have hmain := integral_norm_flucAvg_pow_le_iter_budget hE hu1 (hg p N u hu) le_rfl le_rfl
+      (hρ1 N) (hcρ N) (hw N a) (h2 a)
+    have hep0 : (0 : ℝ) ≤ ep N := (hg p N u hu).rho_nonneg
+    have hBp0 : (0 : ℝ) ≤ Bp p N := (hg p N u hu).B_nonneg
+    have hstep1 : ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
+        ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p) := by
+      rw [← mul_pow]
+      refine pow_le_pow_left₀ (by positivity) ?_ _
+      calc (2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N
+          ≤ (2 : ℝ) ^ (2 * p - 1) * ep N * (Kp p * Bm N) :=
+            mul_le_mul_of_nonneg_left (hBK p N) (by positivity)
+        _ = ((2 : ℝ) ^ (2 * p - 1) * Kp p) * (ep N * Bm N) := by ring
+    have hmain2 : ∫ ω, ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖ ^ (2 * p) ∂(P d)
+        ≤ (((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+            * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p)) * (ep N * Bm N) ^ (2 * p) := by
+      refine le_trans hmain ?_
+      calc ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+              * ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
+          ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+              * (((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p)) :=
+            mul_le_mul_of_nonneg_left hstep1 hc1
+        _ = _ := by ring
+    have hNe : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) :=
+      Real.one_le_rpow (by exact_mod_cast hN1) (by positivity)
+    have hpow : (0 : ℝ) ≤ (ep N * Bm N) ^ (2 * p) :=
+      pow_nonneg (mul_nonneg hep0 (hBm N)) _
+    refine le_trans hmain2 ?_
+    nlinarith [mul_nonneg hcoef hpow, hpow, hNe, hcoef]
+
+/-- **(4.12) for the block average, from the budgeted gain.** -/
+theorem unifDomIcc_flucAvg_blockAvg_iter_budget (d : Dims) (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (blkCoef (d.L N) (d.W N) a) ω‖)
+      (fun N _ _ _ => ep N * Bm N) :=
+  unifDomIcc_flucAvg_iter_budget (V := fun N => ZMod (d.L N)) d hE ht1 hg hKp hBm hBK hpos
+    hρ1 hcρ (fun N a => uniformWeight_blockAvg a)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN a
+      rw [card_blockAvg_support]; exact hN)
+
+/-- **(4.12) for the variance-profile row, from the budgeted gain.** -/
+theorem unifDomIcc_flucAvg_Sblk_iter_budget (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (fun j => Sblk (d.L N) (d.W N) i j) ω‖)
+      (fun N _ _ _ => ep N * Bm N) :=
+  unifDomIcc_flucAvg_iter_budget (V := fun N => d.Idx N) d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ
+    (fun N i => uniformWeight_Sblk i)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN i
+      rw [card_Sblk_support]
+      omega)
+
+/-- **`hfixRow` from the budgeted gain, at the paper's size.**  The budgeted form of
+`RBM.Gauss.unifDomIcc_flucRow_condExpDiag_psi`; the conclusion is literally the same. -/
+theorem unifDomIcc_flucRow_condExpDiag_psi_budget (d : Dims) {δ Ψ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
+    (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
+    (hΨlow : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * Ψ N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
+  have hW : ∀ N, (0 : ℝ) < (d.W N : ℝ) := fun N => by exact_mod_cast d.W_pos N
+  have hpos : ∀ N, (0 : ℝ) < 2 * Ψ N * Ψ N := fun N => by nlinarith [hΨpos N]
+  have hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ (2 * Ψ N) ^ 2 := by
+    intro N
+    have h3 : ((3 * d.W N : ℝ))⁻¹ ≤ ((d.W N : ℝ))⁻¹ := by
+      have hw := hW N
+      rw [inv_le_inv₀ (by linarith) hw]
+      linarith
+    have hl := hΨlow N
+    nlinarith [hl, h3]
+  have hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (2 * Ψ N * Ψ N) ≤ (N : ℝ) ^ τ := flucPhiW_of_psiW d hΨW
+  exact (unifDomIcc_flucAvg_Sblk_iter_budget (Bm := Ψ) (Kp := Kp) (ep := fun N => 2 * Ψ N)
+    d hE ht1 hg hKp (fun N => (hΨpos N).le) hBK hpos hΨhalf hcρ).trans
+    (unifDomIcc_const_Lmax (V := fun N => d.Idx N) d hE.le hδ1 hΩ hΦW)
+
+/-- **`hfixBlk` from the budgeted gain, at the paper's size.** -/
+theorem unifDomIcc_flucBlk_condExpDiag_psi_budget (d : Dims) {δ Ψ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
+    (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
+    (hΨlow : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * Ψ N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
+  have hpos : ∀ N, (0 : ℝ) < 2 * Ψ N * Ψ N := fun N => by nlinarith [hΨpos N]
+  have hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ (2 * Ψ N) ^ 2 := fun N => by nlinarith [hΨlow N]
+  have hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (2 * Ψ N * Ψ N) ≤ (N : ℝ) ^ τ := flucPhiW_of_psiW d hΨW
+  exact (unifDomIcc_flucAvg_blockAvg_iter_budget (Bm := Ψ) (Kp := Kp) (ep := fun N => 2 * Ψ N)
+    d hE ht1 hg hKp (fun N => (hΨpos N).le) hBK hpos hΨhalf hcρ).trans
+    (unifDomIcc_const_Lmax (V := fun N => ZMod (d.L N)) d hE.le hδ1 hΩ hΦW)
+
+/-- **(4.5) along the flow, against the *budgeted* gain interface** — T177.
+
+Word for word `RBM.Gauss.eq45Flow_of_localLaw_gain'` (`RBM1D/Gauss/CondStableFlow.lean`), with
+the one interface that was unsatisfiable replaced by its budgeted form: `hg` now asks for
+`RBM.Gauss.FlucGainUpTo' … (2 * p) (2 * p)`, both budgets being exactly what the `2p`-th
+moment expansion provides.  **The conclusion is verbatim `RBM.StepGlue.Eq45Flow`**, and the
+unprimed versions are untouched.
+
+This is the statement `RBM.Gauss.flucGainUpTo'_of_le_on` can feed: that theorem produces the
+budgeted gain from the flow good event (4.1) alone, with no hypothesis quantified over all
+sample points, and `RBM.Gauss.minorDiffGain_budget_hyps_consistent` exhibits explicit
+parameters making its numeric side conditions hold at `B ≍ Ψ`. -/
+theorem eq45Flow_of_localLaw_gain_budget (d : Dims) {δ Ψ : ℕ → ℝ} {Kenv B : ℝ} {κ : ℝ}
+    (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ) (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
+    (hK : 0 ≤ K) (hδ0 : ∀ N, 0 ≤ δ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΨ0 : ∀ N, 0 ≤ Ψ N) (hKenv : 0 ≤ Kenv) (hB : 0 ≤ B)
+    (hEnv : ∀ᶠ N : ℕ in atTop, ((etaT E (t N))⁻¹ + 1) ^ 2 ≤ (N : ℝ) ^ Kenv)
+    (hΨlow : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-B) ≤ Ψ N * Ψ N)
+    (hΨ1 : ∀ᶠ N : ℕ in atTop, Ψ N * Ψ N ≤ 1)
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ)
+    (hll : LocalLawUnifIcc d E s t Ψ)
+    {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
+    (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
+    (hΨW' : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * Ψ N ^ 2)
+    (hHolIBP : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖condExpDiag d N u (zt E u) (mE E) i ω
+              - (u : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N u ω) (zt E u) k k - mE E)‖
+          - ‖condExpDiag d N v (zt E v) (mE E) i ω
+              - (v : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N v ω) (zt E v) k k - mE E)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hHolRow : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hHolBlk : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    StepGlue.Eq45Flow (sample d) E s t :=
+  eq45Flow_of_unifDom_ibp d hκ0 hκ1 hEκ hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hΨ0 hKenv hB
+    hEnv hΨlow hΨ1 hΨW hll hHolIBP hHolRow
+    (unifDomIcc_flucRow_condExpDiag_psi_budget d hE ht1 hg hKp hBK hΨpos hΨhalf hΨW' hδ1 hΩ
+      hΨW)
+    hHolBlk
+    (unifDomIcc_flucBlk_condExpDiag_psi_budget d hE ht1 hg hKp hBK hΨpos hΨhalf hΨW' hδ1 hΩ
+      hΨW)
+
+/-! #### The end-to-end probe — T177's acceptance criterion
+
+From the flow good event (4.1) to `RBM.StepGlue.Eq45Flow`, through T169/T170 (the level
+budget), T171 (the conditionalization) and T177 (the cardinality budget).  **The hypothesis
+list contains no statement quantified over all sample points**: the only probabilistic inputs
+are `hΩ` — (4.1) itself — and `hsmall`, a bound on the *measure* of the explicit tower
+`RBM.Gauss.badTower`, which `RBM.Gauss.meas_badTower_le` reduces to `P(Ω(t,c)ᶜ)` times a fixed
+power of `(ε + #rows)/ε`.
+
+The size is the paper's: the local-law threshold is `Ψ_N = 2 δ_N`, the gain is `ρ = 2 Ψ_N` and
+the constant is `B_p = 2(2 minorDiffC(2p) + 1) Ψ_N`, so the control of (4.12) is `ρ B ≍ Ψ²` with
+the `p`-dependence confined to `Kp`.  `RBM.Gauss.minorDiffGain_budget_hyps_consistent` gives
+explicit parameters at which the numeric conditions hold simultaneously. -/
+theorem eq45Flow_of_goodSetFlow_budget (d : Dims) {δ : ℕ → ℝ} {Kenv Bx κ : ℝ}
+    (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ) (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N) (hK : 0 ≤ K)
+    (hδpos : ∀ N, 0 < δ N) (hδ4 : ∀ N, δ N ≤ 1 / 4)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hKenv : 0 ≤ Kenv) (hBx : 0 ≤ Bx)
+    (hEnv : ∀ᶠ N : ℕ in atTop, ((etaT E (t N))⁻¹ + 1) ^ 2 ≤ (N : ℝ) ^ Kenv)
+    (hΨlow : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-Bx) ≤ (2 * δ N) * (2 * δ N))
+    (hΨ1 : ∀ᶠ N : ℕ in atTop, (2 * δ N) * (2 * δ N) ≤ 1)
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * ((2 * δ N) * (2 * δ N)) ≤ (N : ℝ) ^ τ)
+    (hll : LocalLawUnifIcc d E s t (fun N => 2 * δ N))
+    (hMδ : ∀ p N : ℕ, 8 * (2 * p) * δ N ≤ 1)
+    (hδC : ∀ p N : ℕ, 2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N ≤ 1)
+    (hWδ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * (2 * δ N) ^ 2)
+    (hsmall : ∀ p N : ℕ, ∀ u ∈ Set.Icc (s N) (t N),
+      condEnv E u (2 * p) ^ (2 * p)
+          * (P d).real (badTower d N (condEps E u (2 * p) (2 * δ N))
+              (badBase d E s t δ N) (2 * p + 1))
+        ≤ (2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N) ^ (2 * p)
+            * (2 * (2 * δ N)) ^ (2 * p * (2 * p)))
+    (hHolIBP : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖condExpDiag d N u (zt E u) (mE E) i ω
+              - (u : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N u ω) (zt E u) k k - mE E)‖
+          - ‖condExpDiag d N v (zt E v) (mE E) i ω
+              - (v : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N v ω) (zt E v) k k - mE E)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hHolRow : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hHolBlk : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    StepGlue.Eq45Flow (sample d) E s t := by
+  have hδ0 : ∀ N, 0 ≤ δ N := fun N => (hδpos N).le
+  have hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2 :=
+    Filter.Eventually.of_forall fun N => by linarith [hδ4 N]
+  have hg : ∀ p N : ℕ, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo' d N u (zt E u) (mE E)
+        (2 * (2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N)) (2 * (2 * δ N))
+        (2 * p) (2 * p) := by
+    intro p N u hu
+    have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+    have hΨ : (0 : ℝ) < 2 * δ N := by linarith [hδpos N]
+    have hcc : condCost E u (2 * p) (2 * δ N) (condEps E u (2 * p) (2 * δ N)) = 2 * δ N :=
+      condCost_condEps hE hu1 (2 * p) hΨ
+    have h := flucGainUpTo'_goodSetFlow (E := E) (s := s) (t := t) (δ := δ)
+      (M := 2 * p) (n := 2 * p)
+      hE hu1 hu (condEps_nonneg hE hu1 (2 * p) hΨ.le) (hδpos N) (hδ4 N)
+      (by push_cast; linarith [hMδ p N])
+      (by rw [hcc]; exact hδC p N) (by rw [hcc]; exact hsmall p N u hu)
+    rwa [hcc] at h
+  exact eq45Flow_of_localLaw_gain_budget (Ψ := fun N => 2 * δ N)
+    (Bp := fun p N => 2 * (2 * minorDiffC (2 * p) * (2 * δ N) + 2 * δ N))
+    (Kp := fun p => 2 * (2 * minorDiffC (2 * p) + 1))
+    d hκ0 hκ1 hEκ hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ
+    (fun N => by linarith [hδpos N]) hKenv hBx hEnv hΨlow hΨ1 hΨW hll hg
+    (fun p => by have := minorDiffC_nonneg (2 * p); linarith)
+    (fun p N => le_of_eq (by ring))
+    (fun N => by linarith [hδpos N]) (fun N => by linarith [hδ4 N]) hWδ
+    hHolIBP hHolRow hHolBlk
+
+end Eq45Budget
 
 end RBM.Gauss

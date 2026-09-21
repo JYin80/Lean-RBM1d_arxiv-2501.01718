@@ -4596,7 +4596,14 @@ paper-deltas #47/#54/#73 记过这条偏差，**但没人记它把 `Thm221` 的�
 **本身不需要截断给的尺寸估计**，只需要生成元恒等式 + Hölder。**所以 (i) 若可行，代价明显小于 (ii)。**
 ⚠ 这是第五次撞上「字段对所有矩阵/所有样本点过度量化」（T145、T132b、T154、T164/T172，现在 T180）。
 
-## D2 ⭐ 基数预算的工单必须把 `FlucGainUpTo` 一并写进规格（T171 + T176，探针 P5）
+## D2 ~~⭐ 基数预算的工单必须把 `FlucGainUpTo` 一并写进规格~~ → **已办（T177，2026-09-21）**
+
+> 两层都加了预算（`FlucGainUpTo'`/`MinorDiffGainUpTo'`），两条反例已入库，(4.12)→`Eq45Flow`
+> 整条链在 `MinorDiffCond.lean` 里按预算版重建、只读文件一个字没动。详见本文档末尾的 T177 节。
+> **仍未验证的那条照旧**：`‖Z_k‖_∞ ≥ 64/65` 的 `L^n → L^∞` 一步（需 `ω ↦ Z_k(ω)` 连续性）没入库。
+> 下面是原始条目，保留备查。
+
+### （原始条目，T171 + T176，探针 P5）
 T171 已编译证明 `MinorDiffGainUpTo` 在 `B ≍ Ψ` 处不可满足（其 `B` 支配 `Z_k` 的所有 `L^n` 范数，配 `‖Z_k‖_∞ ≥ 64/65`）。
 **T176 的探针 P5 表明同一堵墙高一层、且在活路径上**：`FlucGainUpTo` 自己的 `B` 也支配所有 `L^n` 范数，
 而 `FlucGainUpTo` 正是 `eq45Flow_of_localLaw_gain'`（`CondStableFlow.lean:1246`）在 `hg` 槽吃的接口。
@@ -4738,3 +4745,76 @@ Lean 里留了 `RBM.figure_four`（`decide`）作为可编译的锚点。
 
 **另记两处会被重新踩的接缝**：`hasDerivAt_integral_Psi` 带 `0 < u`，故 `hdu` 只能由**开区间**导数 + 连续性得到（同 T161/T173）；
 T72 的 `genMomentPt_le` 同样要全局 `ContDiff ℝ 2`。
+
+## ⭐ T177：基数预算 `#ι ≤ n` —— 两层接口都修了，(4.12) 到 `Eq45Flow` 打通（2026-09-21）
+
+`lake build RBM1D` exit=0、`errors: 0`，审计 **9410** 条（9309 → 9410），全部落在
+`propext / Classical.choice / Quot.sound`。动了三个文件：`Gauss/FlucIter.lean`（+~200 行）、
+`Gauss/FlucIterHigh.lean`（+~70 行）、`Gauss/MinorDiffCond.lean`（726 → 1421 行）。
+**`Gauss/CondStableFlow.lean` 与 `Gauss/Eq45FlowInputs.lean` 一个字没动**（只读），`Gauss/MinorDiffGain.lean` 也没动。
+
+### 先把「不可满足」这件事入库（此前只在探针里）
+两条反例现在是仓库里的编译定理，并排放着，差别一眼可见：
+
+| 接口 | 定理 | 结论 |
+|---|---|---|
+| `FlucGainUpTo`（无预算，**活路径上**） | `integral_pow_norm_flucDiag_le_of_flucGainUpTo` | `∫‖Z_k‖^j ≤ B^j` 对**每个** `j`（T176 探针 P5 入库） |
+| `MinorDiffGainUpTo`（无预算） | `integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` | 同上（T171 已有） |
+| `FlucGainUpTo'`（带预算） | `integral_pow_norm_flucDiag_le_of_flucGainUpTo'` | 只对 `j ≤ n` |
+| `MinorDiffGainUpTo'`（带预算） | `integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo'` | 只对 `j ≤ n` |
+
+⚠ **`‖Z_k‖_∞ ≥ 64/65` 与 `L^n → L^∞` 那一步仍未入库**（T176 的「声明的盲区」照旧）：
+本单把**推出 `B ≥ ‖Z_k‖_{L^j}`（∀j）**这一半编译了，**没有**补 T172 的两点反例与连续性。
+所以「旧接口不可满足」严格说是「旧接口 + T172（未入库）不可满足」。
+
+### 预算的形状与「`#ι ≤ 2p` 本来就成立」的核查（load-bearing，已查）
+`FlucGainUpTo' … (M n : ℕ)`：`M` 管字长，`n` 管 `#ι`。核查结论：
+**整条链里接口只被用了一次**，在 `norm_integral_prod_epsHom_flucDiag_le_budget`
+（`FlucIter.lean:2470`）处，`ι = Fin p ⊕ Fin p`、`Fintype.card = 2p`。
+再往下的 `norm_integral_prod_qRow_le_graded` / `norm_integral_prod_applyOps_le_graded`
+收的是**已经把 `ι` 固定好的** `hgain`，不再碰接口，所以它们**一个字都不用改**。
+于是 `M = n = 2p`，与 `OpsOkOut.length_le` 同源，**确认不损失任何东西**。
+
+### 余项吸收（T171 写下的算术，现在是定理）
+`minorDiffGainUpTo'_of_le_on`：`B₀ := 2·minorDiffC M·Ψ + condCost`，
+`#ι ≤ n`、`∑q ≤ #ι·M ≤ nM`、`B₀ ≤ 1`、`2Ψ ≤ 1`、`1 ≤ condEnv`（新证 `one_le_condEnv`）时
+`condEnv^{#ι}P(Bad) ≤ condEnv^n P(Bad) ≤ B₀^n(2Ψ)^{nM} ≤ B₀^{#ι}(2Ψ)^{∑q}`，
+加回主项付一个 `2 ≤ 2^{#ι}`，得 `B = 2B₀`、**增益 `ρ = 2Ψ` 一点没退化**。
+⚠ **`#ι = 0` 必须单独走**：那一档余项形式给的是 `1 + P(Bad) ≤ 1`，**为假**；
+实际结论是空积的 `∫1 = 1 ≤ 1`（用 `P d` 是概率测度）。这一步不是形式主义，是真的会塌。
+
+### 可满足性检查（两个，都跑了）
+1. **退化检查重跑（负向）**：在 scratchpad 里把 T171 的 `ι = Fin j`、空词脚本原样喂给
+   `FlucGainUpTo'`，剩下的目标就是 `Fintype.card (Fin j) ≤ n`，即 `j ≤ n`，**无法证**。
+   这正是此前推出 `B ≥ ‖Z_k‖_∞` 的那一步，现在被预算挡住了。
+2. **数值束的正向见证**（仿 T167）：`minorDiffGain_budget_hyps_consistent`（已编译）——
+   对任意 `E,t`（`|E|<2`、`t<1`）与任意预算 `M,n`，给出显式的
+   `Ψ = (8(minorDiffC M + 1))⁻¹ > 0`、`ε = condEps E t M Ψ > 0`、`pBad > 0`（且 `≤ 1`），
+   使 `2Ψ ≤ 1`、`B₀ ≤ 1`、`hsmall` **同时成立**，并且 `B = 2(2 minorDiffC M + 1)·Ψ`，即 `B ≍ Ψ`。
+   `pBad` **严格正**，所以不是「例外集测度为 0」那种平凡见证。
+
+### 上层也修了，而且没动只读文件
+`eq45Flow_of_localLaw_gain'`（`CondStableFlow.lean:1246`）吃的 `FlucGainUpTo` 没法就地换，
+于是在 `MinorDiffCond.lean` 里把 `Eq45FlowInputs` 的那条链**按预算版重建**了一遍
+（`unifDomIcc_flucAvg_iter_budget` → `…_blockAvg_/_Sblk_` → `…_condExpDiag_psi_budget` →
+`eq45Flow_of_localLaw_gain_budget`，全部**结论逐字等同**旧版，假设表只差 `FlucGainUpTo → FlucGainUpTo'`），
+收口仍然调用只读文件里的 `eq45Flow_of_unifDom_ibp`。代价是 `MinorDiffCond.lean` 多 import 了
+`Gauss/CondStableFlow.lean`（无环，已验证）。
+
+**端到端**：`eq45Flow_of_goodSetFlow_budget` 从 `goodSetFlow`（= (4.1)）走到 `StepGlue.Eq45Flow`，
+`hg` 是**现场产出**的（`flucGainUpTo'_goodSetFlow`），**假设表里没有任何对所有 `ω` 量化的好事件假设**。
+尺寸是论文的：`Ψ_N = 2δ_N`、`ρ = 2Ψ_N`、`B_p = 2(2 minorDiffC(2p)+1)Ψ_N = Kp p·Ψ_N`，控制 `ρB ≍ Ψ²`。
+
+### 还欠的一步（如实，**不要当成已完成**）
+`hsmall`（`condEnv^n·P(badTower) ≤ B₀^n(2Ψ)^{nM}`）**目前是端到端定理的一条假设**，
+没有从 `HighProb (goodSetFlow)` 推出来。要补的是纯记账但不平凡：
+`meas_badTower_le` 是 `ℝ≥0∞` 里的 `ε^{M+1}P(Bad_{M+1}) ≤ (ε+#Idx)^{M+1}P(Bad_0)`，
+要 (a) 转成实数、(b) 把 `condEnv ≤ N^{C}`、`condEps ≥ N^{-C'}`、`δ_N ≥ N^{-c}` 这些区制界接上、
+(c) 用 `HighProb` 的「对每个 `D`」吃掉多项式因子。**数学上没有悬念**（`P(Ω(t,c)ᶜ)` 超多项式小），
+但需要 100–200 行 rpow/ENNReal 的活，本单没做。
+
+### 旧声明的处置
+`FlucGainUpTo`/`MinorDiffGainUpTo` 及其全部消费者**一字未动**，`FlucGainUpTo.budget` /
+`MinorDiffGainUpTo.budget` 把旧的（更强的）推到新的，所以已有的供给（`FlucGain.upTo` 一路）不丢。
+文件头已注明旧接口在 `B ≍ Ψ` 前提下不可满足，**不要再拿它当假设**。
+paper-deltas 记 `T177a`（临时号，待 Cowork 分配数字号）。

@@ -4342,3 +4342,44 @@ T74 的 `Gauss.eeEdge_eq_sum_SB` 经 T127 的 `EEBridge.eeEdge_eq_sum_gloop` 就
 ### 下一步
 `h566` 需要 `gloop_three_expand` 的 6 元版 + `G†E_bG` 的块结构；
 `hsym` 需要 (5.22) 的 `k=2` 项（仓库里没有），两者都可以在不改 `EEDef.lean` 的前提下单独补。
+
+## ⭐ T171：`MinorDiffGain` 事件条件化落地——外加一堵**可编译证明**的墙（`Gauss/MinorDiffCond.lean`，726 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9150** 条。
+
+### ⚠ 结论一：T164 建议的 `hslice` 形状**本身不可满足**
+建议的签名 `hslice : ∀ κ ω, (P d).real (rowSlice d N κ Bad ω) ≤ ε` **又是一条 `∀ω` 假设，且对真正的好事件为假**：
+把某一行 `j ≠ κ` 的对角坐标冻结成大数 `R`，则 `|G_jj − m| ≈ 1 > Ψ` **与行 `κ` 的取值无关**，于是 `rowSlice κ Bad ω = univ`、概率为 1。
+（这就是 T172 的 `not_minorGood_forall` 换一行的版本。）**Markov 救不了**：`meas_measure_rowSlice_ge` 只能说「截面大的 `ω` 少」，
+而把这些 `ω` 并进 `Bad` 之后**新集合的截面又变了，循环**。
+
+**正确形状是逐层的塔**：`badStep`/`badTower` + `BadFamily`（`slice` 被 `ω ∉ Bad (j+1)` 挡着，**在典范构造里按定义成立、不是 fiat**）。
+`badFamily_badTower` 对任意可测 `S` **无条件产出** 一个 `BadFamily`。
+代价 `meas_badTower_le`：**每个字母损一个 `(ε + #行)/ε = N^{O(1)}`**，字长有界时 `≺` 允许。
+
+### 核心工具与主定理
+`norm_applyOps_le_badFamily`：对字归纳，每个 `E_κ` 用 `Gauss.norm_condRow_le_split`（取 `f := 1`），`Q_κ` 补一次三角不等式。
+**没有把指示函数乘进被积函数。** 结构化简的关键：`flucDiagSet = qRow k (greenSetDiagCentered)` 且 `Δ` 与 `Q_k` 交换
+（`minorDiff_flucDiagSet_eq`），于是整个因子等于**单个字**作用在**确定性**族上，好事件只在那一个确定性族上逐点使用。
+
+主定理 `integral_prod_applyOps_minorDiff_le_on` 与它的 `goodSetFlow` 版，**假设表里没有任何对所有 `ω` 量化的好事件假设**；
+后者的假设**全是数值条件**，概率输入只有 `goodSetFlow`（= 论文 (4.1) 的 `Ω(t,c)`）。
+条件化的代价显式：`condEnv`、`condCost`（**加在常数 `B` 上，增益 `ρ = 2Ψ` 一点没退化**）、以及加性余项 `condEnv^{#ι}·P(Bad_{M+1})`。
+`goodSetFlow` 的可测性缺口用 `toMeasurable` 取可测包解决（外测度下包与补集测度相等），**没有留窟窿**。
+
+### ⚠⚠ 结论二：`MinorDiffGainUpTo` 在 `B ≍ Ψ` 处不可满足——**与 T172 的天花板同一堵墙**
+`integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo`（已编译）：取 `ι = Fin n`、全部 `L i = []`，得
+**`MinorDiffGainUpTo` 的 `B` 支配 `Z_k` 的每一个 `L^n` 范数**，`n → ∞` 即支配 `‖Z_k‖_∞`；
+而 T172 的两点法给出 `‖Z_k‖_∞ ≥ 64/65`。**故 `B ≍ Ψ` 不可满足**——`minorDiffGainUpTo_of_minorGood'` 是真定理但**前提假**，死胡同。
+
+**推论**：加性余项 `condEnv^{#ι}P(Bad)` **不是这条证明的赘生物，它吸收不进 `MinorDiffGainUpTo`**
+（`condEnv ≍ η_u⁻¹ > B`，`#ι` 无界时必然超出）。**根因是 `MinorDiffGainUpTo` 的 `ι` 没有基数预算。**
+
+### 还短的那一步（未做，要改 `FlucIter.lean`/`FlucIterHigh.lean`）
+给 `FlucGainUpTo`/`MinorDiffGainUpTo` 加**第二个预算 `#ι ≤ n`**。有了它余项就能吸收：
+`#ι ≤ n`、`∑q ≤ nM`、`B₀ ≤ 1`、`2Ψ ≤ 1`、`1 ≤ condEnv` 时
+`condEnv^{#ι}P(Bad) ≤ condEnv^n P(Bad) ≤ B₀^n(2Ψ)^{nM} ≤ B₀^{#ι}(2Ψ)^{∑q}`，总界 `≤ (2B₀)^{#ι}(2Ψ)^{∑q}`。
+而 `2p` 阶矩展开里 `#ι ≤ 2p` **本来就成立**（与 `OpsOkOut.length_le` 同源）。本文件的 `..._le_on` 可直接喂它。
+
+**未编译的部分（如实）**：`hslice` 不可满足是论证 + 据此改了接口形状，**不是编译证明**
+（T172 的反例当时只在探针里、未入库，从零搭要另开一单）。

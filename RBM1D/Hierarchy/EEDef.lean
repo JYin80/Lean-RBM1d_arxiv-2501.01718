@@ -852,5 +852,704 @@ theorem eeL6_two_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
 
 end Six
 
+/-! ### T190: the second cut, and (5.36) with `h566` *and* `hsym` both discharged
+
+The `6`-loop of (5.23) has **two** glue labels, `b` and `b'`.  The section above opens it at
+`b`; `RBM.Lemma57.norm_gloop_six_le_schwarz'` opens it at `b'`, and the two openings leave
+*different* four-edge products behind:
+
+| term | cut | the four surviving edges | glued pair |
+|---|---|---|---|
+| `k = 1` | `b`  | `a₁'–a₂'`, `a₂'–b'`, `b'–a₂`, `a₂–a₁` | `a₁–b–a₁'` |
+| `k = 1` | `b'` | `a₂–a₁`, `a₁–b`, `b–a₁'`, `a₁'–a₂'` | `a₂'–b'–a₂` |
+| `k = 0` | `b`  | `a₂'–a₁'`, `a₁'–b'`, `b'–a₁`, `a₁–a₂` | `a₂–b–a₂'` |
+| `k = 0` | `b'` | `a₁–a₂`, `a₂–b`, `b–a₂'`, `a₂'–a₁'` | `a₁'–b'–a₁` |
+
+In the `k = 1` loop the label `b` meets only `a₁`-blocks and `b'` only `a₂`-blocks; in the
+`k = 0` loop it is the other way round.  That is the exact content of the `k=1`/`k=2`
+symmetry of Figure 14, and it is why T178's obstruction dissolves:
+
+* for `b` near `a₁` (so far from `a₂`) the pair of `G`-edges that decays is the one joining
+  the glue label to `a₂`, which is the `b'`-pair at `k = 1` (cut at `b`) and the `b`-pair at
+  `k = 0` (**cut at `b'`**);
+* for `b` near `a₂` the mirror image: cut `k = 0` at `b` and `k = 1` at `b'`.
+
+Both halves therefore land on the *same* shape `Gsq(a₁,a₂)·Gsq(b,aᵢ)·μ`, with `i = 2` on the
+first half and `i = 1` on the second — the two hypotheses `hnear₁`, `hnear₂` of
+`RBM.Lemma57.ee_le_sym`.  For `b` far from both labels either cut works and the product of
+the four edges with the glued pair is symmetric, which is T178's observation about `h572`.
+
+**The outcome is symmetric in the two labels**, as expected: nothing is short.  What the
+argument costs beyond T178's machinery is one hypothesis, `hrow` below — the paper's "we can
+treat `b = b'` for all practical purposes" — which is needed because in each loop one of the
+two glue labels is reached only through `b'`.  `docs/paper-deltas.md` #113 ① already records
+the `b' = b` identification; `hrow` is that identification made into an explicit hypothesis
+rather than a silent step.
+-/
+
+section SixSym
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+variable (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+
+/-- **(5.65) + (5.66) for the `k = 1` term of (5.22), cut at the second glue label `b'`**
+(Figure 14, left, opened at the other side).  The four surviving `G`-edges are
+`a₂–a₁`, `a₁–b`, `b–a₁'`, `a₁'–a₂'`, and the `4`-loop of (5.66) is the one on `b'` and the
+`a₂`-blocks.  Compare `norm_gloop_glue_two_one_le`, which cuts at `b`. -/
+theorem norm_gloop_glue_two_one'_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b b' : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hS : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[!(σ 1), σ 1, !(σ 1), σ 1], [b', leftArg c 1, b', rightArg c 1]⟩).re ≤ S) :
+    ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 1 b b')‖
+      ≤ Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) b
+        * Gm b (rightArg c 0) * Gm (rightArg c 0) (rightArg c 1) * √S := by
+  rw [glueIdx_two_one]
+  exact Lemma57.norm_gloop_six_le_schwarz' (B.L N) (B.W N) (X.hermitian N u ω)
+    (σ 1) (σ 0) (σ 1) (!(σ 1)) (!(σ 0))
+    (leftArg c 1) (leftArg c 0) b (rightArg c 0) (rightArg c 1) b'
+    (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) (hGm0 _ _)
+    (fun q p hq hp => hGm _ _ _ q p hq hp) (fun p r hp hr => hGm _ _ _ p r hp hr)
+    (fun r t hr ht => hGm _ _ _ r t hr ht) (fun t p ht hp => hGm _ _ _ t p ht hp) hS
+
+/-- **(5.65) + (5.66) for the `k = 0` term of (5.22), cut at the second glue label `b'`**
+(Figure 14, right, opened at the other side).  The four surviving `G`-edges are
+`a₁–a₂`, `a₂–b`, `b–a₂'`, `a₂'–a₁'`: they carry the pair `b–a₂` *directly*, with no `b'` in
+it, which is what the half `‖b-a₁‖ ≤ ‖b-a₂‖` of the `b`-sum needs. -/
+theorem norm_gloop_glue_two_zero'_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b b' : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hS : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[!(σ 0), σ 0, !(σ 0), σ 0], [b', leftArg c 0, b', rightArg c 0]⟩).re ≤ S) :
+    ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 0 b b')‖
+      ≤ Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) b
+        * Gm b (rightArg c 1) * Gm (rightArg c 1) (rightArg c 0) * √S := by
+  rw [glueIdx_two_zero]
+  exact Lemma57.norm_gloop_six_le_schwarz' (B.L N) (B.W N) (X.hermitian N u ω)
+    (σ 0) (σ 1) (σ 0) (!(σ 0)) (!(σ 1))
+    (leftArg c 0) (leftArg c 1) b (rightArg c 1) (rightArg c 0) b'
+    (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) (hGm0 _ _)
+    (fun q p hq hp => hGm _ _ _ q p hq hp) (fun p r hp hr => hGm _ _ _ p r hp hr)
+    (fun r t hr ht => hGm _ _ _ r t hr ht) (fun t p ht hp => hGm _ _ _ t p ht hp) hS
+
+/-! ### The `b'`-sum for the second cut
+
+When the loop is cut at `b'` the four surviving `G`-edges do **not** involve `b'` at all, so
+the `b'`-sum against `‖S^{(B)}_{bb'}‖` only has to absorb the `4`-loop of (5.66); a bound `S`
+uniform in `b'` passes straight through the row sum `∑_{b'} ‖S^{(B)}_{bb'}‖ = 1`. -/
+
+/-- **(5.66) for the `k = 1` summand of `RBM.EEDef.eeL6`, cut at `b'`.** -/
+theorem eeL6k_two_one'_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hS : ∀ b' : ZMod (B.L N), (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[!(σ 1), σ 1, !(σ 1), σ 1], [b', leftArg c 1, b', rightArg c 1]⟩).re ≤ S) :
+    eeL6k X E N u ω σ c 1 b
+      ≤ Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) b
+        * Gm b (rightArg c 0) * Gm (rightArg c 0) (rightArg c 1) * √S := by
+  classical
+  refine (Finset.sum_le_sum (fun b' _ => mul_le_mul_of_nonneg_left
+    (norm_gloop_glue_two_one'_le X E N u ω σ c b b' hGm0 hGm (hS b'))
+    (norm_nonneg (SB (B.L N) b b')))).trans ?_
+  rw [← Finset.sum_mul, RBM.sum_norm_SB_row (B.three_le_L N) b, one_mul]
+
+/-- **(5.66) for the `k = 0` summand of `RBM.EEDef.eeL6`, cut at `b'`.** -/
+theorem eeL6k_two_zero'_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hS : ∀ b' : ZMod (B.L N), (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[!(σ 0), σ 0, !(σ 0), σ 0], [b', leftArg c 0, b', rightArg c 0]⟩).re ≤ S) :
+    eeL6k X E N u ω σ c 0 b
+      ≤ Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) b
+        * Gm b (rightArg c 1) * Gm (rightArg c 1) (rightArg c 0) * √S := by
+  classical
+  refine (Finset.sum_le_sum (fun b' _ => mul_le_mul_of_nonneg_left
+    (norm_gloop_glue_two_zero'_le X E N u ω σ c b b' hGm0 hGm (hS b'))
+    (norm_nonneg (SB (B.L N) b b')))).trans ?_
+  rw [← Finset.sum_mul, RBM.sum_norm_SB_row (B.three_le_L N) b, one_mul]
+
+/-! ### The two halves of the `b`-sum, on `RBM.EEDef.eeL6` itself
+
+`hrow` below is the paper's `b = b'`: in each of the two loops of Figure 14 one of the glue
+labels is reached only through `b'`, so the pair of `G`-edges meeting it is
+`Gm x b' · Gm b' x`, and the estimate needs it controlled by the `b`-indexed quantity the
+`b`-sum is about.  `hSmax` is (2.73) at `n = 4`, uniform over the four `4`-loops that the two
+cuts produce. -/
+
+/-- **Case 2(1a) for `b` near `a₁`**, for *both* terms of (5.22): `k = 1` cut at `b`,
+`k = 0` cut at `b'`.  This is the hypothesis `hnear₁` of `RBM.Lemma57.ee_le_sym`, and it is
+`h566` at the granularity at which T178 showed it to be true — except that the `k = 0`
+summand is now taken apart at the *other* glue label, which is what T178 was missing. -/
+theorem eeL6_two_le_near₁ (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Smax : ℝ}
+    (hc0 : rightArg c 0 = leftArg c 0) (hc1 : rightArg c 1 = leftArg c 1)
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hGsq0 : ∀ x y, 0 ≤ Gsq x y)
+    (hGsq2 : ∀ x y, Gm x y * Gm y x ≤ Gsq x y)
+    (hrow : ∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+      Gm x bb' * Gm bb' x ≤ Gsq bb x)
+    (hSmax : ∀ (s : Bool) (x y y' : ZMod (B.L N)),
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[s, !s, s, !s], [x, y, x, y']⟩).re ≤ Smax) :
+    eeL6 X E N u ω σ c b
+      ≤ Gsq (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1) * (2 * √Smax) := by
+  classical
+  have hs0 : (0 : ℝ) ≤ √Smax := Real.sqrt_nonneg _
+  have h1 : eeL6k X E N u ω σ c 1 b
+      ≤ Gm (rightArg c 0) (rightArg c 1) * Gsq b (leftArg c 1)
+        * Gm (leftArg c 1) (leftArg c 0) * √Smax :=
+    eeL6k_two_one_le X E N u ω σ c b hGm0 hGm
+      (fun b' h0 => by rw [hc1]; exact hrow (leftArg c 1) b b' h0)
+      (hSmax (σ 1) b (rightArg c 0) (leftArg c 0))
+  have h0 : eeL6k X E N u ω σ c 0 b
+      ≤ Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) b
+        * Gm b (rightArg c 1) * Gm (rightArg c 1) (rightArg c 0) * √Smax :=
+    eeL6k_two_zero'_le X E N u ω σ c b hGm0 hGm
+      (fun b' => by simpa using hSmax (!(σ 0)) b' (leftArg c 0) (rightArg c 0))
+  have hA : Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0)
+      ≤ Gsq (leftArg c 0) (leftArg c 1) := hGsq2 _ _
+  have hB : Gm (leftArg c 1) b * Gm b (leftArg c 1) ≤ Gsq b (leftArg c 1) := by
+    calc Gm (leftArg c 1) b * Gm b (leftArg c 1)
+        = Gm b (leftArg c 1) * Gm (leftArg c 1) b := mul_comm _ _
+      _ ≤ Gsq b (leftArg c 1) := hGsq2 b (leftArg c 1)
+  have s1 : eeL6k X E N u ω σ c 1 b
+      ≤ Gsq (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1) * √Smax := by
+    refine h1.trans ?_
+    rw [hc0, hc1]
+    have hstep : (Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0))
+        * (Gsq b (leftArg c 1) * √Smax)
+        ≤ Gsq (leftArg c 0) (leftArg c 1) * (Gsq b (leftArg c 1) * √Smax) :=
+      mul_le_mul_of_nonneg_right hA (mul_nonneg (hGsq0 _ _) hs0)
+    calc Gm (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1)
+          * Gm (leftArg c 1) (leftArg c 0) * √Smax
+        = (Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0))
+            * (Gsq b (leftArg c 1) * √Smax) := by ring
+      _ ≤ Gsq (leftArg c 0) (leftArg c 1) * (Gsq b (leftArg c 1) * √Smax) := hstep
+      _ = Gsq (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1) * √Smax := by ring
+  have s0 : eeL6k X E N u ω σ c 0 b
+      ≤ Gsq (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1) * √Smax := by
+    refine h0.trans ?_
+    rw [hc1, hc0]
+    have hstep : (Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0))
+        * ((Gm (leftArg c 1) b * Gm b (leftArg c 1)) * √Smax)
+        ≤ Gsq (leftArg c 0) (leftArg c 1) * (Gsq b (leftArg c 1) * √Smax) :=
+      mul_le_mul hA (mul_le_mul_of_nonneg_right hB hs0)
+        (mul_nonneg (mul_nonneg (hGm0 _ _) (hGm0 _ _)) hs0) (hGsq0 _ _)
+    calc Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) b * Gm b (leftArg c 1)
+          * Gm (leftArg c 1) (leftArg c 0) * √Smax
+        = (Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0))
+            * ((Gm (leftArg c 1) b * Gm b (leftArg c 1)) * √Smax) := by ring
+      _ ≤ Gsq (leftArg c 0) (leftArg c 1) * (Gsq b (leftArg c 1) * √Smax) := hstep
+      _ = Gsq (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1) * √Smax := by ring
+  rw [eeL6_two_eq]
+  exact (add_le_add s0 s1).trans (le_of_eq (by ring))
+
+/-- **Case 2(1a) for `b` near `a₂`** — the mirror: `k = 0` cut at `b`, `k = 1` cut at `b'`.
+This is `hnear₂` of `RBM.Lemma57.ee_le_sym`, i.e. the half the paper disposes of with "by
+symmetry" and which T156 had to assume as `hsym`. -/
+theorem eeL6_two_le_near₂ (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Smax : ℝ}
+    (hc0 : rightArg c 0 = leftArg c 0) (hc1 : rightArg c 1 = leftArg c 1)
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hGsq0 : ∀ x y, 0 ≤ Gsq x y)
+    (hGsq2 : ∀ x y, Gm x y * Gm y x ≤ Gsq x y)
+    (hrow : ∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+      Gm x bb' * Gm bb' x ≤ Gsq bb x)
+    (hSmax : ∀ (s : Bool) (x y y' : ZMod (B.L N)),
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[s, !s, s, !s], [x, y, x, y']⟩).re ≤ Smax) :
+    eeL6 X E N u ω σ c b
+      ≤ Gsq (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0) * (2 * √Smax) := by
+  classical
+  have hs0 : (0 : ℝ) ≤ √Smax := Real.sqrt_nonneg _
+  have h0 : eeL6k X E N u ω σ c 0 b
+      ≤ Gm (rightArg c 1) (rightArg c 0) * Gsq b (leftArg c 0)
+        * Gm (leftArg c 0) (leftArg c 1) * √Smax :=
+    eeL6k_two_zero_le X E N u ω σ c b hGm0 hGm
+      (fun b' hz => by rw [hc0]; exact hrow (leftArg c 0) b b' hz)
+      (hSmax (σ 0) b (rightArg c 1) (leftArg c 1))
+  have h1 : eeL6k X E N u ω σ c 1 b
+      ≤ Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) b
+        * Gm b (rightArg c 0) * Gm (rightArg c 0) (rightArg c 1) * √Smax :=
+    eeL6k_two_one'_le X E N u ω σ c b hGm0 hGm
+      (fun b' => by simpa using hSmax (!(σ 1)) b' (leftArg c 1) (rightArg c 1))
+  have hA : Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1)
+      ≤ Gsq (leftArg c 1) (leftArg c 0) := hGsq2 _ _
+  have hB : Gm (leftArg c 0) b * Gm b (leftArg c 0) ≤ Gsq b (leftArg c 0) := by
+    calc Gm (leftArg c 0) b * Gm b (leftArg c 0)
+        = Gm b (leftArg c 0) * Gm (leftArg c 0) b := mul_comm _ _
+      _ ≤ Gsq b (leftArg c 0) := hGsq2 b (leftArg c 0)
+  have s0 : eeL6k X E N u ω σ c 0 b
+      ≤ Gsq (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0) * √Smax := by
+    refine h0.trans ?_
+    rw [hc1, hc0]
+    have hstep : (Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1))
+        * (Gsq b (leftArg c 0) * √Smax)
+        ≤ Gsq (leftArg c 1) (leftArg c 0) * (Gsq b (leftArg c 0) * √Smax) :=
+      mul_le_mul_of_nonneg_right hA (mul_nonneg (hGsq0 _ _) hs0)
+    calc Gm (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0)
+          * Gm (leftArg c 0) (leftArg c 1) * √Smax
+        = (Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1))
+            * (Gsq b (leftArg c 0) * √Smax) := by ring
+      _ ≤ Gsq (leftArg c 1) (leftArg c 0) * (Gsq b (leftArg c 0) * √Smax) := hstep
+      _ = Gsq (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0) * √Smax := by ring
+  have s1 : eeL6k X E N u ω σ c 1 b
+      ≤ Gsq (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0) * √Smax := by
+    refine h1.trans ?_
+    rw [hc0, hc1]
+    have hstep : (Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1))
+        * ((Gm (leftArg c 0) b * Gm b (leftArg c 0)) * √Smax)
+        ≤ Gsq (leftArg c 1) (leftArg c 0) * (Gsq b (leftArg c 0) * √Smax) :=
+      mul_le_mul hA (mul_le_mul_of_nonneg_right hB hs0)
+        (mul_nonneg (mul_nonneg (hGm0 _ _) (hGm0 _ _)) hs0) (hGsq0 _ _)
+    calc Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) b * Gm b (leftArg c 0)
+          * Gm (leftArg c 0) (leftArg c 1) * √Smax
+        = (Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1))
+            * ((Gm (leftArg c 0) b * Gm b (leftArg c 0)) * √Smax) := by ring
+      _ ≤ Gsq (leftArg c 1) (leftArg c 0) * (Gsq b (leftArg c 0) * √Smax) := hstep
+      _ = Gsq (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0) * √Smax := by ring
+  rw [eeL6_two_eq]
+  exact (add_le_add s0 s1).trans (le_of_eq (by ring))
+
+/-- **Case 2(1b) for `b` far from both labels**, for *both* terms of (5.22).  Here either cut
+does; `eeL6k_two_one_le_glue` and `eeL6k_two_zero_le_glue` (the cut at `b`, T178) are used for
+both, because the product of the four edges with the glued pair is the same
+`T_{u,D}(‖a₁-a₂‖) T_{u,D}(‖a₁-b‖) T_{u,D}(‖a₂-b‖)` either way — T178's observation that
+`h572`'s shape is symmetric in `k`.  The two summands cost a factor `2`, absorbed into
+`(2J)³`. -/
+theorem eeL6_two_le_far (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {ℓu ηu D J : ℝ}
+    {Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ}
+    (hℓu : 0 < ℓu) (hJ : 1 ≤ J)
+    (hc0 : rightArg c 0 = leftArg c 0) (hc1 : rightArg c 1 = leftArg c 1)
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hGsq0 : ∀ x y, 0 ≤ Gsq x y)
+    (hGsq2 : ∀ x y, Gm x y * Gm y x ≤ Gsq x y)
+    (hrow : ∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+      Gm x bb' * Gm bb' x ≤ Gsq bb x)
+    (h42sq : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y)))
+    (hfar : 4 * ellStar (B.W N : ℝ) ℓu
+      ≤ (zdist (B.L N) (leftArg c 0 - leftArg c 1) : ℝ))
+    (hb1 : ellStar (B.W N : ℝ) ℓu < (zdist (B.L N) (leftArg c 0 - b) : ℝ))
+    (hb2 : ellStar (B.W N : ℝ) ℓu < (zdist (B.L N) (leftArg c 1 - b) : ℝ)) :
+    eeL6 X E N u ω σ c b
+      ≤ (2 * J) ^ 3
+          * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+          * (tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))
+            * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) := by
+  classical
+  have hW : (1 : ℝ) ≤ (B.W N : ℝ) := one_le_W B N
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hstar : (0 : ℝ) ≤ ellStar (B.W N : ℝ) ℓu := by
+    unfold ellStar; have := Real.log_nonneg hW; positivity
+  have hT12 : (0 : ℝ) ≤ tailT (B.W N : ℝ) ℓu ηu D
+      (zdist (B.L N) (leftArg c 0 - leftArg c 1)) := tailT_nonneg hW0.le _
+  have hT1b : (0 : ℝ) ≤ tailT (B.W N : ℝ) ℓu ηu D
+      (zdist (B.L N) (leftArg c 0 - b)) := tailT_nonneg hW0.le _
+  have hT2b : (0 : ℝ) ≤ tailT (B.W N : ℝ) ℓu ηu D
+      (zdist (B.L N) (leftArg c 1 - b)) := tailT_nonneg hW0.le _
+  have hA12 : Gsq (leftArg c 0) (leftArg c 1)
+      ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1)) :=
+    h42sq _ _ (by linarith)
+  have hA21 : Gsq (leftArg c 1) (leftArg c 0)
+      ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1)) := by
+    have h := h42sq (leftArg c 1) (leftArg c 0)
+      (by rw [Lemma57.zdist_sub_comm]; linarith)
+    rwa [Lemma57.zdist_sub_comm] at h
+  have hB1 : Gsq b (leftArg c 0)
+      ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b)) := by
+    have h := h42sq b (leftArg c 0) (by rw [Lemma57.zdist_sub_comm]; linarith)
+    rwa [Lemma57.zdist_sub_comm] at h
+  have hB2 : Gsq b (leftArg c 1)
+      ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b)) := by
+    have h := h42sq b (leftArg c 1) (by rw [Lemma57.zdist_sub_comm]; linarith)
+    rwa [Lemma57.zdist_sub_comm] at h
+  have hG1 : Gm (leftArg c 0) b * Gm b (leftArg c 0)
+      ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b)) :=
+    (hGsq2 _ _).trans (h42sq (leftArg c 0) b (by linarith))
+  have hG2 : Gm (leftArg c 1) b * Gm b (leftArg c 1)
+      ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b)) :=
+    (hGsq2 _ _).trans (h42sq (leftArg c 1) b (by linarith))
+  have h1 : eeL6k X E N u ω σ c 1 b
+      ≤ Gm (rightArg c 0) (rightArg c 1) * Gsq b (leftArg c 1)
+        * Gm (leftArg c 1) (leftArg c 0)
+        * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))) :=
+    eeL6k_two_one_le_glue X E N u ω σ c b hGm0 (mul_nonneg hJ0 hT1b) hGm
+      (fun b' hz => by rw [hc1]; exact hrow (leftArg c 1) b b' hz)
+      (fun p q y hp hq hy => by
+        rw [hc0] at hq
+        exact (mul_le_mul (hGm (σ 1) (leftArg c 0) b p y hp hy)
+          (hGm (!(σ 1)) b (leftArg c 0) y q hy hq) (norm_nonneg _) (hGm0 _ _)).trans hG1)
+  have h0 : eeL6k X E N u ω σ c 0 b
+      ≤ Gm (rightArg c 1) (rightArg c 0) * Gsq b (leftArg c 0)
+        * Gm (leftArg c 0) (leftArg c 1)
+        * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) :=
+    eeL6k_two_zero_le_glue X E N u ω σ c b hGm0 (mul_nonneg hJ0 hT2b) hGm
+      (fun b' hz => by rw [hc0]; exact hrow (leftArg c 0) b b' hz)
+      (fun p q y hp hq hy => by
+        rw [hc1] at hq
+        exact (mul_le_mul (hGm (σ 0) (leftArg c 1) b p y hp hy)
+          (hGm (!(σ 0)) b (leftArg c 1) y q hy hq) (norm_nonneg _) (hGm0 _ _)).trans hG2)
+  have s1 : eeL6k X E N u ω σ c 1 b
+      ≤ J ^ 3 * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+        * (tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))
+          * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) := by
+    refine h1.trans ?_
+    rw [hc0, hc1]
+    have p1 : Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0)
+        ≤ J * tailT (B.W N : ℝ) ℓu ηu D
+            (zdist (B.L N) (leftArg c 0 - leftArg c 1)) := (hGsq2 _ _).trans hA12
+    have q1 := mul_le_mul p1 hB2 (hGsq0 _ _) (mul_nonneg hJ0 hT12)
+    have q2 := mul_le_mul_of_nonneg_right q1 (mul_nonneg hJ0 hT1b)
+    calc Gm (leftArg c 0) (leftArg c 1) * Gsq b (leftArg c 1)
+            * Gm (leftArg c 1) (leftArg c 0)
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b)))
+        = (Gm (leftArg c 0) (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0)
+            * Gsq b (leftArg c 1))
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))) := by ring
+      _ ≤ (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))))
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))) := q2
+      _ = _ := by ring
+  have s0 : eeL6k X E N u ω σ c 0 b
+      ≤ J ^ 3 * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+        * (tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))
+          * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) := by
+    refine h0.trans ?_
+    rw [hc1, hc0]
+    have p1 : Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1)
+        ≤ J * tailT (B.W N : ℝ) ℓu ηu D
+            (zdist (B.L N) (leftArg c 0 - leftArg c 1)) := (hGsq2 _ _).trans hA21
+    have q1 := mul_le_mul p1 hB1 (hGsq0 _ _) (mul_nonneg hJ0 hT12)
+    have q2 := mul_le_mul_of_nonneg_right q1 (mul_nonneg hJ0 hT2b)
+    calc Gm (leftArg c 1) (leftArg c 0) * Gsq b (leftArg c 0)
+            * Gm (leftArg c 0) (leftArg c 1)
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b)))
+        = (Gm (leftArg c 1) (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1)
+            * Gsq b (leftArg c 0))
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) := by ring
+      _ ≤ (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))))
+            * (J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) := q2
+      _ = _ := by ring
+  have hP : (0 : ℝ) ≤ J ^ 3
+      * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+      * (tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))
+        * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b))) :=
+    mul_nonneg (mul_nonneg (pow_nonneg hJ0 3) hT12) (mul_nonneg hT1b hT2b)
+  rw [eeL6_two_eq]
+  have hsum := add_le_add s0 s1
+  refine hsum.trans ?_
+  have hexp : (2 * J) ^ 3
+      * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+      * (tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))
+        * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b)))
+      = 8 * (J ^ 3
+        * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - leftArg c 1))
+        * (tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 0 - b))
+          * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (leftArg c 1 - b)))) := by ring
+  rw [hexp]
+  linarith [hP]
+
+/-! ### (5.36) for the pinned `E ⊗ E` with **no** `h566` and **no** `hsym` -/
+
+/-- **(5.36) for `RBM.MomentDuhamel.EEpath` at loop length `2`, with `h566` and `hsym` both
+discharged** (T190).
+
+Compared with `RBM.EEDef.ee_le_EEpath_labels` the hypothesis list has lost `h566` and `hsym`
+— the two T178 showed to be the same obligation — and has gained, in their place, only
+quantities that are genuine inputs of the paper's proof:
+
+* `hGm` — the entrywise `G`-bound of (4.2)/(5.31), as a function `Gm` of the two blocks;
+* `hGsq2` — that `Gsq` dominates the squared `G`-pair `Gm_{xy} Gm_{yx}` (the honest index
+  order: `G(z)` is not symmetric for complex Hermitian `H`, `docs/paper-deltas.md` #113 ⑦);
+* `hrow` — the paper's "we can treat `b = b'` for all practical purposes" (#113 ①), needed
+  because in each of the two loops of Figure 14 one glue label is reached only through `b'`;
+* `hSmax` — (2.73) at `n = 4` for the four `4`-loops the two cuts produce, i.e. the
+  `(max_a max_{σ∈{+,-}⁴} L_{u,σ,a})` of (5.66);
+* `hc0`, `hc1` — `a' = a` (#113 ①, already the setting of `ee_le_EEpath`).
+
+The constant is `2J*` rather than `J*`, and `μ = 2√(max L)` rather than `√(max L)`: the two
+factors of `2` are the two terms of (5.22), which are now both estimated rather than one of
+them being assumed away.  Constants are not optimised. -/
+theorem ee_le_EEpath_sym (X : Sample B) (E : ℝ) {N : ℕ} (u : ℝ) (ω : Ω)
+    (σ : Fin (0 + 2) → Bool) (c : LoopArg (B.L N) ((0 + 2) + (0 + 2)))
+    {ℓu ℓs ηu D J : ℝ} (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu : 0 < ηu) (hJ : 1 ≤ J)
+    (hc0 : rightArg c 0 = leftArg c 0) (hc1 : rightArg c 1 = leftArg c 1)
+    {Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Smax ρ : ℝ} (hρ : 0 ≤ ρ)
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hGsq0 : ∀ x y, 0 ≤ Gsq x y)
+    (hGsq2 : ∀ x y, Gm x y * Gm y x ≤ Gsq x y)
+    (hrow : ∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+      Gm x bb' * Gm bb' x ≤ Gsq bb x)
+    (hSmax : ∀ (s : Bool) (x y y' : ZMod (B.L N)),
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[s, !s, s, !s], [x, y, x, y']⟩).re ≤ Smax)
+    (h273 : ∀ b, eeL6 X E N u ω σ c b
+      ≤ (ℓu / ℓs) ^ 5 * ((((B.W N : ℝ) * ℓu * ηu) ^ 2)⁻¹) ^ 2 * ((B.W N : ℝ) * ℓu * ηu)⁻¹)
+    (h564 : ∀ b, Lemma57.ellStarStar (B.W N : ℝ) ℓu
+      < (zdist (B.L N) (lab₁ c - b) : ℝ) → eeL6 X E N u ω σ c b ≤ ρ)
+    (h42sq : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y))) :
+    ‖MomentDuhamel.EEpath X E 0 N u ω σ c‖
+      ≤ ηu⁻¹ * (Lemma57.cNear2 (B.W N : ℝ) ℓu * (ℓu / ℓs) ^ 5 *
+            (if (zdist (B.L N) (lab₁ c - lab₂ c) : ℝ) ≤ 4 * ellStar (B.W N : ℝ) ℓu
+              then 1 else 0)
+          + Lemma57.cFar2 (B.W N : ℝ) ℓu
+            * ((2 * J) ^ 2 * (((B.W N : ℝ) * ℓu * ηu) * (2 * √Smax)))
+          + 72 * (2 * J) ^ 3 * ((B.W N : ℝ) * ℓu * ηu)⁻¹)
+        * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (lab₁ c - lab₂ c)) ^ 2
+        + ((B.W N : ℝ) * (B.L N : ℝ) * ρ
+          + 2 * (B.W N : ℝ) * (B.L N : ℝ) * (B.W N : ℝ) ^ (-D) * (2 * J) ^ 3
+            * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (lab₁ c - lab₂ c)) ^ 2) := by
+  have hW : (1 : ℝ) ≤ (B.W N : ℝ) := one_le_W B N
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hJ2 : (1 : ℝ) ≤ 2 * J := by linarith
+  have hμ : (0 : ℝ) ≤ 2 * √Smax := by positivity
+  have h42sq' : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      Gsq x y ≤ 2 * J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y)) := by
+    intro x y hxy
+    have h := h42sq x y hxy
+    have hT : (0 : ℝ) ≤ tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y)) :=
+      tailT_nonneg hW0.le _
+    nlinarith
+  exact Lemma57.ee_le_sym (B.L N) hW hℓu hℓs hηu hJ2 (lab₁ c) (lab₂ c) hμ hρ hGsq0
+    h273 h564 h42sq'
+    (fun b _ => eeL6_two_le_near₁ X E N u ω σ c b hc0 hc1 hGm0 hGm hGsq0 hGsq2 hrow hSmax)
+    (fun b _ => eeL6_two_le_near₂ X E N u ω σ c b hc0 hc1 hGm0 hGm hGsq0 hGsq2 hrow hSmax)
+    (fun b hfar hb1 hb2 => eeL6_two_le_far X E N u ω σ c b (by linarith) hJ hc0 hc1
+      hGm0 hGm hGsq0 hGsq2 hrow h42sq hfar hb1 hb2)
+    (norm_EEpath_le_W_sum X E u ω σ c)
+
+/-! ### (5.36) in the paper's shape, with `h566` and `hsym` both discharged -/
+
+/-- **(5.36) for `RBM.MomentDuhamel.EEpath` in the paper's literal shape** (T190): `μ` is
+instantiated from (2.73) at `n = 4`, so it no longer occurs, and neither `h566` nor `hsym` is
+assumed.  The right-hand side is
+
+`η_u^{-1}[(ℓ_u/ℓ_s)^5 1(‖a₁-a₂‖ ≤ 4ℓ*_u) + (ℓ_u/ℓ_s)^{3/2} A_u^{-1/2} (2J*)³] T_{u,D}(‖a₁-a₂‖)²`
+
+plus the two explicit remainders of deviation 5.  `hμbd` is (2.73) at `n = 4` in quantitative
+form: twice the square root of the `4`-loop maximum of (5.66) is below
+`(ℓ_u/ℓ_s)^{3/2} A_u^{-3/2}`; the factor `2` is the two terms of (5.22). -/
+theorem ee_le_paper_EEpath_sym (X : Sample B) (E : ℝ) {N : ℕ} (u : ℝ) (ω : Ω)
+    (σ : Fin (0 + 2) → Bool) (c : LoopArg (B.L N) ((0 + 2) + (0 + 2)))
+    {ℓu ℓs ηu D J : ℝ} (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu : 0 < ηu) (hJ : 1 ≤ J)
+    (hA : 1 ≤ (B.W N : ℝ) * ℓu * ηu) (hr : 1 ≤ ℓu / ℓs)
+    (hc0 : rightArg c 0 = leftArg c 0) (hc1 : rightArg c 1 = leftArg c 1)
+    {Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Smax ρ : ℝ} (hρ : 0 ≤ ρ)
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hGsq0 : ∀ x y, 0 ≤ Gsq x y)
+    (hGsq2 : ∀ x y, Gm x y * Gm y x ≤ Gsq x y)
+    (hrow : ∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+      Gm x bb' * Gm bb' x ≤ Gsq bb x)
+    (hSmax : ∀ (s : Bool) (x y y' : ZMod (B.L N)),
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[s, !s, s, !s], [x, y, x, y']⟩).re ≤ Smax)
+    (hμbd : 2 * √Smax ≤ ℓu / ℓs * √(ℓu / ℓs) *
+      ((√((B.W N : ℝ) * ℓu * ηu))⁻¹ * ((B.W N : ℝ) * ℓu * ηu)⁻¹))
+    (h273 : ∀ b, eeL6 X E N u ω σ c b
+      ≤ (ℓu / ℓs) ^ 5 * ((((B.W N : ℝ) * ℓu * ηu) ^ 2)⁻¹) ^ 2 * ((B.W N : ℝ) * ℓu * ηu)⁻¹)
+    (h564 : ∀ b, Lemma57.ellStarStar (B.W N : ℝ) ℓu
+      < (zdist (B.L N) (lab₁ c - b) : ℝ) → eeL6 X E N u ω σ c b ≤ ρ)
+    (h42sq : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y))) :
+    ‖MomentDuhamel.EEpath X E 0 N u ω σ c‖
+      ≤ ηu⁻¹ * (Lemma57.cNear2 (B.W N : ℝ) ℓu * (ℓu / ℓs) ^ 5 *
+            (if (zdist (B.L N) (lab₁ c - lab₂ c) : ℝ) ≤ 4 * ellStar (B.W N : ℝ) ℓu
+              then 1 else 0)
+          + (Lemma57.cFar2 (B.W N : ℝ) ℓu + 72)
+            * (ℓu / ℓs * √(ℓu / ℓs) * (√((B.W N : ℝ) * ℓu * ηu))⁻¹) * (2 * J) ^ 3)
+        * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (lab₁ c - lab₂ c)) ^ 2
+        + ((B.W N : ℝ) * (B.L N : ℝ) * ρ
+          + 2 * (B.W N : ℝ) * (B.L N : ℝ) * (B.W N : ℝ) ^ (-D) * (2 * J) ^ 3
+            * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (lab₁ c - lab₂ c)) ^ 2) := by
+  have hW : (1 : ℝ) ≤ (B.W N : ℝ) := one_le_W B N
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hJ2 : (1 : ℝ) ≤ 2 * J := by linarith
+  have h42sq' : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      Gsq x y ≤ 2 * J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y)) := by
+    intro x y hxy
+    have h := h42sq x y hxy
+    have hT : (0 : ℝ) ≤ tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y)) :=
+      tailT_nonneg hW0.le _
+    nlinarith
+  exact Lemma57.ee_le_paper_sym (B.L N) hW hℓu hℓs hηu hJ2 hA hr (lab₁ c) (lab₂ c) hρ hGsq0
+    h273 h564 h42sq'
+    (fun b _ => (eeL6_two_le_near₁ X E N u ω σ c b hc0 hc1 hGm0 hGm hGsq0 hGsq2
+        hrow hSmax).trans
+      (mul_le_mul_of_nonneg_left hμbd (mul_nonneg (hGsq0 _ _) (hGsq0 _ _))))
+    (fun b _ => (eeL6_two_le_near₂ X E N u ω σ c b hc0 hc1 hGm0 hGm hGsq0 hGsq2
+        hrow hSmax).trans
+      (mul_le_mul_of_nonneg_left hμbd (mul_nonneg (hGsq0 _ _) (hGsq0 _ _))))
+    (fun b hfar hb1 hb2 => eeL6_two_le_far X E N u ω σ c b (by linarith) hJ hc0 hc1
+      hGm0 hGm hGsq0 hGsq2 hrow h42sq hfar hb1 hb2)
+    (norm_EEpath_le_W_sum X E u ω σ c)
+
+/-! ### The hypotheses of `ee_le_EEpath_sym` and `ee_le_paper_EEpath_sym` are satisfiable
+
+Seven vacuous-hypothesis incidents in this project (T145, T132b, T154, T164/T172, T180, T177,
+and T172's `MinorGood`) make this check mandatory: a hypothesis list that cannot be satisfied
+turns the theorem into a tautology and the compiler never complains.
+
+The witness below covers **both** theorems at once — in particular `hA : 1 ≤ A_u` and
+`hr : 1 ≤ ℓ_u/ℓ_s`, which `ee_hyp_consistent` did not have to produce (it only certified the
+master form).  Take `ℓ_u = 1`, `η_u = W^{-1}` so that `A_u = W ℓ_u η_u = 1` exactly, `D = 0`
+(the tail function then has floor `1` and is everywhere `≥ 1`), `ℓ_s = R^{-1}` with
+`R = 1 + S + 4 max(S⁴, 0)`, `S = ∑_b L^{(1)}(b)` and `S⁴ = Smax` the maximum of the `4`-loops.
+Then the (2.73) budget is `(ℓ_u/ℓ_s)^5 A_u^{-5} = R^5 ≥ S`, and `hμbd` holds because
+`R^{3/2} ≥ R ≥ 1 + 4 Smax⁺ ≥ 2√Smax`.  `Gm` is the entrywise maximum of `|G|` over the
+(finite) index set, `ρ = S`, and `J* = 1 + S + Gm²` — large enough that the saturated
+`Gsq = J* T_{u,0}` dominates the squared `G`-pair, which is the only real tension in the list
+(`hGm` pushes `Gm` up, `hGsq2`/`hrow` push it down, and `h42sq` caps `Gsq`).  It is not the
+regime of the paper (there `A_u → ∞`); it certifies satisfiability only. -/
+
+/-- A doubled loop argument with `a' = a` and prescribed labels — the setting (5.36) is
+formalized in (`docs/paper-deltas.md` #113 ①), exhibited. -/
+theorem exists_loopArg_diag {N : ℕ} (a₁ a₂ : ZMod (B.L N)) :
+    ∃ c : LoopArg (B.L N) ((0 + 2) + (0 + 2)),
+      leftArg c 0 = a₁ ∧ leftArg c 1 = a₂ ∧
+      rightArg c 0 = leftArg c 0 ∧ rightArg c 1 = leftArg c 1 :=
+  ⟨![a₁, a₂, a₁, a₂], rfl, rfl, rfl, rfl⟩
+
+/-- **Joint satisfiability of every hypothesis of `RBM.EEDef.ee_le_EEpath_sym` and of
+`RBM.EEDef.ee_le_paper_EEpath_sym`**, with the two labels `a₁`, `a₂` arbitrary and
+`a' = a`. -/
+theorem ee_sym_hyp_consistent (X : Sample B) (E : ℝ) {N : ℕ} (u : ℝ) (ω : Ω)
+    (σ : Fin (0 + 2) → Bool) (a₁ a₂ : ZMod (B.L N)) :
+    ∃ (c : LoopArg (B.L N) ((0 + 2) + (0 + 2))) (ℓu ℓs ηu D J Smax ρ : ℝ)
+      (Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ),
+      leftArg c 0 = a₁ ∧ leftArg c 1 = a₂ ∧
+      rightArg c 0 = leftArg c 0 ∧ rightArg c 1 = leftArg c 1 ∧
+      1 ≤ ℓu ∧ 0 < ℓs ∧ 0 < ηu ∧ 1 ≤ J ∧
+      1 ≤ (B.W N : ℝ) * ℓu * ηu ∧ 1 ≤ ℓu / ℓs ∧ 0 ≤ ρ ∧
+      (∀ x y, 0 ≤ Gm x y) ∧
+      (∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+        p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y) ∧
+      (∀ x y, 0 ≤ Gsq x y) ∧
+      (∀ x y, Gm x y * Gm y x ≤ Gsq x y) ∧
+      (∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+        Gm x bb' * Gm bb' x ≤ Gsq bb x) ∧
+      (∀ (s : Bool) (x y y' : ZMod (B.L N)),
+        (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+          ⟨[s, !s, s, !s], [x, y, x, y']⟩).re ≤ Smax) ∧
+      (2 * √Smax ≤ ℓu / ℓs * √(ℓu / ℓs) *
+        ((√((B.W N : ℝ) * ℓu * ηu))⁻¹ * ((B.W N : ℝ) * ℓu * ηu)⁻¹)) ∧
+      (∀ b, eeL6 X E N u ω σ c b
+        ≤ (ℓu / ℓs) ^ 5 * ((((B.W N : ℝ) * ℓu * ηu) ^ 2)⁻¹) ^ 2
+            * ((B.W N : ℝ) * ℓu * ηu)⁻¹) ∧
+      (∀ b, Lemma57.ellStarStar (B.W N : ℝ) ℓu < (zdist (B.L N) (lab₁ c - b) : ℝ) →
+        eeL6 X E N u ω σ c b ≤ ρ) ∧
+      (∀ x y : ZMod (B.L N), ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+        Gsq x y ≤ J * tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (x - y))) := by
+  classical
+  obtain ⟨c, hl0, hl1, hr0, hr1⟩ := exists_loopArg_diag (B := B) a₁ a₂
+  obtain ⟨M, hM⟩ := Finite.exists_le
+    (fun t : Bool × (ZMod (B.L N) × Fin (B.W N)) × (ZMod (B.L N) × Fin (B.W N)) =>
+      ‖Gsig (X.H N u ω) (zt E u) t.1 t.2.1 t.2.2‖)
+  obtain ⟨Smax, hSm⟩ := Finite.exists_le
+    (fun t : Bool × ZMod (B.L N) × ZMod (B.L N) × ZMod (B.L N) =>
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[t.1, !t.1, t.1, !t.1], [t.2.1, t.2.2.1, t.2.1, t.2.2.2]⟩).re)
+  set W : ℝ := (B.W N : ℝ) with hWdef
+  have hW1 : 1 ≤ W := one_le_W B N
+  have hW0 : 0 < W := by linarith
+  have hM0 : 0 ≤ M :=
+    le_trans (norm_nonneg _) (hM (true, (0, ⟨0, B.W_pos N⟩), (0, ⟨0, B.W_pos N⟩)))
+  set S : ℝ := ∑ b : ZMod (B.L N), eeL6 X E N u ω σ c b with hSdef
+  have hS0 : 0 ≤ S := Finset.sum_nonneg fun b _ => eeL6_nonneg X E N u ω σ c b
+  have hSb : ∀ b : ZMod (B.L N), eeL6 X E N u ω σ c b ≤ S := fun b =>
+    Finset.single_le_sum (fun b _ => eeL6_nonneg X E N u ω σ c b) (Finset.mem_univ b)
+  -- the regime: `A_u = 1`, `ℓ_u = 1`, `ℓ_s = R⁻¹`, `D = 0`
+  set Sp : ℝ := max Smax 0 with hSpdef
+  have hSp0 : 0 ≤ Sp := le_max_right _ _
+  set R : ℝ := 1 + S + 4 * Sp with hRdef
+  have hR1 : 1 ≤ R := by rw [hRdef]; linarith
+  have hR0 : 0 < R := by linarith
+  set ηu : ℝ := 1 / W with hηdef
+  have hη0 : 0 < ηu := by rw [hηdef]; positivity
+  have hA1 : W * 1 * ηu = 1 := by rw [hηdef]; field_simp
+  have hW0rpow : W ^ (-(0 : ℝ)) = 1 := by rw [neg_zero, Real.rpow_zero]
+  have hT1 : ∀ d : ℝ, 1 ≤ tailT W 1 ηu 0 d := by
+    intro d
+    have h1 : (0 : ℝ) ≤ ((W * 1 * ηu) ^ 2)⁻¹ * Real.exp (-Real.sqrt (d / 1)) := by positivity
+    rw [tailT, hW0rpow]; linarith
+  have hratio : (1 : ℝ) / (1 / R) = R := by field_simp
+  refine ⟨c, 1, 1 / R, ηu, 0, 1 + S + M * M, Smax, S, fun _ _ => M,
+    fun x y => (1 + S + M * M) * tailT W 1 ηu 0 (zdist (B.L N) (x - y)),
+    hl0, hl1, hr0, hr1, le_refl 1, by positivity, hη0, by nlinarith,
+    by rw [hA1], by rw [hratio]; exact hR1, hS0,
+    fun _ _ => hM0, fun s _ _ p q _ _ => hM (s, p, q),
+    ?_, ?_, ?_, fun s x y y' => hSm (s, x, y, y'), ?_, ?_, ?_, fun x y _ => le_refl _⟩
+  · intro x y
+    dsimp only
+    have h := hT1 ((zdist (B.L N) (x - y) : ℝ))
+    nlinarith
+  · intro x y
+    dsimp only
+    have h := hT1 ((zdist (B.L N) (x - y) : ℝ))
+    nlinarith
+  · intro x bb bb' _
+    dsimp only
+    have h := hT1 ((zdist (B.L N) (bb - x) : ℝ))
+    nlinarith
+  · -- `hμbd` : `2√Smax ≤ R √R`, because `R ≥ 1 + 4 Smax⁺` and `2t ≤ 1 + 4t²`
+    rw [hratio, hA1]
+    have hsq : √Smax ≤ √Sp := Real.sqrt_le_sqrt (le_max_left _ _)
+    have ht2 : √Sp ^ 2 = Sp := Real.sq_sqrt hSp0
+    have ht0 : 0 ≤ √Sp := Real.sqrt_nonneg _
+    have hkey : 2 * √Sp ≤ 1 + 4 * Sp := by nlinarith [sq_nonneg (2 * √Sp - 1 / 2)]
+    have hRle : (1 : ℝ) + 4 * Sp ≤ R := by rw [hRdef]; linarith
+    have hsR : (1 : ℝ) ≤ √R := Real.one_le_sqrt.2 hR1
+    have hfin : R ≤ R * √R := le_mul_of_one_le_right hR0.le hsR
+    have hone : ((√(1 : ℝ))⁻¹ * (1 : ℝ)⁻¹) = 1 := by
+      rw [Real.sqrt_one]; norm_num
+    rw [hone, mul_one]
+    linarith
+  · -- (2.73): the budget is `(ℓ_u/ℓ_s)^5 A_u^{-5} = R^5`
+    intro b
+    have hbudget : ((1 : ℝ) / (1 / R)) ^ 5 * (((W * 1 * ηu) ^ 2)⁻¹) ^ 2 * (W * 1 * ηu)⁻¹
+        = R ^ 5 := by rw [hratio, hA1]; norm_num
+    have h5 : R ≤ R ^ 5 := by
+      calc R = R ^ 1 := (pow_one _).symm
+        _ ≤ R ^ 5 := pow_le_pow_right₀ hR1 (by norm_num)
+    rw [hbudget]
+    have := hSb b
+    rw [hRdef] at h5
+    linarith
+  · exact fun b _ => hSb b
+
+
+end SixSym
+
 end EEDef
 end RBM

@@ -2371,11 +2371,14 @@
 \end{proof}
 
 \begin{lemma}[Lemma 5.7, estimate (5.36), free of the stopped martingale]\label{lem:5.7b}
-  \lean{RBM.Lemma57.loss1, RBM.Lemma57.cNear2, RBM.Lemma57.inv_four_le_tailT_sq, RBM.Lemma57.ee_near_le, RBM.Lemma57.case2a_pointwise, RBM.Lemma57.case2b_pointwise, RBM.Lemma57.sum_ee_far_le, RBM.Lemma57.cFar2, RBM.Lemma57.ee_far_le, RBM.Lemma57.ee_le, RBM.Lemma57.ee_le_paper}
+  \lean{RBM.Lemma57.loss1, RBM.Lemma57.cNear2, RBM.Lemma57.inv_four_le_tailT_sq, RBM.Lemma57.ee_near_le, RBM.Lemma57.case2a_pointwise, RBM.Lemma57.case2b_pointwise, RBM.Lemma57.sum_ee_far_le, RBM.Lemma57.cFar2, RBM.Lemma57.ee_far_le, RBM.Lemma57.ee_le, RBM.Lemma57.ee_le_paper, RBM.Lemma57.ee_le_sym, RBM.Lemma57.ee_le_paper_sym, RBM.EEDef.ee_le_EEpath_sym, RBM.EEDef.ee_le_paper_EEpath_sym, RBM.EEDef.ee_sym_hyp_consistent}
   \leanok\uses{lem:5.7a, lem:4.1, lem:stretched-exp}
   The $E\otimes E$ bound (5.36), pp.\ 61--63, with the $T_{u,D}^2$ normalization and the spatial
   decay.  In the library (5.36) had existed only through the stopped-martingale hypothesis, which
-  the moment route cannot use; it is now a pointwise estimate.
+  the moment route cannot use; it is now a pointwise estimate, applying to the pinned
+  \texttt{EEpath} and free of the Cauchy--Schwarz and symmetry hypotheses: both are discharged by
+  cutting (5.23)'s 6-loop at whichever of its two glue labels leaves the decaying edges, which is
+  what (5.22)'s $k=1$ / $k=0$ symmetry amounts to.
 \end{lemma}
 \begin{proof}\leanok
   The super-linearity in $J^*$ here is intrinsic: Case 2(1a)'s four $G$ edges split into two pairs

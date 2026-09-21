@@ -2364,7 +2364,428 @@ theorem norm_gloop_six_le_glue (s₁ s₂ s₃ s₄ s₅ s₆ : Bool)
   have h := norm_trace_Eblk_mul_mul_Eblk_mul_le L Wb _ _ c₂ c₄ hK hMB hMA
   exact h.trans_eq (by ring)
 
+/-! #### The other cut: opening the `6`-loop at `c₆` instead of at `c₃` (T190)
+
+The gluing (5.23) produces a `6`-loop with **two** glue labels, the paper's `b` and `b'`,
+sitting at the positions `c₃` and `c₆`.  `RBM.Lemma57.norm_gloop_six_le_schwarz` and
+`RBM.Lemma57.norm_gloop_six_le_glue` open it at `c₃`; the primed versions below open it at
+`c₆`.  By trace cyclicity (`gloop_rot3_six`) the two are the *same* identity, but they leave
+*different* four-edge products behind, and that is the whole of T190: on the half of the
+`b`-sum where the edges meeting one glue label are short, the other cut is the one all four
+of whose surviving edges decay. -/
+
+/-- One rotation of a `6`-loop (`RBM.gloop_rotate`). -/
+theorem gloop_rot1_six (s₁ s₂ s₃ s₄ s₅ s₆ : Bool) (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) :
+    gloop L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩
+      = gloop L Wb H z ⟨[s₂, s₃, s₄, s₅, s₆, s₁], [c₂, c₃, c₄, c₅, c₆, c₁]⟩ := by
+  have h := gloop_rotate (L := L) (W := Wb) (H := H) (z := z) s₁ c₁
+    (σ := [s₂, s₃, s₄, s₅, s₆]) (a := [c₂, c₃, c₄, c₅, c₆]) rfl
+  simpa using h
+
+/-- Three rotations of a `6`-loop: this is what exchanges the two glue labels of (5.23). -/
+theorem gloop_rot3_six (s₁ s₂ s₃ s₄ s₅ s₆ : Bool) (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) :
+    gloop L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩
+      = gloop L Wb H z ⟨[s₄, s₅, s₆, s₁, s₂, s₃], [c₄, c₅, c₆, c₁, c₂, c₃]⟩ := by
+  rw [gloop_rot1_six, gloop_rot1_six, gloop_rot1_six]
+
+/-- **(5.65) + (5.66) with the cut taken at `c₆`.**
+
+`‖L_{σ,(c₁,…,c₆)}‖ ≤ g₁g₂g₃g₄ √S` where now `g₁ … g₄` bound the four `G`-edges
+`(c₁,c₂), (c₂,c₃), (c₃,c₄), (c₄,c₅)` — the ones *not* meeting `c₆` — and `S` bounds the
+`4`-loop `L_{(σ₆,-σ₆,σ₆,-σ₆),(c₆,c₁,c₆,c₅)}`.  The charge pattern around `c₆` is
+`σ₁ = -σ₆`, which is what the gluing (5.23) produces at its second glue label. -/
+theorem norm_gloop_six_le_schwarz' (hH : H.IsHermitian) (s₁ s₂ s₃ s₄ s₅ : Bool)
+    (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) {g₁ g₂ g₃ g₄ S : ℝ}
+    (hg₁ : 0 ≤ g₁) (hg₂ : 0 ≤ g₂) (hg₃ : 0 ≤ g₃) (hg₄ : 0 ≤ g₄)
+    (h₂ : ∀ q p : ZMod L × Fin Wb, q.1 = c₁ → p.1 = c₂ → ‖Gsig H z s₂ q p‖ ≤ g₁)
+    (h₃ : ∀ p r : ZMod L × Fin Wb, p.1 = c₂ → r.1 = c₃ → ‖Gsig H z s₃ p r‖ ≤ g₂)
+    (h₄ : ∀ r t : ZMod L × Fin Wb, r.1 = c₃ → t.1 = c₄ → ‖Gsig H z s₄ r t‖ ≤ g₃)
+    (h₅ : ∀ t p : ZMod L × Fin Wb, t.1 = c₄ → p.1 = c₅ → ‖Gsig H z s₅ t p‖ ≤ g₄)
+    (hS : (gloop L Wb H z ⟨[!s₁, s₁, !s₁, s₁], [c₆, c₁, c₆, c₅]⟩).re ≤ S) :
+    ‖gloop L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, !s₁], [c₁, c₂, c₃, c₄, c₅, c₆]⟩‖
+      ≤ g₁ * g₂ * g₃ * g₄ * √S := by
+  rw [gloop_rot3_six]
+  have h := norm_gloop_six_le_schwarz L Wb hH s₄ s₅ (!s₁) s₂ s₃ c₄ c₅ c₆ c₁ c₂ c₃
+    hg₁ hg₂ hg₃ hg₄ h₂ h₃ h₄ h₅ (by simpa using hS)
+  simpa using h
+
+/-- **(5.65) + (5.72) with the cut taken at `c₆`** — the Case-2(1b) route for the other glue
+label, with `G(σ₆)E_{c₆}G(σ₁)` bounded entrywise by `K` instead of by Cauchy–Schwarz. -/
+theorem norm_gloop_six_le_glue' (s₁ s₂ s₃ s₄ s₅ s₆ : Bool)
+    (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) {g₁ g₂ g₃ g₄ K : ℝ}
+    (hg₁ : 0 ≤ g₁) (hg₂ : 0 ≤ g₂) (hg₃ : 0 ≤ g₃) (hg₄ : 0 ≤ g₄) (hK : 0 ≤ K)
+    (h₂ : ∀ q p : ZMod L × Fin Wb, q.1 = c₁ → p.1 = c₂ → ‖Gsig H z s₂ q p‖ ≤ g₁)
+    (h₃ : ∀ p r : ZMod L × Fin Wb, p.1 = c₂ → r.1 = c₃ → ‖Gsig H z s₃ p r‖ ≤ g₂)
+    (h₄ : ∀ r t : ZMod L × Fin Wb, r.1 = c₃ → t.1 = c₄ → ‖Gsig H z s₄ r t‖ ≤ g₃)
+    (h₅ : ∀ t p : ZMod L × Fin Wb, t.1 = c₄ → p.1 = c₅ → ‖Gsig H z s₅ t p‖ ≤ g₄)
+    (hglue : ∀ p q y : ZMod L × Fin Wb, p.1 = c₅ → q.1 = c₁ → y.1 = c₆ →
+      ‖Gsig H z s₆ p y‖ * ‖Gsig H z s₁ y q‖ ≤ K) :
+    ‖gloop L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩‖
+      ≤ g₁ * g₂ * g₃ * g₄ * K := by
+  rw [gloop_rot3_six]
+  exact norm_gloop_six_le_glue L Wb s₄ s₅ s₆ s₁ s₂ s₃ c₄ c₅ c₆ c₁ c₂ c₃
+    hg₁ hg₂ hg₃ hg₄ hK h₂ h₃ h₄ h₅ hglue
+
 end Loop6
+
+/-! ### (5.36) without `hsym`: the `k`-split of (5.22) (T190)
+
+`RBM.Lemma57.ee_le` splits the `b`-sum of (5.36) at `‖a₁-b‖ ≤ ‖a₂-b‖` and assumes the other
+half (`hsym`).  T178 showed why that assumption could not be removed as long as the estimate
+was run on *one* term of (5.22): on the far half the two `G`-edges meeting the glue label are
+short, (5.31) does not apply to them, and the surviving bound is short of (5.36) by a full
+`A_u^{1/2}`.
+
+The resolution is the paper's, read at the granularity of (5.23): the `6`-loop has **two**
+glue labels, and the two terms of (5.22) differ exactly by which of `a₁`, `a₂` the edges
+meeting each of them join.  Opening the loop at the *other* glue label
+(`norm_gloop_six_le_schwarz'`, `norm_gloop_six_le_glue'`) turns the short pair into the
+Cauchy–Schwarz factor and leaves four long edges behind.  What the `b`-sum then needs is not
+one estimate plus a symmetry, but **two** pointwise estimates — one for `b` near `a₁`, one for
+`b` near `a₂` — with the roles of `a₁` and `a₂` exchanged between them, and a single far
+estimate for `b` near neither.  That is `hnear₁`, `hnear₂`, `hfarb` below, and the splitting
+lemma is `RBM.Lemma57.sum_le_split_two`, which was already in the file (it is the same split
+(5.59)/(5.62) uses for (5.35)).
+
+`hnear₁` and `hnear₂` are stated in the `Gsq` shape of (5.66) — `case2a_at` does the (5.67)
+arithmetic — while `hfarb` is stated in the *reduced* shape, i.e. already past (5.67): at
+`k = 0` the tail functions come out of the four edges and the glued pair in the opposite
+order from `k = 1`, so the two summands agree only after (5.67) has been applied to both.
+`case2b_at` converts a `Gsq`-shaped Case-2(1b) bound into that reduced shape for a caller who
+wants it.
+
+The bound obtained is the same as `ee_far_le`'s, with the site count `2ℓ*_u + 2` of one
+neighbourhood replaced by the `4ℓ*_u + 4` of two; `cFar2` already carries a `4`. -/
+
+section EESym
+
+variable {W ℓu ℓs ηu D J : ℝ}
+
+/-- **(5.67) + (5.71) at a single site `b`**, with the two labels named `x`, `y` so that the
+lemma can be used in either order.  This is the content of `case2a_pointwise`, stated as a
+bound on one number `v` rather than on a function, and with the hypothesis restricted to the
+`b` where it is used. -/
+theorem case2a_at (hW : 1 ≤ W) (hℓu : 0 < ℓu) (hJ : 1 ≤ J)
+    {x y b : ZMod L} (hfar : 4 * ellStar W ℓu ≤ (zdist L (x - y) : ℝ))
+    (hb : (zdist L (x - b) : ℝ) ≤ ellStar W ℓu)
+    {Gsq : ZMod L → ZMod L → ℝ} {μ v : ℝ} (hμ : 0 ≤ μ)
+    (hGsq : ∀ p q, 0 ≤ Gsq p q)
+    (h42sq : ∀ p q : ZMod L, ellStar W ℓu / 2 ≤ (zdist L (p - q) : ℝ) →
+      Gsq p q ≤ J * tailT W ℓu ηu D (zdist L (p - q)))
+    (hv : v ≤ Gsq x y * Gsq b y * μ) :
+    v ≤ J ^ 2 * loss1 W * μ * tailT W ℓu ηu D (zdist L (x - y)) ^ 2 := by
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hstar : 0 ≤ ellStar W ℓu := by
+    unfold ellStar; have := Real.log_nonneg hW; positivity
+  have hT0 : 0 ≤ tailT W ℓu ηu D (zdist L (x - y)) := tailT_nonneg hW0.le _
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have htri := zdist_sub_le_add L x y b
+  have h12 : Gsq x y ≤ J * tailT W ℓu ηu D (zdist L (x - y)) := h42sq x y (by linarith)
+  have hd2 : (zdist L (x - y) : ℝ) - ellStar W ℓu ≤ (zdist L (y - b) : ℝ) := by linarith
+  have hb2 : Gsq b y ≤ J * (loss1 W * tailT W ℓu ηu D (zdist L (x - y))) := by
+    have hle : Gsq b y ≤ J * tailT W ℓu ηu D (zdist L (y - b)) := by
+      have := h42sq b y (by rw [zdist_sub_comm]; linarith)
+      rwa [zdist_sub_comm] at this
+    refine hle.trans (mul_le_mul_of_nonneg_left ?_ hJ0)
+    have h1 : tailT W ℓu ηu D (zdist L (y - b)) ≤
+        tailT W ℓu ηu D ((zdist L (x - y) : ℝ) - 1 * ellStar W ℓu) :=
+      tailT_antitone hℓu (by linarith)
+    refine h1.trans ?_
+    rw [loss1, show log W ^ (3 / 4 : ℝ) = √(1 : ℝ) * log W ^ (3 / 4 : ℝ) by
+      rw [Real.sqrt_one, one_mul]]
+    exact tailT_sub_le (ℓu := ℓu) (ηu := ηu) (D := D) hW hℓu (by norm_num : (0 : ℝ) ≤ 1) _
+  have hprod : Gsq x y * Gsq b y ≤
+      J ^ 2 * loss1 W * tailT W ℓu ηu D (zdist L (x - y)) ^ 2 := by
+    have := mul_le_mul h12 hb2 (hGsq _ _) (mul_nonneg hJ0 hT0)
+    refine this.trans (le_of_eq (by ring))
+  refine hv.trans ?_
+  have := mul_le_mul_of_nonneg_right hprod hμ
+  refine this.trans (le_of_eq (by ring))
+
+/-- **(5.67) + (5.72) at a single site `b`**: the Case-2(1b) branch, for a `b` far from
+*both* labels.  Compared with `case2b_pointwise` the hypothesis `‖x-b‖ ≤ ‖y-b‖` is replaced
+by `ℓ*_u < ‖y-b‖`, which is what the three-way split of the `b`-sum supplies directly. -/
+theorem case2b_at (hW : 1 ≤ W) (hℓu : 0 < ℓu) (hJ : 1 ≤ J)
+    {x y b : ZMod L} (hfar : 4 * ellStar W ℓu ≤ (zdist L (x - y) : ℝ))
+    (_hbx : ellStar W ℓu < (zdist L (x - b) : ℝ))
+    (hby : ellStar W ℓu < (zdist L (y - b) : ℝ))
+    {Gsq : ZMod L → ZMod L → ℝ} {v : ℝ}
+    (hGsq : ∀ p q, 0 ≤ Gsq p q)
+    (h42sq : ∀ p q : ZMod L, ellStar W ℓu / 2 ≤ (zdist L (p - q) : ℝ) →
+      Gsq p q ≤ J * tailT W ℓu ηu D (zdist L (p - q)))
+    (hv : v ≤ Gsq x y * Gsq b y * (J * tailT W ℓu ηu D (zdist L (x - b)))) :
+    v ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (x - y)) *
+        (tailT W ℓu ηu D (zdist L (x - b)) * tailT W ℓu ηu D (zdist L (y - b))) := by
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hstar : 0 ≤ ellStar W ℓu := by
+    unfold ellStar; have := Real.log_nonneg hW; positivity
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hT0 : 0 ≤ tailT W ℓu ηu D (zdist L (x - y)) := tailT_nonneg hW0.le _
+  have hT1 : 0 ≤ tailT W ℓu ηu D (zdist L (x - b)) := tailT_nonneg hW0.le _
+  have hT2 : 0 ≤ tailT W ℓu ηu D (zdist L (y - b)) := tailT_nonneg hW0.le _
+  have h12 : Gsq x y ≤ J * tailT W ℓu ηu D (zdist L (x - y)) := h42sq x y (by linarith)
+  have hb2 : Gsq b y ≤ J * tailT W ℓu ηu D (zdist L (y - b)) := by
+    have := h42sq b y (by rw [zdist_sub_comm]; linarith)
+    rwa [zdist_sub_comm] at this
+  refine hv.trans ?_
+  have hp1 : Gsq x y * Gsq b y ≤
+      (J * tailT W ℓu ηu D (zdist L (x - y))) * (J * tailT W ℓu ηu D (zdist L (y - b))) :=
+    mul_le_mul h12 hb2 (hGsq _ _) (mul_nonneg hJ0 hT0)
+  have hp2 := mul_le_mul_of_nonneg_right hp1
+    (mul_nonneg hJ0 hT1 : (0 : ℝ) ≤ J * tailT W ℓu ηu D (zdist L (x - b)))
+  refine hp2.trans (le_of_eq (by ring))
+
+/-- **(5.71) + (5.72) over the whole `b`-sum** — no `hsym`.
+
+The three hypotheses are the two halves of Case 2(1a), with `a₁` and `a₂` exchanged between
+them, and Case 2(1b) for the `b` far from both.  `RBM.Lemma57.sum_le_split_two` counts the two
+neighbourhoods. -/
+theorem sum_ee_far_le_sym (hW : 1 ≤ W) (hℓu : 1 ≤ ℓu) (hJ : 1 ≤ J)
+    {a₁ a₂ : ZMod L} (hfar : 4 * ellStar W ℓu ≤ (zdist L (a₁ - a₂) : ℝ))
+    {Gsq : ZMod L → ZMod L → ℝ} {L6 : ZMod L → ℝ} {μ : ℝ} (hμ : 0 ≤ μ)
+    (hGsq : ∀ x y, 0 ≤ Gsq x y)
+    (h42sq : ∀ x y : ZMod L, ellStar W ℓu / 2 ≤ (zdist L (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT W ℓu ηu D (zdist L (x - y)))
+    (hnear₁ : ∀ b, (zdist L (a₁ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₁ a₂ * Gsq b a₂ * μ)
+    (hnear₂ : ∀ b, (zdist L (a₂ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₂ a₁ * Gsq b a₁ * μ)
+    (hfarb : ∀ b, 4 * ellStar W ℓu ≤ (zdist L (a₁ - a₂) : ℝ) →
+      ellStar W ℓu < (zdist L (a₁ - b) : ℝ) →
+      ellStar W ℓu < (zdist L (a₂ - b) : ℝ) →
+      L6 b ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+        (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b)))) :
+    ∑ b : ZMod L, L6 b ≤
+      ((4 * ellStar W ℓu + 4) * (J ^ 2 * loss1 W * μ)
+        + J ^ 3 * (36 * ℓu * ((W * ℓu * ηu) ^ 2)⁻¹ + (L : ℝ) * W ^ (-D)))
+      * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by
+  classical
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hℓ : 0 < ℓu := by linarith
+  have hstar : 0 ≤ ellStar W ℓu := by
+    unfold ellStar; have := Real.log_nonneg hW; positivity
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hT0 : 0 ≤ tailT W ℓu ηu D (zdist L (a₁ - a₂)) := tailT_nonneg hW0.le _
+  have hTb : ∀ b : ZMod L, 0 ≤ tailT W ℓu ηu D (zdist L (a₁ - b)) := fun _ =>
+    tailT_nonneg hW0.le _
+  have hTb' : ∀ b : ZMod L, 0 ≤ tailT W ℓu ηu D (zdist L (a₂ - b)) := fun _ =>
+    tailT_nonneg hW0.le _
+  have hswap : (zdist L (a₂ - a₁) : ℝ) = (zdist L (a₁ - a₂) : ℝ) := by
+    rw [zdist_sub_comm]
+  have hfar' : 4 * ellStar W ℓu ≤ (zdist L (a₂ - a₁) : ℝ) := by rw [hswap]; exact hfar
+  have hloss := loss1_pos W
+  have hc₁ : (0 : ℝ) ≤ J ^ 2 * loss1 W * μ *
+      tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by positivity
+  have hg0 : ∀ b : ZMod L, (0 : ℝ) ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+      (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b))) := by
+    intro b
+    have := hTb b; have := hTb' b
+    positivity
+  have hsplit := sum_le_split_two L (f := L6)
+    (g := fun b : ZMod L => J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+      (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b))))
+    hg0 hstar a₁ a₂ hc₁
+    (fun b hb => by
+      rcases hb with hb | hb
+      · exact case2a_at L hW hℓ hJ hfar hb hμ hGsq h42sq (hnear₁ b hb)
+      · have h := case2a_at L hW hℓ hJ hfar' hb hμ hGsq h42sq (hnear₂ b hb)
+        rwa [hswap] at h)
+    (fun b h1 h2 => hfarb b hfar h1 h2)
+  refine hsplit.trans ?_
+  have hconv := sum_tailT_mul_tailT_le L (ηu := ηu) hW0 hℓu D a₁ a₂
+  have hgsum : (∑ b : ZMod L, J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+        (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b))))
+      = (J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂))) *
+        ∑ b : ZMod L, (tailT W ℓu ηu D (zdist L (a₁ - b)) *
+          tailT W ℓu ηu D (zdist L (a₂ - b))) := by
+    rw [Finset.mul_sum]
+  have hgbd : (∑ b : ZMod L, J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+        (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b)))) ≤
+      J ^ 3 * (36 * ℓu * ((W * ℓu * ηu) ^ 2)⁻¹ + (L : ℝ) * W ^ (-D)) *
+        tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by
+    rw [hgsum]
+    have := mul_le_mul_of_nonneg_left hconv
+      (by positivity : (0 : ℝ) ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)))
+    refine this.trans (le_of_eq (by ring))
+  have he : (4 * ellStar W ℓu + 4) *
+        (J ^ 2 * loss1 W * μ * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2)
+      = (4 * ellStar W ℓu + 4) * (J ^ 2 * loss1 W * μ) *
+        tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by ring
+  rw [he]
+  linarith [hgbd]
+
+/-- **(5.71) + (5.72) assembled without `hsym`**: the far field `‖a₁-a₂‖ ≥ 4ℓ*_u` of (5.36).
+Same conclusion as `RBM.Lemma57.ee_far_le`; the hypothesis `hsym` is gone, replaced by the
+second half `hnear₂` of Case 2(1a). -/
+theorem ee_far_le_sym (hW : 1 ≤ W) (hℓu : 1 ≤ ℓu) (hηu : 0 < ηu) (hJ : 1 ≤ J)
+    {a₁ a₂ : ZMod L} (hfar : 4 * ellStar W ℓu ≤ (zdist L (a₁ - a₂) : ℝ))
+    {Gsq : ZMod L → ZMod L → ℝ} {L6 : ZMod L → ℝ} {μ EE : ℝ} (hμ : 0 ≤ μ)
+    (hGsq : ∀ x y, 0 ≤ Gsq x y)
+    (h42sq : ∀ x y : ZMod L, ellStar W ℓu / 2 ≤ (zdist L (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT W ℓu ηu D (zdist L (x - y)))
+    (hnear₁ : ∀ b, (zdist L (a₁ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₁ a₂ * Gsq b a₂ * μ)
+    (hnear₂ : ∀ b, (zdist L (a₂ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₂ a₁ * Gsq b a₁ * μ)
+    (hfarb : ∀ b, 4 * ellStar W ℓu ≤ (zdist L (a₁ - a₂) : ℝ) →
+      ellStar W ℓu < (zdist L (a₁ - b) : ℝ) →
+      ellStar W ℓu < (zdist L (a₂ - b) : ℝ) →
+      L6 b ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+        (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b))))
+    (hEE : EE ≤ W * ∑ b : ZMod L, L6 b) :
+    EE ≤ ηu⁻¹ * (cFar2 W ℓu * (J ^ 2 * ((W * ℓu * ηu) * μ))
+        + 72 * J ^ 3 * (W * ℓu * ηu)⁻¹) * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2
+      + 2 * W * L * W ^ (-D) * J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by
+  classical
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hℓ : 0 < ℓu := by linarith
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hT0 : 0 ≤ tailT W ℓu ηu D (zdist L (a₁ - a₂)) := tailT_nonneg hW0.le _
+  have h1 := sum_ee_far_le_sym L hW hℓu hJ hfar hμ hGsq h42sq hnear₁ hnear₂ hfarb
+  have hrest : (0 : ℝ) ≤ J ^ 3 * (36 * ℓu * ((W * ℓu * ηu) ^ 2)⁻¹
+      + (L : ℝ) * W ^ (-D)) * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by
+    have : (0 : ℝ) ≤ W ^ (-D) := Real.rpow_nonneg hW0.le _
+    positivity
+  have htot : ∑ b : ZMod L, L6 b ≤
+      2 * (((2 * ellStar W ℓu + 2) * (J ^ 2 * loss1 W * μ)
+        + J ^ 3 * (36 * ℓu * ((W * ℓu * ηu) ^ 2)⁻¹ + (L : ℝ) * W ^ (-D)))
+      * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2) := by nlinarith [h1, hrest]
+  have hmul := mul_le_mul_of_nonneg_left htot hW0.le
+  refine hEE.trans (hmul.trans (le_of_eq ?_))
+  rw [ellStar, cFar2, loss1]
+  field_simp
+  ring
+
+/-- **(5.36) without `hsym`**, the master form: `RBM.Lemma57.ee_le` with its far field
+supplied by `ee_far_le_sym`.  The conclusion is *identical* to `ee_le`'s. -/
+theorem ee_le_sym (hW : 1 ≤ W) (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu : 0 < ηu) (hJ : 1 ≤ J)
+    (a₁ a₂ : ZMod L)
+    {Gsq : ZMod L → ZMod L → ℝ} {L6 : ZMod L → ℝ} {μ ρ EE : ℝ} (hμ : 0 ≤ μ) (hρ : 0 ≤ ρ)
+    (hGsq : ∀ x y, 0 ≤ Gsq x y)
+    (h273 : ∀ b, L6 b ≤ (ℓu / ℓs) ^ 5 * (((W * ℓu * ηu) ^ 2)⁻¹) ^ 2 * (W * ℓu * ηu)⁻¹)
+    (h564 : ∀ b, ellStarStar W ℓu < (zdist L (a₁ - b) : ℝ) → L6 b ≤ ρ)
+    (h42sq : ∀ x y : ZMod L, ellStar W ℓu / 2 ≤ (zdist L (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT W ℓu ηu D (zdist L (x - y)))
+    (hnear₁ : ∀ b, (zdist L (a₁ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₁ a₂ * Gsq b a₂ * μ)
+    (hnear₂ : ∀ b, (zdist L (a₂ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₂ a₁ * Gsq b a₁ * μ)
+    (hfarb : ∀ b, 4 * ellStar W ℓu ≤ (zdist L (a₁ - a₂) : ℝ) →
+      ellStar W ℓu < (zdist L (a₁ - b) : ℝ) →
+      ellStar W ℓu < (zdist L (a₂ - b) : ℝ) →
+      L6 b ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+        (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b))))
+    (hEE : EE ≤ W * ∑ b : ZMod L, L6 b) :
+    EE ≤ ηu⁻¹ * (cNear2 W ℓu * (ℓu / ℓs) ^ 5 *
+          (if (zdist L (a₁ - a₂) : ℝ) ≤ 4 * ellStar W ℓu then 1 else 0)
+        + cFar2 W ℓu * (J ^ 2 * ((W * ℓu * ηu) * μ))
+        + 72 * J ^ 3 * (W * ℓu * ηu)⁻¹) * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2
+      + (W * L * ρ + 2 * W * L * W ^ (-D) * J ^ 3 *
+          tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2) := by
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hℓ : 0 < ℓu := by linarith
+  have hT0 : 0 ≤ tailT W ℓu ηu D (zdist L (a₁ - a₂)) := tailT_nonneg hW0.le _
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hcN : 0 ≤ cNear2 W ℓu := cNear2_nonneg hW hℓ
+  have hcF : 0 ≤ cFar2 W ℓu := cFar2_nonneg hW hℓ
+  have hA0 : (0 : ℝ) < W * ℓu * ηu := by positivity
+  have hrem1 : (0 : ℝ) ≤ W * L * ρ := by positivity
+  have hrem2 : (0 : ℝ) ≤ 2 * W * L * W ^ (-D) * J ^ 3 *
+      tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by
+    have : (0 : ℝ) ≤ W ^ (-D) := Real.rpow_nonneg hW0.le _
+    positivity
+  have hnearterm : (0 : ℝ) ≤ ηu⁻¹ * (cNear2 W ℓu * (ℓu / ℓs) ^ 5) *
+      tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by positivity
+  have hfarterm : (0 : ℝ) ≤ ηu⁻¹ * (cFar2 W ℓu * (J ^ 2 * ((W * ℓu * ηu) * μ))
+      + 72 * J ^ 3 * (W * ℓu * ηu)⁻¹) * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by
+    positivity
+  split_ifs with hd
+  · have h := ee_near_le (D := D) L hW hℓu hℓs hηu hd hρ h273 h564 hEE
+    nlinarith [h, hfarterm, hrem2]
+  · rw [not_le] at hd
+    have h := ee_far_le_sym L hW hℓu hηu hJ hd.le hμ hGsq h42sq hnear₁ hnear₂ hfarb hEE
+    nlinarith [h, hrem1]
+
+/-- **(5.36) in the paper's shape, without `hsym`.**  `μ` is instantiated from (2.73) at
+`n = 4` exactly as in `RBM.Lemma57.ee_le_paper`, and the conclusion is identical to it. -/
+theorem ee_le_paper_sym (hW : 1 ≤ W) (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu : 0 < ηu)
+    (hJ : 1 ≤ J) (hA : 1 ≤ W * ℓu * ηu) (hr : 1 ≤ ℓu / ℓs) (a₁ a₂ : ZMod L)
+    {Gsq : ZMod L → ZMod L → ℝ} {L6 : ZMod L → ℝ} {ρ EE : ℝ} (hρ : 0 ≤ ρ)
+    (hGsq : ∀ x y, 0 ≤ Gsq x y)
+    (h273 : ∀ b, L6 b ≤ (ℓu / ℓs) ^ 5 * (((W * ℓu * ηu) ^ 2)⁻¹) ^ 2 * (W * ℓu * ηu)⁻¹)
+    (h564 : ∀ b, ellStarStar W ℓu < (zdist L (a₁ - b) : ℝ) → L6 b ≤ ρ)
+    (h42sq : ∀ x y : ZMod L, ellStar W ℓu / 2 ≤ (zdist L (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT W ℓu ηu D (zdist L (x - y)))
+    (hnear₁ : ∀ b, (zdist L (a₁ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₁ a₂ * Gsq b a₂ *
+        (ℓu / ℓs * √(ℓu / ℓs) * ((√(W * ℓu * ηu))⁻¹ * (W * ℓu * ηu)⁻¹)))
+    (hnear₂ : ∀ b, (zdist L (a₂ - b) : ℝ) ≤ ellStar W ℓu →
+      L6 b ≤ Gsq a₂ a₁ * Gsq b a₁ *
+        (ℓu / ℓs * √(ℓu / ℓs) * ((√(W * ℓu * ηu))⁻¹ * (W * ℓu * ηu)⁻¹)))
+    (hfarb : ∀ b, 4 * ellStar W ℓu ≤ (zdist L (a₁ - a₂) : ℝ) →
+      ellStar W ℓu < (zdist L (a₁ - b) : ℝ) →
+      ellStar W ℓu < (zdist L (a₂ - b) : ℝ) →
+      L6 b ≤ J ^ 3 * tailT W ℓu ηu D (zdist L (a₁ - a₂)) *
+        (tailT W ℓu ηu D (zdist L (a₁ - b)) * tailT W ℓu ηu D (zdist L (a₂ - b))))
+    (hEE : EE ≤ W * ∑ b : ZMod L, L6 b) :
+    EE ≤ ηu⁻¹ * (cNear2 W ℓu * (ℓu / ℓs) ^ 5 *
+          (if (zdist L (a₁ - a₂) : ℝ) ≤ 4 * ellStar W ℓu then 1 else 0)
+        + (cFar2 W ℓu + 72) * (ℓu / ℓs * √(ℓu / ℓs) * (√(W * ℓu * ηu))⁻¹) * J ^ 3)
+      * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2
+      + (W * L * ρ + 2 * W * L * W ^ (-D) * J ^ 3 *
+          tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2) := by
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hℓ : 0 < ℓu := by linarith
+  have hA0 : (0 : ℝ) < W * ℓu * ηu := by linarith
+  have hsA : (0 : ℝ) < √(W * ℓu * ηu) := Real.sqrt_pos.2 hA0
+  have hr0 : (0 : ℝ) ≤ ℓu / ℓs := by linarith
+  have hJ0 : (0 : ℝ) ≤ J := by linarith
+  have hT0 : 0 ≤ tailT W ℓu ηu D (zdist L (a₁ - a₂)) := tailT_nonneg hW0.le _
+  have hTsq : (0 : ℝ) ≤ tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 := by positivity
+  have hcN : 0 ≤ cNear2 W ℓu := cNear2_nonneg hW hℓ
+  have hcF : 0 ≤ cFar2 W ℓu := cFar2_nonneg hW hℓ
+  have hη0 : (0 : ℝ) < ηu⁻¹ := by positivity
+  have hμ : (0 : ℝ) ≤ ℓu / ℓs * √(ℓu / ℓs) * ((√(W * ℓu * ηu))⁻¹ * (W * ℓu * ηu)⁻¹) := by
+    positivity
+  have hmain := ee_le_sym L hW hℓu hℓs hηu hJ a₁ a₂ hμ hρ hGsq h273 h564 h42sq
+    hnear₁ hnear₂ hfarb hEE
+  refine hmain.trans ?_
+  have hAμ : W * ℓu * ηu *
+      (ℓu / ℓs * √(ℓu / ℓs) * ((√(W * ℓu * ηu))⁻¹ * (W * ℓu * ηu)⁻¹))
+      = ℓu / ℓs * √(ℓu / ℓs) * (√(W * ℓu * ηu))⁻¹ := by
+    field_simp
+  rw [hAμ]
+  set ν : ℝ := ℓu / ℓs * √(ℓu / ℓs) * (√(W * ℓu * ηu))⁻¹ with hν
+  have hν0 : 0 ≤ ν := by rw [hν]; positivity
+  have hone : (1 : ℝ) ≤ ℓu / ℓs * √(ℓu / ℓs) := by
+    have h1 : (1 : ℝ) ≤ √(ℓu / ℓs) := Real.one_le_sqrt.2 hr
+    nlinarith
+  have hinvA : (W * ℓu * ηu)⁻¹ ≤ ν := by
+    have hsq : √(W * ℓu * ηu) ≤ W * ℓu * ηu := by
+      nlinarith [Real.sq_sqrt hA0.le, Real.one_le_sqrt.2 hA, Real.sqrt_nonneg (W * ℓu * ηu)]
+    have h1 : (W * ℓu * ηu)⁻¹ ≤ (√(W * ℓu * ηu))⁻¹ := inv_anti₀ hsA hsq
+    have h2 : (√(W * ℓu * ηu))⁻¹ ≤ ν := by
+      rw [hν]
+      have := mul_le_mul_of_nonneg_right hone (le_of_lt (inv_pos.2 hsA))
+      linarith [this]
+    linarith
+  have hJ23 : J ^ 2 ≤ J ^ 3 := pow_le_pow_right₀ hJ (by norm_num)
+  have hbr : cFar2 W ℓu * (J ^ 2 * ν) + 72 * J ^ 3 * (W * ℓu * ηu)⁻¹
+      ≤ (cFar2 W ℓu + 72) * ν * J ^ 3 := by
+    have t1 : cFar2 W ℓu * (J ^ 2 * ν) ≤ cFar2 W ℓu * (J ^ 3 * ν) :=
+      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hJ23 hν0) hcF
+    have t2 : 72 * J ^ 3 * (W * ℓu * ηu)⁻¹ ≤ 72 * J ^ 3 * ν :=
+      mul_le_mul_of_nonneg_left hinvA (by positivity)
+    linarith
+  set IND : ℝ := cNear2 W ℓu * (ℓu / ℓs) ^ 5 *
+    (if (zdist L (a₁ - a₂) : ℝ) ≤ 4 * ellStar W ℓu then 1 else 0) with hIND
+  have hbr' : IND + cFar2 W ℓu * (J ^ 2 * ν) + 72 * J ^ 3 * (W * ℓu * ηu)⁻¹
+      ≤ IND + (cFar2 W ℓu + 72) * ν * J ^ 3 := by linarith
+  have hstep := mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left hbr' hη0.le) hTsq
+  linarith [hstep]
+
+end EESym
 
 end Lemma57
 end RBM

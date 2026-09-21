@@ -5327,3 +5327,140 @@ T181 列的三个缺口里，**第一个其实早就有了**：
 30 个新顶层名逐个全仓 grep：**撞了一个** —— `RBM.ellHat_nonneg` 已存在于
 `Propagator/Rate.lean`（我的 import 链够不到它，单文件编译发现不了，全量 `lake build` 才会炸）。
 已删掉重复声明、改成内联。其余 29 个零冲突。
+
+## ⭐ T191：`Hyp` 两字段的**分析链全部打通**，剩下的是含时可容许性（`Gauss/MomentDuhamelTime.lean`，1421 行，2026-09-21）
+
+`lake env lean RBM1D/Gauss/MomentDuhamelTime.lean` exit=0、零 warning；本文件 34 条声明逐条
+`#print axioms` 全是 `propext / Classical.choice / Quot.sound`（跑完即删）。
+**新文件，`Gauss/MomentDuhamel.lean`、`MomentDuhamelRhs.lean`、`TestFunHerm.lean`、
+`Lemma514Moment.lean`、`Hierarchy/*` 一个字没动**（`RBM1D.lean` 的 import 由协调者加）。
+
+### ⭐ 第 0 步的答案：`TestFunT` 对**时间**的 `C²` 确实是过度要求（今天第七次）
+
+逐行读 `hasDerivAt_integral_Psi` 的证明，联合 `contDiffAt`（`ContDiffAt ℝ 2` on `(u,M)`）**只被用了两处**：
+
+| 用处 | 真正需要的 |
+|---|---|
+| `hasDerivAt_Psi_Hflow` | `DifferentiableAt ℝ (uncurry Ψ) (x, H_x ω)` —— 联合**一阶** |
+| `continuous_timeD1` | `M ↦ timeD1 Ψ u M` 连续（只为 `∂₁Ψ(u,H_u·)` 的可测 + 可积） |
+
+其余全部是**矩阵**切片 `Ψ u` 的事（`slice`、`continuous_coordD1/D2`、`hasDerivAt_coordD1_update`、
+`sum_used_eq_sum_pairs_coordD2`），那里 `C²` 是真需要的。
+
+于是落地 `RBM.Gauss.TestFunT₁`：把联合 `C²` 换成 `contDiffM`（切片 `C²`）+ `diffJoint`（联合可微）
++ `contT`（`∂₁Ψ` 对 `M` 连续），四条界原样。配套
+`hasDerivAt_integral_Psi₁` / `…_pairs₁` / `…_pairs_of_herm₁`，**结论逐字不变**——
+把原证明重放一遍就是这条结论的验证：若联合 `C²` 在别处被用到，这次重放根本编译不过。
+
+* `TestFunT.toTestFunT₁`：旧类装进新类，**已有供给一条不丢**（非空）。
+* `TestFunT₁.of_contDiffAt_one`：联合 `C¹` + 切片 `C²` 就够，这是将来检查 `Ψ` 可容许性的形状。
+* **放宽是严格的（本单最重要的负向检查）**：`kinkT u M = (u−½)|u−½|`（对 `M` 常值）
+  `testFunT₁_kinkT` 属于新类，`not_testFunT_kinkT` **证明它不属于旧类**
+  （`deriv` 是 `2|·−½|`，在 `½` 不可微，经 `ContDiffAt.derivWithin` + `not_differentiableAt_abs_zero`）。
+  所以这不是"换个写法"，新类真的接纳旧类拒绝的函数。
+
+**对 T191 的后果**：`edgeKer` / `Band.Kval` 对 `u` 的**二阶**依赖**不用做了**。
+仓库现有的一阶事实 `hasDerivAt_edgeKer`、`hasDerivAt_Kgen_all`（长度 ≥ 2 全覆盖）就是对的阶。
+短的是**联合**正则性，不是第二个时间导数。
+
+### 漂移 + Hölder 链：三块全部落地
+
+1. **Hölder（两条，含时无关）**：`integral_pow_sub_one_mul_le`
+   （`E[|Y|^{2p−1}|Z|] ≤ (E|Y|^{2p})^{(2p−1)/(2p)}·‖Z‖_{2p}`）与 `integral_pow_sub_two_mul_le`
+   （`E[|Y|^{2p−2}Q] ≤ (E|Y|^{2p})^{(p−1)/p}·‖Q‖_p`，`Q ≥ 0`）。
+   经 Mathlib 的 `integral_mul_le_Lp_mul_Lq_of_nonneg`；桥 `memLp_ofReal_of_integrable_rpow`
+   把接口自带的 `Integrable (|·|^q)` 变成 `MemLp`（就是 `momNorm_le_momNorm_of_exponent_le` 里
+   那段 `hfin` 计算的通用版）。⚠ **`p = 1` 必须单独走**：第二条的共轭指数 `p/(p−1)` 在 `p=1` 没定义，
+   那一档是 `E[Q] ≤ E[Q]`，直接证。
+2. **除以 `p ψ^{p−1}`（`ψ = 0` 处安全）**：`rpow_inv_le_of_deriv_le` / `…_Icc` /
+   `diffIneq_of_deriv_le`。`φ^{1/p}` 在 `φ = 0` 处不可导，所以在 `φ + ε` 上做 FTC 再让 `ε ↓ 0`；
+   **`ε` 极限是初等的**（`Real.rpow_add_le_add_rpow` 的次可加性把误差写成
+   `ε^{1/p} + 2ε^{1/(2p)}∫f`），**不需要控制收敛**。
+   **导数只在开区间 `Set.Ioo (s N) v` 上假设**——正是 `hasDerivAt_integral_Psi` 的 `0 < u` 逼出来的接缝。
+   `diffIneq_of_deriv_le` 的结论**逐字是** `momentIneq_of_diffIneq` 要的 `hdu`（含 `momNorm`）。
+3. **总装**：`momentIneq_of_derivBound` 与 `momentIneqQ_of_derivBound` ——
+   **`MomentIneq` / `MomentIneqQ` 现在只差一条逐点的导数不等式**，
+   外加可积性/上界这些边条件。顺带补了 T180 文档里"同样三行"却**从未写出来**的
+   `momentIneqQ_of_diffIneq`（`Q_t` 路线的接线）。
+
+### ⚠ 常数的一个真陷阱：`cMD p = 2p − 1` 在 `p = 0` 是负的
+
+`Hyp.cMD_nonneg : ∀ p, 0 ≤ cMD p` 对**所有** `p : ℕ` 量化，而两条不等式只在 `1 ≤ p` 处发声。
+字面 `2p − 1` 在 `p = 0` 取 `−1`，**装不进字段**。落地 `cMDval p = max 0 (2p−1)`，
+`cMDval_of_one_le` 证明它在 `1 ≤ p` 处就是 `2p−1`。STATUS 里 T180 写的"常数定死 `cMD p = 2p−1`"
+要按这个读。
+
+### 可满足性 / 锐度检查（全部编译过）
+
+* `holder_first_sharp` / `holder_second_sharp`：`Z = Y`（resp. `Q = |Y|²`）时两条 Hölder **取等**，
+  配 `holder_first_lhs_self` / `holder_second_lhs_self`（左端就是同一个积分）。
+  指数抄错则这两条恒等式当场失败。
+* `deriv_le_hyp_sharp_one` / `rpow_inv_le_of_deriv_le_sharp_one` / `deriv_le_conclusion_sharp_one`：
+  `p = 1`、`φ u = u`、`f ≡ 0`、`g ≡ 1` 时假设**取等**、结论读作 `v ≤ v` 也取等，
+  所以 `2p − 1` 不能再小，假设集非空。
+* `testFunT₁_kinkT` + `not_testFunT_kinkT`：见上，Step 0 的放宽严格。
+* `TestFunT.toTestFunT₁`：新类非空（旧类的每一个供给都还在）。
+
+### 还短什么（如实，别当成做完了）
+
+**两条 `Hyp` 字段仍未闭合**，剩下的**全部**是含时可容许性 + 生成元的逐点展开，具体三条：
+
+1. **`TestFunT₁ d N T (hermFunT d N Ψ)`**（`Ψ(u,M) = |(U_{u,v}∘(L−K)(u,M))_a|^{2p}`）：
+   (a) `contDiffM` = T133 的 `testFun_momentFun_ukerObs`，**现成**；
+   (b) `diffJoint`（联合可微）——圈沿 `u ↦ z_u` 要把 `EGDef.contDiffAt_gloopProd_matrix` 的归纳
+   改成 pair 版（预解式的联合 `C²` 已有：`contDiffAt_resH_zt`），再配 `hasDerivAt_edgeKer`
+   与 `hasDerivAt_Kgen_all`；**只要一阶**；
+   (c) `contT`（`∂₁Ψ` 对 `M` 连续）与 `bddT`（`∂_u Ψ` 在窗口上一致有界）——
+   后者仍要**圈对 `z` 的导数界**；T141 给的是「`M`-导数界对 `z` 一致」，**不是 `z`-导数界**（T187 的判断成立）。
+2. **`φ' u` 的存在与识别**：由 `hasDerivAt_integral_Psi_pairs_of_herm₁`（本单提供）得到
+   `φ' = ∫∂₁Ψ + ½∑S∫wirtSecond`，再用 `Hyp.drift` + `hasDerivAt_Uker_path` 把
+   `∂₁Ψ` 与 `genS` 项对消（`hasDerivAt_Uker_thetaOp` 已有），二阶项用 `genMomentPt_le'`（T187），
+   其二次变差认成 `(U⊗U)∘(E⊗E)`（`quadVarPairs_Uker` + T127）。
+3. **边条件**：`φ'`、`f`、`g`、`ψ·f` 的区间可积性与 `ψ` 在窗口上的一致上界。
+   高斯模型上都应由确定性包络 `‖G‖ ≤ η⁻¹` 给出（同 `integrable_lkT_pow` 的路子），本单没做。
+
+### 命名检查（手动，单文件编译查不出跨文件重名）
+
+新增的 34 个顶层名逐个全仓 grep，**零冲突**（`TestFunT₁`、`kinkT`、`cMDval`、
+`rpow_inv_le_of_deriv_le*`、`diffIneq_of_deriv_le`、`integral_pow_sub_{one,two}_mul_le`、
+`holder_*`、`memLp_ofReal_of_integrable_rpow`、`momentIneq{,Q}_of_derivBound`、
+`momentIneqQ_of_diffIneq`、`momNorm_eq_rpow` 等）。
+
+## ⭐⭐ T190：`h566` 与 `hsym` **同时卸掉**——T178 的障碍是割点选错（2026-09-21）
+
+`lake build RBM1D` exit=0，审计 10016 条（含 T191）。`ee_le_EEpath_sym` / `ee_le_paper_EEpath_sym` 的假设表里**既无 `h566` 也无 `hsym`**。
+
+**关键不是拆 `k`，是换割点。** (5.23) 的 6-loop 有**两个**黏合标号 `b`、`b'`，T178 只在 `b` 处开环。
+**在 `k=1` 的圈里 `b` 只碰 `a₁` 块、`b'` 只碰 `a₂` 块，`k=0` 反过来——这才是 Figure 14 那个对称的实质。** 于是
+`b` 靠近 `a₁` 时 `k=1` 割 `b`、`k=0` **割 `b'`**；`b` 靠近 `a₂` 时镜像；两者都远时任一割法都行。
+`b`-求和因此是**两个逐点估计（`a₁↔a₂` 互换）+ 一个远场估计**，拼接用 (5.35) 用过的同一个三分 split。
+**T178 说的「`k=0` 项差整整 `A^{1/2}`」是割点选错造成的，换割点后消失**，结果在两个标号上对称、没有任何东西短。
+
+**代价是记账而非缺口**：`hrow` 把论文 "treat `b = b′`" 显式化（paper-deltas #129），损失 `W^{o(1)}` 吸进 `J*`；
+结论里的两个常数 `2` 就是 (5.22) 的两项——**以前其中一项是被假设掉的**。
+`hfarb` 用 (5.67) **之后**的约化形状，因为 `k=0` 的尾函数出场次序与 `k=1` 相反、只有过完 (5.67) 才合流。
+
+**可满足性已编译**：`ee_sym_hyp_consistent` 给出显式见证**同时**满足两条定理的全部假设，
+**并补上了旧 `ee_hyp_consistent` 没覆盖的 `hA`/`hr` 两条**；另有解包后直接喂进两条主定理的非空真探针。
+
+## ⭐ T191：矩 Duhamel 的分析链全部打通，两字段**仍未闭合**（`Gauss/MomentDuhamelTime.lean`，1421 行）
+
+**第 0 步的答案：`TestFunT` 对时间的 `C²` 是过度要求——今天第七次，而且放宽是严格的。**
+逐行读 `hasDerivAt_integral_Psi` 后发现联合 `contDiffAt` **只被用了两处**（`hasDerivAt_Psi_Hflow` 要**联合可微**一阶、
+`continuous_timeD1` 要 `∂₁Ψ` 对 `M` 连续），其余全是矩阵切片的事。
+落地 `TestFunT₁` 与三条恒等式，**结论逐字不变**。
+**后果：`edgeKer`/`Kval` 对 `u` 的二阶依赖不用做了**——现有的一阶已是对的阶，短的是**联合**正则性。
+**严格性是证出来的**：`(u−½)|u−½|` 属于新类且 **`not_testFunT_kinkT` 证明它不属于旧类**。
+
+**漂移 + Hölder 链三块全部落地**：Hölder（⚠ **`p = 1` 必须单独走**，共轭指数 `p/(p−1)` 在那里没定义）；
+除以 `pψ^{p−1}` 的 `ψ = 0` 安全版（在 `φ+ε` 上做 FTC 再令 `ε ↓ 0`，**极限是初等的、不需要控制收敛**；
+**导数只在开区间假设**，对上 `0 < u` 的接缝）；总装 `momentIneq_of_derivBound`，
+并补了 T180 文档里「同样三行」却**从未写出来**的 `momentIneqQ_of_diffIneq`。
+
+**⚠ 一个真陷阱：`cMD p = 2p − 1` 在 `p = 0` 是负的**，而 `Hyp.cMD_nonneg` 对**所有** `p : ℕ` 量化，**字面装不进字段**。
+落地 `cMDval p = max 0 (2p−1)`。**T180 记的「常数定死 `2p−1`」要按这个读。**
+
+**锐度检查（编译过）**：Hölder 在 `Z = Y`、`Q = |Y|²` 处**取等**；`p=1` 时假设取等、结论读作 `v ≤ v`，**`2p−1` 不能再小**。
+
+**唯一的真缺口**：`bddT` 仍要**圈对 `z` 的导数界**——**T187 的判断成立，T141 给的是「`M`-导数界对 `z` 一致」，不是 `z`-导数界**。
+另两块有主：`diffJoint` 只要把 `EGDef.contDiffAt_gloopProd_matrix` 的归纳改成 pair 版（**只要一阶**）；边条件应由 `‖G‖ ≤ η⁻¹` 给出。

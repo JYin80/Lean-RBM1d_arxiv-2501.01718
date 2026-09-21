@@ -1051,7 +1051,7 @@ theorem lemma_5_1 (X : Sample B) {E κ c : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 -
   have ht₁1 : ∀ N, t₁ N < 1 := fun N => (h₁₂ N).trans_lt (h₂ N)
   have hW : ∀ N, (0 : ℝ) < B.W N := fun N => by exact_mod_cast B.W_pos N
   have hℓ : ∀ N, 1 ≤ B.ell N (t₁ N) := fun N =>
-    one_le_ellHat (B.L N) (B.three_le_L N) (ht₁0 N) (ht₁1 N)
+    one_le_ellHat (B.L N) (B.three_le_L N) (ht₁0 N).le (ht₁1 N)
   have hη1 : ∀ N, 0 < etaT E (t₁ N) := fun N => etaT_pos hE2 (ht₁1 N)
   have hη2 : ∀ N, 0 < etaT E (t₂ N) := fun N => etaT_pos hE2 (h₂ N)
   have hmIm : 0 ≤ (mE E).im := (mE_im_pos hE2).le
@@ -1177,9 +1177,9 @@ theorem lemma_5_1' (X : Sample B) {E κ c : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 
   convert h using 3 with N u ω
   have ht₂0 : 0 < t₂ N := (hc.trans_le (h₁ N)).trans_le (h₁₂ N)
   have hℓ1 : 0 < B.ell N (t₁ N) := lt_of_lt_of_le zero_lt_one
-    (one_le_ellHat (B.L N) (B.three_le_L N) (hc.trans_le (h₁ N)) ((h₁₂ N).trans_lt (h₂ N)))
+    (one_le_ellHat (B.L N) (B.three_le_L N) (hc.trans_le (h₁ N)).le ((h₁₂ N).trans_lt (h₂ N)))
   have hℓ2 : 0 < B.ell N (t₂ N) := lt_of_lt_of_le zero_lt_one
-    (one_le_ellHat (B.L N) (B.three_le_L N) ht₂0 (h₂ N))
+    (one_le_ellHat (B.L N) (B.three_le_L N) ht₂0.le (h₂ N))
   have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
   have hη : 0 < etaT E (t₂ N) := etaT_pos hE2 (h₂ N)
   rw [← mul_pow, Band.scale]
@@ -1322,7 +1322,7 @@ theorem lemma_5_1_thr (X : Sample B) {E κ c C₀ : ℝ} (hκ : 0 < κ) (hE : |E
   have ht₁1 : ∀ N, t₁ N < 1 := fun N => (h₁₂ N).trans_lt (h₂ N)
   have hW : ∀ N, (0 : ℝ) < B.W N := fun N => by exact_mod_cast B.W_pos N
   have hℓ : ∀ N, 1 ≤ B.ell N (t₁ N) := fun N =>
-    one_le_ellHat (B.L N) (B.three_le_L N) (ht₁0 N) (ht₁1 N)
+    one_le_ellHat (B.L N) (B.three_le_L N) (ht₁0 N).le (ht₁1 N)
   have hη1 : ∀ N, 0 < etaT E (t₁ N) := fun N => etaT_pos hE2 (ht₁1 N)
   have hη2 : ∀ N, 0 < etaT E (t₂ N) := fun N => etaT_pos hE2 (h₂ N)
   have hmIm : 0 ≤ (mE E).im := (mE_im_pos hE2).le
@@ -1447,9 +1447,9 @@ theorem lemma_5_1'_thr (X : Sample B) {E κ c C₀ : ℝ} (hκ : 0 < κ) (hE : |
   convert h using 3 with N u ω
   have ht₂0 : 0 < t₂ N := (hc.trans_le (h₁ N)).trans_le (h₁₂ N)
   have hℓ1 : 0 < B.ell N (t₁ N) := lt_of_lt_of_le zero_lt_one
-    (one_le_ellHat (B.L N) (B.three_le_L N) (hc.trans_le (h₁ N)) ((h₁₂ N).trans_lt (h₂ N)))
+    (one_le_ellHat (B.L N) (B.three_le_L N) (hc.trans_le (h₁ N)).le ((h₁₂ N).trans_lt (h₂ N)))
   have hℓ2 : 0 < B.ell N (t₂ N) := lt_of_lt_of_le zero_lt_one
-    (one_le_ellHat (B.L N) (B.three_le_L N) ht₂0 (h₂ N))
+    (one_le_ellHat (B.L N) (B.three_le_L N) ht₂0.le (h₂ N))
   have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
   have hη : 0 < etaT E (t₂ N) := etaT_pos hE2 (h₂ N)
   rw [← mul_pow, Band.scale]

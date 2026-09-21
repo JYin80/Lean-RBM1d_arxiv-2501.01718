@@ -1168,7 +1168,7 @@ theorem etaT_mul_ellHat_sq_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht1 : t < 1)
   calc etaT E t * ellHat L (t : ℂ) ^ 2 ≤ (1 - t) * (1 / Real.sqrt (1 - t)) ^ 2 := by gcongr
     _ = 1 := by rw [div_pow, hs]; field_simp
 
-theorem etaT_mul_ellHat_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+theorem etaT_mul_ellHat_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
     etaT E t * ellHat L (t : ℂ) ≤ 1 := by
   have h := etaT_mul_ellHat_sq_le (L := L) hE ht1
   have hℓ1 : 1 ≤ ellHat L (t : ℂ) := one_le_ellHat L hL ht0 ht1
@@ -1221,8 +1221,8 @@ theorem norm_Kpi_empty_alt_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |
   set η := etaT E t with hηdef
   set ℓ := ellHat L (t : ℂ) with hℓdef
   have hη : 0 < η := etaT_pos hE ht1
-  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
-  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0.le ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0.le ht1
   have hηℓ2 : η * ℓ ^ 2 ≤ 1 := etaT_mul_ellHat_sq_le hE2 ht1
   have hηℓ0 : 0 < η * ℓ := by positivity
   set A := e8 * (η * ℓ)⁻¹ with hAdef
@@ -1405,8 +1405,8 @@ theorem norm_Kpi_empty_short_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk :
   set η := etaT E t with hηdef
   set ℓ := ellHat L (t : ℂ) with hℓdef
   have hη : 0 < η := etaT_pos hE ht1
-  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
-  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0.le ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0.le ht1
   have hηℓ0 : 0 < η * ℓ := by positivity
   set A := e8 * (η * ℓ)⁻¹ with hAdef
   have hA1 : 1 ≤ A := by
@@ -1491,7 +1491,7 @@ theorem norm_Kpi_empty_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| �
   have hE : |E| < 2 := by linarith
   have hX : 0 ≤ (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (n - 1) := by
     have := etaT_pos hE ht1
-    have := one_le_ellHat L hL ht0 ht1
+    have := one_le_ellHat L hL ht0.le ht1
     positivity
   by_cases halt : ∀ v, σ v ≠ σ (v + 1)
   · exact (h₁ L hL t ht0 ht1 σ halt a).trans (by nlinarith)
@@ -1772,8 +1772,8 @@ theorem sum_norm_innerId_alt_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk :
   set η := etaT E t with hηdef
   set ℓ := ellHat L (t : ℂ) with hℓdef
   have hη : 0 < η := etaT_pos hE ht1
-  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
-  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0.le ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0.le ht1
   have hηℓ2 : η * ℓ ^ 2 ≤ 1 := etaT_mul_ellHat_sq_le hE2 ht1
   have hηℓ0 : 0 < η * ℓ := by positivity
   set A := e8 * (η * ℓ)⁻¹ with hAdef
@@ -2065,8 +2065,8 @@ theorem sum_norm_innerId_short_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk
   set η := etaT E t with hηdef
   set ℓ := ellHat L (t : ℂ) with hℓdef
   have hη : 0 < η := etaT_pos hE ht1
-  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0 ht1
-  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0 ht1
+  have hℓ1 : 1 ≤ ℓ := one_le_ellHat L hL ht0.le ht1
+  have hηℓ : η * ℓ ≤ 1 := etaT_mul_ellHat_le hL hE2 ht0.le ht1
   have hηℓ0 : 0 < η * ℓ := by positivity
   set A := e8 * (η * ℓ)⁻¹ with hAdef
   have hA1 : 1 ≤ A := by
@@ -2154,7 +2154,7 @@ theorem sum_norm_innerId_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E|
   have hE : |E| < 2 := by linarith
   have hX : 0 ≤ (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2) := by
     have := etaT_pos hE ht1
-    have := one_le_ellHat L hL ht0 ht1
+    have := one_le_ellHat L hL ht0.le ht1
     positivity
   by_cases halt : ∀ v, σ' v ≠ σ' (v + 1)
   · exact (h₁ L hL t ht0 ht1 σ' halt a' p).trans (by nlinarith)
@@ -2363,7 +2363,7 @@ theorem norm_Kpi_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 -
     (fun N C C' hP hCC' => fun L _ hL t ht0 ht1 σ' p hp a' => by
       have hb := hP L hL t ht0 ht1 σ' p hp a'
       have : 0 ≤ (etaT E t * ellHat L (t : ℂ))⁻¹ ^ (N - 2) := by
-        have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0 ht1; positivity
+        have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0.le ht1; positivity
       exact hb.trans (by nlinarith))
     (fun N hN => by
       have : NeZero N := ⟨by omega⟩
@@ -2381,7 +2381,7 @@ theorem norm_Kpi_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 -
   refine ⟨C + Ce + Cin * C, by positivity, fun n _ hn hnN L _ hL t ht0 ht1 σ a π => ?_⟩
   set X := (etaT E t * ellHat L (t : ℂ))⁻¹ with hXdef
   have hX0 : 0 ≤ X := by
-    have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0 ht1; positivity
+    have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0.le ht1; positivity
   have hXn : 0 ≤ X ^ (n - 1) := pow_nonneg hX0 _
   rcases Nat.lt_or_ge n (N + 1) with hlt | hge
   · refine (hC n hn (by omega) L hL t ht0 ht1 σ a π).trans ?_
@@ -2475,7 +2475,7 @@ theorem norm_Kgen_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 
     ⟨ht0.le, le_rfl⟩ I hI h3
   set X := (etaT E t * ellHat L (t : ℂ))⁻¹
   have hX0 : 0 ≤ X := by
-    have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0 ht1; positivity
+    have := etaT_pos hE ht1; have := one_le_ellHat L hL ht0.le ht1; positivity
   have hW1 : (1 : ℝ) ≤ W := by exact_mod_cast Nat.one_le_iff_ne_zero.2 (NeZero.ne W)
   have hprod : ‖(I.σ.map (mSigma E)).prod‖ = 1 := by
     induction I.σ with

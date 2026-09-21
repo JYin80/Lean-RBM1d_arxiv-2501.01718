@@ -145,7 +145,7 @@ noncomputable def flowDelta (d : Dims) (E : ℝ) (t : ℕ → ℝ) (N : ℕ) : �
   ((band d).scale E N (t N))⁻¹ ^ ((1 : ℝ) / 6)
 
 /-- The `u`-threshold of `RBM.Step1.goodEv` is at most `δ_N`, for `u ∈ [s_N, t_N]`. -/
-theorem scale_rpow_le_flowDelta (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem scale_rpow_le_flowDelta (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     (N : ℕ) (u : RBM.TimeIcc s t N) :
     ((band d).scale E N (u : ℝ))⁻¹ ^ ((1 : ℝ) / 6) ≤ flowDelta d E t N := by
   have hW : (0 : ℝ) ≤ ((band d).W N : ℝ) := Nat.cast_nonneg _
@@ -153,8 +153,8 @@ theorem scale_rpow_le_flowDelta (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀
   have hanti : (band d).scale E N (t N) ≤ (band d).scale E N (u : ℝ) :=
     flowScale_antitoneOn hW ((band d).L N) E (Set.mem_Iic.2 hu1.le)
       (Set.mem_Iic.2 (ht1 N).le) u.2.2
-  have ht0 : 0 < t N := (hs0 N).trans_le (u.2.1.trans u.2.2)
-  have htpos : 0 < (band d).scale E N (t N) := (band d).scale_pos hE N ht0 (ht1 N)
+  have ht0 : (0 : ℝ) ≤ t N := (hs0 N).trans (u.2.1.trans u.2.2)
+  have htpos : 0 < (band d).scale E N (t N) := (band d).scale_pos' hE N ht0 (ht1 N)
   have hupos : 0 < (band d).scale E N (u : ℝ) := htpos.trans_le hanti
   have hinv : ((band d).scale E N (u : ℝ))⁻¹ ≤ ((band d).scale E N (t N))⁻¹ := by
     have h := one_div_le_one_div_of_le htpos hanti
@@ -164,7 +164,7 @@ theorem scale_rpow_le_flowDelta (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀
 /-- **The good event of `RBM.Step1.Lemma41Flow` sits inside the good event of (4.1) at the
 uniform threshold `δ_N`.**  Both are `{‖G_u − m‖_max ≤ ·}`; only the threshold differs, and
 `RBM.flowScale` is antitone in the time. -/
-theorem goodEv_subset_goodSet_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem goodEv_subset_goodSet_flow (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     (N : ℕ) (u : RBM.TimeIcc s t N) :
     Step1.goodEv (sample d) E N (u : ℝ) ⊆
       goodSet (L := d.L) (W := d.W) (fun N ω => Hflow d N (u : ℝ) ω) (zt E (u : ℝ)) (mE E)
@@ -313,7 +313,7 @@ theorem stochDom_indicator_entryControl_flow (hΦ0 : ∀ N u, 0 ≤ Φ N u)
 
 /-- **The diagonal half of Lemma 4.1 along the flow**: `1_{Ω_u}|G_u,ii − m|² ≺ Φ(N,u) + W⁻¹`,
 uniformly in `u ∈ [s_N, t_N]` and `i`. -/
-theorem stochDom_indicator_diag_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem stochDom_indicator_diag_flow (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     (hDiag : DiagBoundFlow d E s t) (hΦ0 : ∀ N u, 0 ≤ Φ N u) (hΦ : LoopHypFlow d E s t Φ) :
     StochDom (P d)
       (fun N (p : RBM.TimeIcc s t N × BIdx d.L d.W N) ω =>
@@ -344,7 +344,7 @@ theorem stochDom_indicator_diag_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 
 
 /-- **The off-diagonal half of Lemma 4.1 along the flow**: `1_{Ω_u}|G_u,ij|² ≺ Φ(N,u) + W⁻¹`,
 uniformly in `u ∈ [s_N, t_N]` and `i ≠ j`. -/
-theorem stochDom_indicator_offdiag_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem stochDom_indicator_offdiag_flow (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) (hEntry : EntryBoundFlow d E s t) (hΦ0 : ∀ N u, 0 ≤ Φ N u)
     (hΦ : LoopHypFlow d E s t Φ) :
     StochDom (P d)
@@ -370,7 +370,7 @@ theorem stochDom_indicator_offdiag_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
 
 /-- **Lemma 4.1 along the flow, in the language of `RBM.Step1.Lemma41Flow`**:
 `1_{Ω_u} ‖G_u − m‖²_max ≺ Φ(N,u) + W⁻¹`, uniformly in `u ∈ [s_N, t_N]`. -/
-theorem stochDom_indicator_llMax_sq_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem stochDom_indicator_llMax_sq_flow (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) (hEntry : EntryBoundFlow d E s t) (hDiag : DiagBoundFlow d E s t)
     (hΦ0 : ∀ N u, 0 ≤ Φ N u) (hΦ : LoopHypFlow d E s t Φ) :
     StochDom (P d)
@@ -435,7 +435,7 @@ The two hypotheses are the time-indexed forms of (4.2) and (4.3), the deliverabl
 No slow-variation assumption on `Φ` and no time net are needed: `Lemma41Flow` is a transfer
 between two dominations that are *both* already uniform in the time, and every step of the
 transfer is an argument about the failure event at a single `N` and a single `ω`. -/
-theorem lemma41Flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem lemma41Flow (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     (hEntry : EntryBoundFlow d E s t) (hDiag : DiagBoundFlow d E s t) :
     Step1.Lemma41Flow (sample d) E s t := by
   intro Φ hΦ0 hloop

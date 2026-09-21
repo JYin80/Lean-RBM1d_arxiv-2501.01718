@@ -237,19 +237,19 @@ This is the paper's "with the bound (2.73) for `L` and (3.46) for `K`, `S(m,l,s,
 `l = 0` and any `m ≥ 1`" (p. 70).  (2.73) is `RBM.Steps.apriori`; (3.46)/(2.59) is the proved
 `RBM.Band.norm_Kval_le` (via `RBM.Step3.exists_norm_Kval_le`).  Note that (2.73) is a bound on
 `max_{σ,a}`, so **all** charges `σ ∈ {+,-}^m` are covered. -/
-theorem flow_S_zero (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
-    (hSteps : Steps X E s t) (m : ℕ) (hm : 1 ≤ m) :
+theorem flow_S_zero' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hapriori : AprioriFlow X E s t) (m : ℕ) (hm : 1 ≤ m) :
     Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
       (Step3.flowA B E s t) m 0 := by
   have hE : |E| < 2 := by linarith
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
   have sc := Step3.scales_flow (E := E) (s := s) (t := t) hE hs0 hst ht1 hc
   obtain ⟨C, hC0, hC⟩ := Step3.exists_norm_Kval_le (B := B) hκ0 hκ1 hEκ hs0 ht1 hm
   set R : ℕ → ℝ := Step3.flowR B s t with hRdef
   -- (2.73): the a priori loop bound
-  have hL := hSteps.apriori m hm
+  have hL := hapriori m hm
   -- (2.59): the deterministic bound on `K`
   have hKle : StochDom B.P
       (fun N (p : TimeIcc s t N × LoopData (B.L N) m) (_ : Ω) => ‖B.Kval E N p.1 p.2.idx‖)
@@ -318,11 +318,11 @@ theorem flow_S_zero (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) 
 
 /-- **The `1`-loop `L - K` is `≺ (W ℓ_u η_u)^{-1/2}`**, uniformly in `u ∈ [s,t]` and in the
 charge, directly from (2.75) (`RBM.Steps.localLaw`). -/
-theorem flow_lkErr_one_le (X : Sample B) (hSteps : Steps X E s t) :
+theorem flow_lkErr_one_le' (X : Sample B) (hll : LocalLawFlow X E s t) :
     StochDom B.P
       (fun N (p : TimeIcc s t N × LoopData (B.L N) 1) ω => X.lkErr E N p.1 ω p.2.idx)
       (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) := by
-  refine StochDom.of_subset_union hSteps.localLaw hSteps.localLaw
+  refine StochDom.of_subset_union hll hll
     fun τ hτ => ⟨τ, hτ, Eventually.of_forall fun N => ?_⟩
   rintro ω ⟨p, hp⟩
   by_cases h' : ∃ q : TimeIcc s t N × (B.Idx N × B.Idx N),
@@ -337,15 +337,15 @@ theorem flow_lkErr_one_le (X : Sample B) (hSteps : Steps X E s t) :
 /-- **`S(1,l)` for every `l`**: `Ξ^{(L-K)}_{u,1} ≺ (W ℓ_u η_u)^{1/2} ≤ (W ℓ_s η_s)^{1/2}`, from
 (2.75).  This is the `m = 1` half of the paper's "by (2.76), `S(m,l)` holds for any `l` and
 `m ≤ 2`" (p. 70) — for `m = 1` the local law (2.75) alone suffices. -/
-theorem flow_S_one (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
-    (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) (hSteps : Steps X E s t) (l : ℕ) :
+theorem flow_S_one' (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) (hll : LocalLawFlow X E s t) (l : ℕ) :
     Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
       (Step3.flowA B E s t) 1 l := by
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
   have sc := Step3.scales_flow (E := E) (s := s) (t := t) hE hs0 hst ht1 hc
   have hXi := stochDom_flowXiLK X (f := fun N (u : TimeIcc s t N) =>
-    (B.scale E N u)⁻¹ ^ ((1 : ℝ) / 2)) (fun N u => (hA N u).le) (flow_lkErr_one_le X hSteps)
+    (B.scale E N u)⁻¹ ^ ((1 : ℝ) / 2)) (fun N u => (hA N u).le) (flow_lkErr_one_le' X hll)
   refine Step3.stochDom_mono (fun N u _ => Step3.psi_nonneg (sc.As_pos N).le (sc.R_nonneg N)
     (sc.A_pos N u).le) 1 ?_ hXi
   filter_upwards [sc.A_le_As] with N hle u _
@@ -405,13 +405,14 @@ def Eq45Flow (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
 
 /-- **The `(+,-)` part of `AprioriDecayAll` is free**: it is (2.76) with the decay profile
 `exp(-(|a₁-a₂|/ℓ_u)^{1/2}) + W^{-D} ≤ 2` dropped. -/
-theorem aprioriDecay_pm (X : Sample B) (ht1 : ∀ N, t N < 1) (hSteps : Steps X E s t) :
+theorem aprioriDecay_pm' (X : Sample B) (ht1 : ∀ N, t N < 1)
+    (hdecay : AprioriDecayFlow X E s t) :
     StochDom B.P
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
       (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2) := by
   refine Step3.stochDom_mono (fun N p _ => by positivity) 2
-    (Eventually.of_forall fun N p _ => ?_) (hSteps.aprioriDecay 1 one_pos)
+    (Eventually.of_forall fun N p _ => ?_) (hdecay 1 one_pos)
   have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
   have hW1 : (1 : ℝ) ≤ B.W N := by exact_mod_cast B.W_pos N
   have hℓ : 0 < B.ell N p.1 := Step3.ellHat_pos_of_lt_one (B.one_le_L N) hu1
@@ -431,12 +432,12 @@ theorem aprioriDecay_pm (X : Sample B) (ht1 : ∀ N, t N < 1) (hSteps : Steps X 
 /-! ### `S(2,l)` and Step 4's base cases -/
 
 /-- `Ξ^{(L-K)}_{u,2} ≺ (η_s/η_u)⁴` from (2.76) for all charges. -/
-theorem flow_xiLK_two_le (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem flow_xiLK_two_le (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) (h276 : AprioriDecayAll X E s t) :
     StochDom B.P (Step3.flowXiLK X E s t 2)
       (fun N (u : TimeIcc s t N) _ => (etaT E (s N) / etaT E u) ^ 4) := by
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
   have hXi := stochDom_flowXiLK X (f := fun N (u : TimeIcc s t N) =>
     (etaT E (s N) / etaT E u) ^ 4 * (B.scale E N u)⁻¹ ^ 2) (fun N u => (hA N u).le) h276
   refine Step3.stochDom_mono (fun N u _ => by positivity) 1
@@ -447,14 +448,14 @@ theorem flow_xiLK_two_le (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
 /-- **Step 4's base case `hs2`**: `Ξ^{(L-K)}_{u,2} ≺ (W ℓ_u η_u)^{1/4}` (p. 72, "by (2.76) …
 and the condition (2.72)"), in exactly the shape of the hypothesis `h2` of
 `RBM.Step45.flow_steps45`. -/
-theorem flow_hs2 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem flow_hs2 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
     (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N)) (h276 : AprioriDecayAll X E s t) :
     StochDom B.P (Step3.flowXiLK X E s t 2)
       fun N u _ => Step3.flowA B E s t N u ^ ((1 : ℝ) / 4) := by
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
   refine Step3.stochDom_mono (fun N u _ => Real.rpow_nonneg (hA N u).le _) 1 ?_
     (flow_xiLK_two_le X hE hs0 ht1 h276)
   filter_upwards [eventually_R4_le_rpow_quarter hE hst ht1 hc0 hregS] with N hN u _
@@ -463,14 +464,14 @@ theorem flow_hs2 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀
 
 /-- **`S(2,l)` for every `l`** from (2.76) for all charges and (2.72) with a gain:
 `Ξ^{(L-K)}_{u,2} ≺ (η_s/η_u)⁴ ≤ (W ℓ_u η_u)^{1/4} ≤ (W ℓ_s η_s)^{1/2} ≤ Ψ(2,l)`. -/
-theorem flow_S_two (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem flow_S_two (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hcond : Cond272 B E s t) {c : ℝ} (hc0 : 0 < c)
     (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N)) (h276 : AprioriDecayAll X E s t) (l : ℕ) :
     Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
       (Step3.flowA B E s t) 2 l := by
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
   have sc := Step3.scales_flow (E := E) (s := s) (t := t) hE hs0 hst ht1 hcond
   refine Step3.stochDom_mono (fun N u _ => Step3.psi_nonneg (sc.As_pos N).le (sc.R_nonneg N)
     (sc.A_pos N u).le) 1 ?_ (flow_xiLK_two_le X hE hs0 ht1 h276)
@@ -487,28 +488,28 @@ theorem flow_S_two (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : �
 
 /-- **`h12`**: `S(m,l)` for every `l` and `m ≤ 2`, in exactly the shape of the hypothesis `h12`
 of `RBM.Step3.flow_sharpLoop` and `RBM.Step45.flow_steps45`. -/
-theorem flow_S_le_two (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem flow_S_le_two' (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hcond : Cond272 B E s t) {c : ℝ} (hc0 : 0 < c)
     (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
-      B.scale E N (t N)) (hSteps : Steps X E s t) (h276 : AprioriDecayAll X E s t)
+      B.scale E N (t N)) (hll : LocalLawFlow X E s t) (h276 : AprioriDecayAll X E s t)
     (m l : ℕ) (hm1 : 1 ≤ m) (hm2 : m ≤ 2) :
     Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
       (Step3.flowA B E s t) m l := by
   interval_cases m
-  · exact flow_S_one X hE hs0 hst ht1 hcond hSteps l
+  · exact flow_S_one' X hE hs0 hst ht1 hcond hll l
   · exact flow_S_two X hE hs0 hst ht1 hcond hc0 hregS h276 l
 
 /-- **Step 4's base case `hs1`**: `Ξ^{(L-K)}_{u,1} ≺ 1` (p. 72, "by (2.76) and (4.5) for
 `(L-K)`-loops of length 1 and 2"), in exactly the shape of the hypothesis `h1` of
 `RBM.Step45.flow_steps45`.  Inputs: (4.5) along the flow and (2.77) at `n = 2` (Step 3). -/
-theorem flow_hs1 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem flow_hs1 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     (h45 : Eq45Flow X E s t)
     (h277 : StochDom B.P
       (fun N (p : TimeIcc s t N × LoopData (B.L N) 2) ω => ‖X.Lval E N p.1 ω p.2.idx‖)
       (fun N p _ => (B.scale E N p.1)⁻¹ ^ (2 - 1))) :
     StochDom B.P (Step3.flowXiLK X E s t 1) fun _ _ _ => 1 := by
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
   have hpm : StochDom B.P
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         ‖X.Lval E N p.1 ω (pmLoop p.2.1 p.2.2)‖)
@@ -529,12 +530,14 @@ theorem flow_hs1 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀
 /-- **(2.77) with `h0` and `h12` discharged**, in exactly the shape of the field
 `RBM.Steps.sharpLoop`.  Remaining inputs: the fields of `RBM.Steps` produced by Steps 1–2,
 `hregS` (2.72 with a gain), Lemma 5.14 (5.92) for `n ≥ 3`, and `AprioriDecayAll`. -/
-theorem flow_sharpLoop_glue (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+theorem flow_sharpLoop_glue' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c)
     (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
-    (hSteps : Steps X E s t) (h276 : AprioriDecayAll X E s t)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (h276 : AprioriDecayAll X E s t)
     (h514 : ∀ n, 3 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) n)
     {n : ℕ} (hn : 1 ≤ n) :
@@ -544,19 +547,21 @@ theorem flow_sharpLoop_glue (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ
   have hE : |E| < 2 := by linarith
   have hcond : Cond272 B E s t := Step2.cond272_of_strict hE hst ht1 hc0 hregS
   exact Step3.flow_sharpLoop X hκ0 hκ1 hEκ hs0 hst ht1 hcond h514
-    (flow_S_zero X hκ0 hκ1 hEκ hs0 hst ht1 hcond hSteps)
-    (flow_S_le_two X hE hs0 hst ht1 hcond hc0 hregS hSteps h276) hn
+    (flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
+    (flow_S_le_two' X hE hs0 hst ht1 hcond hc0 hregS hll h276) hn
 
 /-- **(2.78) and (2.79) with `h0`, `h12`, `h1`, `h2` discharged**, in exactly the shapes of the
 fields `RBM.Steps.sharpLmK` and `RBM.Steps.sharpDecay`.  Remaining inputs: the fields of
 `RBM.Steps` produced by Steps 1–2, `hregS`, Lemma 5.14 (5.92) for `n ≥ 2`, `AprioriDecayAll`,
 `Eq45Flow` and (5.48). -/
-theorem flow_steps45_glue (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+theorem flow_steps45_glue' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c)
     (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
-    (hSteps : Steps X E s t) (h276 : AprioriDecayAll X E s t) (h45 : Eq45Flow X E s t)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hsharp : SharpLoopFlow X E s t) (h276 : AprioriDecayAll X E s t) (h45 : Eq45Flow X E s t)
     (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) n)
     (h548 : Step45.FlowEq548 X E s t) :
@@ -570,11 +575,86 @@ theorem flow_steps45_glue (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ �
   have hE : |E| < 2 := by linarith
   have hcond : Cond272 B E s t := Step2.cond272_of_strict hE hst ht1 hc0 hregS
   exact Step45.flow_steps45 X hκ0 hκ1 hEκ hs0 hst ht1 hcond h514
-    (flow_S_zero X hκ0 hκ1 hEκ hs0 hst ht1 hcond hSteps)
-    (flow_S_le_two X hE hs0 hst ht1 hcond hc0 hregS hSteps h276)
-    (flow_hs1 X hE hs0 ht1 h45 (hSteps.sharpLoop 2 (by norm_num)))
+    (flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
+    (flow_S_le_two' X hE hs0 hst ht1 hcond hc0 hregS hll h276)
+    (flow_hs1 X hE hs0 ht1 h45 (hsharp 2 (by norm_num)))
     (flow_hs2 X hE hs0 hst ht1 hc0 hregS h276) h548
 
+
+/-! ### The bundle-shaped corollaries (kept for compatibility)
+
+Each is the primed statement with the individual hypotheses replaced by the projections of a
+`RBM.Steps`.  They are one-liners, so the two forms cannot drift apart; **they must not be used
+to produce a field of `RBM.Steps`** (that is the circularity of T147 §0a). -/
+
+theorem flow_S_zero (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hSteps : Steps X E s t) (m : ℕ) (hm : 1 ≤ m) :
+    Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
+      (Step3.flowA B E s t) m 0 :=
+  flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hc hSteps.apriori m hm
+
+theorem flow_lkErr_one_le (X : Sample B) (hSteps : Steps X E s t) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) 1) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) :=
+  flow_lkErr_one_le' X hSteps.localLaw
+
+theorem flow_S_one (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) (hSteps : Steps X E s t) (l : ℕ) :
+    Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
+      (Step3.flowA B E s t) 1 l :=
+  flow_S_one' X hE hs0 hst ht1 hc hSteps.localLaw l
+
+theorem aprioriDecay_pm (X : Sample B) (ht1 : ∀ N, t N < 1) (hSteps : Steps X E s t) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2) :=
+  aprioriDecay_pm' X ht1 hSteps.aprioriDecay
+
+theorem flow_S_le_two (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hcond : Cond272 B E s t) {c : ℝ} (hc0 : 0 < c)
+    (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N)) (hSteps : Steps X E s t) (h276 : AprioriDecayAll X E s t)
+    (m l : ℕ) (hm1 : 1 ≤ m) (hm2 : m ≤ 2) :
+    Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s) (Step3.flowR B s t)
+      (Step3.flowA B E s t) m l :=
+  flow_S_le_two' X hE hs0 hst ht1 hcond hc0 hregS hSteps.localLaw h276 m l hm1 hm2
+
+theorem flow_sharpLoop_glue (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c)
+    (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (hSteps : Steps X E s t) (h276 : AprioriDecayAll X E s t)
+    (h514 : ∀ n, 3 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    {n : ℕ} (hn : 1 ≤ n) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => ‖X.Lval E N p.1 ω p.2.idx‖)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ (n - 1)) :=
+  flow_sharpLoop_glue' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hSteps.apriori hSteps.localLaw h276
+    h514 hn
+
+theorem flow_steps45_glue (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c)
+    (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (hSteps : Steps X E s t) (h276 : AprioriDecayAll X E s t) (h45 : Eq45Flow X E s t)
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h548 : Step45.FlowEq548 X E s t) :
+    (∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) ∧
+    (∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) :=
+  flow_steps45_glue' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hSteps.apriori hSteps.localLaw
+    hSteps.sharpLoop h276 h45 h514 h548
 
 end StepGlue
 

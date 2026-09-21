@@ -1096,7 +1096,7 @@ theorem natCast_rpow_pow (N : ℕ) (a : ℝ) (k : ℕ) :
 
 /-- **The scale facts used by one step**, eventually in `N`, uniformly in `v ∈ [s, t]`, with
 `x = N^{δ/8}`: the hypotheses of `phi_arith`, `e ≤ W`, `Ξ ≤ x`, `C < x⁶`, and `W ℓ_s η_s ≥ 1`. -/
-theorem eventually_step_facts (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem eventually_step_facts (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
@@ -1151,7 +1151,7 @@ theorem eventually_step_facts (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N
     have h3 : 0 ≤ (N : ℝ) ^ (δ / 16) := Real.rpow_nonneg hN0.le _
     nlinarith
   · intro v
-    have hv0 : 0 < (v : ℝ) := (hs0 N).trans_le v.2.1
+    have hv0 : (0 : ℝ) ≤ (v : ℝ) := (hs0 N).trans v.2.1
     have hv1 : (v : ℝ) < 1 := v.2.2.trans_lt (ht1 N)
     have hs1 : s N < 1 := (hst N).trans_lt (ht1 N)
     have h1v : 0 < 1 - (v : ℝ) := by linarith
@@ -1178,7 +1178,7 @@ theorem eventually_step_facts (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N
       calc x ^ 192 * R ^ 30 ≤ (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 := by
             gcongr
         _ ≤ _ := hreg'.trans hAv
-    have hApos : 0 < B.scale E N v := B.scale_pos hE N hv0 hv1
+    have hApos : 0 < B.scale E N v := B.scale_pos' hE N hv0 hv1
     have hR0 : 0 ≤ R := by linarith
     have hx0 : 0 ≤ x := by linarith
     refine ⟨?_, ?_, ?_⟩
@@ -1324,7 +1324,7 @@ theorem jS_highProb (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
   have G2 := (Hy.eG D hD0).highProb hτ
   have G3 := (Hy.mart δ hδ0 hδ₀ D hD0).highProb hτ
   refine (((G1.inter G2).inter G3).inter Hy.cont).mono ?_
-  filter_upwards [eventually_step_facts hE hs0 hst ht1 hc0 hreg hδ0 hδ1 hδc hD] with N hF
+  filter_upwards [eventually_step_facts hE (fun N => (hs0 N).le) hst ht1 hc0 hreg hδ0 hδ1 hδc hD] with N hF
   rintro ω ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
   obtain ⟨hWe, hx1, hCx, hΞ, hAs, hvF⟩ := hF
   simp only [Set.mem_ofPred_eq] at h1 h2 h3 h4 ⊢
@@ -1434,7 +1434,7 @@ theorem jS_stochDom (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
     linarith
   have hδ1 : δ ≤ 1 := (min_le_right _ _).trans (min_le_right _ _)
   refine ⟨_, jS_highProb X Hy hE hs0 hst ht1 hB hc0 hreg hδ0 hδ1 hδc hδ₀ hD, ?_⟩
-  filter_upwards [eventually_step_facts (B := B) hE hs0 hst ht1 hc0 hreg hδ0 hδ1 hδc hD,
+  filter_upwards [eventually_step_facts (B := B) hE (fun N => (hs0 N).le) hst ht1 hc0 hreg hδ0 hδ1 hδc hD,
     eventually_ge_atTop 1] with N hF hN1 ω hω u
   obtain ⟨-, hx1, hCx, -⟩ := hF
   have hN : (1 : ℝ) ≤ N := by exact_mod_cast hN1
@@ -1518,7 +1518,8 @@ theorem aprioriDecay (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
     have hA := B.scale_nonneg E N (p.1.2.2.trans (ht1 N).le)
     have : 0 ≤ B.decayProf N p.1 D₀ p.2.1 p.2.2 := by unfold Band.decayProf; positivity
     positivity
-  · filter_upwards [SumZeroDyn.flow_crude hE hs0 hst ht1 h272, eventually_le_W_sq B] with
+  · filter_upwards [SumZeroDyn.flow_crude hE (fun N => (hs0 N).le) hst ht1 h272,
+      eventually_le_W_sq B] with
       N hcr hW2 p ω
     obtain ⟨-, -, -, hsc⟩ := hcr
     rw [one_mul, mul_assoc]
@@ -1620,7 +1621,7 @@ Proof (p. 63): (2.76) and the `K` bound (2.59) give (5.73)
 Step 1) turns this into `‖G_u - m‖²_max ≺ (W ℓ_u η_u)^{-1}` on the event
 `{‖G_u - m‖_max ≤ (W ℓ_u η_u)^{-1/6}}`, which holds w.h.p. by the weak law (2.74). -/
 theorem localLaw {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
     (h276 : ∀ D : ℝ, 0 < D → StochDom B.P
@@ -1636,10 +1637,10 @@ theorem localLaw {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 
       (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
       (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) := by
   have hE : |E| < 2 := by linarith
-  have hu0 : ∀ N (u : TimeIcc s t N), 0 < (u : ℝ) := fun N u => (hs0 N).trans_le u.2.1
+  have hu0 : ∀ N (u : TimeIcc s t N), (0 : ℝ) ≤ (u : ℝ) := fun N u => (hs0 N).trans u.2.1
   have hu1 : ∀ N (u : TimeIcc s t N), (u : ℝ) < 1 := fun N u => u.2.2.trans_lt (ht1 N)
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N (hu0 N u) (hu1 N u)
+    B.scale_pos' hE N (hu0 N u) (hu1 N u)
   have hAi : ∀ N (u : TimeIcc s t N), 0 ≤ (B.scale E N u)⁻¹ := fun N u => (inv_pos.2 (hA N u)).le
   have hfacts := eventually_R4_le_scale (B := B) hE hst ht1 hc0 hreg
   -- (5.73): `|L_{u,(+,-)}| ≺ (W ℓ_u η_u)^{-1}`
@@ -1849,7 +1850,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ �
 /-- **Lemma 5.6, (5.30)**: for fixed `δ, D > 0`, eventually in `N`, for all `u ∈ [s, t]` and
 `‖x - y‖ ≥ δ ℓ*_u`: `|(Θ_u)_{xy}| ≤ W^{-D}` and `|(Θ_s^{-1} Θ_u)_{xy}| ≤ W^{-D}`, where
 `Θ_s^{-1} Θ_u = (1 - s S^{(B)}) Θ_u`. -/
-theorem eq530 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+theorem eq530 (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     (hc : Cond272 B E s t) {δ D : ℝ} (hδ : 0 < δ) :
     ∀ᶠ N : ℕ in atTop, ∀ (u : TimeIcc s t N) (x y : ZMod (B.L N)),
       δ * ellStar (B.W N) (B.ell N u) ≤ zdist (B.L N) (x - y) →
@@ -1871,7 +1872,7 @@ theorem eq530 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (
   have hW0 : (0 : ℝ) < B.W N := by linarith
   have hW1 : (1 : ℝ) ≤ B.W N := by linarith
   have hL3 := B.three_le_L N
-  have hu0 : 0 ≤ (u : ℝ) := ((hs0 N).trans_le u.2.1).le
+  have hu0 : 0 ≤ (u : ℝ) := ((hs0 N).trans u.2.1)
   have hu1 : (u : ℝ) < 1 := u.2.2.trans_lt (ht1 N)
   have hℓ1 : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg (B.one_le_L N) hu0 hu1
   have h1u : 0 < 1 - (u : ℝ) := by linarith
@@ -1922,7 +1923,7 @@ theorem eq530 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (
     nlinarith
   refine ⟨(hfar x (by linarith)).trans hWD, ?_⟩
   have hs1 : s N ≤ 1 := ((hst N).trans_lt (ht1 N)).le
-  have h2 := norm_oneSub_mul_Theta_le (B.L N) hL3 (hs0 N).le hs1 (t := u) (x := x) (y := y)
+  have h2 := norm_oneSub_mul_Theta_le (B.L N) hL3 (hs0 N) hs1 (t := u) (x := x) (y := y)
     (M := (B.W N : ℝ) ^ (-(D + 1))) fun z hz => hfar z (by linarith)
   refine h2.trans ?_
   have : 2 * (B.W N : ℝ) ^ (-(D + 1)) = 2 * (B.W N : ℝ)⁻¹ * (B.W N : ℝ) ^ (-D) := by
@@ -1951,7 +1952,7 @@ theorem Kval_mp (hE : |E| ≤ 2) (N : ℕ) (u : ℝ) (a b : ZMod (B.L N)) :
 /-- **Lemma 5.6, (5.31)**: for fixed `δ, D > 0`, eventually in `N`, for every `ω`,
 `u ∈ [s, t]` and `‖a - b‖ ≥ δ ℓ*_u`:
 `|L_{u,(-,+),(a,b)}| ≤ J*_{u,D} T_{u,D}(‖a - b‖)` (deterministically, the paper's `≺`). -/
-theorem eq531 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem eq531 (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) {δ : ℝ} (hδ : 0 < δ) (D : ℝ) :
     ∀ᶠ N : ℕ in atTop, ∀ (ω : Ω) (u : TimeIcc s t N) (a b : ZMod (B.L N)),
       δ * ellStar (B.W N) (B.ell N u) ≤ zdist (B.L N) (a - b) →
@@ -1960,7 +1961,7 @@ theorem eq531 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
   filter_upwards [eq530 (B := B) hE hs0 hst ht1 hc (D := D) hδ] with N h530
   intro ω u a b hab
   have hΘ := (h530 u a b hab).1
-  have hu0 : 0 ≤ (u : ℝ) := ((hs0 N).trans_le u.2.1).le
+  have hu0 : 0 ≤ (u : ℝ) := ((hs0 N).trans u.2.1)
   have hu1 : (u : ℝ) < 1 := u.2.2.trans_lt (ht1 N)
   have hW0 : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
   have hW1 : (1 : ℝ) ≤ B.W N := by exact_mod_cast B.W_pos N
@@ -2031,8 +2032,9 @@ theorem step2 {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - �
   have hreg' : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N) := by
     filter_upwards [eventually_R4_le_scale (B := B) hE hst ht1 hc0 hreg] with N hN
     exact (hN ⟨t N, hst N, le_rfl⟩).2
-  have h274 := Step1.weakLaw X hκ0 hEκ hB hs0 hst ht1 hc272 hc0 hreg' h1
-  exact ⟨localLaw X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg h276 h274 h1.lemma41, h276⟩
+  have h274 := Step1.weakLaw X hκ0 hEκ hB (fun N => (hs0 N).le) hst ht1 hc272 hc0 hreg' h1
+  exact ⟨localLaw X hκ0 hκ1 hEκ (fun N => (hs0 N).le) hst ht1 hc0 hreg h276 h274 h1.lemma41,
+    h276⟩
 
 end Step2Main
 

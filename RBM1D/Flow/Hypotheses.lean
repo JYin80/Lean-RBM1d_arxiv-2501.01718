@@ -192,13 +192,23 @@ noncomputable def Kval (E : ℝ) (N : ℕ) (t : ℝ) (I : LoopIdx (ZMod (B.L N))
 noncomputable def decayProf (N : ℕ) (t D : ℝ) (a b : ZMod (B.L N)) : ℝ :=
   Real.exp (-(((zdist (B.L N) (a - b) : ℝ) / B.ell N t) ^ ((1 : ℝ) / 2))) + (B.W N : ℝ) ^ (-D)
 
-theorem scale_pos {E : ℝ} (hE : |E| < 2) (N : ℕ) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+/-- **`W ℓ_t η_t > 0` for `0 ≤ t < 1`** — the `0 ≤ t` form of `RBM.Band.scale_pos`.
+
+Strict positivity of `t` is not needed: `ℓ_t ≥ 1` already holds at `t = 0` (`ℓ_0 = min(1,L) = 1`),
+which is `RBM.one_le_ellHat`.  This form is load-bearing for the assembly of Theorem 2.21:
+`RBM.Thm221.step` quantifies over `0 ≤ s N`, and the grid of `RBM.Bounds_of_Thm221` really does
+start at `s ≡ 0`. -/
+theorem scale_pos' {E : ℝ} (hE : |E| < 2) (N : ℕ) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
     0 < B.scale E N t := by
   have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
   have hℓ := one_le_ellHat (B.L N) (B.three_le_L N) ht0 ht1
   have hη := etaT_pos hE ht1
   unfold scale ell
   positivity
+
+theorem scale_pos {E : ℝ} (hE : |E| < 2) (N : ℕ) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+    0 < B.scale E N t :=
+  B.scale_pos' hE N ht0.le ht1
 
 end Band
 
@@ -288,6 +298,52 @@ structure Thm221 (X : Sample B) (κ : ℝ) : Prop where
 
 /-- The times `u ∈ [s, t]` at index `N`. -/
 abbrev TimeIcc (s t : ℕ → ℝ) (N : ℕ) : Type := ↥(Set.Icc (s N) (t N))
+
+/-! ### The individual conclusions of Steps 1–6, as standalone statements (T149)
+
+`RBM.Steps` bundles the eight conclusions of §2.7.  The deterministic glue that *produces* the
+later fields must not take the whole bundle as a hypothesis — that would make "Step 3 needs
+(2.77)" a theorem, i.e. circular packaging (T147 §0a verified this with a compiled probe).  The
+five statements below are, verbatim, the five fields of `RBM.Steps` that the glue actually
+projects; every glue theorem takes these instead of the bundle, and the bundle-shaped statement
+is kept as a one-line corollary.  The dependency order 1 → 2 → 3 → 4/5 → 6 is acyclic. -/
+
+/-- **(2.73)** (Step 1): `|L_{u,σ,a}| ≺ (ℓ_u/ℓ_s)^{n-1} (W ℓ_u η_u)^{-n+1}`, uniformly in
+`u ∈ [s,t]`.  Verbatim the field `RBM.Steps.apriori`. -/
+def AprioriFlow (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∀ n : ℕ, 1 ≤ n → StochDom B.P
+    (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => ‖X.Lval E N p.1 ω p.2.idx‖)
+    (fun N p _ => (B.ell N p.1 / B.ell N (s N)) ^ (n - 1) * (B.scale E N p.1)⁻¹ ^ (n - 1))
+
+/-- **(2.75)** (Step 2): `‖G_u - m‖_max ≺ (W ℓ_u η_u)^{-1/2}`, uniformly in `u ∈ [s,t]`.
+Verbatim the field `RBM.Steps.localLaw`. -/
+def LocalLawFlow (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  StochDom B.P
+    (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
+    (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2))
+
+/-- **(2.76)** (Step 2): for `σ = (+,-)`, `|L_u - K_u| ≺ (η_s/η_u)^4 (W ℓ_u η_u)^{-2}
+(exp(-(|a₁-a₂|/ℓ_u)^{1/2}) + W^{-D})`.  Verbatim the field `RBM.Steps.aprioriDecay`. -/
+def AprioriDecayFlow (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∀ D : ℝ, 0 < D → StochDom B.P
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+      X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+    (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+      B.decayProf N p.1 D p.2.1 p.2.2)
+
+/-- **(2.77)** (Step 3): `max_{σ,a} |L_{u,σ,a}| ≺ (W ℓ_u η_u)^{-n+1}`, uniformly in `u ∈ [s,t]`.
+Verbatim the field `RBM.Steps.sharpLoop`. -/
+def SharpLoopFlow (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∀ n : ℕ, 1 ≤ n → StochDom B.P
+    (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => ‖X.Lval E N p.1 ω p.2.idx‖)
+    (fun N p _ => (B.scale E N p.1)⁻¹ ^ (n - 1))
+
+/-- **(2.78)** (Step 4): `max_{σ,a} |L_{u,σ,a} - K_{u,σ,a}| ≺ (W ℓ_u η_u)^{-n}`, uniformly in
+`u ∈ [s,t]`.  Verbatim the field `RBM.Steps.sharpLmK`. -/
+def SharpLmKFlow (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∀ n : ℕ, 1 ≤ n → StochDom B.P
+    (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+    (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)
 
 /-- **Steps 1–6 of the proof of Theorem 2.21** (§2.7, proved in Section 5), as hypotheses.
 All bounds are uniform in `u ∈ [s, t]`. -/

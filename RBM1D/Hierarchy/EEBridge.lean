@@ -623,14 +623,14 @@ def xiLowEvent (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) (C : ℝ) 
 
 /-- The elementary facts about the scales at a time `u ∈ [s_N, t_N]` with `0 < s_N` and
 `t_N < 1`: the scale is positive, `0 < η_u ≤ 1` and `1 ≤ ℓ_u ≤ L`. -/
-theorem eeFacts (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N)
+theorem eeFacts (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) (N : ℕ) (u : TimeIcc s t N) :
     0 < B.scale E N (u : ℝ) ∧ 0 < etaT E (u : ℝ) ∧ etaT E (u : ℝ) ≤ 1 ∧
       1 ≤ B.ell N (u : ℝ) ∧ B.ell N (u : ℝ) ≤ (B.L N : ℝ) := by
-  have hu0 : 0 < (u : ℝ) := lt_of_lt_of_le (hs0 N) u.2.1
+  have hu0 : (0 : ℝ) ≤ (u : ℝ) := le_trans (hs0 N) u.2.1
   have hu1 : (u : ℝ) < 1 := lt_of_le_of_lt u.2.2 (ht1 N)
-  exact ⟨B.scale_pos hE N hu0 hu1, etaT_pos hE hu1, etaT_le_one hE hu0.le,
-    one_le_ellHat_of_nonneg (B.one_le_L N) hu0.le hu1, min_le_right _ _⟩
+  exact ⟨B.scale_pos' hE N hu0 hu1, etaT_pos hE hu1, etaT_le_one hE hu0,
+    one_le_ellHat_of_nonneg (B.one_le_L N) hu0 hu1, min_le_right _ _⟩
 
 /-- **The deterministic half of the polynomial lower bound on the control of `EE_le`.**  With
 `ℓ_u ≤ L`, `η_u ≤ 1` and `W L ≤ N` the scale satisfies `Wℓ_uη_u ≤ N`, so
@@ -756,7 +756,7 @@ The inputs are:
 Nothing here defines `H.EE`, so `RBM.SumZeroDyn.Lemma510` is not made easier to discharge:
 installing `eeField` as the field still drags `duhamel` and `bdg` along with it. -/
 theorem stochDom_norm_eeField (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     (hc : Cond272 B E s t) {n : ℕ} {C : ℝ}
     (hxi : HighProb B.P (xiLowEvent X E s t n C))
     (hdec : ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), HighProb B.P (eeDecayEvent X E s t n τ D)) :

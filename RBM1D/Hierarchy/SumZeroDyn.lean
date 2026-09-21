@@ -1354,7 +1354,7 @@ theorem ellHat_real_le_L {L : ℕ} {u : ℝ} (hu1 : u < 1) : ellHat L (u : ℂ) 
 
 /-- **Crude bounds on the scales of the flow**: eventually in `N`, uniformly in `u ∈ [s,t]`,
 `1 ≤ W ℓ_u η_u ≤ N`, `L, W ≤ N` and `(1-u)^{-1} ≤ N`.  (From (2.72) and `W L ≤ N`.) -/
-theorem flow_crude (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem flow_crude (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) :
     ∀ᶠ N : ℕ in atTop, (B.L N : ℝ) ≤ N ∧ (B.W N : ℝ) ≤ N ∧ 1 ≤ N ∧
       ∀ u : TimeIcc s t N, 1 ≤ B.scale E N u ∧ B.scale E N u ≤ N ∧ (1 - (u : ℝ))⁻¹ ≤ N := by
@@ -1367,7 +1367,7 @@ theorem flow_crude (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t
   have hLN : (B.L N : ℝ) ≤ N := by nlinarith
   have hWN : (B.W N : ℝ) ≤ N := by nlinarith
   refine ⟨hLN, hWN, by exact_mod_cast hN1, fun u => ?_⟩
-  have hu0 : 0 < (u : ℝ) := (hs0 N).trans_le u.2.1
+  have hu0 : (0 : ℝ) ≤ (u : ℝ) := (hs0 N).trans u.2.1
   have hu1 : (u : ℝ) < 1 := u.2.2.trans_lt (ht1 N)
   have hA1 : 1 ≤ B.scale E N u := by
     have h4 := hle u
@@ -2759,7 +2759,7 @@ theorem integral_term_stochDom (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ 
   have hf1 := eventually_const_mul_rpow_le (cKerSumZero (n + 2) * c₀ ^ (2 * (n + 2)) * C / τ₁) hexp
   have hf2 := eventually_const_mul_rpow_le C₂ (show (q' : ℝ) < D by rw [hD]; linarith)
   have hf3 := eventually_exp_small C₂ q' c₁ hc₁ hτ₁0
-  filter_upwards [hev, flow_crude hE hs0 hst ht1 hc, hf1, hf2, hf3] with
+  filter_upwards [hev, flow_crude hE (fun N => (hs0 N).le) hst ht1 hc, hf1, hf2, hf3] with
     N hN ⟨hLN, hWN, hN1, hu⟩ hf1 hf2 hf3
   intro ω hω pp
   have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
@@ -2898,7 +2898,7 @@ theorem termP (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (
     nlinarith
   have hfin := eventually_finish ((6 * exp 1) ^ n * cTwo52 ^ (n + 1)) (2 ^ n * cTwo52 ^ (n + 1))
     ha (show (2 * n + 1 : ℝ) + τ₁ < D by rw [hD]; linarith)
-  filter_upwards [flow_crude hE hs0 hst ht1 hc, hfin] with N ⟨hLN, hWN, hN1, hu⟩ ⟨hf1, hf2⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc, hfin] with N ⟨hLN, hWN, hN1, hu⟩ ⟨hf1, hf2⟩
   intro ω ⟨hω1, hω2⟩ p
   have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
   have hN0 : (0 : ℝ) < N := by linarith
@@ -3063,7 +3063,7 @@ theorem hgood_QF (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N
   have hC0 : 0 ≤ C := by positivity
   refine ⟨C, hC0, _, (good_of_stochDom hF hτ₁).inter
     (good_of_stochDom (h510.F_decay τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ σ u hsu hut
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
@@ -3233,7 +3233,7 @@ theorem hgood_commDot (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N �
   have hC₃0 : 0 ≤ C₃ := by rw [hC₃]; positivity
   refine ⟨C₁ + C₂ + C₃, by linarith, _, (good_of_stochDom hX hτ₁).inter
     (good_of_stochDom (hdec (n + 1) (by omega) τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ σ u hsu hut
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
@@ -3507,7 +3507,7 @@ theorem termI1 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
     rw [hCe]; have := cKerSumZero_nonneg (n + 2); have := cKerSumZeroErr_nonneg (n + 2); positivity
   refine ⟨Cm + Ce, by linarith, _, (good_of_stochDom hLmK hτ₁).inter
     (good_of_stochDom (hdec (n + 2) (by omega) τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ pp
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   obtain ⟨⟨v, hsv, hvt⟩, σ, a⟩ := pp
@@ -3835,7 +3835,7 @@ theorem QV_Q_stochDom (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N �
   have hCe0 : 0 ≤ Ce := by rw [hCe]; positivity
   refine ⟨Cm + Ce, add_nonneg hCm0 hCe0, _, (good_of_stochDom hEE hτ₁).inter
     (good_of_stochDom (h510.EE_decay τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ q
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   obtain ⟨uu, vv, σ, a⟩ := q
@@ -4158,7 +4158,7 @@ theorem termM (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
     have := log_le_rpow_div_nat N hτ
     have e : 2 * ((N : ℝ) ^ τ / τ) = 2 / τ * (N : ℝ) ^ τ := by ring
     linarith
-  filter_upwards [hlogN, flow_crude hE hs0 hst ht1 hc] with N hN ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [hlogN, flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N hN ⟨hLN, hWN, hN1, hu⟩
   intro p
   have hA := hApos N p.1
   have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
@@ -4365,7 +4365,7 @@ theorem term1F {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - 
   have hψ₀0 : 0 ≤ ψ₀ := by rw [hψ₀]; positivity
   refine ⟨cS * ψ₀ + 1, by positivity, _, (good_of_stochDom hF hτ₁).inter
     (good_of_stochDom (h510.F_decay τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ pp
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   obtain ⟨vv, σ, a⟩ := pp
@@ -4525,7 +4525,7 @@ theorem mart_of_QV (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t
     have := log_le_rpow_div_nat N hτ
     have e : 2 * ((N : ℝ) ^ τ / τ) = 2 / τ * (N : ℝ) ^ τ := by ring
     linarith
-  filter_upwards [hlogN, flow_crude hE hs0 hst ht1 hc] with N hN ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [hlogN, flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N hN ⟨hLN, hWN, hN1, hu⟩
   intro p
   have hA := hApos N p.1
   have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
@@ -4634,7 +4634,7 @@ theorem QV1_stochDom {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| �
   have hcS0 : 0 ≤ cS := hcS ▸ cKerShort_nonneg _ (Real.sqrt_pos.2 hκ0)
   refine ⟨cS / (mE E).im + 1, by positivity, _, (good_of_stochDom hEE hτ₁).inter
     (good_of_stochDom (h510.EE_decay τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ q
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   obtain ⟨uu, vv, σ, a⟩ := q
@@ -4756,7 +4756,7 @@ theorem term1I {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - 
   have hcS0 : 0 ≤ cS := hcS ▸ cKerShort_nonneg _ (Real.sqrt_pos.2 hκ0)
   refine ⟨cS + 1, by positivity, _, (good_of_stochDom hLmK hτ₁).inter
     (good_of_stochDom (hdec (n + 2) (by omega) τ₁ hτ₁ D hD) hτ₁), ?_⟩
-  filter_upwards [flow_crude hE hs0 hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
+  filter_upwards [flow_crude hE (fun N => (hs0 N).le) hst ht1 hc] with N ⟨hLN, hWN, hN1, hu⟩
   intro ω ⟨hω1, hω2⟩ pp
   simp only [Set.mem_ofPred_eq] at hω1 hω2
   obtain ⟨vv, σ, a⟩ := pp

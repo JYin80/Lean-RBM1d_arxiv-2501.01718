@@ -226,11 +226,11 @@ deterministic identities `RBM.ChargeReduce.lkErr_two_flip` and
 `RBM.ChargeReduce.lkErr_two_const`.
 
 No bound on the `(+,+)` charge is assumed: it is the hypothesis `hpp`. -/
-theorem aprioriDecayAll_of_pp {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B)
+theorem aprioriDecayAll_of_pp' {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B)
     {E : ℝ} {s t : ℕ → ℝ} (hE : |E| ≤ 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
-    (hSteps : Steps X E s t) (hpp : AprioriDecayPP X E s t) :
+    (hdecay : AprioriDecayFlow X E s t) (hpp : AprioriDecayPP X E s t) :
     StepGlue.AprioriDecayAll X E s t := by
-  refine StochDom.of_subset_union (StepGlue.aprioriDecay_pm X ht1 hSteps) hpp
+  refine StochDom.of_subset_union (StepGlue.aprioriDecay_pm' X ht1 hdecay) hpp
     fun τ hτ => ⟨τ, hτ, Eventually.of_forall fun N ω hω => ?_⟩
   obtain ⟨⟨u, v⟩, hp⟩ := hω
   simp only at hp
@@ -250,6 +250,13 @@ theorem aprioriDecayAll_of_pp {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X
     exact Or.inl ⟨(u, (v.2 0, v.2 1)), hp⟩
   · -- `σ = (+,+)`: the remaining hypothesis
     exact Or.inr ⟨(u, (v.2 0, v.2 1)), hp⟩
+
+/-- `RBM.ChargeReduce.aprioriDecayAll_of_pp'` with (2.76) taken from a `RBM.Steps` bundle. -/
+theorem aprioriDecayAll_of_pp {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B)
+    {E : ℝ} {s t : ℕ → ℝ} (hE : |E| ≤ 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hSteps : Steps X E s t) (hpp : AprioriDecayPP X E s t) :
+    StepGlue.AprioriDecayAll X E s t :=
+  aprioriDecayAll_of_pp' X hE hs0 ht1 hSteps.aprioriDecay hpp
 
 end ChargeReduce
 

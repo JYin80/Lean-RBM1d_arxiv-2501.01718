@@ -3531,3 +3531,74 @@ cFar · (r·√r·(√A)⁻¹·J)  +  169 · (r·A⁻¹·(J·√J))
 ### 与 `Step2.Hyp.eG` 的对接
 `eG` 用的 `B.scale E N u`、`tT B E N D u ℓ`、`jS` 与本文件的写法**定义相等**，`eG_le_paper` 的结论逐项对得上 `eG` 的右端。
 真正的接线缺口只有上面的 (5.51)/(5.52) 与 `H.F − eLL` 的关系。`Step2.lean` 的签名未动。
+
+## T149：拆 `Steps` 包 + `0 ≤ s`（2026-09-21，Claude Code）
+
+**全量 `lake build RBM1D` exit=0**，`axiom audit: 8667 declarations in `RBM`, all within [propext, Classical.choice, Quot.sound]`。
+`Steps` 结构**一个字段都没动**；所有改动要么是**新增声明**，要么是**放宽假设**（单调加强），没有改过任何结论。
+
+### (a) 打包上的循环已解开
+
+`Flow/Hypotheses.lean` 新增 5 个 `def`，**逐字**等于 `Steps` 里被投影到的那五个字段
+（探针验证 `h.apriori : AprioriFlow …` 等五条都是 `:=` 直给，定义相等）：
+
+`AprioriFlow`（2.73）、`LocalLawFlow`（2.75）、`AprioriDecayFlow`（2.76）、
+`SharpLoopFlow`（2.77）、`SharpLmKFlow`（2.78）。
+
+先用 `grep` 复核了 T147 的投影清单，**全树确实只有那 5 个投影**（另加 `Flow/Hypotheses.lean`
+自己的 `BoundsCore_of_Steps`/`Bounds_of_Steps`，它们是合法的消费者）。
+
+带撇版（**旧签名全部保留，改成一行推论，所以两边不会走样**）：
+
+* `Hierarchy/StepGlue.lean`：`flow_S_zero'`、`flow_lkErr_one_le'`、`flow_S_one'`、
+  `aprioriDecay_pm'`、`flow_S_le_two'`、`flow_sharpLoop_glue'`、`flow_steps45_glue'`
+* `Hierarchy/ChargeReduce.lean`：`aprioriDecayAll_of_pp'`
+* `Hierarchy/Step2PP.lean`：`flow_xiL_apriori_le'`、`flow_xiLK_one_le'`、`xiLK_two_improve_of'`、
+  `xiLK_two_improve'`、`flow_S_le_two_of'`、`flow_hs2_of'`、`flow_sharpLoop_glue_of'`、
+  `flow_steps45_glue_of'`、`flow_sharpLoop_glue_flowAs'`、`flow_steps45_glue_flowAs'`
+* `Gauss/Step6Hyp.lean`：`quad11_unifDetDom'`、`quad13_unifDetDom'`、
+  `quad11_unifDetDom_gauss'`、`quad13_unifDetDom_gauss'`
+
+### 验收探针（scratchpad，不入库）：**两个都过，公理干净**
+
+1. `steps_of_inputs`：按 1→2→3→4/5→6 的依赖序串起来，**结论是 `Steps X E s t`，假设里没有
+   `Steps`**。链条是 `Step1.step1` → `Step2.step2` → `Step2PP.flow_sharpLoop_glue_flowAs'` →
+   `Step2PP.flow_steps45_glue_flowAs'` → `Gauss.quad11/13_unifDetDom'` →
+   `Step6.sharpExpect_step6`。携带的假设都是随机层接口或别处的工单
+   （`Step1.Hyp`、`Step2.Hyp`、`hΘ`（由 `Step2PP.xiLK_two_le` 从 `BootPP` + `hB.LmK 2` 生产，
+   也不是 `Steps` 的字段）、`Lemma514`、`Eq45Flow`、`FlowEq548`、`Step6.Hierarchy`/`FastDecayHyp`
+   等），**没有一个是 `Steps` 的字段**。
+2. `steps_of_inputs_nonneg`：同一条链在 `hs0 : ∀ N, 0 ≤ s N` 下，把 Step 2 的两个输出
+   （`LocalLawFlow`、`AprioriDecayFlow`）当假设收——1、3、4、5、6 **全部在 `0 ≤ s` 下走通**。
+
+### (b) `0 ≤ s`：走到了 Step 2 的门口就停住，原因不是记账
+
+`Band.scale_pos'`（`0 ≤ t`）已落地，`Band.scale_pos` 成了它的一行推论。顺带把两条传播子引理
+**就地放宽**（只动假设）：`RBM.one_le_ellHat`（`Propagator/Decay.lean`）与
+`RBM.etaT_mul_ellHat_le`（`Loop/KBound.lean`）现在收 `0 ≤ t`——证明本来就不用严格正性。
+
+`hs0 : 0 ≤ s N` 现在成立于：`Step1`（全部，含 `inv_W_le_inv_scale`、`norm_Lval_le_of_le_half`）、
+`Step3`、`Step45`、`StepGlue`、`Step2PP`、`ChargeReduce`、`Step2Moment`、`EEBridge`、
+`LKDecayQuant`（除 `lemma514_flow_of_flowInputs`）、`SumZeroDyn.flow_crude`、
+`Gauss/XiLow`、`Gauss/Step1Hyp`、`Gauss/Lemma41FlowGauss`、`Gauss/Step6Hyp`（含
+`lkErr_le_rpow`、`lkErr_loopData_le_rpow`）、`Step2.localLaw`/`eventually_step_facts`。
+
+**仍然需要 `0 < s` 的，且 T147 §0b 低估了它**：
+
+* `Step2.jS_highProb` → `jS_stochDom` → `Step2.aprioriDecay` → **`Step2.step2`**。
+  底在 `Step2.step_bound`，它用 `RBM.norm_Uker_flow`（要 `0 < v`）。
+* `SumZeroDyn` 的 `integral_term_stochDom`、`termI1`、`QV_Q_stochDom`（以及它们的下游
+  `termI2/I3/I4`、`termM`、`lemma514_flow`），底在 `integral_term_le`、
+  `norm_Uker_sumZero_scale_le`、`norm_Uker_fastDecay_le_sumZero`，这三条又都要
+  `norm_edgeKer_sub_one_sub_le` → **`norm_Theta_mul_sub_le`**，而 `Propagator/` 里
+  `Θ_t` 的一阶/二阶差分估计**整族只对 `0 < t` 证过**（`ρ(t)` 那套闭式）。
+  因此 `SumZeroDyn.lean` 整个文件**原样退回**（`git checkout`），只有 `flow_crude` 放宽了。
+* `Flow/Hypotheses.BoundsCore.stochDom_norm_Lval`：它走 `norm_Kgen_le`（要 `0 < t`）。
+  **无消费者**——`0 ≤ t` 的版本是 `Flow/Iteration.stochDom_norm_Lval_of_LmK`，早就有了。
+
+**结论**：`0 ≤ s` 在**总装层面**（Steps 1、3、4、5、6 + 全部 glue）是通的；要让
+`Thm221.step` 在 `s ≡ 0` 处真的可填，还差的不是记账，而是把 `Propagator/Decay.lean` 的
+`Θ_t` 差分估计（`norm_Theta_sub_shift_le`、`norm_Theta_second_diff_le` 一族）延拓到 `t = 0`。
+`t = 0` 处 `Θ_0 = I`，界本身平凡为真，但现有证明全部经过 `ρ(t)`，要单独分情况。
+**这值得单开一张工单**（估计：`Propagator/Decay.lean` + `LongDiff.lean` 的 `ht0` 一族，
+再加 `KernelDecay.lean` 的三条 `Uker` 引理）。

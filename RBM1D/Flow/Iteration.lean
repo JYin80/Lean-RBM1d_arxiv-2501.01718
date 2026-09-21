@@ -408,7 +408,7 @@ theorem norm_Kval_two_le {E k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| �
     exact Real.sqrt_le_one.2 (by linarith)
   have hηℓ : etaT E t * ellHat (B.L N) (t : ℂ) ≤ 1 := by
     rcases ht0.lt_or_eq with ht0' | rfl
-    · exact etaT_mul_ellHat_le hL hE2 ht0' ht1
+    · exact etaT_mul_ellHat_le hL hE2 ht0'.le ht1
     · have h1 : ellHat (B.L N) ((0 : ℝ) : ℂ) = 1 := by
         rw [ellHat_ofReal _ zero_lt_one, sub_zero, Real.sqrt_one, div_one]
         exact min_eq_left (by exact_mod_cast (show 1 ≤ B.L N by omega))

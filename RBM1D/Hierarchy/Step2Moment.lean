@@ -496,7 +496,7 @@ theorem moment_bound (Hy : MomentHyp X E s t D) (hE : |E| < 2) (hst : ∀ N, s N
 
 /-- `J*_{u,D}/(η_s/η_u)^4 ≺ 1`, uniformly in `u ∈ [s, t]`: the moment bounds of the bootstrap
 plus the deterministic modulus of continuity, through the net of (5.46). -/
-theorem stochDom_jSnorm (Hy : MomentHyp X E s t D) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem stochDom_jSnorm (Hy : MomentHyp X E s t D) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) :
     StochDom B.P (U := fun N => TimeIcc s t N)
       (fun N u ω => jSnorm X E D s N (u : ℝ) ω) (fun _ _ _ => (1 : ℝ)) := by
@@ -509,7 +509,7 @@ theorem stochDom_jSnorm (Hy : MomentHyp X E s t D) (hE : |E| < 2) (hs0 : ∀ N, 
 /-- **(5.47)**: `J*_{u,D} ≺ (η_s/η_u)^4`, uniformly in `u ∈ [s, t]`, in *exactly* the shape of
 `RBM.Step2.jS_stochDom` — but obtained by continuous induction on the deterministic moment
 `φ_q`, with no stopping time anywhere. -/
-theorem jS_stochDom (Hy : MomentHyp X E s t D) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem jS_stochDom (Hy : MomentHyp X E s t D) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) :
     StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N u ω)
       (fun N u _ => (etaT E (s N) / etaT E u) ^ 4) := by
@@ -536,7 +536,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ
 (2.76) uses nothing but the definition (5.29) of `J*` and the deterministic estimates of
 `RBM1D/Hierarchy/Step2.lean`; it is the proof of `RBM.Step2.aprioriDecay` with (5.47) taken as
 an input, so that either route may supply it. -/
-theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
@@ -588,7 +588,7 @@ theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s
 /-- **(2.76)** along the moment route, in exactly the shape of the field
 `RBM.Steps.aprioriDecay`. -/
 theorem aprioriDecay (Hy : ∀ D : ℝ, 60 ≤ D → MomentHyp X E s t D) (hE : |E| < 2)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N)) :
     ∀ D : ℝ, 0 < D → StochDom B.P
@@ -608,7 +608,7 @@ deterministic moment `φ_q(u) = E[(J*_{u,D})^q]`.
 common to both routes; (2.74) comes from `RBM.Step1.weakLaw` as in T61. -/
 theorem step2 {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
     (Hy : ∀ D : ℝ, 60 ≤ D → MomentHyp X E s t D) (h1 : Step1.Hyp X E s t)
-    (hB : BoundsCore X E s) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hB : BoundsCore X E s) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N)) :

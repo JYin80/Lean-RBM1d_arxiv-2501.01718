@@ -309,9 +309,9 @@ theorem goodEv_subset_gEv (hE : |E| ≤ 2) {N : ℕ} {u : ℝ} (hA : 1 ≤ B.sca
   exact Real.rpow_le_one (inv_nonneg.2 h0.le) (inv_le_one_of_one_le₀ hA) (by norm_num)
 
 /-- `W⁻¹ ≤ (W ℓ_u η_u)⁻¹` (since `ℓ_u η_u ≤ 1`). -/
-theorem inv_W_le_inv_scale (hE : |E| < 2) (N : ℕ) {u : ℝ} (hu0 : 0 < u) (hu1 : u < 1) :
+theorem inv_W_le_inv_scale (hE : |E| < 2) (N : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1) :
     (B.W N : ℝ)⁻¹ ≤ (B.scale E N u)⁻¹ := by
-  have hA := B.scale_pos hE N hu0 hu1
+  have hA := B.scale_pos' hE N hu0 hu1
   refine inv_anti₀ hA ?_
   have h := etaT_mul_ellHat_le (B.three_le_L N) hE.le hu0 hu1
   have hW : (0 : ℝ) ≤ B.W N := Nat.cast_nonneg _
@@ -332,7 +332,7 @@ theorem one_le_ell_div {N : ℕ} {s u : ℝ} (hsu : s ≤ u) (hu1 : u < 1) :
 /-- **(5.2) in the form used by Case 1**: for `0 < u ≤ 1/2`,
 `|L_{u,σ,a}| ≤ (2 / Im m)^n (W ℓ_u η_u)^{-n+1}` — from `‖G_u‖_op ≤ η_u⁻¹`, `‖E_a‖_op ≤ W⁻¹`
 (`RBM.norm_gloop_le_of_le_abs_im`), `η_u ≥ Im m / 2` and `W⁻¹ ≤ (W ℓ_u η_u)⁻¹`. -/
-theorem norm_Lval_le_of_le_half (hE : |E| < 2) (N : ℕ) {u : ℝ} (hu0 : 0 < u) (hu : u ≤ 1 / 2)
+theorem norm_Lval_le_of_le_half (hE : |E| < 2) (N : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu : u ≤ 1 / 2)
     (ω : Ω) {n : ℕ} (hn : 1 ≤ n) (v : LoopData (B.L N) n) :
     ‖X.Lval E N u ω v.idx‖ ≤ (2 / (mE E).im) ^ n * (B.scale E N u)⁻¹ ^ (n - 1) := by
   have hm := mE_im_pos hE
@@ -383,14 +383,14 @@ theorem eventually_one_le_scale_s (hE : |E| < 2) (hst : ∀ N, s N ≤ t N) (ht1
 /-- **(5.4)**: (2.68) and (2.59) give `max_{σ,a} |L_{s,σ,a}| ≺ (W ℓ_s η_s)^{-n+1}`
 (`RBM.stochDom_norm_Lval_of_LmK`). -/
 theorem eq54 {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     {n : ℕ} (hn : 1 ≤ n) :
     StochDom B.P (fun N (v : LoopData (B.L N) n) ω => ‖X.Lval E N (s N) ω v.idx‖)
       (fun N _ _ => (B.scale E N (s N))⁻¹ ^ (n - 1)) := by
   have hE2 : |E| < 2 := by linarith
   have hk0 : 0 < min κ 1 := lt_min hκ one_pos
   have hEk : |E| ≤ 2 - min κ 1 := hE.trans (by linarith [min_le_left κ 1])
-  exact stochDom_norm_Lval_of_LmK X hk0 (min_le_right κ 1) hEk (fun N => (hs0 N).le)
+  exact stochDom_norm_Lval_of_LmK X hk0 (min_le_right κ 1) hEk (fun N => (hs0 N))
     (fun N => (hst N).trans_lt (ht1 N)) (eventually_one_le_scale_s hE2 hst ht1 hc) hn
     (hB.LmK n hn)
 
@@ -407,7 +407,7 @@ theorem eq52_half (hE : |E| < 2) {n : ℕ} (hn : 1 ≤ n) :
 (5.4) when `s ≥ 1/2` (Case 2) and from (5.2) when `s < 1/2` (Case 3: "(5.2) holds for
 `t = 1/2`"). -/
 theorem eq55 {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) :
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) :
     ∀ n : ℕ, 1 ≤ n → StochDom B.P
       (fun N (v : LoopData (B.L N) n) ω => ‖X.Lval E N (startTime s N) ω v.idx‖)
       (fun N _ _ => (B.scale E N (startTime s N))⁻¹ ^ (n - 1)) := by
@@ -427,7 +427,7 @@ For `u ≥ t₁ = max(s, 1/2)` this is Lemma 5.1 (`RBM.lemma_5_1'`) started at `
 for `u < t₁` necessarily `u < 1/2` (Case 1, and the part `[s, 1/2]` of Case 3), and it is the
 deterministic bound (5.2). -/
 theorem eq58_seq {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (hS : ∀ t₁ t₂ : ℕ → ℝ, (∀ N, 1 / 2 ≤ t₁ N) → (∀ N, t₁ N ≤ t₂ N) → (∀ N, t₂ N < 1) →
       LoopScaling X E t₁ t₂)
     (u : ∀ N, TimeIcc s t N) {n : ℕ} (hn : 1 ≤ n) :
@@ -445,12 +445,12 @@ theorem eq58_seq {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCor
   set C : ℝ := (2 / (mE E).im) ^ n with hC
   have hm := mE_im_pos hE2
   have hC0 : 0 ≤ C := by positivity
-  have hu0 : ∀ N, 0 < (u N : ℝ) := fun N => (hs0 N).trans_le (u N).2.1
+  have hu0 : ∀ N, (0 : ℝ) ≤ (u N : ℝ) := fun N => (hs0 N).trans (u N).2.1
   have hu1 : ∀ N, (u N : ℝ) < 1 := fun N => (u N).2.2.trans_lt (ht1 N)
   have hζ0 : ∀ N, 0 ≤ (B.ell N (u N) / B.ell N (s N)) ^ (n - 1) *
       (B.scale E N (u N))⁻¹ ^ (n - 1) := fun N => by
     have h := one_le_ell_div (B := B) (N := N) (u N).2.1 (hu1 N)
-    have := (B.scale_pos hE2 N (hu0 N) (hu1 N))
+    have := (B.scale_pos' hE2 N (hu0 N) (hu1 N))
     positivity
   have hdet : StochDom B.P
       (fun N (_ : LoopData (B.L N) n) (_ : Ω) => C * ((B.ell N (u N) / B.ell N (s N)) ^ (n - 1) *
@@ -471,7 +471,7 @@ theorem eq58_seq {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCor
     have hℓu := Step3.ellHat_pos_of_lt_one (L := B.L N) hL (hu1 N)
     have hmono : ellHat (B.L N) ((s N : ℝ) : ℂ) ≤ ellHat (B.L N) ((startTime s N : ℝ) : ℂ) :=
       Step3.ellHat_mono (le_max_left _ _) (h.trans_lt (hu1 N))
-    have hA := (B.scale_pos hE2 N (hu0 N) (hu1 N))
+    have hA := (B.scale_pos' hE2 N (hu0 N) (hu1 N))
     refine mul_le_mul_of_nonneg_right ?_ (by positivity)
     refine pow_le_pow_left₀ (div_nonneg hℓu.le (hℓs.trans_le hmono).le) ?_ _
     simp only [Band.ell]
@@ -488,7 +488,7 @@ theorem eq58_seq {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCor
     refine hind.trans ((norm_Lval_le_of_le_half X hE2 N (hu0 N) hhalf ω hn v).trans ?_)
     rw [← hC]
     have hR := one_le_pow₀ (n := n - 1) (one_le_ell_div (B := B) (N := N) (u N).2.1 (hu1 N))
-    have hA := (B.scale_pos hE2 N (hu0 N) (hu1 N))
+    have hA := (B.scale_pos' hE2 N (hu0 N) (hu1 N))
     have hA' : 0 ≤ (B.scale E N (u N))⁻¹ ^ (n - 1) := by positivity
     have := mul_le_mul_of_nonneg_right hR hA'
     rw [one_mul] at this
@@ -518,7 +518,7 @@ noncomputable def aprioriRhs (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (n : �
 /-- **(5.8)** uniformly in `u ∈ [s, t]` (all three cases at once):
 `1(‖G_u‖_max ≤ 2) max_{σ,a} |L_{u,σ,a}| ≺ (ℓ_u/ℓ_s)^{n-1} (W ℓ_u η_u)^{-n+1}`. -/
 theorem eq58 {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (hS : ∀ t₁ t₂ : ℕ → ℝ, (∀ N, 1 / 2 ≤ t₁ N) → (∀ N, t₁ N ≤ t₂ N) → (∀ N, t₂ N < 1) →
       LoopScaling X E t₁ t₂)
     {n : ℕ} (hn : 1 ≤ n) (hlift : NetLift B.P s t (loopInd X E s t n) (aprioriRhs B E s t n)) :
@@ -680,7 +680,7 @@ Proof, as on p. 52: (5.8) at `n = 2` and Lemma 4.1 give
 by (2.72) the right side is `≪ (W ℓ_u η_u)^{-1/4}`, so `[(W ℓ_u η_u)^{-1/4}, (W ℓ_u η_u)^{-1/6}]`
 is a forbidden region (`forbidden_region`); at `u = s` the assumption (2.70) puts
 `‖G_s - m‖_max` below it, and continuity in `u` (`bootstrap`) keeps it there. -/
-theorem weakLaw_highProb (hE : |E| < 2) (hB : BoundsCore X E s) (hs0 : ∀ N, 0 < s N)
+theorem weakLaw_highProb (hE : |E| < 2) (hB : BoundsCore X E s) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N))
     (h58 : StochDom B.P (loopInd X E s t 2) (aprioriRhs B E s t 2))
@@ -689,10 +689,10 @@ theorem weakLaw_highProb (hE : |E| < 2) (hB : BoundsCore X E s) (hs0 : ∀ N, 0 
       (fun N => {ω | ContinuousOn (fun u => llMax X E N u ω) (Set.Icc (s N) (t N))})) :
     HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N,
       llMax X E N u ω < (B.scale E N u)⁻¹ ^ ((1 : ℝ) / 4)}) := by
-  have hu0 : ∀ N (u : TimeIcc s t N), 0 < (u : ℝ) := fun N u => (hs0 N).trans_le u.2.1
+  have hu0 : ∀ N (u : TimeIcc s t N), (0 : ℝ) ≤ (u : ℝ) := fun N u => (hs0 N).trans u.2.1
   have hu1 : ∀ N (u : TimeIcc s t N), (u : ℝ) < 1 := fun N u => u.2.2.trans_lt (ht1 N)
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos hE N (hu0 N u) (hu1 N u)
+    B.scale_pos' hE N (hu0 N u) (hu1 N u)
   have hfacts := eventually_scale_facts hE hst ht1 hc hreg
   -- `A_u ≥ 1` for large `N`
   have hA1 : ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N, 1 ≤ B.scale E N u := by
@@ -766,7 +766,7 @@ theorem weakLaw_highProb (hE : |E| < 2) (hB : BoundsCore X E s) (hs0 : ∀ N, 0 
   have hacont : ∀ N, ContinuousOn (fun u => (B.scale E N u)⁻¹ ^ ((1 : ℝ) / 4))
       (Set.Icc (s N) (t N)) := fun N =>
     ((continuousOn_scale N (ht1 N)).inv₀ fun u hu =>
-      (B.scale_pos hE N ((hs0 N).trans_le hu.1) (hu.2.trans_lt (ht1 N))).ne').rpow_const
+      (B.scale_pos' hE N ((hs0 N).trans hu.1) (hu.2.trans_lt (ht1 N))).ne').rpow_const
       fun _ _ => Or.inr (by norm_num)
   -- `a ≤ b`
   have hab : ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N,
@@ -803,7 +803,7 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop where
 /-- **(2.74)** (Step 1, weak local law) in exactly the shape of `RBM.Steps.weakLaw`:
 `‖G_u - m‖_max ≺ (W ℓ_u η_u)^{-1/4}`, uniformly in `u ∈ [s, t]`. -/
 theorem weakLaw {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     {c : ℝ} (hc0 : 0 < c) (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N))
     (h : Hyp X E s t) :
     StochDom B.P
@@ -824,7 +824,7 @@ theorem weakLaw {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore
 every `n ≥ 1`.  (5.8) plus the removal of the indicator `1(‖G_u‖_max ≤ 2)`, which holds for
 all `u` simultaneously w.h.p. by the weak law (2.74). -/
 theorem apriori {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     {c : ℝ} (hc0 : 0 < c) (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N))
     (h : Hyp X E s t) :
     ∀ n : ℕ, 1 ≤ n → StochDom B.P
@@ -857,7 +857,7 @@ theorem apriori {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore
 inputs `Hyp`, both conclusions (2.73) and (2.74) hold, in the shapes of the fields `apriori`
 and `weakLaw` of `RBM.Steps`. -/
 theorem step1 {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     {c : ℝ} (hc0 : 0 < c) (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N))
     (h : Hyp X E s t) :
     (∀ n : ℕ, 1 ≤ n → StochDom B.P

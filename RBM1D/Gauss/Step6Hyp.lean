@@ -626,7 +626,7 @@ theorem lkErr_le_det (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {u : ℝ}
 `N^{-c} ≤ η_u` is **not** free; it is the form in which `W ℓ_u η_u ≥ 1` (a consequence of
 (2.72)) enters, and it is threaded explicitly through every statement below. -/
 theorem lkErr_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} (hN : 1 ≤ N) {u : ℝ}
-    (hu0 : 0 < u) (hu1 : u < 1) {c : ℝ} (hc0 : 0 ≤ c) (hη : (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hu0 : 0 ≤ u) (hu1 : u < 1) {c : ℝ} (hc0 : 0 ≤ c) (hη : (N : ℝ) ^ (-c) ≤ etaT E u)
     (ω : Ω) {I : LoopIdx (ZMod (B.L N))} (hwf : I.WF) (hn : 1 ≤ I.length)
     {CK : ℝ} (hCK0 : 0 ≤ CK)
     (hK : ‖B.Kval E N u I‖ ≤ CK * (B.scale E N u)⁻¹ ^ (I.length - 1)) :
@@ -635,8 +635,8 @@ theorem lkErr_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} (hN : 1 
   have hη0 : 0 < etaT E u := etaT_pos_of_lt_one hE hu1
   have hW1 : 1 ≤ B.W N := B.W_pos N
   have hWge1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast hW1
-  have hℓ1 : (1 : ℝ) ≤ B.ell N u := one_le_ellHat_of_nonneg (B.one_le_L N) hu0.le hu1
-  have hsc0 : 0 < B.scale E N u := B.scale_pos hE N hu0 hu1
+  have hℓ1 : (1 : ℝ) ≤ B.ell N u := one_le_ellHat_of_nonneg (B.one_le_L N) hu0 hu1
+  have hsc0 : 0 < B.scale E N u := B.scale_pos' hE N hu0 hu1
   -- the loop half
   have hloop := det_envelope_le_rpow hη0 hN hη hW1 I.length
   -- `(W ℓ_u η_u)⁻¹ ≤ η_u⁻¹ ≤ N^c`
@@ -669,7 +669,7 @@ theorem lkErr_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} (hN : 1 
 
 /-- `RBM.Gauss.lkErr_le_rpow` for the `RBM.LoopData` index family of `RBM.Steps`. -/
 theorem lkErr_loopData_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} (hN : 1 ≤ N)
-    {u : ℝ} (hu0 : 0 < u) (hu1 : u < 1) {c : ℝ} (hc0 : 0 ≤ c) (hη : (N : ℝ) ^ (-c) ≤ etaT E u)
+    {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1) {c : ℝ} (hc0 : 0 ≤ c) (hη : (N : ℝ) ^ (-c) ≤ etaT E u)
     (ω : Ω) {k : ℕ} (hk : 1 ≤ k) (v : LoopData (B.L N) k) {CK : ℝ} (hCK0 : 0 ≤ CK)
     (hK : ‖B.Kval E N u v.idx‖ ≤ CK * (B.scale E N u)⁻¹ ^ (k - 1)) :
     X.lkErr E N u ω v.idx ≤ (1 + CK) * (N : ℝ) ^ (c * k) := by
@@ -683,7 +683,7 @@ theorem lkErr_loopData_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ}
 indices at once — the two factors live in different index families, so this is a reindexing of
 `RBM.StochDom.mul`, not an instance of it. -/
 theorem stochDom_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {m n : ℕ}
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) {m n : ℕ}
     (hdm : StochDom B.P
       (fun N (p : TimeIcc s t N × LoopData (B.L N) m) ω => X.lkErr E N p.1 ω p.2.idx)
       (fun N p _ => (B.scale E N p.1)⁻¹ ^ m))
@@ -702,7 +702,7 @@ theorem stochDom_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ �
   have h1 := hno.1 (p.1, p.2.1)
   have h2 := hno.2 (p.1, p.2.2)
   have hsc0 : 0 < B.scale E N (p.1 : ℝ) :=
-    B.scale_pos hE N ((hs0 N).trans_le p.1.2.1) (p.1.2.2.trans_lt (ht1 N))
+    B.scale_pos' hE N ((hs0 N).trans p.1.2.1) (p.1.2.2.trans_lt (ht1 N))
   have hinv0 : (0 : ℝ) ≤ (B.scale E N (p.1 : ℝ))⁻¹ := (inv_nonneg.2 hsc0.le)
   have hpos : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
   have hY2 : 0 ≤ X.lkErr E N (p.1 : ℝ) ω p.2.2.idx := norm_nonneg _
@@ -738,7 +738,7 @@ with its three inputs supplied:
 which `W ℓ_u η_u ≥ 1`, a consequence of (2.72), enters the envelope, and it is carried
 explicitly here and in every statement below rather than being assumed silently. -/
 theorem unifDetDom_integral_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n)
     {c : ℝ} (hc0 : 0 ≤ c)
     (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
     {CK : ℝ} (hCK0 : 0 ≤ CK)
@@ -766,19 +766,19 @@ theorem unifDetDom_integral_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s
   · -- `0 < (W ℓ_u η_u)^{-(m+n)}`
     intro N p
     have hsc0 : 0 < B.scale E N (p.1 : ℝ) :=
-      B.scale_pos hE N ((hs0 N).trans_le p.1.2.1) (p.1.2.2.trans_lt (ht1 N))
+      B.scale_pos' hE N ((hs0 N).trans p.1.2.1) (p.1.2.2.trans_lt (ht1 N))
     positivity
   · -- the polynomial lower bound on the control
     filter_upwards [B.dim, eventually_ge_atTop 1] with N hdim hN1 p
     have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
-    have hu0 : 0 < (p.1 : ℝ) := (hs0 N).trans_le p.1.2.1
+    have hu0 : (0 : ℝ) ≤ (p.1 : ℝ) := (hs0 N).trans p.1.2.1
     have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
-    have hsc0 : 0 < B.scale E N (p.1 : ℝ) := B.scale_pos hE N hu0 hu1
+    have hsc0 : 0 < B.scale E N (p.1 : ℝ) := B.scale_pos' hE N hu0 hu1
     have hell : B.ell N (p.1 : ℝ) ≤ (B.L N : ℝ) := by
       simp only [Band.ell, ellHat]; exact min_le_right _ _
     have hell0 : (0 : ℝ) ≤ B.ell N (p.1 : ℝ) :=
-      le_trans zero_le_one (one_le_ellHat_of_nonneg (B.one_le_L N) hu0.le hu1)
-    have heta1 : etaT E (p.1 : ℝ) ≤ 1 := etaT_le_one hE hu0.le
+      le_trans zero_le_one (one_le_ellHat_of_nonneg (B.one_le_L N) hu0 hu1)
+    have heta1 : etaT E (p.1 : ℝ) ≤ 1 := etaT_le_one hE hu0
     have heta0 : (0 : ℝ) < etaT E (p.1 : ℝ) := etaT_pos_of_lt_one hE hu1
     have hW0 : (0 : ℝ) ≤ (B.W N : ℝ) := Nat.cast_nonneg _
     have hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ) := by exact_mod_cast hdim.1
@@ -798,7 +798,7 @@ theorem unifDetDom_integral_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s
     filter_upwards [hη, eventually_ge_atTop 1, eventually_le_rpow ((1 + CK) ^ 2) one_pos] with
       N hηN hN1 hCN p ω
     have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
-    have hu0 : 0 < (p.1 : ℝ) := (hs0 N).trans_le p.1.2.1
+    have hu0 : (0 : ℝ) ≤ (p.1 : ℝ) := (hs0 N).trans p.1.2.1
     have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
     have h1 := lkErr_loopData_le_rpow X hE hN1 hu0 hu1 hc0 (hηN p.1) ω hm p.2.1 hCK0
       (hKm N p.1 p.2.1)
@@ -829,22 +829,22 @@ uniformly in `u ∈ [s,t]` and in the two blocks.
 The proof is `RBM.Gauss.norm_quad11_le_integral` (the deterministic first step) followed by the
 first-moment reverse bridge `RBM.Gauss.unifDetDom_integral_lkErr_mul` applied to (2.78)
 (`RBM.Steps.sharpLmK`) at `n = 1`, twice — Step 4's output, available before Step 6. -/
-theorem quad11_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
-    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem quad11_unifDetDom' (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 ≤ c)
     (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
     (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) 1 × LoopData (B.L N) 1)),
       Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
-    (hsteps : Steps X E s t) :
+    (hlmk : SharpLmKFlow X E s t) :
     UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
       ‖Step6.quad11 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 2) := by
   have hE : |E| < 2 := by linarith [abs_nonneg E]
   obtain ⟨C1, hC10, hC1⟩ := B.norm_Kval_le hκ0 hκ1 hEκ (n := 1) le_rfl
   have hK1 : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) 1),
       ‖B.Kval E N u v.idx‖ ≤ C1 * (B.scale E N u)⁻¹ ^ (1 - 1) :=
-    fun N u v => hC1 N u ((hs0 N).le.trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf (by simp)
+    fun N u v => hC1 N u ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf (by simp)
   have hmain := unifDetDom_integral_lkErr_mul X hE hs0 ht1 (m := 1) (n := 1) le_rfl le_rfl
-    hc0 hη hC10 hK1 hK1 hint (hsteps.sharpLmK 1 le_rfl) (hsteps.sharpLmK 1 le_rfl)
+    hc0 hη hC10 hK1 hK1 hint (hlmk 1 le_rfl) (hlmk 1 le_rfl)
   have hre := hmain.precomp_param
     (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
       (p.1, (oneLoopData p.2.1, oneLoopData p.2.2)))
@@ -854,13 +854,13 @@ theorem quad11_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ
 /-- **`hq13` of `RBM.Step6.sharpExpect_step6`**: `E[(L-K)_1 (L-K)_3] ≺ (W ℓ_u η_u)^{-4}`,
 uniformly in `u ∈ [s,t]`, in the block and in the `3`-loop.  Same proof as
 `RBM.Gauss.quad11_unifDetDom`, with (2.78) at `n = 1` and at `n = 3`. -/
-theorem quad13_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
-    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem quad13_unifDetDom' (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 ≤ c)
     (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
     (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) 1 × LoopData (B.L N) 3)),
       Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
-    (hsteps : Steps X E s t) :
+    (hlmk : SharpLmKFlow X E s t) :
     UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
       ‖Step6.quad13 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 4) := by
   have hE : |E| < 2 := by linarith [abs_nonneg E]
@@ -870,22 +870,49 @@ theorem quad13_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ
   have hK1 : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) 1),
       ‖B.Kval E N u v.idx‖ ≤ max C1 C3 * (B.scale E N u)⁻¹ ^ (1 - 1) := by
     intro N u v
-    refine (hC1 N u ((hs0 N).le.trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf
+    refine (hC1 N u ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf
       (by simp)).trans ?_
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by norm_num)
   have hK3 : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) 3),
       ‖B.Kval E N u v.idx‖ ≤ max C1 C3 * (B.scale E N u)⁻¹ ^ (3 - 1) := by
     intro N u v
-    refine (hC3 N u ((hs0 N).le.trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf
+    refine (hC3 N u ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf
       (by simp)).trans ?_
     exact mul_le_mul_of_nonneg_right (le_max_right _ _) (sq_nonneg _)
   have hmain := unifDetDom_integral_lkErr_mul X hE hs0 ht1 (m := 1) (n := 3) le_rfl (by norm_num)
-    hc0 hη hCK0 hK1 hK3 hint (hsteps.sharpLmK 1 le_rfl) (hsteps.sharpLmK 3 (by norm_num))
+    hc0 hη hCK0 hK1 hK3 hint (hlmk 1 le_rfl) (hlmk 3 (by norm_num))
   have hre := hmain.precomp_param
     (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
       (p.1, (oneLoopData p.2.1, p.2.2)))
   refine UnifDetDom.mono_left (Filter.Eventually.of_forall fun N p => ?_) hre
   simpa using norm_quad13_le_integral X E N p.1 p.2.1 p.2.2
+
+/-! ### The bundle-shaped corollaries (kept for compatibility)
+
+Each is the primed statement with (2.78) taken from a `RBM.Steps`.  **They must not be used to
+produce `RBM.Steps.sharpExpect`** — that is the circularity of T147 §0a. -/
+
+theorem quad11_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) 1 × LoopData (B.L N) 1)),
+      Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
+    (hsteps : Steps X E s t) :
+    UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
+      ‖Step6.quad11 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 2) :=
+  quad11_unifDetDom' X hκ0 hκ1 hEκ hs0 ht1 hc0 hη hint hsteps.sharpLmK
+
+theorem quad13_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) 1 × LoopData (B.L N) 3)),
+      Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
+    (hsteps : Steps X E s t) :
+    UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
+      ‖Step6.quad13 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 4) :=
+  quad13_unifDetDom' X hκ0 hκ1 hEκ hs0 ht1 hc0 hη hint hsteps.sharpLmK
 
 end FirstMoment
 
@@ -901,37 +928,61 @@ length `≥ 1`, and `u < 1` comes from `t_N < 1`.
 The general-`RBM.Sample` statement is kept: nothing outside the Gaussian model can prove `hint`,
 since it rests on the deterministic envelope (5.2) along the flow together with continuity of the
 loop in `ω`. -/
-theorem quad11_unifDetDom_gauss (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
-    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem quad11_unifDetDom_gauss' (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 ≤ c)
     (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
-    (hsteps : Steps (sample d) E s t) :
+    (hlmk : SharpLmKFlow (sample d) E s t) :
     UnifDetDom
       (fun N (p : TimeIcc s t N × (ZMod ((band d).L N) × ZMod ((band d).L N))) =>
         ‖Step6.quad11 (sample d) E N p.1 p.2.1 p.2.2‖)
       (fun N p => ((band d).scale E N p.1)⁻¹ ^ 2) := by
   have hE : |E| < 2 := by linarith [abs_nonneg E]
-  refine quad11_unifDetDom (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη ?_ hsteps
+  refine quad11_unifDetDom' (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη ?_ hlmk
   intro N p
   exact integrable_sample_lkErr_mul_real d N hE (p.1.2.2.trans_lt (ht1 N)) _ _
     p.2.1.idx_wf (by simp [LoopData.idx]) p.2.2.idx_wf (by simp [LoopData.idx])
 
 /-- **`hq13` for the Gaussian model, with no integrability hypothesis.**  Same as
 `RBM.Gauss.quad11_unifDetDom_gauss`, with the second loop of length `3`. -/
+theorem quad13_unifDetDom_gauss' (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hlmk : SharpLmKFlow (sample d) E s t) :
+    UnifDetDom
+      (fun N (p : TimeIcc s t N × (ZMod ((band d).L N) × LoopData ((band d).L N) 3)) =>
+        ‖Step6.quad13 (sample d) E N p.1 p.2.1 p.2.2‖)
+      (fun N p => ((band d).scale E N p.1)⁻¹ ^ 4) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  refine quad13_unifDetDom' (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη ?_ hlmk
+  intro N p
+  exact integrable_sample_lkErr_mul_real d N hE (p.1.2.2.trans_lt (ht1 N)) _ _
+    p.2.1.idx_wf (by simp [LoopData.idx]) p.2.2.idx_wf (by simp [LoopData.idx])
+
+/-! ### The bundle-shaped corollaries for the Gaussian model -/
+
+theorem quad11_unifDetDom_gauss (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hsteps : Steps (sample d) E s t) :
+    UnifDetDom
+      (fun N (p : TimeIcc s t N × (ZMod ((band d).L N) × ZMod ((band d).L N))) =>
+        ‖Step6.quad11 (sample d) E N p.1 p.2.1 p.2.2‖)
+      (fun N p => ((band d).scale E N p.1)⁻¹ ^ 2) :=
+  quad11_unifDetDom_gauss' d hκ0 hκ1 hEκ hs0 ht1 hc0 hη hsteps.sharpLmK
+
 theorem quad13_unifDetDom_gauss (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
-    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 ≤ c)
     (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
     (hsteps : Steps (sample d) E s t) :
     UnifDetDom
       (fun N (p : TimeIcc s t N × (ZMod ((band d).L N) × LoopData ((band d).L N) 3)) =>
         ‖Step6.quad13 (sample d) E N p.1 p.2.1 p.2.2‖)
-      (fun N p => ((band d).scale E N p.1)⁻¹ ^ 4) := by
-  have hE : |E| < 2 := by linarith [abs_nonneg E]
-  refine quad13_unifDetDom (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη ?_ hsteps
-  intro N p
-  exact integrable_sample_lkErr_mul_real d N hE (p.1.2.2.trans_lt (ht1 N)) _ _
-    p.2.1.idx_wf (by simp [LoopData.idx]) p.2.2.idx_wf (by simp [LoopData.idx])
+      (fun N p => ((band d).scale E N p.1)⁻¹ ^ 4) :=
+  quad13_unifDetDom_gauss' d hκ0 hκ1 hEκ hs0 ht1 hc0 hη hsteps.sharpLmK
 
 end FirstMomentGauss
 

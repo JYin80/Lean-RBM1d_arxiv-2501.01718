@@ -427,7 +427,7 @@ section Assembly
 given the time-indexed (4.2)/(4.3), and `cont` is `RBM.Gauss.cont_gauss` (this file,
 unconditional).  Only `lift` is still an input; see `stochDom_of_forall_seq_relaxed` for what
 it reduces to. -/
-theorem step1Hyp_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N)
+theorem step1Hyp_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) (hEntry : EntryBoundFlow d E s t) (hDiag : DiagBoundFlow d E s t)
     (hlift : ∀ n : ℕ, 1 ≤ n → Step1.NetLift (P d) s t
       (Step1.loopInd (sample d) E s t n) (Step1.aprioriRhs (band d) E s t n)) :
@@ -436,7 +436,7 @@ theorem step1Hyp_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (
     loopScaling_gauss (d := d) (fun N => lt_of_lt_of_le (by norm_num : (0:ℝ) < 1/2) (h1 N)) h12
   lift := hlift
   lemma41 := lemma41Flow hE hs0 ht1 hEntry hDiag
-  cont := cont_gauss d hE (fun N => (hs0 N).le) ht1
+  cont := cont_gauss d hE (fun N => (hs0 N)) ht1
 
 end Assembly
 
@@ -708,14 +708,14 @@ variable {Ωb : Type*} [MeasurableSpace Ωb] {B : Band Ωb}
 By `RBM.Gauss.aprioriRhs_eq` the right side is `(ℓ_s W η_u)^{-n+1}`, and `ℓ_s W η_u ≤ W L ≤ N`
 because `ℓ_s ≤ L` and `η_u ≤ 1`. -/
 theorem rpow_neg_le_aprioriRhs (B : Band Ωb) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {n : ℕ} (hn : 1 ≤ n) :
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {n : ℕ} (hn : 1 ≤ n) :
     ∀ᶠ N : ℕ in atTop, ∀ (p : RBM.TimeIcc s t N × LoopData (B.L N) n) (ω : Ωb),
       (N : ℝ) ^ (-((n : ℝ) - 1)) ≤ Step1.aprioriRhs B E s t n N p ω := by
   filter_upwards [B.dim, eventually_ge_atTop 1] with N hdim hN1
   intro p ω
   have hsu : s N ≤ (p.1 : ℝ) := p.1.2.1
   have hut : (p.1 : ℝ) ≤ t N := p.1.2.2
-  have hu0 : 0 < (p.1 : ℝ) := (hs0 N).trans_le hsu
+  have hu0 : (0 : ℝ) ≤ (p.1 : ℝ) := (hs0 N).trans hsu
   have hu1 : (p.1 : ℝ) < 1 := hut.trans_lt (ht1 N)
   have hs1 : s N < 1 := (hst N).trans_lt (ht1 N)
   have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
@@ -728,7 +728,7 @@ theorem rpow_neg_le_aprioriRhs (B : Band Ωb) {E : ℝ} (hE : |E| < 2) {s t : �
   have hQ0 : 0 < Q := by rw [hQdef]; positivity
   have hQN : Q ≤ (N : ℝ) := by
     have h1 : B.ell N (s N) ≤ (B.L N : ℝ) := min_le_right _ _
-    have h2 : etaT E (p.1 : ℝ) ≤ 1 := RBM.etaT_le_one hE hu0.le
+    have h2 : etaT E (p.1 : ℝ) ≤ 1 := RBM.etaT_le_one hE hu0
     have hWL : (B.W N : ℝ) * B.L N ≤ N := by exact_mod_cast hdim.1
     calc Q ≤ (B.L N : ℝ) * (B.W N : ℝ) * 1 :=
           mul_le_mul (mul_le_mul_of_nonneg_right h1 hW.le) h2 hη.le (by positivity)
@@ -802,7 +802,7 @@ theorem pow_one_sub_le_two_mul {k : ℕ} {u u' T ε : ℝ} (hk : 1 ≤ k) (huT :
 /-- **Item (2): the slow variation `ζ(u') ≤ 2 ζ(u)`** of the right side of (5.8), for net
 spacing `ε` below `(1 - t_N)/(2(n-1))`. -/
 theorem aprioriRhs_le_two_mul (B : Band Ωb) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (_hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {n : ℕ} (_hn : 1 ≤ n)
+    (_hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {n : ℕ} (_hn : 1 ≤ n)
     {N : ℕ} {ε : ℝ} (hsmall : 2 * ((n - 1 : ℕ) : ℝ) * ε ≤ 1 - t N)
     (u u' : RBM.TimeIcc s t N) (hcl : |(u : ℝ) - (u' : ℝ)| ≤ ε) (v : LoopData (B.L N) n)
     (ω : Ωb) :
@@ -870,7 +870,7 @@ theorem loopIndThr_nonneg (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (C₀ : �
 /-- **Item (4): (5.8) along a time sequence with the raised threshold `C₀`.**  Verbatim the
 proof of `RBM.Step1.eq58_seq`, with `RBM.lemma_5_1'` replaced by `RBM.lemma_5_1'_thr`. -/
 theorem eq58_seq_thr (X : Sample B) {E : ℝ} {s t : ℕ → ℝ} {κ C₀ : ℝ} (hκ : 0 < κ)
-    (hE : |E| ≤ 2 - κ) (hC₀ : 0 ≤ C₀) (hB : BoundsCore X E s) (hs0 : ∀ N, 0 < s N)
+    (hE : |E| ≤ 2 - κ) (hC₀ : 0 ≤ C₀) (hB : BoundsCore X E s) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (hS : ∀ t₁ t₂ : ℕ → ℝ, (∀ N, 1 / 2 ≤ t₁ N) → (∀ N, t₁ N ≤ t₂ N) → (∀ N, t₂ N < 1) →
       LoopScaling X E t₁ t₂)
@@ -888,12 +888,12 @@ theorem eq58_seq_thr (X : Sample B) {E : ℝ} {s t : ℕ → ℝ} {κ C₀ : ℝ
   set C : ℝ := (2 / (mE E).im) ^ n with hC
   have hm := mE_im_pos hE2
   have hC0 : 0 ≤ C := by positivity
-  have hu0 : ∀ N, 0 < (u N : ℝ) := fun N => (hs0 N).trans_le (u N).2.1
+  have hu0 : ∀ N, (0 : ℝ) ≤ (u N : ℝ) := fun N => (hs0 N).trans (u N).2.1
   have hu1 : ∀ N, (u N : ℝ) < 1 := fun N => (u N).2.2.trans_lt (ht1 N)
   have hζ0 : ∀ N, 0 ≤ (B.ell N (u N) / B.ell N (s N)) ^ (n - 1) *
       (B.scale E N (u N))⁻¹ ^ (n - 1) := fun N => by
     have h := Step1.one_le_ell_div (B := B) (N := N) (u N).2.1 (hu1 N)
-    have := (B.scale_pos hE2 N (hu0 N) (hu1 N))
+    have := (B.scale_pos' hE2 N (hu0 N) (hu1 N))
     positivity
   have hdet : StochDom B.P
       (fun N (_ : LoopData (B.L N) n) (_ : Ωb) => C * ((B.ell N (u N) / B.ell N (s N)) ^ (n - 1) *
@@ -914,7 +914,7 @@ theorem eq58_seq_thr (X : Sample B) {E : ℝ} {s t : ℕ → ℝ} {κ C₀ : ℝ
     have hℓu := Step3.ellHat_pos_of_lt_one (L := B.L N) hL (hu1 N)
     have hmono : ellHat (B.L N) ((s N : ℝ) : ℂ) ≤ ellHat (B.L N) ((Step1.startTime s N : ℝ) : ℂ) :=
       Step3.ellHat_mono (le_max_left _ _) (h.trans_lt (hu1 N))
-    have hA := (B.scale_pos hE2 N (hu0 N) (hu1 N))
+    have hA := (B.scale_pos' hE2 N (hu0 N) (hu1 N))
     refine mul_le_mul_of_nonneg_right ?_ (by positivity)
     refine pow_le_pow_left₀ (div_nonneg hℓu.le (hℓs.trans_le hmono).le) ?_ _
     simp only [Band.ell]
@@ -931,7 +931,7 @@ theorem eq58_seq_thr (X : Sample B) {E : ℝ} {s t : ℕ → ℝ} {κ C₀ : ℝ
     refine hind.trans ((Step1.norm_Lval_le_of_le_half X hE2 N (hu0 N) hhalf ω hn v).trans ?_)
     rw [← hC]
     have hR := one_le_pow₀ (n := n - 1) (Step1.one_le_ell_div (B := B) (N := N) (u N).2.1 (hu1 N))
-    have hA := (B.scale_pos hE2 N (hu0 N) (hu1 N))
+    have hA := (B.scale_pos' hE2 N (hu0 N) (hu1 N))
     have hA' : 0 ≤ (B.scale E N (u N))⁻¹ ^ (n - 1) := by positivity
     have := mul_le_mul_of_nonneg_right hR hA'
     rw [one_mul] at this
@@ -1000,7 +1000,7 @@ open Filter MeasureTheory
 The regime hypothesis `hreg` (`t_N ≤ 1 - N^{-c}`) is what makes the net spacing `N^{-A}`
 smaller than a multiple of `1 - t_N`; it is the paper's own regime `t ≤ 1 - N^{-1+τ}`. -/
 theorem netLift_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc : 0 < c) (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-c) ≤ 1 - t N)
     {n : ℕ} (hn : 1 ≤ n)
     (hrel : ∀ u : ∀ N, RBM.TimeIcc s t N,
@@ -1023,7 +1023,7 @@ theorem netLift_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
   intro ω hω u u' hd v
   have hN0 : (0 : ℝ) < N := by exact_mod_cast hN1
   have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
-  have ht0 : (0 : ℝ) ≤ t N := le_trans (hs0 N).le (hst N)
+  have ht0 : (0 : ℝ) ≤ t N := le_trans (hs0 N) (hst N)
   have hηt : 0 < etaT E (t N) := etaT_pos_of_lt_one' hE (ht1 N)
   set q : ℝ := (etaT E (t N))⁻¹ with hqdef
   have hq1 : (1 : ℝ) ≤ q := one_le_inv_etaT hE ht0 (ht1 N)
@@ -1073,7 +1073,7 @@ theorem netLift_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
   -- the entrywise modulus of the resolvent
   have hGop : ‖green (Hflow d N (u : ℝ) ω) (zt E (u : ℝ))
       - green (Hflow d N (u' : ℝ) ω) (zt E (u' : ℝ))‖ ≤ Δ :=
-    norm_green_flow_sub_le_sqrt d N hE (hs0 N).le (ht1 N) ω u.2 u'.2
+    norm_green_flow_sub_le_sqrt d N hE (hs0 N) (ht1 N) ω u.2 u'.2
   have hexp : -(((n : ℝ) - 1) + 2) = -((n : ℝ) + 1) := by ring
   rw [hexp]
   by_cases hωu : ω ∈ Step1.gEv (sample d) E N (u : ℝ)
@@ -1092,7 +1092,7 @@ theorem netLift_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
       show ‖green (Hflow d N (u' : ℝ) ω) (zt E (u' : ℝ)) i j‖ ≤ 3
       linarith
     rw [Step1.loopInd, Set.indicator_of_mem hωu, loopIndThr, Set.indicator_of_mem hmem']
-    have hL := norm_Lval_sub_le_sqrt d N hE (hs0 N).le (ht1 N) ω u.2 u'.2 hn v
+    have hL := norm_Lval_sub_le_sqrt d N hE (hs0 N) (ht1 N) ω u.2 u'.2 hn v
     have hLsub : ‖(sample d).Lval E N (u : ℝ) ω v.idx‖
         - ‖(sample d).Lval E N (u' : ℝ) ω v.idx‖ ≤ (n : ℝ) * (Δ * q ^ (n - 1)) := by
       refine le_trans (norm_sub_norm_le _ _) ?_
@@ -1136,7 +1136,7 @@ Compared with `RBM.Gauss.step1Hyp_gauss`, the hypothesis `hlift` is gone; what r
 (2.68)/(2.70) at `s` (`BoundsCore`) and (2.72) (`Cond272`) — which `RBM.Step1.step1` assumes
 anyway — together with the regime `t_N ≤ 1 - N^{-c}`. -/
 theorem step1Hyp_gauss_of_regime (d : Dims) {E κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ)
-    {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     (hB : BoundsCore (sample d) E s) (hcond : Cond272 (band d) E s t)
     {c : ℝ} (hc : 0 < c) (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-c) ≤ 1 - t N)
     (hEntry : EntryBoundFlow d E s t) (hDiag : DiagBoundFlow d E s t) :
@@ -1151,7 +1151,7 @@ theorem step1Hyp_gauss_of_regime (d : Dims) {E κ : ℝ} (hκ : 0 < κ) (hE : |E
         (fun u => eq58_seq_thr (sample d) hκ hE (C₀ := 3) (by norm_num) hB hs0 hst ht1 hcond
           hS u hn)
       lemma41 := lemma41Flow hE2 hs0 ht1 hEntry hDiag
-      cont := cont_gauss d hE2 (fun N => (hs0 N).le) ht1 }
+      cont := cont_gauss d hE2 (fun N => (hs0 N)) ht1 }
 
 /-- **The regime hypothesis of `netLift_gauss` is already a hypothesis of `RBM.Step1.step1`.**
 From `N^c ≤ W ℓ_t η_t` and `W ℓ_t ≤ W L ≤ N` one gets `η_t ≥ N^{c-1} ≥ N^{-1}`, and
@@ -1194,7 +1194,7 @@ theorem rpow_neg_one_le_one_sub_of_scale_ge {Ωb : Type*} [MeasurableSpace Ωb] 
 `RBM.Step1.step1`'s own `N^c ≤ W ℓ_t η_t`.  So on top of `RBM.Step1.step1`'s hypotheses the
 only inputs left are (4.2)/(4.3) along the flow (T107). -/
 theorem step1Hyp_gauss_of_scale (d : Dims) {E κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ)
-    {s t : ℕ → ℝ} (hB : BoundsCore (sample d) E s) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+    {s t : ℕ → ℝ} (hB : BoundsCore (sample d) E s) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hcond : Cond272 (band d) E s t) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ (band d).scale E N (t N))
     (hEntry : EntryBoundFlow d E s t) (hDiag : DiagBoundFlow d E s t) :

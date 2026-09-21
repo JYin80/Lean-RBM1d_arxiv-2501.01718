@@ -559,7 +559,7 @@ The only probabilistic input is T109's `RBM.Gauss.stochDom_norm_Xmat_gauss` (`�
 unconditional), used at the single exponent `τ = 1/2`; everything else is the standing regime
 plus (2.72), through `RBM.SumZeroDyn.flow_crude`. -/
 theorem highProb_xiLowEvent (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     (hcond : Cond272 (band d) E s t) (n : ℕ) :
     HighProb (band d).P
       (EEBridge.xiLowEvent (sample d) E s t n ((6 * (n + 3) : ℕ) : ℝ)) := by
@@ -571,7 +571,7 @@ theorem highProb_xiLowEvent (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → �
   intro ω hω u
   have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
   have hN0' : (0 : ℝ) < (N : ℝ) := by linarith
-  have hu0 : 0 < (u : ℝ) := lt_of_lt_of_le (hs0 N) u.2.1
+  have hu0 : (0 : ℝ) ≤ (u : ℝ) := le_trans (hs0 N) u.2.1
   have hu1 : (u : ℝ) < 1 := lt_of_le_of_lt u.2.2 (ht1 N)
   -- the spectral parameter is off the real axis
   have hz : (zt E (u : ℝ)).im ≠ 0 := by
@@ -592,7 +592,7 @@ theorem highProb_xiLowEvent (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → �
   have hΘ : entryMax ((sample d).H N (u : ℝ) ω) + ‖zt E (u : ℝ)‖ ≤ (N : ℝ) := by
     have h1 : entryMax ((sample d).H N (u : ℝ) ω) ≤ (N : ℝ) ^ ((1 : ℝ) / 2) :=
       le_trans (entryMax_Hflow_le d N hu1.le ω) hX
-    have h2 : ‖zt E (u : ℝ)‖ ≤ 3 := norm_zt_le_three hE hu0.le hu1.le
+    have h2 : ‖zt E (u : ℝ)‖ ≤ 3 := norm_zt_le_three hE hu0 hu1.le
     have h3 : (3 : ℝ) ≤ 3 * (N : ℝ) ^ ((1 : ℝ) / 2) := by linarith
     calc entryMax ((sample d).H N (u : ℝ) ω) + ‖zt E (u : ℝ)‖
         ≤ (N : ℝ) ^ ((1 : ℝ) / 2) + 3 * (N : ℝ) ^ ((1 : ℝ) / 2) := by linarith

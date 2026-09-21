@@ -996,7 +996,7 @@ section InvDist
 
 variable (L : ℕ) [NeZero L] {ξ : ℂ}
 
-theorem one_le_ellHat (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+theorem one_le_ellHat (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
     1 ≤ ellHat L (t : ℂ) := by
   have h1t : (0 : ℝ) < 1 - t := by linarith
   have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
@@ -1028,7 +1028,7 @@ theorem norm_Theta_second_diff_le_inv_dist (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t
   have hs : 0 < Real.sqrt (1 - t) := Real.sqrt_pos.mpr h1t
   have hnr : ‖rho (t : ℂ)‖ = r := by
     rw [hrho, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hr0]
-  have hell1 : 1 ≤ ellHat L (t : ℂ) := one_le_ellHat L hL ht0 ht1
+  have hell1 : 1 ≤ ellHat L (t : ℂ) := one_le_ellHat L hL ht0.le ht1
   have hellpos : (0 : ℝ) < ellHat L (t : ℂ) := lt_of_lt_of_le one_pos hell1
   have hdnn : (0 : ℝ) ≤ (zdist L (x - y) : ℝ) := Nat.cast_nonneg _
   have hrd : (0 : ℝ) ≤ r ^ (zdist L (x - y) - 1) := pow_nonneg hr0.le _

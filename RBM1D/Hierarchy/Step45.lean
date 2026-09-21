@@ -256,7 +256,7 @@ open Step3
 
 /-- **(2.78) from `Ξ^{(L-K)}_{u,n} ≺ 1`**: `max_{σ,a} |L_{u,σ,a} - K_{u,σ,a}| ≺ (W ℓ_u η_u)^{-n}`,
 uniformly in `u ∈ [s,t]` (the shape of the field `RBM.Steps.sharpLmK`). -/
-theorem flow_lkErr_le_of (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {n : ℕ}
+theorem flow_lkErr_le_of (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) {n : ℕ}
     (hX : StochDom B.P (flowXiLK X E s t n) fun _ _ _ => 1) :
     StochDom B.P
       (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
@@ -281,7 +281,7 @@ theorem flow_lkErr_le_of (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N
 (2.76)) — the inputs of Step 3 —; and the base cases `Ξ^{(L-K)}_{u,1} ≺ 1` (from (4.5)) and
 `Ξ^{(L-K)}_{u,2} ≺ (W ℓ_u η_u)^{1/4}` (from (2.76), (2.72)). -/
 theorem flow_sharpLmK {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (h514 : ∀ n, 2 ≤ n → Lemma514 B.P (flowXiLK X E s t) (flowXiL X E s t) (flowA B E s t) n)
     (h0 : ∀ m, 1 ≤ m → S B.P (flowXiLK X E s t) (flowAs B E s) (flowR B s t) (flowA B E s t) m 0)
     (h12 : ∀ m l, 1 ≤ m → m ≤ 2 →
@@ -429,7 +429,7 @@ for `σ = (+,-)` and every `D > 0`,
 `|L_{u,σ,a} - K_{u,σ,a}| ≺ (W ℓ_u η_u)^{-2} (exp(-(|a₁-a₂|/ℓ_u)^{1/2}) + W^{-D})`, uniformly in
 `u ∈ [s,t]` and `a₁, a₂`.  Inputs: (2.78) at `n = 2` (Step 4, `flow_sharpLmK`), used for
 `|a₁-a₂| ≤ 6 ℓ*_u`, and (5.48), used for `|a₁-a₂| > 6 ℓ*_u`. -/
-theorem flow_sharpDecay (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem flow_sharpDecay (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     (h4 : StochDom B.P
       (fun N (p : TimeIcc s t N × LoopData (B.L N) 2) ω => X.lkErr E N p.1 ω p.2.idx)
       (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2))
@@ -438,14 +438,14 @@ theorem flow_sharpDecay (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N 
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
       (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2) := by
-  have hu0 : ∀ N (u : TimeIcc s t N), 0 < (u : ℝ) := fun N u => (hs0 N).trans_le u.2.1
+  have hu0 : ∀ N (u : TimeIcc s t N), (0 : ℝ) ≤ (u : ℝ) := fun N u => (hs0 N).trans u.2.1
   have hu1 : ∀ N (u : TimeIcc s t N), (u : ℝ) < 1 := fun N u => u.2.2.trans_lt (ht1 N)
   have h4' := h4.precomp_param
     (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) => (p.1, pmData p.2.1 p.2.2))
   refine decay_of_split (tendsto_atTop.2 fun b => B.eventually_le_W b) (eventually_W_le B)
     (fun N => by exact_mod_cast B.W_pos N)
     (fun N p => Step3.ellHat_pos_of_lt_one (by have := B.three_le_L N; omega) (hu1 N p.1))
-    (fun N p => B.scale_pos hE N (hu0 N p.1) (hu1 N p.1)) ?_ h4' h548
+    (fun N p => B.scale_pos' hE N (hu0 N p.1) (hu1 N p.1)) ?_ h4' h548
   refine Eventually.of_forall fun N p => ?_
   have h := etaT_mul_ellHat_le (B.three_le_L N) hE.le (hu0 N p.1) (hu1 N p.1)
   have hW : (0 : ℝ) ≤ B.W N := Nat.cast_nonneg _
@@ -456,7 +456,7 @@ theorem flow_sharpDecay (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N 
 /-- **Steps 4 and 5 together**: under the inputs of `flow_sharpLmK` and (5.48), both (2.78) and
 (2.79) hold, in the shapes of the fields `RBM.Steps.sharpLmK` and `RBM.Steps.sharpDecay`. -/
 theorem flow_steps45 {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (h514 : ∀ n, 2 ≤ n →
       Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t) (Step3.flowA B E s t) n)
     (h0 : ∀ m, 1 ≤ m → Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s)

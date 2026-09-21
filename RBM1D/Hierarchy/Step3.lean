@@ -917,12 +917,12 @@ noncomputable def flowR (B : Band Ω) (s t : ℕ → ℝ) : ℕ → ℝ :=
 
 variable {E : ℝ} {s t : ℕ → ℝ}
 
-theorem flowA_pos (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) (N : ℕ)
+theorem flowA_pos (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (N : ℕ)
     (u : TimeIcc s t N) : 0 < flowA B E s t N u :=
-  B.scale_pos hE N ((hs0 N).trans_le u.2.1) (u.2.2.trans_lt (ht1 N))
+  B.scale_pos' hE N ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N))
 
 /-- **(2.72) gives the scale conditions of Step 3** for `u ∈ [s,t]`. -/
-theorem scales_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
+theorem scales_flow (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) :
     Scales (flowAs B E s) (flowR B s t) (flowA B E s t) := by
   have hs1 : ∀ N, s N < 1 := fun N => (hst N).trans_lt (ht1 N)
@@ -933,7 +933,7 @@ theorem scales_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ 
         flowR B s t N ^ 2 * flowAs B E s N ^ ((3 : ℝ) / 4) ≤ flowA B E s t N u := by
     filter_upwards [hc] with N hN u
     exact scale_facts_of_cond272 (hW N) (hL N) hE u.2.1 u.2.2 (ht1 N) hN
-  refine ⟨fun N => B.scale_pos hE N (hs0 N) (hs1 N), fun N => ?_,
+  refine ⟨fun N => B.scale_pos' hE N (hs0 N) (hs1 N), fun N => ?_,
     flowA_pos hE hs0 ht1, ?_, ?_, ?_, ?_⟩
   · exact div_nonneg (ellHat_pos_of_lt_one (hL N) (ht1 N)).le
       (ellHat_pos_of_lt_one (hL N) (hs1 N)).le
@@ -948,18 +948,18 @@ theorem scales_flow (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ 
 
 /-- The bound (2.59) on `K`, at the times `u ∈ [s,t]`, in the form used by (5.107). -/
 theorem exists_norm_Kval_le {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {n : ℕ} (hn : 1 ≤ n) :
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) {n : ℕ} (hn : 1 ≤ n) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) n),
       ‖B.Kval E N u v.idx‖ ≤ C * (B.scale E N u)⁻¹ ^ (n - 1) := by
   obtain ⟨C, hC0, hC⟩ := B.norm_Kval_le hκ0 hκ1 hEκ hn
   refine ⟨C, hC0, fun N u v => ?_⟩
-  exact hC N u ((hs0 N).trans_le u.2.1).le (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf (by simp)
+  exact hC N u ((hs0 N).trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf (by simp)
 
 variable (X : Sample B)
 
 /-- **(5.107) for the flow** from a bound `|K_{u,σ,a}| ≤ C (W ℓ_u η_u)^{-n+1}` (this is (2.59)):
 `Ξ^{(L)}_{u,n} ≺ 1 + (W ℓ_u η_u)^{-1} Ξ^{(L-K)}_{u,n}`, uniformly in `u ∈ [s,t]`. -/
-theorem flow_xiL_le_of {C : ℝ} (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+theorem flow_xiL_le_of {C : ℝ} (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     {n : ℕ} (hn : 1 ≤ n)
     (hC : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) n),
       ‖B.Kval E N u v.idx‖ ≤ C * (B.scale E N u)⁻¹ ^ (n - 1)) :
@@ -988,14 +988,14 @@ theorem flow_xiL_le_of {C : ℝ} (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : �
 
 /-- **(5.107) for the flow** (`n ≥ 3`), from (2.59) (`RBM.norm_Kgen_le`). -/
 theorem flow_xiL_le {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {n : ℕ} (hn : 1 ≤ n) :
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) {n : ℕ} (hn : 1 ≤ n) :
     StochDom B.P (flowXiL X E s t n)
       fun N u ω => 1 + (flowA B E s t N u)⁻¹ * flowXiLK X E s t n N u ω := by
   obtain ⟨C, -, hC⟩ := exists_norm_Kval_le (B := B) hκ0 hκ1 hEκ hs0 ht1 hn
   exact flow_xiL_le_of X (by linarith) hs0 ht1 hn hC
 
 /-- **(5.107) for the flow at `n = 1`**: `K_{u,(σ),(a)} = m(σ)` has `|m(σ)| ≤ 1`. -/
-theorem flow_xiL_le_one_len (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) :
+theorem flow_xiL_le_one_len (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) :
     StochDom B.P (flowXiL X E s t 1)
       fun N u ω => 1 + (flowA B E s t N u)⁻¹ * flowXiLK X E s t 1 N u ω := by
   refine flow_xiL_le_of X (C := 1) hE hs0 ht1 le_rfl fun N u v => ?_
@@ -1008,7 +1008,7 @@ Lemma 5.14 (5.92) (the only random-layer input), the hypotheses `RBM.Step3.Hyp` 
 `Ξ^{(L-K)}`, `Ξ^{(L)}` of (5.76) on `[s,t]`: (5.107) by (2.59), (5.118) by
 `RBM.loopXi_le`, the scale conditions by (2.72). -/
 theorem hyp_flow {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (h514 : ∀ n, 3 ≤ n → Lemma514 B.P (flowXiLK X E s t) (flowXiL X E s t) (flowA B E s t) n) :
     Hyp B.P (flowXiLK X E s t) (flowXiL X E s t) (flowAs B E s) (flowR B s t)
       (flowA B E s t) := by
@@ -1028,7 +1028,7 @@ theorem hyp_flow {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 
 Inputs: `|E| ≤ 2 - κ`, `0 < s ≤ t < 1`, (2.72), Lemma 5.14 (5.92), `S(m,0)` for `m ≥ 1` (from
 (2.73), (3.46)) and `S(m,l)` for `m ≤ 2` (from (2.75), (2.76)). -/
 theorem flow_sharpLoop_of {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (h514 : ∀ n, 3 ≤ n → Lemma514 B.P (flowXiLK X E s t) (flowXiL X E s t) (flowA B E s t) n)
     (h0 : ∀ m, 1 ≤ m → S B.P (flowXiLK X E s t) (flowAs B E s) (flowR B s t) (flowA B E s t) m 0)
     (h12 : ∀ m l, 1 ≤ m → m ≤ 2 →
@@ -1060,7 +1060,7 @@ theorem flow_sharpLoop_of {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |
 (`n = 2` needs (5.107) at `n = 2`, i.e. `|K_{u,σ,a}| ≤ C (W ℓ_u η_u)^{-1}` for `2`-loops,
 which is not used anywhere in the induction and not proved here.) -/
 theorem flow_sharpLoop {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
     (h514 : ∀ n, 3 ≤ n → Lemma514 B.P (flowXiLK X E s t) (flowXiL X E s t) (flowA B E s t) n)
     (h0 : ∀ m, 1 ≤ m → S B.P (flowXiLK X E s t) (flowAs B E s) (flowR B s t) (flowA B E s t) m 0)
     (h12 : ∀ m l, 1 ≤ m → m ≤ 2 →

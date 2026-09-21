@@ -1,6 +1,8 @@
 # 任务队列
 
-> ## ⭐⭐⭐ 当前优先级：T145 > T146 ‖ T140 ‖ T141 > T132b > T132c > T142 > T143 > T144 > T139 > T58（2026-09-21 04:55，Cowork；T132a 部分完成、T136 完成）
+> ## ⭐⭐⭐ 当前优先级：T149 > T132b ‖ T146 ‖ T148 > T150 ‖ T151 > T132c > T152 > T153 > T58（2026-09-21 07:50，Cowork，据 T147 审计）
+>
+> **T58 的四项交付物在矩路线下的归属**：① Step 2 路线 A → **放弃**，走路线 B（T132c）；②③ `Lemma514` → **T146**（矩 Duhamel 重新生产）；④ Step 6 层级 → **T152**。T58 只剩表示桥与 (5.19)（已由 T140 以更正形式证出），**降为清理单**。
 >
 > **T132 是随机层真正剩下的那堵墙**（T74/T76 判定逐路径 `duhamel`/`bdg` 在 `√u·X` 下不可卸，之后没人接手）。规格见下文「T132 规格」。T133、T134 是它的两块前置零件，可并行。
 >
@@ -310,6 +312,11 @@
 | T146 | **`hrhs`：矩 Duhamel 右端三项的 `‖·‖_{2p}` 界**（T132a 余项；重新生产 `Step3.Lemma514` 的最后一环）。**第 0 步：先试「≺ ⟹ 矩」的桥，而不是把 `stochDom_of_logBound`/`term1F`/`termI1`/`QV1_stochDom` 整套做矩版**——那些定理在对时间积分**之前**已有逐时刻的 `≺` 界（(7.16) 核估计 + `Lemma510` 幂次计数），逐时刻 `|U∘F_u| ≺ Φ_u` + 确定性包络（T77 `norm_gloop_le_det`）经 T77 `momentDom_of_stochDom` 就给 `‖U∘F_u‖_{2p} ≤ N^ε Φ_u`；控制的多项式下界用 T135 的吸收引理。若中间 `≺` 结论在现有定理里没被单独陈述，就把它**抽出来**（不改旧签名）。时间一致性走 T124 网引擎（`TimeIcc` 非 `Fintype`，T132a 已确认） | `Gauss/MomentDuhamelRhs.lean`（新建） | Claude Code | 进行中（Claude Code agent） |
 | T147 | **审计：总装还差什么（精确清单）**。从最顶层的定理（Theorem 2.2 / `Thm221` 经 Lemmas 2.18–2.20 的迭代）往下，列出**目前仍被携带的全部具名假设**，每条标：已有生产者（哪个定理）/ 在飞行中（哪张单）/ 无主（缺什么）。特别核对：矩路线接上后 `SumZeroDyn.Hierarchy`、`MomentHyp`、`BootPP`、`Step6.Hierarchy` 各自由谁替代；`hll`（u-一致弱局部律）是否就是 `Steps` 的字段。**只交清单，不写 Lean**；用于给 Jun 估算剩余工作量 | `docs/STATUS.md` | Claude Code | **完成**（七个编译探针；结论：拦路的头两项是**记账**——`Steps` 当假设用是循环打包、`0 < s` 未放宽；`T58` 有**四**项交付物且 Steps 2–6 全压在它上面；`BootPP.step`、`Step45.FlowEq548`、`StepTwoClaim`、Thm 2.2 的概率一半**无主无工单**；另有 9 处「已证但没接线」，见 STATUS） |
 | T148 | **`LDENetClose`**（T143 余项，paper-deltas #104）：`ξ(u)/ζ(u) = u|⟨g, w(u)⟩|²` 对 `u` 一致，`g` 是第 `i` 行（高斯）、`w(u)` 是小行 Green 列的单位化。**第 0 步：试「条件化 + 不单位化 + 加地板」**——对其余各行条件化（T84 的坐标积分），`v(u)` 成为确定性曲线、与 `g` 独立；改证 `|⟨g, v(u)⟩| ≤ N^ε(‖v(u)‖ + N^{−D})`：网点上用高斯尾 + 并界，网点之间用 `v` 的确定性 Hölder 模（`‖v(u)−v(u')‖ ≤ η⁻²(‖X‖+1)|u−u'|^{1/2}`，T106）与 `‖g‖ ≤ N`；单位化在 `v(u) → 0` 处不 Lipschitz，**所以别单位化**，地板 `N^{−D}` 用 T135 的吸收引理收回。若消费者 `ldeFlowDom_of_close` 不容地板，报告需要的形状 | `Gauss/LDEFlow.lean`（续） | Claude Code | 进行中（Claude Code agent） |
+| T149 | **⭐⭐⭐ 拆 `Steps` 包 + `0 ≤ s`**（T147 §0a/§0b，**杠杆最大、零新数学、最先做**）：约 8 条 glue 定理把整个 `RBM.Steps` 当假设收，而它们自己生产其中字段——打包上的循环（探针 P2/P5 已证实）。把这些签名里的 `hSteps : Steps X E s t` 换成**实际用到的字段**（全树只取 5 个投影：`apriori`、`localLaw`、`aprioriDecay`、`sharpLoop 2`、`sharpLmK 1/3`）。新增带撇版、旧签名保留（它们仍然正确，只是循环）；另把 `hs0 : 0 < s` 放宽成 `0 ≤ s`（`one_le_ellHat_of_nonneg`，探针 P4 五行）。**验收：一个探针把 1→2→3→4/5→6 按依赖序串起来，不再出现「先有 `Steps` 才能造 `Steps`」** | glue 文件（`StepGlue`/`Step2PP`/`Step6Hyp` 等）追加带撇版 | 待认领 | 未开工 |
+| T150 | **接线：已卸但没接的**（T147 §6(c)）：`hll`（`Steps.localLaw` + `Step3.Scales.le_A`，探针 P7）、Step 6 的 `hint1`（`integrable_sample_Lval`，P5b）、Thm 2.5 的 `hint_pp/hint_pm`、`eq45Flow_of_localLaw_gain` 的三个时间 Hölder 模 `hHolIBP/hHolRow/hHolBlk`（T129 + T106 组装）。**零新数学**，每条一个带撇定理 + 探针 | 各消费者所在文件（追加） | 待认领 | 未开工 |
+| T151 | **`FlucGain` 分级接口的改接**（T147 §6(b)④⑤）：`eq45Flow_of_localLaw_gain` 要**不分级**的 `FlucGain`，而 T137/T142 产出的是分级 `FlucGainUpTo`；把该消费者搬到分级接口（只需 `M = 2p`），落地 T142 探针里的 `flucGainUpTo_of_minorDiff` 桥，按 `ρB ≍ Ψ²` 重算 `hΦW`/`hΨW` | `Gauss/FlucIterHigh.lean` + `Gauss/Eq45FlowInputs.lean` | 待认领 | 未开工 |
+| T152 | **Step 6 的层级（`Step6.Hierarchy` + `FastDecayHyp` + `h5133` + `hG`）走矩路线**（T147 §5，原 T58 ④）：`Step6.Hierarchy` 是**期望形**的 (5.20)@长度 2（无 ω、无鞅、漂移拆成 `DLK + DG`），正是 T132b 的带时间生成元恒等式在**一阶**（线性，不取 `|·|^{2p}`）上的直接推论。`DLK`/`DG` 取 T134/T140 已钉死的漂移。等 T132b | `Gauss/Step6HierarchyGauss.lean`（新建） | 待认领 | 未开工 |
+| T153 | **Theorem 2.2 的概率一半**（T147 §1，无主）：(2.10) 要在随机谱参数 `z = λ_k(ω) + iη` 处用局部律，而 `localSemicircleLaw_of_Thm221` 对确定性 `z : ℕ → ℂ` 陈述，`SpecSeq` 还把能量钉成与 `N` 无关。**第 0 步：查固定 `E` 的假设渗进多深**（`E : ℝ` 在 `Flow/`、`Hierarchy/` 里是否处处是参数）；方案候选：(i) 允许 `N` 依赖的能量 `E : ℕ → ℝ`（若只是参数化、证明一致，则 `≺` 对 `E` 自动一致）；(ii) 对能量取 `N^{−C}` 网 + `z` 的 Lipschitz。选哪条、改动多大，报告后再做 | `Delocalization.lean` 等 | 待认领 | 未开工 |
 | T133 | **loop 观测量的 `C²` 界**（T76 `TestFun` 缺口）：`L_{σ,a}` 与 `(U∘(L−K))_a` 对 `H` 为 `C²`，一二阶导有确定性 `η` 幂界。T132 的前置 | `Gauss/LoopC2.lean`（新建） | Claude Code | **完成**（`BddC2` 对乘积封闭——缺的只有 Leibniz 一步；loop 与 `U∘(L−K)` 的 `TestFun` 均已拿到，探针验证端到端） |
 | T134 | **逐点漂移恒等式 + 动 `z_u`**（T76 `LoopIto` 与未做项）：`(∂_u + 𝓛)(L−K) = Θ∘(L−K) + F` 逐点成立；联合可微走 `ContDiff.comp`，绕开「偏导连续 ⟹ 可微」。T132 的前置 | `Gauss/LoopIto.lean`（新建） | Claude Code | **完成**（动 `z_u` 闭合、`ContDiff.comp` 够用；**(2.47) 的 `−m` 减项证明为动 `z` 的产物**，`LoopIto.second` 今后只需冻结形式；余 `hjoint`，见 STATUS） |
 | T135 | **`≺` 的可加余量吸收引理**（T127 余项）：界形如 `N^τ·Φ + m·W·L·N^{−D}` ⟹ `≺ Φ`，前提是控制 `Φ` 有**多项式下界** `N^{−B} ≤ Φ`。放 `Defs/StochDom.lean`（通用，**先 grep**：T123 `rpow_neg_le_aprioriRhs`、T125 同形引理可能已近似）。然后用它把 `EEBridge.norm_eeField_le` 升成 `Lemma510.EE_le` 的 `≺` 版，并给出该控制的多项式下界 | `Defs/StochDom.lean` + `Hierarchy/EEBridge.lean` | Claude Code | **完成**（吸收引理进 `Defs/StochDom.lean`（高概率型，下界本身是事件）；`EE_le` 已由裸 `:=` 闭合，余 `eeDecayEvent`/`xiLowEvent` 两个生产者，见 STATUS） |
@@ -2653,5 +2660,5 @@ T72 已对**预解式观测量** `φ(G)` 卸掉 `TestFun`（`bddC2_greenObs`）�
 > **Jun 2026-09-21 补充**：(2.72) 的指数 30 是随手取的小数，**可以放宽到 50 或 100**（Lemmas 2.18–2.20 的迭代步数 `n₀` 仍有限）。这是**备用**选项：优先不动 30（`hregS` 自带 `N^c` 增益，(5.41) 用 (2.73) 降幂后本就有余量）；只有指数表证明某项确实不够时才启用，届时 Lean 侧给 `Cond272`/`hregS` 加指数参数的带撇版（旧签名不动），论文只改一个数字，记进论文改动预算。
 
 **然后照原设计做**：`Φ̃ = χ(J/Θ)·Φ`（`J` 取光滑 max）→ 漂移三项（支撑上线性化；`χ'`、`χ''` 项只活在缺口）→ 同阶矩闭合 → 缺口 + 对 `u` 的连续性 ⟹ (5.47)。
-`(+,+)` 在 `n = 2` 的 `BootPP.step` 同法（平方项在截断支撑上线性化为 `Θ·Ξ_2/A`）。依赖 T132b。论文零改动（Jun 已选 (a)），记 paper-delta。
+`(+,+)` 在 `n = 2` 的 `BootPP.step` 同法（平方项在截断支撑上线性化为 `Θ·Ξ_2/A`）。**交付还须包括 (5.48)**（`Step45.FlowEq548`，T147 查出无主——它是 Step 2 同一论证的副产品，论文 p.59 末尾「Notice that we have also proved」）。依赖 T132b。论文零改动（Jun 已选 (a)），记 paper-delta。
 

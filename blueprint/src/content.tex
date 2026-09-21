@@ -2041,6 +2041,19 @@
   $\xi=u\,m(\sigma_1)m(\sigma_2)$ with $u$ real.
 \end{proof}
 
+\begin{lemma}[(4.5) uniformly in time, without a net]\label{lem:eq45flow}
+  \lean{RBM.Gauss.lkErr_one_eq_norm_trace, RBM.Gauss.stochDom_Lmax_timeIcc, RBM.Gauss.IBPFlow, RBM.Gauss.FlucRowFlow, RBM.Gauss.FlucBlkFlow, RBM.Gauss.stochDom_lkErr_one_Lmax, RBM.Gauss.eq45Flow_of_inputs, RBM.Gauss.eq45Flow_gauss}
+  \leanok\uses{lem:4.1, lem:fluc-avg, thm:lemma41-flow, lem:stepglue}
+  Like \texttt{Lemma41Flow} and unlike \texttt{NetLift}, this is a transfer between dominations
+  already uniform in time, so carrying $u$ inside the index set suffices: no net, no continuity in
+  $u$. The $1$-loop $L-K$ \emph{equals} $\|\langle(G_u-m)E_a\rangle\|$ for both charges, the two
+  differing by a conjugation invisible to the norm.
+\end{lemma}
+\begin{proof}\leanok
+  The deterministic bound behind (4.5) is pointwise in $(N,\omega,u)$, so its \texttt{of\_det} step
+  is redone with the enlarged index set.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

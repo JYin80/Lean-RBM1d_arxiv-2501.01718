@@ -274,7 +274,7 @@
 | T118 | **`SumZeroDyn.Lemma510` / `LKDecay` 与 T59 的形状不匹配**（`SumZeroDyn.lean:62` 自己记了「对不上」）。**第 0 步：说清楚是哪一侧该改**，不要两边硬凑；结论报 Cowork 裁 | `Hierarchy/SumZeroDyn.lean` 侧或新文件 | Claude Code | 进行中（先做第 0 步：判定哪一侧该改） |
 | T119 | **`hIBP` 终定理的局部律侧输入**：`hstabP`/`hstabM`（`CondStable`）、`hrepl`、`hloc`、`hΩ`。这些是 `trace_green_sub_mul_Eblk_stochDom_of_localLaw` 现在带的假设，**目前不属于任何工单** | `Gauss/CondStableInst.lean`（新建） | Claude Code | **完成**（`hloc`/`hrepl`/`hstab*` 全卸，8→3 条假设；**发现固定 t 下 `L^max ≍ W⁻¹` 是确定性的**，T112 的判断被推翻，但时间依赖区制下失效，见 STATUS） |
 | T120 | **`AprioriDecayAll`（四电荷版的 (2.76)）** —— T115 查出的**论文缺口**，`(+,+)` 无来源且便宜补法差一个 `A_u`。**不要硬证**：先把三条归约（循环性、共轭）落成定理，把缺口精确收缩到 `(+,+)` 一个电荷，写进 STATUS 等 Jun 裁 | `Hierarchy/ChargeReduce.lean`（新建） | Claude Code | **完成**（三条归约全通，缺口收缩为单一陈述 `AprioriDecayPP`；`K` 侧四电荷本就齐备，缺的只在 `L` 侧。**等 Jun 裁**，见 STATUS） |
-| T121 | **`Eq45Flow`**：(4.5) 对 `u ∈ [s,t]` 一致。(4.5) 本身已证（`avg_bound_stochDom`），差 p.51 的一致化 | `Gauss/Eq45Flow.lean`（新建） | Claude Code | 进行中 |
+| T121 | **`Eq45Flow`**：(4.5) 对 `u ∈ [s,t]` 一致。(4.5) 本身已证（`avg_bound_stochDom`），差 p.51 的一致化 | `Gauss/Eq45Flow.lean`（新建） | Claude Code | **完成**（是 T108 的情形：不需要时间网；`Eq45Flow` 已卸，条件为三个带时间指标的输入，见 STATUS） |
 
 ---
 

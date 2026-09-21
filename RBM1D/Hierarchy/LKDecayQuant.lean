@@ -3,6 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
+import RBM1D.Green.EntryBoundFloor
 import RBM1D.Hierarchy.DecayBridge
 
 /-!
@@ -1122,186 +1123,41 @@ small a power of `N` as the target `D'` requires; the downstream decay target al
 a `W^{-D}` floor of its own, so nothing is lost.
 
 Nothing in the unprimed development changes: every declaration below is new.
+
+**T184.** Eight of the declarations this section originally carried were duplicates of
+`RBM1D/Green/EntryBoundFloor.lean` (T166 had to reprove them there, since `RBM1D/Green/` cannot
+import `RBM1D/Hierarchy/`).  They have been deleted and replaced by `export`s of the `RBM`
+originals, which this file now imports; the names are unchanged and denote the same constants.
 -/
 
-section EntryFloor
+/-! #### The six floored entry-bound lemmas — moved to `RBM1D/Green/EntryBoundFloor.lean` (T184)
 
-open Finset
+T160 proved `LDERowFloor`, `LDEColFloor`, their two `of_*` weakenings and
+`norm_sq_green_le_{row,col,two_sided}_floor` in this namespace.  T166 needed exactly the same
+statements one level down and, because `RBM1D/Green/` cannot import `RBM1D/Hierarchy/`, had to
+reprove them in `RBM1D/Green/EntryBoundFloor.lean`.  The dependency runs the other way without
+trouble, so T184 deleted the copies here and re-exported the `RBM` originals.
 
-variable {n : Type*} [Fintype n] [DecidableEq n]
-variable {H G : Matrix n n ℂ} {z m : ℂ} {δ Φ fl : ℝ} {S : n → n → ℝ}
+The names below therefore denote the **same constants** as `RBM.LDERowFloor`,
+`RBM.LDEColFloor`, `RBM.LDERowFloor.of_lderow`, `RBM.LDEColFloor.of_ldecol`,
+`RBM.norm_sq_green_le_row_floor`, `RBM.norm_sq_green_le_col_floor` and
+`RBM.norm_sq_green_le_two_sided_floor`; every use site, in this file and downstream, is
+unaffected.  `RBM.LDEQuadFloor` — the (4.7) analogue — only ever existed in `RBM`. -/
 
-/-- **The row large deviation bound (4.2) with an additive floor `fl` in the control.**
-This is `RBM.LDERow` with `ldeRowRHS` replaced by `ldeRowRHS + fl`; it is what
-`RBM.Gauss.ldeFlowDom_floor` produces at `fl = N^{-B}`. -/
-def LDERowFloor (H G : Matrix n n ℂ) (S : n → n → ℝ) (Φ fl : ℝ) : Prop :=
-  ∀ i j, i ≠ j → ldeRowLHS H G i j ≤ Φ * (ldeRowRHS S G i j + fl)
+export _root_.RBM (LDERowFloor LDEColFloor norm_sq_green_le_row_floor
+  norm_sq_green_le_col_floor norm_sq_green_le_two_sided_floor)
 
-/-- **The column large deviation bound (4.2) with an additive floor `fl` in the control.** -/
-def LDEColFloor (H G : Matrix n n ℂ) (S : n → n → ℝ) (Φ fl : ℝ) : Prop :=
-  ∀ k j, k ≠ j → ldeColLHS H G k j ≤ Φ * (ldeColRHS S G k j + fl)
+namespace LDERowFloor
 
-/-- The floor is a weakening: `RBM.LDERow` implies `RBM.LKDecayQuant.LDERowFloor` for every
-non-negative floor. -/
-theorem LDERowFloor.of_lderow (hΦ : 0 ≤ Φ) (hfl : 0 ≤ fl) (h : LDERow H G S Φ) :
-    LDERowFloor H G S Φ fl := fun i j hij =>
-  (h i j hij).trans (mul_le_mul_of_nonneg_left (by linarith) hΦ)
+export _root_.RBM.LDERowFloor (of_lderow)
 
-/-- The floor is a weakening: `RBM.LDECol` implies `RBM.LKDecayQuant.LDEColFloor`. -/
-theorem LDEColFloor.of_ldecol (hΦ : 0 ≤ Φ) (hfl : 0 ≤ fl) (h : LDECol H G S Φ) :
-    LDEColFloor H G S Φ fl := fun k j hkj =>
-  (h k j hkj).trans (mul_le_mul_of_nonneg_left (by linarith) hΦ)
+end LDERowFloor
 
-/-- **(4.10) with a floor**: `|G_{ij}|² ≤ 9 Φ (∑_k S_{ik} |G_{kj}|² + fl)` for `i ≠ j`.
-The proof of `RBM.norm_sq_green_le_row` with `fl` carried through the absorption. -/
-theorem norm_sq_green_le_row_floor (hMG : (H - z • (1 : Matrix n n ℂ)) * G = 1) (hm : ‖m‖ = 1)
-    (hΩ : GoodEvent G m δ) (hδ : δ ≤ 1 / 2) (hS0 : ∀ i k, 0 ≤ S i k)
-    (hS1 : ∀ i, ∑ k, S i k ≤ 1) (hΦ : 0 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) (hfl : 0 ≤ fl)
-    (hLDE : LDERowFloor H G S Φ fl) {i j : n} (hij : i ≠ j) :
-    ‖G i j‖ ^ 2 ≤ 9 * Φ * (∑ k, S i k * ‖G k j‖ ^ 2 + fl) := by
-  have hGii := hΩ.diag_ne_zero hm hδ i
-  have h48 := green_eq_neg_mul_sum_row hMG hGii hij
-  rw [sum_erase_sub_smul_row] at h48
-  have hnorm := congrArg norm h48
-  rw [norm_mul, norm_neg] at hnorm
-  have hsq : ‖G i j‖ ^ 2 ≤ 9 / 4 * ldeRowLHS H G i j := by
-    rw [hnorm, ldeRowLHS, mul_pow]
-    exact mul_le_mul_of_nonneg_right (hΩ.norm_sq_diag_le hm hδ i) (sq_nonneg _)
-  have hrhs : ldeRowRHS S G i j ≤ 2 * ∑ k, S i k * ‖G k j‖ ^ 2 + 2 * (2 * δ * ‖G i j‖) ^ 2 := by
-    refine sum_mul_sq_le_of_le_add _ (hS0 i) (hS1 i) (fun _ => norm_nonneg _) ?_
-    intro k hk
-    have hki : k ≠ i := Finset.ne_of_mem_erase hk
-    have h1 := hΩ.norm_greenMinor_sub_le hm hδ i k j
-    have h2 := hΩ.norm_offdiag_le hki
-    have h3 : ‖greenMinor G i k j‖ ≤ ‖G k j‖ + ‖greenMinor G i k j - G k j‖ := by
-      calc ‖greenMinor G i k j‖ = ‖G k j + (greenMinor G i k j - G k j)‖ := by
-            rw [add_sub_cancel]
-        _ ≤ _ := norm_add_le _ _
-    have h4 : ‖G k i‖ * ‖G i j‖ ≤ δ * ‖G i j‖ :=
-      mul_le_mul_of_nonneg_right h2 (norm_nonneg _)
-    linarith
-  have hlde := hLDE i j hij
-  have key : ‖G i j‖ ^ 2 ≤ 9 * Φ * (∑ k, S i k * ‖G k j‖ ^ 2 + fl / 2) := by
-    refine absorb_le (sq_nonneg _) hΦδ ?_
-    calc ‖G i j‖ ^ 2 ≤ 9 / 4 * ldeRowLHS H G i j := hsq
-      _ ≤ 9 / 4 * (Φ * (ldeRowRHS S G i j + fl)) := by linarith
-      _ ≤ 9 / 4 * (Φ * ((2 * ∑ k, S i k * ‖G k j‖ ^ 2 + 2 * (2 * δ * ‖G i j‖) ^ 2) + fl)) := by
-          gcongr
-      _ = 9 / 4 * (Φ * (2 * (∑ k, S i k * ‖G k j‖ ^ 2 + fl / 2)
-            + 8 * δ ^ 2 * ‖G i j‖ ^ 2)) := by ring
-  nlinarith [mul_nonneg hΦ hfl]
+namespace LDEColFloor
 
-/-- **(4.10), column form, with a floor.** -/
-theorem norm_sq_green_le_col_floor (hGM : G * (H - z • (1 : Matrix n n ℂ)) = 1) (hm : ‖m‖ = 1)
-    (hΩ : GoodEvent G m δ) (hδ : δ ≤ 1 / 2) (hS0 : ∀ i k, 0 ≤ S i k)
-    (hS1 : ∀ j, ∑ l, S l j ≤ 1) (hΦ : 0 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) (hfl : 0 ≤ fl)
-    (hLDE : LDEColFloor H G S Φ fl) {k j : n} (hkj : k ≠ j) :
-    ‖G k j‖ ^ 2 ≤ 9 * Φ * (∑ l, S l j * ‖G k l‖ ^ 2 + fl) := by
-  have hGjj := hΩ.diag_ne_zero hm hδ j
-  have h48 := green_eq_neg_mul_sum_col hGM hGjj hkj
-  rw [sum_erase_sub_smul_col] at h48
-  have hnorm := congrArg norm h48
-  rw [norm_mul, norm_neg] at hnorm
-  have hsq : ‖G k j‖ ^ 2 ≤ 9 / 4 * ldeColLHS H G k j := by
-    rw [hnorm, ldeColLHS, mul_pow]
-    exact mul_le_mul_of_nonneg_right (hΩ.norm_sq_diag_le hm hδ j) (sq_nonneg _)
-  have hrhs : ldeColRHS S G k j ≤ 2 * ∑ l, S l j * ‖G k l‖ ^ 2 + 2 * (2 * δ * ‖G k j‖) ^ 2 := by
-    have hre : ldeColRHS S G k j = ∑ l ∈ univ.erase j, S l j * ‖greenMinor G j k l‖ ^ 2 := by
-      rw [ldeColRHS]
-      exact Finset.sum_congr rfl fun l _ => mul_comm _ _
-    rw [hre]
-    refine sum_mul_sq_le_of_le_add _ (fun l => hS0 l j) (hS1 j) (fun _ => norm_nonneg _) ?_
-    intro l hl
-    have hlj : l ≠ j := Finset.ne_of_mem_erase hl
-    have h1 := hΩ.norm_greenMinor_sub_le hm hδ j k l
-    have h2 := hΩ.norm_offdiag_le hlj.symm
-    have h3 : ‖greenMinor G j k l‖ ≤ ‖G k l‖ + ‖greenMinor G j k l - G k l‖ := by
-      calc ‖greenMinor G j k l‖ = ‖G k l + (greenMinor G j k l - G k l)‖ := by
-            rw [add_sub_cancel]
-        _ ≤ _ := norm_add_le _ _
-    have h4 : ‖G k j‖ * ‖G j l‖ ≤ ‖G k j‖ * δ :=
-      mul_le_mul_of_nonneg_left h2 (norm_nonneg _)
-    linarith
-  have hlde := hLDE k j hkj
-  have key : ‖G k j‖ ^ 2 ≤ 9 * Φ * (∑ l, S l j * ‖G k l‖ ^ 2 + fl / 2) := by
-    refine absorb_le (sq_nonneg _) hΦδ ?_
-    calc ‖G k j‖ ^ 2 ≤ 9 / 4 * ldeColLHS H G k j := hsq
-      _ ≤ 9 / 4 * (Φ * (ldeColRHS S G k j + fl)) := by linarith
-      _ ≤ 9 / 4 * (Φ * ((2 * ∑ l, S l j * ‖G k l‖ ^ 2 + 2 * (2 * δ * ‖G k j‖) ^ 2) + fl)) := by
-          gcongr
-      _ = 9 / 4 * (Φ * (2 * (∑ l, S l j * ‖G k l‖ ^ 2 + fl / 2)
-            + 8 * δ ^ 2 * ‖G k j‖ ^ 2)) := by ring
-  nlinarith [mul_nonneg hΦ hfl]
+export _root_.RBM.LDEColFloor (of_ldecol)
 
-/-- **(4.11) with a floor**: the floor survives the two iterations as `2 fl` inside the same
-bracket, `|G_{ij}|² ≤ 81 Φ² (∑_{k,l} S_{ik}|G_{kl}|²S_{lj} + S_{ij} + 2 fl)`. -/
-theorem norm_sq_green_le_two_sided_floor (hGM : G * (H - z • (1 : Matrix n n ℂ)) = 1)
-    (hMG : (H - z • (1 : Matrix n n ℂ)) * G = 1) (hm : ‖m‖ = 1)
-    (hΩ : GoodEvent G m δ) (hδ : δ ≤ 1 / 2) (hS0 : ∀ i k, 0 ≤ S i k)
-    (hSrow : ∀ i, ∑ k, S i k ≤ 1) (hScol : ∀ j, ∑ l, S l j ≤ 1) (hΦ1 : 1 ≤ Φ)
-    (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) (hfl : 0 ≤ fl) (hLrow : LDERowFloor H G S Φ fl)
-    (hLcol : LDEColFloor H G S Φ fl) {i j : n} (hij : i ≠ j) :
-    ‖G i j‖ ^ 2 ≤ 81 * Φ ^ 2 * ((∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + S i j + 2 * fl) := by
-  have hΦ : 0 ≤ Φ := by linarith
-  have h1 := norm_sq_green_le_row_floor hMG hm hΩ hδ hS0 hSrow hΦ hΦδ hfl hLrow hij
-  have hk : ∀ k, ‖G k j‖ ^ 2
-      ≤ 9 * Φ * ((∑ l, S l j * ‖G k l‖ ^ 2) + fl) + (if k = j then 9 / 4 else 0) := by
-    intro k
-    by_cases hkj : k = j
-    · subst hkj
-      rw [ite_eq_left rfl]
-      have h2 := hΩ.norm_sq_diag_le hm hδ k
-      have h3 : 0 ≤ 9 * Φ * ((∑ l, S l k * ‖G k l‖ ^ 2) + fl) :=
-        mul_nonneg (by linarith) (by
-          have : 0 ≤ ∑ l, S l k * ‖G k l‖ ^ 2 :=
-            Finset.sum_nonneg fun l _ => mul_nonneg (hS0 l k) (sq_nonneg _)
-          linarith)
-      linarith
-    · rw [ite_eq_right hkj, add_zero]
-      exact norm_sq_green_le_col_floor hGM hm hΩ hδ hS0 hScol hΦ hΦδ hfl hLcol hkj
-  have e1 : ∀ k : n, S i k * (9 * Φ * ((∑ l, S l j * ‖G k l‖ ^ 2) + fl)
-        + (if k = j then 9 / 4 else 0))
-      = 9 * Φ * (∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl * S i k
-        + S i k * (if k = j then 9 / 4 else 0) := by
-    intro k
-    have hterm : ∑ l, S i k * ‖G k l‖ ^ 2 * S l j = S i k * ∑ l, S l j * ‖G k l‖ ^ 2 := by
-      rw [Finset.mul_sum]
-      exact Finset.sum_congr rfl fun l _ => by ring
-    rw [hterm]; ring
-  have hs : ∑ k, S i k * (if k = j then 9 / 4 else 0) = 9 / 4 * S i j := by
-    simp only [mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-    ring
-  have hsum : ∑ k, S i k * ‖G k j‖ ^ 2
-      ≤ 9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl + 9 / 4 * S i j := by
-    have hrow := hSrow i
-    have hrow0 : 0 ≤ ∑ k, S i k := Finset.sum_nonneg fun k _ => hS0 i k
-    have hfl9 : 0 ≤ 9 * Φ * fl := by positivity
-    calc ∑ k, S i k * ‖G k j‖ ^ 2
-        ≤ ∑ k, S i k * (9 * Φ * ((∑ l, S l j * ‖G k l‖ ^ 2) + fl)
-            + (if k = j then 9 / 4 else 0)) :=
-          Finset.sum_le_sum fun k _ => mul_le_mul_of_nonneg_left (hk k) (hS0 i k)
-      _ = ∑ k, (9 * Φ * (∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl * S i k
-            + S i k * (if k = j then 9 / 4 else 0)) := Finset.sum_congr rfl fun k _ => e1 k
-      _ = 9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j)
-            + 9 * Φ * fl * (∑ k, S i k) + ∑ k, S i k * (if k = j then 9 / 4 else 0) := by
-          rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
-      _ ≤ 9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl + 9 / 4 * S i j := by
-          rw [hs]
-          nlinarith
-  have hX : 0 ≤ ∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j :=
-    Finset.sum_nonneg fun k _ => Finset.sum_nonneg fun l _ =>
-      mul_nonneg (mul_nonneg (hS0 i k) (sq_nonneg _)) (hS0 l j)
-  have hSij := hS0 i j
-  have hΦ2 : Φ ≤ Φ ^ 2 := by nlinarith
-  have hstep : ‖G i j‖ ^ 2
-      ≤ 9 * Φ * ((9 * Φ * (∑ k, ∑ l, S i k * ‖G k l‖ ^ 2 * S l j) + 9 * Φ * fl
-          + 9 / 4 * S i j) + fl) := by
-    refine h1.trans (mul_le_mul_of_nonneg_left ?_ (by linarith))
-    linarith
-  nlinarith [mul_le_mul_of_nonneg_right hΦ2 hSij, mul_le_mul_of_nonneg_right hΦ2 hfl,
-    mul_nonneg hΦ hfl, sq_nonneg Φ]
-
-end EntryFloor
+end LDEColFloor
 
 section BlkFloor
 
@@ -1310,26 +1166,16 @@ open Finset
 variable (L : ℕ) [NeZero L] {W : ℕ} [NeZero W]
   {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
 
-/-- **(4.2) in the block model, with a floor** — `RBM.norm_sq_green_le_blk` with `2 fl`
-added inside the bracket. -/
-theorem norm_sq_green_le_blk_floor (hL : 3 ≤ L) (hH : H.IsHermitian) (hz : z.im ≠ 0) {m : ℂ}
-    (hm : ‖m‖ = 1) {δ : ℝ} (hΩ : GoodEvent (green H z) m δ) (hδ : δ ≤ 1 / 2) {Φ : ℝ}
-    (hΦ1 : 1 ≤ Φ) (hΦδ : 36 * Φ * δ ^ 2 ≤ 1) {fl : ℝ} (hfl : 0 ≤ fl)
-    (hLrow : LDERowFloor H (green H z) (Sblk L W) Φ fl)
-    (hLcol : LDEColFloor H (green H z) (Sblk L W) Φ fl)
-    {i j : ZMod L × Fin W} (hij : i ≠ j) :
-    ‖green H z i j‖ ^ 2 ≤ 81 * Φ ^ 2 * ((∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L,
-        Lre H z (j.1 + v) (i.1 + u))
-      + (if i.1 - j.1 ∈ sbSupport L then (W : ℝ)⁻¹ else 0) + 2 * fl) := by
-  have h := norm_sq_green_le_two_sided_floor (green_mul_sub_of_im hH hz)
-    (sub_mul_green_of_im hH hz) hm hΩ hδ Sblk_nonneg (fun i => (sum_Sblk_row hL i).le)
-    (fun j => (sum_Sblk_col hL j).le) hΦ1 hΦδ hfl hLrow hLcol hij
-  rw [sum_sum_Sblk_eq_nbr hH] at h
-  refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
-  have h1 : 0 ≤ ∑ u ∈ sbSupport L, ∑ v ∈ sbSupport L, Lre H z (j.1 + v) (i.1 + u) :=
-    Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => Lre_nonneg hH _ _
-  have h2 := Sblk_le (L := L) (W := W) i j
-  linarith
+/-! #### `RBM.norm_sq_green_le_blk_floor` — moved to `RBM1D/Green/EntryBoundFloor.lean` (T184)
+
+T160 proved (4.2) in the block model with a floor here; T166 reproved it verbatim in
+`RBM1D/Green/EntryBoundFloor.lean` because `RBM1D/Green/` cannot import `RBM1D/Hierarchy/`.
+T184 deleted this copy.  `RBM.LKDecayQuant.norm_sq_green_le_blk_floor` is now an `export` of
+`RBM.norm_sq_green_le_blk_floor` — the same constant — so `RBM.LKDecayQuant`'s own consumers
+below (`norm_sq_green_le_of_far_floor`, `loopDecay_gloop_of_event_floor`, `lemma59_floor`) and
+anything downstream are unaffected. -/
+
+export _root_.RBM (norm_sq_green_le_blk_floor)
 
 /-- **Lemma 5.9, first step, with a floor**: the floor and the (2.76) error `δ₂` enter the
 entry decay in exactly the same place, `|G_{ij}|² ≤ 729 Φ² (δ₂ + fl)` for far pairs. -/

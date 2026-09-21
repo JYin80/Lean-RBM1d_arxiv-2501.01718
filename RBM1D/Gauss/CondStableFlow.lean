@@ -83,6 +83,24 @@ reason the diagonal term `k = i` is handled here by `RBM.Gauss.unifDomIcc_ibpRem
 * `RBM.Gauss.eq45Flow_of_unifDom_ibp`, `RBM.Gauss.eq45Flow_of_localLaw_gain` — the compile-time
   checks that the above fills the frozen slot of `RBM.Gauss.eq45Flow_of_unifDom`, and that with
   T128's two fluctuation inputs all three `hfix` of (4.5) are now supplied.
+
+## ⚠ `RBM.Gauss.eq45Flow_of_localLaw_gain` and `RBM.Gauss.eq45Flow_of_localLaw_gain'` are
+retired — T184
+
+Both of them take the **unbudgeted** gain interface (`RBM.Gauss.FlucGain`, resp.
+`RBM.Gauss.FlucGainUpTo`) in their `hg` slot, and T171/T176/T177 proved that that interface is
+**unsatisfiable at the paper's size `B ≍ Ψ`**: with the index type `ι` unbudgeted, the same `B`
+dominates *every* `L^j` norm of `Z_k` (`RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo`
+in `RBM1D/Gauss/FlucIter.lean`), while T172 exhibits a sample point with `‖Z_k‖ ≥ 64/65`.  A
+theorem with a false hypothesis is vacuously true and the compiler never complains, so both
+carry `@[deprecated]` and a retirement note; they are kept only because
+`blueprint/src/content.tex` cites them.
+
+The live entry points are T177's `RBM.Gauss.eq45Flow_of_localLaw_gain_budget` and
+`RBM.Gauss.eq45Flow_of_goodSetFlow_budget` (`RBM1D/Gauss/MinorDiffCond.lean`), which take the
+doubly budgeted `RBM.Gauss.FlucGainUpTo'` (`#ι ≤ n` added).  Nothing else in this file is on
+that wall: the three Hölder moduli below are stated independently of the consumer and are used
+by the budgeted versions unchanged.
 * `RBM.Gauss.holIBP_of_inputs`, `RBM.Gauss.holRow_of_inputs`, `RBM.Gauss.holBlk_of_inputs`
   (T150) — **the three time-Hölder moduli** `hHolIBP` / `hHolRow` / `hHolBlk` that both
   `RBM.Gauss.eq45Flow_of_localLaw_gain` and `RBM.Gauss.eq45Flow_of_localLaw_gain'` still carry,
@@ -1164,12 +1182,26 @@ theorem eq45Flow_of_unifDom_ibp (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ
 
 /-- **(4.5) along the flow with all three fixed-time inputs supplied.**
 
+⚠ **RETIRED — do not use as an entry point: its `hg` is unsatisfiable at the paper's size
+`B ≍ Ψ`.**  `RBM.Gauss.FlucGain` implies `RBM.Gauss.FlucGainUpTo` (`RBM.Gauss.FlucGain.upTo`),
+so it inherits *a fortiori* the obstruction described in the retirement note of
+`RBM.Gauss.eq45Flow_of_localLaw_gain'` immediately below.  The statement is true — **vacuously**
+so, which is exactly why the compiler never objects — and it is kept only because it is cited
+in the blueprint node for this section.  The live entry points are
+`RBM.Gauss.eq45Flow_of_localLaw_gain_budget` and `RBM.Gauss.eq45Flow_of_goodSetFlow_budget`
+(T177, `RBM1D/Gauss/MinorDiffCond.lean`), which take the budgeted `RBM.Gauss.FlucGainUpTo'`.
+
 The `hfix` slots are now: this file's `RBM.Gauss.unifDomIcc_condExpDiag_flow` for the
 integration-by-parts input, and T128's `RBM.Gauss.unifDomIcc_flucRow_condExpDiag` /
 `RBM.Gauss.unifDomIcc_flucBlk_condExpDiag` for the two fluctuation-averaging inputs.  What is
 left is *not* a fixed-time estimate any more: the three Hölder moduli in the time, the
 `RBM.Gauss.FlucGain` interface, the `u`-uniform weak local law `hll`, the flow good event `hΩ`
 (T130 produces it from `hll`), and purely numerical regime conditions. -/
+@[deprecated "RETIRED (T184): `hg : FlucGain …` is unsatisfiable at the paper's size `B ≍ Ψ`, \
+so this theorem is vacuous.  `FlucGain.upTo` lands in `FlucGainUpTo`, whose own `B` dominates \
+every `L^j` norm of `Z_k` (`integral_pow_norm_flucDiag_le_of_flucGainUpTo`, T176 probe P5).  \
+Use `eq45Flow_of_localLaw_gain_budget` / `eq45Flow_of_goodSetFlow_budget` (T177) instead."
+  (since := "2026-09-21")]
 theorem eq45Flow_of_localLaw_gain (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hE : |E| < 2)
     (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
@@ -1227,6 +1259,41 @@ theorem eq45Flow_of_localLaw_gain (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : 
 
 /-- **(4.5) along the flow, against the *graded* gain interface** — T151.
 
+⚠ **RETIRED (T184) — do not use as an entry point: its `hg` is unsatisfiable at the paper's
+size `B ≍ Ψ`, so this theorem is vacuously true and the compiler will never object.**
+
+The obstruction, and where it is proved:
+
+* `RBM.Gauss.FlucGainUpTo` budgets the *length* of the words but leaves the index type `ι`
+  free.  Instantiating it with `ι = Fin j`, every word empty and every pivot equal to a single
+  `k`, gives `∫ ‖Z_k‖^j ≤ B^j` — i.e. `‖Z_k‖_{L^j} ≤ B` — for **every** `j`.  That is the
+  compiled statement `RBM.Gauss.integral_pow_norm_flucDiag_le_of_flucGainUpTo`
+  (`RBM1D/Gauss/FlucIter.lean`, T176 probe P5); its reduced-interface twin is
+  `RBM.Gauss.integral_pow_norm_flucDiag_le_of_minorDiffGainUpTo` (T171,
+  `RBM1D/Gauss/MinorDiffCond.lean`).
+* Letting `j → ∞` the left side is `‖Z_k‖_∞`, and T172's two-point configuration exhibits a
+  sample point with `‖Z_k‖ ≥ 64/65`.  So `B` cannot be `N^{-c}`.  (The `L^j → L^∞` limit is
+  the one step of this argument that is *not* yet in the repository; see the T177 row of
+  `docs/TASKS.md`.  Everything before it is compiled.)
+* The `hg` slot below asks for exactly `RBM.Gauss.FlucGainUpTo` at `ρ = 2 Ψ` with
+  `Bp p N ≤ Kp p * Ψ N`, i.e. at `B ≍ Ψ`.  So it is that slot that cannot be filled.
+
+**The replacement**, landed by T177, is the doubly budgeted `RBM.Gauss.FlucGainUpTo'`, which
+adds the missing cardinality budget `#ι ≤ n` (nothing is lost: the `2p`-th moment expansion
+instantiates the interface only at `ι = Fin p ⊕ Fin p`).  Its consumers are
+
+* `RBM.Gauss.eq45Flow_of_localLaw_gain_budget` — word for word this theorem with `hg` moved to
+  `RBM.Gauss.FlucGainUpTo' … (2 * p) (2 * p)`;
+* `RBM.Gauss.eq45Flow_of_goodSetFlow_budget` — end to end from the flow good event (4.1) to
+  `RBM.StepGlue.Eq45Flow`,
+
+both in `RBM1D/Gauss/MinorDiffCond.lean`.  **Use those.**
+
+This theorem is kept rather than deleted only because `blueprint/src/content.tex` cites it in
+the `\lean{}` list of this section's node; it is on no live path.
+
+-- Historical note (T151), for the record: --
+
 The word-for-word analogue of `RBM.Gauss.eq45Flow_of_localLaw_gain`, with the one interface
 that was mismatched replaced: `RBM.Gauss.FlucGain` at the paper's size `ρ ≍ Ψ` is not a
 theorem and T137/T142 do not prove it — what they prove is the word-length-graded
@@ -1243,6 +1310,12 @@ unprimed version is untouched (`RBM.Gauss.FlucGain.upTo` still connects the two)
 `RBM.Gauss.flucPhiW_of_psiW` derives `4 W ρ B ≤ N^τ` from the `hΨW` this theorem already
 carries; likewise the two size conditions `(3W)⁻¹ ≤ ρ²` and `W⁻¹ ≤ ρ²` collapse into the
 single `hΨW'`, `W⁻¹ ≤ 4Ψ²`.  So moving to the graded interface *removes* hypotheses. -/
+@[deprecated "RETIRED (T184): `hg : FlucGainUpTo …` at `B ≍ Ψ` is unsatisfiable, so this \
+theorem is vacuous.  `integral_pow_norm_flucDiag_le_of_flucGainUpTo` (T176 probe P5) shows its \
+own `B` dominates every `L^j` norm of `Z_k`, while T172 exhibits `‖Z_k‖ ≥ 64/65`.  Use \
+`eq45Flow_of_localLaw_gain_budget` / `eq45Flow_of_goodSetFlow_budget` (T177), which take the \
+budgeted `FlucGainUpTo'`."
+  (since := "2026-09-21")]
 theorem eq45Flow_of_localLaw_gain' (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hE : |E| < 2)
     (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)

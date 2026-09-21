@@ -4829,3 +4829,32 @@ paper-deltas 记 `T177a`（临时号）→ **Cowork 已分配 #126**。
 
 **选 (i)**：`TestFun`/`TestFunT` 加带撇版，把 `∀ M` 放松到 `∀ M, M.IsHermitian →`（与 T145 对 `Hyp.drift` 的修补同型），控制收敛在流上重证；**不走截断 (ii)**——`Hyp.momentDuhamel` 是结构性不等式，不需要截断给的尺寸估计。开 **T187**。路由类决定，Jun 已授权，不转 Jun。
 **T179 验收**：`Thm221′` 已通（`c = min(τ,1)/32` 取自 (2.2)，增益上界约 `τ/16`，故 `c` 量化在 `step` 内）；D1 的 Lean 侧已无需裁定，论文侧 Jun 已选 (a)（(5.41) 补一句），字面版由 T186 收回。
+
+## T184：过时消费者已按编译器级护栏退役 + 地板内核归位（2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9401** 条（9410 − 删除的 8 条；移动不改数）。
+
+### ⭐ 新增项（最重要的一条）：`eq45Flow_of_localLaw_gain(')` 退役
+**grep 结论：Lean 代码里没有任何声明依赖它**（八处全是 docstring 文本）。但 `content.tex:2295` 的 `\lean{}` 列了这两个名字，
+而蓝图对该 agent 只读，**删声明会让节点指向不存在的名字**，所以保留 + 钉死。
+
+**做法值得推广：加 `@[deprecated "RETIRED (T184): …" (since := "2026-09-21")]`**——
+**这是编译器级护栏，不只是文字**：将来谁再把它当入口，`lake build` 会直接打出带替代者名字的警告。
+**docstring 挡不住下一个 agent，`MinorGood` 那次就是证据。**
+docstring 同时写清：`hg` 槽要的正是 `B ≍ Ψ`；已编译的证据链（T176 探针 P5 + T171 的低层孪生）；
+**并诚实标出唯一未入库的一步是 `L^j → L^∞` 的极限**；以及替代者 `eq45Flow_of_localLaw_gain_budget`/`eq45Flow_of_goodSetFlow_budget`。
+不带撇的那条**一并退役**（它吃 `FlucGain`，经 `FlucGain.upTo` 落进同一堵墙，a fortiori）。
+
+⚠ **还有两个消费者没动**：`Eq45FlowInputs.lean` 的 `unifDomIcc_flucRow/flucBlk_condExpDiag_psi` 是 `gain'` 的直接喂料，
+**同样站在 `FlucGainUpTo` + `Bp ≤ Kp·Ψ` 上，而该文件没有任何不可满足性警告**——在只读清单里，**留作后续工单**。
+
+### 地板内核归位
+`entry_bound_stochDom_floor_idx` 下沉到 `Green/EntryBoundFloor.lean`，紧挨 `diag_bound_stochDom_floor_idx`（两者是 (4.2)/(4.3) 的两半），
+**证明一字未改**；旧名以 `export` 保留，`rfl` 探针验过是**同一个常量**。
+
+### `LKDecayQuant` 的八条重复：删除改指
+加 `import RBM1D.Green.EntryBoundFloor`（`Hierarchy → Green`，无环），**删掉整个 `section EntryFloor` 与 `BlkFloor` 里的一条**，共 8 条；
+删前逐条比对过**语句与证明逐字相同**，八个公开名全部 `export` 保留，**8 条 `rfl` 探针**确认是同一常量。
+下游的 `norm_sq_green_le_of_far_floor`/`loopDecay_gloop_of_event_floor`/`lemma59_floor`/整个 `Flow'` 节**一字未动**。
+
+**工单第 (3) 项未做**：`Decay.norm_couplingLen_le` 的 `hD` 带撇版要改 `Hierarchy/Decay.lean`，不在该 agent 的可写清单里（= STATUS 的 D8）。

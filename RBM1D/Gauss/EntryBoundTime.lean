@@ -27,8 +27,10 @@ So the deliverable here is `RBM.Gauss.EntryBoundFlow'`, which is `RBM.Gauss.Entr
 `+ fl N` in the control, and `RBM.Gauss.entryBoundFlow_floor`, which proves it with
 `fl N = 2 N^{-B}` and **no large deviation hypothesis at all**.  The deterministic kernel is
 T166's `RBM.norm_sq_green_le_blk_floor` (`RBM1D/Green/EntryBoundFloor.lean`); the index widening
-that T166 wrote for (4.3) — `RBM.diag_bound_stochDom_floor_idx` — has no (4.2) counterpart
-there, so `RBM.Gauss.entry_bound_stochDom_floor_idx` is written here.
+that T166 wrote for (4.3) — `RBM.diag_bound_stochDom_floor_idx` — had no (4.2) counterpart
+there, so `RBM.Gauss.entry_bound_stochDom_floor_idx` was written here.  **T184 sank it** into
+`RBM1D/Green/EntryBoundFloor.lean` beside its diagonal twin, where it belongs; the name
+`RBM.Gauss.entry_bound_stochDom_floor_idx` survives as an `export` of the very same constant.
 
 ## Why the floor costs nothing
 
@@ -52,7 +54,8 @@ declaration here is new.
 
 ## Main results
 
-* `RBM.Gauss.entry_bound_stochDom_floor_idx` — (4.2) floored, with the time in the index set.
+* `RBM.Gauss.entry_bound_stochDom_floor_idx` — (4.2) floored, with the time in the index set;
+  since T184 an `export` of `RBM.entry_bound_stochDom_floor_idx`.
 * `RBM.Gauss.entryBoundFlow_floor` — **(4.2) along the flow**, the T107 deliverable.
 * `RBM.Gauss.lemma41Flow_of_diagBoundFlow` — `RBM.Step1.Lemma41Flow` with (4.2) discharged.
 * `RBM.Gauss.step1Hyp_gauss_of_scale'` — `RBM.Step1.Hyp` with (4.2) discharged; its two extra
@@ -96,80 +99,19 @@ namespace RBM.Gauss
 
 open MeasureTheory Filter Finset
 
-section Kernel
+/-! ### The (4.2) kernel with the time in the index set — sunk by T184
 
-variable {Ω : Type*} [MeasurableSpace Ω] (P : MeasureTheory.Measure Ω)
-variable {L W : ℕ → ℕ} [∀ N, NeZero (L N)] [∀ N, NeZero (W N)]
+`RBM.Gauss.entry_bound_stochDom_floor_idx` was written here (T107) because T166's index widening
+for (4.3), `RBM.diag_bound_stochDom_floor_idx`, had no (4.2) counterpart in
+`RBM1D/Green/EntryBoundFloor.lean`.  It is a pure `RBM.StochDom.of_det` call on the
+deterministic kernel `RBM.norm_sq_green_le_blk_floor`, with nothing in it that belongs to the
+Gaussian flow, so T184 sank it beside its diagonal twin as
+`RBM.entry_bound_stochDom_floor_idx`.
 
-/-- **Lemma 4.1, (4.2), with an additive floor *and* the time inside the index set.**
+The old name is kept as a re-export, so it denotes the **same constant**: every use site, here
+and downstream, is unaffected. -/
 
-The (4.2) companion of `RBM.diag_bound_stochDom_floor_idx` (T166): `RBM.entry_bound_stochDom`
-with the two large deviation inputs floored and the matrix and the spectral parameter allowed to
-follow the index through `uf`. -/
-theorem entry_bound_stochDom_floor_idx {U : ℕ → Type*} (hL : ∀ N, 3 ≤ L N)
-    (Hf : ∀ N, ℝ → Ω → Matrix (BIdx L W N) (BIdx L W N) ℂ)
-    (uf : ∀ N, U N → ℝ) (zf : ℝ → ℂ) (hH : ∀ N u ω, (Hf N u ω).IsHermitian)
-    (hz : ∀ N (q : U N), (zf (uf N q)).im ≠ 0) {m : ℂ} (hm : ‖m‖ = 1)
-    {δ : ℕ → ℝ} (hδ0 : ∀ N, 0 ≤ δ N) {c₀ : ℝ} (hc₀ : 0 < c₀)
-    (hδ : ∀ᶠ N : ℕ in atTop, δ N ≤ (N : ℝ) ^ (-c₀)) {fl : ℕ → ℝ} (hfl0 : ∀ N, 0 ≤ fl N)
-    (hLrow : StochDom P
-      (fun N (q : U N × OffPair L W N) ω =>
-        ldeRowLHS (Hf N (uf N q.1) ω) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
-          q.2.1.1 q.2.1.2)
-      (fun N q ω =>
-        ldeRowRHS (Sblk (L N) (W N)) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
-          q.2.1.1 q.2.1.2 + fl N))
-    (hLcol : StochDom P
-      (fun N (q : U N × OffPair L W N) ω =>
-        ldeColLHS (Hf N (uf N q.1) ω) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
-          q.2.1.1 q.2.1.2)
-      (fun N q ω =>
-        ldeColRHS (Sblk (L N) (W N)) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
-          q.2.1.1 q.2.1.2 + fl N)) :
-    StochDom P
-      (fun N (q : U N × OffPair L W N) ω =>
-        Set.indicator {ω | GoodEvent (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) m (δ N)}
-          (fun ω => ‖green (Hf N (uf N q.1) ω) (zf (uf N q.1)) q.2.1.1 q.2.1.2‖ ^ 2) ω)
-      (fun N q ω =>
-        (∑ a ∈ sbSupport (L N), ∑ b ∈ sbSupport (L N),
-            Lre (Hf N (uf N q.1) ω) (zf (uf N q.1)) (q.2.1.2.1 + b) (q.2.1.1.1 + a))
-          + (if q.2.1.1.1 - q.2.1.2.1 ∈ sbSupport (L N) then ((W N : ℕ) : ℝ)⁻¹ else 0)
-          + 2 * fl N) := by
-  refine StochDom.of_det (hLrow.sumElim hLcol) ?_ hδ0 hc₀ hδ
-    (by norm_num : (0 : ℝ) < 1 / 2) 81 2 ?_
-  · intro N q ω
-    have h1 : 0 ≤ ∑ a ∈ sbSupport (L N), ∑ b ∈ sbSupport (L N),
-        Lre (Hf N (uf N q.1) ω) (zf (uf N q.1)) (q.2.1.2.1 + b) (q.2.1.1.1 + a) :=
-      Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ =>
-        Lre_nonneg (hH N (uf N q.1) ω) _ _
-    have h2 : (0 : ℝ) ≤ if q.2.1.1.1 - q.2.1.2.1 ∈ sbSupport (L N) then ((W N : ℕ) : ℝ)⁻¹ else 0 := by
-      split_ifs <;> positivity
-    have h3 := hfl0 N
-    linarith
-  · intro N ω Φ hΦ1 hΦδ hδε hAB q
-    have hflN := hfl0 N
-    by_cases hω : ω ∈ {ω | GoodEvent (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) m (δ N)}
-    · rw [Set.indicator_of_mem hω]
-      have hLr : LDERowFloor (Hf N (uf N q.1) ω)
-          (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) (Sblk (L N) (W N)) Φ (fl N) :=
-        fun i j hij => hAB (Sum.inl (q.1, ⟨(i, j), hij⟩))
-      have hLc : LDEColFloor (Hf N (uf N q.1) ω)
-          (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) (Sblk (L N) (W N)) Φ (fl N) :=
-        fun k j hkj => hAB (Sum.inr (q.1, ⟨(k, j), hkj⟩))
-      exact norm_sq_green_le_blk_floor (L N) (hL N) (hH N (uf N q.1) ω) (hz N q.1) hm hω hδε
-        hΦ1 hΦδ hflN hLr hLc q.2.2
-    · rw [Set.indicator_of_notMem hω]
-      have h1 : 0 ≤ ∑ a ∈ sbSupport (L N), ∑ b ∈ sbSupport (L N),
-          Lre (Hf N (uf N q.1) ω) (zf (uf N q.1)) (q.2.1.2.1 + b) (q.2.1.1.1 + a) :=
-        Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ =>
-          Lre_nonneg (hH N (uf N q.1) ω) _ _
-      have h2 : (0 : ℝ) ≤
-          if q.2.1.1.1 - q.2.1.2.1 ∈ sbSupport (L N) then ((W N : ℕ) : ℝ)⁻¹ else 0 := by
-        split_ifs <;> positivity
-      have hΦ0 : 0 ≤ Φ := by linarith
-      positivity
-
-end Kernel
+export _root_.RBM (entry_bound_stochDom_floor_idx)
 
 section Flow
 

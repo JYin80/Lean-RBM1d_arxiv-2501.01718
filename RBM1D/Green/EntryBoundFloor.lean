@@ -42,12 +42,21 @@ The constants are not optimised.
 
 ## Relation to `RBM1D/Hierarchy/LKDecayQuant.lean`
 
-T160 proved the (4.2) half of this chain — `LDERowFloor`, `LDEColFloor`,
-`norm_sq_green_le_row_floor`, `norm_sq_green_le_col_floor`, `norm_sq_green_le_two_sided_floor`,
-`norm_sq_green_le_blk_floor` — inside `RBM.LKDecayQuant`, and recommended sinking them here,
-since they are pure matrix lemmas with nothing to do with the hierarchy.  They are reproved here
-(in the `RBM` namespace, so there is no clash with the `RBM.LKDecayQuant` copies); the copies in
-`RBM1D/Hierarchy/LKDecayQuant.lean` can be deleted and re-routed here by whoever owns that file.
+T160 proved the (4.2) half of this chain — `LDERowFloor`, `LDEColFloor`, their two `of_*`
+weakenings, `norm_sq_green_le_row_floor`, `norm_sq_green_le_col_floor`,
+`norm_sq_green_le_two_sided_floor` and `norm_sq_green_le_blk_floor` — inside `RBM.LKDecayQuant`,
+and recommended sinking them here, since they are pure matrix lemmas with nothing to do with the
+hierarchy.  T166 reproved them here (in the `RBM` namespace) because `RBM1D/Green/` cannot import
+`RBM1D/Hierarchy/`.  **T184 deleted the eight copies**: `RBM1D/Hierarchy/LKDecayQuant.lean` now
+imports this file and `export`s these declarations under their old `RBM.LKDecayQuant` names, so
+the two sets of names denote the same constants.
+
+## Relation to `RBM1D/Gauss/EntryBoundTime.lean`
+
+`RBM.entry_bound_stochDom_floor_idx` — (4.2) with the floor *and* the time in the index set —
+was written by T107 in `RBM1D/Gauss/EntryBoundTime.lean` because T166's diagonal counterpart
+`RBM.diag_bound_stochDom_floor_idx` had no (4.2) twin here.  **T184 sank it here** beside that
+twin; `RBM.Gauss.entry_bound_stochDom_floor_idx` is now an `export` of it.
 -/
 
 namespace RBM
@@ -700,6 +709,87 @@ theorem diag_bound_stochDom_floor (hL : ∀ N, 3 ≤ L N)
   · rw [Set.indicator_of_notMem hω]
     have hΦ0 : 0 ≤ Φ := by linarith
     positivity
+
+/-! #### The two halves of Lemma 4.1 with the time inside the index set
+
+`RBM.entry_bound_stochDom_floor_idx` is the row/column half (4.2) and
+`RBM.diag_bound_stochDom_floor_idx` the diagonal half (4.3); they are the same widening of the
+index type applied to the two kernels `RBM.norm_sq_green_le_blk_floor` and
+`RBM.norm_sq_green_diag_sub_le_blk_floor`.  The (4.2) half was written by T107 in
+`RBM1D/Gauss/EntryBoundTime.lean` before the (4.3) half existed; T184 sank it here beside its
+twin, and `RBM.Gauss.entry_bound_stochDom_floor_idx` is now an `export` of this declaration. -/
+
+/-- **Lemma 4.1, (4.2), with an additive floor *and* the time inside the index set** — T107.
+
+The (4.2) companion of `RBM.diag_bound_stochDom_floor_idx` (T166): `RBM.entry_bound_stochDom`
+with the two large deviation inputs floored and the matrix and the spectral parameter allowed to
+follow the index through `uf`.
+
+The consumer is `RBM.Gauss.entryBoundFlow_floor` (`RBM1D/Gauss/EntryBoundTime.lean`), which
+feeds it T148/T160's floored, time-uniform row and column estimates. -/
+theorem entry_bound_stochDom_floor_idx {U : ℕ → Type*} (hL : ∀ N, 3 ≤ L N)
+    (Hf : ∀ N, ℝ → Ω → Matrix (BIdx L W N) (BIdx L W N) ℂ)
+    (uf : ∀ N, U N → ℝ) (zf : ℝ → ℂ) (hH : ∀ N u ω, (Hf N u ω).IsHermitian)
+    (hz : ∀ N (q : U N), (zf (uf N q)).im ≠ 0) {m : ℂ} (hm : ‖m‖ = 1)
+    {δ : ℕ → ℝ} (hδ0 : ∀ N, 0 ≤ δ N) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hδ : ∀ᶠ N : ℕ in atTop, δ N ≤ (N : ℝ) ^ (-c₀)) {fl : ℕ → ℝ} (hfl0 : ∀ N, 0 ≤ fl N)
+    (hLrow : StochDom P
+      (fun N (q : U N × OffPair L W N) ω =>
+        ldeRowLHS (Hf N (uf N q.1) ω) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
+          q.2.1.1 q.2.1.2)
+      (fun N q ω =>
+        ldeRowRHS (Sblk (L N) (W N)) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
+          q.2.1.1 q.2.1.2 + fl N))
+    (hLcol : StochDom P
+      (fun N (q : U N × OffPair L W N) ω =>
+        ldeColLHS (Hf N (uf N q.1) ω) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
+          q.2.1.1 q.2.1.2)
+      (fun N q ω =>
+        ldeColRHS (Sblk (L N) (W N)) (green (Hf N (uf N q.1) ω) (zf (uf N q.1)))
+          q.2.1.1 q.2.1.2 + fl N)) :
+    StochDom P
+      (fun N (q : U N × OffPair L W N) ω =>
+        Set.indicator {ω | GoodEvent (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) m (δ N)}
+          (fun ω => ‖green (Hf N (uf N q.1) ω) (zf (uf N q.1)) q.2.1.1 q.2.1.2‖ ^ 2) ω)
+      (fun N q ω =>
+        (∑ a ∈ sbSupport (L N), ∑ b ∈ sbSupport (L N),
+            Lre (Hf N (uf N q.1) ω) (zf (uf N q.1)) (q.2.1.2.1 + b) (q.2.1.1.1 + a))
+          + (if q.2.1.1.1 - q.2.1.2.1 ∈ sbSupport (L N) then ((W N : ℕ) : ℝ)⁻¹ else 0)
+          + 2 * fl N) := by
+  refine StochDom.of_det (hLrow.sumElim hLcol) ?_ hδ0 hc₀ hδ
+    (by norm_num : (0 : ℝ) < 1 / 2) 81 2 ?_
+  · intro N q ω
+    have h1 : 0 ≤ ∑ a ∈ sbSupport (L N), ∑ b ∈ sbSupport (L N),
+        Lre (Hf N (uf N q.1) ω) (zf (uf N q.1)) (q.2.1.2.1 + b) (q.2.1.1.1 + a) :=
+      Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ =>
+        Lre_nonneg (hH N (uf N q.1) ω) _ _
+    have h2 : (0 : ℝ) ≤
+        if q.2.1.1.1 - q.2.1.2.1 ∈ sbSupport (L N) then ((W N : ℕ) : ℝ)⁻¹ else 0 := by
+      split_ifs <;> positivity
+    have h3 := hfl0 N
+    linarith
+  · intro N ω Φ hΦ1 hΦδ hδε hAB q
+    have hflN := hfl0 N
+    by_cases hω : ω ∈ {ω | GoodEvent (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) m (δ N)}
+    · rw [Set.indicator_of_mem hω]
+      have hLr : LDERowFloor (Hf N (uf N q.1) ω)
+          (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) (Sblk (L N) (W N)) Φ (fl N) :=
+        fun i j hij => hAB (Sum.inl (q.1, ⟨(i, j), hij⟩))
+      have hLc : LDEColFloor (Hf N (uf N q.1) ω)
+          (green (Hf N (uf N q.1) ω) (zf (uf N q.1))) (Sblk (L N) (W N)) Φ (fl N) :=
+        fun k j hkj => hAB (Sum.inr (q.1, ⟨(k, j), hkj⟩))
+      exact norm_sq_green_le_blk_floor (L N) (hL N) (hH N (uf N q.1) ω) (hz N q.1) hm hω hδε
+        hΦ1 hΦδ hflN hLr hLc q.2.2
+    · rw [Set.indicator_of_notMem hω]
+      have h1 : 0 ≤ ∑ a ∈ sbSupport (L N), ∑ b ∈ sbSupport (L N),
+          Lre (Hf N (uf N q.1) ω) (zf (uf N q.1)) (q.2.1.2.1 + b) (q.2.1.1.1 + a) :=
+        Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ =>
+          Lre_nonneg (hH N (uf N q.1) ω) _ _
+      have h2 : (0 : ℝ) ≤
+          if q.2.1.1.1 - q.2.1.2.1 ∈ sbSupport (L N) then ((W N : ℕ) : ℝ)⁻¹ else 0 := by
+        split_ifs <;> positivity
+      have hΦ0 : 0 ≤ Φ := by linarith
+      positivity
 
 /-- **Lemma 4.1, (4.3), with an additive floor *and* the time inside the index set.**
 

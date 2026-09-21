@@ -4000,3 +4000,43 @@ docstring 明说 generic、非高斯特有）+ `StochDom.of_forall_le`；而 **`
 `Thm221N` 依然无生产者（负担转嫁给六步）；**谱边缘**——局部律只在 `|E| ≤ 2−κ` 上有，(2.10) 对边缘的 `λ_k` 要么排除、
 要么另记一条 paper-delta，**论文 Theorem 2.2 的措辞待确认**；特征值编号沿用 #5；
 `norm_apply_le_l2_opNorm` 要 `[Nonempty n]`，`Band.Idx N` 的实例待确认。
+
+## ⚠ T152：Step 6 的四个洞里**两个是空洞**；另发现高斯漂移恒等式在 `v = 0` 处不可满足（`Gauss/Step6HierarchyGauss.lean`，557 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **8864** 条。
+
+### 产出
+**1. `Uker` 的常数变易演算（树里原先完全没有这块）**：
+`edgeKer_mul_Theta_mul_SB`（全部内容就是 `(1−vξS)Θ_{vξ} = 1` + 交换性）、`Uker_ThetaOp_eq`（配对合重标 `sum_update_reindex`）、
+**`hasDerivAt_Uker_thetaOp`：`∂_v U_{v,t} = −U_{v,t}∘Θ_v`**（符号有独立交叉验证：`n = 1` 退化成 T132a 已证的 `hasDerivAt_edgeKer`）、
+`hasDerivAt_Uker_path`、**`Uker_duhamel`** 与 **`Uker_duhamel_Ioo`**、`integral_ThetaOp`。
+T132a 的 `hasDerivAt_Uker_apply` 是**把张量冻住**求导、积不出层级；这一节补的正是这个缺口。
+**2. `hH` 的生产者**（全树第一个）：`Step6.hierarchy_of_hasDerivAt` / `..._Ioo`。
+
+### ⚠ fiat 审计：四个洞里两个是空洞，且**做成了定理**
+| 字段 | 结论 |
+|---|---|
+| `DLK`/`DG` | **自由数据**（`DriftTensor` 是纯数据，`sharpExpect_step6` 对它们全称量化） |
+| `hH` | **可 fiat**：取 `DG = 0`、`DLK_v := (∂_v − Θ_v)E(L−K)_v`，只要路径 `C¹`，用本文件的 `Uker_duhamel` 就按定义成立。**所以单独交付 `hH` 一文不值。** |
+| `hG` | **完全空洞**，已编译证明 `hG_zero_right`：`DG = 0`、`Cg = 0` 即满足。`hG` 只有在 `DG` 被先钉死成论文的 `E E^{(G)}` 之后才有约束力 |
+| `hFD` 的 `DG` 半边 | **空洞**（`fastDecay_zero`） |
+| `hFD` 的 `DLK` 半边、`h5133` | **唯一有内容的两条**，未做 |
+
+**最实用的一条结论，已编译成 `sharpExpect_step6_single`**：
+**论文把漂移拆成 `DLK`/`DG` 在 Lean 里毫无代价可省**——`driftBound_of_5133` 与 `driftBound_of_5134` 给出的是**同一个**界
+`η_v⁻¹(Wℓ_vη_v)⁻³`。于是 Step 6 的四个洞塌缩成**单张量 `D` 上的三条义务**：层级恒等式 + `D` 的快衰减 + (5.133)。
+**后续接手的人不必再构造两个张量。**
+
+### ⚠ 新发现的硬障碍：高斯漂移恒等式在 `v = 0` 处**不可满足**
+所有路线都要经过沿 `H_v = √v·X` 的链式法则，而 `hasDerivAt_Psi_Hflow` / `hasDerivAt_integral_Psi` /
+`hasDerivAt_sample_ELval_hierarchy_gauss` **全部**带 `0 < u`；偏偏 **Step 6 是 Theorem 2.21 里唯一接受 `0 ≤ s` 的一步**。
+所以闭区间版的 `hderiv` 在 `s N = 0` 时不可满足——**这就是为什么本单额外做了 `_Ioo` 版本**（开区间要导数、闭区间只要连续），
+**接手的人应当用 `_Ioo` 版本**。这是 T149/T161 那条 `0 ≤ s` vs `0 < s` 的缝从**解析侧**的又一次撞击。
+
+### 未做
+* **高斯侧的期望漂移恒等式（`hderiv` 的输入）不是拼装活**：逐路径的 (5.15) 是 T140 的 `hasDerivAt_sub_prim_thetaGen`，
+  微分号下求导是 `hasDerivAt_sample_ELval_hierarchy_gauss`（仍挂 `MatrixStein`(T70) 与 T141 的 `hjoint`）。
+  但 **`primRhs` 对回路值是二次的，`E[primRhs(L_v)] ≠ primRhs(E L_v)`**，取期望这一步真的会生出 `E[primBil(L−K,L−K)]`
+  ——正是论文的 `E E^{((L−K)×(L−K))}`。**纯线性的那一半已做掉**（`integral_ThetaOp`），二次的那一半是剩余工作。
+* `h5133` 与 `hFD` 是 size estimate，依赖上一条把 `D` 定成论文的对象之后才谈得上。
+* **没有捏造 `DLK`/`DG` 的具体定义**——在上一条没有之前定义它们只是摆样子，反而会掩盖 `hH` 可 fiat 这件事。

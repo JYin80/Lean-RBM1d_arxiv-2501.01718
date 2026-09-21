@@ -13,6 +13,7 @@ import RBM1D.Gauss.Thm25Gauss
 import RBM1D.Gauss.Lemma41FlowGauss
 import RBM1D.Gauss.Step1Hyp
 import RBM1D.Gauss.Step6Hyp
+import RBM1D.Gauss.Step6HierarchyGauss
 import RBM1D.Gauss.Eq45Flow
 import RBM1D.Gauss.Eq45FlowInputs
 import RBM1D.Gauss.GoodSetFlow

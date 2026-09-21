@@ -2395,3 +2395,27 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 **使归纳闭合的设计要点**：原子带一个基层级 `T`（`gFam a b T S = G^{(S∪T)}_{ab}`，指标被删时延拓为 0），于是这一类对层级平移封闭；而 `MinorDiffGain` 的 `Nodup`/新鲜性条件**正好**是分级所需要的。
 **m=3 体检**：`norm_minorDiff_triple_le ≤ 2^91·Ψ⁴`；幂的阶梯 `Ψ²`(T85, m=1) → `10Ψ³`(T110, m=2) → `Ψ⁴`(此处) 对上了。
 `FlucIterHigh`/`FlucIter`/`FlucCount`/`FlucAvg`/`EntryBound` 的签名一律未动，`MinorDiffGain` 的定义未改（被 `minorDiffGain_of_pointwise` 原样消费）。paper-deltas #68。
+
+### `RBM1D/Gauss/CondDom.lean` — `≺` 在条件期望下的保持（T112，Claude Code 并行 agent）
+
+**通用工具 `stochDom_condRow_of_envelope`**（本单的可复用产出，用的是仓库自己的 `RBM.StochDom` 与 `condRow`）：
+`‖X‖ ≺ ζ` + 逐点确定性包络 `Env`（多项式增长）+ `N^{-B} ≺ χ` + **`CondStable`** ⟹ `‖E_k[X]‖ ≺ χ`。
+数学内容就是工单那段「为什么不自动」所要求的两条：`lintegral_measure_rowSlice`（`∫ P(行切片) dP = P(S)`，经 T84 的 `measurePreserving_rowSplit` 做 Fubini）与其上的 Markov（`meas_measure_rowSlice_ge`），
+再加 T77 式的好/坏事件分割 `norm_condRow_le_split`。
+
+**第四条假设不可避免，这是本单真正的发现**：把 `E_k` 写成精确坐标积分后得到 `‖E_k[X](ω)‖ ≤ N^τ E_k[ζ](ω) + Env·P(切片)`——
+**控制出现在分割点上**，所以诚实的结论是被 `E_k[ζ]` 界住而不是被 `ζ` 界住。打包成结构 `CondStable`（ζ 的行可积性 + `E_k[ζ] ≺ χ`）；
+`CondStable.of_det`（确定性控制）与 `of_finDepOffRow`（控制读自小行）免费卸掉它，但 `χ = ζ = Lmax` 时不免费，需携带。
+
+## ⚠ 发现冻结接口里的一处**假命题**：`condExpDiag_stochDom_of_pieces` 的 `hminor` 在对角处为假
+
+`hminor` 在 `q.1 = q.2` 处断言 `E_i(G_ii − m) − (G_ii − m) ≺ Ψ²`，但该量正是 `−(1 − E_i)(G_ii − m)`，**尺度是 `Ψ` 而非 `Ψ²`**，且对角没有小行替身。
+故 `condExpDiag_stochDom_of_pieces` **按原样喂不进去**。**修法完全在本文件内，没碰任何冻结签名**：
+对角项在 `Σ_k S_ik·ibpRem(i,k)` 中带系数 `S_ii`，而事件上 `S_ii ≤ 2·Lmax`（`RBM.Sblk_le_Lmax`），`ibpRem` 有确定性包络 `(η_t⁻¹+1)²`；
+于是用加权版 `norm_condExpDiag_sub_le_offdiag` 取代一致版，经 `condExpDiag_stochDom_of_offdiag` 得 **`condExpDiag_stochDom_of_localLaw`——`hIBP` 的冻结签名**。
+**已按要求做编译验证**：`trace_green_sub_mul_Eblk_stochDom_of_localLaw` 把它塞进 `hIBP` 槽并编译通过（走的是 `condExpDiag_stochDom_of_offdiag`，不是 `condExpDiag_stochDom_of_pieces`）。
+
+**剩余假设**：`hstabP`/`hstabM`（`E_i[Lmax] ≺ Lmax`——本路线暴露出的**真正新的概率输入**，属局部律类的比较而非涨落平均，**值得单独一张单**）；
+`hloc`（(4.3) 去掉指示函数）；`hrepl`（T85 的 (4.9) 搬到 `greenMinorMat` 与控制 `Lmax`，需 `greenMinorMat = minorGreen` 的可逆性与 `Ψ² ≺ Lmax`）；`hΩ`(4.4) 与 `hG : GaussIBP`。
+顺带证出：`measurable_Lmax`、`stochDom_rpow_neg_one_Lmax`（`N⁻¹ ≺ Lmax`），故 `N^{-B} ≺ χ` 那条**不用携带**。
+又一次名字冲突（`norm_condRow_le` 与 `Gauss/FlucIter.lean` 重名），agent 自查时发现并改名为 `norm_condRow_le_const`——**单文件编译查不出跨文件重名，整合时必须跑全量 build**。paper-deltas #69、#70。

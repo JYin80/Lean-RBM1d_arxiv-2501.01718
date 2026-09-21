@@ -296,7 +296,10 @@
 | T129 | **`condExpDiag` 对 u 的模**（T124 余项 (3) 里真正新的那半，paper-deltas #79）：Green 函数那半已有（T106 `norm_green_flow_sub_le`）；`condExpDiag` 那半的难点是随机常数 `‖X‖` 落在**行条件期望的积分内部**，不是逐点模的推论。**第 0 步：判定能否把模写成「随机常数 `C(ω) = E_i[‖X‖+1]` × `|u−v|^{1/2}`」并证 `C ≺ 1`**（`‖X‖ ≺ 1` 是 T109；条件期望下 `≺` 的保持是 T112 `CondDom` 的主题——**它不是自动的**），再看 T124 的 `stochDom_timeIcc_of_unifDom` 是否接受**随机**的 Hölder 常数；不接受就报告需要的引擎形状，别硬凑 | `Gauss/CondExpModulus.lean`（新建） | Claude Code | **完成**（模无条件；随机常数 `E_k[‖X‖] ≺ 1` 绕开 T112——靠「只重采一行」+ 锐的列范数界；引擎不需改，见 STATUS） |
 | T130 | **`hΩ` 的 u-一致版**（T124 余项 (1) + T119 留下的 `hΩ`）：(4.4) 在**每个** `u ∈ [s,t]` 上成立的高概率事件。这是一条网命题，用 T124 刚补的网引擎（`UnifDomIcc`/`stochDom_timeIcc_of_unifDom`）+ T109 `‖X‖ ≺ 1`。**第 0 步：先写清 (4.4) 在 Lean 里的事件是什么、固定时刻由谁产出**；若事件含 `1(‖G_u‖_max ≤ 2)` 这类对 u 不连续的指示函数，照 T116 的**放宽阈值**做法（`netLift_of_relaxed`），并写 paper-delta | `Gauss/Eq45FlowInputs.lean` 或新文件 | Claude Code | **完成**（`hΩ` 的 u-一致版已有生产者，条件为弱局部律 + 两条区制边条件；`t_N → 1` 的坑不适用，见 STATUS） |
 | T131 | **小单：T123 的 `hint` 尾巴**。`quad11_unifDetDom`/`quad13_unifDetDom` 仍带可积性假设 `hint`；现成的 `integrable_sample_lkErr_mul` 是 **ℂ 值乘积**，桥要 **ℝ 值** `lkErr · lkErr`。补一条 ℝ 值版的可积性（由 ℂ 版取范数，或直接由确定性包络 `‖G‖ ≤ η⁻¹`），**对一般 `Sample` 陈述**，保持 T123 的普适性 | `Gauss/Envelope.lean` 或 `Gauss/Step6Hyp.lean` | Claude Code | **完成**（ℝ 值可积性补上，高斯版 `quad11/13_unifDetDom_gauss` 不再带 `hint`；一般版保持不变） |
-| T132 | **⭐⭐⭐ 矩 Duhamel**：`Φ(u,H) = (U_{u,t}∘(L−K)(H,z_u))_a`，对 `|Φ|^{2p}` 用**带显式时间的生成元恒等式**（只依赖一时刻律，故与模型无关）+ T72 的 QV 支点 ⟹ `‖(L−K)_t‖_{2p} ≤ ‖U(L−K)_s‖_{2p} + 2∫‖U∘F‖_{2p} + (C∫‖(U⊗U)∘(E⊗E)‖_p)^{1/2}`，即 (5.20)+(5.24) 的合体。替代全部 `Hierarchy.duhamel/bdg` 消费者（带撇变体）。**第 0 步只交消费者清单 + 接口草案，Cowork 审过再开工** | `Gauss/MomentDuhamel.lean`（新建） | Claude Code | **第 0 步完成，等 Cowork 审**（建议 proceed with modifications；消费者只 5 处、下游零改动；`∂_u Uker` 已顺手证出；**关键建议：把逐点漂移恒等式作为必需字段以在定义层钉死 `F`**，见 STATUS） |
+| T132 | **⭐⭐⭐ 矩 Duhamel**：`Φ(u,H) = (U_{u,t}∘(L−K)(H,z_u))_a`，对 `|Φ|^{2p}` 用**带显式时间的生成元恒等式**（只依赖一时刻律，故与模型无关）+ T72 的 QV 支点 ⟹ `‖(L−K)_t‖_{2p} ≤ ‖U(L−K)_s‖_{2p} + 2∫‖U∘F‖_{2p} + (C∫‖(U⊗U)∘(E⊗E)‖_p)^{1/2}`，即 (5.20)+(5.24) 的合体。替代全部 `Hierarchy.duhamel/bdg` 消费者（带撇变体）。**第 0 步只交消费者清单 + 接口草案，Cowork 审过再开工** | `Gauss/MomentDuhamel.lean`（新建） | Claude Code | **第 0 步已审（03:55）：拆成 T132a/b/c；修改 3 退回**，见规格下「Cowork 审查结论」 |
+| T132a | **矩 Duhamel 的结构 + 收口 + 带撇 `Lemma514`**（不依赖 T133/T134）：`MomentDuhamel(Q)`（含逐点漂移字段钉死 `F`）、积分+取上确界的收口引理（**不是** `gronwallBound`）、`∂_u Uker`、重新生产 `Step3.Lemma514` | `Gauss/MomentDuhamel.lean` + `Analysis/` | 待认领（T132 原 agent 优先） | 未开工 |
+| T132b | **矩 Duhamel 的高斯卸载**：带显式时间的生成元恒等式 + `(z,M)` 联合 `C²` ⟹ `MomentDuhamel` 实例。等 T133/T134 | `Gauss/MomentDuhamelGauss.lean` | 待认领 | 未开工 |
+| T132c | **`MomentHyp.step` 与 `(+,+)` 一步改进**：由矩 Duhamel + (5.39)–(5.41)(5.45) 的矩形式给出。等 T132a | `Hierarchy/Step2Moment.lean` 追加或新文件 | 待认领 | 未开工 |
 | T133 | **loop 观测量的 `C²` 界**（T76 `TestFun` 缺口）：`L_{σ,a}` 与 `(U∘(L−K))_a` 对 `H` 为 `C²`，一二阶导有确定性 `η` 幂界。T132 的前置 | `Gauss/LoopC2.lean`（新建） | Claude Code | 进行中 |
 | T134 | **逐点漂移恒等式 + 动 `z_u`**（T76 `LoopIto` 与未做项）：`(∂_u + 𝓛)(L−K) = Θ∘(L−K) + F` 逐点成立；联合可微走 `ContDiff.comp`，绕开「偏导连续 ⟹ 可微」。T132 的前置 | `Gauss/LoopIto.lean`（新建） | Claude Code | 进行中 |
 | T135 | **`≺` 的可加余量吸收引理**（T127 余项）：界形如 `N^τ·Φ + m·W·L·N^{−D}` ⟹ `≺ Φ`，前提是控制 `Φ` 有**多项式下界** `N^{−B} ≤ Φ`。放 `Defs/StochDom.lean`（通用，**先 grep**：T123 `rpow_neg_le_aprioriRhs`、T125 同形引理可能已近似）。然后用它把 `EEBridge.norm_eeField_le` 升成 `Lemma510.EE_le` 的 `≺` 版，并给出该控制的多项式下界 | `Defs/StochDom.lean` + `Hierarchy/EEBridge.lean` | 待认领 | 未开工 |
@@ -2502,9 +2505,43 @@ T74/T76 之后**没有任何工单接手这堵墙**。这张单接手。
   `lemma514_flow'` 的带撇变体（不经 `Hierarchy`）、`Step6.Hierarchy`（期望形，`p` 取最低阶即可）；
 * **旧签名一律不动**，新路线全用带撇变体；全量 `lake build`；paper-deltas 记一条（`(5.24)` 在 Lean 里以合体形式出现）。
 
+
+### Cowork 审查结论（2026-09-21 03:55）：**可开工**，按下面修改；拆成 T132a / T132b / T132c
+
+**接受**：
+* **修改 1（逐点漂移恒等式作必需字段，在定义层钉死 `F`）——强烈同意**，这是本单的主要收益。注意它是关于**确定性函数** `(u, M) ↦ (L−K)(u, M)` 的恒等式
+  （`𝓛 = ½ Σ S_ij ∂_ij∂_ji` 只用到方差剖面 `S`），所以能在一般 `Band`/`Sample B` 上陈述，不需要高斯。
+* 修改 2（结构陈述在一般 `Sample B`，高斯卸载单列）、修改 4（带撇件直接出 `≺`，不做带撇 `bound_nonAlt`/`bound_qGood`/`step_bound`）、
+  修改 5（三块无主缺口：`(z,M)` 联合 `C²` → 并入 T134；参数积分的 `u`-一致控制 → 并入 T133；`Lp` 可积性字段 → T132a 自带）。
+* 3(d) 的措辞更正：是「对**同一一时刻边缘律**的不同流无关」，不是「对模型无关」。同意，已按此理解 paper-deltas #88。
+* `∂_u Uker` 免费（仿射因子之积）——好发现。
+
+**退回：修改 3（改用 `e^{p(2p−1)(v−s)}` 的 Grönwall 形）——不行，会丢 `η` 的幂。**
+理由：(5.77) 的每个 E 项与 (5.86) 的二次变差都带 `1/η_u`。Young + 常系数 Grönwall 给出的非齐次项是 `∫ ‖U∘F_u‖_{2p}^{2p} du`，
+而论文要的是 `(∫ ‖U∘F_u‖_{2p} du)^{2p}`。当 `‖U∘F_u‖ ≍ Φ/η_u` 时前者 `≍ Φ^{2p} η_t^{1−2p}`，后者 `≍ (Φ·log)^{2p}`——
+开 `2p` 次方后**差一个 `η_t^{−1}`**；二次变差项同理差 `η_t^{−1/2}`。改用 `1/η_u` 加权的 Young 也不行：Grönwall 因子变成 `(η_s/η_t)^{C p²}`，
+随 `p` 二次增长，而 `≺` 需要对任意大的 `p`，时间步长 `τ'` 却要在 `ε, D` 之前定好——不闭合。**这正是 moment-route-plan 里标的「Hölder 记账」风险。**
+
+**正确的收口不需要 ODE 比较定理，只要积分 + 取上确界**（照做）：
+1. Hölder：`φ' ≤ 2p φ^{1−1/2p} f + C_p φ^{1−1/p} g`，`f_u = ‖(U_{u,t}∘F_u)_a‖_{2p}`，`g_u = ‖((U⊗U)∘(E⊗E))_{u,a,a}‖_p`。
+2. 令 `ψ = (φ + ε)^{1/p}`（`ε > 0` 避开 `φ = 0` 处的除法，最后 `ε → 0`），则 `ψ' ≤ 2 ψ^{1/2} f + (C_p/p) g`。
+3. 积分：`ψ(u) ≤ ψ(s) + 2 m(u) ∫_s^u f + (C_p/p) ∫_s^u g`，其中 `m(u) = sup_{r≤u} ψ(r)^{1/2}`；右端对 `u` 单调，取 `sup` 得
+   `m² ≤ m_s² + 2 m F + c G`（`F = ∫_s^t f`、`G = ∫_s^t g`、`m_s = ψ(s)^{1/2}`）。
+4. 解二次不等式：`m ≤ F + √(F² + m_s² + cG) ≤ 2F + m_s + √(cG)`。即
+   **`‖(L−K)_{t,a}‖_{2p} ≤ ‖(U_{s,t}∘(L−K)_s)_a‖_{2p} + 2∫_s^t f + (c ∫_s^t g)^{1/2}`**——`p` 只进常数 `c = C_p/p`，`η` 只以 `∫ du/η_u = log` 的形式出现。
+这就是规格里写的形状，不用 `gronwallBound`。
+
+**拆单**：
+* **T132a（现在开工，不依赖 T133/T134）**：`MomentDuhamel` / `MomentDuhamelQ` 结构（含修改 1 的漂移字段、`Lp` 可积性字段）、
+  上面 1–4 的收口引理（纯实分析，放 `Analysis/`）、`∂_u Uker`、带撇件直接出 `≺` 并重新生产 `Step3.Lemma514`（`u`-一致性走 T124 的网引擎 + T125 的 loop 模）。
+* **T132b（等 T133/T134）**：高斯卸载——带显式时间的生成元恒等式 + `(z,M)` 联合 `C²` ⟹ `MomentDuhamel` 的实例。
+* **T132c（等 T132a）**：`Step2Moment.MomentHyp.step` 与 `Step2PP` 的 `(+,+)` 一步改进，由矩 Duhamel + (5.39)–(5.41)(5.45) 的矩形式给出。
+
 ---
 
 ## T133 规格：loop 观测量的 `C²` 界（T76 的 `TestFun` 缺口；Cowork，2026-09-21）
+
+> **补充（T132 第 0 步审查，03:55）**：界要对 `u ∈ [s,t]` **一致**（参数积分求导的 dominated convergence 要用），不只是固定 `u`。
 
 T72 已对**预解式观测量** `φ(G)` 卸掉 `TestFun`（`bddC2_greenObs`）。loop `L_{σ,a}(H) = ⟨∏ G(σ_i)E_{a_i}⟩` 还差：
 矩阵求逆的 Fréchet `C²`（Mathlib：`contDiffAt_ring_inverse` 一类）+ `List.foldr` 乘积的 Leibniz（`Generator.lean` 只有逐线 `iteratedDeriv` 版）。
@@ -2514,6 +2551,8 @@ T72 已对**预解式观测量** `φ(G)` 卸掉 `TestFun`（`bddC2_greenObs`）�
 ---
 
 ## T134 规格：逐点漂移恒等式 + 动 `z_u` 的全导数（T76 的 `LoopIto` 与未做项；Cowork，2026-09-21）
+
+> **补充（T132 第 0 步审查，03:55）**：另需 `(z, M) ↦ (M − z)⁻¹` 的**联合** `C²` 及其导数的确定性界（T132b 要用）。
 
 1. **`LoopIto`（纯确定性）**：`½ Σ S_ij ∂_ij∂_ji L_{σ,a}(H)` = (2.45) 的 dt 部分（cut-and-glue 项 + `G̃` 项），**逐点、对固定 `H`、固定 `z`**。
    T76 只证了期望版；这里要逐点版。

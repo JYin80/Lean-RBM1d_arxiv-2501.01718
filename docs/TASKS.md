@@ -1,6 +1,8 @@
 # 任务队列
 
-> ## ⭐⭐ 当前优先级：T122 > T126 > T127 > T128 > T130 > T129 > T131 > T58（2026-09-21，Cowork；T123/T124 已完成）
+> ## ⭐⭐⭐ 当前优先级：T132（第 0 步）‖ T133 ‖ T134 > T126 > T127 > T128 > T130 > T129 > T131 > T58（2026-09-21，Cowork；T122–T125 已完成）
+>
+> **T132 是随机层真正剩下的那堵墙**（T74/T76 判定逐路径 `duhamel`/`bdg` 在 `√u·X` 下不可卸，之后没人接手）。规格见下文「T132 规格」。T133、T134 是它的两块前置零件，可并行。
 >
 > **Jun 已裁 paper-deltas #72（原 #66）：论文不缺数学，走 (c) 收窄引用，(2.76) 陈述不改。**
 > `(+,+)` 的来源是 **Lemma 5.11 在 `n = 2`**（非交错电荷，(7.16) 情形 1），p.70 只是把出处写成了 (2.76)。
@@ -222,7 +224,7 @@
 | T55 | Steps 4 与 5：(5.125) ⟹ (2.78)；两段劈分 ⟹ (2.79) | `Hierarchy/Step45.lean`（新建） | Claude Code | **完成** |
 | T56 | Step 6：(5.126)–(5.136) ⟹ (2.80) | `Hierarchy/Step6.lean`（新建） | Claude Code | **完成** |
 | T57 | Lemma 2.18/2.19/2.20 由 Theorem 2.21 推出（§2.7 p.24 的时间网格归纳） | `Flow/Iteration.lean`（新建） | Claude Code | **完成** |
-| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | 待认领（优先级已下调，非主定理阻塞） | 规格见下文「T58 交接：表示桥的设计决定」（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上）；**T118 (iii) 并入**：把 `F` **具体定义**为 `Decay` 的 `couplingLen + primBil + eG`，届时 `Lemma510` 其余部分**逐路径可证**。⚠ 不许按定义造一个任意 `F` 让 `duhamel` 平凡成立（`Gauss/DischargeBDG.lean:70ff` 的 fiat 警告；`Lemma510` 是唯一护栏，**不得弱化**） |
+| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | 待认领（优先级已下调，非主定理阻塞） | 规格见下文「T58 交接：表示桥的设计决定」（(5.12)(5.13)(5.14)(5.15) 已落地；剩 (5.19)、(5.20)(5.21)、Def 5.4 的 `E⊗E`——都卡在下面那条**表示桥**上）；**T118 (iii) 并入**：把 `F` **具体定义**为 `Decay` 的 `couplingLen + primBil + eG`，届时 `Lemma510` 其余部分**逐路径可证**。⚠ 不许按定义造一个任意 `F` 让 `duhamel` 平凡成立（`Gauss/DischargeBDG.lean:70ff` 的 fiat 警告；`Lemma510` 是唯一护栏，**不得弱化**）；**⚠ 2026-09-21 Cowork**：(5.20)(5.21) 的**逐路径**形（带 `mart`）在 `√u·X` 下只能 fiat，**不要交付那一半**——其真实内容改由 T132（矩 Duhamel）供给；T58 保留表示桥、(5.19)、Def 5.4 与 `F` 的具体定义 |
 | T59 | §5.4：Def 5.8 快衰减、Lemma 5.9、Lemma 5.10 (5.77) 的幂计数、Lemma 5.11 (5.83) | `Hierarchy/Decay.lean`（新建） | Claude Code | **完成**（E⊗E 仅抽象形式，待 T58 Def 5.4） |
 | T60 | §5.5 的动力学半边：(5.88)(5.91)、**Lemma 5.14 (5.92)**、(5.95)–(5.101) | `Hierarchy/SumZeroDyn.lean`（新建） | Claude Code | **完成**（`lemma514_flow′` 给出 `Step3.Lemma514`；(5.77)(5.75) 仍为占位假设，见 STATUS） |
 | T61 | §5.3 Step 2：Lemma 5.6、Lemma 5.7 (5.34)(5.35)(5.36)、(5.39)–(5.48) 的自改进不等式 | `Hierarchy/Step2.lean`（新建） | Claude Code | **完成**（`step2` 给出 (2.75)(2.76)；(2.72) 需 `N^c` 增益，见 STATUS；(5.35) 为 T58 占位假设） |
@@ -294,6 +296,9 @@
 | T129 | **`condExpDiag` 对 u 的模**（T124 余项 (3) 里真正新的那半，paper-deltas #79）：Green 函数那半已有（T106 `norm_green_flow_sub_le`）；`condExpDiag` 那半的难点是随机常数 `‖X‖` 落在**行条件期望的积分内部**，不是逐点模的推论。**第 0 步：判定能否把模写成「随机常数 `C(ω) = E_i[‖X‖+1]` × `|u−v|^{1/2}`」并证 `C ≺ 1`**（`‖X‖ ≺ 1` 是 T109；条件期望下 `≺` 的保持是 T112 `CondDom` 的主题——**它不是自动的**），再看 T124 的 `stochDom_timeIcc_of_unifDom` 是否接受**随机**的 Hölder 常数；不接受就报告需要的引擎形状，别硬凑 | `Gauss/CondExpModulus.lean`（新建） | Claude Code | 进行中 |
 | T130 | **`hΩ` 的 u-一致版**（T124 余项 (1) + T119 留下的 `hΩ`）：(4.4) 在**每个** `u ∈ [s,t]` 上成立的高概率事件。这是一条网命题，用 T124 刚补的网引擎（`UnifDomIcc`/`stochDom_timeIcc_of_unifDom`）+ T109 `‖X‖ ≺ 1`。**第 0 步：先写清 (4.4) 在 Lean 里的事件是什么、固定时刻由谁产出**；若事件含 `1(‖G_u‖_max ≤ 2)` 这类对 u 不连续的指示函数，照 T116 的**放宽阈值**做法（`netLift_of_relaxed`），并写 paper-delta | `Gauss/Eq45FlowInputs.lean` 或新文件 | Claude Code | 进行中 |
 | T131 | **小单：T123 的 `hint` 尾巴**。`quad11_unifDetDom`/`quad13_unifDetDom` 仍带可积性假设 `hint`；现成的 `integrable_sample_lkErr_mul` 是 **ℂ 值乘积**，桥要 **ℝ 值** `lkErr · lkErr`。补一条 ℝ 值版的可积性（由 ℂ 版取范数，或直接由确定性包络 `‖G‖ ≤ η⁻¹`），**对一般 `Sample` 陈述**，保持 T123 的普适性 | `Gauss/Envelope.lean` 或 `Gauss/Step6Hyp.lean` | Claude Code | **完成**（ℝ 值可积性补上，高斯版 `quad11/13_unifDetDom_gauss` 不再带 `hint`；一般版保持不变） |
+| T132 | **⭐⭐⭐ 矩 Duhamel**：`Φ(u,H) = (U_{u,t}∘(L−K)(H,z_u))_a`，对 `|Φ|^{2p}` 用**带显式时间的生成元恒等式**（只依赖一时刻律，故与模型无关）+ T72 的 QV 支点 ⟹ `‖(L−K)_t‖_{2p} ≤ ‖U(L−K)_s‖_{2p} + 2∫‖U∘F‖_{2p} + (C∫‖(U⊗U)∘(E⊗E)‖_p)^{1/2}`，即 (5.20)+(5.24) 的合体。替代全部 `Hierarchy.duhamel/bdg` 消费者（带撇变体）。**第 0 步只交消费者清单 + 接口草案，Cowork 审过再开工** | `Gauss/MomentDuhamel.lean`（新建） | 待认领 | 未开工 |
+| T133 | **loop 观测量的 `C²` 界**（T76 `TestFun` 缺口）：`L_{σ,a}` 与 `(U∘(L−K))_a` 对 `H` 为 `C²`，一二阶导有确定性 `η` 幂界。T132 的前置 | `Gauss/LoopC2.lean`（新建） | 待认领 | 未开工 |
+| T134 | **逐点漂移恒等式 + 动 `z_u`**（T76 `LoopIto` 与未做项）：`(∂_u + 𝓛)(L−K) = Θ∘(L−K) + F` 逐点成立；联合可微走 `ContDiff.comp`，绕开「偏导连续 ⟹ 可微」。T132 的前置 | `Gauss/LoopIto.lean`（新建） | 待认领 | 未开工 |
 
 ---
 
@@ -2443,3 +2448,70 @@ T115/T120 写的「旁证：Lemma 5.14（p.68）排除常值 σ」是**误读**�
 `norm_quad11_le_integral`/`norm_quad13_le_integral` 从 `Steps.sharpLmK 1`/`sharpLmK 3` 收口，卸掉 `hq11`/`hq13`。
 
 **验收**：`sharpExpect_step6` 的七条假设只剩 A 组（`hH`/`hFD`/`h5133`/`hG`，归 T58）；零 `sorry`/`axiom`；全量 `lake build`；STATUS 记录。
+
+---
+
+## T132 规格：矩 Duhamel——随机层真正剩下的那堵墙（Cowork，2026-09-21）
+
+### 为什么现在开这张单
+
+盘点结果：Steps 2–6 的随机层**全部**经 `SumZeroDyn.Hierarchy`（`duhamel`/`duhamelQ` 带鞅字段、`bdg`/`bdgQ`）或
+`Step2Moment.MomentHyp.step`、`Step2PP.BootPP.step`、`Step6.Hierarchy` 取输入。T74/T76 已判定：在 `H_u = √u·X` 模型里，
+逐路径的 `duhamel` 只能 fiat（`mart :=` 残差），而**残差的 BDG 在这个模型里不是生成元论证能给的**——残差含 `∫_s^v F(H_r) dr`，
+代入 `H_r = √(r/v)·H_v` 后对 `v` 显式依赖（T74 理由 2），且无鞅结构（理由 3）。**这是结构性的，不是没做完**。
+T74/T76 之后**没有任何工单接手这堵墙**。这张单接手。
+
+### 数学（关键：只用一时刻边缘律，因而与模型无关）
+
+固定目标时刻 `t`、电荷 `σ`、指标 `a`。令
+`Φ(u, H) := (U_{u,t,σ} ∘ (L−K)_{σ}(H, z_u))_a`，`u ∈ [s, t]`——**它是 `(u, H)` 的函数，不是路径泛函**。
+
+1. **逐点漂移恒等式**（确定性，T134）：`(∂_u + 𝓛) Φ = (U_{u,t,σ} ∘ F_{u,σ})_a`，其中 `𝓛 = ½ Σ S_ij ∂_ij ∂_ji`，
+   `∂_u` 是对显式 `u`（经 `z_u`、`K_u`、`U_{u,t}`）的偏导，`F` 是 (5.15)/(5.19) 的非线性项（`K∼(L−K)`、`E^{(L−K)×(L−K)}`、`E^{(G̃)}`）。
+   线性部分被 `U` 的定义**恰好**消掉——这就是论文 (5.20) 的 dt 部分，逐点成立。
+2. **带显式时间的生成元恒等式**（T71 的推广）：`d/du E[Ψ(u, H_u)] = E[∂_uΨ(u, H_u)] + E[𝓛Ψ(u, H_u)]`。
+   它**只依赖 `H_u` 的一时刻律**，故在 `√u·X` 与论文的布朗模型里**同一个式子**——这是整条路线合法的理由。
+3. 取 `Ψ = |Φ|^{2p}`，由 T72 的 `genMomentPt_le` 与支点 `secondOrder_eq_quadVar`、T74 的 `emart_Uker`/`eeRaw_self_eq_quadVar`：
+   `φ' ≤ 2p·E[|Φ|^{2p−1}·|U∘F|] + C_p·E[|Φ|^{2p−2}·((U⊗U)∘(E⊗E))_{a,a}]`，`φ(u) := E|Φ(u,H_u)|^{2p}`。
+4. Hölder 后得 `φ' ≤ 2p·φ^{1−1/2p}·f + C_p·φ^{1−1/p}·g`（`f = ‖U∘F‖_{2p}`、`g = ‖(U⊗U)∘(E⊗E)‖_p`）。
+   令 `y = φ^{1/2p}`，积分后对 `m = max_{r≤u} y(r)` 解二次不等式（**不需要 ODE 比较定理**）：
+   **`‖(L−K)_{t,σ,a}‖_{2p} ≤ ‖(U_{s,t}∘(L−K)_s)_a‖_{2p} + 2∫_s^t ‖(U_{u,t}∘F_u)_a‖_{2p} du + (C_p ∫_s^t ‖((U⊗U)∘(E⊗E))_{u,a,a}‖_p du)^{1/2}`**。
+   这就是 (5.20)+(5.24) 在 `L^{2p}` 里的合体（Minkowski 形；对 `≺` 用途与论文的 `E(∫QV)^p` 等价）。
+
+**不要做的事**：不要试图在 `√u·X` 模型里对**残差**证 (5.24)——那条可能根本不成立（残差的增量完全相关）。
+不要实例化 `SumZeroDyn.Hierarchy`（fiat 风险，见 T118）。
+
+### 第 0 步（必做，先写进 STATUS 再动手）
+
+1. **消费者清单**：`duhamel`/`duhamelQ`/`bdg`/`bdgQ`/`mart` 出现在 `SumZeroDyn.lean`、`Step2.lean`、`Step2Moment.lean`、`Step2PP.lean`、`DischargeBDG.lean`。
+   逐个写出消费者**实际抽取的 `≺` 或矩层陈述**（多半是「`(Wℓη)^n|(L−K)_t| ≺ ‖U(L−K)_s‖ + ∫(≺-界) + (∫ QV-界)^{1/2}`」这一句）。
+2. 据此设计**替代接口** `MomentDuhamel`（`≺` 进、`≺` 出，形如上面第 4 条经 T73/T77 转换后的样子），**以及 `Q_t` 版**（交错电荷走 (5.91)，同一论证，`F` 多出 `[Q,Θ]` 与 `P∘(L−K)·ϑ̇` 两项）。
+3. 列出第 1–4 条每一步的现成零件与缺口（预期缺口：T133 的 loop `C²` 界、T134 的逐点漂移恒等式与 `z_u` 的全导数）。
+**这一步不写证明，只交清单 + 接口草案**；Cowork 审过再开工。
+
+### 交付（第 0 步审过之后）
+
+* 第 4 条的定理（`Gauss/MomentDuhamel.lean`，矩只活在 `Gauss/` 里，对外 `≺`）；
+* 由它产出：`Step2Moment.MomentHyp.step`（`(+,−)`）、`Step2PP` 的 `(+,+)` 自举的一步改进（**若事件形 `BootPP.step` 产不出，就加矩形变体，别硬凑**）、
+  `lemma514_flow'` 的带撇变体（不经 `Hierarchy`）、`Step6.Hierarchy`（期望形，`p` 取最低阶即可）；
+* **旧签名一律不动**，新路线全用带撇变体；全量 `lake build`；paper-deltas 记一条（`(5.24)` 在 Lean 里以合体形式出现）。
+
+---
+
+## T133 规格：loop 观测量的 `C²` 界（T76 的 `TestFun` 缺口；Cowork，2026-09-21）
+
+T72 已对**预解式观测量** `φ(G)` 卸掉 `TestFun`（`bddC2_greenObs`）。loop `L_{σ,a}(H) = ⟨∏ G(σ_i)E_{a_i}⟩` 还差：
+矩阵求逆的 Fréchet `C²`（Mathlib：`contDiffAt_ring_inverse` 一类）+ `List.foldr` 乘积的 Leibniz（`Generator.lean` 只有逐线 `iteratedDeriv` 版）。
+**交付**：`bddC2_loopObs`——`L_{σ,a}` 及 `(U∘(L−K))_a` 对 `H` 是 `C²`，一、二阶导有**确定性**界（`η⁻¹` 的幂，由 `‖G‖ ≤ η⁻¹`），供 T132 第 3 条的 `genMomentPt_le` 与 dominated convergence 使用。
+**第 0 步**：先 grep `Gauss/` 下是否已有 `foldr`/`List.prod` 的 Leibniz 或 `ContDiff` 乘积引理，**别造第二个轮子**。
+
+---
+
+## T134 规格：逐点漂移恒等式 + 动 `z_u` 的全导数（T76 的 `LoopIto` 与未做项；Cowork，2026-09-21）
+
+1. **`LoopIto`（纯确定性）**：`½ Σ S_ij ∂_ij∂_ji L_{σ,a}(H)` = (2.45) 的 dt 部分（cut-and-glue 项 + `G̃` 项），**逐点、对固定 `H`、固定 `z`**。
+   T76 只证了期望版；这里要逐点版。
+2. **动 `z_u`**：`∂_u` 经 `z_u` 的部分（`∂_z G = G²`）与 1 合起来，再减去 `K` 的原始方程 (2.48)，得到 (5.15) 的逐点形：
+   `(∂_u + 𝓛)(L−K)_{u,σ,a} = (Θ_{u,σ}∘(L−K))_a + F_{u,σ,a}`。(5.10)–(5.15) 的代数重组 T58 已落地，**复用**。
+3. T76 卡住的「偏导连续 ⟹ 可微」：**绕开它**——`(u, H) ↦ L` 是光滑映射的复合（`z_u` 光滑、矩阵求逆解析），直接用 `ContDiff.comp` 得联合可微。
+**第 0 步**：确认 T58 已落地的 (5.12)–(5.15) 是逐点（对 `H`）陈述还是对抽象张量陈述；是后者就先写适配，报告再动。

@@ -199,9 +199,9 @@ Task/Agent 工具扇出子 agent**：保留手上这张单，另外从 `docs/TAS
 （`condRow_zero` 在 `Gauss/IBP.lean` 与 `Gauss/FlucIter.lean` 各声明一次，
 全量 `lake build` 拼 import 链时才炸）。
 
-## ⭐⭐ 最高优先级是 T122（2026-09-21；T115 已完成，T58 仍为普通优先级）
+## ⭐⭐⭐ 最高优先级是 T132（2026-09-21；T122 已完成）
 
-**下一个空出来的 agent 去接 T122**（`docs/TASKS.md` 的「T122 规格」），其次 T123。
-Jun 已裁 paper-deltas #72：`(+,+)` 的 (2.76) 型界**不需要改论文陈述**，来源是 Lemma 5.11 在 `n = 2`
-（Lean 已有 `SumZeroDyn.bound_nonAlt`），缺的只是 `n = 2` 自二次项的自举收口。
-**更正**：T115/T120 文件头里「Lemma 5.14 排除常值 σ」那句旁证是误读，别再引用它。
+**下一个空出来的 agent 去接 T132 的第 0 步**（`docs/TASKS.md` 的「T132 规格」），T133/T134 可并行。
+T132 是随机层真正剩下的那堵墙：逐路径 `duhamel`/`bdg` 在 `√u·X` 下不可卸（T74/T76），
+改走**矩 Duhamel**——对 `|U_{u,t}∘(L−K)_u|^{2p}` 用带显式时间的生成元恒等式，只依赖一时刻律。
+**禁止**实例化 `SumZeroDyn.Hierarchy`（`mart :=` 残差是 fiat，见 T118）。

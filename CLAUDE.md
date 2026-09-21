@@ -198,3 +198,9 @@ Task/Agent 工具扇出子 agent**：保留手上这张单，另外从 `docs/TAS
 单文件 `lake env lean` **查不出跨文件重名**。2026-09-20 就因此红过一次
 （`condRow_zero` 在 `Gauss/IBP.lean` 与 `Gauss/FlucIter.lean` 各声明一次，
 全量 `lake build` 拼 import 链时才炸）。
+
+## ⭐⭐ T58 是全队最高优先级（2026-09-21，Jun 指定）
+
+**下一个空出来的 agent 无条件去接 T58**（`docs/TASKS.md` 的「T58 交接」有规格与验收标准）。
+它是 Theorem 2.21 六步总装的**唯一阻塞**，其余所有单做完主定理仍然拼不起来。
+设计决定已拍板、Mathlib 引理现成，接手不需要再做判断。

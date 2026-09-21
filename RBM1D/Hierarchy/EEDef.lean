@@ -46,6 +46,14 @@ the two together makes both `hEE` and `hL6` *provable* rather than assumed.
 * `RBM.EEDef.ee_hyp_consistent` — the six surviving hypotheses are **jointly satisfiable**
   for the concrete `eeL6`, with an explicit witness.  Without this the wiring could have
   produced a theorem with an empty hypothesis set, which is what T172's scan found elsewhere.
+* `RBM.EEDef.eeL6k`, `RBM.EEDef.eeL6_two_eq`, `RBM.EEDef.glueIdx_two_zero`,
+  `RBM.EEDef.glueIdx_two_one` (T178) — the `k`-sum of (5.22) at `n = 0` and the two explicit
+  glued `6`-loops of Figure 14.
+* `RBM.EEDef.eeL6k_two_one_le`, `RBM.EEDef.eeL6k_two_zero_le`, `RBM.EEDef.eeL6_two_le` (T178)
+  — **(5.65) + (5.66)** for each summand of (5.22), i.e. the content of `h566`, at the
+  granularity at which it is true.  See the section "⚠ What this says about `h566`" below.
+* `RBM.EEDef.eeL6k_two_one_le_glue`, `RBM.EEDef.eeL6k_two_zero_le_glue` (T178) — **(5.65) +
+  (5.72)** for each summand, i.e. the content of `h572`.
 
 ## What remains assumed, and why
 
@@ -55,18 +63,26 @@ Six hypotheses survive, and none of them is about the plumbing:
 * `h564` — the `‖a₁-b‖ > ℓ**_u` part of the `b`-sum is `≤ ρ`.  Lemma 5.9's decay for the
   glued `(2n+2)`-loop; kept as an explicit additive remainder (deviation 5 of `Lemma57.lean`).
 * `h42sq` — (4.2)/(4.5) + (5.31) for the squared `G`-pair `Gsq`.  The Lemma 4.1 chain.
-* `h566` — the Cauchy-Schwarz step (5.65)/(5.66).  **Known gap**: it needs the entrywise
-  expansion of the `6`-loop (the six-factor analogue of `RBM.Lemma57.gloop_three_expand`)
-  together with the block structure of `G†E_b G`.  T156 pierced the `3`-loop layer only.
-* `h572` — `(G†E_bG)_{x₁x₁'} ≤ max_{y ∈ I_b} ‖G_{x₁y}‖‖G_{x₁'y}‖`.  Elementary, not done.
+* `h566` — the Cauchy-Schwarz step (5.65)/(5.66).  The `6`-loop machinery it needs now exists
+  (`RBM.Lemma57.norm_gloop_six_le_schwarz` and the section at the end of this file, T178), and
+  the estimate holds for the **`k = 1` summand** of (5.22), `RBM.EEDef.eeL6k_two_one_le`.  It
+  does **not** hold for `eeL6`, which is the sum over `k`: the `k = 0` summand has the two
+  `b'`-edges attached to `a₁`, not `a₂`, so it carries `Gsq b a₁` where `h566` asks for
+  `Gsq b a₂`, and exactly where `case2a_pointwise` uses `h566` the former has no decay.  So
+  `h566` is *not* independent of `hsym`; see "⚠ What this says about `h566`" below.
+* `h572` — `(G†E_bG)_{x₁x₁'} ≤ max_{y ∈ I_b} ‖G_{yx₁}‖‖G_{yx₁'}‖` (the honest index order;
+  `G(z)` is not symmetric).  **Done**: `RBM.Lemma57.norm_conjTranspose_mul_Eblk_mul_apply_le`,
+  and for the glued loop itself `RBM.EEDef.eeL6k_two_one_le_glue` /
+  `RBM.EEDef.eeL6k_two_zero_le_glue` (T178), which *both* summands of (5.22) satisfy.
 * `hsym` — the half `‖a₂-b‖ < ‖a₁-b‖`.  **Known gap, and a negative result**: T156 established
   (`docs/paper-deltas.md` #113 ②) that the paper's "by symmetry" is the `k=1`/`k=2` symmetry of
   (5.22), *not* a relabelling inside the `k=1` term — on that half the `(b,a₂)` pair of
   `G`-edges of (5.65) is short and (5.31) does not apply.  It cannot be derived from the `k=1`
   term, so it is *not* attempted here.
 
-The wiring below is deliberately indifferent to all six: they are stated about the concrete
-`RBM.EEDef.eeL6`, so discharging any one of them later needs no change to this file.
+The wiring in the middle of this file is deliberately indifferent to all six: they are stated
+about the concrete `RBM.EEDef.eeL6`, so discharging any one of them later needs no change to
+`ee_le_EEpath` itself.
 
 ## Fiat audit
 
@@ -480,6 +496,361 @@ theorem ee_hyp_consistent (X : Sample B) (E : ℝ) {n N : ℕ} (u : ℝ) (ω : �
     exact hsub.trans (le_trans hQS (le_mul_of_one_le_right hQ0 hTsq))
 
 end Main
+
+
+/-! ### (5.65)-(5.66) and (5.72) for the glued `6`-loop (T178)
+
+`RBM.EEDef.eeL6` is by *definition* the sum over `k ∈ range m` of (5.22).  At `m = 2` — the
+`2`-loop that (5.36) is about — that sum has the two terms of Figure 14, and
+`RBM.EEDef.glueIdx_two_zero` / `glueIdx_two_one` compute them: the glued `(2n+2)`-loop of
+(5.23) is the explicit `6`-loop
+
+`k = 1 :  ⟨[σ₂, σ₁, σ₂, -σ₂, -σ₁, -σ₂], [a₂, a₁, b, a₁', a₂', b']⟩`
+`k = 0 :  ⟨[σ₁, σ₂, σ₁, -σ₁, -σ₂, -σ₁], [a₁, a₂, b, a₂', a₁', b']⟩`
+
+with `a₁ = leftArg c 0`, `a₂ = leftArg c 1`, `aᵢ' = rightArg c (i-1)`.  Feeding these to
+`RBM.Lemma57.norm_gloop_six_le_schwarz` (= (5.65) + (5.66)) and
+`RBM.Lemma57.norm_gloop_six_le_glue` (= (5.65) + (5.72)) gives the four estimates below.
+
+## ⚠ What this says about the hypothesis `h566` of `RBM.EEDef.ee_le_EEpath`
+
+Compare `eeL6k_two_one_le` with `eeL6k_two_zero_le`.  The two `G`-edges that touch the glue
+label `b'` join it to **`a₂`** at `k = 1` and to **`a₁`** at `k = 0`; everything else is the
+same.  `h566`'s right-hand side `Gsq a₁ a₂ * Gsq b a₂ * μ` is the `k = 1` pattern.
+
+At the place where `RBM.Lemma57.case2a_pointwise` consumes `h566` — `‖a₁ - b‖ ≤ ℓ*_u` while
+`‖a₁ - a₂‖ ≥ 4ℓ*_u` — the two patterns are *not* comparable: `Gsq b a₂` is forced small by
+`h42sq` ((4.2)+(5.31), which applies because `‖b - a₂‖ ≥ 3ℓ*_u`), whereas the `k = 0`
+summand's `Gsq b a₁` has no decay at all there, `b` being inside `I`'s own `ℓ*_u`-neighbourhood
+of `a₁`.  So `h566`, as a statement about `eeL6` (the full `k`-sum), is **not** provable from
+(5.65)/(5.66); it is provable for the `k = 1` summand, which is `eeL6k_two_one_le`.
+
+This is `docs/paper-deltas.md` #113 ② seen from the other side: the `k = 0` summand *is* the
+half that `hsym` is about, so `h566` and `hsym` are not independent hypotheses — discharging
+`h566` for `eeL6` needs exactly the `k`-split that `hsym` needs.  Nothing here overturns the
+recorded finding; it makes the `k`-dependence of the shape visible in Lean.
+
+`h572` is different, and the two glue lemmas below show why: there the glued factor
+`G(σ)E_bG(-σ)` is *also* bounded by a tail function rather than by Cauchy-Schwarz, and at
+`k = 0` the pair `(edges to a₁, glue factor at a₂)` replaces `k = 1`'s
+`(edges to a₂, glue factor at a₁)` — the same product `T_{u,D}(‖b-a₁‖) T_{u,D}(‖b-a₂‖)`.  Both
+summands therefore satisfy the shape of `h572`, provided the caller's `Gsq` saturates (4.2)
+(i.e. `Gsq x y = J*_{u,D} T_{u,D}(‖x-y‖)`); with a general `Gsq` the `k = 0` summand needs a
+*lower* bound on `Gsq b a₂`, which `h42sq` does not give.
+-/
+
+section Six
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- The `k`-th summand of `RBM.EEDef.eeL6`, i.e. the `k`-th term of the `k`-sum of (5.22). -/
+noncomputable def eeL6k (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {m : ℕ}
+    (σ : Fin m → Bool) (c : LoopArg (B.L N) (m + m)) (k : ℕ) (b : ZMod (B.L N)) : ℝ :=
+  ∑ b' : ZMod (B.L N),
+    ‖SB (B.L N) b b'‖ * ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+      (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) k b b')‖
+
+theorem eeL6_eq_sum_eeL6k (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {m : ℕ}
+    (σ : Fin m → Bool) (c : LoopArg (B.L N) (m + m)) (b : ZMod (B.L N)) :
+    eeL6 X E N u ω σ c b = ∑ k ∈ Finset.range m, eeL6k X E N u ω σ c k b := rfl
+
+theorem eeL6k_nonneg (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {m : ℕ}
+    (σ : Fin m → Bool) (c : LoopArg (B.L N) (m + m)) (k : ℕ) (b : ZMod (B.L N)) :
+    0 ≤ eeL6k X E N u ω σ c k b := by
+  unfold eeL6k; positivity
+
+/-- At `m = 2` — the `2`-loop of (5.36) — the `k`-sum of (5.22) has exactly the two terms of
+Figure 14. -/
+theorem eeL6_two_eq (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2)) (b : ZMod (B.L N)) :
+    eeL6 X E N u ω σ c b = eeL6k X E N u ω σ c 0 b + eeL6k X E N u ω σ c 1 b := by
+  rw [eeL6_eq_sum_eeL6k, Finset.sum_range_succ, Finset.sum_range_one]
+
+/-! ### (5.23) at `n = 0`: the two glued `6`-loops of Figure 14 -/
+
+/-- **Figure 14, right (`k = 0`)**: cutting the first edge of the `2`-loop. -/
+theorem glueIdx_two_zero {L : ℕ} (σ : Fin 2 → Bool) (c : LoopArg L (2 + 2))
+    (b b' : ZMod L) :
+    glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 0 b b'
+      = ⟨[σ 0, σ 1, σ 0, !(σ 0), !(σ 1), !(σ 0)],
+         [leftArg c 0, leftArg c 1, b, rightArg c 1, rightArg c 0, b']⟩ := by
+  simp [glueIdx, cutPairs, pairs, pairAt, ofPairs, LoopData.idx, List.ofFn_succ]
+
+/-- **Figure 14, left (`k = 1`)**: cutting the second edge of the `2`-loop. -/
+theorem glueIdx_two_one {L : ℕ} (σ : Fin 2 → Bool) (c : LoopArg L (2 + 2))
+    (b b' : ZMod L) :
+    glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 1 b b'
+      = ⟨[σ 1, σ 0, σ 1, !(σ 1), !(σ 0), !(σ 1)],
+         [leftArg c 1, leftArg c 0, b, rightArg c 0, rightArg c 1, b']⟩ := by
+  simp [glueIdx, cutPairs, pairs, pairAt, ofPairs, LoopData.idx, List.ofFn_succ]
+
+
+/-! ### (5.65) + (5.66) for the two glued `6`-loops -/
+
+variable (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+
+/-- **(5.65) + (5.66) for the `k = 1` term of (5.22)** (Figure 14, left).
+
+The four `G`-edges of (5.65) are `(a₁', a₂')`, `(a₂', b')`, `(b', a₂)`, `(a₂, a₁)`, so the two
+edges that touch the glue label `b'` are attached to `a₂`; `S` bounds the `4`-loop
+`L_{(σ₂,-σ₂,σ₂,-σ₂),(b,a₁',b,a₁)}` of (5.66), which is what (2.73) at `n = 4` estimates. -/
+theorem norm_gloop_glue_two_one_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b b' : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hS : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[σ 1, !(σ 1), σ 1, !(σ 1)], [b, rightArg c 0, b, leftArg c 0]⟩).re ≤ S) :
+    ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 1 b b')‖
+      ≤ Gm (rightArg c 0) (rightArg c 1) * Gm (rightArg c 1) b'
+        * Gm b' (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0) * √S := by
+  rw [glueIdx_two_one]
+  exact Lemma57.norm_gloop_six_le_schwarz (B.L N) (B.W N) (X.hermitian N u ω)
+    (σ 1) (σ 0) (σ 1) (!(σ 0)) (!(σ 1))
+    (leftArg c 1) (leftArg c 0) b (rightArg c 0) (rightArg c 1) b'
+    (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) (hGm0 _ _)
+    (fun q p hq hp => hGm _ _ _ q p hq hp) (fun p r hp hr => hGm _ _ _ p r hp hr)
+    (fun r t hr ht => hGm _ _ _ r t hr ht) (fun t p ht hp => hGm _ _ _ t p ht hp) hS
+
+/-- **(5.65) + (5.66) for the `k = 0` term of (5.22)** (Figure 14, right).
+
+Identical to `norm_gloop_glue_two_one_le` except that the two `G`-edges that touch the glue
+label `b'` are now attached to `a₁`, not `a₂`, and the `4`-loop of (5.66) is the one with
+`a₂'`, `a₂` in place of `a₁'`, `a₁`.  This swap is the whole content of the `k = 1`/`k = 2`
+symmetry of Figure 14. -/
+theorem norm_gloop_glue_two_zero_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b b' : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hS : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[σ 0, !(σ 0), σ 0, !(σ 0)], [b, rightArg c 1, b, leftArg c 1]⟩).re ≤ S) :
+    ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 0 b b')‖
+      ≤ Gm (rightArg c 1) (rightArg c 0) * Gm (rightArg c 0) b'
+        * Gm b' (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1) * √S := by
+  rw [glueIdx_two_zero]
+  exact Lemma57.norm_gloop_six_le_schwarz (B.L N) (B.W N) (X.hermitian N u ω)
+    (σ 0) (σ 1) (σ 0) (!(σ 1)) (!(σ 0))
+    (leftArg c 0) (leftArg c 1) b (rightArg c 1) (rightArg c 0) b'
+    (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) (hGm0 _ _)
+    (fun q p hq hp => hGm _ _ _ q p hq hp) (fun p r hp hr => hGm _ _ _ p r hp hr)
+    (fun r t hr ht => hGm _ _ _ r t hr ht) (fun t p ht hp => hGm _ _ _ t p ht hp) hS
+
+
+/-! ### The `b'`-sum: (5.66) for the two summands of `eeL6` -/
+
+/-- **(5.66) for the `k = 1` summand of `RBM.EEDef.eeL6`.**
+
+The `b'`-sum is against `‖S^{(B)}_{bb'}‖`, whose row sums are `1`, so a bound `Kb` on the
+product of the two `b'`-edges, valid on the (three-point) support of that row, passes through
+unchanged.  `Kb` is the paper's `T_{u,D}(‖b - a₂‖)`-carrying factor of (5.67). -/
+theorem eeL6k_two_one_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Kb S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hb' : ∀ b' : ZMod (B.L N), SB (B.L N) b b' ≠ 0 →
+      Gm (rightArg c 1) b' * Gm b' (leftArg c 1) ≤ Kb)
+    (hS : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[σ 1, !(σ 1), σ 1, !(σ 1)], [b, rightArg c 0, b, leftArg c 0]⟩).re ≤ S) :
+    eeL6k X E N u ω σ c 1 b
+      ≤ Gm (rightArg c 0) (rightArg c 1) * Kb * Gm (leftArg c 1) (leftArg c 0) * √S := by
+  classical
+  set C : ℝ := Gm (rightArg c 0) (rightArg c 1) * Kb * Gm (leftArg c 1) (leftArg c 0) * √S
+    with hC
+  have hstep : ∀ b' ∈ (Finset.univ : Finset (ZMod (B.L N))),
+      ‖SB (B.L N) b b'‖ * ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+          (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 1 b b')‖
+        ≤ ‖SB (B.L N) b b'‖ * C := by
+    intro b' _
+    by_cases h0 : SB (B.L N) b b' = 0
+    · simp [h0]
+    · refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+      refine (norm_gloop_glue_two_one_le X E N u ω σ c b b' hGm0 hGm hS).trans ?_
+      rw [hC]
+      have h1 := hb' b' h0
+      have h2 : (0 : ℝ) ≤ √S := Real.sqrt_nonneg S
+      have h3 := hGm0 (rightArg c 0) (rightArg c 1)
+      have h4 := hGm0 (leftArg c 1) (leftArg c 0)
+      have hexp : Gm (rightArg c 0) (rightArg c 1) * Gm (rightArg c 1) b'
+          * Gm b' (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0) * √S
+          = Gm (rightArg c 0) (rightArg c 1) * (Gm (rightArg c 1) b' * Gm b' (leftArg c 1))
+            * Gm (leftArg c 1) (leftArg c 0) * √S := by ring
+      rw [hexp]
+      gcongr
+  refine (Finset.sum_le_sum hstep).trans ?_
+  rw [← Finset.sum_mul, RBM.sum_norm_SB_row (B.three_le_L N) b, one_mul]
+
+/-- **(5.66) for the `k = 0` summand of `RBM.EEDef.eeL6`** — the mirror image, with the two
+`b'`-edges attached to `a₁`. -/
+theorem eeL6k_two_zero_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Kb S : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hb' : ∀ b' : ZMod (B.L N), SB (B.L N) b b' ≠ 0 →
+      Gm (rightArg c 0) b' * Gm b' (leftArg c 0) ≤ Kb)
+    (hS : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[σ 0, !(σ 0), σ 0, !(σ 0)], [b, rightArg c 1, b, leftArg c 1]⟩).re ≤ S) :
+    eeL6k X E N u ω σ c 0 b
+      ≤ Gm (rightArg c 1) (rightArg c 0) * Kb * Gm (leftArg c 0) (leftArg c 1) * √S := by
+  classical
+  set C : ℝ := Gm (rightArg c 1) (rightArg c 0) * Kb * Gm (leftArg c 0) (leftArg c 1) * √S
+    with hC
+  have hstep : ∀ b' ∈ (Finset.univ : Finset (ZMod (B.L N))),
+      ‖SB (B.L N) b b'‖ * ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+          (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 0 b b')‖
+        ≤ ‖SB (B.L N) b b'‖ * C := by
+    intro b' _
+    by_cases h0 : SB (B.L N) b b' = 0
+    · simp [h0]
+    · refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+      refine (norm_gloop_glue_two_zero_le X E N u ω σ c b b' hGm0 hGm hS).trans ?_
+      rw [hC]
+      have h1 := hb' b' h0
+      have h2 : (0 : ℝ) ≤ √S := Real.sqrt_nonneg S
+      have h3 := hGm0 (rightArg c 1) (rightArg c 0)
+      have h4 := hGm0 (leftArg c 0) (leftArg c 1)
+      have hexp : Gm (rightArg c 1) (rightArg c 0) * Gm (rightArg c 0) b'
+          * Gm b' (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1) * √S
+          = Gm (rightArg c 1) (rightArg c 0) * (Gm (rightArg c 0) b' * Gm b' (leftArg c 0))
+            * Gm (leftArg c 0) (leftArg c 1) * √S := by ring
+      rw [hexp]
+      gcongr
+  refine (Finset.sum_le_sum hstep).trans ?_
+  rw [← Finset.sum_mul, RBM.sum_norm_SB_row (B.three_le_L N) b, one_mul]
+
+
+/-! ### (5.65) + (5.72): the Case-2(1b) route, with `G†E_bG` bounded entrywise -/
+
+/-- **(5.72) for the `k = 1` summand of `RBM.EEDef.eeL6`.**
+
+`K` bounds the glued factor `(G(σ₂)E_bG(-σ₂))_{x₁x₁'}` entrywise, via
+`RBM.Lemma57.norm_mul_Eblk_mul_apply_le` — that is the paper's
+`(G†E_bG)_{x₁x₁'} ≤ max_{y∈I_b}|G_{x₁y}||G_{x₁'y}|` followed by (4.2)+(5.31).  At `k = 1`
+the free ends of that factor lie in the blocks `a₁`, `a₁'`, so `K` is the paper's
+`J*_{u,D} T_{u,D}(‖b - a₁‖)`. -/
+theorem eeL6k_two_one_le_glue (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Kb K : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y) (hK : 0 ≤ K)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hb' : ∀ b' : ZMod (B.L N), SB (B.L N) b b' ≠ 0 →
+      Gm (rightArg c 1) b' * Gm b' (leftArg c 1) ≤ Kb)
+    (hglue : ∀ p q y : ZMod (B.L N) × Fin (B.W N),
+      p.1 = leftArg c 0 → q.1 = rightArg c 0 → y.1 = b →
+      ‖Gsig (X.H N u ω) (zt E u) (σ 1) p y‖
+        * ‖Gsig (X.H N u ω) (zt E u) (!(σ 1)) y q‖ ≤ K) :
+    eeL6k X E N u ω σ c 1 b
+      ≤ Gm (rightArg c 0) (rightArg c 1) * Kb * Gm (leftArg c 1) (leftArg c 0) * K := by
+  classical
+  set C : ℝ := Gm (rightArg c 0) (rightArg c 1) * Kb * Gm (leftArg c 1) (leftArg c 0) * K
+    with hC
+  have hstep : ∀ b' ∈ (Finset.univ : Finset (ZMod (B.L N))),
+      ‖SB (B.L N) b b'‖ * ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+          (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 1 b b')‖
+        ≤ ‖SB (B.L N) b b'‖ * C := by
+    intro b' _
+    by_cases h0 : SB (B.L N) b b' = 0
+    · simp [h0]
+    · refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+      rw [glueIdx_two_one]
+      refine (Lemma57.norm_gloop_six_le_glue (B.L N) (B.W N)
+        (σ 1) (σ 0) (σ 1) (!(σ 1)) (!(σ 0)) (!(σ 1))
+        (leftArg c 1) (leftArg c 0) b (rightArg c 0) (rightArg c 1) b'
+        (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) hK
+        (fun q p hq hp => hGm _ _ _ q p hq hp) (fun p r hp hr => hGm _ _ _ p r hp hr)
+        (fun r t hr ht => hGm _ _ _ r t hr ht) (fun t p ht hp => hGm _ _ _ t p ht hp)
+        (fun p q y hp hq hy => hglue p q y hp hq hy)).trans ?_
+      rw [hC]
+      have h1 := hb' b' h0
+      have hexp : Gm (rightArg c 0) (rightArg c 1) * Gm (rightArg c 1) b'
+          * Gm b' (leftArg c 1) * Gm (leftArg c 1) (leftArg c 0) * K
+          = Gm (rightArg c 0) (rightArg c 1) * (Gm (rightArg c 1) b' * Gm b' (leftArg c 1))
+            * Gm (leftArg c 1) (leftArg c 0) * K := by ring
+      rw [hexp]
+      gcongr <;> exact hGm0 _ _
+  refine (Finset.sum_le_sum hstep).trans ?_
+  rw [← Finset.sum_mul, RBM.sum_norm_SB_row (B.three_le_L N) b, one_mul]
+
+/-- **(5.72) for the `k = 0` summand of `RBM.EEDef.eeL6`** — the mirror image: the free ends
+of the glued factor lie in the blocks `a₂`, `a₂'`, so `K` is `J*_{u,D} T_{u,D}(‖b - a₂‖)`
+while the `b'`-edges carry `‖b - a₁‖`.  The *product* of the two is the same as at `k = 1`,
+which is why `h572` — unlike `h566` — has a shape that both summands of (5.22) satisfy. -/
+theorem eeL6k_two_zero_le_glue (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Kb K : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y) (hK : 0 ≤ K)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hb' : ∀ b' : ZMod (B.L N), SB (B.L N) b b' ≠ 0 →
+      Gm (rightArg c 0) b' * Gm b' (leftArg c 0) ≤ Kb)
+    (hglue : ∀ p q y : ZMod (B.L N) × Fin (B.W N),
+      p.1 = leftArg c 1 → q.1 = rightArg c 1 → y.1 = b →
+      ‖Gsig (X.H N u ω) (zt E u) (σ 0) p y‖
+        * ‖Gsig (X.H N u ω) (zt E u) (!(σ 0)) y q‖ ≤ K) :
+    eeL6k X E N u ω σ c 0 b
+      ≤ Gm (rightArg c 1) (rightArg c 0) * Kb * Gm (leftArg c 0) (leftArg c 1) * K := by
+  classical
+  set C : ℝ := Gm (rightArg c 1) (rightArg c 0) * Kb * Gm (leftArg c 0) (leftArg c 1) * K
+    with hC
+  have hstep : ∀ b' ∈ (Finset.univ : Finset (ZMod (B.L N))),
+      ‖SB (B.L N) b b'‖ * ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+          (glueIdx (toIdx σ (leftArg c)) (toIdx σ (rightArg c)) 0 b b')‖
+        ≤ ‖SB (B.L N) b b'‖ * C := by
+    intro b' _
+    by_cases h0 : SB (B.L N) b b' = 0
+    · simp [h0]
+    · refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+      rw [glueIdx_two_zero]
+      refine (Lemma57.norm_gloop_six_le_glue (B.L N) (B.W N)
+        (σ 0) (σ 1) (σ 0) (!(σ 0)) (!(σ 1)) (!(σ 0))
+        (leftArg c 0) (leftArg c 1) b (rightArg c 1) (rightArg c 0) b'
+        (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) (hGm0 _ _) hK
+        (fun q p hq hp => hGm _ _ _ q p hq hp) (fun p r hp hr => hGm _ _ _ p r hp hr)
+        (fun r t hr ht => hGm _ _ _ r t hr ht) (fun t p ht hp => hGm _ _ _ t p ht hp)
+        (fun p q y hp hq hy => hglue p q y hp hq hy)).trans ?_
+      rw [hC]
+      have h1 := hb' b' h0
+      have hexp : Gm (rightArg c 1) (rightArg c 0) * Gm (rightArg c 0) b'
+          * Gm b' (leftArg c 0) * Gm (leftArg c 0) (leftArg c 1) * K
+          = Gm (rightArg c 1) (rightArg c 0) * (Gm (rightArg c 0) b' * Gm b' (leftArg c 0))
+            * Gm (leftArg c 0) (leftArg c 1) * K := by ring
+      rw [hexp]
+      gcongr <;> exact hGm0 _ _
+  refine (Finset.sum_le_sum hstep).trans ?_
+  rw [← Finset.sum_mul, RBM.sum_norm_SB_row (B.three_le_L N) b, one_mul]
+
+
+/-! ### The two summands together -/
+
+/-- **(5.22) + (5.65) + (5.66) at `n = 0`**: both terms of the `k`-sum.
+
+Adding `eeL6k_two_zero_le` and `eeL6k_two_one_le`.  The two bounds are *not* the same
+expression: at `k = 1` the factor `Kb₁` controls the pair of `G`-edges joining the glue label
+`b'` to `a₂ = leftArg c 1`, at `k = 0` the pair joining `b'` to `a₁ = leftArg c 0`. -/
+theorem eeL6_two_le (σ : Fin 2 → Bool) (c : LoopArg (B.L N) (2 + 2))
+    (b : ZMod (B.L N)) {Gm : ZMod (B.L N) → ZMod (B.L N) → ℝ} {Kb₀ Kb₁ S₀ S₁ : ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N)) (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hb'₀ : ∀ b' : ZMod (B.L N), SB (B.L N) b b' ≠ 0 →
+      Gm (rightArg c 0) b' * Gm b' (leftArg c 0) ≤ Kb₀)
+    (hb'₁ : ∀ b' : ZMod (B.L N), SB (B.L N) b b' ≠ 0 →
+      Gm (rightArg c 1) b' * Gm b' (leftArg c 1) ≤ Kb₁)
+    (hS₀ : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[σ 0, !(σ 0), σ 0, !(σ 0)], [b, rightArg c 1, b, leftArg c 1]⟩).re ≤ S₀)
+    (hS₁ : (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[σ 1, !(σ 1), σ 1, !(σ 1)], [b, rightArg c 0, b, leftArg c 0]⟩).re ≤ S₁) :
+    eeL6 X E N u ω σ c b
+      ≤ Gm (rightArg c 1) (rightArg c 0) * Kb₀ * Gm (leftArg c 0) (leftArg c 1) * √S₀
+        + Gm (rightArg c 0) (rightArg c 1) * Kb₁ * Gm (leftArg c 1) (leftArg c 0) * √S₁ := by
+  rw [eeL6_two_eq]
+  exact add_le_add (eeL6k_two_zero_le X E N u ω σ c b hGm0 hGm hb'₀ hS₀)
+    (eeL6k_two_one_le X E N u ω σ c b hGm0 hGm hb'₁ hS₁)
+
+end Six
 
 end EEDef
 end RBM

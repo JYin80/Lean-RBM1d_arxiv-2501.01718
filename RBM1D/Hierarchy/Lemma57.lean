@@ -43,6 +43,9 @@ as explicit hypotheses, and all constants explicit (not optimal).
 | (5.67)+(5.72) | `case2b_pointwise` — Case 2(1b), intrinsic `(J*)³` |
 | (5.71)+(5.72) | `sum_ee_far_le` (one half), `ee_far_le` (both halves) |
 | (5.36) | `ee_le` (master), `ee_le_paper` (with `μ` from (2.73) at `n = 4`) |
+| (5.65) | `gloop_six_eq_trace`, `norm_chain_four_apply_le` — the `6`-loop of (5.23) entrywise |
+| (5.66) | `norm_gloop_six_le_schwarz` — Cauchy–Schwarz, with the `4`-loop `trace_Eblk_glue_eq_gloop_four` |
+| (5.72), 1st display | `norm_conjTranspose_mul_Eblk_mul_apply_le`; `norm_gloop_six_le_glue` for the `6`-loop |
 
 The intrinsic super-linear powers of `J*` in (5.36) are **confirmed**, and for the same
 structural reason as in (5.61): Case 2(1a) needs `T_{u,D}(‖a₁-a₂‖) T_{u,D}(‖b-a₂‖)`, one
@@ -94,6 +97,11 @@ from the `a₁–a₂` edge is what turns the convolution bound `∑_b √(T_{1b
    `(b, a₂)` pair of `G`-edges of (5.65) is short, so (5.31) does not apply to it and the
    `k = 1` term alone does not give the bound there.  Discharging `hsym` needs the second
    term of (5.22), which is not in the repository.
+   **T178 update**: the second term *is* in the repository — it is the `k = 0` summand of
+   `RBM.EEDef.eeL6` (`RBM.EEDef.eeL6k_two_zero_le`) — and computing it shows that `h566` is
+   entangled with `hsym`: the `k = 0` summand carries `Gsq b a₁` where `h566` asks for
+   `Gsq b a₂`, so `h566` holds for the `k = 1` summand only.  `h572`'s shape, by contrast,
+   is satisfied by both summands.  See the module docstring of `RBM1D/Hierarchy/EEDef.lean`.
 8. `ee_le_paper` keeps the factor `(ℓ_u/ℓ_s)^{3/2}` that (2.73) at `n = 4` produces in the
    line after (5.67); the statement of (5.36) drops it.
 9. The `k`-sum of (5.22) is taken in the form `E⊗E ≤ W ∑_b L^{(1)}(b)` (`hEE`), matching
@@ -1940,6 +1948,423 @@ theorem ee_le_paper (hW : 1 ≤ W) (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu
   linarith [hstep]
 
 end EE
+
+/-! ### (5.65)-(5.66): the `6`-loop of (5.23), entrywise
+
+T156 pierced the `3`-loop layer of (5.56)/(5.58)/(5.60).  This section does the same for the
+`6`-loop that the gluing (5.23) of (5.22) produces out of a `2`-loop: the entrywise expansion
+(5.65), the Cauchy–Schwarz step (5.66), and the elementary bound on `G†E_bG` used at (5.72).
+
+The `6`-loop `L_{σ,(c₁,…,c₆)}` is cut open at the two sites adjacent to the glue label `c₃`,
+which exhibits it as `⟨E_{c₂} A E_{c₄} B⟩` with `A = G(σ₃)E_{c₃}G(σ₄)` the glued pair of
+edges and `B` the chain of the remaining four `G`-edges.  Bounding `B` entrywise
+(`norm_chain_four_apply_le`) is (5.65); Cauchy–Schwarz on the double block sum of `A`, whose
+square is a `4`-loop (`trace_Eblk_glue_eq_gloop_four`), is (5.66).
+-/
+
+section Loop6
+
+open Matrix
+
+variable (Wb : ℕ) [NeZero Wb] {H : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ} {z : ℂ}
+
+set_option linter.unusedSectionVars false
+
+/-! #### One block-averaged site between two matrices -/
+
+/-- Entries of `A E_c B`: the block projection `E_c` of (2.5) contributes the weight
+`W^{-1} 1(p ∈ I_c)` at the intermediate site.
+
+Appendix A has the same identity in the `RBM.eblkW` spelling
+(`RBM.mul_Eblk_mul_apply`, `RBM1D/Loop/ChainExpand.lean`); it is restated here in the `ite`
+spelling this file already uses (`RBM.Lemma57.blkW`) rather than imported, because
+`Loop/ChainExpand.lean` pulls in `Green/Minor` and this file is deliberately confined to
+`Loop/GLoop` + `Analysis/StretchedExp`. -/
+theorem mul_Eblk_mul_apply_ite (A B : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ) (c : ZMod L)
+    (x y : ZMod L × Fin Wb) :
+    (A * Eblk L Wb c * B) x y
+      = ∑ p : ZMod L × Fin Wb, (if p.1 = c then (Wb : ℂ)⁻¹ else 0) * (A x p * B p y) := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_congr rfl fun p _ => ?_
+  rw [Eblk, Matrix.mul_diagonal]
+  ring
+
+/-- **One block-averaged site is a maximum, not a sum**: because `E_c` carries the factor
+`W^{-1}` and `I_c` has `W` sites, `|(A E_c B)_{xy}| ≤ max_{p ∈ I_c} |A_{xp}| |B_{py}|`. -/
+theorem norm_mul_Eblk_mul_apply_le (A B : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ)
+    (c : ZMod L) (x y : ZMod L × Fin Wb) {g : ℝ}
+    (hg : ∀ p : ZMod L × Fin Wb, p.1 = c → ‖A x p‖ * ‖B p y‖ ≤ g) :
+    ‖(A * Eblk L Wb c * B) x y‖ ≤ g := by
+  classical
+  rw [mul_Eblk_mul_apply_ite]
+  refine (norm_sum_le _ _).trans ?_
+  have hpt : ∀ p : ZMod L × Fin Wb,
+      ‖(if p.1 = c then (Wb : ℂ)⁻¹ else 0) * (A x p * B p y)‖
+        ≤ (if p.1 = c then (Wb : ℝ)⁻¹ else 0) * g := by
+    intro p
+    by_cases hp : p.1 = c
+    · have h1 : (if p.1 = c then (Wb : ℂ)⁻¹ else 0) = (Wb : ℂ)⁻¹ := by simp [hp]
+      have h2 : (if p.1 = c then (Wb : ℝ)⁻¹ else 0) = (Wb : ℝ)⁻¹ := by simp [hp]
+      rw [h1, h2, norm_mul, norm_mul, norm_inv, Complex.norm_natCast]
+      exact mul_le_mul_of_nonneg_left (hg p hp) (by positivity)
+    · simp [hp]
+  refine (Finset.sum_le_sum fun p _ => hpt p).trans ?_
+  exact le_of_eq (sum_blockWeight L Wb c g)
+
+/-- **(5.72), first display**: `(G†E_bG)_{x₁x₁'} ≤ max_{y ∈ I_b} |G_{yx₁}| |G_{yx₁'}|`.
+
+This is the elementary step the paper writes as `(G†E_bG)_{x₁x₁'} ≤ max_{y∈I_b}|G_{x₁y}||G_{x₁'y}|`
+just before (5.72).  The honest index order is the one below: `(Aᴴ)_{x₁y} = conj(A_{yx₁})`, and
+for a complex Hermitian `H` the matrix `G(z)` is *not* symmetric, so `|G_{x₁y}|` and `|G_{yx₁}|`
+are different numbers (they are `|G(z)_{yx₁}|` and `|G(z̄)_{x₁y}|`).  Nothing else changes. -/
+theorem norm_conjTranspose_mul_Eblk_mul_apply_le
+    (A : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ) (c : ZMod L)
+    (x x' : ZMod L × Fin Wb) {g : ℝ}
+    (hg : ∀ p : ZMod L × Fin Wb, p.1 = c → ‖A p x‖ * ‖A p x'‖ ≤ g) :
+    ‖(Aᴴ * Eblk L Wb c * A) x x'‖ ≤ g := by
+  refine norm_mul_Eblk_mul_apply_le L Wb _ _ c x x' fun p hp => ?_
+  rw [Matrix.conjTranspose_apply, norm_star]
+  exact hg p hp
+
+/-! #### Weighted Cauchy-Schwarz -/
+
+/-- Weighted Cauchy–Schwarz, `∑ w v ≤ √(∑ w) √(∑ w v²)`.  (The same wheel as
+`RBM.Gauss.sq_sum_weighted_le`, which lives in the Gaussian stack; this file may not import
+it — `Lemma57.lean` is below `Gauss/` — so the four lines are repeated here.) -/
+theorem sum_weight_mul_le_sqrt {ι : Type*} [Fintype ι] {w v : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
+    (hv : ∀ i, 0 ≤ v i) :
+    ∑ i, w i * v i ≤ √(∑ i, w i) * √(∑ i, w i * v i ^ 2) := by
+  classical
+  have h := Finset.sum_mul_sq_le_sq_mul_sq (Finset.univ : Finset ι)
+    (fun i => √(w i)) (fun i => √(w i) * v i)
+  have e0 : ∀ i : ι, √(w i) * (√(w i) * v i) = w i * v i := by
+    intro i; rw [← mul_assoc, Real.mul_self_sqrt (hw i)]
+  have e1 : ∀ i : ι, √(w i) ^ 2 = w i := fun i => Real.sq_sqrt (hw i)
+  have e2 : ∀ i : ι, (√(w i) * v i) ^ 2 = w i * v i ^ 2 := by
+    intro i; rw [mul_pow, e1]
+  simp only [e0, e1, e2] at h
+  have hlhs : 0 ≤ ∑ i, w i * v i := Finset.sum_nonneg fun i _ => mul_nonneg (hw i) (hv i)
+  calc ∑ i, w i * v i = √((∑ i, w i * v i) ^ 2) := (Real.sqrt_sq hlhs).symm
+    _ ≤ √((∑ i, w i) * ∑ i, w i * v i ^ 2) := Real.sqrt_le_sqrt h
+    _ = √(∑ i, w i) * √(∑ i, w i * v i ^ 2) :=
+        Real.sqrt_mul (Finset.sum_nonneg fun i _ => hw i) _
+
+/-- The block weight is a probability weight: `∑_x W^{-1} 1(x ∈ I_c) = 1`. -/
+theorem sum_blkW (c : ZMod L) : ∑ q : ZMod L × Fin Wb, blkW L Wb q c = 1 := by
+  simpa [blkW] using sum_blockWeight L Wb c 1
+
+/-- **The Cauchy–Schwarz of (5.66)**, in the block-weighted form: the two weights
+`W^{-1}1(p ∈ I_{c₂})`, `W^{-1}1(q ∈ I_{c₄})` together are a probability measure, so the
+`√(∑ w) = 1` factor the paper writes as `(W²)^{1/2} W^{-2} · W` disappears. -/
+theorem sum_blkW_mul_le_sqrt (c₂ c₄ : ZMod L)
+    (f : (ZMod L × Fin Wb) → (ZMod L × Fin Wb) → ℝ) (hf : ∀ p q, 0 ≤ f p q) :
+    (∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb, blkW L Wb p c₂ * blkW L Wb q c₄ * f p q)
+      ≤ √(∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+            blkW L Wb p c₂ * blkW L Wb q c₄ * f p q ^ 2) := by
+  classical
+  have conv1 : ∀ g : (ZMod L × Fin Wb) → (ZMod L × Fin Wb) → ℝ,
+      (∑ x : (ZMod L × Fin Wb) × (ZMod L × Fin Wb), g x.1 x.2)
+        = ∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb, g p q := by
+    intro g
+    rw [← Finset.univ_product_univ, Finset.sum_product]
+  have hw0 : ∀ x : (ZMod L × Fin Wb) × (ZMod L × Fin Wb),
+      0 ≤ blkW L Wb x.1 c₂ * blkW L Wb x.2 c₄ :=
+    fun x => mul_nonneg (blkW_nonneg L Wb _ _) (blkW_nonneg L Wb _ _)
+  have h := sum_weight_mul_le_sqrt (ι := (ZMod L × Fin Wb) × (ZMod L × Fin Wb))
+    (w := fun x => blkW L Wb x.1 c₂ * blkW L Wb x.2 c₄) (v := fun x => f x.1 x.2)
+    hw0 (fun x => hf _ _)
+  have hw1 : (∑ x : (ZMod L × Fin Wb) × (ZMod L × Fin Wb),
+      blkW L Wb x.1 c₂ * blkW L Wb x.2 c₄) = 1 := by
+    rw [conv1 (fun p q => blkW L Wb p c₂ * blkW L Wb q c₄)]
+    simp_rw [← Finset.mul_sum, sum_blkW L Wb c₄, mul_one]
+    exact sum_blkW L Wb c₂
+  rw [hw1, Real.sqrt_one, one_mul] at h
+  calc (∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+        blkW L Wb p c₂ * blkW L Wb q c₄ * f p q)
+      = ∑ x : (ZMod L × Fin Wb) × (ZMod L × Fin Wb),
+          blkW L Wb x.1 c₂ * blkW L Wb x.2 c₄ * f x.1 x.2 :=
+        (conv1 (fun p q => blkW L Wb p c₂ * blkW L Wb q c₄ * f p q)).symm
+    _ ≤ √(∑ x : (ZMod L × Fin Wb) × (ZMod L × Fin Wb),
+          blkW L Wb x.1 c₂ * blkW L Wb x.2 c₄ * f x.1 x.2 ^ 2) := h
+    _ = √(∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+          blkW L Wb p c₂ * blkW L Wb q c₄ * f p q ^ 2) := by
+        rw [conv1 (fun p q => blkW L Wb p c₂ * blkW L Wb q c₄ * f p q ^ 2)]
+
+
+/-! #### The trace of `E_{c₂} A E_{c₄} B` -/
+
+/-- The trace of `E_{c₂} A E_{c₄} B` written out over the two block-averaged sites. -/
+theorem trace_Eblk_mul_mul_Eblk_mul (A B : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ)
+    (c₂ c₄ : ZMod L) :
+    Matrix.trace (Eblk L Wb c₂ * A * Eblk L Wb c₄ * B)
+      = ∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+          (if p.1 = c₂ then (Wb : ℂ)⁻¹ else 0) *
+            ((if q.1 = c₄ then (Wb : ℂ)⁻¹ else 0) * (A p q * B q p)) := by
+  rw [Matrix.trace]
+  refine Finset.sum_congr rfl fun p _ => ?_
+  rw [Matrix.diag_apply, Matrix.mul_apply]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  rw [Eblk, Eblk, Matrix.mul_diagonal, Matrix.diagonal_mul]
+  ring
+
+/-- **The squared block mass of a matrix is a `2`-loop of that matrix**:
+`W^{-2} ∑_{p ∈ I_{c₂}, q ∈ I_{c₄}} |A_{pq}|² = ⟨E_{c₂} A E_{c₄} A†⟩`.  With `A = G(σ)E_bG(-σ)`
+the right-hand side is the `4`-loop of (5.66) — see `trace_Eblk_glue_eq_gloop_four`.  This is
+the matrix-level generalization of `RBM.Lemma57.sum_blkW_normSq` (`A = G`). -/
+theorem sum_blkW_normSq_of_mat (A : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ)
+    (c₂ c₄ : ZMod L) :
+    (∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+        blkW L Wb p c₂ * blkW L Wb q c₄ * ‖A p q‖ ^ 2)
+      = (Matrix.trace (Eblk L Wb c₂ * A * Eblk L Wb c₄ * Aᴴ)).re := by
+  classical
+  have hterm : ∀ p q : ZMod L × Fin Wb,
+      (if p.1 = c₂ then (Wb : ℂ)⁻¹ else 0) *
+          ((if q.1 = c₄ then (Wb : ℂ)⁻¹ else 0) * (A p q * Aᴴ q p))
+        = ((blkW L Wb p c₂ * blkW L Wb q c₄ * ‖A p q‖ ^ 2 : ℝ) : ℂ) := by
+    intro p q
+    rw [Matrix.conjTranspose_apply, Complex.star_def, Complex.mul_conj,
+      Complex.normSq_eq_norm_sq, blkW, blkW]
+    split_ifs <;> push_cast <;> ring
+  have key : Matrix.trace (Eblk L Wb c₂ * A * Eblk L Wb c₄ * Aᴴ)
+      = ((∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+          blkW L Wb p c₂ * blkW L Wb q c₄ * ‖A p q‖ ^ 2 : ℝ) : ℂ) := by
+    rw [trace_Eblk_mul_mul_Eblk_mul, Complex.ofReal_sum]
+    refine Finset.sum_congr rfl fun p _ => ?_
+    rw [Complex.ofReal_sum]
+    exact Finset.sum_congr rfl fun q _ => hterm p q
+  rw [key, Complex.ofReal_re]
+
+/-! #### (5.65) + (5.66): the Cauchy-Schwarz step on the glued block -/
+
+/-- **(5.65) + (5.66)** at the level of matrices: pulling the four `G`-edges out as a maximum
+`M` and applying Cauchy–Schwarz to the remaining double block sum of `A = G(σ)E_bG(-σ)`
+leaves `M √S`, where `S` bounds the squared block mass of `A`. -/
+theorem norm_trace_Eblk_mul_mul_Eblk_mul_le_sqrt
+    (A B : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ) (c₂ c₄ : ZMod L) {M S : ℝ}
+    (hM : 0 ≤ M)
+    (hB : ∀ p q : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ → ‖B q p‖ ≤ M)
+    (hS : (∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+        blkW L Wb p c₂ * blkW L Wb q c₄ * ‖A p q‖ ^ 2) ≤ S) :
+    ‖Matrix.trace (Eblk L Wb c₂ * A * Eblk L Wb c₄ * B)‖ ≤ M * √S := by
+  classical
+  rw [trace_Eblk_mul_mul_Eblk_mul]
+  have hpt : ∀ p q : ZMod L × Fin Wb,
+      ‖(if p.1 = c₂ then (Wb : ℂ)⁻¹ else 0) *
+          ((if q.1 = c₄ then (Wb : ℂ)⁻¹ else 0) * (A p q * B q p))‖
+        ≤ blkW L Wb p c₂ * blkW L Wb q c₄ * (M * ‖A p q‖) := by
+    intro p q
+    by_cases hp : p.1 = c₂
+    · by_cases hq : q.1 = c₄
+      · have e1 : (if p.1 = c₂ then (Wb : ℂ)⁻¹ else 0) = (Wb : ℂ)⁻¹ := by simp [hp]
+        have e2 : (if q.1 = c₄ then (Wb : ℂ)⁻¹ else 0) = (Wb : ℂ)⁻¹ := by simp [hq]
+        have e3 : blkW L Wb p c₂ = (Wb : ℝ)⁻¹ := by simp [blkW, hp]
+        have e4 : blkW L Wb q c₄ = (Wb : ℝ)⁻¹ := by simp [blkW, hq]
+        rw [e1, e2, e3, e4, norm_mul, norm_mul, norm_mul, norm_inv, Complex.norm_natCast]
+        have hle : ‖A p q‖ * ‖B q p‖ ≤ ‖A p q‖ * M :=
+          mul_le_mul_of_nonneg_left (hB p q hp hq) (norm_nonneg _)
+        have hW : (0 : ℝ) ≤ (Wb : ℝ)⁻¹ := by positivity
+        nlinarith [norm_nonneg (A p q), norm_nonneg (B q p)]
+      · simp [blkW, hq]
+    · simp [blkW, hp]
+  refine (norm_sum_le _ _).trans ?_
+  refine (Finset.sum_le_sum fun p _ => (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun q _ => hpt p q)).trans ?_
+  have hfold : (∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+        blkW L Wb p c₂ * blkW L Wb q c₄ * (M * ‖A p q‖))
+      = M * ∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+          blkW L Wb p c₂ * blkW L Wb q c₄ * ‖A p q‖ := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun p _ => ?_
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun q _ => by ring
+  rw [hfold]
+  refine mul_le_mul_of_nonneg_left ?_ hM
+  refine (sum_blkW_mul_le_sqrt L Wb c₂ c₄ (fun p q => ‖A p q‖)
+    (fun p q => norm_nonneg _)).trans ?_
+  exact Real.sqrt_le_sqrt hS
+
+/-- **(5.65) + (5.72)**: the same with the Cauchy–Schwarz step replaced by an entrywise bound
+`K` on `A = G(σ)E_bG(-σ)`, which is the route Case 2(1b) takes. -/
+theorem norm_trace_Eblk_mul_mul_Eblk_mul_le
+    (A B : Matrix (ZMod L × Fin Wb) (ZMod L × Fin Wb) ℂ) (c₂ c₄ : ZMod L) {M K : ℝ}
+    (hK : 0 ≤ K)
+    (hB : ∀ p q : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ → ‖B q p‖ ≤ M)
+    (hA : ∀ p q : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ → ‖A p q‖ ≤ K) :
+    ‖Matrix.trace (Eblk L Wb c₂ * A * Eblk L Wb c₄ * B)‖ ≤ K * M := by
+  classical
+  rw [trace_Eblk_mul_mul_Eblk_mul]
+  have hpt : ∀ p q : ZMod L × Fin Wb,
+      ‖(if p.1 = c₂ then (Wb : ℂ)⁻¹ else 0) *
+          ((if q.1 = c₄ then (Wb : ℂ)⁻¹ else 0) * (A p q * B q p))‖
+        ≤ (if p.1 = c₂ then (Wb : ℝ)⁻¹ else 0) *
+            ((if q.1 = c₄ then (Wb : ℝ)⁻¹ else 0) * (K * M)) := by
+    intro p q
+    by_cases hp : p.1 = c₂
+    · by_cases hq : q.1 = c₄
+      · have e1 : (if p.1 = c₂ then (Wb : ℂ)⁻¹ else 0) = (Wb : ℂ)⁻¹ := by simp [hp]
+        have e2 : (if q.1 = c₄ then (Wb : ℂ)⁻¹ else 0) = (Wb : ℂ)⁻¹ := by simp [hq]
+        have e3 : (if p.1 = c₂ then (Wb : ℝ)⁻¹ else 0) = (Wb : ℝ)⁻¹ := by simp [hp]
+        have e4 : (if q.1 = c₄ then (Wb : ℝ)⁻¹ else 0) = (Wb : ℝ)⁻¹ := by simp [hq]
+        rw [e1, e2, e3, e4, norm_mul, norm_mul, norm_mul, norm_inv, Complex.norm_natCast]
+        have hW : (0 : ℝ) ≤ (Wb : ℝ)⁻¹ := by positivity
+        have hprod : ‖A p q‖ * ‖B q p‖ ≤ K * M :=
+          mul_le_mul (hA p q hp hq) (hB p q hp hq) (norm_nonneg _) hK
+        exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hprod hW) hW
+      · simp [hq]
+    · simp [hp]
+  refine (norm_sum_le _ _).trans ?_
+  refine (Finset.sum_le_sum fun p _ => (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun q _ => hpt p q)).trans ?_
+  have e1 : ∀ p : ZMod L × Fin Wb,
+      (∑ q : ZMod L × Fin Wb, (if p.1 = c₂ then (Wb : ℝ)⁻¹ else 0) *
+        ((if q.1 = c₄ then (Wb : ℝ)⁻¹ else 0) * (K * M)))
+      = (if p.1 = c₂ then (Wb : ℝ)⁻¹ else 0) * (K * M) := by
+    intro p
+    rw [← Finset.mul_sum, sum_blockWeight]
+  simp_rw [e1]
+  exact le_of_eq (sum_blockWeight L Wb c₂ (K * M))
+
+
+/-! #### The glued `4`-loop and the `6`-loop -/
+
+/-- `G(σ) E_b G(-σ)` is Hermitian (`G(σ)† = G(-σ)`, `E_b† = E_b`).  For `σ = -` this is the
+paper's `G†E_bG`. -/
+theorem conjTranspose_Gsig_Eblk_Gsig (hH : H.IsHermitian) (s : Bool) (c : ZMod L) :
+    (Gsig H z s * Eblk L Wb c * Gsig H z (!s))ᴴ
+      = Gsig H z s * Eblk L Wb c * Gsig H z (!s) := by
+  rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_mul, Gsig_conjTranspose hH,
+    Eblk_conjTranspose, Gsig_conjTranspose hH, Bool.not_not, Matrix.mul_assoc]
+
+/-- **The `4`-loop of (5.66)**: the squared block mass of `A = G(σ)E_bG(-σ)` between the
+blocks `I_{c₂}` and `I_{c₄}` is the `4`-loop `L_{u,(σ,-σ,σ,-σ),(b,c₄,b,c₂)}`, one of the
+`max_a max_{σ ∈ {+,-}⁴} L_{u,σ,a}` of (5.66).  This is what (2.73) at `n = 4` bounds. -/
+theorem trace_Eblk_glue_eq_gloop_four (hH : H.IsHermitian) (s : Bool) (c₂ c₃ c₄ : ZMod L) :
+    Matrix.trace (Eblk L Wb c₂ * (Gsig H z s * Eblk L Wb c₃ * Gsig H z (!s)) * Eblk L Wb c₄
+        * (Gsig H z s * Eblk L Wb c₃ * Gsig H z (!s))ᴴ)
+      = gloop L Wb H z ⟨[s, !s, s, !s], [c₃, c₄, c₃, c₂]⟩ := by
+  rw [conjTranspose_Gsig_Eblk_Gsig L Wb hH s c₃, gloop]
+  simp only [gloopProd_cons, gloopProd_nil, Matrix.mul_one, Matrix.mul_assoc]
+  rw [Matrix.trace_mul_comm]
+  simp only [Matrix.mul_assoc]
+
+/-- **The `6`-loop of (5.23) read as (5.65)**: cutting it open at the two sites adjacent to
+the glue label `c₃` exhibits it as `⟨E_{c₂} · (G(σ₃)E_{c₃}G(σ₄)) · E_{c₄} · B⟩` with
+`B = G(σ₅)E_{c₅}G(σ₆)E_{c₆}G(σ₁)E_{c₁}G(σ₂)` the chain of the four remaining `G`-edges.
+Only trace cyclicity is used. -/
+theorem gloop_six_eq_trace (s₁ s₂ s₃ s₄ s₅ s₆ : Bool) (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) :
+    gloop L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩
+      = Matrix.trace (Eblk L Wb c₂ * (Gsig H z s₃ * Eblk L Wb c₃ * Gsig H z s₄) * Eblk L Wb c₄
+          * (Gsig H z s₅ * Eblk L Wb c₅ * Gsig H z s₆ * Eblk L Wb c₆ * Gsig H z s₁
+              * Eblk L Wb c₁ * Gsig H z s₂)) := by
+  rw [gloop]
+  have h1 : gloopProd L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩
+      = (Gsig H z s₁ * Eblk L Wb c₁ * Gsig H z s₂)
+        * (Eblk L Wb c₂ * (Gsig H z s₃ * Eblk L Wb c₃ * Gsig H z s₄) * Eblk L Wb c₄
+            * (Gsig H z s₅ * Eblk L Wb c₅ * Gsig H z s₆ * Eblk L Wb c₆)) := by
+    simp only [gloopProd_cons, gloopProd_nil, Matrix.mul_one, Matrix.mul_assoc]
+  rw [h1, Matrix.trace_mul_comm]
+  congr 1
+  simp only [Matrix.mul_assoc]
+
+/-- **The four `G`-edges of (5.65)**: an entry of a chain of four `G`'s with three
+block-averaged sites in between is bounded by the product of four entrywise bounds, one per
+edge.  Each block average costs nothing (`norm_mul_Eblk_mul_apply_le`). -/
+theorem norm_chain_four_apply_le (s₅ s₆ s₁ s₂ : Bool) (c₅ c₆ c₁ : ZMod L)
+    (x y : ZMod L × Fin Wb) {g₁ g₂ g₃ g₄ : ℝ}
+    (hg₂ : 0 ≤ g₂) (hg₃ : 0 ≤ g₃) (_hg₄ : 0 ≤ g₄)
+    (h₅ : ∀ p : ZMod L × Fin Wb, p.1 = c₅ → ‖Gsig H z s₅ x p‖ ≤ g₁)
+    (h₆ : ∀ p r : ZMod L × Fin Wb, p.1 = c₅ → r.1 = c₆ → ‖Gsig H z s₆ p r‖ ≤ g₂)
+    (h₁ : ∀ r t : ZMod L × Fin Wb, r.1 = c₆ → t.1 = c₁ → ‖Gsig H z s₁ r t‖ ≤ g₃)
+    (h₂ : ∀ t : ZMod L × Fin Wb, t.1 = c₁ → ‖Gsig H z s₂ t y‖ ≤ g₄) :
+    ‖(Gsig H z s₅ * Eblk L Wb c₅ * Gsig H z s₆ * Eblk L Wb c₆ * Gsig H z s₁
+        * Eblk L Wb c₁ * Gsig H z s₂) x y‖ ≤ g₁ * g₂ * g₃ * g₄ := by
+  have hassoc : (Gsig H z s₅ * Eblk L Wb c₅ * Gsig H z s₆ * Eblk L Wb c₆ * Gsig H z s₁
+      * Eblk L Wb c₁ * Gsig H z s₂)
+      = Gsig H z s₅ * Eblk L Wb c₅ *
+          (Gsig H z s₆ * Eblk L Wb c₆ * (Gsig H z s₁ * Eblk L Wb c₁ * Gsig H z s₂)) := by
+    simp only [Matrix.mul_assoc]
+  rw [hassoc]
+  refine norm_mul_Eblk_mul_apply_le L Wb _ _ c₅ x y fun p hp => ?_
+  have inner1 : ∀ r : ZMod L × Fin Wb, r.1 = c₆ →
+      ‖Gsig H z s₆ p r‖ * ‖(Gsig H z s₁ * Eblk L Wb c₁ * Gsig H z s₂) r y‖
+        ≤ g₂ * (g₃ * g₄) := by
+    intro r hr
+    have inner2 : ‖(Gsig H z s₁ * Eblk L Wb c₁ * Gsig H z s₂) r y‖ ≤ g₃ * g₄ := by
+      refine norm_mul_Eblk_mul_apply_le L Wb _ _ c₁ r y fun t ht => ?_
+      exact mul_le_mul (h₁ r t hr ht) (h₂ t ht) (norm_nonneg _) hg₃
+    exact mul_le_mul (h₆ p r hp hr) inner2 (norm_nonneg _) hg₂
+  have step : ‖(Gsig H z s₆ * Eblk L Wb c₆ * (Gsig H z s₁ * Eblk L Wb c₁ * Gsig H z s₂)) p y‖
+      ≤ g₂ * (g₃ * g₄) :=
+    norm_mul_Eblk_mul_apply_le L Wb _ _ c₆ p y inner1
+  calc ‖Gsig H z s₅ x p‖ *
+      ‖(Gsig H z s₆ * Eblk L Wb c₆ * (Gsig H z s₁ * Eblk L Wb c₁ * Gsig H z s₂)) p y‖
+      ≤ g₁ * (g₂ * (g₃ * g₄)) :=
+        mul_le_mul (h₅ p hp) step (norm_nonneg _) (le_trans (norm_nonneg _) (h₅ p hp))
+    _ = g₁ * g₂ * g₃ * g₄ := by ring
+
+/-- **(5.65) + (5.66) for the `6`-loop of (5.23)**.
+
+`‖L_{σ,(c₁,…,c₆)}‖ ≤ g₁g₂g₃g₄ √S` where `g₁ … g₄` bound the four `G`-edges
+`(c₄,c₅), (c₅,c₆), (c₆,c₁), (c₁,c₂)` entrywise and `S` bounds the `4`-loop
+`L_{(σ₃,-σ₃,σ₃,-σ₃),(c₃,c₄,c₃,c₂)}` — the `(max_a max_{σ∈{+,-}⁴} L_{u,σ,a})^{1/2}` of (5.66).
+
+The charge pattern `σ₄ = -σ₃` around the glue label `c₃` is the one the gluing (5.23)
+produces (`RBM.EEBridge.glueIdx`), and it is what makes `G(σ₃)E_{c₃}G(σ₄)` Hermitian, hence
+its squared block mass a loop. -/
+theorem norm_gloop_six_le_schwarz (hH : H.IsHermitian) (s₁ s₂ s₃ s₅ s₆ : Bool)
+    (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) {g₁ g₂ g₃ g₄ S : ℝ}
+    (hg₁ : 0 ≤ g₁) (hg₂ : 0 ≤ g₂) (hg₃ : 0 ≤ g₃) (hg₄ : 0 ≤ g₄)
+    (h₅ : ∀ q p : ZMod L × Fin Wb, q.1 = c₄ → p.1 = c₅ → ‖Gsig H z s₅ q p‖ ≤ g₁)
+    (h₆ : ∀ p r : ZMod L × Fin Wb, p.1 = c₅ → r.1 = c₆ → ‖Gsig H z s₆ p r‖ ≤ g₂)
+    (h₁ : ∀ r t : ZMod L × Fin Wb, r.1 = c₆ → t.1 = c₁ → ‖Gsig H z s₁ r t‖ ≤ g₃)
+    (h₂ : ∀ t p : ZMod L × Fin Wb, t.1 = c₁ → p.1 = c₂ → ‖Gsig H z s₂ t p‖ ≤ g₄)
+    (hS : (gloop L Wb H z ⟨[s₃, !s₃, s₃, !s₃], [c₃, c₄, c₃, c₂]⟩).re ≤ S) :
+    ‖gloop L Wb H z ⟨[s₁, s₂, s₃, !s₃, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩‖
+      ≤ g₁ * g₂ * g₃ * g₄ * √S := by
+  rw [gloop_six_eq_trace]
+  have hMB : ∀ p q : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ →
+      ‖(Gsig H z s₅ * Eblk L Wb c₅ * Gsig H z s₆ * Eblk L Wb c₆ * Gsig H z s₁
+          * Eblk L Wb c₁ * Gsig H z s₂) q p‖ ≤ g₁ * g₂ * g₃ * g₄ := by
+    intro p q hp hq
+    exact norm_chain_four_apply_le L Wb s₅ s₆ s₁ s₂ c₅ c₆ c₁ q p hg₂ hg₃ hg₄
+      (fun r hr => h₅ q r hq hr) h₆ h₁ (fun t ht => h₂ t p ht hp)
+  have hSA : (∑ p : ZMod L × Fin Wb, ∑ q : ZMod L × Fin Wb,
+      blkW L Wb p c₂ * blkW L Wb q c₄ *
+        ‖(Gsig H z s₃ * Eblk L Wb c₃ * Gsig H z (!s₃)) p q‖ ^ 2) ≤ S := by
+    rw [sum_blkW_normSq_of_mat, trace_Eblk_glue_eq_gloop_four L Wb hH]
+    exact hS
+  exact norm_trace_Eblk_mul_mul_Eblk_mul_le_sqrt L Wb _ _ c₂ c₄
+    (mul_nonneg (mul_nonneg (mul_nonneg hg₁ hg₂) hg₃) hg₄) hMB hSA
+
+/-- **(5.65) + (5.72) for the `6`-loop of (5.23)**: the Case-2(1b) route, in which the glued
+factor `G(σ₃)E_{c₃}G(σ₄)` is bounded entrywise by `K` instead of by Cauchy–Schwarz.  Here the
+charges around `c₃` are unconstrained and `H` need not be Hermitian. -/
+theorem norm_gloop_six_le_glue (s₁ s₂ s₃ s₄ s₅ s₆ : Bool)
+    (c₁ c₂ c₃ c₄ c₅ c₆ : ZMod L) {g₁ g₂ g₃ g₄ K : ℝ}
+    (_hg₁ : 0 ≤ g₁) (hg₂ : 0 ≤ g₂) (hg₃ : 0 ≤ g₃) (hg₄ : 0 ≤ g₄) (hK : 0 ≤ K)
+    (h₅ : ∀ q p : ZMod L × Fin Wb, q.1 = c₄ → p.1 = c₅ → ‖Gsig H z s₅ q p‖ ≤ g₁)
+    (h₆ : ∀ p r : ZMod L × Fin Wb, p.1 = c₅ → r.1 = c₆ → ‖Gsig H z s₆ p r‖ ≤ g₂)
+    (h₁ : ∀ r t : ZMod L × Fin Wb, r.1 = c₆ → t.1 = c₁ → ‖Gsig H z s₁ r t‖ ≤ g₃)
+    (h₂ : ∀ t p : ZMod L × Fin Wb, t.1 = c₁ → p.1 = c₂ → ‖Gsig H z s₂ t p‖ ≤ g₄)
+    (hglue : ∀ p q y : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ → y.1 = c₃ →
+      ‖Gsig H z s₃ p y‖ * ‖Gsig H z s₄ y q‖ ≤ K) :
+    ‖gloop L Wb H z ⟨[s₁, s₂, s₃, s₄, s₅, s₆], [c₁, c₂, c₃, c₄, c₅, c₆]⟩‖
+      ≤ g₁ * g₂ * g₃ * g₄ * K := by
+  rw [gloop_six_eq_trace]
+  have hMB : ∀ p q : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ →
+      ‖(Gsig H z s₅ * Eblk L Wb c₅ * Gsig H z s₆ * Eblk L Wb c₆ * Gsig H z s₁
+          * Eblk L Wb c₁ * Gsig H z s₂) q p‖ ≤ g₁ * g₂ * g₃ * g₄ := by
+    intro p q hp hq
+    exact norm_chain_four_apply_le L Wb s₅ s₆ s₁ s₂ c₅ c₆ c₁ q p hg₂ hg₃ hg₄
+      (fun r hr => h₅ q r hq hr) h₆ h₁ (fun t ht => h₂ t p ht hp)
+  have hMA : ∀ p q : ZMod L × Fin Wb, p.1 = c₂ → q.1 = c₄ →
+      ‖(Gsig H z s₃ * Eblk L Wb c₃ * Gsig H z s₄) p q‖ ≤ K := by
+    intro p q hp hq
+    exact norm_mul_Eblk_mul_apply_le L Wb _ _ c₃ p q fun y hy => hglue p q y hp hq hy
+  have h := norm_trace_Eblk_mul_mul_Eblk_mul_le L Wb _ _ c₂ c₄ hK hMB hMA
+  exact h.trans_eq (by ring)
+
+end Loop6
 
 end Lemma57
 end RBM

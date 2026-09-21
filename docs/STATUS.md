@@ -4899,3 +4899,32 @@ docstring 同时写清：`hg` 槽要的正是 `B ≍ Ψ`；已编译的证据链
 
 **fiat 审计**：两个张量都是 `def`、无结构字段、无自由张量变量；**没有为了让 (5.133) 出来去调整任何定义**，短的那个因子如实报告。
 全程未实例化 `SumZeroDyn.Hierarchy`、未用 `Lemma510` 任何字段、只用 `_Ioo` 版。
+
+## T178：`h572` 卸掉；**`h566` 的机器全部落地但假设不可卸——一条精确的否定发现**（2026-09-21）
+
+两文件 `lake env lean` 均 exit=0。
+
+**`h572` 落地**（`Lemma57.lean` 新 `section Loop6` + `EEDef` 的 `eeL6k_two_{zero,one}_le_glue`）。
+**一处对论文的修正**：(5.72) 论文写 `max_{y∈I_b}|G_{x₁y}||G_{x₁'y}|`，**诚实的指标序是 `|G_{yx₁}||G_{yx₁'}|`**
+——复 Hermitian `H` 的 `G(z)` **不对称**。记 paper-deltas #113 ⑦。
+
+**`h566` 的机器全部落地**：`gloop_six_eq_trace`（(5.65) 的开环）、`norm_chain_four_apply_le`、
+`trace_Eblk_glue_eq_gloop_four`（`G(σ)E_bG(−σ)` 的块平方质量 **= 4-loop**，正是 (5.66) 里那个 `max`）、
+`sum_blkW_mul_le_sqrt`（**块权是概率权，论文 `W^{−2}·W·(W²L)^{1/2}` 的 `W` 计数自动消掉**）、收口 `norm_gloop_six_le_schwarz`。
+`glueIdx_two_{zero,one}` 把 (5.23) 在 `n = 0` 算成显式 6-loop（一次 `simp` 就过，证实了手算），
+**两个 `k` 的右端肉眼可见地不同**：碰到黏合标号 `b'` 的那两条 `G` 边，`k=1` 接 `a₂`、`k=0` 接 `a₁`。
+
+### ⚠ 否定发现：`h566` 与 `hsym` 不是两条独立假设
+`eeL6` 按定义是 `∑_{k ∈ range m}`，而 `h566` 的右端是 **`k=1` 的形状**。在 `case2a_pointwise` 真正用它的区制里
+（`‖a₁−b‖ ≤ ℓ*_u` 且 `‖a₁−a₂‖ ≥ 4ℓ*_u`），`Gsq b a₂` 被 `h42sq` 压小，而 **`k=0` 项带的 `Gsq b a₁` 完全没有衰减**
+（`b` 就在 `a₁` 的 `ℓ*_u` 邻域里，只有 `≺ (ℓ_u/ℓ_s)A_u^{−1}`）。过完 `Wℓ*_u ∑_b` 后 `k=0` 项给出 `η_u^{−1}(J*)²T²`，
+**比 (5.36) 的 `η_u^{−1}A_u^{−1/2}(J*)³T²` 差整整 `A^{1/2}`**。
+**所以 `k=0` 项正是 `hsym` 管的那一半，换个方向看。** 这**没有推翻 #113 ②**，而是把它的 `k` 依赖在 Lean 里变成了可见的两条并列定理。
+**要卸 `h566`，需要的正是 `hsym` 需要的那个 `k`-拆分。**
+对照之下 **`h572` 的形状是对称的**（那里黏合因子自己也带尾函数），所以可卸——前提是调用方的 `Gsq` 取 (4.2) 的等号。
+
+### 造轮子检查（照规矩先搜了一遍，三处命中）
+* `RBM.sum_norm_SB_row` 已在 `Loop/KBound.lean:2321` 且可见——**删掉了新写的那条，改用已有的**。
+* `RBM.mul_Eblk_mul_apply` 已在 `Loop/ChainExpand.lean:1262`，但 `Lemma57` **不能 import 它**（会拖进 `Green/Minor`，方向不对），故新条改名 `mul_Eblk_mul_apply_ite` 并注明。
+* `Gauss.sq_sum_weighted_le` 从 `Lemma57` **不可见**（已编译验证），只好重写 4 行，docstring 注明是同一个轮子。
+* 顺带发现既有重复（未动）：`Lemma57.blkW` 与 `ChainExpand.eblkW` 是同一个块权。

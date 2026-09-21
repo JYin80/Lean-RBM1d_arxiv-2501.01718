@@ -2674,3 +2674,19 @@ T116 的另外两个障碍也不存在——**`Eq45Flow` 完全没有指示函�
 * **不免费的是包络需要的 `η_u ≥ N^{-c}`**——作具名假设 `hη` 全程显式穿过（`lkErr_le_rpow` → `quad11/13_unifDetDom`），其出处（`Wℓ_uη_u ≥ 1` ← (2.72)）记在两处 docstring 里。
 **小尾巴（未做，很便宜）**：`hint` 仍是假设——现成的 `integrable_sample_lkErr_mul` 是对**ℂ 值乘积**陈述的，而桥要的是 **ℝ 值**的 `lkErr · lkErr`；为保持对一般 `Sample` 的普适性没有就地特化。
 paper-deltas：**无新增**（本单没有任何 Lean 陈述偏离论文）。
+
+### `RBM1D/Gauss/Eq45FlowInputs.lean` — T124：三个输入「到网为止」已卸（Claude Code 并行 agent，2026-09-21）
+
+**第 0 步判定：三个全是 T116 的情形，网不可避免。** T121/T108 的论证讲的是**传递**一个假设里本就带时间的支配，那里指标集是惰性的；**生产**一个则相反——把指标集放大成 `TimeIcc × V` 就等于把不可数的 `∃ u` 放进 `P` 里（`badSet`）。
+**证据不是说辞**：每个固定时刻的生产者都经过一个**结构上要求 `Fintype` 指标**的步骤——`stochDom_flucAvg_*` 经 `stochDom_of_momentDom`（其 `hcard` 是对 `Fintype.card` 的多项式界），`condExpDiag_stochDom_of_highProb` 经 `stochDom_condRow_of_envelope`（带 `[∀ N, Fintype (U N)]`）。而 `TimeIcc` 是 `ℝ` 的子类型，矩+Markov 在它上面做不了。
+于是 `‖X‖ ≺ 1`（T109）与 T101 的网机器**正是在这里**用上——与 T121 的预判一致。
+
+**T101 的五条网定理全部要求控制是确定性的**（`Φ : ℕ → ℝ` 或 `ℕ → ℝ → ℝ`），而 (4.5) 的控制是 `L^max_u(ω)`——**既随机又依赖时间**，一条都用不上。agent 补了缺的引擎：`UnifDomIcc` + **`stochDom_timeIcc_of_unifDom`**（带随机且时间依赖控制的网提升）。
+控制侧的输入全部**无条件证出**：`highProb_flowNetEvent`（后半就是 T109）、`rpow_neg_le_Lmax_flow`（`N^{-2} ≤ L^max_u`，即 `hζlow`）、以及**新的确定性模 `Lmax_flow_le_add`**：`L^max_v ≤ L^max_u + (η_u⁻¹+η_v⁻¹)‖G_u−G_v‖`，由它得 `Lmax_flow_slow_of_net`。
+三个生产者 `ibpFlow_of_unifDom`/`flucRowFlow_of_unifDom`/`flucBlkFlow_of_unifDom` **逐字**产出 `IBPFlow`/`FlucRowFlow`/`FlucBlkFlow`（`exact`，无 `convert`、无强制转换），`eq45Flow_of_unifDom` 喂进冻结的 `eq45Flow_gauss` 得到 `StepGlue.Eq45Flow`——**这就是所要的探针，已类型检查通过**；其结论与 T121 已验证能填 `flow_hs1` 的 `h45` 槽是同一个项，故下游检查自动沿用。
+
+**T119 的固定时间警告已正面处理**：从夹逼 `W⁻¹/4 ≤ L^max_u ≤ η⁻²W⁻¹` 推缓变要付 `4η_v⁻²`，在 `t_N → 1` 时是多项式大——**所以没有用 `stochDom_Lmax_inv_W`**，只用了**下半边**（在流的好事件上对每个时刻都成立），缓变本身走真正的模。代价是一条显式可查的假设 `hfine`，与网距条件相容。**因此不需要 `LmaxRowProxy`**——本文件从不对 `u` 一致地做 `L^max ≍ W⁻¹` 的比较。
+
+**`Eq45Flow` 仍非无条件**，余下三类：(1) **`hΩ`**——(4.4) 在**每个** `u ∈ [s,t]` 上成立，即 T119 留下的那个 `hΩ` 的 u-一致版（它本身也是一条网命题）；
+(2) **三个 `hfix`**（固定时刻的输入作 `UnifDomIcc`）——**注意这些即便在固定时刻也还没有**：`stochDom_flucAvg_*` 仍带未卸的 `hsmall`（`FlucBound` 参数的**尺寸**；唯一无条件的实例 `stochDom_flucAvg_blockAvg_env` 控制是常数），`condExpDiag_stochDom_of_highProb` 仍带 `hΩ`；
+(3) **三个 `hHol`**（`u` 的模）——Green 函数那半是 T106 的 `norm_green_flow_sub_le`，而 **`condExpDiag` 那半是真正新的估计**，且**不是逐点模的推论**，因为随机常数 `‖X‖` 落在行积分内部。paper-deltas #79。

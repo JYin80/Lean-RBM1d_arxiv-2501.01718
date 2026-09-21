@@ -2079,6 +2079,20 @@
   measure Definition 2.1(i) bounds, so no measurability of $Y$ is needed.
 \end{proof}
 
+\begin{lemma}[The (4.5) flow inputs: a net with a random, time-dependent control]\label{lem:eq45inputs}
+  \lean{RBM.Gauss.UnifDomIcc, RBM.Gauss.stochDom_timeIcc_of_unifDom, RBM.Gauss.goodSetFlow, RBM.Gauss.flowNetEvent, RBM.Gauss.highProb_flowNetEvent, RBM.Gauss.inv_W_le_Lmax_flow, RBM.Gauss.rpow_neg_le_Lmax_flow, RBM.Gauss.Lre_flow_le_add, RBM.Gauss.Lmax_flow_le_add, RBM.Gauss.Lmax_flow_slow_of_net, RBM.Gauss.stochDom_timeIcc_Lmax_of_unifDom, RBM.Gauss.ibpFlow_of_unifDom, RBM.Gauss.flucRowFlow_of_unifDom, RBM.Gauss.flucBlkFlow_of_unifDom, RBM.Gauss.eq45Flow_of_unifDom}
+  \leanok\uses{lem:eq45flow, lem:holder-hp, lem:condstable, thm:trace-moment}
+  Unlike the \emph{transfer} of \texttt{Lemma41Flow}, \emph{producing} a domination over
+  $[s_N,t_N]$ puts an uncountable $\exists u$ inside $P$, and every fixed-time producer factors
+  through a step needing a finite index. So the net is unavoidable; since the control $L^{\max}_u$
+  is random and time-dependent, the existing net lemmas do not apply and the engine is built here.
+\end{lemma}
+\begin{proof}\leanok
+  Slow variation of $L^{\max}$ comes from the modulus
+  $L^{\max}_v\le L^{\max}_u+(\eta_u^{-1}+\eta_v^{-1})\|G_u-G_v\|$, not from
+  $L^{\max}\asymp W^{-1}$, which degrades as $t_N\to1$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -2591,3 +2591,24 @@ T108 的障碍之所以消失，是因为 `Lemma41Flow` 是两个**本已时间�
 按 CLAUDE.md「造轮子之前先查」，agent **有意没有**在 `Step6Hyp.lean` 里就地造它（那会是个等着被重复的轮子）。B 的范围应是：(i) 给 T77 加 `unifDetDom_integral_of_stochDom`；(ii) 为 `lkErr` 之积供其两个输入（确定性包络 + 多项式下界）；(iii) 经 `norm_quad11_le_integral`/`norm_quad13_le_integral` 从 `Steps.sharpLmK` 收口。
 **B 完全不依赖 T58，现在就能开工。** 一个勘察时发现的注意点：(ii) 需要 `η_u ≥ N^{-c}`，**这不是免费的**，来自 `Wℓ_uη_u ≥ 1`（由 (2.72) 推出），故该桥会带上这条假设。
 **paper-deltas：本文件无新增**——(5.127) 与论文陈述完全一致；两条可积性是论文在 `‖G_u‖ ≤ η_u⁻¹` 下略去的 Lean 记账。
+
+### `RBM1D/Hierarchy/ChargeReduce.lean` — T120：缺口从四个电荷收缩到一个（Claude Code 并行 agent，2026-09-21）
+
+**三条归约全部走通**，而且我预先担心的两种失败模式都没出现：
+* **共轭不移动谱参数**——`RBM.Gsig H z σ` 本身就把电荷编码成 `z ↦ conj z`，故 `Gsig_conjTranspose` 给出的是**同一个** `z_u` 上的 `(G_u(−))ᴴ = G_u(+)`；`K` 侧 `ξ = u·m(σ₁)m(σ₂)` 而 `u` 实，故 `conj(u·m(−)²) = u·m(+)²`。
+  唯一需要新造的零件是 `conj (Θ_ξ)_{ab} = (Θ_{conj ξ})_{ab}`（由 `eq_Theta_of_mul` + `S^(B)` 元素为实的 `conj_SB_apply` 证出）——**已先 grep，仓库里原本没有任何 `Theta` 的共轭引理**。
+* **循环性不需要拿不到的假设**——`L` 侧 `gloop_rotate` 是无条件的迹恒等式；`K` 侧 `kTwo_rotate` 要 `‖u·m(σ₁)m(σ₂)‖ < 1`，由已有的 `norm_mul_mSigma_lt_one` 从 `|E| ≤ 2`、`0 ≤ u`、`u < 1` 供给，**这三条在 `AprioriDecayAll` 的每个消费点都已具备**。
+
+归约的**总代价**：`|E| ≤ 2`、`∀ N, 0 ≤ s N`、`∀ N, t N < 1`。没有新增任何东西。
+**收口定理** `aprioriDecayAll_of_pp`：`Steps` + `AprioriDecayPP` ⟹ `StepGlue.AprioriDecayAll`；`(+,−)` 那半复用 T115 的 `aprioriDecay_pm`（未重复造），四路 case split 把 `(−,+)`/`(−,−)` 分别路由到两条归约。
+
+**`K` 侧的结论：`(+,+)` 处的 `K` 并不缺**。`Band.Kval` 是定义，处处可用；Step 3 真正用的界 `Band.norm_Kval_two_le`（`Flow/Iteration.lean:380`）是对**任意** `I : LoopIdx`（`I.WF`、长度 2）陈述的，证明里把 `I` 拆成一般的 `⟨[s₁,s₂],[x,y]⟩`，**四个电荷全覆盖、无需改动、无额外假设**；`Step3.exists_norm_Kval_le` 同理；(2.73) 本身也是 `max_{σ,a}`。
+**所以 `L − K` 在 `(+,+)` 处缺的，精确地只在 `L`（涨落）一侧。**
+
+**agent 的一个观察（未形式化、未声称）**：`(+,+)` 处传播子的参数是 `ξ = u·m²`，`‖ξ‖ = u`，但只要 `|E|` 离 `±2` 有距离，`|1 − u m²|` 就离 0 有距离，故 `Θ_{u m²}` 的衰减长度是 `O(1)` 而非 `ℓ_u`——**这正是 `K_{(+,+)}` 无害、而困难全在涨落一侧的原因**。
+
+## ⚠ 现在需要 Jun 裁的，精确到一条陈述
+
+**`AprioriDecayPP`**：`|L_{u,(+,+),(a₁,a₂)} − K_{u,(+,+),(a₁,a₂)}| ≺ (η_s/η_u)⁴ (Wℓ_uη_u)^{−2}`，对 `u ∈ [s,t]` 与 `(a₁,a₂)` 一致。**除它之外什么都不缺。**
+便宜的路子仍差整整一个 `A_u = Wℓ_uη_u`（T115：(2.73)+(2.59) 给 `≺ R·A_u`、(2.75) 给 `≺ A_u`，而大 `l` 处的 `S(2,l)` 要 `≺ (Wℓ_sη_s)^{1/2}`）——**这就是 §5.3 的那个因子**。
+选择是：补一个 `(+,+)` 版的 §5.3 论证，还是改论文陈述。旁证仍是 Lemma 5.14 的证明（p.68）独立地排除了常值 σ。paper-deltas #72 已就地补充。

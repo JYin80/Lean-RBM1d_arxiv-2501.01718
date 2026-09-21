@@ -2001,6 +2001,20 @@
   the net points must carry a raised threshold.
 \end{proof}
 
+\begin{lemma}[The local-law side of \texttt{hIBP}, and $L^{\max}\asymp W^{-1}$ at fixed $t$]\label{lem:condstable}
+  \lean{RBM.Gauss.stochDom_normSq_green_diag_sub_Lmax, RBM.Gauss.isUnit_det_Hflow_sub, RBM.Gauss.green_Hflow_diag_ne_zero, RBM.Gauss.stochDom_indicator_normSq_green_offdiag_Lmax, RBM.Gauss.stochDom_greenDiagCentered_sub_minor_Lmax, RBM.Gauss.Lmax_Hflow_le_inv_W, RBM.Gauss.integrable_Lmax_rowSplit, RBM.Gauss.LmaxRowProxy, RBM.Gauss.condStable_Lmax_of_rowProxy, RBM.Gauss.lmaxRowProxy_inv_W, RBM.Gauss.condStable_Lmax, RBM.Gauss.highProb_goodSet_of_stochDom, RBM.Gauss.condExpDiag_stochDom_of_highProb, RBM.Gauss.trace_green_sub_mul_Eblk_stochDom_of_highProb}
+  \leanok\uses{thm:conddom, lem:ibp, lem:4.1, lem:condrow}
+  Ward's identity gives $L^{\max}\le\eta_t^{-2}W^{-1}$ on the whole space, and $W^{-1}\le4L^{\max}$
+  on the good event: at a \emph{fixed} $t<1$ the control is deterministic up to an $N$-independent
+  factor, so $\mathbb E_i[L^{\max}]\prec L^{\max}$ is not a local-law comparison at all. Five of the
+  eight hypotheses of \texttt{hIBP}'s final theorem are thereby eliminated.
+\end{lemma}
+\begin{proof}\leanok
+  The minor identification needs no event: $H_t$ is Hermitian and $\operatorname{Im}z_t\ne0$, so the
+  determinant is a unit for every sample. The replacement error is redone from (4.2) with control
+  $L^{\max}$, bypassing any $\Psi^2\asymp L^{\max}$ identification.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

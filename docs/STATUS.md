@@ -2548,3 +2548,19 @@ T108 的障碍之所以消失，是因为 `Lemma41Flow` 是两个**本已时间�
 **`lift` 要闭合还缺四样**（按性质排）：(1) `‖L_{u,σ,a}‖` 对 u 的连续模——`gloop` 的望远镜估计，`Gauss/Envelope.lean` 只有包络与对**固定**核的差，都不是 u 的模；
 (2) `Step1.aprioriRhs` 的缓变 `ζ(u') ≤ 2ζ(u)`，在指数 `n−1` 处要求网距小于 `c_n(1−t_N)`，即一条区制假设（`Φ` 层的计算已有：`step1Phi_eq` + `Lemma41FlowGauss.lean` 的缓变一节）；
 (3) 多项式下界 `N^{−B} ≤ ζ`；(4) **Lemma 5.1 在阈值 `2 + o(1)` 处的版本——这是真正新的数学输入，且属 `Hierarchy/Step45.lean` 而非 `Gauss/`**。paper-deltas #74。
+
+### `RBM1D/Gauss/CondStableInst.lean` — T119：`hIBP` 的局部律侧输入（Claude Code 并行 agent，2026-09-21）
+
+**四条里三条卸掉，第八条只剩三条假设。** `trace_green_sub_mul_Eblk_stochDom_of_highProb` 只要 `hΩ`、`hFArow`、`hFAblk`——**从 8 条减到 3 条**。
+编译验证：`condExpDiag_stochDom_of_highProb` 把四个槽全部填满（`hG := gaussIBP`，T104），**无 `convert`、无 `precomp_param`、无强制转换**，再喂进冻结的 `trace_green_sub_mul_Eblk_stochDom`。
+
+- **`hloc` 卸掉**：`stochDom_normSq_green_diag_sub_Lmax`，就是 T112 预言的 `StochDom.of_indicator hΩ (diag_bound_gauss …)`；两边的指标类型无需强制转换即可合一。
+- **`hrepl` 卸掉**：两点发现——(i) `greenMinorMat = minorGreen` 的识别**不需要事件也不需要额外假设**（`H_t` Hermitian、`Im z_t ≠ 0` ⟹ 行列式对每个 ω 都是单位）；(ii) 不去比较控制（`Ψ² ≺ L_max` 无生产者），而是**直接从 (4.2) 用控制 `L_max` 重做**。
+- **`hstabP`/`hstabM` 卸掉，且 T112 对它的判断是错的**：`condStable_Lmax` 直接证出。关键是 **`Lmax_Hflow_le_inv_W`**——Ward 恒等式给出 `L_max ≤ η_t⁻²W⁻¹` **在全空间**成立，配 (4.1) 上的 `W⁻¹ ≤ 4L_max`；
+  `t < 1` 是固定实数，`η_t` 与 N 无关，故 `L_max ≺ W⁻¹ ≺ L_max`。**`L^max` 本质上是确定性的，这根本不是局部律比较。**
+- **`hΩ`(4.4) 未卸，全树无生产者**：已备好桥 `highProb_goodSet_of_stochDom`——由弱局部律 `‖G − m‖_max ≺ Ψ`（`MinorReplace` 已在用的形状）加多项式余量 `∀ᶠ N, N^τ Ψ_N ≤ δ_N` 即得。供给它就是 Step 1/2 的 (2.74)/(2.75)。
+
+**⚠ 必须随 `L^max ≍ W⁻¹` 一起携带的警告**：上述论证**全部是固定时间的**。若 `t = t(N) → 1`（`Gauss/EntryBoundTime.lean`、`Gauss/Lemma41FlowGauss.lean` 所在、也是 §4 最终被使用的区制），
+`η_t⁻²` 不再是常数，`stochDom_Lmax_inv_W` 作为 `≺` **失效**。agent 保留了一般接口 `LmaxRowProxy`（不读第 i 行的双边 proxy）+ `condStable_Lmax_of_rowProxy`，只是当前用常数 proxy `Λ_i := W⁻¹` 实例化；
+**时间依赖区制下 proxy 要取小行的 `L^max`，那时比较才真的成为局部律输入。**
+**剩余**：`hΩ`；`hFArow`/`hFAblk`（T88 的 `stochDom_flucAvg` 是确定性控制 `Ψ²`，`Ψ² → L_max` 的桥是另一件事）。paper-deltas #75、#76。

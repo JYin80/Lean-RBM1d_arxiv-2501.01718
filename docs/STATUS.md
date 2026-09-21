@@ -3685,3 +3685,16 @@ cFar · (r·√r·(√A)⁻¹·J)  +  169 · (r·A⁻¹·(J·√J))
   调用方就得有一个 `SumZeroDyn.Hierarchy` 且其 `F` 等于 `Hyp.Fpath`——**T118 禁止实例化 `Hierarchy`**。
   这一环没有被绕过也没有被伪造：`hdom` 留成假设，形状与 `F_stochDom` 的结论完全一致。**它指向 T58/T163。**
 * `momentDuhamelQ`（五项 `Q_t` 路线）依旧无消费者，不需要卸。
+
+## Theorem 2.6 外部输入：方案 (A)（Jun 2026-09-21，Cowork 逐字核对后定）
+
+**问题**：[51] Theorem 2.2（`paper/1609.09011v3.pdf`）字面只陈述 β = 1——§2 首句「W be a standard GOE matrix」，(2.9) 比较 `p_GOE`，§3 起的证明是 β = 1 的 DBM (3.1)；§8「General β-ensembles」是带势的不变 β-系综（Theorem 2.4），与矩阵模型 `V + √t·W` 无关。全文只有摘要声称「classical values of β … GOE/GUE」。我们的矩阵是复 Hermitian。
+
+**方案 (B) 核对（`paper/0905.4176v2.pdf`，[51] 的参考文献 [35]：Erdős–Péché–Ramírez–Schlein–Yau, CPAM 63 (2010)）——不可用**，三条理由，任一条都致命：
+1. **主定理不适用**：Theorem 1.1/1.2 是 i.i.d. 复 Wigner 矩阵、矩阵元分布满足 (1.5)(1.6)(1.8)（`C⁶` 光滑、高斯尾）。能套到一般初值上的只有 **Proposition 3.3**（辅助命题）。
+2. **Prop. 3.3 是关于显式密度 `q_S(x; y)`（(3.5)）的陈述，不是关于矩阵模型的**：「`Ĥ + aV` 的特征值密度等于 `q_S`」来自 [13]（Johansson）的 Proposition 1.1（HCIZ 型公式）。要把 Prop. 3.3 接到我们的矩阵上，**必须再引一条外部结果**，违反「唯一外部输入」。
+3. **前提 `𝒴_N`（(3.8)）要全能量域的局部律**：`sup_{Im z ≥ η} |N⁻¹Σ_j (z − y_j)⁻¹ − m_sc(z)| ≤ N^{−λ/4}`，其中 `η = η₀ t √(1−u²)`、`t = N^{−1+λ}`，**上确界取遍所有 `Re z`**（原文 (3.9) 的注：「after taking the supremum over all energies」）；另要 `sup_j |y_j| ≤ K`。论文 Theorem 2.3 只到 `|E| ≤ 2 − κ`，带状矩阵的谱边局部律在论文之外。
+
+对照 [51] Theorem 2.2 的前提——`(g,G)`-正则只要求**局部窗口** `|E| ≤ G` 内 `c ≤ Im m_V ≤ C`（`g ≤ η ≤ 10`）加 `‖V‖ ≤ N^{C_V}`，结论直接是矩阵模型 `H_t` 的 `k` 点相关函数——与体区局部律严丝合缝。
+
+**裁定 (A)**：唯一外部假设 = **[51] Theorem 2.2 逐字，只把 (2.1) 的 GOE 与 (2.9) 的 `p_GOE` 换成 GUE**；最终 Lean 报告写明「[51] 正文陈述 β = 1，此处使用其摘要所声称的 β = 2 版本」。已写入 `CLAUDE.md`「外部输入的边界」。Theorem 2.6 仍暂缓开单。

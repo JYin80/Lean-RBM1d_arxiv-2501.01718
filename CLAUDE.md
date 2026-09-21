@@ -208,3 +208,8 @@ Task/Agent 工具扇出子 agent**：保留手上这张单，另外从 `docs/TAS
 ## 外部输入的边界（Jun 2026-09-21，永久规则）
 
 **全项目唯一允许的外部输入是 Theorem 2.6 Step 1 的 [51] 主定理**，必须逐字按其陈述写成假设、量化在所有满足其前提的模型上，**不得编造类似结论作为 input**；其余一切（包括 Theorem 2.6 的 Step 2/3 与 §7.2）都要自证。最终报告必须写明 Universality 部分用了外部 input。
+
+**β = 2 的处理（Jun 2026-09-21 定为方案 (A)）**：[51]（`paper/1609.09011v3.pdf`）的 Theorem 2.2 字面只陈述 β = 1（`W` 是 GOE，比较对象 `p_GOE`），摘要声称「classical values of β … GOE/GUE」，正文无 β = 2 的编号定理。
+我们的矩阵是复 Hermitian，所以**唯一的外部假设 = [51] Theorem 2.2 逐字、只把 (2.1) 的 GOE 与 (2.9) 的 `p_GOE` 换成 GUE**（前提 `(g,G)`-正则、时间窗、能量窗、结论形状一字不改）。
+最终 Lean 报告必须写明这一点：「[51] 正文陈述 β = 1；此处使用其摘要所声称的 β = 2 版本」。
+已核过的替代方案 (B)（[35] = Erdős–Péché–Ramírez–Schlein–Yau, CPAM 2010, `paper/0905.4176v2.pdf`, Prop. 3.3）**不可用**：见 `docs/STATUS.md`「Theorem 2.6 外部输入：方案 (A)」。

@@ -298,7 +298,7 @@
 | T131 | **小单：T123 的 `hint` 尾巴**。`quad11_unifDetDom`/`quad13_unifDetDom` 仍带可积性假设 `hint`；现成的 `integrable_sample_lkErr_mul` 是 **ℂ 值乘积**，桥要 **ℝ 值** `lkErr · lkErr`。补一条 ℝ 值版的可积性（由 ℂ 版取范数，或直接由确定性包络 `‖G‖ ≤ η⁻¹`），**对一般 `Sample` 陈述**，保持 T123 的普适性 | `Gauss/Envelope.lean` 或 `Gauss/Step6Hyp.lean` | Claude Code | **完成**（ℝ 值可积性补上，高斯版 `quad11/13_unifDetDom_gauss` 不再带 `hint`；一般版保持不变） |
 | T132 | **⭐⭐⭐ 矩 Duhamel**：`Φ(u,H) = (U_{u,t}∘(L−K)(H,z_u))_a`，对 `|Φ|^{2p}` 用**带显式时间的生成元恒等式**（只依赖一时刻律，故与模型无关）+ T72 的 QV 支点 ⟹ `‖(L−K)_t‖_{2p} ≤ ‖U(L−K)_s‖_{2p} + 2∫‖U∘F‖_{2p} + (C∫‖(U⊗U)∘(E⊗E)‖_p)^{1/2}`，即 (5.20)+(5.24) 的合体。替代全部 `Hierarchy.duhamel/bdg` 消费者（带撇变体）。**第 0 步只交消费者清单 + 接口草案，Cowork 审过再开工** | `Gauss/MomentDuhamel.lean`（新建） | Claude Code | **第 0 步已审（03:55）：拆成 T132a/b/c；修改 3 退回**，见规格下「Cowork 审查结论」 |
 | T132a | **矩 Duhamel 的结构 + 收口 + 带撇 `Lemma514`**（不依赖 T133/T134）：`MomentDuhamel(Q)`（含逐点漂移字段钉死 `F`）、积分+取上确界的收口引理（**不是** `gronwallBound`）、`∂_u Uker`、重新生产 `Step3.Lemma514` | `Gauss/MomentDuhamel.lean` + `Analysis/` | Claude Code | **部分完成**（结构 + 收口 + `F_unique` 已证；**带撇 `Lemma514` 未做**，归约成具名 `hrhs`，需矩版的 `stochDom_of_logBound` 机器。另：`TimeIcc` 非 `Fintype`，时间一致性必须走 T124 网引擎，见 STATUS） |
-| T132b | **矩 Duhamel 的高斯卸载**：带显式时间的生成元恒等式 + `(z,M)` 联合 `C²` ⟹ `MomentDuhamel` 实例。等 T133/T134 | `Gauss/MomentDuhamelGauss.lean` | 待认领 | 未开工 |
+| T132b | **矩 Duhamel 的高斯卸载**：带显式时间的生成元恒等式 + `(z,M)` 联合 `C²` ⟹ `MomentDuhamel` 实例。等 T133/T134；**规格见下文「T132b 规格」**（05:40）| `Gauss/MomentDuhamelGauss.lean` | 待认领 | 未开工 |
 | T132c | **`MomentHyp.step` 与 `(+,+)` 一步改进**：由矩 Duhamel + (5.39)–(5.41)(5.45) 的矩形式给出。等 T132a | `Hierarchy/Step2Moment.lean` 追加或新文件 | 待认领 | 未开工 |
 | T139 | **维护：paper-deltas 编号去重**。`61`–`65` 各有两行（T81/T91–T95 一组、T94/T101/T108/T83/T111 一组）。把**后一组**改编 `91`–`95`，再 grep 全仓库（`docs/`、`RBM1D/**/*.lean` 的 docstring）里的 `#61`–`#65` 引用，**按上下文**改到正确的号。以后新增条目前先 `grep -o '^| [0-9]* |' | sort -n | tail -1` 取号 | `docs/paper-deltas.md` 等 | 待认领 | 未开工 |
 | T140 | **`LoopIto.second`（冻结形式）+ (5.19) 的 `primBilLen 2 = ThetaOp`**（T134 余项，T132b 的前置）：`½ Σ S_ij ∂_ij∂_ji L_{σ,a}` = (2.45) 的 cut-and-glue dt 部分，**只需冻结 `z`、用 `G` 而非 `G̃`**（T134 已证 `G̃` 的 `−m` 减项是动 `z` 白送的）。纯确定性代数，用 T133 的 Fréchet 二阶乘积法则 | `Gauss/LoopIto.lean`（续） | 待认领 | 未开工 |
@@ -2581,3 +2581,26 @@ T72 已对**预解式观测量** `φ(G)` 卸掉 `TestFun`（`bddC2_greenObs`）�
    `(∂_u + 𝓛)(L−K)_{u,σ,a} = (Θ_{u,σ}∘(L−K))_a + F_{u,σ,a}`。(5.10)–(5.15) 的代数重组 T58 已落地，**复用**。
 3. T76 卡住的「偏导连续 ⟹ 可微」：**绕开它**——`(u, H) ↦ L` 是光滑映射的复合（`z_u` 光滑、矩阵求逆解析），直接用 `ContDiff.comp` 得联合可微。
 **第 0 步**：确认 T58 已落地的 (5.12)–(5.15) 是逐点（对 `H`）陈述还是对抽象张量陈述；是后者就先写适配，报告再动。
+
+---
+
+## T132b 规格：矩 Duhamel 的高斯卸载（Cowork，2026-09-21 05:40；等 T140、T141、T145）
+
+**目标**：在高斯流 `H_u = √u·X` 上造出 `MomentDuhamel.Hyp` 的实例（T145 修好之后的结构：`EE = eeField`、`drift` 只对 Hermitian `M`），即证 `momentDuhamel` 与 `momentDuhamelQ` 两个不等式字段。
+
+**五步（照做，第 0 步先核对前置）**：
+0. **核对前置**：T145 已合入（`git grep eeField\|IsHermitian -- RBM1D/Gauss/MomentDuhamel.lean` 非空）；T140（`LoopIto.second` 冻结形式 + (5.19)）、T141（loop 导数界对 `z` 在球上一致）已合入。缺哪个报告哪个，**不要就地补**。
+1. **带显式时间的生成元恒等式**：`d/du E[Ψ(u, H_u)] = E[∂_1Ψ(u, H_u)] + ½ Σ S_ij E[∂_ij∂_ji Ψ(u, H_u)]`。
+   证法：`d/du Ψ(u, √u·X) = ∂_1Ψ + (2√u)⁻¹ Σ X_ij ∂_ij Ψ`（`hasDerivAt_comp_diag`，T134），再对第二项用 T70 的 `matrixStein`；求导进积分用 dominated convergence，控制函数取 T133/T141 的**对 `u` 一致**的确定性界。
+   它是 T71 `hasDerivAt_momentIntegral` 的带时间版，**先 grep T71/T72/T134 有无现成的一半**。
+2. **点态展开**：取 `Ψ(u, M) = |Φ(u, M)|^{2p}`，`Φ(u, M) = (U_{u,v}∘(L−K)(u, M))_a`。显式部分 `∂_1|Φ|^{2p} = 2p|Φ|^{2p−2} Re(Φ̄ ∂_1Φ)`；生成元部分用 T72 的 `genMomentPt_le`
+   （`𝓛|F|^{2p} ≤ 2p|F|^{2p−2}Re(F̄ 𝓛F) + C_p|F|^{2p−2} Σ S|∂F|²`）。二者合起来一阶项是 `2p|Φ|^{2p−2}Re(Φ̄ (∂_1 + 𝓛)Φ)`。
+3. **漂移代入**：`(∂_1 + 𝓛)Φ = (U_{u,v}∘F_u)_a`——由 `drift` 字段 + T132a 的 `hasDerivAt_Uker_apply`（`∂_u U_{u,v} = −U_{u,v}∘Θ_u`，线性部分恰好相消）。
+   二阶项 `Σ S|∂Φ|² = ((U⊗U)∘eeField)_{a,a}`：T72 `secondOrder_eq_quadVar` + T74 `emart_Uker`/`eeRaw_self_eq_quadVar` + T127 `eeField`。
+4. **Hölder + 收口**：`φ' ≤ 2p φ^{1−1/2p} f + C_p φ^{1−1/p} g`，喂 T132a 的 `sqrt_le_of_integral_le`（`ψ = (φ+ε)^{1/p}`，积分形，FTC 接上）得 `momentDuhamel`。
+   **`Q_t` 版**同法，`F` 多出 `commS` 与 `Psum·ϑ̇` 两项（`Q_u` 对 `u` 求导，SumZeroDyn 已有 `hasDerivAt_Qop_hierarchy`）。
+5. **`integrable` 字段**：T77 确定性包络 `‖G‖ ≤ η⁻¹` 给出，T131 的 ℝ 值可积性可复用。
+
+**禁止**：常系数 Grönwall（见 T132 审查）；实例化 `SumZeroDyn.Hierarchy`；改 `Hyp` 结构（结构改动只经 T145）。
+**验收**：`momentDuhamelGauss : MomentDuhamel.Hyp (sample d) E s t n`（名字可调），假设只剩 `|E| ≤ 2−κ`、`0 ≤ s`、`t < 1` 与 (2.72)；零 `sorry`/`axiom`；全量 `lake build`；paper-deltas 取号前查重。
+

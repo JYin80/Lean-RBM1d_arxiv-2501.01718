@@ -2321,6 +2321,22 @@
   (2.73) leaves a $T^{1/2}$ missing.
 \end{proof}
 
+\begin{theorem}[$E^{(\tilde G)}$ as a definition, and the drift it splits]\label{thm:egdef}
+  \lean{RBM.EGDef.eGpm, RBM.EGDef.eGpm_eq_eGterm, RBM.EGDef.gloop_three_conj, RBM.EGDef.gloop_k1_eq, RBM.EGDef.norm_gloop_k2_eq, RBM.EGDef.sum_norm_SB_col, RBM.EGDef.norm_eGpm_le, RBM.EGDef.eGpm_le_reduced, RBM.EGDef.fderiv2_comp_clm, RBM.EGDef.contDiffAt_gloop_matrix, RBM.EGDef.coordD2_gloop_eq, RBM.EGDef.coordD2_sub_const, RBM.EGDef.genLK_eq_split, RBM.EGDef.hasDerivAt_Kval_two, RBM.EGDef.primBilLen_two_of_len_two, RBM.EGDef.couplingLen_two_of_len_two, RBM.EGDef.genS_eq_thetaGenLoop, RBM.EGDef.drift_split, RBM.EGDef.F_eq_eGterm_add_quadGlue, RBM.EGDef.F_eq_eGpm_add_quadGlue, RBM.EGDef.primBil_two_eq}
+  \leanok\uses{lem:5.7a, thm:momentduhamel, thm:loopito2, thm:generator}
+  (5.51)'s $E^{(\tilde G)}$ written out in $G$-loops as a \emph{definition}, proved equal to
+  (2.47)'s $\tilde E$; and the identity, at loop length two, between the drift $F$ that
+  \texttt{Hyp.drift} pins down and $E^{(\tilde G)}$ plus (5.49)'s quadratic gluing term -- with no
+  third term.
+\end{theorem}
+\begin{proof}\leanok
+  At length two the only cut is $(k,l)=(1,2)$ and both sub-loops have length two, so the coupling
+  \emph{is} its $\ell_K=2$ component and the sum over $\ell_K>2$ is empty; (5.19) identifies that
+  component with the \texttt{genS} already on the left of \texttt{Hyp.drift}.  Hence every quantity
+  on the left of (5.35) is either a definition or pinned by an identity, and no
+  \texttt{SumZeroDyn.Hierarchy} is instantiated.
+\end{proof}
+
 \begin{lemma}[Lemma 5.7, estimate (5.36), free of the stopped martingale]\label{lem:5.7b}
   \lean{RBM.Lemma57.loss1, RBM.Lemma57.cNear2, RBM.Lemma57.inv_four_le_tailT_sq, RBM.Lemma57.ee_near_le, RBM.Lemma57.case2a_pointwise, RBM.Lemma57.case2b_pointwise, RBM.Lemma57.sum_ee_far_le, RBM.Lemma57.cFar2, RBM.Lemma57.ee_far_le, RBM.Lemma57.ee_le, RBM.Lemma57.ee_le_paper}
   \leanok\uses{lem:5.7a, lem:4.1, lem:stretched-exp}

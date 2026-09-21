@@ -6045,3 +6045,23 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 * **`M_f(1−s) ≺ 1` 还没从 `eGpm_le_reduced` 机械地推出来**：`farInputs'_of_eG_of_quad` 把它化归到「`‖eGpm‖ ≤ M_gf·T` 且 `‖primBil‖ ≤ M_qf·T`（远场）」，但把 `eGpm_le_reduced` 的右端（含指示函数项与 `(r/(ℓ_uη_u))·L·ρ` 余项）整理成这个形状、并核出 `M_gf(1−s) ≺ 1` 的显式指数账，**本单没做**。建议开新单，输入是 (2.72)/(2.73) 与 `J* ≺ (η_s/η_u)²`（T207）。
 * **把一步界改成带 `L¹` 权的积分形**（`∫_s^v η_u^{-1}du = (Im m)^{-1}log R`）可以彻底去掉 `1−s`，与论文字面一致；需要漂移的可积性假设，**本单没做**（T208a 已记）。
 * **没动 `Step2MomentStep.lean`**：里面没有按字面为假的陈述（`cFarStep` 是定义，`flowEq548_of_near_farInputs` 在 `s = 0` 可用），加 `@[deprecated]` 会在该文件内部产生约 8 条弃用警告、干扰正在只读它的 T207。守卫以**定理**形式放在 `Step2FarInputs.lean`（`cFarStep_not_detDom`），`grep -rn "cFarStep"` 一定命中。
+
+## ⭐ T206：φ′ 识别成钉死的 `driftF`、桥是等式定理——但 **`momentDuhamelHyp_gauss` 仍不存在**（`Gauss/MomentDuhamelHypGauss.lean`，741 行、19 条，2026-09-21）
+
+**第 (1) 步（φ′ 的识别）与第 (3) 步（桥）全部落地。**
+
+* `hasDerivAt_ukerObsT_drift`：`(∂_u + 𝓛)(U_{u,t}∘(L−K)_u)_a = (U_{u,t}∘F_u)_a`，**`F` 逐字是 `DriftDef.driftF`（T58 的定义），不是自由张量、不是 `Hyp` 的字段**；`K` 被 `hKdef` 钉在 `B.Kval`，`∂_uK` 被钉在 `Kprim = primRhs`。两侧都没有可选数据。
+* `timeD1_add_genMomentPt_le_driftF`：(5.20) 的**逐点被积式**，常数正是定 `cMDval` 的那两个。
+* `ukerObsT_eq_Uker_lkFun` / `momentObsT_flow`：`momentObsT ↔ Uker∘lkT` 是**等式定理**，不是假设。
+
+**一处数学要点（防 fiat 的地方）**：`genMomentPt_le` 在最后一步就把 `Re(F̄𝓛F)` 放成 `‖F‖‖𝓛F‖`，**对矩路线早了一步**——时间导数另出一项 `Re(F̄∂_uF)`，两项必须**先相加再取模**，那正是 `∂_uΨ₁ = U∘(L−K)′ − U∘Θ_u(L−K)` 里的 `Θ` 与漂移恒等式里的 `genS` 相消的位置（`genS` 与 `ThetaOp` 定义相等）。分开放缩会留下 `U∘Θ(L−K)`，**它不小**。故新证 `genMomentPt_le_re`。
+
+**可满足性**：`hasDerivAt_ukerObsT_drift_flow` / `timeD1_add_genMomentPt_le_driftF_flow` 取**全开区间** `0 ≤ u < 1`、`0 ≤ v < 1`（允许 `v ↑ 1`，不是退化点）；退化检查 `hasDerivAt_ukerObsT_drift_at_zero` 证 `ω = 0`（流矩阵 `0`、`G = −z⁻¹`）处恒等式**照样成立且有内容**——T164 事故要求的同形检查。
+
+## ⚠⚠ 更正 T206 工单：它少点名了两项，所以 `Hyp` 还差三块不是一块
+
+工单说「余三步」做完就能交 `momentDuhamelHyp_gauss`。**不对。** 除第 (2) 步外还有两项工单没点名，实例**仍不存在**：
+
+1. **第 (2) 步（边界可积性）——仍属本条线，一条都没做。** `momentIneq_of_derivBound` 每个 `(p,N,σ,v,a)` 要八件东西，T206 只给了最后一件（逐点不等式）与桥。缺的五件：`ψ` 的窗口界、`u ↦ E|Ψ₁|^{2p}` 的 `ContinuousOn`、`φ′` 的区间可积、`u ↦ ‖U∘F_u‖_{2p}` 与 `u ↦ ‖(U⊗U)∘(E⊗E)‖_p` 的区间可积、乘积 `ψ·f` 的可积。机制上都该由确定性包络 `‖G‖ ≤ (Im z_u)^{−1}` + 控制收敛给出（仿 `integrable_lkT_pow` 的定时版）。
+2. **⚠ 无主：二次变差还不是接口要的 `E⊗E`。** `MomentIneq` 右端要 `‖(U⊗U)∘(E⊗E)_{a,a}‖_p`（`Uker` 在 `SumZeroDyn.xi2` 上作用于 `eeFun`）。仓库有的是 `quadVarPairs_Uker`（`quadVar(Ψ₁) = ∑_{ij}‖(U∘E^{(M)}(i,j))_a‖²`）与**单条 loop** 的 `eeRaw_self_eq_quadVarPairs` + (5.22) `eeEdge_eq_sum_SB`。**缺的是该胶合的双线性、`U` 共轭版**：`∑_{ij}(U∘E^{(M)}(i,j))_a·conj((U∘E^{(M)}(i,j))_{a′}) = (U⊗U∘eeArg)_{a,a′}`。已核：`Hierarchy/EEBridge.lean` 里**一个 `RBM.Uker` 都没有**。归 `EEBridge`/`DischargeBDG` 那条线，**没有单负责**。
+3. **⚠ 无主：`Q_t` 路线（`MomentIneqQ`）完全没碰。** 它的漂移恒等式要 `∂_u Q_u`，由此才生出 (5.91) 的 `SumZeroDyn.commS` 与 `varthetaDot` 两项；**仓库里没有对 `Qop` 求时间导数的任何东西**。**没有单负责。**（注意这与 T201 的 `Q_u` + (7.16) 是同一个 `Q`，两条线应当合看。）

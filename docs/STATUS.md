@@ -3072,3 +3072,44 @@ Example 2.16（p.20–21）的核也写作 `m₁m₂(Θ_{tm₁m₂}·S^(B))`。*
 * **Lean**：`RBM.ThetaOp`（冻结，5 个文件引用）**不改**；其 docstring 由下一张碰到它的单补一句「按字面转写 (5.16)，缺 `S^(B)`；生成元请用 `SumZeroDyn.genS` / `thetaGenLoop`」。
   既有结论不受影响（`sum_Theta_mul_SB_row`：`S^(B)` 行随机，ℓ^∞ 界与 sum-zero 原样成立），且 `SumZeroDyn.genS` 与 T132a 的 `drift` 字段**早已用的是带 `S^(B)` 的正确核**。
 
+
+## Jun 裁定并落地：`RBM.ThetaOp` 已按更正后的 (5.16) 重定义（2026-09-21，Claude Code 并行 agent）
+
+上一节 Cowork 的裁定是「论文改、Lean 不改」；**Jun 随后决定 Lean 一并改，31 处引用一起改**。已完成并推送。
+
+**新定义**（`RBM1D/Hierarchy/Kernel.lean`，名字不变，只换核）：
+
+```lean
+fun a => ∑ i : Fin n, ∑ c : ZMod L,
+  (ξ i * (Theta L (t * ξ i) * SB L) (a i) c) * A (Function.update a i c)
+```
+
+**没有一条定理被削弱或删除。** `S^(B)` 行随机，所以 `Hierarchy/SumZero.lean` 里
+`sum_ThetaOp_row` 的值、`Psum_ThetaOp_succ_term` 的常数、`norm_Psum_ThetaOp_le` 的界**逐字不变**；
+`SumZero_ThetaOp`、`commQT`、`SumZero_commQT` 以及整个 `Psum`/`vartheta`/`Qop`/`TwoSlot` 块
+**连证明都没动**。只有四条把核写开的展开引理需要按新核重新陈述（是忠实重述，不是弱化）。
+`SumZeroDyn.lean` 与 `Gauss/DischargeBDG.lean` 无数学改动。
+
+**新增**（放在 `Hierarchy/Kernel.lean`，让 `Hierarchy/` 不必再向 `Gauss/` 借）：
+`RBM.Theta_mul_SB_transpose`、`RBM.sum_Theta_mul_SB_row`、`RBM.sum_norm_Theta_mul_SB_row_le`。
+
+**副产物**：`Gauss.thetaGenOp` 与 `SumZeroDyn.genS` 现在与 `ThetaOp` **按 `rfl` 相等**
+（`Gauss.thetaGenOp_eq_ThetaOp`，机器验过）。两者都保留：前者是 (5.19) 的 `LoopIdx` 桥
+（`thetaGenLoop_ofFn`、`smul_thetaGenOp_eq`）所用的陈述名，后者是 `genOp` 的实例、
+`Q_t` 的估计都是对它陈述的。`thetaGenLoop` 不冗余——它是 `LoopIdx` 两表表示，类型不同。
+
+**验证**：`lake build RBM1D` exit=0、0 errors、3797 jobs；公理审计 **8452** 条声明全部落在
+`[propext, Classical.choice, Quot.sound]`。四个文件的 olean 均新于源文件。
+
+**上一节（Cowork 07:35 裁定）中「Lean 不改、docstring 补一句」的处置已作废**，paper-deltas #106 同步重写。
+
+## 蓝图解析器：`]` 吞节点的 bug 第三次发生，已从根上修掉
+
+`lem:lde-quad-T` 的标题是 `$\mathbb E[T^p]\le C_p\,\mathbb E[V_q^p]$`，含 `]`，
+于是 `\begin{lemma}[...]\label{...}` 的正则匹配不上，**整个节点连同 36 个 `\lean` 名字被静默丢弃**，
+而「all 2165 names exist」照样打印绿色——只有一个悬空的 `\uses{lem:lde-quad-T}` 露出马脚。
+
+`scripts/blueprint_preview.py` 两处修改：① 标题改为**惰性**匹配到「后面真的跟着 `\label` 的那个 `]`」；
+② `parse` 直接数 `\begin{...}` 环境的个数，与产出的节点数不符就**报错退出**。
+丢节点再也躲不进「名字全部存在」后面了。节点数 161 → 162，名字数 2165 → 2201
+（找回的那个节点本来就已形式化，别无变化）。

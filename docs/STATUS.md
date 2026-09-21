@@ -3413,3 +3413,22 @@ T145 的 fiat 审计结论「`F` 被 `drift` 钉死」仍然成立，**但钉死
 
 **因此 STATUS 上一节（T132b）里关于这两处缺陷的描述已过时**：T132b 现在只剩两条矩不等式与高斯实例本身，
 外加它自己报告的两个缺生产者（`u ↦ Kval` 的时间可微性、固定 Hermitian `M` 时 `u ↦ gloop` 的可微性）。
+
+## T154(4)：Lyapunov 落地，`hEEmom` 的阶数落差不再是障碍（2026-09-21）
+
+T146 报「唯一真正缺的引理」是 Lyapunov `‖·‖_p ≤ ‖·‖_{2p}`。现已证出，且**不是裸手 Jensen/Hölder**：
+
+* **桥** `MomentDuhamel.momNorm_eq_eLpNorm_toReal`：`momNorm P r Y = (eLpNorm Y r P).toReal`，
+  **不需要可积性**——`|Y|^r` 不可积时 Bochner 积分为 `0`、lintegral 为 `∞`，两边同为 `0`。
+* **Lyapunov** `MomentDuhamel.momNorm_le_momNorm_of_exponent_le`：`p ≠ 0 → p ≤ q → Integrable (|Y|^q) → momNorm P p Y ≤ momNorm P q Y`（`[IsProbabilityMeasure P]`）。
+
+**假设是最弱的那一组**：`p = 0` 时左边恒为 `1`、命题假；没有 `q` 阶可积性时右边被 `integral_undef` 打成 `0`、命题也假；
+而**不需要 `Y` 的可测性假设**——`momNorm` 只看 `|Y| = (|Y|^q)^{1/q}`，`|Y|^q` 的可测性已含在 `Integrable` 里。
+`Hyp.integrable` 对每个阶数都给，消费者全能满足。
+
+核心 Mathlib 引理是 `MeasureTheory.eLpNorm_le_eLpNorm_of_exponent_le`，**它本身不要求可测性**——
+所以 T146 担心的「桥会需要消费者给不出的可积性侧条件」没有发生。
+
+**接线通了**：`Gauss.hEEmom_of_momNorm_two_mul` 让 `hrhs_of_moment_inputs` 的 `hEEmom` 由 `2p` 阶界直接得出，
+**常数 `C` 与控制 `ΦE` 原样不变**，可积性用的就是该定理已经在收的 `hintEE`，调用方零额外代价。
+于是 `hEEmom` 现在只差**输入**——把 T135 的 `stochDom_norm_eeField` 变成 `MomentDom` 要的确定性包络，那是 T157 的范围。

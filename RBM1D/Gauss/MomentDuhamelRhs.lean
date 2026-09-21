@@ -56,6 +56,11 @@ and none of them is used.
   `RBM.MomentDuhamel.stochDom_of_momentDuhamel` by a bare application.
 * `RBM.Gauss.hFmom_of_momNormDom`, `RBM.Gauss.hinit_of_momNormDom` — the currying steps that
   put `momNormDom_of_stochDom`'s output into the shape `hrhs_of_moment_inputs` asks for.
+* `RBM.Gauss.hEEmom_of_momNorm_two_mul`, `RBM.Gauss.hEEmom_of_momNormDom` — the same for the
+  `E ⊗ E` input, which `hrhs_of_moment_inputs` asks for at the **odd-admissible** exponent
+  `p`; these are Lyapunov's inequality (`RBM.MomentDuhamel.momNorm_le_momNorm_of_exponent_le`,
+  T154(4)) applied under the quantifiers, and they are what lets an *even*-moment producer —
+  every producer in this repository — feed `hEEmom`.
 
 Nothing here touches `RBM.ThetaOp`: the kernel hypotheses are stated at the level of
 `RBM.edgeKer` row sums (`RBM.sum_norm_edgeKer_row_le`), so the pending correction to
@@ -87,12 +92,15 @@ carries the window length.
   reduced to a `≺` with a **deterministic** control by `momNormDom_of_stochDom`;
   `RBM.SumZeroDyn.Lemma510.F_le` has a *random* control (`xiRhs`), so the missing step is the
   same `Ξ ≺ 1` replacement that `RBM.SumZeroDyn.F_stochDom` performs pathwise.
-* The `E ⊗ E` input `hEEmom` is a **`p`-th** moment norm, not a `2p`-th one (that is what
-  (5.24) asks for, and what `Hyp.momentDuhamel` writes).  T77's reverse bridge produces only
-  even moments, so supplying `hEEmom` from `RBM.EEBridge.stochDom_norm_eeField` needs
-  Lyapunov's inequality `‖·‖_p ≤ ‖·‖_{2p}` on a probability space.  That inequality is not in
-  this repository and is not proved here; it is a small, general, reusable tool and should be
-  added next to `momNorm` rather than invented inside a term estimate.
+* ~~The `E ⊗ E` input `hEEmom` needs Lyapunov's inequality.~~  **Done (T154(4)).**  `hEEmom`
+  is a **`p`-th** moment norm, not a `2p`-th one (that is what (5.24) asks for, and what
+  `Hyp.momentDuhamel` writes), while T77's reverse bridge produces only even moments.  The
+  missing step, Lyapunov's inequality `‖·‖_p ≤ ‖·‖_{2p}` on a probability space, is now
+  `RBM.MomentDuhamel.momNorm_le_momNorm_of_exponent_le`, next to `momNorm`; the currying that
+  turns an even bound into `hEEmom` is `RBM.Gauss.hEEmom_of_momNorm_two_mul` (and, from a
+  `MomNormDom` on `RBM.Gauss.EEIdx`, `RBM.Gauss.hEEmom_of_momNormDom`) in this file.  What is
+  still missing for `hEEmom` is only the *input*: the deterministic envelope that turns
+  `RBM.EEBridge.stochDom_norm_eeField` into a `MomentDom`.
 * `momentDuhamelQ` (the five-term `Q_t` route) has no consumer yet in
   `RBM1D/Gauss/MomentDuhamel.lean`, so there is nothing to discharge for it.
 
@@ -383,6 +391,69 @@ theorem hinit_of_momNormDom {X : Sample B} {E : ℝ} {s : ℕ → ℝ} {n : ℕ}
   intro ε hε p hp
   obtain ⟨C, hC0, hN⟩ := h ε hε p hp
   exact ⟨C, hC0, hN.mono fun N hNi q b => hNi (q, b)⟩
+
+/-- The index of the `E ⊗ E` input of `hrhs_of_moment_inputs`: a time in the window
+`[s_N, v_N]`, a charge/label pair, and the label of the **doubled** tensor entry. -/
+abbrev EEIdx (B : Band Ω) (s v : ℕ → ℝ) (n N : ℕ) : Type :=
+  {u : ℝ // s N ≤ u ∧ u ≤ v N} × LoopData (B.L N) (n + 2) ×
+    LoopArg (B.L N) ((n + 2) + (n + 2))
+
+/-- **`hEEmom` of `hrhs_of_moment_inputs` from the *even* bound, by Lyapunov.**
+
+`hEEmom` asks for the `p`-th moment norm of `E ⊗ E`, whereas every producer in the repository
+— T77's `RBM.Gauss.momentDom_of_stochDom`, and hence `momNormDom_of_stochDom` and T135's
+`RBM.EEBridge.stochDom_norm_eeField` read through it — delivers **even** moments only.  The
+missing step is Lyapunov's inequality `‖·‖_p ≤ ‖·‖_{2p}`, i.e.
+`RBM.MomentDuhamel.momNorm_le_momNorm_of_exponent_le`; this lemma is nothing but that
+inequality applied under the quantifiers, with the same constant `C` and the same control
+`ΦE`.
+
+The integrability hypothesis is the one `hrhs_of_moment_inputs` already takes (`hintEE`), so
+this costs the caller nothing. -/
+theorem hEEmom_of_momNorm_two_mul [IsProbabilityMeasure (B.P)]
+    {X : Sample B} {E : ℝ} {s v : ℕ → ℝ} {n : ℕ}
+    {ΦE : ∀ N, LoopData (B.L N) (n + 2) → ℝ}
+    (hintEE : ∀ (r N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool)
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      Integrable (fun ω => ‖eeFun B E N u (X.H N u ω) σ c‖ ^ r) B.P)
+    (h2 : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ (q : LoopData (B.L N) (n + 2))
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+        momNorm B.P (2 * p) (fun ω => ‖eeFun B E N u (X.H N u ω) q.1 c‖)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * ΦE N q)) :
+    ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ (q : LoopData (B.L N) (n + 2))
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+        momNorm B.P p (fun ω => ‖eeFun B E N u (X.H N u ω) q.1 c‖)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * ΦE N q) := by
+  intro ε hε p hp
+  obtain ⟨C, hC0, hN⟩ := h2 ε hε p hp
+  refine ⟨C, hC0, hN.mono fun N hNi u hu1 hu2 q c => ?_⟩
+  refine le_trans ?_ (hNi u hu1 hu2 q c)
+  refine momNorm_le_momNorm_of_exponent_le (by omega) (by omega) ?_
+  simpa only [abs_norm] using hintEE (2 * p) N u q.1 c
+
+/-- **`hEEmom` from a `MomNormDom` on `EEIdx`**, the shape `momNormDom_of_stochDom` produces
+from T135's `RBM.EEBridge.stochDom_norm_eeField` together with a deterministic envelope.
+This is `hEEmom_of_momNorm_two_mul` precomposed with the currying of `hFmom_of_momNormDom`. -/
+theorem hEEmom_of_momNormDom [IsProbabilityMeasure (B.P)]
+    {X : Sample B} {E : ℝ} {s : ℕ → ℝ} {n : ℕ} (v : ℕ → ℝ)
+    {ΦE : ∀ N, LoopData (B.L N) (n + 2) → ℝ}
+    (hintEE : ∀ (r N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool)
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      Integrable (fun ω => ‖eeFun B E N u (X.H N u ω) σ c‖ ^ r) B.P)
+    (h : MomNormDom B.P
+      (fun N (i : EEIdx B s v n N) ω =>
+        ‖eeFun B E N (i.1 : ℝ) (X.H N (i.1 : ℝ) ω) i.2.1.1 i.2.2‖)
+      (fun N i => ΦE N i.2.1)) :
+    ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ (q : LoopData (B.L N) (n + 2))
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+        momNorm B.P p (fun ω => ‖eeFun B E N u (X.H N u ω) q.1 c‖)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * ΦE N q) :=
+  hEEmom_of_momNorm_two_mul hintEE fun ε hε p hp => by
+    obtain ⟨C, hC0, hN⟩ := h ε hε p hp
+    exact ⟨C, hC0, hN.mono fun N hNi u hu1 hu2 q c => hNi (⟨u, hu1, hu2⟩, q, c)⟩
 
 /-- **`hrhs` for `RBM.MomentDuhamel.stochDom_of_momentDuhamel`.**
 

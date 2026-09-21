@@ -210,6 +210,75 @@ noncomputable def momNorm (P : Measure Ω) (q : ℕ) (Y : Ω → ℝ) : ℝ :=
 theorem momNorm_nonneg (P : Measure Ω) (q : ℕ) (Y : Ω → ℝ) : 0 ≤ momNorm P q Y :=
   Real.rpow_nonneg (integral_nonneg fun _ => pow_nonneg (abs_nonneg _) _) _
 
+/-- **`momNorm` is the `toReal` of Mathlib's `eLpNorm`**, for an exponent `r ≠ 0`.
+
+This is the only bridge in the file between the raw `(∫ |Y|^r)^{1/r}` of `momNorm` and the
+`L^p` machinery, and it is *unconditional* in the integrability: if `|Y|^r` fails to be
+integrable then the Bochner integral is `0` and `momNorm` is `0`, while the `lintegral` is
+`∞` and `(eLpNorm …).toReal` is `0` as well.  Only measurability is needed, and only of `Y`
+itself.
+
+It exists for `momNorm_le_momNorm_of_exponent_le`; everything else in this development works
+with `momNorm` directly. -/
+theorem momNorm_eq_eLpNorm_toReal {P : Measure Ω} {r : ℕ} (hr : r ≠ 0) {Y : Ω → ℝ}
+    (hY : AEStronglyMeasurable Y P) :
+    momNorm P r Y = (eLpNorm Y (r : ENNReal) P).toReal := by
+  have hr0 : ((r : ℕ) : ENNReal) ≠ 0 := by exact_mod_cast hr
+  have hrtop : ((r : ℕ) : ENNReal) ≠ ⊤ := by simp
+  have hrt : (((r : ℕ) : ENNReal)).toReal = (r : ℝ) := by simp
+  rw [eLpNorm_eq_eLpNorm' hr0 hrtop hY, eLpNorm'_eq_lintegral_enorm, hrt,
+    ← ENNReal.toReal_rpow, momNorm]
+  congr 1
+  rw [integral_eq_lintegral_of_nonneg_ae
+    (Filter.Eventually.of_forall fun ω => pow_nonneg (abs_nonneg (Y ω)) r)
+    ((continuous_pow r).comp_aestronglyMeasurable (continuous_abs.comp_aestronglyMeasurable hY))]
+  congr 1
+  refine lintegral_congr fun ω => ?_
+  rw [Real.enorm_eq_ofReal_abs,
+    ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (Nat.cast_nonneg r), Real.rpow_natCast]
+
+/-- **Lyapunov's inequality for `momNorm`**: `‖Y‖_p ≤ ‖Y‖_q` whenever `p ≤ q`, on a
+probability measure.  The case `q = 2 * p` is the one the moment Duhamel needs: T77's bridge
+`RBM.Gauss.momentDom_of_stochDom` only ever produces **even** moments, while `Hyp`'s third
+right-hand term (the `E ⊗ E` one) is stated with the `p`-th moment norm, and this is the step
+that connects them.
+
+**On the hypotheses.**  Only `p ≠ 0` (at `p = 0` the left side is `1` and the statement is
+false), `p ≤ q`, and the integrability of `|Y|^q` — the last is genuinely needed, since
+without it `momNorm P q Y = 0` by `MeasureTheory.integral_undef` while the left side need not
+vanish.  `RBM.MomentDuhamel.Hyp.integrable` supplies exactly that, at every exponent and at
+every time of the window.  No measurability hypothesis on `Y` is required: `momNorm` only
+sees `|Y| = (|Y|^q)^{1/q}`, which is measurable as soon as `|Y|^q` is, and that is part of
+`Integrable`. -/
+theorem momNorm_le_momNorm_of_exponent_le {P : Measure Ω} [IsProbabilityMeasure P] {p q : ℕ}
+    (hp : p ≠ 0) (hpq : p ≤ q) {Y : Ω → ℝ} (hY : Integrable (fun ω => |Y ω| ^ q) P) :
+    momNorm P p Y ≤ momNorm P q Y := by
+  have hq : q ≠ 0 := by omega
+  -- `|Y|` is measurable, being `(|Y|^q)^{1/q}`
+  have hZm : AEStronglyMeasurable (fun ω => |Y ω|) P := by
+    have h1 : AEStronglyMeasurable (fun ω => |Y ω| ^ q) P := hY.aestronglyMeasurable
+    have h2 := (Real.continuous_rpow_const
+      (q := ((q : ℝ))⁻¹) (by positivity)).comp_aestronglyMeasurable h1
+    have key : (fun ω => (|Y ω| ^ q) ^ ((q : ℝ))⁻¹) = fun ω => |Y ω| := by
+      funext ω; exact Real.pow_rpow_inv_natCast (abs_nonneg _) hq
+    rwa [key] at h2
+  have habs : ∀ r : ℕ, momNorm P r Y = momNorm P r (fun ω => |Y ω|) := by
+    intro r; simp only [momNorm, abs_abs]
+  have hfin : eLpNorm (fun ω => |Y ω|) ((q : ℕ) : ENNReal) P ≠ ⊤ := by
+    have hint : (∫⁻ ω, ‖|Y ω|‖ₑ ^ ((q : ℕ) : ℝ) ∂P) ≠ ⊤ := by
+      have hfi := hY.hasFiniteIntegral
+      rw [hasFiniteIntegral_iff_enorm] at hfi
+      refine ne_of_lt (lt_of_le_of_lt (le_of_eq ?_) hfi)
+      refine lintegral_congr fun ω => ?_
+      rw [Real.enorm_eq_ofReal_abs, Real.enorm_eq_ofReal_abs,
+        ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (Nat.cast_nonneg q), Real.rpow_natCast,
+        abs_abs, abs_of_nonneg (pow_nonneg (abs_nonneg (Y ω)) q)]
+    rw [eLpNorm_eq_eLpNorm' (by exact_mod_cast hq) (by simp) hZm, eLpNorm'_eq_lintegral_enorm]
+    simp only [ENNReal.toReal_natCast]
+    exact ENNReal.rpow_ne_top_of_nonneg (by positivity) hint
+  rw [habs p, habs q, momNorm_eq_eLpNorm_toReal hp hZm, momNorm_eq_eLpNorm_toReal hq hZm]
+  exact ENNReal.toReal_mono hfin (eLpNorm_le_eLpNorm_of_exponent_le (by exact_mod_cast hpq))
+
 /-- **The primed interface at loop length `n + 2`.**
 
 Compare `RBM.SumZeroDyn.Hierarchy`.  The differences, in order of importance:

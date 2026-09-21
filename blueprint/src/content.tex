@@ -2374,6 +2374,24 @@
   $(W\eta_u\ell_u)^{-1/2}$ that (5.36) itself displays -- and only (1b) carries $A^{-1}$.
 \end{proof}
 
+\begin{lemma}[(5.36) applied to the pinned $E\otimes E$]\label{lem:5.7c}
+  \lean{RBM.EEDef.glueSum, RBM.EEDef.glueSum_nonneg, RBM.EEDef.norm_eeTens_le_W_sum, RBM.EEDef.eeL6, RBM.EEDef.eeL6_eq_glueSum, RBM.EEDef.eeL6_nonneg, RBM.EEDef.norm_eeFun_le_W_sum, RBM.EEDef.norm_EEpath_le_W_sum, RBM.EEDef.norm_eeField_le_W_sum, RBM.EEDef.one_le_W, RBM.EEDef.ee_le_EEpath, RBM.EEDef.ee_le_paper_EEpath, RBM.EEDef.lab₁, RBM.EEDef.lab₂, RBM.EEDef.ee_le_EEpath_labels, RBM.EEDef.ee_hyp_consistent}
+  \leanok\uses{lem:5.7b, lem:eebridge, thm:discharge-bdg}
+  (5.36) holds for $\|(E\otimes E)_{u,\sigma,c}\|$ with $E\otimes E$ the \emph{definition}
+  \texttt{MomentDuhamel.EEpath} $=$ \texttt{EEBridge.eeField}, not an abstract field.  The
+  $b$-sum $L^{(1)}$ of (5.22) is likewise a definition, \texttt{EEDef.eeL6}, so the hypotheses
+  \texttt{hEE}, \texttt{hL6} and $1\le W$ of the abstract form are discharged.
+\end{lemma}
+\begin{proof}\leanok
+  (5.22) is already a theorem (\texttt{eeEdge\_eq\_sum\_SB} read through the gluing identity), so
+  $\|E\otimes E\|\le W\sum_b L^{(1)}(b)$ is the triangle inequality plus one exchange of the $k$-
+  and $b$-sums.  Six hypotheses survive -- (2.73) at $n=6$, the far-$b$ remainder, (4.2)/(5.31),
+  the Cauchy--Schwarz step (5.65)/(5.66), the $G^\dagger E_bG$ bound (5.72), and the $k=2$ half
+  \texttt{hsym} -- and they are shown jointly satisfiable by an explicit witness, so the
+  conclusion is not vacuous.  \texttt{h566} needs the $6$-loop entrywise expansion and
+  \texttt{hsym} needs the second term of (5.22); neither is in the repository.
+\end{proof}
+
 \begin{lemma}[The deterministic modulus of (4.2), and why the floor cannot be removed]\label{lem:ldenetclose}
   \lean{RBM.Gauss.norm_mul_mul_apply_le_of_entries, RBM.Gauss.norm_green_sub_apply_le_of_entries, RBM.Gauss.norm_greenMinorMat_flow_sub_apply_le, RBM.Gauss.minorCol_eq_greenMinorMat, RBM.Gauss.minorRowConj_eq_greenMinorMat, RBM.Gauss.norm_minorCol_le, RBM.Gauss.norm_minorRowConj_le, RBM.Gauss.norm_minorCol_flow_sub_le, RBM.Gauss.norm_minorRowConj_flow_sub_le, RBM.Gauss.sWeight, RBM.Gauss.rowLin, RBM.Gauss.rowSum_eq_rowLin, RBM.Gauss.abs_norm_sq_sub_le, RBM.Gauss.norm_Hflow_apply_le_opNorm, RBM.Gauss.abs_sWeight_sub_le, RBM.Gauss.norm_rowLin_le, RBM.Gauss.norm_rowLin_sub_le, RBM.Gauss.sWeight_minorCol_eq, RBM.Gauss.sWeight_minorRowConj_eq, RBM.Gauss.abs_ldeRow_flow_sub_le, RBM.Gauss.abs_ldeCol_flow_sub_le, RBM.Gauss.eventually_mod_le_floor, RBM.Gauss.stochDom_ldeRow_flow_floor, RBM.Gauss.stochDom_ldeCol_flow_floor, RBM.Gauss.ldeFlowDom_floor, RBM.Gauss.ldeNetClose_of_lower_bound}
   \leanok\uses{lem:ldeflow, lem:opnorm, lem:4.1}

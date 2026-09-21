@@ -97,7 +97,10 @@ from the `a₁–a₂` edge is what turns the convolution bound `∑_b √(T_{1b
 8. `ee_le_paper` keeps the factor `(ℓ_u/ℓ_s)^{3/2}` that (2.73) at `n = 4` produces in the
    line after (5.67); the statement of (5.36) drops it.
 9. The `k`-sum of (5.22) is taken in the form `E⊗E ≤ W ∑_b L^{(1)}(b)` (`hEE`), matching
-   the power counting (5.38); the expansion itself is not in the repository.
+   the power counting (5.38).  Both `hEE` and `hL6` are *discharged* for the pinned `E ⊗ E`
+   in `RBM1D/Hierarchy/EEDef.lean` (T167), where `L^{(1)}` is the definition
+   `RBM.EEDef.eeL6` and the expansion is `RBM.EEDef.norm_eeTens_le_W_sum`; `ee_le` and
+   `ee_le_paper` keep them abstract so that this file stays free of the probabilistic layer.
 
 `RBM.Lemma57.inv_sq_le_tailT` and `RBM.Step45.inv_sq_le_tailT` are now the `C = 1` and
 `C = 6` instances of the single lemma `RBM.inv_sq_le_tailT` in `Analysis/StretchedExp.lean`.

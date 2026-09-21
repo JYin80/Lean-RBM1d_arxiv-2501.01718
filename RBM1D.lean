@@ -78,6 +78,7 @@ import RBM1D.Hierarchy.Step2Moment
 import RBM1D.Hierarchy.Step45
 import RBM1D.Hierarchy.Lemma57
 import RBM1D.Hierarchy.EGDef
+import RBM1D.Hierarchy.EEDef
 import RBM1D.Hierarchy.DriftDef
 import RBM1D.Hierarchy.DriftBound
 import RBM1D.Hierarchy.StepGlue

@@ -2853,7 +2853,7 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 `bddC2_loopObs` 取 `B = 2(1+η⁻¹)³` 落成 `η⁻¹` 的显式幂。**`TestFun` 已由探针验证**：`testFun_loopObs_of_im_le` 填上 T76 那个 hook 的三个空字段；
 端到端的 `hasDerivAt_momentIntegral … (testFun_momentFun_loopObs …)` 也编译通过——即 `d/du E|L_{σ,a}(H_u)|^{2p} = E[𝓛(|L|^{2p})]` **除 `MatrixStein`（T70）外假设全部卸掉**。
 `(U∘(L−K))_a` 同样拿到（`ukerObs`/`bddC2_ukerObs`/`testFun_ukerObs`）——因为 (5.17) 的系数**不依赖 `H`**，它就是 loop 的有限 ℂ-线性组合加常数。
-**一处继承来的多余假设**：`testFun_loopObs_of_im_le` 带 `1 ≤ I.a.length`，**不是本单的界需要的**，而是仓库里 `testFun_loopObs` 的 `bdd₀` 字段（即 (5.2)）自带的；`bddC2_loopObs` 与整条 Uker 链**没有**长度假设。paper-deltas #88。
+**一处继承来的多余假设**：`testFun_loopObs_of_im_le` 带 `1 ≤ I.a.length`，**不是本单的界需要的**，而是仓库里 `testFun_loopObs` 的 `bdd₀` 字段（即 (5.2)）自带的；`bddC2_loopObs` 与整条 Uker 链**没有**长度假设。paper-deltas #90（原误编 #88，与 Jun 的模型裁决撞号，Cowork 改）。
 
 ### `RBM1D/Gauss/LoopIto.lean` — T134：动 `z_u` 已解决，且 (2.47) 的 `G̃` 升级为定理（Claude Code 并行 agent，2026-09-21）
 

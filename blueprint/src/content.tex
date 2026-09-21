@@ -1246,9 +1246,10 @@
 \end{proof}
 
 \begin{definition}[Tensor propagator and evolution kernel, Definition 5.2 and Lemma 7.1]\label{def:5.2}
-  \lean{RBM.LoopArg, RBM.sum_prod_pi, RBM.sum_norm_row_le, RBM.edgeKer, RBM.edgeKer_eq, RBM.edgeKer_self, RBM.norm_edgeKer_le, RBM.sum_norm_edgeKer_row_le, RBM.edgeKer_mul, RBM.sum_edgeKer_mul, RBM.xiOf, RBM.Uker, RBM.ThetaOp, RBM.Uker_apply, RBM.Uker_add, RBM.Uker_smul, RBM.norm_Uker_apply_le, RBM.Uker_self, RBM.Uker_comp}
+  \lean{RBM.LoopArg, RBM.sum_prod_pi, RBM.sum_norm_row_le, RBM.edgeKer, RBM.edgeKer_eq, RBM.edgeKer_self, RBM.norm_edgeKer_le, RBM.sum_norm_edgeKer_row_le, RBM.edgeKer_mul, RBM.sum_edgeKer_mul, RBM.xiOf, RBM.Uker, RBM.ThetaOp, RBM.Theta_mul_SB_transpose, RBM.sum_Theta_mul_SB_row, RBM.sum_norm_Theta_mul_SB_row_le, RBM.Uker_apply, RBM.Uker_add, RBM.Uker_smul, RBM.norm_Uker_apply_le, RBM.Uker_self, RBM.Uker_comp}
   \leanok\uses{def:Theta, lem:Theta-bounds}
-  $\Theta_{t,\sigma}$ (5.16) and $U_{s,t,\sigma}$ (5.17) on tensors $A:\mathbb Z_L^n\to\mathbb C$; the
+  $\Theta_{t,\sigma}$ (5.16), \emph{corrected} to carry the trailing $S^{(B)}$ that the printed
+  display drops (paper-deltas \#106), and $U_{s,t,\sigma}$ (5.17) on tensors $A:\mathbb Z_L^n\to\mathbb C$; the
   identity (5.18), the semigroup law $U_{u,t}U_{s,u}=U_{s,t}$, and
   $\|U_{s,t,\sigma}A\|_{\max}\le(1+|1-s|\max\|\Theta^{(B)}_{t\xi}\|_{\max\to\max})^n\|A\|_{\max}$ (7.1).
 \end{definition}
@@ -1635,7 +1636,7 @@
   coordinate, and Young's inequality with a rational exponent close the recursion.
 \end{proof}
 
-\begin{lemma}[Positive chaos moment bound: $\mathbb E[T^p]\le C_p\,\mathbb E[V_q^p]$]\label{lem:lde-quad-T}
+\begin{lemma}[Positive chaos moment bound: the $p$-th moment of $T$ is controlled by that of $V_q$]\label{lem:lde-quad-T}
   \lean{RBM.Gauss.RowChaos.wirtVal, RBM.Gauss.RowChaos.wirtVal_U, RBM.Gauss.RowChaos.wirtVal_V,
     RBM.Gauss.RowChaos.wirtVal_conj_U, RBM.Gauss.RowChaos.wirtVal_conj_V,
     RBM.Gauss.RowChaos.integral_conj_h_mul_gen, RBM.Gauss.RowChaos.TA, RBM.Gauss.RowChaos.TB,
@@ -2299,13 +2300,15 @@
 \end{proof}
 
 \begin{theorem}[The cut-and-glue algebra, and (5.19) with the missing $S^{(B)}$]\label{thm:loopito2}
-  \lean{RBM.Gauss.coordD2_loopObs_eq, RBM.Gauss.isHermitian_Bmat_of, RBM.Gauss.sumSblk_half_wirtPair, RBM.Gauss.loopIto_second_frozen, RBM.Gauss.loopIto_second_frozen_of_im_ne_zero, RBM.Gauss.loopItoFrozen, RBM.Gauss.generator_add_zMotion_gauss, RBM.Gauss.hasDerivAt_sample_ELval_hierarchy_gauss, RBM.Gauss.thetaGenOp, RBM.Gauss.thetaGenLoop, RBM.Gauss.thetaGenLoop_ofFn, RBM.Gauss.thetaGenLoop_kernel_eq, RBM.Gauss.smul_thetaGenOp_eq, RBM.Gauss.sum_Theta_mul_SB_row, RBM.Gauss.thetaGenLoop_three, RBM.Gauss.couplingLen_two_eq_thetaGenLoop, RBM.Gauss.hasDerivAt_sub_prim_thetaGen}
+  \lean{RBM.Gauss.coordD2_loopObs_eq, RBM.Gauss.isHermitian_Bmat_of, RBM.Gauss.sumSblk_half_wirtPair, RBM.Gauss.loopIto_second_frozen, RBM.Gauss.loopIto_second_frozen_of_im_ne_zero, RBM.Gauss.loopItoFrozen, RBM.Gauss.generator_add_zMotion_gauss, RBM.Gauss.hasDerivAt_sample_ELval_hierarchy_gauss, RBM.Gauss.thetaGenOp, RBM.Gauss.thetaGenLoop, RBM.Gauss.thetaGenLoop_ofFn, RBM.Gauss.thetaGenLoop_kernel_eq, RBM.Gauss.smul_thetaGenOp_eq, RBM.Gauss.sum_Theta_mul_SB_row, RBM.Gauss.thetaGenOp_eq_ThetaOp, RBM.Gauss.thetaGenLoop_three, RBM.Gauss.couplingLen_two_eq_thetaGenLoop, RBM.Gauss.hasDerivAt_sub_prim_thetaGen}
   \leanok\uses{thm:loopito, lem:loopc2, lem:5.10, thm:moment-hierarchy}
   $\tfrac12\sum_{ij}S_{ij}\partial_{ij}\partial_{ji}L=\tilde E+\mathrm{primRhs}$ exactly, with no
   boundary term: the contraction $\tfrac12\sum_{ij}S_{ij}\langle ABCB\rangle
   =\tfrac12W\sum\langle AE_a\rangle S^{(B)}_{ab}\langle CE_b\rangle$ is where Definition 2.10's
   $E_a$ come from. (5.19) holds for the symmetrized coupling and the kernel
-  $\xi\Theta_{t\xi}S^{(B)}$ -- (5.16) as printed omits the $S^{(B)}$.
+  $\xi\Theta_{t\xi}S^{(B)}$ -- (5.16) as printed omits the $S^{(B)}$.  That omission has since
+  been corrected in \texttt{RBM.ThetaOp} itself, so \texttt{thetaGenOp} is now the same
+  operator, by \texttt{rfl}.
 \end{theorem}
 \begin{proof}\leanok
   $\xi\Theta_{t\xi}S=t^{-1}(\Theta_{t\xi}-1)$; the omission is invisible to every row-sum argument

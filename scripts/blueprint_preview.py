@@ -23,7 +23,9 @@ OUT = os.path.join(ROOT, 'blueprint', 'preview.html')
 def parse(s):
     chapters = [(m.start(), m.group(1)) for m in re.finditer(r'\\chapter\{([^}]*)\}', s)]
     env = re.compile(r'\\begin\{(definition|lemma|theorem|remark|corollary|proposition)\}'
-                     r'(\[[^\]]*\])?\s*\\label\{([^}]*)\}')
+                     # NB: the title may itself contain ']' (e.g. $\mathbb E[T^p]$), so
+                     # match lazily up to the ']' that is actually followed by \label.
+                     r'(\[.*?\])?\s*\\label\{([^}]*)\}')
     nodes = []
     for m in env.finditer(s):
         kind, title, label = m.group(1), (m.group(2) or '')[1:-1], m.group(3)
@@ -41,6 +43,17 @@ def parse(s):
             lean=[l.strip() for x in re.findall(r'\\lean\{([^}]*)\}', body)
                   for l in x.split(',') if l.strip()],
             uses=sorted(uses)))
+    # Safety net: a node whose \begin{...} the regex above fails to match is *silently*
+    # dropped, and every downstream check ("all N names exist") still passes.  This has
+    # actually happened three times, always because of a ']' in the title.  Count the
+    # environments directly and refuse to be quiet about a mismatch.
+    declared = len(re.findall(r'\\begin\{(?:definition|lemma|theorem|remark|corollary'
+                              r'|proposition)\}', s))
+    if declared != len(nodes):
+        raise SystemExit(
+            f'blueprint parse error: {declared} environments in content.tex but only '
+            f'{len(nodes)} parsed as nodes.  Some \\begin{{...}}[title]\\label{{...}} did '
+            f'not match -- check for an unusual title or a missing \\label.')
     return nodes
 
 

@@ -2321,6 +2321,21 @@
   (2.73) leaves a $T^{1/2}$ missing.
 \end{proof}
 
+\begin{theorem}[The drift $F$ at general loop length, as a definition]\label{thm:driftdef}
+  \lean{RBM.DriftDef.driftF, RBM.DriftDef.drift_split_gen, RBM.DriftDef.F_eq_driftF, RBM.DriftDef.Fpath_eq_driftF_of_lt_one, RBM.DriftDef.eGterm_eq_eG, RBM.DriftDef.driftF_eq_eG_add, RBM.DriftDef.driftF_zero_eq_eGpm_add_quadGlue, RBM.DriftDef.sum_couplingLen_erase_two, RBM.DriftDef.fastDecay_driftF}
+  \leanok\uses{thm:egdef, thm:momentduhamel, thm:loopito2, lem:decaybridge}
+  $F=\tilde E+\sum_{\ell_K\ge3}[K\sim(L-K)]^{\ell_K}+E^{((L-K)\times(L-K))}$, proved from
+  \texttt{Hyp.F\_unique} rather than posited: $\tilde E_0$ cancels exactly and no remainder
+  survives.  Two bridges were missing and are supplied here -- (5.77) states its decay for
+  \texttt{Decay.eG} while the drift carries \texttt{Gauss.eGterm}, and (5.15)'s
+  $\sum_{\ell_K\ne2}$ is shown to be the paper's $\sum_{\ell_K>2}$, truncated at $\ell_K\le n$.
+\end{theorem}
+\begin{proof}\leanok
+  $\partial_u$ of the loop at $z_u$, the split of \texttt{genLK}, $\partial_u K=\mathrm{primRhs}(K)$
+  at every length, and (5.19) for the $\ell_K=2$ branch.  Both truncation bounds are theorems about
+  \texttt{cutGlue}, not conventions.
+\end{proof}
+
 \begin{theorem}[$E^{(\tilde G)}$ as a definition, and the drift it splits]\label{thm:egdef}
   \lean{RBM.EGDef.eGpm, RBM.EGDef.eGpm_eq_eGterm, RBM.EGDef.gloop_three_conj, RBM.EGDef.gloop_k1_eq, RBM.EGDef.norm_gloop_k2_eq, RBM.EGDef.sum_norm_SB_col, RBM.EGDef.norm_eGpm_le, RBM.EGDef.eGpm_le_reduced, RBM.EGDef.fderiv2_comp_clm, RBM.EGDef.contDiffAt_gloop_matrix, RBM.EGDef.coordD2_gloop_eq, RBM.EGDef.coordD2_sub_const, RBM.EGDef.genLK_eq_split, RBM.EGDef.hasDerivAt_Kval_two, RBM.EGDef.primBilLen_two_of_len_two, RBM.EGDef.couplingLen_two_of_len_two, RBM.EGDef.genS_eq_thetaGenLoop, RBM.EGDef.drift_split, RBM.EGDef.F_eq_eGterm_add_quadGlue, RBM.EGDef.F_eq_eGpm_add_quadGlue, RBM.EGDef.primBil_two_eq}
   \leanok\uses{lem:5.7a, thm:momentduhamel, thm:loopito2, thm:generator}

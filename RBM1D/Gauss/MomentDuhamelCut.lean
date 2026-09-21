@@ -110,6 +110,16 @@ the error that made an end-to-end theorem vacuous once before (`docs/STATUS.md`,
 * the sharpened `(η_s/η_u)²` prefactor of `RBM.Step2MomentStep.flowEq548_of_near_far`'s `hnear`:
   the repository's (5.47), and `jS_stochDom_cut` below, give `(η_s/η_u)^4`.
 * the Gaussian discharge of `CutHyp.moment` itself, i.e. the truncated Duhamel computation.
+  ⚠ **T210 located the obstruction precisely**: `CutHyp.moment` is stated *unconditionally*,
+  while the Duhamel computation only holds on a **prefix event** -- the cutoff `χ(J_{ws}/θ)`
+  constrains the value at the endpoint `ws` only, and says nothing about the loop hierarchy at
+  intermediate times `u ∈ [s, ws]`, which every term of (5.39)--(5.44) needs.  So this field
+  cannot be produced from Duhamel directly.  The reduction is compiled as
+  `RBM.CutHypTheta.moment_of_conditional`: the unconditional field follows from a *conditional*
+  moment bound on a high-probability prefix event plus a polynomial bound on the truncation
+  level, the outside-the-prefix part being paid by the cutoff's own envelope `2θ` with `D`
+  chosen inside `∀ p`.  What is still missing is that conditional bound, which needs the three
+  open pieces of `MomentDuhamel.Hyp`.
   Nothing here is an `axiom` and nothing is `sorry`.
 
 ## Deviations from the paper

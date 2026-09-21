@@ -79,9 +79,22 @@ sharp output needs only the *blunt* prefix `J* ≤ x⁸R⁴`, so the right inter
 `CutHyp` whose **truncation level** is read off the blunt bound and whose **conclusion** is
 about `jSnorm2` — no second bootstrap at all.  `RBM.MomentDuhamelCut.CutHyp` cannot express
 it, because its `Θ : ℕ → ℝ` has no `u`-dependence while the blunt level `N^{2δ}(η_s/η_u)²`
-(read in `jSnorm2` units) does.  Generalizing `Θ` to `ℕ → ℝ → ℝ` would remove the last piece
-of assumption here; `MomentHypCutSharp` is the version expressible against the frozen
-interface today, and it is *stronger* than what §2 shows is needed (`jSnorm_le_jSnorm2`).
+(read in `jSnorm2` units) does.  `MomentHypCutSharp` is the version expressible against the
+frozen interface today, and it is *stronger* than what §2 shows is needed
+(`jSnorm_le_jSnorm2`).
+
+⚠ **Update (T210).**  The generalization has landed as `RBM.CutHypTheta.CutHyp'`, and
+`MomentHypCutSharp` is no longer an independent assumption: it is derived by
+`RBM.CutHypTheta.momentHypCutSharp_of_cut2`.  But the sentence above used to say this "would
+remove the last piece of assumption here", and **that was wrong**: `cutTrunc` is *monotone* in
+the level (`RBM.CutHypTheta.cutTrunc_mono_level`, strict by `sat_level_strict`), so raising the
+truncation level from `1` to `(η_s/η_u)²` **strengthens** the hypothesis rather than deleting it.
+Step 2 still carries two named assumptions, `MomentHypCut.cut` (blunt) and `MomentHypCut2.cut`
+(sharp); their difference is exactly the `R^{-4p}` gain, i.e. the whole mathematical content of
+(5.47), and it cannot be derived from the blunt one.  What the generalization does buy is that
+the assumption is now stated at the truncation level the mathematics actually supports, and that
+the second pass needs neither a second bootstrap nor a second initial condition
+(`stochDom_of_cutHyp'_of_prefix`).
 
 ## Deviations from the paper (to report)
 

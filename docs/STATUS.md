@@ -6276,3 +6276,63 @@ T201 没有权限做这个决定。
 
 1. **合并 T204 与 T211 的重复七条**：T209 交还 `Flow/Thm221NoEL.lean` 后，删掉它 §6 里与 `RBM.Core.*_of_boundsCore` 逐字相同的七条，把 Consequences 的 `Core.` 前缀去掉；`localSemicircleLaw_of_Thm221NoEL'` / `quantumDiffusion_pm_pp_of_Thm221NoEL'` 改成一行推论指向 `RBM.localSemicircleLaw_of_boundsCore` / `RBM.quantumDiffusion_pm_pp_of_boundsCore`。**归 `Thm221NoEL.lean` 的持有者（T209 之后）。**
 2. **`Flow/EnergyUniform.lean` 的 `SpecSeqN` 一套（:506/:521/:542/:552/:568）是第三份同样的证明脚本**——归 T199 的后继。
+
+## ⭐⭐ T210：`CutHyp.moment` **不能直接从 Duhamel 产出**——障碍精确定位并编译成化归（`Gauss/CutHypTheta.lean`，1062 行、39 条，2026-09-21）
+
+**第 0 步最重要的发现**：**`CutHyp.moment` 是无条件的，而 Duhamel 计算只在「前缀事件」上成立。** 截断 `χ(J_{ws}/θ)` 只约束**端点** `ws` 处的值，对中间时刻 `u ∈ [s,ws]` 的 loop hierarchy 毫无约束；而 (5.39)–(5.44) 的每一项都要用中间时刻的先验界。
+
+化归已编译（`moment_of_conditional`）：
+
+> 无条件 `moment` ⟸（**条件**矩界，限制在前缀事件 `A N ws` 上）＋（`A` 以 `HighProb` 成立）＋（截断水平多项式有界 `2·lev ≤ N^{Clev}Θ`）。前缀外由截断自身的包络 `2θ` 付账，`D` 在 `∀ p` **之内**选（`D := (2δ+Clev)(2p)+1`）压掉它。
+
+后果分两边：**第二遍（sharp）这条前缀是免费的**——它就是第一遍的结论（`prefix_of_stochDom`）；**第一遍（blunt）这条前缀正是自举要证的东西**，在 `moment`「一次性对所有网点、无条件」的形状下拿不到。⚠ 这是**结构性障碍的精确定位，不是不可证性证明**——T210 只编译了化归，**请勿当作否定定理引用**。
+
+**⚠⚠ 更正 T210 工单**：工单说推广 `Θ` 后「能把 T207 §3 的那条假设**彻底去掉**」——**做不到，方向还相反**。`cutTrunc` 对水平**单增**（`cutTrunc_mono_level`，严格性见 `sat_level_strict`），把截断水平从 `1` 抬到 `(η_s/η_u)²` 是**加强**假设，不是删除。真实结果：
+* `MomentHypCutSharp`（T207 §3）**不再是独立假设**，由 `momentHypCutSharp_of_cut2` 从 `MomentHypCut2` + `MomentHypCut` 导出（`init` 走 `jSnorm2_left`，与 (2.69) 逐字同一条）；
+* 但 Step 2 的具名假设仍是**两条**：`MomentHypCut.cut`（钝版）与 `MomentHypCut2.cut`（锐版），二者之差恰是 `R^{−4p}` 的增益，**即 (5.47) 的全部数学内容，不可能从钝版推出**；
+* 推广真正买到的是：(i) 假设现在写在**数学真正支持的截断水平**上；(ii) 第二遍**不需要第二次 bootstrap，也不需要第二个初值条件**（`stochDom_of_cutHyp'_of_prefix` 的假设表里没有 `hinit`、没有 `Θ ≥ 1`）。
+
+**可满足性**：主见证 `satCutHyp'` 取**临界标度** `J ≡ Θ ≡ 1`（不是退化的 0），水平 `satLev N u = (1−u)⁻¹` **真带 `u`**，窗口右端 → 1；`mesh_fine`/`card_le` 这对反向条件由同一见证满足。`sat_lev_unbounded` 证 `u ↑ 1` 处水平无界（非退化）。⚠ **`lev_ge` 必须限制在窗口**：`u > 1` 时 `η_s/η_u < 0` 且其平方很小，`∀ N u, Θ N ≤ lev N u` **按字面为假**——结构体字段因此写成 `∀ N, ∀ u ∈ Set.Icc (s N) (t N), …`。
+
+**协调者已接线**：`Hierarchy/Step2Near47.lean` 文件头那段「Generalizing `Θ` … would remove the last piece of assumption here」与 `Gauss/MomentDuhamelCut.lean` 文件头「the Gaussian discharge of `CutHyp.moment`」两段**已按本单结论改写**（前者原措辞为错，后者补上障碍的精确定位与化归指针）。
+
+## ⚠ 无主的活（T210 交出）
+
+1. **`CutHyp.moment` 的条件版生产者**：交付 `moment_of_conditional` 的 `hcond`（**前缀事件上的截断 Duhamel 矩界**）+ 前缀事件可测性。输入是 T212/T213/T214 的 `momentDuhamelHyp_gauss` 三块；`phi_arith'` / `integral_nearInt_le` / `phi_arith_second_pass` 的**记账层接线并入该单**（T207 查出那三条全仓无消费者，要接的正是这条条件矩界）。**T210 没有硬接**——差的是 (5.34)/(5.35)/(5.36) 三项的界，硬接会变成 fiat。
+2. **前缀事件的可测性**：`moment_of_conditional` 把 `hA` 当假设收；路径连续 + `AEStronglyMeasurable` 只能给到 `NullMeasurableSet`，要去掉这条假设得改用 `integral_add_compl₀` 并补一条「连续路径的一致上界事件是零可测集」的引理。并入上一条。
+3. **T209 的余项**：`Step2.localLaw` / `Step2Moment.aprioriDecay_of_jS` 的原版该改成一行推论（`StepGlue` 里已有严格更一般的重述，证明脚本逐字照抄）。纯机械。
+
+## ⭐⭐⭐ T213：查出 `SumZeroDyn.xi2` **按字面不是论文那个量**——第二半漏了共轭（`Gauss/EEUker.lean`，744 行、44 条，2026-09-21）
+
+**第 0 步的答案：对不上，差的就是第二半的一次复共轭。**
+
+* `emart`/`emartEdge` 与 p.55 逐字对应，**对得上**；`EEBridge.eeArg`/`MomentDuhamel.eeFun` 是 Def 5.4 在 #102 约定下的形式，(5.22) 的 `W∑S^{(B)}` 已由 `eeEdge_eq_sum_SB` 消掉，**对得上**。
+* **`SumZeroDyn.xi2` 错了。** 论文 Lemma 5.5（p.55）把算子写死成 `[(U_{u,t,σ} ⊗ U_{u,t,σ̄}) ∘ A]`，紧接一句 "where σ̄ is the conjugate sign vector of σ"；(5.23) 的 `σ(k)` 后半段也全带杠。仓库的 `xi2 E σ = Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) σ)` **重复了未共轭的 ξ**。独立推导同结论：`d⟨M_a, M̄_{a'}⟩ = ∑_{b,b'} K_{ab}·conj(K_{a'b'})·eeRaw(b,b')`，第二槽必须是 `K̄ = Uker(conj ξ)`。
+* **差在哪个因子**：只差第二半那 `n+2` 个边参数上的一次 `starRingEnd ℂ`（等价于把 `σ` 换成 `!∘σ`）。
+* **为什么此前没人发现**：`|E| ≤ 2` 时 `‖ξ_i‖ = 1`，所以**仓库里所有经 `xi2` 的估计看不见这个差别**（`norm_xi2_le`、`xi2_ne_zero`、`norm_xi2_mSigma`、整个 §7.1），但**等式**对 `xi2` 为假。`norm_xi2bar` 证两者逐项模相同（⇒ 下游估计一字不用动），`xi2bar_ne_xi2` 给出 `E = 1`、`σ ≡ +` 的反例（⇒ 修正非空）。
+
+**交付**：`sum_Uker_mul_conj_Uker`（核心代数等式，任意 `Fintype ι` 与任意族）、`quadVarPairs_Uker_eq_norm_eeRawArg`（**等式**，无 Schwarz 无链式法则）、`quadVarPairs_Uker_le_norm_eeArg`（**(5.25)**）、`quadVarPairs_Uker_le_norm_eeFun`（Band 版，右端逐字是 `MomentDuhamel.eeFun`）。
+
+**数值自洽检查**（本单最重要的验收物）：`L = 3`、一条边、`ξ = i`、`s = 1`、`t = 0`、`E = (1, i, i)`。`(a,a') = ((0),(1))` 与 `((0),(0))` 两处，两侧**各自独立**算出 `8/9 − (4/3)i` 与 `26/9`，**都非零**；两侧求值**不用本文件任何定理**。**判别性**：`sanity_rhs_xi2_wrong` 证明第二半改用 `ξ`（即现有 `xi2` 的做法）在同一点给出**不同的数**——这个共轭不是装饰。
+
+## ⭐⭐ T214：`stochDom_of_momentDuhamelQ` **总装起来了**——D14「改」那一侧的消费者端不再是缺口（`Gauss/MomentDuhamelQ.lean`，884 行、27 条，2026-09-21）
+
+**⚠⚠ 更正 T214 工单（也更正 `MomentDuhamelHypGauss.lean` 文件头第 3 条）**：工单说「仓库里没有对 `Qop` 求时间导数的任何东西，`hasDerivAt_Qop_hierarchy` 是对层级求导不是对 `u`」——**两句都是错的**。`Hierarchy/SumZeroDyn.lean` 早就有 `hasDerivAt_Qop`（:1157，**逐字就是 `∂_u Q_u`**）与 `hasDerivAt_Qop_hierarchy`（:1174，**即 (5.88)**，结论里 `commS` 与 `varthetaDot` 已显式出现）。真正缺的是**传播子共轭 + 矩阵生成元**那一版，即 T206 的 `hasDerivAt_ukerObsT_drift` 的 `Q` 孪生——本单补的就是这个：
+
+> `(∂_u + 𝓛)(U_{u,v} ∘ Q_u (L−K)_u)_a = (U ∘ Q_uF_u)_a + (U ∘ [Q_u,Θ_{u,σ}](L−K)_u)_a − (U ∘ (P(L−K)_u)_{b₀}ϑ̇_{u,b})_a`
+
+三项与 `MomentIneqQ` 的三个漂移被积式**逐字同形**。代数关键：`Q_u(dv + 𝓛(L−K)) = Q_u(Θ_u(L−K) + F)`，`commS` 恰好是 `Q_uΘ_u − Θ_uQ_u` 的亏量，传播子的 `Θ` 与之相消。漂移全是钉死的（`driftF`、`commS`、`varthetaDot` 都是定义，`K` 由 `hKdef` 钉成 `Band.Kval`），**两侧无自由张量**。
+
+**对 D14 的输入**：`stochDom_of_momentDuhamelQ` 编译通过、公理干净，所以 **D14 的「改」那一侧，消费者端不再是缺口**。代价只有一条 `QIntegrable`（paper-delta T214a），在高斯模型上是定理。但 **`MomentIneqQ` 本身仍未产出**，还差三件（见下）；**T201 的五条核估计至今仍无消费者**，把它们接进 `hrhs` 现在做不到——它们的 `hGd`（(7.13) 快衰减沿流）T201 自己写明没产出。**这是矩路线走 `Q` 的真实剩余风险，D14 裁定时请一并计入。**
+
+## ⚠ 无主的活（T213 / T214 交出，点名到字段级）
+
+1. **⭐ 修正 `SumZeroDyn.xi2` 的定义**（T213 查出）：`Hierarchy/SumZeroDyn.lean:1445` 改成 `Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) (fun i => !(σ i)))`（或保留 `xi2` 并把消费者改吃 `EEUker.xi2bar`）。改完 `xi2_ne_zero`(:3650)、`norm_xi2_le`(:3657) 只需在第二半多一步 `xiOf_not` + `Complex.norm_conj`。**消费者共 11 个文件**：`SumZeroDyn.lean`(18 处，含 `Hierarchy.bdg`/`bdgQ` 字段与 Lemma 5.10 侧估计)、`Gauss/MomentDuhamel.lean`(3 处：`Hyp.momentDuhamel`、`momentDuhamelQ`、`stochDom_of_momentDuhamel` 的 `hrhs`)、`Lemma514Holder`(4 处)、`Lemma514Moment`/`Lemma514Q716`/`MomentDuhamelHyp`/`MomentDuhamelHypGauss`/`MomentDuhamelQ`/`MomentDuhamelRhs`/`MomentDuhamelTime`。**全部只用 `‖xi2‖ = 1` / `≠ 0`，机械替换。**
+2. **`hsplit`（链式法则 `E^{(M)}(α) = ∑_k E^{(M)}(α,k)`）与 `hdiff` 仍是假设**（T213 查出）：与 `Gauss.quadVarPairs_le_of_split`、`quadVarPairs_Uker` 同一条缺口（`DischargeBDG.lean` 文件头已承认：需要 `List.foldr` 预解式乘积的 Leibniz 法则）。**全仓无人负责。**
+3. **`Q` 版的 `TestFunT₁` / 生成元恒等式**（T214 交出，**`MomentIneqQ` 唯一的大缺口**，约等于 T196 的体量）：`momentIneqQ_of_derivBound` 的 `hbound` 要 `∂_u E[·]` 的**期望**形式，T214 给的是**逐点**被积式；桥是 `testFunT₁_qMomentObsT` + `hasDerivAt_integral_qMomentObsT`，而 `testFunT₁_momentObsT`/`exists_bddC2C_momentObsT`/`bddT_momentObsT`/`differentiableAt_momentObsT_pair`/`continuous_timeD1_momentObsT` 全是对 `momentObsT` **特化写死**的。**最省的做法**：`qUkerObsT` 与 `ukerObsT` 同属「确定性系数的 loopObs 有限线性组合」这一类，把那五条按「系数族对 `u` 是 `C¹` 且有界」**泛化一次，两条路线一起吃**。
+4. **`Q` 版的五件区间可积性**（T212 那条线的孪生）与 **`Q` 版的二次变差桥**（T213 那条线的孪生：`∑_{ij}(U∘Q_u∘E^{(M)}(i,j))_a·conj(…)_{a′} = ((U⊗U)∘QQ(eeArg))_{a,a′}`）。
+5. **去重下沉到 `RBM1D/Defs/`**：`EEUker.mSigma_not` ≡ `Gauss/Step6DriftEG.lean:192` 的 `RBM.mSigma_not`；`EEBridge.leftArg`/`rightArg` ≡ `SumZeroDyn.spl1`/`spl2`（定义相等）。
+
+## ⚠ T214 的一条局限（如实转述）
+
+本机**没有 poppler/pdftotext**，T214 **没有**直接逐字核对论文 (5.91)/(5.99)/(5.100)/(5.103) 的印刷文本；对齐靠仓库里已对齐的 `Hyp.momentDuhamelQ` 五项与 `hasDerivAt_Qop_hierarchy` 的 (5.88)。**论文层面的逐字复核请 Cowork 用会话里的 PDF 做一次。**

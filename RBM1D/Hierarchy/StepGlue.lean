@@ -54,9 +54,15 @@ signature of `Flow/Hypotheses.lean` or of the six step files is touched.
   to it by trace cyclicity (`RBM.gloop_rotate`), and `(-,-)` to `(+,+)` by conjugation; the
   **constant charges `(+,+)`, `(-,-)` have no source in Steps 1–2**.  What is missing is a
   `(+,+)` analogue of (2.76), i.e. `|L_{u,(+,+),a} - K_{u,(+,+),a}| ≺ (η_s/η_u)^4
-  (W ℓ_u η_u)^{-2}` for `u ∈ [s,t]`.  (Relatedly, the proof of Lemma 5.14 restricts (5.96) —
-  hence the whole Step-3 machinery — to *non-constant* `σ`, p. 68.)  See
-  `docs/paper-deltas.md`.
+  (W ℓ_u η_u)^{-2}` for `u ∈ [s,t]`.  See `docs/paper-deltas.md`.
+
+  **Correction (T122).**  An earlier version of this paragraph offered as a corroborating point
+  that the proof of Lemma 5.14 (p. 68) restricts (5.96), hence the whole Step-3 machinery, to
+  *non-constant* `σ`.  That was a **misreading**: the "non-constant" condition occurs only
+  inside the **alternating** branch of (5.96).  Constant charges are handled by Lemma 5.11
+  (p. 65), which satisfies (5.82) and applies at `n = 2` as well — see
+  `RBM1D/Hierarchy/Step2PP.lean`, where `RBM.Step2PP.flow_S_le_two_of` and
+  `RBM.Step2PP.flow_hs2_of` replace the uses of `AprioriDecayAll` below.
 
 * `RBM.StepGlue.Eq45Flow` — **(4.5) along the flow**, in bound-transfer form.  (4.5) itself is
   proved in `RBM1D/Green/EntryBound.lean` (`RBM.avg_bound_stochDom`) at a *fixed* spectral
@@ -365,7 +371,16 @@ dropped").  Step 3 and Step 4 use it through `Ξ^{(L-K)}_{u,2}`, whose definitio
 maximum over **all four** charges `σ ∈ {+,-}²`.  Nothing in Steps 1–2 supplies the constant
 charges `σ = (+,+)`, `(-,-)` at this strength, so the statement is recorded here as a named
 hypothesis rather than derived; `RBM.StepGlue.aprioriDecay_pm` shows that the `(+,-)` part of it
-*is* free. -/
+*is* free.
+
+**Correction and status (T122).**  The remark, made when this definition was introduced, that
+the proof of Lemma 5.14 (p. 68) excludes constant `σ` is a **misreading**: "non-constant"
+occurs only inside the alternating branch of (5.96).  Constant charges are supplied by
+Lemma 5.11 (p. 65) at `n = 2`, which is the route taken in `RBM1D/Hierarchy/Step2PP.lean`.
+That route does **not** reproduce this statement — it gives the weaker, time-independent
+`Ξ^{(L-K)}_{u,2} ≺ (W ℓ_s η_s)^{1/2}` — but it does discharge everything this statement is used
+for here: see `RBM.Step2PP.flow_S_le_two_of`, `RBM.Step2PP.flow_hs2_of` and the packaged
+`RBM.Step2PP.flow_sharpLoop_glue_of` / `RBM.Step2PP.flow_steps45_glue_of`. -/
 def AprioriDecayAll (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
   StochDom B.P
     (fun N (p : TimeIcc s t N × LoopData (B.L N) 2) ω => X.lkErr E N p.1 ω p.2.idx)

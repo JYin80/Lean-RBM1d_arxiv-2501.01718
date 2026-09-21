@@ -2093,6 +2093,20 @@
   $L^{\max}\asymp W^{-1}$, which degrades as $t_N\to1$.
 \end{proof}
 
+\begin{theorem}[The constant charge via Lemma 5.11 at $n=2$]\label{thm:step2pp}
+  \lean{RBM.Step2PP.scale_last_le, RBM.Step2PP.xiLK_two_improve_of, RBM.Step2PP.xiLK_two_improve, RBM.Step2PP.stochDom_flowXiL, RBM.Step2PP.flow_xiL_apriori_le, RBM.Step2PP.flow_xiLK_one_le, RBM.Step2PP.xiLK_two_init, RBM.Step2PP.BootPP, RBM.Step2PP.xiLK_two_le, RBM.Step2PP.flow_S_two_of, RBM.Step2PP.flow_S_le_two_of, RBM.Step2PP.flow_hs2_of, RBM.Step2PP.flowR_le_ratio, RBM.Step2PP.harith_flowAs, RBM.Step2PP.flow_sharpLoop_glue_of, RBM.Step2PP.flow_steps45_glue_of, RBM.Step2PP.flow_sharpLoop_glue_flowAs, RBM.Step2PP.flow_steps45_glue_flowAs}
+  \leanok\uses{lem:chargereduce, lem:stepglue, lem:5.14, thm:step3, thm:step45}
+  (2.76) is not changed: $(+,+)$ satisfies (5.82), so Lemma 5.11 at $n=2$ applies and case 1 of
+  (7.16) contracts the kernel directly. The bootstrap runs \emph{pathwise} inside a high-probability
+  event, since $u\mapsto\Xi^{(L-K)}_{u,2}(\omega)$ is a finite max of continuous functions for every
+  $\omega$. Its output $\Xi_{u,2}\prec(W\ell_s\eta_s)^{1/2}$ is weaker than
+  \texttt{AprioriDecayPP} but is all the consumers need.
+\end{theorem}
+\begin{proof}\leanok
+  (5.83) at $n=2$ has both quadratic factors equal to the quantity being estimated; the a priori
+  inputs come from (2.73), (2.75) and (2.68) at $s$; the second pass needs no second bootstrap.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -59,6 +59,7 @@ import RBM1D.Hierarchy.Step2
 import RBM1D.Hierarchy.Step2Moment
 import RBM1D.Hierarchy.Step45
 import RBM1D.Hierarchy.StepGlue
+import RBM1D.Hierarchy.Step2PP
 import RBM1D.Hierarchy.ChargeReduce
 import RBM1D.Hierarchy.Step6
 import RBM1D.Defs.Dist

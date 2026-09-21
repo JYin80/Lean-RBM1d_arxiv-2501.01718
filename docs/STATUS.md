@@ -3441,3 +3441,35 @@ T146 报「唯一真正缺的引理」是 Lyapunov `‖·‖_p ≤ ‖·‖_{2p}
 修法（六步完成后开单）：钉死 `H_t := e^{−t/2}H + (1−e^{−t})^{1/2}G`（`G` 为独立 GUE）；[51] 与 [37]/[70] 写成**对任意满足前提的模型**成立的一般形式，前提（能量窗一致的局部律等）由我们证；
 (2.25)（[70] Lemma 4.18）用带时间生成元恒等式自证（高斯情形是等式），(2.31)、`η Im m` 单调性自证。完整分析在项目文档 `claude/theorem-2.6-analysis.md`。
 
+
+## T151：分级 `FlucGain` 的改接——**三件事里有两件是「已经不是问题了」**（`Gauss/Eq45FlowInputs.lean`，2026-09-21）
+
+**1. 消费者搬到分级接口：数学上完成。** `eq45Flow_of_localLaw_gain` 对 `hg` 的全部用法只有两处
+（`unifDomIcc_flucRow_condExpDiag` 与 `unifDomIcc_flucBlk_condExpDiag`），都经 `integral_norm_flucAvg_pow_le_iter`
+在**字长 ≤ 2p** 处用——**所以工单说的「只需 `M = 2p`」是对的**。
+但分级接口还多要一样东西：`FlucGainUpTo` 的 `B` 允许随 grade 变（T142 的确实变），而 `UnifDomIcc` 的控制必须与 `p` 无关。
+对齐办法就是 T137 在 `momentDom_flucAvg_iter_graded` 里用的因子分解 `Bp p N ≤ Kp p * Bm N`
+（`Kp p` 与 `N` 无关，被 `unifDomIcc_of_moment` 本来就允许依赖 `p` 的常数吞掉）；
+**在 T142 的参数下这个分解取等**（`Kp p = 2 + 2·minorDiffC(2p)`、`Bm = Ψ`），**不花任何代价**。
+落地：`unifDomIcc_flucAvg_iter'` 及两个权重特例、`unifDomIcc_flucRow/flucBlk_condExpDiag'`（**结论与不带撇的逐字相同**）、
+`flucRowFlow_of_gain'`/`flucBlkFlow_of_gain'`。不带撇的版本一字未动。
+
+**⚠ 只剩一个文件边界问题**：`eq45Flow_of_localLaw_gain` 在 `CondStableFlow.lean`，而 `CondStableFlow` import `Eq45FlowInputs`，
+方向反了，带撇消费者写不进生产者那个文件。**但它只有三行**——中间层 `eq45Flow_of_unifDom_ibp`（`CondStableFlow.lean:1097`）
+本来就把两个槽当**裸 `UnifDomIcc` 假设**收，生产者原样插进去即可。该三行已在探针里整条写出并编译（`exit 0`、公理干净、
+无 `convert` 无强制转换），**结论一字未弱**（仍是 `StepGlue.Eq45Flow`）。
+
+**2. `flucGainUpTo_of_minorDiff` 早就是定理了——T147 审计的 §6(b)⑤「只存在于探针里」是过时的。**
+那是 T137 时代的状态；**T142 已经落地**：`MinorDiffGain.lean:1239` `flucGainUpTo_of_minorDiff`、
+`:1249` `flucGainUpTo_of_minorDiff'`（锐强度 `B = 2Ψ + 2·minorDiffC M·Ψ`、`ρ = 2Ψ`），
+无 import 依赖的那半（`MinorDiffGainUpTo`、`flucGainUpTo_of_minorDiffGainUpTo`）在 `FlucIterHigh.lean:898/917`。
+**所以 `FlucIterHigh.lean` 没有可做的事，一行未动。** 从 `MinorGood'` 到 `Eq45Flow` 的链现在是通的，
+只剩上面那三行的位置问题与 `MinorGood'` 自身的生产者（仍是 T142 记的开放项）。
+
+**3. `hΦW`/`hΨW` 重算：`hΦW` 整条消失。** T142 把控制降到 `ρB = 2Ψ·Ψ = 2Ψ²`，于是
+`flucPhiW_of_psiW` 由 `hΨW` 一次 `τ/2` 劈分即得——**`hΦW` 不再是消费者的假设**；
+两条 `hcρ`（`(3W)⁻¹ ≤ ρ²` 与 `W⁻¹ ≤ ρ²`）在 `ρ = 2Ψ` 下合并成一条。
+打包成 `unifDomIcc_flucRow/flucBlk_condExpDiag_psi`，签名里只剩 `hΨW`、`hΨpos`、`hΨhalf`、`hΨlow`。
+**T142 说的「对生产者是负代价」在消费者侧同样成立：这次重算是净删假设，不是替换。**
+
+**据此更正 T147 审计的两条**：§6(b)⑤ 应删除（桥已落地）；§6(b)④ 的「重算 `hΦW`/`hΨW`」实际结果是 `hΦW` 被消掉。

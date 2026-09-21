@@ -1063,6 +1063,339 @@ theorem flucBlkFlow_of_gain (d : Dims) {δ : ℕ → ℝ} {K : ℝ} (hE : |E| < 
     d hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hHol
     (unifDomIcc_flucBlk_condExpDiag d hE ht1 hg hpos hρ1 hcρ hδ1 hΩ hΦW)
 
+
+/-! #### The same inputs, against the **graded** gain interface — T151
+
+`RBM.Gauss.FlucGain` at the paper's size `ρ ≍ Ψ` is *not* a theorem, and T137/T142 do not
+prove it: what they prove is the word-length-graded `RBM.Gauss.FlucGainUpTo … M`
+(`RBM.Gauss.flucGainUpTo_of_minorDiff'`, with `ρ = 2Ψ` and `B = 2Ψ + 2 minorDiffC(M) Ψ`).  The
+producers above consume the ungraded interface, so they currently have no supply.  This block
+re-derives them from the graded one, following `RBM.Gauss.momentDom_flucAvg_iter_graded`: the
+`2p`-th moment of (4.12) only ever builds words of length `≤ 2p`
+(`RBM.Gauss.OpsOkOut.length_le`), so a gain valid up to `M = 2p` at each `p` is enough, and the
+grade-dependence of `B` is confined to a factor `Kp p` — which the constant of
+`RBM.Gauss.unifDomIcc_of_moment`, allowed to depend on `p`, absorbs.  The control is the
+`p`-independent `ep N * Bm N`.
+
+Nothing is weakened: the conclusions are literally those of the unprimed versions, and the
+unprimed ones remain available through `RBM.Gauss.FlucGain.upTo`.
+
+`RBM.Gauss.eq45Flow_of_localLaw_gain` (`RBM1D/Gauss/CondStableFlow.lean`) touches its `hg`
+**only** through `RBM.Gauss.unifDomIcc_flucRow_condExpDiag` and
+`RBM.Gauss.unifDomIcc_flucBlk_condExpDiag`, and the intermediate
+`RBM.Gauss.eq45Flow_of_unifDom_ibp` takes those two as plain `RBM.Gauss.UnifDomIcc`
+hypotheses.  So the primed producers below plug into that intermediate verbatim, and the
+primed consumer is the three-line composition — it lives in `CondStableFlow.lean` only
+because that is where `eq45Flow_of_unifDom_ibp` is.
+-/
+
+/-- **(4.12) at every time of the flow interval, from the graded gain.**  The primed form of
+`RBM.Gauss.unifDomIcc_flucAvg_iter`: only `FlucGainUpTo … (2 * p)` is asked for at each `p`,
+with the grade-dependent size factored as `Bp p N ≤ Kp p * Bm N`. -/
+theorem unifDomIcc_flucAvg_iter' {V : ℕ → Type*} (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Tw : ∀ N, V N → d.Idx N → ℝ} {cw : ℕ → ℝ} {Aw : ∀ N, V N → Finset (d.Idx N)}
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1) (hcρ : ∀ N, cw N ≤ ep N ^ 2)
+    (hw : ∀ N (a : V N), UniformWeight (Tw N a) (cw N) (Aw N a))
+    (hcardA : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ a : V N, 2 * p ≤ (Aw N a).card) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : V N) ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖)
+      (fun N _ _ _ => ep N * Bm N) := by
+  refine unifDomIcc_of_moment (fun N => hpos N) (fun p N u hu a => ?_) ?_
+  · exact integrable_norm_flucAvg_pow
+      (flucBound_env hE (lt_of_le_of_lt hu.2 (ht1 N)) d N u).flucDiag_le p
+  · intro ε hε p
+    have hK0 : (0 : ℝ) ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) :=
+      pow_nonneg (mul_nonneg (by positivity) (hKp p)) _
+    have hc1 : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p) := by positivity
+    have hcoef : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+        * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) := mul_nonneg hc1 hK0
+    refine ⟨((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+      * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) + 1, by linarith, ?_⟩
+    filter_upwards [hcardA p, eventually_ge_atTop 1] with N h2 hN1 u hu a
+    have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+    have hrw : (fun ω => |‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖| ^ (2 * p))
+        = fun ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖ ^ (2 * p) := by
+      funext ω; rw [abs_norm]
+    rw [hrw]
+    have hmain := integral_norm_flucAvg_pow_le_iter_graded hE hu1 (hg p N u hu) le_rfl
+      (hρ1 N) (hcρ N) (hw N a) (h2 a)
+    have hep0 : (0 : ℝ) ≤ ep N := (hg p N u hu).rho_nonneg
+    have hBp0 : (0 : ℝ) ≤ Bp p N := (hg p N u hu).B_nonneg
+    have hstep1 : ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
+        ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p) := by
+      rw [← mul_pow]
+      refine pow_le_pow_left₀ (by positivity) ?_ _
+      calc (2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N
+          ≤ (2 : ℝ) ^ (2 * p - 1) * ep N * (Kp p * Bm N) :=
+            mul_le_mul_of_nonneg_left (hBK p N) (by positivity)
+        _ = ((2 : ℝ) ^ (2 * p - 1) * Kp p) * (ep N * Bm N) := by ring
+    have hmain2 : ∫ ω, ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖ ^ (2 * p) ∂(P d)
+        ≤ (((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+            * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p)) * (ep N * Bm N) ^ (2 * p) := by
+      refine le_trans hmain ?_
+      calc ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+              * ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
+          ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+              * (((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p)) :=
+            mul_le_mul_of_nonneg_left hstep1 hc1
+        _ = _ := by ring
+    have hNe : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) :=
+      Real.one_le_rpow (by exact_mod_cast hN1) (by positivity)
+    have hpow : (0 : ℝ) ≤ (ep N * Bm N) ^ (2 * p) :=
+      pow_nonneg (mul_nonneg hep0 (hBm N)) _
+    refine le_trans hmain2 ?_
+    nlinarith [mul_nonneg hcoef hpow, hpow, hNe, hcoef]
+
+/-- **(4.12) for the block average, from the graded gain, at every time of the flow.** -/
+theorem unifDomIcc_flucAvg_blockAvg_iter' (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (blkCoef (d.L N) (d.W N) a) ω‖)
+      (fun N _ _ _ => ep N * Bm N) :=
+  unifDomIcc_flucAvg_iter' (V := fun N => ZMod (d.L N)) d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ
+    (fun N a => uniformWeight_blockAvg a)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN a
+      rw [card_blockAvg_support]; exact hN)
+
+/-- **(4.12) for the variance-profile row, from the graded gain, at every time of the
+flow.** -/
+theorem unifDomIcc_flucAvg_Sblk_iter' (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (fun j => Sblk (d.L N) (d.W N) i j) ω‖)
+      (fun N _ _ _ => ep N * Bm N) :=
+  unifDomIcc_flucAvg_iter' (V := fun N => d.Idx N) d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ
+    (fun N i => uniformWeight_Sblk i)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN i
+      rw [card_Sblk_support]
+      omega)
+
+/-- **`hfixRow` from the graded gain.**  The primed form of
+`RBM.Gauss.unifDomIcc_flucRow_condExpDiag`; the conclusion is literally the same. -/
+theorem unifDomIcc_flucRow_condExpDiag' (d : Dims) {δ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bm N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) :=
+  (unifDomIcc_flucAvg_Sblk_iter' d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ).trans
+    (unifDomIcc_const_Lmax (V := fun N => d.Idx N) d hE.le hδ1 hΩ hΦW)
+
+/-- **`hfixBlk` from the graded gain.**  The primed form of
+`RBM.Gauss.unifDomIcc_flucBlk_condExpDiag`. -/
+theorem unifDomIcc_flucBlk_condExpDiag' (d : Dims) {δ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bm N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) :=
+  (unifDomIcc_flucAvg_blockAvg_iter' d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ).trans
+    (unifDomIcc_const_Lmax (V := fun N => ZMod (d.L N)) d hE.le hδ1 hΩ hΦW)
+
+/-! ##### The numeric bundles at the paper's size `ρ B ≍ Ψ²`
+
+T142 brings the graded gain to `ρ = 2Ψ`, `B ≤ Kp p · Ψ`, hence to the control
+`Φ = ρ B = 2 Ψ²`.  At that size the two numeric side conditions of the block above are no
+longer independent hypotheses:
+
+* `hΦW` (`4 W Φ ≤ N^τ`) **follows from** `hΨW` (`4 W Ψ² ≤ N^τ`), which
+  `RBM.Gauss.eq45Flow_of_localLaw_gain` already assumes — one `τ/2` split and `2 ≤ N^{τ/2}`;
+* `hcρ` at both sizes `W⁻¹` and `(3W)⁻¹` follows from the single `W⁻¹ ≤ 4 Ψ²`, because
+  `ρ² = 4Ψ²`.
+
+So the re-derivation asked for by T147 §6(b)④ is a *net removal* of hypotheses, not a
+replacement: this is the "negative cost to producers" T142 reports, seen from the consumer
+side. -/
+
+/-- **`hΦW` at the paper's size, from `hΨW`.**  With `ρ B = 2 Ψ²` the sub-polynomial bound on
+`W ρ B` needed by `RBM.Gauss.unifDomIcc_const_Lmax` is the one on `W Ψ²` that (4.5) already
+carries. -/
+theorem flucPhiW_of_psiW (d : Dims) {Ψ : ℕ → ℝ}
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (2 * Ψ N * Ψ N) ≤ (N : ℝ) ^ τ := by
+  intro τ hτ
+  have hτ2 : (0 : ℝ) < τ / 2 := half_pos hτ
+  filter_upwards [hΨW (τ / 2) hτ2, eventually_le_rpow 2 hτ2, eventually_ge_atTop 1]
+    with N hN h2 hN1
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hsplit : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ := by
+    rw [← Real.rpow_add hNpos]; ring_nf
+  have hnn : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg hNpos.le _
+  calc 4 * ((d.W N : ℕ) : ℝ) * (2 * Ψ N * Ψ N)
+      = 2 * (4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N)) := by ring
+    _ ≤ (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) := by
+        exact mul_le_mul h2 hN (by nlinarith [hN, h2]) hnn
+    _ = (N : ℝ) ^ τ := hsplit
+
+/-- **`hfixRow` at the paper's size.**  `RBM.Gauss.unifDomIcc_flucRow_condExpDiag'` with
+T142's parameters `ρ = 2Ψ`, `Bm = Ψ`: the control is `2Ψ²`, `hΦW` is gone (it is
+`RBM.Gauss.flucPhiW_of_psiW` applied to the `hΨW` of (4.5)), and the two `hcρ` conditions
+collapse to `W⁻¹ ≤ 4Ψ²`. -/
+theorem unifDomIcc_flucRow_condExpDiag_psi (d : Dims) {δ Ψ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
+    (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
+    (hΨlow : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * Ψ N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
+  have hW : ∀ N, (0 : ℝ) < (d.W N : ℝ) := fun N => by exact_mod_cast d.W_pos N
+  have hpos : ∀ N, (0 : ℝ) < 2 * Ψ N * Ψ N := fun N => by nlinarith [hΨpos N]
+  have hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ (2 * Ψ N) ^ 2 := by
+    intro N
+    have h3 : ((3 * d.W N : ℝ))⁻¹ ≤ ((d.W N : ℝ))⁻¹ := by
+      have hw := hW N
+      rw [inv_le_inv₀ (by linarith) hw]
+      linarith
+    have hl := hΨlow N
+    nlinarith [hl, h3]
+  have hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (2 * Ψ N * Ψ N) ≤ (N : ℝ) ^ τ := flucPhiW_of_psiW d hΨW
+  exact unifDomIcc_flucRow_condExpDiag' (Bm := Ψ) (Kp := Kp) (ep := fun N => 2 * Ψ N)
+    d hE ht1 hg hKp (fun N => (hΨpos N).le) hBK hpos hΨhalf hcρ hδ1 hΩ hΦW
+
+/-- **`hfixBlk` at the paper's size.**  The block-average half of
+`RBM.Gauss.unifDomIcc_flucRow_condExpDiag_psi`. -/
+theorem unifDomIcc_flucBlk_condExpDiag_psi (d : Dims) {δ Ψ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp : ℕ → ℕ → ℝ} {Kp : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (2 * Ψ N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBK : ∀ p N, Bp p N ≤ Kp p * Ψ N)
+    (hΨpos : ∀ N, 0 < Ψ N) (hΨhalf : ∀ N, 2 * Ψ N ≤ 1)
+    (hΨlow : ∀ N, ((d.W N : ℝ))⁻¹ ≤ 4 * Ψ N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΨW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (Ψ N * Ψ N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
+  have hpos : ∀ N, (0 : ℝ) < 2 * Ψ N * Ψ N := fun N => by nlinarith [hΨpos N]
+  have hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ (2 * Ψ N) ^ 2 := fun N => by nlinarith [hΨlow N]
+  have hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (2 * Ψ N * Ψ N) ≤ (N : ℝ) ^ τ := flucPhiW_of_psiW d hΨW
+  exact unifDomIcc_flucBlk_condExpDiag' (Bm := Ψ) (Kp := Kp) (ep := fun N => 2 * Ψ N)
+    d hE ht1 hg hKp (fun N => (hΨpos N).le) hBK hpos hΨhalf hcρ hδ1 hΩ hΦW
+
+/-- **`RBM.Gauss.FlucRowFlow` from the graded gain.**  The primed form of
+`RBM.Gauss.flucRowFlow_of_gain`. -/
+theorem flucRowFlow_of_gain' (d : Dims) {δ : ℕ → ℝ} {K : ℝ} (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N) (hK : 0 ≤ K)
+    (hδ0 : ∀ N, 0 ≤ δ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bm N) ≤ (N : ℝ) ^ τ)
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                  - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                  - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    FlucRowFlow (sample d) E s t
+      (fun N u ω i => condExpDiag d N (u : ℝ) (zt E (u : ℝ)) (mE E) i ω) :=
+  flucRowFlow_of_unifDom (y := fun N u ω i => condExpDiag d N u (zt E u) (mE E) i ω)
+    d hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hHol
+    (unifDomIcc_flucRow_condExpDiag' d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ hδ1 hΩ hΦW)
+
+/-- **`RBM.Gauss.FlucBlkFlow` from the graded gain.**  The primed form of
+`RBM.Gauss.flucBlkFlow_of_gain`. -/
+theorem flucBlkFlow_of_gain' (d : Dims) {δ : ℕ → ℝ} {K : ℝ} (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N) (hK : 0 ≤ K)
+    (hδ0 : ∀ N, 0 ≤ δ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, ∀ u ∈ Set.Icc (s N) (t N),
+      FlucGainUpTo d N u (zt E u) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bm N) ≤ (N : ℝ) ^ τ)
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                  - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                  - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    FlucBlkFlow (sample d) E s t
+      (fun N u ω i => condExpDiag d N (u : ℝ) (zt E (u : ℝ)) (mE E) i ω) :=
+  flucBlkFlow_of_unifDom (y := fun N u ω i => condExpDiag d N u (zt E u) (mE E) i ω)
+    d hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hHol
+    (unifDomIcc_flucBlk_condExpDiag' d hE ht1 hg hKp hBm hBK hpos hρ1 hcρ hδ1 hΩ hΦW)
+
+
 end FlucFix
 
 section FlucEnv

@@ -2419,3 +2419,64 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 `hloc`（(4.3) 去掉指示函数）；`hrepl`（T85 的 (4.9) 搬到 `greenMinorMat` 与控制 `Lmax`，需 `greenMinorMat = minorGreen` 的可逆性与 `Ψ² ≺ Lmax`）；`hΩ`(4.4) 与 `hG : GaussIBP`。
 顺带证出：`measurable_Lmax`、`stochDom_rpow_neg_one_Lmax`（`N⁻¹ ≺ Lmax`），故 `N^{-B} ≺ χ` 那条**不用携带**。
 又一次名字冲突（`norm_condRow_le` 与 `Gauss/FlucIter.lean` 重名），agent 自查时发现并改名为 `norm_condRow_le_const`——**单文件编译查不出跨文件重名，整合时必须跑全量 build**。paper-deltas #69、#70。
+
+## T114 第 1 步：`Steps` 八字段对账（Claude Code，2026-09-21；**只做对账，未写 Lean**）
+
+方法：scratchpad 下四个探针 + 一个负对照，`lake env lean` 对活的工作树编译（未碰任何仓库文件）。下面标 **[编译]** 的是探针验证过的，**[读码]** 的是只读代码得出的。
+
+### 结论一句话：**八个字段全部逐字对上，零 `precomp_param`、零量词重排、零指标集改动、零类型类调整。**
+
+探针 1 是一个字面的 `Steps X E s t where apriori := … sharpExpect := …`，每个字段都由裸应用填上，`EXIT=0` 无警告 **[编译]**；
+负对照（把 Step 1 的 `weakLaw` 喂进 `localLaw` 槽）如期报错，说明探针确实在做类型检查 **[编译]**。
+**真正的问题不在这八个字段，而在（i）各步定理的残余假设，（ii）`Thm221.step` 自身的一处假设强度不匹配。**
+
+| 字段 | 来源 | 对上？ | 关键残余假设 |
+|---|---|---|---|
+| `apriori`(2.73) / `weakLaw`(2.74) | `Step1.step1` 的 `.1`/`.2` | **逐字** [编译] | `hreg`（**`Cond272` 推不出**，paper-delta #44；但可由 Step 2 的 `hregS` 推出，见下）；`Step1.Hyp` 四字段中 `scaling` = `Gauss.loopScaling_gauss`（T111）、`lemma41` = `Gauss.lemma41Flow`（T102/T108），**`lift` 与 `cont` 全树无生产者** |
+| `localLaw`(2.75) / `aprioriDecay`(2.76) | `Step2.step2`（路线 A）**或** `Step2Moment.step2`（路线 B） | **两条路线都逐字** [编译] | A 需 T58；B 需 `MomentHyp.step`（STATUS 已记：今天供不出，T74/T76 那堵墙） |
+| `sharpLoop`(2.77) | `Step3.flow_sharpLoop` | **逐字** [编译] | `h514` 由 `SumZeroDyn.lemma514_flow'` 卸；**`h0`/`h12` 全树无生产者** |
+| `sharpLmK`(2.78) / `sharpDecay`(2.79) | `Step45.flow_steps45` 的 `.1`/`.2` | **逐字** [编译] | `h514` 要 `2 ≤ n`（严格强于 Step 3 的 `3 ≤ n`，由 `fun n hn => h514 n (by omega)` 转换 [编译]）；**`h1`/`h2`/`h548` 无生产者** |
+| `sharpExpect`(2.80) | `Step6.sharpExpect_step6` | **逐字**（右端在**终点时刻**） [编译] | **`h5132` 字面就是 `(hb : Bounds X E s).expect`，无需搬运** [编译]；`hint1` = `Gauss.integrable_sample_Lval`；`DLK`/`DG` 是隐式且目标定不下来，总装要存在性地给出；`Step6.Hierarchy`/`FastDecayHyp`/`h5133`/`Eq527`/`hq11`/`hG`/`hq13` 无生产者 |
+
+**两条经济性事实（都 [编译]，探针 4）**：`hregS` 同时蕴含 Step 1 的 `hreg`（经 `Step2.eventually_R4_le_scale` 取 `u := t`）**与** `Cond272`（经 `Step2.cond272_of_strict`）。
+**故总装只需要一条正则性假设 `hregS`，`hc` 与 `hreg` 都可以去掉。**
+
+### ⚠ 唯一的陈述级不匹配，需 Cowork 定夺：`0 ≤ s` vs `0 < s`
+
+`Thm221.step`（`Flow/Hypotheses.lean:286`）给的是 `(∀ N, 0 ≤ s N)`，而 Steps 1–5 **全部**要求 `(∀ N, 0 < s N)`，只有 Step 6 接受 `0 ≤`。探针 3 复现为硬错误 **[编译]**：
+`Application type mismatch: hs0 has type ∀ N, 0 ≤ s N but is expected to have type ∀ N, 0 < s N`。
+**这不是 `precomp_param` 能搬的，是假设强度差。** 注意 `s` 是**序列**，所以「`s N = 0` 单独处理」不是能对 N 一致做的分情况；`Bounds_zero`/(2.67) 是 `s ≡ 0` 的基例。
+**三条出路（我不替 Cowork 选）**：把五个 step 定理放宽到 `0 ≤ s`；或把 `Thm221.step` 收紧到 `0 < s`（一条 paper-delta）；或插值。
+另记：`Thm221 X κ` 不带 `0 < κ`/`κ ≤ 1`，这两条要成为外层 `thm221_gauss` 的假设（只是记账，不是不匹配）。
+
+### `Step2.Hyp` 的 `eG`/`mart` 与 T75 的关系：**两者是互斥的平行路线，不能混用**
+
+`Step2Moment.lean` 里**没有任何**对 `Step2.Hyp`/`tau`/`stopTime`/`step_bound`/`self_improving`/`jS_highProb` 的引用（文档注释除外）**[读码+grep]**，
+且 `Step2Moment.step2` 不带 `Step2.Hyp` 参数就产出 `Steps` 形状 **[编译]**。
+`eG` **依赖 `H`**（其陈述里出现 `H.F`），**T58 定下 `F` 之前连陈述都写不出来**；`mart` 是**停止**鞅，依赖 `H.mart` 与停时。`MomentHyp` 的 15 个字段没有一个与二者一一对应。
+T75 的替代关系是：`Hyp.cont`（高概率）→ `MomentHyp.cont`（逐 ω）；`Hyp.mart` + 自改进 → 单一字段 `MomentHyp.step`；Def 2.1(i) 的不可数并 → `stochDom_timeIcc_of_holder`（由 `holder`/`Kmod`/`gam` 喂）。`eG` 也被吸收进 `MomentHyp.step`。
+**路线 B 假设更少**（不需 `Cond272`，只要 `hregS`），且 `holder` 由 T101 的 `stochDom_timeIcc_of_holder_dom` 卸掉 **[读码]**。
+
+### T58 的消费点有**三处**（工单只写了两处），以及它必须交付的形状
+
+1. `Step2.Hyp.H : SumZeroDyn.Hierarchy X E s t 0`——只有 `F`/`mart`/`duhamel` 被用到，但 `Hierarchy` 是结构，**八个字段都得给**。仅路线 A 需要。
+2. **`SumZeroDyn.lemma514_flow'`——比工单说的「Step 3 的 `hyp_flow` 同理」分量重得多**：它要 `H : ∀ n, Hierarchy X E s t n`（**对所有 loop 长度**，不只 `n = 0`），并喂给 `sharpLoop`/`sharpLmK`/`sharpDecay`。
+   **即：无论 Step 2 选哪条路线，T58 都在 Steps 3/4/5 的关键路径上**——工单正文没说这一点。其 `hLmK` **字面就是 `hB.LmK`**，无需搬运 **[编译]**。
+3. `Step6.Hierarchy X E s t DLK DG`——**另一个对象**：无 ω、无鞅、无 `F`，漂移拆成 `DLK + DG`，是 (5.20) 在 `n = 2` 取期望**之后**的版本。**不是** `SumZeroDyn.Hierarchy` 的实例，不积分掉路径、不证 `E[mart] = 0` 就推不出来。**应告知 T58 这是第四项交付物。**
+
+**形状要求**：TASKS 里 T58 的验收标准全写在 `LoopIdx` 一侧，**但每个消费者都在 `Fin n` 一侧**（`LoopArg L n = Fin n → ZMod L`；`SumZeroDyn.lkT` 里 `LoopData.idx (σ,a) = ⟨List.ofFn σ, List.ofFn a⟩` 已经把桥焊死在 `List.ofFn` 方向）。
+**所以 T58 必须额外导出 `Fin n` 一侧的推论**（形如 `SumZeroDyn.lkT` + `Uker` + `xiOf (mSigma E) σ`），最低限度是给出 `∀ n, SumZeroDyn.Hierarchy X E s t n` 的项，其中
+`F` 取 (5.15) 的漂移减去 `l_K = 2` 项（这样 `Lemma510` 才可证而非空洞）；`EE` 取 Def 5.4 的 `E⊗E`（**`Gauss.eeTens`/`eeRaw` 已经定义了这个对象，`toIdx`/`emart_Uker`/`quadVarPairs_Uker` 已经把它桥到 `Uker`，这一项最接近完成**）；`duhamel`=(5.20)、`duhamelQ`=(5.91)；`bdg`/`bdgQ`=(5.85)/(5.103)+BDG。
+**必须转告 T58 的警告**（来自 `Gauss/DischargeBDG.lean:70ff`）：`duhamel` 可以**按定义造出来**从而对任意 `F` 成立，那会把全部内容压进 `bdg` 并使 `Lemma510` 为假。**只产出 `duhamel` 的交付物对 T114 毫无价值；绑定义务是三元组（`F` 具体、对它 `Lemma510` 可证、`bdg` 可证）。**
+
+### 阻塞总装但**不属于**不匹配的缺口（全树无生产者）
+
+按离完成的远近排序：`hs1`/`hs2`（Step 4 基例，Step45 文档说「可由 (4.5) 与 (2.76)+(2.72) 得出」但没证）→ `h0`/`h12`（文档说由 (2.73)(3.46) 与 (2.75)(2.76) 得出，但无引理；
+**`h12` 在 `m = 2` 处有个坎**：`Step3.S … 2 l` 是对**全部四个** `σ ∈ {+,−}²` 取 max，而 (2.76) 只覆盖 `σ = (+,−)`，**其余电荷从哪来需要有人说明**）→ `h548`(5.48，T61 的遗留)
+→ `Step1.Hyp.lift`/`cont` → Step 6 的七条随机层假设 → `SumZeroDyn.Lemma510`/`LKDecay`（其形状与 T59 的定理「对不上」，见 `SumZeroDyn.lean:62`）。
+
+### 给 Cowork 的结论
+
+八字段总装本身**不是问题**：八行字段赋值，今天就能编译。T114 实际要解决的是
+**(a)** `Thm221.step` 的 `0 ≤ s` vs `0 < s`；**(b)** Step 2 选哪条路线；
+**(c)** 从 Steps 1–2 的产出推导 `h0`/`h12`/`hs1`/`hs2`——**这块目前不属于任何工单，且与 T58 不同，它是纯确定性的记账，现在就能开工。**

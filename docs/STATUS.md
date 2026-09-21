@@ -2957,3 +2957,10 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 
 **探针**：`eq45Flow_of_unifDom_ibp`（填 `hfixIBP`）与 **`eq45Flow_of_localLaw_gain`（三个 `hfix` 全部供齐）**，都以 `exact` 式应用、无 `convert`、无强制转换。
 **`Eq45Flow` 仍非无条件，但剩下的已不再是固定时刻的估计**：三条 `u`-模（T129 给了 `condExpDiag` 那半并在 docstring 里写了组装配方，Green 那半是 T106）、`FlucGain` 在 `ρ ≍ Ψ`（堵在 T137 的分级接口）、`hll`（Steps 1/2）、`hΩ`（T130 由 `hll` 产出）、以及数值/区制条件。paper-deltas #94。
+
+## ⚠ Cowork 审计 T132a（2026-09-21 04:55）：两处审查意见未落实 → T145
+
+04:25 的中途抽查（`docs/TASKS.md` T132 规格下「Cowork 中途抽查 T132a」）要求提交前改两处：`Hyp.EE` 钉死为 T127 的 `eeField`；`drift` 只对 Hermitian `M` 量化。
+68e7f61 提交的 `Gauss/MomentDuhamel.lean` **两处都没有**（`git grep eeField\|IsHermitian` 为空）。收口引理与 `F_unique` 是对的。
+不是返工：`Hyp` 刚建、无外部消费者，改结构即可。开 **T145**（最高优先级）。另开 **T146**：`hrhs` 先试「逐时刻 `≺` + 确定性包络 ⟹ 矩」（T77）的桥，而不是把 `stochDom_of_logBound` 整套做矩版。
+

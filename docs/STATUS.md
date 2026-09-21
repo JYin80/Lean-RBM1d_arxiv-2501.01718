@@ -5949,3 +5949,21 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 2. **`Flow/Consequences.lean` 的改吃 `BoundsCore`**（机械：`hB : Bounds …` → `hB : BoundsCore …`，**证明脚本一字不动**；T204 文件里已有逐字副本 + `rfl` 探针作模板）。应改的：`localLaw_of_bounds`、`loop1_of_bounds`、`partialTrace_of_bounds`、`trace_of_bounds`、`loop2_of_bounds`、`quantumDiffusion_pm/pp_of_bounds`、四条 `*_prob_of_bounds`、`localSemicircleLaw_of_Thm221` 整条，以及把 `quantumDiffusion_of_Thm221` 的**前两个合取**拆成独立定理。**不许动**：`expect_loop2_of_bounds`、`expect_quantumDiffusion_*`、`QDExpect.of_Thm221*`、`theorem2_5_of_Thm221*`（都要 (2.71)，归 T205）。**没有单负责。**
 3. **`Flow/EnergyUniform.lean` 的 `BoundsCoreN` 版**（`localSemicircleLaw_of_Thm221N*` 与 `*_of_z`）——Theorem 2.2 路线 (ii) 将来要吃的。归 T199 或其续单。
 4. **`RBM.Bounds` 在 `s > 0` 处仍无居民**（T202 查出；只有 `Flow/Iteration.lean:165 Bounds_zero`）。`BoundsCore` 这一侧已由 `boundsCore_gauss_witness` 解决，**带 `expect` 的那一侧没有**。归 T205。
+
+## T200：`docs/REPORT.md` 已起草（537 行，活文档，2026-09-21）
+
+九节：主定理清单（Lean 名 + 完整假设表 + ①无条件/②化归/③空着）、六步链现状、外部输入声明、公理审计、**没有生产者的具名假设（点名到字段级）**、方法学附录（空真与 fiat 两张风险清单）、paper-deltas 索引、探针清单、待定夺。
+
+**数据纪律**：每一条「Lean 名 + 假设表 + 有没有生产者」都是 **scratchpad 里编译探针打印出来的**，不是从 STATUS/TASKS 的叙述里抄的。基准快照 `HEAD = 2bde09d`；协调者已在文件头补记 T202/T203/T204 落地后的变化。
+
+**T200 的一条方法学发现（值得进 playbook）**：按「结论头常量」找生产者的元程序对 **`def` 形状**的假设有**假阴性**——五条 `*Flow` 被误报为无生产者，实际是定义展开。所以 `def` 一律要用**裸 `:=` 探针**逐条核（`T200Defeq.lean` 把 Step 1/2/3/4-5 的结论喂进四个槽，四条全过）。
+
+**T200 如实写明它没做的**：① 没读论文 PDF，凡「论文是否真这么写」均转述 STATUS/paper-deltas；② 没跑 `lake build RBM1D`（九个 agent 并发）；③ 没对**全部** `def` 形状假设做裸 `:=` 逐条核（只核了六步链上的五条 + 八条）。
+
+## 待 Jun 定夺：R1–R5（T200 交出，2026-09-21）
+
+* **R1（报告口径）**：Theorems 2.3/2.4/2.5 目前全是「吃 `Thm221` 的化归」。最终报告是把它们**并列为主定理**（附「以 Theorem 2.21 为前提」），还是**只把 Theorem 2.21 与 Lemmas 2.18–2.20 列为成果**、2.3–2.5 作为推论一并陈述？两种写法给读者的印象差别很大。
+* **R2（Theorem 2.6 的范围）⭐**：`DBMUniversality` 与 `GreenComparison` 按 Jun 的永久规则**都要改形状**（前者重写成逐字的 [51] Theorem 2.2 复 Hermitian 形式、量化在所有满足其前提的模型上；后者改为自证）。是否在本轮范围内？在它们完成之前，报告 §3「外部输入声明」只能写「待定」。**（Cowork 2026-09-21 07:50 报过同一问题，至今未见裁定。）**
+* **R3（`OUFlow` 的保真）**：现有 `OUFlow` **未钉死分布**，常值流使 Theorem 2.6 的三条假设**全部平凡**（fiat）。是现在就钉死 `H_t := e^{−t/2}H + (1−e^{−t})^{1/2}G`，还是等六步完成？**在钉死之前，报告不能把 `theorem2_6_of_steps` 算作 Theorem 2.6 的形式化。**
+* **R4（Step 6 与 D12/D13 的联动）**：**已被 D12/D13 回答**（选 (a)，T204 今日落地第一遍）。剩下的是 Step 6 样本侧四个好集（`FDInputs`/`QuadInputs`/`EGInputs`/`DriftInputs`）的开单时机——按 D12 归 T205。**此条可视为已裁定，留档备查。**
+* **R5（否定结论怎么呈现）**：`LDENetClose` 按字面不可证、`MinorGood` 恒假、`MomentHyp.step` 在冻结形状下不可证、裸 `Cond272` 不够——四条都**编译成了定理**，是本项目的真实产出。最终报告单列一节（「形式化查出的论文/草图缺陷」）还是只作脚注？T200 建议单列；涉及论文措辞，请 Jun 定。

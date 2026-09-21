@@ -86,6 +86,7 @@ import RBM1D.Hierarchy.Step3
 import RBM1D.Hierarchy.Step1
 import RBM1D.Hierarchy.Step2
 import RBM1D.Hierarchy.Step2Moment
+import RBM1D.Hierarchy.Step2MomentStep
 import RBM1D.Hierarchy.Step45
 import RBM1D.Hierarchy.Lemma57
 import RBM1D.Hierarchy.EGDef

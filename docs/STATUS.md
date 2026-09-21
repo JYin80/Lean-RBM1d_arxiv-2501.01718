@@ -3046,3 +3046,19 @@ T133 的常数**不能直接复用**（`v`-导数是 `D_M L[∂_v H_v]`，而 `�
 **`EE_le` 现在还差什么**：从「两条携带假设 + `FlowInputs` + T58」变成「**`FlowInputs` + T58**」。
 其一是 `H.EE` 仍是 `SumZeroDyn.Hierarchy` 的无约束字段（T58 的决定；**注意 T145 已在 `MomentDuhamel` 那边把对应字段删掉了，但 `SumZeroDyn` 一侧仍未动**）——探针 C 表明一旦有 `H.EE = eeField`，该字段立刻闭合；
 其二是 `FlowInputs` 自身的余项（T130 的 `hΩ`/弱局部律、`LDEFlowDom`、(2.76)）。`Lemma510` 的另外三个字段未动。
+
+### T140：cut-and-glue 冻结形式已证；(5.19) 暴露出论文的一处笔误（Claude Code 并行 agent，2026-09-21）
+
+**1. `LoopIto.second`（冻结形式）逐字证出，无边界项。** `loopIto_second_frozen` + `loopItoFrozen`——**T76 的那条假设现在是定理**。
+路线：`coordD2_loopObs_eq` → `insB`/`dblB`/`ins2B` 归并 → **`sumSblk_half_wirtPair`**（收缩 `½∑S_ij⟨ABCB⟩ = ½W∑⟨AE_a⟩S^(B)_{ab}⟨CE_b⟩`，**这正是 Def 2.10 的 `E_a` 的来源**）→ 字典 `insB E_b = cutGlue`、`ins2B = (cutGlueL, cutGlueR)`。
+**收益已在文件内兑现**（不只是探针）：`hasDerivAt_sample_ELval_hierarchy_gauss` 把 T134 的终点重述，**去掉三条假设**（`hito`、`hEG`、`TestFun`）。
+**Lemma 2.11 的矩形式现在只剩 `MatrixStein`（T70）与 `hjoint`（T141，已卸）** —— 即只剩 T70。
+
+## ⚠ 2. (5.19)：`primBilLen 2 = ThetaOp` **按字面为假**，两个独立原因（见 paper-deltas #106、#107）
+
+**(a) 左端错**：`primBilLen … 2` 只是回绕切 `(1,n)` 一项，其余 `n−1` 个相邻切在 `Decay.primBilLenR` 里；正确的左端是对称化的 (5.14)，即 `Decay.couplingLen L W 2 K D I`。
+**(b) 核错——这是论文的笔误**：恒等式**强制**核为 `ξ_i·Θ^{(B)}_{tξ_i}·S^(B)`，而 (5.16)（以及逐字转写它的 `RBM.ThetaOp`）没有那个 `S^(B)`。
+**两条独立佐证**：论文自己的 Example 2.16（p.21）写的核**带** `S^(B)`；且 `∂_t U_{s,t,σ} = Θ_{t,σ}∘U_{s,t,σ}` 经 (5.18) 也强制它。
+已证的是更正后的版本 `couplingLen_two_eq_thetaGenLoop`（配 `thetaGenLoop`），并附 `thetaGenLoop_three` 作指标自检——**逐字复现 Example 2.16 的三项展开**。
+**`RBM.ThetaOp` 未改**：19 条签名经过它，属冻结接口，该由 Cowork 决定。**而且这个疏漏是良性的**：`sum_Theta_mul_SB_row` 表明 `S^(B)` 行随机，故 `sum_ThetaOp_row`、`SumZero_ThetaOp` 与所有 ℓ^∞ 界**原样成立**，**只有恒等式 (5.19) 本身不成立**。
+顺带把 STATUS 里一直挂着的 `LoopIdx ↔ LoopArg` 桥补上了（`thetaGenLoop_ofFn`、`set_ofFn_eq_ofFn_update`）。

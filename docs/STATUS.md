@@ -2940,3 +2940,20 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 **未做（工单第 4 项）**：`Step3.Lemma514` 的带撇再生产。`stochDom_of_momentDuhamel` 把它归约成具名假设 `hrhs`（`U` 核估计 + `Lemma510` ⟹ 右端三项的 `‖·‖_{2p}` 界）；
 填它要把 `SumZeroDyn` 的 `term1F`/`termI1`/`QV1_stochDom` 那套 `stochDom_of_logBound` 机器做出矩版本，体量与 `lemma514_flow` 相当，agent 本轮预算内做不完，**没有硬凑**。
 另两项有意留给 T132b：收口引理与 `Hyp` 的内部接线（需 Hölder 步，而那要生成元恒等式）、`momentDuhamelQ` 的消费者。paper-deltas #93。
+
+### `RBM1D/Gauss/CondStableFlow.lean` — T136：`hfixIBP` 已卸（Claude Code 并行 agent，2026-09-21）
+
+**`unifDomIcc_condExpDiag_flow` 就是 `eq45Flow_of_unifDom` 的 `hfixIBP` 槽**（`y = condExpDiag`）。
+假设里 **`hloc`/`hrepl`/`hstabP`/`hstabM` 全部消失**——不需要一致版的 `CondStable`，也不需要 `LmaxRowProxy`。
+剩下的是 `hll`（u-一致的弱局部律，**与 T130 要的是同一条**，无新数学输入）、`hΩ`（T130）、`hΨW`（即论文的 `Ψ² ≍ W⁻¹`，与 T128 的 `hΦW` 同一条）、`hEnv`（常设区制）加记账项。
+
+**卡住的不是 `∀ᶠ N` 的记账，而是控制的选择。** 在 `UnifDomIcc` 层根本不取对指标的并，故移植过来的 `unifDomIcc_condRow_of_envelope` **完全不需要基数假设**（与 T128 在 `unifDomIcc_of_moment` 处发现的是同一现象）。
+真正的障碍是 T119 那条链把每个 `E_i[·]` 都用随机的 `L^max` 支配，因而需要 `E_i[L^max] ≺ L^max`，而后者经 `L^max ≍ W⁻¹` 证出、代价 `η_t⁻²`。
+**agent 换成全程用确定性控制 `Ψ²` 重跑该链**——对它 `E_i` 是恒等（`condRowReal_const`），故 `CondStable` **退化掉**；`L^max` 只在最后一行、且只用其**下半边** `W⁻¹ ≤ 4L^max`（在流的好事件上对每个 `u` 成立、不花 `η` 的幂）。
+于是 `hloc` 直接从 `hll` 读出，`hrepl` 由 (4.9) 重做、两个非对角因子都取自 `hll`。
+
+**`t_N → 1` 的坑两个方向都守住了**：`L^max ≍ W⁻¹` **从不**对 `u` 一致使用，`LmaxRowProxy` 一次未用；`η_{t_N}` 只出现在**确定性包络**里乘以例外概率，多项式大小被 `Kenv` 吸收。
+固定时刻的证明里唯一把 `η` 当作 `≺` 的**乘性常数**的地方（对角项 `k = i`，常数 `(η_t⁻¹+1)²`，在 `t_N → 1` 时多项式大）被替换成 `unifDomIcc_ibpRem_diag`（`ibpRem(i,i) ≺ 1`，控制取常数 1），够用是因为其系数 `S_{ii} ≤ 2L^max`。
+
+**探针**：`eq45Flow_of_unifDom_ibp`（填 `hfixIBP`）与 **`eq45Flow_of_localLaw_gain`（三个 `hfix` 全部供齐）**，都以 `exact` 式应用、无 `convert`、无强制转换。
+**`Eq45Flow` 仍非无条件，但剩下的已不再是固定时刻的估计**：三条 `u`-模（T129 给了 `condExpDiag` 那半并在 docstring 里写了组装配方，Green 那半是 T106）、`FlucGain` 在 `ρ ≍ Ψ`（堵在 T137 的分级接口）、`hll`（Steps 1/2）、`hΩ`（T130 由 `hll` 产出）、以及数值/区制条件。paper-deltas #94。

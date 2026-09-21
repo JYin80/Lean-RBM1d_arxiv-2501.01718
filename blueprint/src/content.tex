@@ -2242,6 +2242,21 @@
   enters, which is what makes the right-hand side independent of $u$.
 \end{proof}
 
+\begin{lemma}[The IBP input of (4.5), uniformly in time]\label{lem:condstableflow}
+  \lean{RBM.Gauss.unifDomIcc_condRow_of_envelope, RBM.Gauss.unifDomIcc_condRow_sub_self, RBM.Gauss.condRowReal_const, RBM.Gauss.inv_etaT_le_inv_etaT, RBM.Gauss.unifDomIcc_greenDiagCentered_sub_minor, RBM.Gauss.unifDomIcc_ibpRem_diag, RBM.Gauss.unifDomIcc_ibpRem, RBM.Gauss.unifDomIcc_condExpDiag_flow, RBM.Gauss.eq45Flow_of_unifDom_ibp, RBM.Gauss.eq45Flow_of_localLaw_gain}
+  \leanok\uses{lem:condstable, lem:goodsetflow, lem:eq45inputs, lem:condrow}
+  Run with the \emph{deterministic} control $\Psi^2$ instead of $L^{\max}$, the conditional
+  expectation acts as the identity on the control, so the stability comparison degenerates and
+  $\mathbb E_i[L^{\max}]\prec L^{\max}$ is never needed. $L^{\max}$ survives only through its lower
+  half, which costs no power of $\eta$ -- so the fixed-time restriction of T119 is avoided rather
+  than patched.
+\end{lemma}
+\begin{proof}\leanok
+  At \texttt{UnifDomIcc} level no union over indices is taken, so the ported tool needs no
+  cardinality hypothesis; the diagonal remainder is bounded by $\prec1$ rather than by a
+  deterministic envelope that grows as $t_N\to1$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

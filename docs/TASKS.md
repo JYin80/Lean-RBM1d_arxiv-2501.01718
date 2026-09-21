@@ -242,6 +242,7 @@
 | T109 | **`TraceMomentBound` (p ≥ 2)**：`E Tr(X^{2p}) ≤ C·N`。**规格见下文「T109 规格」：建议用已证的 `gaussIBP` 跑矩递推绕开 Wick 与走计数，第 0 步先验因子**。卸掉 T100 收窄后剩的那条接口，进而 `‖X‖ ≺ 1` 无条件 | `Gauss/TraceMoment.lean`（新建） | Claude Code | 进行中 |
 | T110 | **`FlucGain` (m ≥ 2)**：小行替换迭代到 `2p` 阶，卸掉 (4.12) 最后一条接口。承 T94（`m = 0`、`m = 1` 已证）。**规格见下文「T110 规格」，第 0 步先手算 m = 2** | `Gauss/FlucIterHigh.lean`（新建） | Claude Code | 进行中 |
 | T111 | **两条分布相等**：(2.39) 与 (6.1)，外加 1-loop 的 `TransferLoop1`。**规格见下文「T111 规格」：先查是不是同一个 `X` 的确定性标度；真换律就走 `gaussianReal_map_const_mul` + `infinitePi_map_pi`** | `Gauss/DistEq.lean`（新建） | Claude Code | **完成**（三条全部为定理；全是逐点相等，不需要任何分布论证） |
+| T112 | **`≺` 在条件期望下的保持** + T83 剩下的两个输入 `hprod`/`hminor`。**规格见下文「T112 规格」** | `Gauss/CondDom.lean`（新建） | 待认领 | 未开工 ← **T83 的收尾，也是一块公共工具** |
 
 ---
 
@@ -2134,3 +2135,49 @@ Cowork 手上原有的 T1、T58、T83 已全部交回队列，规格见下文。
 * 先做 `TransferLoop1`（只涉及 1-loop，最小），通了再做 `Transfer`，最后 `LoopScaling`。
 
 **卸掉之后**：全文图里三个「仍作为假设」的橙点去掉两个，Theorem 2.4 不再带额外假设。
+
+---
+
+## T112 规格：`≺` 在条件期望下的保持（Cowork 设计，2026-09-21）
+
+**来历**：T83 把 `hIBP` 推到了只差两个输入（`Gauss/IBP.lean` 的
+`condExpDiag_stochDom_of_pieces`），做 T83 的 agent 在 STATUS 里指出其中一个卡在一块
+**仓库里没有的通用工具**上：
+
+> 「被 `≺` 支配的量取 `E_i` 后仍被 `≺` 支配」——**这不是自动的**。
+
+他说得对，而且这正是这张单的价值：它不只是 T83 的收尾，是一块**公共工具**。
+
+### 为什么不自动（接手前先理解这一点）
+
+`X ≺ Y` 的定义带一个例外事件：对每个 `τ > 0`，`P(|X| > N^τ Y)` 小于任意多项式。
+取条件期望 `E_i` 是对第 `i` 行坐标积分，**例外事件在积分里不会自己消失**——
+`E_i[1_{bad}·X]` 没有先验的小性，除非你对 `X` 在坏事件上也有控制。
+
+**所以正确的形状不是「`≺` 蕴含 `E_i`-`≺`」，而是「`≺` + 坏事件上的确定性包络 ⟹ `E_i`-`≺`」。**
+这和 T77（`Gauss/Envelope.lean`）的反向桥是同一个套路：**包络是免费的**，
+因为 `Im z_t = η_t > 0` 给出 `‖G‖ ≤ η_t⁻¹` 在**全空间**成立。
+
+### 建议的三步
+
+1. **通用引理**（本单的主产出，放 `Gauss/CondDom.lean`）：
+
+       X ≺ Y，且 ∃ 确定性 B 使 ∀ω, ‖X ω‖ ≤ B   ⟹   E_i[X] ≺ Y + (可忽略项)
+
+   用 `condRow`（T84）把 `E_i` 写成精确的坐标积分，坏事件那部分用 `B · P(bad) ≤ B·N^{-D}` 吃掉。
+   **直接照抄 T77 `Gauss/Envelope.lean` 的记账结构**，那里已经处理过同样的「好事件 + 包络」拆分。
+2. **`hminor`**：`E_i(G_kk − m) − (G_kk − m) ≺ Ψ²`。用第 1 步 + T85
+   （`Gauss/MinorReplace.lean` 的替换误差）+ `norm_green_apply_le_etaT` 当包络。
+3. **`hprod`**：`E_i[(G_ii − m)(G_kk − m)] ≺ Ψ²`。两个因子各 `≺ Ψ`（局部律），
+   乘积 `≺ Ψ²`，再用第 1 步过 `E_i`。包络同样由 `η_t⁻¹` 给。
+
+做完把两项喂进 `condExpDiag_stochDom_of_pieces`，`hIBP` 就在冻结签名下真正卸掉，(4.5) 只剩 (4.12)。
+
+### 硬性约束
+
+* **不许改** `Gauss/IBP.lean` 里 `condExpDiag_stochDom_of_pieces` / `_of_ibpRem` 的签名，
+  也不许改 `Gauss/FlucAvg.lean`、`Green/EntryBound.lean`——全是冻结接口。
+* 第 1 步的引理**要写成通用形状**（对任意被包络控制的 `X`），不要写死在 `G_kk − m` 上：
+  T110 的高阶小行展开大概率也要用它。
+* 复用：`condRow`/`FinDepOffRow`（T84）、`Envelope`（T77）、`MinorReplace`（T85）、
+  `norm_green_apply_le_etaT`（T88）。

@@ -2243,6 +2243,22 @@
   enters, which is what makes the right-hand side independent of $u$.
 \end{proof}
 
+\begin{lemma}[The generator identity with explicit time dependence]\label{lem:momentduhamelgauss}
+  \lean{RBM.Gauss.timeD1, RBM.Gauss.fderiv_uncurry_apply, RBM.Gauss.timeD1_eq_fderiv_uncurry, RBM.Gauss.hasDerivAt_Psi_Hflow, RBM.Gauss.TestFunT, RBM.Gauss.TestFunT.slice, RBM.Gauss.continuous_timeD1, RBM.Gauss.hasDerivAt_integral_Psi, RBM.Gauss.hasDerivAt_integral_Psi_pairs, RBM.Gauss.contDiffAt_resH_path, RBM.Gauss.contDiff_resH_path, RBM.Gauss.contDiffAt_resH_zt, RBM.Gauss.W_mul_genLK_eq, RBM.Gauss.integrable_lkT_pow}
+  \leanok\uses{thm:generator, thm:momentduhamel, lem:loopc2}
+  $\frac{d}{du}\mathbb E[\Psi(u,H_u)]=\mathbb E[\partial_1\Psi]
+  +\tfrac12\sum_{ij}S_{ij}\mathbb E[\partial_{ij}\partial_{ji}\Psi]$ for a test function that
+  depends on the time as well as the matrix; the generator identity of T71 is the case
+  $\Psi(v,\cdot)=\Phi$.  The admissible class is localised to a time window, which is forced
+  rather than cosmetic: every bound on the real $\Psi$ is a power of
+  $(\operatorname{Im}z_u)^{-1}=((1-u)\operatorname{Im}m_E)^{-1}$.
+\end{lemma}
+\begin{proof}\leanok
+  The joint derivative splits as $a\,\partial_1\Psi+\partial_M\Psi[B]$ -- the only place the two
+  slots interact.  Joint $C^2$ of the resolvent along the path needs no second-order bounded
+  class: $\mathrm{Ring.inverse}$ is $C^\infty$ at units and the inner map is jointly smooth.
+\end{proof}
+
 \begin{lemma}[The right-hand side of the moment Duhamel inequality]\label{lem:momentduhamelrhs}
   \lean{RBM.Gauss.momNorm_mono, RBM.Gauss.momNorm_le_of_le_weighted_sum, RBM.Gauss.sum_prod_norm_edgeKer_le, RBM.Gauss.momNorm_Uker_apply_le, RBM.Gauss.intervalIntegral_le_of_le_const, RBM.Gauss.MomNormDom, RBM.Gauss.momNormDom_of_momentDom, RBM.Gauss.momNormDom_of_stochDom, RBM.Gauss.hFmom_of_momNormDom, RBM.Gauss.hinit_of_momNormDom, RBM.Gauss.hrhs_of_moment_inputs}
   \leanok\uses{thm:momentduhamel, lem:envelope, def:5.2}

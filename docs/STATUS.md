@@ -3236,3 +3236,50 @@ Bochner 积分为 `0`，界平凡成立——这就避开了证 `u ↦ ‖·‖_
 **⚠ 顺带查出 `Gauss/MomentDuhamel.lean` 的一处括号错误**（T132a/T145 的文件，未动）：见 paper-deltas #108。
 `Hyp.momentDuhamel`/`momentDuhamelQ`/`hrhs` 里 `∫` 的被积式向右延伸，**(5.24) 的第三项实际落在了时间积分内部**。
 T146 按它实际 elaborate 的样子证明，因此能复合；**修法是一对括号，但要等 T132b 落地再动**——那两个字段正在被卸。
+
+## T132b：带时间的生成元恒等式证出；但查出 `genLK` 多了一个 `W`（`Gauss/MomentDuhamelGauss.lean`，499 行，2026-09-21）
+
+**1. 带显式时间依赖的生成元恒等式，完整走通。**
+`hasDerivAt_integral_Psi_pairs`：`d/du E[Ψ(u, H_u)] = E[∂₁Ψ] + ½ ∑_{ij} S_ij E[∂_ij∂_ji Ψ]`。
+T71 的 `hasDerivAt_integral_Phi_pairs` 就是 `Ψ v = Φ` 的特例。配套：`timeD1`、`fderiv_uncurry_apply`
+（联合导数拆成 `a·∂₁Ψ + ∂_M Ψ[B]`——**两个槽唯一相互作用的地方**）、`hasDerivAt_Psi_Hflow`、`TestFunT`(+`slice`)。
+`TestFunT` 是**时间局部化**的，窗口不是装饰：`Ψ` 的每个界都是 `(Im z_u)⁻¹ = ((1−u)Im m_E)⁻¹` 的幂。
+探针验证过该类**非空**，且在 `Ψ(u,M) = u` 上恒等式重现 `d/du ∫u dP = 1`。
+
+**2. `(z,M)` 联合 `C²`：不需要二阶的 `BddC1On` 类比。** `resH` 是 `Ring.inverse ∘ ((u,M) ↦ (M+Mᴴ)/2 − z_u)`，
+内层映射在 `z` 为 `C²` 时联合 `C^∞`，而 `contDiffAt_ringInverse` 在单位处是 `C^∞`——就是 `contDiff_resH`
+的证明把 `M` 换成序对，**T141 的 `BddC1On` 没用上**。（集合局部化的二阶**有界**类只在要造 loop 观测量的
+具体 `TestFunT` 实例时才需要，那部分没做。）
+
+### ⚠⚠ 查出的缺陷：`MomentDuhamel.genLK` 多带一个 `W⁻¹`
+
+`genLK` 把 `∂_ij∂_ji` 的权重写成 `Sblk (B.L N) (B.W N) i j / B.W N`。但
+**`RBM.Sblk L W i j = sbKre L (i.1 − j.1) / W` 本身就是方差 `E|X_ij|²`**（逐字等于 `Gauss.gvar`，
+见 `gvar_diag`/`gvar_offDiag`），它正是 `hasDerivAt_integral_Phi_pairs`、`genD` 和 T140 的
+`sumSblk_half_wirtPair` 里用的权重。agent 把这件事做成了**定理**而不是断言：
+
+```
+RBM.Gauss.W_mul_genLK_eq :  W · genLK = ½ ∑_{ij} Sblk_ij · wirtSecond(lkFun)
+```
+
+即 **`genLK = W⁻¹ · 𝓛`**。（`genLK` 的 docstring 说「只有方差剖面 `S^{(B)}/W` 进来」——
+写它的时候把 `Sblk` 当成了不带 `/W` 的 `S^{(B)}`。）
+
+**代价不是 `drift` 变得不可证。** `drift` 读作 `∃ dv, HasDerivAt … dv u ∧ dv + genLK = genS + F`，
+`F` 是**数据**字段，取 `F := dv + genLK − genS` 就卸掉了，真正的义务只有 `u`-导数存在。
+**真正的损害是：这样钉死的 `F` 与 (5.15) 的 `F` 差了 `(W⁻¹ − 1)·𝓛(L−K)`，量级就是 `𝓛(L−K)` 本身。**
+T145 的 fiat 审计结论「`F` 被 `drift` 钉死」仍然成立，**但钉死的是 (5.15) 没有命名的那个对象**，
+于是 `SumZeroDyn.Lemma510` 会在估计错的东西。**修法是一个 token**（删掉 `/ (B.W N : ℝ)`）。
+
+### ⚠ 第二处：`Hyp.integrable` 对 `u` 过度量化
+`integrable_lkT_pow` 已证（带 `(zt Ev u).im ≠ 0`），**但它闭合不了字段**，唯一原因是
+`Hyp.integrable` 把 `u` 量化在**整个 `ℝ`** 上而不是 `[s N, t N]`。`u = 1` 时谱参数是实的，不存在确定性包络。
+**这与 T145 从 `drift` 上删掉的过度量化是同一类问题。**
+
+### 未完成（边界）
+`momentDuhamel`/`momentDuhamelQ` 整条链（T72 `genMomentPt_le` → 代入 drift → Hölder → T132a `sqrt_le_of_integral_le`）
+都挂在 `drift` 上，被上面的缺陷堵住。`drift` 本身还缺两个生产者：`u ↦ B.Kval E N u I` 的时间可微性（仓库里没有），
+以及固定 Hermitian `M` 时 `u ↦ gloop(M, z_u, I)` 的可微性（在 `Gauss/LoopIto.lean`，当时是**在飞行中**的文件，未碰）。
+`Ψ = |U∘(L−K)|^{2p}` 的具体 `TestFunT` 实例要 `ℝ × Matrix` 上的联合二阶**有界**演算（T133 `BddC2C` 的时间版），未做。
+
+**`ThetaOp` 暴露：无。** 本文件没有任何声明提到 `ThetaOp`/`genS`/hierarchy 核，并行的 `S^(B)` 更正只让它重编译。

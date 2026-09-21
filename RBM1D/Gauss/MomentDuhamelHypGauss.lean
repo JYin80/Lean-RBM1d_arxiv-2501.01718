@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.MomentDuhamelBddT
 import RBM1D.Gauss.Step6HierarchyGauss
 import RBM1D.Gauss.DischargeBDG
+import RBM1D.Gauss.SteinMatrix
 
 /-!
 # The identification of `φ'` with the pinned drift (T206)
@@ -67,17 +68,34 @@ scaling, with `v ↑ 1` allowed, not a degenerate point.
 `RBM.Gauss.hasDerivAt_ukerObsT_drift_at_zero` is the mandatory degenerate check at `ω = 0`
 (flow matrix `0`): the identity is asserted there too and is not vacuous.
 
-## What is **not** here (item (2) of T206, and two items T206 did not list)
+## The five side conditions (T212)
 
 `RBM.MomentDuhamel.momentIneq_of_derivBound` consumes eight things per `(p, N, σ, v, a)`.
-This file supplies the pointwise inequality (its last item) and the bridge.  Still missing:
+T206 supplied the pointwise inequality (its last item) and the bridge; **T212 supplies the
+five integrability side conditions**, so that
+`RBM.Gauss.momentIneq_of_derivBound_gauss` — the Gaussian form of that theorem — asks only for
+the derivative on the *open* window and for the pointwise inequality.  The five are
 
-1. **The interval integrability and continuity side conditions** — item (2) of T206.  Five of
-   them: a window bound on `ψ`, `ContinuousOn` of `u ↦ E|Ψ₁|^{2p}`, and interval integrability
-   of `φ'`, of `u ↦ ‖U ∘ F_u‖_{2p}`, of `u ↦ ‖(U⊗U) ∘ (E⊗E)‖_p`, and of the product `ψ·f`.
-   All should follow from the deterministic envelope `‖G‖ ≤ (Im z_u)⁻¹` by dominated
-   convergence, as `RBM.Gauss.integrable_lkT_pow` does at a fixed time; none is done.
-2. **The quadratic variation is not yet the interface's `E ⊗ E`.**  `RBM.MomentDuhamel.MomentIneq`
+1. the window bound on `ψ` (`RBM.Gauss.exists_bdd_psi_gauss`),
+2. `ContinuousOn` of `u ↦ E|Ψ₁|^{2p}` (`RBM.Gauss.continuousOn_integral_psi_gauss`),
+3. the interval integrability of `φ'` (`RBM.Gauss.intervalIntegrable_phi'_gauss`),
+4. that of `u ↦ ‖U ∘ F_u‖_{2p}` and of `u ↦ ‖(U⊗U) ∘ (E⊗E)‖_p`
+   (`RBM.Gauss.intervalIntegrable_momNorm_driftF_gauss`,
+   `RBM.Gauss.intervalIntegrable_momNorm_eeFun_gauss`),
+5. that of the product `ψ · f` (`RBM.Gauss.intervalIntegrable_psi_mul_driftF_gauss`),
+
+and all five come from one mechanism: the deterministic envelope `‖G‖ ≤ (Im z_u)⁻¹` of T77 —
+uniform on the window `[s_N, v] ⊆ [0, 1)`, **not** on `[0, 1)` itself, where it does not exist
+(T154) — plus dominated convergence, which is the timed version of the argument
+`RBM.Gauss.integrable_lkT_pow` runs at a fixed time.  The drift integrand needs no new size
+estimate: `RBM.Gauss.uker_driftF_eq` turns `(U ∘ F_u)_a` into `∂_u Ψ₁ + 𝓛 Ψ₁`, both of which
+T196's `RBM.Gauss.norm_ukerObsTDeriv_le` and `RBM.Gauss.bddC2C_ukerObsT` already bound.  The
+primitive's own window bound is a theorem too (`RBM.Gauss.exists_bdd_Kval_Kprim`: `K` and
+`∂_u K` are continuous and the loop arguments form a finite type), so no `cK` is assumed.
+
+## What is still **not** here (two items T206 did not list)
+
+1. **The quadratic variation is not yet the interface's `E ⊗ E`.**  `RBM.MomentDuhamel.MomentIneq`
    has `‖(U⊗U) ∘ (E⊗E)_{a,a}‖_p` on the right, i.e. `RBM.Uker` at the doubled charges
    `RBM.SumZeroDyn.xi2` applied to `RBM.MomentDuhamel.eeFun`.  What exists is
    `RBM.Gauss.quadVarPairs_Uker` (`quadVar(Ψ₁) = ∑_{ij} ‖(U ∘ E^{(M)}(i,j))_a‖²`) and, for a
@@ -85,11 +103,14 @@ This file supplies the pointwise inequality (its last item) and the bridge.  Sti
    `RBM.Gauss.eeEdge_eq_sum_SB`.  The **bilinear, `U`-conjugated** form of that gluing —
    `∑_{ij} (U ∘ E^{(M)}(i,j))_a · conj((U ∘ E^{(M)}(i,j))_{a'}) = (U⊗U ∘ eeArg)_{a,a'}` — is
    not in the repository (`RBM1D/Hierarchy/EEBridge.lean` contains no `RBM.Uker`).
-3. **The `Q_t` route (`MomentIneqQ`) is untouched.**  Its drift identity needs `∂_u Q_u`, which
+2. **The `Q_t` route (`MomentIneqQ`) is untouched.**  Its drift identity needs `∂_u Q_u`, which
    produces the two extra terms `RBM.SumZeroDyn.commS` and `RBM.SumZeroDyn.varthetaDot` of
-   (5.91); nothing here differentiates `RBM.Qop` in the time.
+   (5.91); nothing here differentiates `RBM.Qop` in the time.  (T214 has since opened
+   `RBM1D/Gauss/MomentDuhamelQ.lean` for it.)
 
-Consequently `momentDuhamelHyp_gauss` still does not exist, and this file does not create it.
+Consequently `momentDuhamelHyp_gauss` still does not exist, and this file does not create it:
+what is missing is the `U`-conjugated bilinear form of (5.22) (T213) and the `Q_t` route
+(T214), not the integrability.
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/
@@ -735,6 +756,1314 @@ theorem timeD1_add_genMomentPt_le_driftF_flow (B : Band Ω) (X : Sample B) (E : 
   rwa [hbr] at hmain
 
 end Band2
+
+/-! ### Interval integrability from a deterministic envelope (T212)
+
+`RBM.MomentDuhamel.momentIneq_of_derivBound` asks, per `(p, N, σ, v, a)`, for five side
+conditions besides the derivative and the pointwise inequality: a window bound on `ψ`, the
+`ContinuousOn` of `u ↦ E|Ψ₁|^{2p}`, and the interval integrability of `φ'`, of the two drift
+integrands, and of the product `ψ · f`.  All of them are instances of one statement: a family
+of random variables that is **continuous in the time at each sample point** and **bounded by a
+deterministic constant over the window** has continuous — hence interval integrable — moments.
+
+The constant is the envelope `‖G‖ ≤ (Im z_u)⁻¹` of T77, which on the paper's window
+`[s_N, v] ⊆ [0, 1)` is uniform because `Im z_u = (1-u) Im m_E ≥ (1-v) Im m_E > 0`.  Nothing
+here quantifies `u` over all of `ℝ`: at `u = 1` no envelope exists (T154). -/
+
+section Envelope
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **A moment is continuous in the time, under a deterministic envelope.**
+
+Dominated convergence (`MeasureTheory.continuousOn_of_dominated`) with the *constant*
+dominating function `|C|^q`, which is integrable because the measure is finite.  This is the
+timed version of the argument `RBM.Gauss.integrable_lkT_pow` runs at a fixed time. -/
+theorem continuousOn_integral_abs_pow_of_envelope {P : Measure Ω} [IsFiniteMeasure P]
+    {S : Set ℝ} {f : ℝ → Ω → ℝ} {C : ℝ} (q : ℕ)
+    (hmeas : ∀ u ∈ S, AEStronglyMeasurable (f u) P)
+    (hbd : ∀ u ∈ S, ∀ ω, |f u ω| ≤ C)
+    (hcont : ∀ ω, ContinuousOn (fun u => f u ω) S) :
+    ContinuousOn (fun u => ∫ ω, |f u ω| ^ q ∂P) S := by
+  refine MeasureTheory.continuousOn_of_dominated (bound := fun _ : Ω => |C| ^ q) ?_ ?_
+    (integrable_const _) ?_
+  · intro u hu
+    have h := ((hmeas u hu).norm).pow q
+    have he : ((fun ω => ‖f u ω‖) ^ q) = fun ω => |f u ω| ^ q := by
+      funext ω; simp [Real.norm_eq_abs]
+    rwa [he] at h
+  · refine fun u hu => Filter.Eventually.of_forall fun ω => ?_
+    rw [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (abs_nonneg _) q)]
+    exact pow_le_pow_left₀ (abs_nonneg _) ((hbd u hu ω).trans (le_abs_self C)) q
+  · exact Filter.Eventually.of_forall fun ω => ((hcont ω).abs).pow q
+
+/-- **`RBM.MomentDuhamel.momNorm` is continuous in the time, under a deterministic
+envelope.** -/
+theorem continuousOn_momNorm_of_envelope {P : Measure Ω} [IsFiniteMeasure P]
+    {S : Set ℝ} {f : ℝ → Ω → ℝ} {C : ℝ} (q : ℕ)
+    (hmeas : ∀ u ∈ S, AEStronglyMeasurable (f u) P)
+    (hbd : ∀ u ∈ S, ∀ ω, |f u ω| ≤ C)
+    (hcont : ∀ ω, ContinuousOn (fun u => f u ω) S) :
+    ContinuousOn (fun u => MomentDuhamel.momNorm P q (f u)) S := by
+  have hb : ContinuousOn (fun u => ∫ ω, |f u ω| ^ q ∂P) S :=
+    continuousOn_integral_abs_pow_of_envelope q hmeas hbd hcont
+  exact hb.rpow_const fun _ _ => Or.inr (by positivity)
+
+/-- **The interval integrability the two drift integrands of (5.20) need**, from the same
+envelope.  The window is the closed `[a, b]` the inequality speaks on. -/
+theorem intervalIntegrable_momNorm_of_envelope {P : Measure Ω} [IsFiniteMeasure P]
+    {a b : ℝ} (hab : a ≤ b) {f : ℝ → Ω → ℝ} {C : ℝ} (q : ℕ)
+    (hmeas : ∀ u ∈ Set.Icc a b, AEStronglyMeasurable (f u) P)
+    (hbd : ∀ u ∈ Set.Icc a b, ∀ ω, |f u ω| ≤ C)
+    (hcont : ∀ ω, ContinuousOn (fun u => f u ω) (Set.Icc a b)) :
+    IntervalIntegrable (fun u => MomentDuhamel.momNorm P q (f u)) volume a b :=
+  (continuousOn_momNorm_of_envelope q hmeas hbd hcont).intervalIntegrable_of_Icc hab
+
+end Envelope
+
+/-! ### The time-continuity of the flow, and of the moment route's `Ψ₁` along it -/
+
+section FlowTime
+
+/-- `u ↦ H_u(ω) = √u X(ω)` is continuous — at **every** `u`, including `u = 0`, because
+`Real.sqrt` is.  (Differentiability in `u` fails at `0`; only continuity is used here, which is
+why the window `[s_N, v]` is allowed to start at `s_N = 0`.) -/
+theorem continuous_Hflow_time (d : Dims) (N : ℕ) (ω : Ω d) :
+    Continuous fun u : ℝ => Hflow d N u ω := by
+  have hfun : (fun u : ℝ => Hflow d N u ω)
+      = fun u : ℝ => ((Real.sqrt u : ℝ) : ℂ) • Xmat d N ω := by
+    funext u
+    ext i j
+    simp [Hflow, Matrix.smul_apply, smul_eq_mul]
+  rw [hfun]
+  exact (Complex.continuous_ofReal.comp Real.continuous_sqrt).smul continuous_const
+
+/-- The pair map `u ↦ (u, H_u(ω))` the joint regularity statements are composed with. -/
+theorem continuous_pair_Hflow (d : Dims) (N : ℕ) (ω : Ω d) :
+    Continuous fun u : ℝ => ((u, Hflow d N u ω) : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ) :=
+  continuous_id.prodMk (continuous_Hflow_time d N ω)
+
+/-- **`u ↦ (U_{u,t} ∘ (L - K)_u)_a(H_u ω)` is continuous on the window.**
+
+`RBM.Gauss.differentiableAt_ukerObsT_pair` (T196) is joint differentiability in `(u, M)`; the
+flow is continuous in `u` by `RBM.Gauss.continuous_Hflow_time`, so the composite is continuous.
+No Hermitian side condition is needed: `RBM.Gauss.loopObs` carries `RBM.Gauss.hermCLM`. -/
+theorem continuousOn_ukerObsT_flow (Ev : ℝ) {σ : List Bool} {m : ℕ}
+    (ξ : Fin m → ℂ) (t : ℂ) (K : ℝ → LoopArg (d.L N) m → ℂ) (a : LoopArg (d.L N) m)
+    {S : Set ℝ} (hzim : ∀ u ∈ S, (zt Ev u).im ≠ 0)
+    (hK : ∀ u ∈ S, ∀ b, DifferentiableAt ℝ (fun r : ℝ => K r b) u) (ω : Ω d) :
+    ContinuousOn (fun u : ℝ => ukerObsT d N Ev σ ξ t K a u (Hflow d N u ω)) S := by
+  intro u hu
+  have hjoint : ContinuousAt (fun q : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ =>
+      ukerObsT d N Ev σ ξ t K a q.1 q.2) (u, Hflow d N u ω) :=
+    (differentiableAt_ukerObsT_pair Ev ξ t K a (hzim u hu) (hK u hu) _).continuousAt
+  have hcomp := ContinuousAt.comp (x := u)
+    (g := fun q : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ => ukerObsT d N Ev σ ξ t K a q.1 q.2)
+    (f := fun r : ℝ => ((r, Hflow d N r ω) : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ))
+    hjoint ((continuous_pair_Hflow d N ω).continuousAt)
+  rw [Function.comp_def] at hcomp
+  exact hcomp.continuousWithinAt
+
+/-- **The value bound on `(U_{u,t} ∘ (L - K)_u)_a`, uniform over the window and over all
+matrices** — the `bdd₀` of `RBM.Gauss.bddC2C_ukerObsT` with the `u`-dependence removed by
+compactness of the window, exactly as `RBM.Gauss.bdd₀_momentObsT` does for `|·|^{2p}`. -/
+theorem exists_bdd₀_ukerObsT (Ev : ℝ) {σ : List Bool} {m : ℕ} (hσ : σ.length = m) (hm : 1 ≤ m)
+    (ξ : Fin m → ℂ) (t : ℂ) (K : ℝ → LoopArg (d.L N) m → ℂ) (a : LoopArg (d.L N) m)
+    {u₀ u₁ η cK : ℝ} (hη : 0 < η) (hcK : 0 ≤ cK)
+    (hzim : ∀ u ∈ Set.Icc u₀ u₁, η ≤ |(zt Ev u).im|)
+    (hKb : ∀ u ∈ Set.Icc u₀ u₁, ∀ b, ‖K u b‖ ≤ cK) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ Set.Icc u₀ u₁, ∀ M : Matrix (d.Idx N) (d.Idx N) ℂ,
+      ‖ukerObsT d N Ev σ ξ t K a u M‖ ≤ C := by
+  classical
+  set Cloop : ℝ := η⁻¹ ^ m * ((d.W N : ℝ))⁻¹ ^ (m - 1) with hCloop
+  set C₀ : ℝ := Cloop + cK with hC₀
+  have hC₀0 : 0 ≤ C₀ := by positivity
+  have hwf : ∀ b : LoopArg (d.L N) m, (LoopIdx.mk σ (List.ofFn b)).WF := fun b => by
+    show σ.length = (List.ofFn b).length
+    rw [hσ, List.length_ofFn]
+  have hlen : ∀ b : LoopArg (d.L N) m, (LoopIdx.mk σ (List.ofFn b)).a.length = m := fun b => by
+    show (List.ofFn b).length = m
+    rw [List.length_ofFn]
+  set Q : ℝ → ℝ := fun u => ukerCoefBd ξ t a u * C₀ with hQ
+  have hpt : ∀ u ∈ Set.Icc u₀ u₁, ∀ M : Matrix (d.Idx N) (d.Idx N) ℂ,
+      ‖ukerObsT d N Ev σ ξ t K a u M‖ ≤ Q u := by
+    intro u hu M
+    have hval : ∀ b : LoopArg (d.L N) m,
+        ‖loopObs d N (zt Ev u) ⟨σ, List.ofFn b⟩ M - K u b‖ ≤ C₀ := by
+      intro b
+      have h : ‖loopObs d N (zt Ev u) ⟨σ, List.ofFn b⟩ M‖ ≤ Cloop := by
+        have h0 := norm_loopObs_le hη (hzim u hu) _ (hwf b) (by rw [hlen b]; exact hm) M
+        rw [hlen b] at h0
+        exact h0
+      calc ‖loopObs d N (zt Ev u) ⟨σ, List.ofFn b⟩ M - K u b‖
+          ≤ ‖loopObs d N (zt Ev u) ⟨σ, List.ofFn b⟩ M‖ + ‖K u b‖ := norm_sub_le _ _
+        _ ≤ Cloop + cK := add_le_add h (hKb u hu b)
+    exact norm_ukerObsT_le Ev σ ξ t K a u M hC₀0 hval
+  have hQc : Continuous Q := (continuous_ukerCoefBd ξ t a).mul continuous_const
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := u₀) (b := u₁)).exists_bound_of_continuousOn
+    (f := Q) hQc.continuousOn
+  refine ⟨|C|, abs_nonneg _, fun u hu M => ?_⟩
+  exact le_trans (hpt u hu M)
+    (le_trans (le_trans (le_abs_self _) (hC u hu)) (le_abs_self _))
+
+end FlowTime
+
+/-! ### The envelope of the drift integrand
+
+`RBM.Gauss.hasDerivAt_ukerObsT_drift` says `(U ∘ F_u)_a = ∂_u Ψ₁ + 𝓛 Ψ₁`, and both summands
+on the right are **already** bounded uniformly over the window by T196's machinery
+(`RBM.Gauss.norm_ukerObsTDeriv_le` and `RBM.Gauss.bddC2C_ukerObsT`'s `bdd₂` through
+`RBM.Gauss.norm_coordD2_le`).  So the drift integrand of (5.20) needs no new size estimate:
+the envelope `‖G‖ ≤ (Im z_u)⁻¹` that bounds `Ψ₁` bounds `U ∘ F_u` too. -/
+
+section DriftEnvelope
+
+/-- `‖U_{u,t} ∘ A‖ ≤ ukerRow · sup‖A‖` — the row `ℓ¹` bound of the propagator, with the same
+row size `RBM.Gauss.ukerRow` that T196's uniform bounds are organised around. -/
+theorem norm_Uker_apply_le_ukerRow {L : ℕ} [NeZero L] {n : ℕ} (ξ : Fin n → ℂ) (t : ℂ) (u : ℝ)
+    (A : LoopArg L n → ℂ) (a : LoopArg L n) {C : ℝ} (hA : ∀ b, ‖A b‖ ≤ C) :
+    ‖Uker L ξ ((u : ℝ) : ℂ) t A a‖ ≤ ukerRow ξ t a u * C := by
+  rw [Uker_apply, ukerRow, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun b _ => ?_)
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_left (hA b) (norm_nonneg _)
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **`(U_{u,t} ∘ F_u)_a = ∂_u(U ∘ (L-K))_a + 𝓛(U ∘ (L-K))_a`, with both sides pinned.**
+
+The drift identity `RBM.Gauss.hasDerivAt_ukerObsT_drift` produces the derivative
+existentially; `RBM.Gauss.hasDerivAt_ukerObsT` identifies it with the *definition*
+`RBM.Gauss.ukerObsTDeriv`, so the identity becomes an equation between two explicit
+expressions.  This is what turns the drift integrand's size and continuity into statements
+about `Ψ₁` alone. -/
+theorem uker_driftF_eq (B : Band Ω) (E : ℝ) (N : ℕ) (u : ℝ)
+    {M : Matrix (B.Idx N) (B.Idx N) ℂ} (hM : M.IsHermitian) (hz : (zt E u).im ≠ 0)
+    {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2)) (t : ℂ)
+    (hm : ∀ s s' : Bool, ‖(u : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    (hv : ∀ i, ‖((u : ℝ) : ℂ) * xiOf (mSigma E) σ i‖ < 1)
+    (ht : ∀ i, ‖t * xiOf (mSigma E) σ i‖ < 1) :
+    Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t (DriftDef.driftF B E N u M σ) a
+      = ukerObsTDeriv B.toDims N E (List.ofFn σ) (xiOf (mSigma E) σ) t
+            (fun r b => B.Kval E N r (LoopData.idx (σ, b))) (Kprim B E N σ) a u M
+        + genD B.toDims N
+            (ukerObsT B.toDims N E (List.ofFn σ) (xiOf (mSigma E) σ) t
+              (fun r b => B.Kval E N r (LoopData.idx (σ, b))) a u) M := by
+  obtain ⟨D, hD, hDeq⟩ :=
+    hasDerivAt_ukerObsT_drift B E N u hM hz σ a t (fun _ _ => rfl) hm hv ht
+  have hσlen : (List.ofFn σ).length = n + 2 := List.length_ofFn
+  have hD2 := hasDerivAt_ukerObsT (d := B.toDims) (N := N) E hσlen
+    (xiOf (mSigma E) σ) t (fun r b => B.Kval E N r (LoopData.idx (σ, b)))
+    (Kprim B E N σ) a hz (fun b => hasDerivAt_Kval_Kprim B E N hm σ b) M
+  rw [← hDeq, hD.unique hD2]
+  rfl
+
+end DriftEnvelope
+
+/-! ### `𝓛F` from a uniform second-derivative bound -/
+
+/-- `‖𝓛F‖ ≤ ‖∂²F‖ · ½∑_α S_α ‖B_α‖²`, the crude bound the drift integrand needs. -/
+theorem norm_genD_le {F : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ} {C : ℝ}
+    (hC : ∀ M : Matrix (d.Idx N) (d.Idx N) ℂ, ‖fderiv ℝ (fderiv ℝ F) M‖ ≤ C)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) :
+    ‖genD d N F M‖
+      ≤ C * ((2 : ℝ)⁻¹ * ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ)
+          * (‖Bmat d N q.1 q.2.1 q.2.2‖ * ‖Bmat d N q.1 q.2.1 q.2.2‖)) := by
+  have hstep : ‖genD d N F M‖
+      ≤ (2 : ℝ)⁻¹ * ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ)
+          * (C * ‖Bmat d N q.1 q.2.1 q.2.2‖ * ‖Bmat d N q.1 q.2.1 q.2.2‖) := by
+    rw [genD, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
+    refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun q _ => ?_)
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _)]
+    exact mul_le_mul_of_nonneg_left (norm_coordD2_le hC M q) (NNReal.coe_nonneg _)
+  refine hstep.trans (le_of_eq ?_)
+  rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun q _ => by ring
+
+/-! ### The uniform envelope of the drift integrand of (5.20) -/
+
+section DriftBound
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **`u ↦ ‖(U_{u,t} ∘ F_u)_a(M)‖` is bounded on the window, uniformly in the Hermitian
+matrix.**
+
+Everything comes from `RBM.Gauss.uker_driftF_eq`: the drift integrand is
+`∂_u Ψ₁ + 𝓛 Ψ₁`, the first summand bounded by `RBM.Gauss.norm_ukerObsTDeriv_le` (through the
+envelope `RBM.norm_loopObs_le` for the value and `RBM.Gauss.norm_zMotion_le` for the
+`z`-motion), the second by `RBM.Gauss.norm_genD_le` on `RBM.Gauss.bddC2C_ukerObsT`'s `bdd₂`.
+The only `u`-dependence left is in `RBM.Gauss.ukerCoefBd` and `RBM.Gauss.ukerRow`, continuous
+functions of `u` alone, which the compact window bounds. -/
+theorem exists_bdd_uker_driftF (B : Band Ω) (E : ℝ) (N : ℕ) {n : ℕ}
+    (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2)) (t : ℂ)
+    {u₀ u₁ η cK : ℝ} (hη : 0 < η)
+    (hzim : ∀ u ∈ Set.Icc u₀ u₁, η ≤ |(zt E u).im|)
+    (hKb : ∀ u ∈ Set.Icc u₀ u₁, ∀ b : LoopArg (B.toDims.L N) (n + 2),
+      ‖B.Kval E N u (LoopData.idx (σ, b))‖ ≤ cK)
+    (hK'b : ∀ u ∈ Set.Icc u₀ u₁, ∀ b : LoopArg (B.toDims.L N) (n + 2),
+      ‖Kprim B E N σ u b‖ ≤ cK)
+    (hmw : ∀ u ∈ Set.Icc u₀ u₁, ∀ s s' : Bool, ‖(u : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    (hvw : ∀ u ∈ Set.Icc u₀ u₁, ∀ i, ‖((u : ℝ) : ℂ) * xiOf (mSigma E) σ i‖ < 1)
+    (ht : ∀ i, ‖t * xiOf (mSigma E) σ i‖ < 1) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ Set.Icc u₀ u₁, ∀ M : Matrix (B.Idx N) (B.Idx N) ℂ, M.IsHermitian →
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t (DriftDef.driftF B E N u M σ) a‖ ≤ C := by
+  classical
+  have hσlen : (List.ofFn σ).length = n + 2 := List.length_ofFn
+  have hwf : ∀ b : LoopArg (B.toDims.L N) (n + 2),
+      (LoopIdx.mk (List.ofFn σ) (List.ofFn b)).WF := fun b => by
+    show (List.ofFn σ).length = (List.ofFn b).length
+    rw [hσlen, List.length_ofFn]
+  have hlen : ∀ b : LoopArg (B.toDims.L N) (n + 2),
+      (LoopIdx.mk (List.ofFn σ) (List.ofFn b)).length = n + 2 := fun b => by
+    show (List.ofFn b).length = n + 2
+    rw [List.length_ofFn]
+  -- the two deterministic envelopes
+  set Cloop : ℝ := η⁻¹ ^ (n + 2) * ((B.toDims.W N : ℝ))⁻¹ ^ (n + 2 - 1) with hCloop
+  set Czm : ℝ := ((n + 2 : ℕ) : ℝ) * (max ‖mSigma E true‖ ‖mSigma E false‖ *
+      ((B.toDims.W N : ℝ) * ((Fintype.card (ZMod (B.toDims.L N)) : ℝ) *
+        (η⁻¹ ^ (n + 2 + 1) * ((B.toDims.W N : ℝ))⁻¹ ^ (n + 2))))) with hCzm
+  set Cbig : ℝ := max (Cloop + cK) (Czm + cK) with hCbig
+  set G : ℝ → ℝ := fun u =>
+    ukerCoefBd (xiOf (mSigma E) σ) t a u * Cbig
+      + ukerRow (xiOf (mSigma E) σ) t a u
+          * ((Fintype.card (B.toDims.Idx N) : ℝ)
+              * (((n + 2 : ℕ) : ℝ) ^ 2 * (2 * (1 + η⁻¹) ^ 3) ^ (n + 2)))
+        * ((2 : ℝ)⁻¹ * ∑ q ∈ usedCoord B.toDims N,
+            (gvar B.toDims (crd B.toDims N q) : ℝ)
+              * (‖Bmat B.toDims N q.1 q.2.1 q.2.2‖
+                  * ‖Bmat B.toDims N q.1 q.2.1 q.2.2‖)) with hG
+  have hGc : Continuous G :=
+    ((continuous_ukerCoefBd (xiOf (mSigma E) σ) t a).mul continuous_const).add
+      (((continuous_ukerRow (xiOf (mSigma E) σ) t a).mul continuous_const).mul continuous_const)
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := u₀) (b := u₁)).exists_bound_of_continuousOn
+    (f := G) hGc.continuousOn
+  refine ⟨|C|, abs_nonneg _, fun u hu M hM => ?_⟩
+  have hz : (zt E u).im ≠ 0 := im_zt_ne_zero_of_le hη (hzim u hu)
+  have hval : ∀ b : LoopArg (B.toDims.L N) (n + 2),
+      ‖loopObs B.toDims N (zt E u) ⟨List.ofFn σ, List.ofFn b⟩ M
+        - B.Kval E N u (LoopData.idx (σ, b))‖ ≤ Cbig := by
+    intro b
+    have h : ‖loopObs B.toDims N (zt E u) ⟨List.ofFn σ, List.ofFn b⟩ M‖ ≤ Cloop := by
+      have h0 := norm_loopObs_le hη (hzim u hu) _ (hwf b) (by rw [show
+        (LoopIdx.mk (List.ofFn σ) (List.ofFn b)).a.length = n + 2 from hlen b]; omega) M
+      rw [show (LoopIdx.mk (List.ofFn σ) (List.ofFn b)).a.length = n + 2 from hlen b] at h0
+      exact h0
+    refine le_trans (le_trans (norm_sub_le _ _) (add_le_add h (hKb u hu b))) ?_
+    exact le_max_left _ _
+  have hder : ∀ b : LoopArg (B.toDims.L N) (n + 2),
+      ‖zMotion (B.toDims.L N) (B.toDims.W N) (mSigma E) (hermCLM (B.Idx N) M) (zt E u)
+          ⟨List.ofFn σ, List.ofFn b⟩ - Kprim B E N σ u b‖ ≤ Cbig := by
+    intro b
+    have h : ‖zMotion (B.toDims.L N) (B.toDims.W N) (mSigma E) (hermCLM (B.Idx N) M) (zt E u)
+        ⟨List.ofFn σ, List.ofFn b⟩‖ ≤ Czm := by
+      have h0 := norm_zMotion_le (L := B.toDims.L N) (W := B.toDims.W N)
+        (isHermitian_hermCLM M) hη (hzim u hu) (mSigma E) _ (hwf b)
+      rw [hlen b] at h0
+      exact h0
+    refine le_trans (le_trans (norm_sub_le _ _) (add_le_add h (hK'b u hu b))) ?_
+    exact le_max_right _ _
+  have hbase := bddC2C_ukerObsT (d := B.toDims) (N := N) hη hz (hzim u hu) hσlen
+    (xiOf (mSigma E) σ) t (fun r b => B.Kval E N r (LoopData.idx (σ, b))) a
+    (fun b => hKb u hu b)
+  have h1 : ‖ukerObsTDeriv B.toDims N E (List.ofFn σ) (xiOf (mSigma E) σ) t
+        (fun r b => B.Kval E N r (LoopData.idx (σ, b))) (Kprim B E N σ) a u M‖
+      ≤ ukerCoefBd (xiOf (mSigma E) σ) t a u * Cbig :=
+    norm_ukerObsTDeriv_le (d := B.toDims) (N := N) (C := Cbig) E (List.ofFn σ)
+      (xiOf (mSigma E) σ) t (fun r b => B.Kval E N r (LoopData.idx (σ, b)))
+      (Kprim B E N σ) a u M hval hder
+  have h2 := norm_genD_le (fun M' => hbase.bdd₂ M') M
+  have hsum : ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+      (DriftDef.driftF B E N u M σ) a‖ ≤ G u := by
+    rw [uker_driftF_eq B E N u hM hz σ a t (hmw u hu) (hvw u hu) ht]
+    exact (norm_add_le _ _).trans (add_le_add h1 h2)
+  exact hsum.trans (le_trans (le_trans (le_abs_self _) (hC u hu)) (le_abs_self _))
+
+end DriftBound
+
+/-! ### Continuity of the pinned drift and of `E ⊗ E` along a path
+
+The envelope above is a *size* statement; interval integrability needs a *measurability*
+statement too.  `RBM.DriftDef.driftF` and `RBM.MomentDuhamel.eeFun` are finite algebraic
+expressions in three ingredients — the loops `L_{u,J}`, the spectral edge `G(σ) - m(σ)` and
+the primitive `K_u` — and each of the three is continuous.
+
+Everything is stated along an arbitrary continuous path `x ↦ (τ x, M x)` of (time, Hermitian
+matrix), because the moment route needs it twice: with `x = u` and `M = H_u(ω)` for the
+**time**-continuity that interval integrability asks for, and with `x = ω` and `τ` constant
+for the **sample**-measurability that the Bochner integral asks for.  Doing it once avoids
+proving the same chain twice. -/
+
+section PathContinuity
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- **Every loop is continuous along a continuous Hermitian path.**  Joint `C²` in `(u, M)`
+(`RBM.Gauss.contDiffAt_loopObs_zt_pair`) composed with the path; at a Hermitian matrix
+`RBM.Gauss.loopObs` *is* `RBM.gloop`. -/
+theorem continuousOn_gloop_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    (I : LoopIdx (ZMod (d.L N))) :
+    ContinuousOn (fun x => gloop (d.L N) (d.W N) (Mt x) (zt E (τ x)) I) S := by
+  have hEq : (fun x => gloop (d.L N) (d.W N) (Mt x) (zt E (τ x)) I)
+      = fun x => loopObs d N (zt E (τ x)) I (Mt x) := by
+    funext x
+    exact (loopObs_of_isHermitian (hherm x)).symm
+  rw [hEq]
+  intro x hx
+  have hjoint : ContinuousAt (fun q : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ =>
+      loopObs d N (zt E q.1) I q.2) (τ x, Mt x) :=
+    (contDiffAt_loopObs_zt_pair E (hzim x hx) I _).continuousAt
+  have hcomp := ContinuousAt.comp_continuousWithinAt (s := S) (x := x)
+    (g := fun q : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ => loopObs d N (zt E q.1) I q.2)
+    (f := fun y : X => ((τ y, Mt y) : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ))
+    hjoint ((hτ x hx).prodMk (hMt x hx))
+  rw [Function.comp_def] at hcomp
+  exact hcomp
+
+/-- **The spectral edge `G^{(σ)}` is continuous along a continuous Hermitian path.** -/
+theorem continuousOn_Gsig_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0) (sgn : Bool) :
+    ContinuousOn (fun x => Gsig (Mt x) (zt E (τ x)) sgn) S := by
+  have hEq : (fun x => Gsig (Mt x) (zt E (τ x)) sgn)
+      = fun x => Gsig (hermCLM (d.Idx N) (Mt x)) (zt E (τ x)) sgn := by
+    funext x
+    rw [hermCLM_of_isHermitian (hherm x)]
+  rw [hEq]
+  intro x hx
+  have hjoint : ContinuousAt (fun q : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ =>
+      Gsig (hermCLM (d.Idx N) q.2) (zt E q.1) sgn) (τ x, Mt x) :=
+    (contDiffAt_Gsig_zt_pair E (hzim x hx) sgn _).continuousAt
+  have hcomp := ContinuousAt.comp_continuousWithinAt (s := S) (x := x)
+    (g := fun q : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ =>
+      Gsig (hermCLM (d.Idx N) q.2) (zt E q.1) sgn)
+    (f := fun y : X => ((τ y, Mt y) : ℝ × Matrix (d.Idx N) (d.Idx N) ℂ))
+    hjoint ((hτ x hx).prodMk (hMt x hx))
+  rw [Function.comp_def] at hcomp
+  exact hcomp
+
+section KvalCont
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **The primitive `K_u` is continuous in the time at every well-formed index.**
+
+Loops of length `≥ 2` are differentiable in the time (`RBM.hasDerivAt_Kgen_all`, T58); loops
+of length `0` or `1` do not move at all (`RBM.Kgen` is `0` resp. `m(σ₁)` there). -/
+theorem continuousOn_Kval_path (B : Band Ω) (E : ℝ) (N : ℕ) {S : Set X} {τ : X → ℝ}
+    (hτ : ContinuousOn τ S)
+    (hm : ∀ x ∈ S, ∀ s s' : Bool, ‖((τ x : ℝ) : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    (I : LoopIdx (ZMod (B.L N))) (hI : I.WF) :
+    ContinuousOn (fun x => B.Kval E N (τ x) I) S := by
+  rcases Nat.lt_or_ge I.length 2 with h | h
+  · have hconst : ∀ r : ℝ, B.Kval E N r I = B.Kval E N 0 I := by
+      intro r
+      show Kgen (B.L N) (B.W N) (mSigma E) r I = Kgen (B.L N) (B.W N) (mSigma E) 0 I
+      unfold Kgen
+      split_ifs <;> first | rfl | omega
+    exact continuousOn_const.congr fun x _ => hconst (τ x)
+  · intro x hx
+    have hd : ContinuousAt (fun r : ℝ => B.Kval E N r I) (τ x) :=
+      (hasDerivAt_Kgen_all (L := B.L N) (B.W N) (mSigma E) (B.three_le_L N)
+        (hm x hx) I hI h).continuousAt
+    exact hd.comp_continuousWithinAt (hτ x hx)
+
+end KvalCont
+
+/-! #### The three bilinear blocks of (5.15) -/
+
+section Bilinear
+
+variable {L : ℕ} [NeZero L]
+
+/-- `primBil` is continuous when both tensors are. -/
+theorem continuousOn_primBil (W : ℕ) {S : Set X} {Y Z : X → LoopIdx (ZMod L) → ℂ}
+    (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hY : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Y x J) S)
+    (hZ : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Z x J) S) :
+    ContinuousOn (fun x => primBil L W (Y x) (Z x) I) S := by
+  simp only [primBil]
+  refine continuousOn_const.mul (continuousOn_finsetSum _ fun k hk => ?_)
+  refine continuousOn_finsetSum _ fun l hl => ?_
+  refine continuousOn_finsetSum _ fun a _ => continuousOn_finsetSum _ fun b _ => ?_
+  rw [Finset.mem_Icc] at hk
+  rw [Finset.mem_Ioc] at hl
+  exact ((hY _ (hI.cutGlueL a hk.1 hl.1 hl.2)).mul continuousOn_const).mul
+    (hZ _ (hI.cutGlueR b hk.1 hl.1 hl.2))
+
+/-- `primBilLen` is continuous when both tensors are. -/
+theorem continuousOn_primBilLen (W lK : ℕ) {S : Set X} {Y Z : X → LoopIdx (ZMod L) → ℂ}
+    (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hY : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Y x J) S)
+    (hZ : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Z x J) S) :
+    ContinuousOn (fun x => primBilLen L W lK (Y x) (Z x) I) S := by
+  simp only [primBilLen]
+  refine continuousOn_const.mul (continuousOn_finsetSum _ fun k hk => ?_)
+  refine continuousOn_finsetSum _ fun l hl => ?_
+  refine continuousOn_finsetSum _ fun a _ => continuousOn_finsetSum _ fun b _ => ?_
+  rw [Finset.mem_Icc] at hk
+  rw [Finset.mem_Ioc] at hl
+  split_ifs with hc
+  · exact ((hY _ (hI.cutGlueL a hk.1 hl.1 hl.2)).mul continuousOn_const).mul
+      (hZ _ (hI.cutGlueR b hk.1 hl.1 hl.2))
+  · exact continuousOn_const
+
+/-- `RBM.Decay.primBilLenR` is continuous when both tensors are. -/
+theorem continuousOn_primBilLenR (W lK : ℕ) {S : Set X} {Y Z : X → LoopIdx (ZMod L) → ℂ}
+    (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hY : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Y x J) S)
+    (hZ : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Z x J) S) :
+    ContinuousOn (fun x => Decay.primBilLenR L W lK (Y x) (Z x) I) S := by
+  simp only [Decay.primBilLenR]
+  refine continuousOn_const.mul (continuousOn_finsetSum _ fun k hk => ?_)
+  refine continuousOn_finsetSum _ fun l hl => ?_
+  refine continuousOn_finsetSum _ fun a _ => continuousOn_finsetSum _ fun b _ => ?_
+  rw [Finset.mem_Icc] at hk
+  rw [Finset.mem_Ioc] at hl
+  split_ifs with hc
+  · exact ((hY _ (hI.cutGlueL a hk.1 hl.1 hl.2)).mul continuousOn_const).mul
+      (hZ _ (hI.cutGlueR b hk.1 hl.1 hl.2))
+  · exact continuousOn_const
+
+/-- `RBM.Decay.couplingLen` is continuous when both tensors are. -/
+theorem continuousOn_couplingLen (W lK : ℕ) {S : Set X} {Y Z : X → LoopIdx (ZMod L) → ℂ}
+    (I : LoopIdx (ZMod L)) (hI : I.WF)
+    (hY : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Y x J) S)
+    (hZ : ∀ J : LoopIdx (ZMod L), J.WF → ContinuousOn (fun x => Z x J) S) :
+    ContinuousOn (fun x => Decay.couplingLen L W lK (Y x) (Z x) I) S :=
+  (continuousOn_primBilLen W lK I hI hY hZ).add (continuousOn_primBilLenR W lK I hI hZ hY)
+
+end Bilinear
+
+/-- `RBM.Gauss.eGterm` is continuous along a continuous Hermitian path. -/
+theorem continuousOn_eGterm_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    (I : LoopIdx (ZMod (d.L N))) :
+    ContinuousOn (fun x => eGterm (d.L N) (d.W N) (mSigma E) (Mt x) (zt E (τ x)) I) S := by
+  simp only [eGterm]
+  refine continuousOn_const.mul (continuousOn_finsetSum _ fun k _ => ?_)
+  refine continuousOn_finsetSum _ fun c _ => continuousOn_finsetSum _ fun b _ => ?_
+  have htr : Continuous (fun A : Matrix (d.Idx N) (d.Idx N) ℂ =>
+      Matrix.trace (A * Eblk (d.L N) (d.W N) c)) :=
+    continuous_matrixTrace.comp (continuous_id.matrix_mul continuous_const)
+  have hA : ContinuousOn (fun x =>
+      Gsig (Mt x) (zt E (τ x)) (I.σ.getD (k - 1) true)
+        - mSigma E (I.σ.getD (k - 1) true) • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)) S :=
+    (continuousOn_Gsig_path d N E hτ hMt hherm hzim _).sub continuousOn_const
+  exact ((htr.comp_continuousOn hA).mul continuousOn_const).mul
+    (continuousOn_gloop_path d N E hτ hMt hherm hzim _)
+
+/-- **The pinned drift is continuous along a continuous Hermitian path.**  (5.15)'s `F` is
+`eGterm + ∑ couplingLen + primBil`, and all three blocks are finite algebraic expressions in
+the loops and the primitive. -/
+theorem continuousOn_driftF_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    (hm : ∀ x ∈ S, ∀ s s' : Bool, ‖((τ x : ℝ) : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    {n : ℕ} (σ : Fin (n + 2) → Bool) (b : LoopArg (d.L N) (n + 2)) :
+    ContinuousOn (fun x => DriftDef.driftF (band d) E N (τ x) (Mt x) σ b) S := by
+  have hwf : (LoopData.idx (σ, b)).WF := LoopData.idx_wf _
+  have hK : ∀ J : LoopIdx (ZMod ((band d).L N)), J.WF →
+      ContinuousOn (fun x => (band d).Kval E N (τ x) J) S :=
+    fun J hJ => continuousOn_Kval_path (band d) E N hτ hm J hJ
+  have hD : ∀ J : LoopIdx (ZMod ((band d).L N)), J.WF →
+      ContinuousOn (fun x =>
+        (gloop ((band d).L N) ((band d).W N) (Mt x) (zt E (τ x))
+          - (band d).Kval E N (τ x)) J) S := by
+    intro J hJ
+    simp only [Pi.sub_apply]
+    exact (continuousOn_gloop_path d N E hτ hMt hherm hzim J).sub (hK J hJ)
+  simp only [DriftDef.driftF]
+  refine ((continuousOn_eGterm_path d N E hτ hMt hherm hzim _).add
+    (continuousOn_finsetSum _ fun lK _ => ?_)).add ?_
+  · exact continuousOn_couplingLen (L := (band d).L N) ((band d).W N) lK _ hwf hK hD
+  · exact continuousOn_primBil (L := (band d).L N) ((band d).W N) _ hwf hD hD
+
+/-- **The drift integrand of (5.20) is continuous along a continuous Hermitian path**, in the
+time variable of the propagator as well as in the matrix. -/
+theorem continuousOn_uker_driftF_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    (hm : ∀ x ∈ S, ∀ s s' : Bool, ‖((τ x : ℝ) : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ) :
+    ContinuousOn (fun x => Uker (d.L N) (xiOf (mSigma E) σ) ((τ x : ℝ) : ℂ) t
+      (DriftDef.driftF (band d) E N (τ x) (Mt x) σ) a) S := by
+  simp only [Uker]
+  refine continuousOn_finsetSum _ fun b _ => ?_
+  refine ContinuousOn.mul ?_ (continuousOn_driftF_path d N E hτ hMt hherm hzim hm σ b)
+  exact (continuous_finsetProd _ fun i _ =>
+    continuous_edgeKer_time (xiOf (mSigma E) σ i) t (a i) (b i)).comp_continuousOn hτ
+
+
+/-! #### `L - K` along the path -/
+
+/-- `L - K` is continuous along a continuous Hermitian path. -/
+theorem continuousOn_lkFun_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    (hm : ∀ x ∈ S, ∀ s s' : Bool, ‖((τ x : ℝ) : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    {m : ℕ} (σ : Fin m → Bool) (b : LoopArg (d.L N) m) :
+    ContinuousOn (fun x => MomentDuhamel.lkFun (band d) E N (τ x) (Mt x) σ b) S := by
+  simp only [MomentDuhamel.lkFun]
+  exact (continuousOn_gloop_path d N E hτ hMt hherm hzim _).sub
+    (continuousOn_Kval_path (band d) E N hτ hm _ (LoopData.idx_wf _))
+
+/-- **`Ψ₁ = (U_{u,t} ∘ (L-K)_u)_a` is continuous along a continuous Hermitian path.** -/
+theorem continuousOn_uker_lkFun_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    (hm : ∀ x ∈ S, ∀ s s' : Bool, ‖((τ x : ℝ) : ℂ) * (mSigma E s * mSigma E s')‖ < 1)
+    {m : ℕ} (σ : Fin m → Bool) (ξ : Fin m → ℂ) (a : LoopArg (d.L N) m) (t : ℂ) :
+    ContinuousOn (fun x => Uker (d.L N) ξ ((τ x : ℝ) : ℂ) t
+      (MomentDuhamel.lkFun (band d) E N (τ x) (Mt x) σ) a) S := by
+  simp only [Uker]
+  refine continuousOn_finsetSum _ fun b _ => ?_
+  refine ContinuousOn.mul ?_ (continuousOn_lkFun_path d N E hτ hMt hherm hzim hm σ b)
+  exact (continuous_finsetProd _ fun i _ =>
+    continuous_edgeKer_time (ξ i) t (a i) (b i)).comp_continuousOn hτ
+
+/-! #### `E ⊗ E` along the path -/
+
+/-- **(5.22) along the path**: `E ⊗ E` is `∑_k W ∑_{b,b'} S^{(B)}_{bb'} L_{glue}`. -/
+theorem eeArg_herm_eq (d : Dims) (N : ℕ) (z : ℂ) {M : Matrix (d.Idx N) (d.Idx N) ℂ}
+    (hM : M.IsHermitian) {n : ℕ} (σ : Fin n → Bool) (c : LoopArg (d.L N) (n + n)) :
+    EEBridge.eeArg d N z M σ c
+      = ∑ k ∈ Finset.range n, ((d.W N : ℂ) * ∑ b : ZMod (d.L N), ∑ b' : ZMod (d.L N),
+          SB (d.L N) b b' * gloop (d.L N) (d.W N) M z
+            (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c)) (toIdx σ (EEBridge.rightArg c))
+              k b b')) := by
+  rw [EEBridge.eeArg, eeTens, toIdx_length]
+  exact Finset.sum_congr rfl fun k _ => EEBridge.eeEdge_eq_sum_gloop hM _ _ k
+
+/-- **`E ⊗ E` is continuous along a continuous Hermitian path.** -/
+theorem continuousOn_eeFun_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    {n : ℕ} (σ : Fin n → Bool) (c : LoopArg (d.L N) (n + n)) :
+    ContinuousOn (fun x => MomentDuhamel.eeFun (band d) E N (τ x) (Mt x) σ c) S := by
+  have hEq : (fun x => MomentDuhamel.eeFun (band d) E N (τ x) (Mt x) σ c)
+      = fun x => ∑ k ∈ Finset.range n, ((d.W N : ℂ)
+          * ∑ b : ZMod (d.L N), ∑ b' : ZMod (d.L N),
+            SB (d.L N) b b' * gloop (d.L N) (d.W N) (Mt x) (zt E (τ x))
+              (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+                (toIdx σ (EEBridge.rightArg c)) k b b')) := by
+    funext x
+    exact eeArg_herm_eq d N (zt E (τ x)) (hherm x) σ c
+  rw [hEq]
+  refine continuousOn_finsetSum _ fun k _ => continuousOn_const.mul ?_
+  refine continuousOn_finsetSum _ fun b _ => continuousOn_finsetSum _ fun b' _ => ?_
+  exact continuousOn_const.mul (continuousOn_gloop_path d N E hτ hMt hherm hzim _)
+
+/-- **The quadratic-variation integrand of (5.20) is continuous along the path.** -/
+theorem continuousOn_uker_eeFun_path (d : Dims) (N : ℕ) (E : ℝ) {S : Set X} {τ : X → ℝ}
+    {Mt : X → Matrix (d.Idx N) (d.Idx N) ℂ} (hτ : ContinuousOn τ S) (hMt : ContinuousOn Mt S)
+    (hherm : ∀ x, (Mt x).IsHermitian) (hzim : ∀ x ∈ S, (zt E (τ x)).im ≠ 0)
+    {n : ℕ} (σ : Fin n → Bool) (ξ : Fin (n + n) → ℂ) (c : LoopArg (d.L N) (n + n)) (t : ℂ) :
+    ContinuousOn (fun x => Uker (d.L N) ξ ((τ x : ℝ) : ℂ) t
+      (MomentDuhamel.eeFun (band d) E N (τ x) (Mt x) σ) c) S := by
+  simp only [Uker]
+  refine continuousOn_finsetSum _ fun b _ => ?_
+  refine ContinuousOn.mul ?_ (continuousOn_eeFun_path d N E hτ hMt hherm hzim σ b)
+  exact (continuous_finsetProd _ fun i _ =>
+    continuous_edgeKer_time (ξ i) t (c i) (b i)).comp_continuousOn hτ
+
+/-- **The deterministic envelope of `E ⊗ E`**, from (5.2) on the glued `(2n+2)`-loop and the
+row `ℓ¹` normalisation `∑_{b'} ‖S^{(B)}_{bb'}‖ = 1`. -/
+theorem norm_eeFun_herm_le (d : Dims) (N : ℕ) (E : ℝ) {η : ℝ} (hη : 0 < η) {u : ℝ}
+    (hz : η ≤ |(zt E u).im|) {M : Matrix (d.Idx N) (d.Idx N) ℂ} (hM : M.IsHermitian)
+    {n : ℕ} (σ : Fin n → Bool) (c : LoopArg (d.L N) (n + n)) :
+    ‖MomentDuhamel.eeFun (band d) E N u M σ c‖
+      ≤ (n : ℝ) * ((d.W N : ℝ) * ((Fintype.card (ZMod (d.L N)) : ℝ)
+          * (η⁻¹ ^ (2 * n + 2) * ((d.W N : ℝ))⁻¹ ^ (2 * n + 1)))) := by
+  classical
+  have hL3 : 3 ≤ d.L N := d.three_le_L N
+  set Glue : ℝ := η⁻¹ ^ (2 * n + 2) * ((d.W N : ℝ))⁻¹ ^ (2 * n + 1) with hGlue
+  have hkey : ∀ k ∈ Finset.range n,
+      ‖(d.W N : ℂ) * ∑ b : ZMod (d.L N), ∑ b' : ZMod (d.L N),
+          SB (d.L N) b b' * gloop (d.L N) (d.W N) M (zt E u)
+            (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+              (toIdx σ (EEBridge.rightArg c)) k b b')‖
+        ≤ (d.W N : ℝ) * ((Fintype.card (ZMod (d.L N)) : ℝ) * Glue) := by
+    intro k hk
+    rw [Finset.mem_range] at hk
+    have hgl : ∀ b b' : ZMod (d.L N),
+        ‖gloop (d.L N) (d.W N) M (zt E u)
+            (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+              (toIdx σ (EEBridge.rightArg c)) k b b')‖ ≤ Glue := by
+      intro b b'
+      have hlen : (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+          (toIdx σ (EEBridge.rightArg c)) k b b').a.length = 2 * n + 2 :=
+        EEBridge.glueIdx_length (toIdx_wf _ _) (toIdx_wf _ _) (toIdx_length _ _)
+          (toIdx_length _ _) hk b b'
+      have h0 := norm_gloop_le_of_le_abs_im hM hη hz
+        (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+          (toIdx σ (EEBridge.rightArg c)) k b b') (EEBridge.glueIdx_wf _ _ _ _ _)
+        (by rw [hlen]; omega)
+      rwa [hlen] at h0
+    rw [norm_mul, Complex.norm_natCast]
+    refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
+    refine (norm_sum_le _ _).trans ?_
+    have hrow : ∀ b : ZMod (d.L N),
+        ‖∑ b' : ZMod (d.L N), SB (d.L N) b b'
+            * gloop (d.L N) (d.W N) M (zt E u)
+              (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+                (toIdx σ (EEBridge.rightArg c)) k b b')‖ ≤ Glue := by
+      intro b
+      refine (norm_sum_le _ _).trans ?_
+      have hb : ∀ b' : ZMod (d.L N),
+          ‖SB (d.L N) b b' * gloop (d.L N) (d.W N) M (zt E u)
+              (EEBridge.glueIdx (toIdx σ (EEBridge.leftArg c))
+                (toIdx σ (EEBridge.rightArg c)) k b b')‖
+            ≤ ‖SB (d.L N) b b'‖ * Glue := by
+        intro b'
+        rw [norm_mul]
+        exact mul_le_mul_of_nonneg_left (hgl b b') (norm_nonneg _)
+      refine (Finset.sum_le_sum fun b' _ => hb b').trans ?_
+      rw [← Finset.sum_mul, sum_norm_SB_apply_row (d.L N) hL3 b, one_mul]
+    refine (Finset.sum_le_sum fun b _ => hrow b).trans ?_
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have hsum : ‖MomentDuhamel.eeFun (band d) E N u M σ c‖
+      ≤ ∑ _k ∈ Finset.range n, ((d.W N : ℝ) * ((Fintype.card (ZMod (d.L N)) : ℝ) * Glue)) := by
+    rw [show MomentDuhamel.eeFun (band d) E N u M σ c
+        = EEBridge.eeArg d N (zt E u) M σ c from rfl, eeArg_herm_eq d N (zt E u) hM σ c]
+    exact (norm_sum_le _ _).trans (Finset.sum_le_sum hkey)
+  refine hsum.trans (le_of_eq ?_)
+  rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+
+end PathContinuity
+
+
+
+
+/-! ### The five side conditions of `RBM.MomentDuhamel.momentIneq_of_derivBound` (T212)
+
+For the Gaussian sample, on the paper's window `[s, v] ⊆ [0, 1)`.  Each of the five is the
+generic envelope lemma of the previous section applied to one of the three tensors, and all
+three envelopes are the deterministic `‖G‖ ≤ (Im z_u)⁻¹` of T77. -/
+
+section SideConditions
+
+/-! #### The window package -/
+
+/-- On `[s, v]` with `v < 1` and `|E| < 2` the spectral parameter stays off the real axis, with
+the explicit `η = (1-v) Im m_E`. -/
+theorem window_le_abs_im {E : ℝ} (hE : |E| < 2) {s v : ℝ} (hv1 : v < 1) :
+    ∀ u ∈ Set.Icc s v, (1 - v) * (mE E).im ≤ |(zt E u).im| :=
+  fun _ hu => le_abs_im_zt_of_le hE hv1 hu.2
+
+theorem window_eta_pos {E : ℝ} (hE : |E| < 2) {v : ℝ} (hv1 : v < 1) :
+    0 < (1 - v) * (mE E).im := mul_pos (by linarith) (mE_im_pos hE)
+
+theorem window_im_ne_zero {E : ℝ} (hE : |E| < 2) {s v : ℝ} (hv1 : v < 1) :
+    ∀ u ∈ Set.Icc s v, (zt E u).im ≠ 0 :=
+  fun u hu => im_zt_ne_zero_of_le (window_eta_pos hE hv1) (window_le_abs_im hE hv1 u hu)
+
+theorem window_norm_mul_lt {E : ℝ} (hE : |E| ≤ 2) {s v : ℝ} (hs0 : 0 ≤ s) (hv1 : v < 1) :
+    ∀ u ∈ Set.Icc s v, ∀ x y : Bool, ‖(u : ℂ) * (mSigma E x * mSigma E y)‖ < 1 := by
+  intro u hu x y
+  rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg (hs0.trans hu.1), norm_mSigma hE, norm_mSigma hE, mul_one, mul_one]
+  exact lt_of_le_of_lt hu.2 hv1
+
+theorem window_norm_xi_lt {E : ℝ} (hE : |E| ≤ 2) {s v : ℝ} (hs0 : 0 ≤ s) (hv1 : v < 1)
+    {m : ℕ} [NeZero m] (σ : Fin m → Bool) :
+    ∀ u ∈ Set.Icc s v, ∀ i, ‖((u : ℝ) : ℂ) * xiOf (mSigma E) σ i‖ < 1 := by
+  intro u hu i
+  rw [xiOf, norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg (hs0.trans hu.1), norm_mSigma hE, norm_mSigma hE, mul_one, mul_one]
+  exact lt_of_le_of_lt hu.2 hv1
+
+/-! #### The three integrands along the Gaussian flow -/
+
+variable (d : Dims)
+
+/-- `Ψ₁` along the Gaussian flow, in the shape the interface uses. -/
+theorem uker_lkT_eq_path (E : ℝ) (N : ℕ) {m : ℕ} (σ : Fin m → Bool)
+    (ξ : Fin m → ℂ) (a : LoopArg (d.L N) m) (t : ℂ) (u : ℝ) (ω : Ω d) :
+    Uker (d.L N) ξ ((u : ℝ) : ℂ) t (SumZeroDyn.lkT (sample d) E N u ω σ) a
+      = Uker (d.L N) ξ ((u : ℝ) : ℂ) t
+          (MomentDuhamel.lkFun (band d) E N u (Hflow d N u ω) σ) a := rfl
+
+/-- `Ψ₁` is continuous in the sample point, hence measurable. -/
+theorem continuous_uker_lkT_omega (E : ℝ) (N : ℕ) {u : ℝ} (hz : (zt E u).im ≠ 0)
+    (hm : ∀ x y : Bool, ‖(u : ℂ) * (mSigma E x * mSigma E y)‖ < 1)
+    {m : ℕ} (σ : Fin m → Bool) (ξ : Fin m → ℂ) (a : LoopArg (d.L N) m) (t : ℂ) :
+    Continuous fun ω : Ω d => Uker (d.L N) ξ ((u : ℝ) : ℂ) t
+      (SumZeroDyn.lkT (sample d) E N u ω σ) a := by
+  rw [← continuousOn_univ]
+  refine ContinuousOn.congr ?_ fun ω _ => uker_lkT_eq_path d E N σ ξ a t u ω
+  exact continuousOn_uker_lkFun_path (X := Ω d) d N E (τ := fun _ => u)
+    (Mt := fun ω => Hflow d N u ω) continuousOn_const
+    (continuous_Hflow d N u).continuousOn (fun ω => Hflow_isHermitian d N u ω)
+    (fun _ _ => hz) (fun _ _ => hm) σ ξ a t
+
+/-- The drift integrand is continuous in the sample point, hence measurable. -/
+theorem continuous_uker_driftF_omega (E : ℝ) (N : ℕ) {u : ℝ} (hz : (zt E u).im ≠ 0)
+    (hm : ∀ x y : Bool, ‖(u : ℂ) * (mSigma E x * mSigma E y)‖ < 1)
+    {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ) :
+    Continuous fun ω : Ω d => Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+      (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a := by
+  rw [← continuousOn_univ]
+  exact continuousOn_uker_driftF_path (X := Ω d) d N E (τ := fun _ => u)
+    (Mt := fun ω => Hflow d N u ω) continuousOn_const
+    (continuous_Hflow d N u).continuousOn (fun ω => Hflow_isHermitian d N u ω)
+    (fun _ _ => hz) (fun _ _ => hm) σ a t
+
+/-- The quadratic-variation integrand is continuous in the sample point, hence measurable. -/
+theorem continuous_uker_eeFun_omega (E : ℝ) (N : ℕ) {u : ℝ} (hz : (zt E u).im ≠ 0)
+    {m : ℕ} (σ : Fin m → Bool) (ξ : Fin (m + m) → ℂ) (c : LoopArg (d.L N) (m + m)) (t : ℂ) :
+    Continuous fun ω : Ω d => Uker (d.L N) ξ ((u : ℝ) : ℂ) t
+      (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ) c := by
+  rw [← continuousOn_univ]
+  exact continuousOn_uker_eeFun_path (X := Ω d) d N E (τ := fun _ => u)
+    (Mt := fun ω => Hflow d N u ω) continuousOn_const
+    (continuous_Hflow d N u).continuousOn (fun ω => Hflow_isHermitian d N u ω)
+    (fun _ _ => hz) σ ξ c t
+
+/-! #### The bridge and the three envelopes on the window -/
+
+/-- `Ψ₁` along the Gaussian flow is T196's `RBM.Gauss.ukerObsT`, with `K` pinned. -/
+theorem uker_lkT_eq_ukerObsT (E : ℝ) (N : ℕ) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (t : ℂ) (u : ℝ) (ω : Ω d) :
+    Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t (SumZeroDyn.lkT (sample d) E N u ω σ) a
+      = ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) t
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u (Hflow d N u ω) :=
+  (ukerObsT_flow (band d) (sample d) E N σ a t (fun _ _ => rfl) u ω).symm
+
+variable {d}
+
+/-- **The envelope of `Ψ₁` on the window**, uniform in the sample point. -/
+theorem exists_bdd_uker_lkT (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ)
+    {cK : ℝ} (hcK : 0 ≤ cK)
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ Set.Icc s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+        (SumZeroDyn.lkT (sample d) E N u ω σ) a‖ ≤ C := by
+  obtain ⟨C, hC0, hC⟩ := exists_bdd₀_ukerObsT (d := d) (N := N) E
+    (σ := List.ofFn σ) (List.length_ofFn) (by omega) (xiOf (mSigma E) σ) t
+    (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a
+    (window_eta_pos hE hv1) hcK (window_le_abs_im hE hv1) hKb
+  exact ⟨C, hC0, fun u hu ω => by
+    rw [uker_lkT_eq_ukerObsT d E N σ a t u ω]; exact hC u hu _⟩
+
+/-! #### Item 1: the window bound on `ψ` -/
+
+/-- **`ψ_u = (E|Ψ₁|^{2p})^{1/p}` is bounded on the window** — the first of the five side
+conditions of `RBM.MomentDuhamel.momentIneq_of_derivBound`. -/
+theorem exists_bdd_psi_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hs0 : 0 ≤ s)
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ)
+    (p : ℕ) {cK : ℝ} (hcK : 0 ≤ cK)
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK) :
+    ∃ C : ℝ, ∀ u ∈ Set.Icc s v,
+      (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+          (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P) ^ ((1 : ℝ) / p)
+        ≤ C := by
+  classical
+  have hprob := (band d).isProbabilityMeasure
+  obtain ⟨C, hC0, hC⟩ := exists_bdd_uker_lkT E N hE hv1 σ a t hcK hKb
+  refine ⟨(C ^ (2 * p)) ^ ((1 : ℝ) / p), fun u hu => ?_⟩
+  have hz : (zt E u).im ≠ 0 := window_im_ne_zero hE hv1 u hu
+  have hmu : ∀ x y : Bool, ‖(u : ℂ) * (mSigma E x * mSigma E y)‖ < 1 :=
+    window_norm_mul_lt hE.le hs0 hv1 u hu
+  have hcont := continuous_uker_lkT_omega d E N hz hmu σ (xiOf (mSigma E) σ) a t
+  have hint : Integrable (fun ω : Ω d => |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+      (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p)) (band d).P := by
+    refine integrable_of_continuous_of_bound (hcont.norm.abs.pow (2 * p))
+      (C := C ^ (2 * p)) fun ω => ?_
+    rw [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (abs_nonneg _) _)]
+    exact pow_le_pow_left₀ (abs_nonneg _) (by rw [abs_norm]; exact hC u hu ω) _
+  have hle : (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+      (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P) ≤ C ^ (2 * p) := by
+    have h := integral_mono hint (integrable_const (C ^ (2 * p))) (fun ω => by
+      rw [abs_norm]
+      exact pow_le_pow_left₀ (norm_nonneg _) (hC u hu ω) _)
+    simpa using h
+  exact Real.rpow_le_rpow (integral_nonneg fun _ => pow_nonneg (abs_nonneg _) _) hle
+    (by positivity)
+
+/-! #### Item 2: `ContinuousOn` of `u ↦ E|Ψ₁|^{2p}` -/
+
+/-- **The `2p`-th moment of `Ψ₁` is continuous on the window** — the second side condition. -/
+theorem continuousOn_integral_psi_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hs0 : 0 ≤ s)
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ)
+    (p : ℕ) {cK : ℝ} (hcK : 0 ≤ cK)
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK) :
+    ContinuousOn (fun u : ℝ => ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+      (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P) (Set.Icc s v) := by
+  classical
+  have hprob := (band d).isProbabilityMeasure
+  obtain ⟨C, hC0, hC⟩ := exists_bdd_uker_lkT E N hE hv1 σ a t hcK hKb
+  refine continuousOn_integral_abs_pow_of_envelope (C := C) (2 * p) ?_ ?_ ?_
+  · intro u hu
+    exact (continuous_uker_lkT_omega d E N (window_im_ne_zero hE hv1 u hu)
+      (window_norm_mul_lt hE.le hs0 hv1 u hu) σ (xiOf (mSigma E) σ) a t).norm.aestronglyMeasurable
+  · intro u hu ω
+    rw [abs_norm]
+    exact hC u hu ω
+  · intro ω
+    refine ContinuousOn.norm ?_
+    refine ContinuousOn.congr ?_ fun u hu => uker_lkT_eq_path d E N σ (xiOf (mSigma E) σ) a t u ω
+    exact continuousOn_uker_lkFun_path (X := ℝ) d N E (τ := id)
+      (Mt := fun u => Hflow d N u ω) continuousOn_id
+      (continuous_Hflow_time d N ω).continuousOn (fun u => Hflow_isHermitian d N u ω)
+      (fun u hu => window_im_ne_zero hE hv1 u hu)
+      (fun u hu => window_norm_mul_lt hE.le hs0 hv1 u hu) σ (xiOf (mSigma E) σ) a t
+
+/-! #### The envelope of the quadratic-variation integrand -/
+
+/-- **The envelope of `(U⊗U) ∘ (E⊗E)` on the window**, uniform in the sample point: the
+`(2n+2)`-loop bound of (5.2) carried through the propagator's row `ℓ¹` size. -/
+theorem exists_bdd_uker_eeFun (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hv1 : v < 1)
+    {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ Set.Icc s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) t
+        (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ) (Fin.append a a)‖ ≤ C := by
+  classical
+  set η : ℝ := (1 - v) * (mE E).im with hη
+  have hη0 : 0 < η := window_eta_pos hE hv1
+  set Mee : ℝ := ((n + 2 : ℕ) : ℝ) * ((d.W N : ℝ) * ((Fintype.card (ZMod (d.L N)) : ℝ)
+    * (η⁻¹ ^ (2 * (n + 2) + 2) * ((d.W N : ℝ))⁻¹ ^ (2 * (n + 2) + 1)))) with hMee
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := s) (b := v)).exists_bound_of_continuousOn
+    (f := fun u : ℝ => ukerRow (SumZeroDyn.xi2 E σ) t (Fin.append a a) u * Mee)
+    (((continuous_ukerRow (SumZeroDyn.xi2 E σ) t (Fin.append a a)).mul
+      continuous_const)).continuousOn
+  refine ⟨|C|, abs_nonneg _, fun u hu ω => ?_⟩
+  have hb := norm_Uker_apply_le_ukerRow (SumZeroDyn.xi2 E σ) t u
+    (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ) (Fin.append a a)
+    (C := Mee) (fun b => norm_eeFun_herm_le d N E hη0 (window_le_abs_im hE hv1 u hu)
+      (Hflow_isHermitian d N u ω) σ b)
+  exact hb.trans (le_trans (le_trans (le_abs_self _) (hC u hu)) (le_abs_self _))
+
+/-! #### Items 3–5: the interval integrabilities -/
+
+/-- `u ↦ ‖Ψ₁‖_{2p}` is continuous on the window. -/
+theorem continuousOn_momNorm_lkT_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hs0 : 0 ≤ s)
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ)
+    (q : ℕ) {cK : ℝ} (hcK : 0 ≤ cK)
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK) :
+    ContinuousOn (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+        (SumZeroDyn.lkT (sample d) E N u ω σ) a‖)) (Set.Icc s v) := by
+  classical
+  have hprob := (band d).isProbabilityMeasure
+  obtain ⟨C, hC0, hC⟩ := exists_bdd_uker_lkT E N hE hv1 σ a t hcK hKb
+  refine continuousOn_momNorm_of_envelope (C := C) q ?_ ?_ ?_
+  · intro u hu
+    exact (continuous_uker_lkT_omega d E N (window_im_ne_zero hE hv1 u hu)
+      (window_norm_mul_lt hE.le hs0 hv1 u hu) σ (xiOf (mSigma E) σ) a t).norm.aestronglyMeasurable
+  · intro u hu ω
+    rw [abs_norm]
+    exact hC u hu ω
+  · intro ω
+    refine ContinuousOn.norm ?_
+    refine ContinuousOn.congr ?_ fun u hu => uker_lkT_eq_path d E N σ (xiOf (mSigma E) σ) a t u ω
+    exact continuousOn_uker_lkFun_path (X := ℝ) d N E (τ := id)
+      (Mt := fun u => Hflow d N u ω) continuousOn_id
+      (continuous_Hflow_time d N ω).continuousOn (fun u => Hflow_isHermitian d N u ω)
+      (fun u hu => window_im_ne_zero hE hv1 u hu)
+      (fun u hu => window_norm_mul_lt hE.le hs0 hv1 u hu) σ (xiOf (mSigma E) σ) a t
+
+/-- `u ↦ ‖(U ∘ F_u)_a‖_{2p}` is continuous on the window. -/
+theorem continuousOn_momNorm_driftF_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hsv : s ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (q : ℕ) {cK : ℝ}
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg ((band d).toDims.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK)
+    (hK'b : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg ((band d).toDims.L N) (n + 2),
+      ‖Kprim (band d) E N σ u b‖ ≤ cK) :
+    ContinuousOn (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)) (Set.Icc s v) := by
+  classical
+  have hprob := (band d).isProbabilityMeasure
+  obtain ⟨C, hC0, hC⟩ := exists_bdd_uker_driftF (band d) E N σ a ((v : ℝ) : ℂ)
+    (window_eta_pos hE hv1) (window_le_abs_im hE hv1) hKb hK'b
+    (window_norm_mul_lt hE.le hs0 hv1) (window_norm_xi_lt hE.le hs0 hv1 σ)
+    (fun i => by
+      rw [xiOf, norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_nonneg (hs0.trans hsv),
+        norm_mSigma hE.le, norm_mSigma hE.le, mul_one, mul_one]
+      exact hv1)
+  refine continuousOn_momNorm_of_envelope (C := C) q ?_ ?_ ?_
+  · intro u hu
+    exact (continuous_uker_driftF_omega d E N (window_im_ne_zero hE hv1 u hu)
+      (window_norm_mul_lt hE.le hs0 hv1 u hu) σ a ((v : ℝ) : ℂ)).norm.aestronglyMeasurable
+  · intro u hu ω
+    rw [abs_norm]
+    exact hC u hu _ (Hflow_isHermitian d N u ω)
+  · intro ω
+    refine ContinuousOn.norm ?_
+    exact continuousOn_uker_driftF_path (X := ℝ) d N E (τ := id)
+      (Mt := fun u => Hflow d N u ω) continuousOn_id
+      (continuous_Hflow_time d N ω).continuousOn (fun u => Hflow_isHermitian d N u ω)
+      (fun u hu => window_im_ne_zero hE hv1 u hu)
+      (fun u hu => window_norm_mul_lt hE.le hs0 hv1 u hu) σ a ((v : ℝ) : ℂ)
+
+/-- `u ↦ ‖(U⊗U) ∘ (E⊗E)_{a,a}‖_p` is continuous on the window. -/
+theorem continuousOn_momNorm_eeFun_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (q : ℕ) :
+    ContinuousOn (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+          (Fin.append a a)‖)) (Set.Icc s v) := by
+  classical
+  have hprob := (band d).isProbabilityMeasure
+  obtain ⟨C, hC0, hC⟩ := exists_bdd_uker_eeFun E N hE hv1 σ a ((v : ℝ) : ℂ)
+  refine continuousOn_momNorm_of_envelope (C := C) q ?_ ?_ ?_
+  · intro u hu
+    exact (continuous_uker_eeFun_omega d E N (window_im_ne_zero hE hv1 u hu) σ
+      (SumZeroDyn.xi2 E σ) (Fin.append a a) ((v : ℝ) : ℂ)).norm.aestronglyMeasurable
+  · intro u hu ω
+    rw [abs_norm]
+    exact hC u hu ω
+  · intro ω
+    refine ContinuousOn.norm ?_
+    exact continuousOn_uker_eeFun_path (X := ℝ) d N E (τ := id)
+      (Mt := fun u => Hflow d N u ω) continuousOn_id
+      (continuous_Hflow_time d N ω).continuousOn (fun u => Hflow_isHermitian d N u ω)
+      (fun u hu => window_im_ne_zero hE hv1 u hu) σ (SumZeroDyn.xi2 E σ)
+      (Fin.append a a) ((v : ℝ) : ℂ)
+
+/-- **Item 3: `φ'` is interval integrable.**
+
+The derivative slot of `RBM.MomentDuhamel.momentIneq_of_derivBound` is existential, so the
+integrability has to hold for *whatever* witness the caller supplies.  It does, because a
+derivative is unique: on the open window `φ'` is forced to be the generator expression of
+`RBM.Gauss.hasDerivAt_integral_Psi₁`, which T196's `bddT` and `bdd₂` bound uniformly.
+Measurability is `Mathlib.measurable_deriv`.  Only the **open** interval is used, which is
+also the only place `0 < u` — needed by the Gaussian generator identity — is available. -/
+theorem intervalIntegrable_phi'_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hs0 : 0 ≤ s)
+    (hsv : s ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (p : ℕ) {cK : ℝ} (hcK : 0 ≤ cK)
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK)
+    (hK'b : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖Kprim (band d) E N σ u b‖ ≤ cK)
+    {φ' : ℝ → ℝ}
+    (hφ' : ∀ u ∈ Set.Ioo s v, HasDerivAt (fun r : ℝ =>
+        ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) ∂(band d).P) (φ' u) u) :
+    IntervalIntegrable φ' volume s v := by
+  classical
+  set φ : ℝ → ℝ := fun r : ℝ =>
+    ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+      (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) ∂(band d).P with hφ
+  set Ψ : ℝ → Matrix (d.Idx N) (d.Idx N) ℂ → ℂ :=
+    momentObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p with hΨ
+  have hT₁ : TestFunT₁ d N (Set.Icc s v) Ψ :=
+    testFunT₁_momentObsT E (List.length_ofFn) (by omega) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) (Kprim (band d) E N σ) a p
+      (window_eta_pos hE hv1) hcK (window_le_abs_im hE hv1)
+      (fun u hu b => hasDerivAt_Kval_Kprim (band d) E N
+        (window_norm_mul_lt hE.le hs0 hv1 u hu) σ b) hKb hK'b
+  obtain ⟨CT, hCT⟩ := hT₁.bddT
+  obtain ⟨C₂, hC₂⟩ := hT₁.bdd₂
+  set Cb : ℝ := CT + (1 / 2 : ℝ) * ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ)
+      * (C₂ * ‖Bmat d N q.1 q.2.1 q.2.2‖ * ‖Bmat d N q.1 q.2.1 q.2.2‖) with hCb
+  have hΦφ : (fun r : ℝ => ∫ ω, Ψ r (Hflow d N r ω) ∂(P d)) = fun r : ℝ => ((φ r : ℝ) : ℂ) := by
+    funext r
+    have hpt : ∀ ω : Ω d, Ψ r (Hflow d N r ω)
+        = ((|‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) : ℝ) : ℂ) := fun ω =>
+      momentObsT_flow (band d) (sample d) E N σ a ((v : ℝ) : ℂ) (fun _ _ => rfl) p r ω
+    rw [show (fun ω : Ω d => Ψ r (Hflow d N r ω))
+        = fun ω : Ω d => ((|‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) : ℝ) : ℂ) from funext hpt]
+    exact integral_complex_ofReal
+  have hkey : ∀ u ∈ Set.Ioo s v, |φ' u| ≤ Cb := by
+    intro u hu
+    have hu0 : 0 < u := lt_of_le_of_lt hs0 hu.1
+    have hmem : Set.Icc s v ∈ nhds u := Icc_mem_nhds hu.1 hu.2
+    have hmemI : u ∈ Set.Icc s v := ⟨hu.1.le, hu.2.le⟩
+    have hD := hasDerivAt_integral_Psi₁ (matrixStein d) hT₁ hu0 hmem
+    rw [hΦφ] at hD
+    have hre : HasDerivAt (fun r : ℝ => (((φ r : ℝ) : ℂ)).re)
+        (Complex.reCLM ((∫ ω, timeD1 Ψ u (Hflow d N u ω) ∂(P d))
+          + (1 / 2 : ℝ) • ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ) •
+            ∫ ω, coordD2 d N (Ψ u) (Hflow d N u ω) q ∂(P d))) u :=
+      Complex.reCLM.hasFDerivAt.comp_hasDerivAt u hD
+    simp only [Complex.ofReal_re, Complex.reCLM_apply] at hre
+    have heq : φ' u = ((∫ ω, timeD1 Ψ u (Hflow d N u ω) ∂(P d))
+        + (1 / 2 : ℝ) • ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ) •
+          ∫ ω, coordD2 d N (Ψ u) (Hflow d N u ω) q ∂(P d)).re :=
+      (hφ' u hu).unique hre
+    have hb1 : ‖∫ ω, timeD1 Ψ u (Hflow d N u ω) ∂(P d)‖ ≤ CT := by
+      have h := norm_integral_le_of_norm_le_const (μ := P d) (C := CT)
+        (Filter.Eventually.of_forall fun ω => hCT u hmemI (Hflow d N u ω))
+      simpa using h
+    have hb2 : ‖(1 / 2 : ℝ) • ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ) •
+        ∫ ω, coordD2 d N (Ψ u) (Hflow d N u ω) q ∂(P d)‖
+        ≤ (1 / 2 : ℝ) * ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ)
+          * (C₂ * ‖Bmat d N q.1 q.2.1 q.2.2‖ * ‖Bmat d N q.1 q.2.1 q.2.2‖) := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
+      refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+      refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun q _ => ?_)
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _)]
+      refine mul_le_mul_of_nonneg_left ?_ (NNReal.coe_nonneg _)
+      have h := norm_integral_le_of_norm_le_const (μ := P d)
+        (C := C₂ * ‖Bmat d N q.1 q.2.1 q.2.2‖ * ‖Bmat d N q.1 q.2.1 q.2.2‖)
+        (Filter.Eventually.of_forall fun ω =>
+          norm_coordD2_le (fun M => hC₂ u hmemI M) (Hflow d N u ω) q)
+      simpa using h
+    rw [heq]
+    refine le_trans (Complex.abs_re_le_norm _) ?_
+    exact (norm_add_le _ _).trans (add_le_add hb1 hb2)
+  -- measurability from uniqueness of the derivative, integrability from the bound
+  have hderiv : ∀ u ∈ Set.Ioo s v, deriv φ u = φ' u := fun u hu => (hφ' u hu).deriv
+  have hae : deriv φ =ᵐ[volume.restrict (Set.Ioo s v)] φ' := by
+    filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with u hu using hderiv u hu
+  have hmeas : AEStronglyMeasurable φ' (volume.restrict (Set.Ioo s v)) :=
+    ((measurable_deriv φ).aestronglyMeasurable).congr hae
+  have hintOo : IntegrableOn φ' (Set.Ioo s v) := by
+    refine Integrable.mono' (integrable_const Cb) hmeas ?_
+    filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with u hu
+    rw [Real.norm_eq_abs]
+    exact hkey u hu
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le hsv]
+  exact hintOo.congr_set_ae Ioo_ae_eq_Ioc.symm
+
+/-! #### Items 4 and 5 -/
+
+/-- **Item 4, first half**: `u ↦ ‖(U ∘ F_u)_a‖_{2p}` is interval integrable on the window. -/
+theorem intervalIntegrable_momNorm_driftF_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hsv : s ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (q : ℕ) {cK : ℝ}
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg ((band d).toDims.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK)
+    (hK'b : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg ((band d).toDims.L N) (n + 2),
+      ‖Kprim (band d) E N σ u b‖ ≤ cK) :
+    IntervalIntegrable (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)) volume s v :=
+  (continuousOn_momNorm_driftF_gauss E N hE hs0 hsv hv1 σ a q hKb
+    hK'b).intervalIntegrable_of_Icc hsv
+
+/-- **Item 4, second half**: `u ↦ ‖(U⊗U) ∘ (E⊗E)_{a,a}‖_p` is interval integrable. -/
+theorem intervalIntegrable_momNorm_eeFun_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hsv : s ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (q : ℕ) :
+    IntervalIntegrable (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+          (Fin.append a a)‖)) volume s v :=
+  (continuousOn_momNorm_eeFun_gauss E N hE hv1 σ a q).intervalIntegrable_of_Icc hsv
+
+/-- **Item 5**: the product `ψ · f` is interval integrable on every initial segment. -/
+theorem intervalIntegrable_psi_mul_driftF_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hsv : s ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (q : ℕ) {cK : ℝ} (hcK : 0 ≤ cK)
+    (hKb : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ cK)
+    (hK'b : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖Kprim (band d) E N σ u b‖ ≤ cK) :
+    ∀ u ∈ Set.Icc s v, IntervalIntegrable (fun r : ℝ =>
+      MomentDuhamel.momNorm (band d).P q (fun ω =>
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N r ω σ) a‖)
+      * MomentDuhamel.momNorm (band d).P q (fun ω =>
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (DriftDef.driftF (band d) E N r ((sample d).H N r ω) σ) a‖)) volume s u := by
+  intro u hu
+  have hmono : Set.Icc s u ⊆ Set.Icc s v := Set.Icc_subset_Icc le_rfl hu.2
+  refine ContinuousOn.intervalIntegrable_of_Icc hu.1 ?_
+  exact (((continuousOn_momNorm_lkT_gauss E N hE hs0 hv1 σ a ((v : ℝ) : ℂ) q hcK hKb).mul
+    (continuousOn_momNorm_driftF_gauss E N hE hs0 hsv hv1 σ a q hKb hK'b)).mono hmono)
+
+/-! #### The primitive's own window bound, from compactness
+
+`K_u` and `∂_u K_u` are continuous in `u` and the loop arguments range over a *finite* type, so
+on the compact window `[s, v] ⊆ [0, 1)` they are bounded — no hypothesis needed.  (The bound
+does blow up as `v ↑ 1`; that is why it is taken on `[s, v]` and not on `[0, 1)`, which would
+be unsatisfiable.) -/
+
+/-- `∂_u K_u` is continuous in the time — `RBM.Gauss.Kprim` is `RBM.primRhs`, i.e. `primBil`
+of the primitive with itself. -/
+theorem continuousOn_Kprim (E : ℝ) (N : ℕ) {S : Set ℝ}
+    (hm : ∀ u ∈ S, ∀ x y : Bool, ‖(u : ℂ) * (mSigma E x * mSigma E y)‖ < 1)
+    {n : ℕ} (σ : Fin (n + 2) → Bool) (b : LoopArg ((band d).toDims.L N) (n + 2)) :
+    ContinuousOn (fun u : ℝ => Kprim (band d) E N σ u b) S := by
+  have hK : ∀ J : LoopIdx (ZMod ((band d).L N)), J.WF →
+      ContinuousOn (fun u : ℝ => (band d).Kval E N u J) S :=
+    fun J hJ => continuousOn_Kval_path (band d) E N continuousOn_id hm J hJ
+  simpa only [Kprim, ← primBil_self] using
+    continuousOn_primBil (X := ℝ) (L := (band d).L N) ((band d).W N)
+      (LoopData.idx (σ, b)) (LoopData.idx_wf _) hK hK
+
+/-- **The window bound on `K` and `∂_u K` is a theorem, not a hypothesis.** -/
+theorem exists_bdd_Kval_Kprim (E : ℝ) (N : ℕ) (hE : |E| ≤ 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) :
+    ∃ c : ℝ, 0 ≤ c
+      ∧ (∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+          ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ ≤ c)
+      ∧ (∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+          ‖Kprim (band d) E N σ u b‖ ≤ c) := by
+  classical
+  have hm := window_norm_mul_lt (E := E) hE (s := s) (v := v) hs0 hv1
+  set g : ℝ → ℝ := fun u => ∑ b : LoopArg (d.L N) (n + 2),
+    (‖(band d).Kval E N u (LoopData.idx (σ, b))‖ + ‖Kprim (band d) E N σ u b‖) with hg
+  have hgc : ContinuousOn g (Set.Icc s v) := by
+    refine continuousOn_finsetSum _ fun b _ => ContinuousOn.add ?_ ?_
+    · exact (continuousOn_Kval_path (band d) E N continuousOn_id hm _
+        (LoopData.idx_wf _)).norm
+    · exact (continuousOn_Kprim E N hm σ b).norm
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := s) (b := v)).exists_bound_of_continuousOn hgc
+  have hnn : ∀ u, 0 ≤ g u := fun u => Finset.sum_nonneg fun _ _ => by positivity
+  have hle : ∀ u ∈ Set.Icc s v, ∀ b : LoopArg (d.L N) (n + 2),
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ + ‖Kprim (band d) E N σ u b‖ ≤ |C| := by
+    intro u hu b
+    refine le_trans (Finset.single_le_sum (f := fun b : LoopArg (d.L N) (n + 2) =>
+      ‖(band d).Kval E N u (LoopData.idx (σ, b))‖ + ‖Kprim (band d) E N σ u b‖)
+      (fun _ _ => by positivity) (Finset.mem_univ b)) ?_
+    exact le_trans (le_trans (le_abs_self _) (hC u hu)) (le_abs_self _)
+  exact ⟨|C|, abs_nonneg _,
+    fun u hu b => le_trans (by linarith [norm_nonneg (Kprim (band d) E N σ u b)])
+      (hle u hu b),
+    fun u hu b => le_trans
+      (by linarith [norm_nonneg ((band d).Kval E N u (LoopData.idx (σ, b)))]) (hle u hu b)⟩
+
+/-! #### The assembly: `RBM.MomentDuhamel.MomentIneq` with the five side conditions gone -/
+
+/-- **T212's deliverable: `RBM.MomentDuhamel.momentIneq_of_derivBound` for the Gaussian
+sample, with all five integrability side conditions discharged.**
+
+What is left in the hypothesis `h` is exactly the two items that carry mathematics: the
+existence of the `u`-derivative of `u ↦ E|Ψ₁|^{2p}` on the **open** window, and the pointwise
+inequality (5.20) that the generator identity of
+`RBM.Gauss.timeD1_add_genMomentPt_le_driftF_flow` (T206) followed by Hölder produces.  The
+five that this file removes —
+
+1. the window bound on `ψ` (`RBM.Gauss.exists_bdd_psi_gauss`),
+2. the `ContinuousOn` of `u ↦ E|Ψ₁|^{2p}` (`RBM.Gauss.continuousOn_integral_psi_gauss`),
+3. the interval integrability of `φ'` (`RBM.Gauss.intervalIntegrable_phi'_gauss`),
+4. the interval integrability of the two drift integrands
+   (`RBM.Gauss.intervalIntegrable_momNorm_driftF_gauss`,
+   `RBM.Gauss.intervalIntegrable_momNorm_eeFun_gauss`),
+5. the interval integrability of the product `ψ · f`
+   (`RBM.Gauss.intervalIntegrable_psi_mul_driftF_gauss`)
+
+— all follow from the deterministic envelope `‖G‖ ≤ (Im z_u)⁻¹` of T77, which on the window
+`[s_N, v] ⊆ [0, 1)` is uniform.  The primitive's own window bound is a theorem too
+(`RBM.Gauss.exists_bdd_Kval_Kprim`), so no `cK` appears here either.
+
+The drift is **pinned**: `RBM.DriftDef.driftF`, T58's definition, not a free tensor. -/
+theorem momentIneq_of_derivBound_gauss (d : Dims) {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : ∀ (p : ℕ), 1 ≤ p → ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ), s N ≤ v → v ≤ t N →
+      ∀ a : LoopArg ((band d).L N) (n + 2), ∃ φ' : ℝ → ℝ,
+        (∀ u ∈ Set.Ioo (s N) v, HasDerivAt
+              (fun r => ∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ)
+                ((v : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p)
+                  ∂(band d).P) (φ' u) u)
+        ∧ (∀ u ∈ Set.Ioo (s N) v, φ' u
+            ≤ 2 * (p : ℝ)
+                * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+                * MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+                    ‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)
+              + (p : ℝ) * (2 * (p : ℝ) - 1)
+                * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ (((p : ℝ) - 1) / (p : ℝ))
+                * MomentDuhamel.momNorm (band d).P p (fun ω =>
+                    ‖Uker ((band d).L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+                        (Fin.append a a)‖))) :
+    MomentDuhamel.MomentIneq (sample d) E s t n MomentDuhamel.cMDval := by
+  refine MomentDuhamel.momentIneq_of_derivBound hE.le hs0 ht1 ?_
+  intro p hp N σ v hsv hvt a
+  obtain ⟨φ', hd, hb⟩ := h p hp N σ v hsv hvt a
+  have hv1 : v < 1 := lt_of_le_of_lt hvt (ht1 N)
+  obtain ⟨cK, hcK, hKb, hK'b⟩ :=
+    exists_bdd_Kval_Kprim (d := d) E N hE.le (hs0 N) hv1 (v := v) σ
+  obtain ⟨C, hC⟩ := exists_bdd_psi_gauss E N hE (hs0 N) hv1 σ a ((v : ℝ) : ℂ) p hcK hKb
+  exact ⟨φ', C, hC,
+    continuousOn_integral_psi_gauss E N hE (hs0 N) hv1 σ a ((v : ℝ) : ℂ) p hcK hKb,
+    hd,
+    intervalIntegrable_phi'_gauss E N hE (hs0 N) hsv hv1 σ a p hcK hKb hK'b hd,
+    intervalIntegrable_momNorm_driftF_gauss E N hE (hs0 N) hsv hv1 σ a (2 * p) hKb hK'b,
+    intervalIntegrable_momNorm_eeFun_gauss E N hE hsv hv1 σ a p,
+    intervalIntegrable_psi_mul_driftF_gauss E N hE (hs0 N) hsv hv1 σ a (2 * p) hcK hKb hK'b,
+    hb⟩
+
+/-! #### Satisfiability
+
+Two checks, both compiled.
+
+* `RBM.Gauss.sideConditions_gauss_window_zero` is the **positive** witness: at the critical
+  scaling — the full open window `s = 0`, `0 ≤ v < 1`, with `v` allowed to run up to `1` and
+  no constant that degenerates as it does (the T195 accident) — all five side conditions hold
+  **simultaneously**, for an arbitrary Gaussian model, an arbitrary charge vector and an
+  arbitrary `p`, with **no free data**: the primitive's window bound is itself produced by
+  `RBM.Gauss.exists_bdd_Kval_Kprim`.
+* `RBM.Gauss.uker_driftF_eq_at_zero` is the **degenerate** check the T164 rule demands: at the
+  sample point `ω = 0` (`H_u = 0`, `G = -z⁻¹`) the drift identity, and hence the envelope built
+  on it, is asserted and has content.  The drift there is the pinned `RBM.DriftDef.driftF`,
+  not a free tensor and not zero by fiat. -/
+
+/-- **Degenerate check at `ω = 0`.** -/
+theorem uker_driftF_eq_at_zero (E : ℝ) (N : ℕ) {u v : ℝ} (hE : |E| < 2)
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hv0 : 0 ≤ v) (hv1 : v < 1) {n : ℕ}
+    (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) :
+    Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (DriftDef.driftF (band d) E N u 0 σ) a
+      = ukerObsTDeriv d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+            (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) (Kprim (band d) E N σ) a u 0
+        + genD d N (ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+              (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u) 0 := by
+  have hz : (zt E u).im ≠ 0 := by
+    rw [zt_im]; exact ne_of_gt (mul_pos (by linarith) (mE_im_pos hE))
+  refine uker_driftF_eq (band d) E N u Matrix.isHermitian_zero hz σ a ((v : ℝ) : ℂ) ?_ ?_ ?_
+  · exact fun x y => window_norm_mul_lt hE.le hu0 hu1 u ⟨le_rfl, le_rfl⟩ x y
+  · exact fun i => window_norm_xi_lt hE.le hu0 hu1 σ u ⟨le_rfl, le_rfl⟩ i
+  · exact fun i => window_norm_xi_lt hE.le hv0 hv1 σ v ⟨le_rfl, le_rfl⟩ i
+
+/-- **Positive satisfiability witness: the five side conditions hold together on the full
+open window `[0, v]`, `v < 1`, with no free data.** -/
+theorem sideConditions_gauss_window_zero (E : ℝ) (N : ℕ) (hE : |E| < 2) {v : ℝ}
+    (hv0 : 0 ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (p : ℕ) :
+    (∃ C : ℝ, ∀ u ∈ Set.Icc (0 : ℝ) v,
+        (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P) ^ ((1 : ℝ) / p) ≤ C)
+      ∧ ContinuousOn (fun u : ℝ =>
+          ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P) (Set.Icc 0 v)
+      ∧ IntervalIntegrable (fun u : ℝ => MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+          ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)) volume 0 v
+      ∧ IntervalIntegrable (fun u : ℝ => MomentDuhamel.momNorm (band d).P p (fun ω =>
+          ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+              (Fin.append a a)‖)) volume 0 v
+      ∧ (∀ u ∈ Set.Icc (0 : ℝ) v, IntervalIntegrable (fun r : ℝ =>
+          MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+            ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (SumZeroDyn.lkT (sample d) E N r ω σ) a‖)
+          * MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+            ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (DriftDef.driftF (band d) E N r ((sample d).H N r ω) σ) a‖)) volume 0 u) := by
+  obtain ⟨cK, hcK, hKb, hK'b⟩ :=
+    exists_bdd_Kval_Kprim (d := d) E N hE.le (le_refl (0 : ℝ)) hv1 (v := v) σ
+  exact ⟨exists_bdd_psi_gauss E N hE le_rfl hv1 σ a ((v : ℝ) : ℂ) p hcK hKb,
+    continuousOn_integral_psi_gauss E N hE le_rfl hv1 σ a ((v : ℝ) : ℂ) p hcK hKb,
+    intervalIntegrable_momNorm_driftF_gauss E N hE le_rfl hv0 hv1 σ a (2 * p) hKb hK'b,
+    intervalIntegrable_momNorm_eeFun_gauss E N hE hv0 hv1 σ a p,
+    intervalIntegrable_psi_mul_driftF_gauss E N hE le_rfl hv0 hv1 σ a (2 * p) hcK hKb hK'b⟩
+
+end SideConditions
 
 end Gauss
 

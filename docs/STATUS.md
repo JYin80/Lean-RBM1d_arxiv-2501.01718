@@ -2874,3 +2874,17 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 **剩余假设**：`LoopIto`（cut-and-glue，仍欠，但只需冻结形式）；`MatrixStein`（T70）；`TestFun`（**T133 已交**）；
 以及**唯一的新假设** `hjoint`——逐 ω 就是本单已证的 `contDiffAt_gloop_flow`，缺的是**对 `z` 在球上一致**的联合导数控制，**即 T133 的 `bdd₁`/`bdd₂` 加强成对 `z` 一致的版本**（这就是 T133 该补交的精确形状）。
 **未做**：`LoopIto.second` 本身；(5.19) 的 `primBilLen 2 = ThetaOp`；`hjoint` 的卸载。paper-deltas #52 已改写，另加 #89。
+
+### T137：按字长分级的 gain 接口（Claude Code 并行 agent，2026-09-21）
+
+**`FlucGainUpTo … M`** = `FlucGain` 加一条 `(L i).length ≤ M`；`FlucGain.upTo` 表明**无分级蕴含每个分级**，故 `flucGain_env` 仍是每一档的非空性见证。**`FlucGain` 本身一字未动。**
+**使这件事变便宜的结构性事实**：`OpsOkOut.length_le`——归纳不变量本来就说「字母来自 `R` 之外**互不相同**的 slot」，故**字长自动小于 `#ι`**；
+于是整个迭代不需要穿任何长度记账，分级版就是旧证明把 gain 假设限制到 `≤ #ι`，并在**唯一用到它的基例**处把该限制卸掉。
+消费者全链重derive（`…_graded` 后缀）直到 `trace_green_sub_mul_Eblk_stochDom_iter_graded`，结论逐字不变。
+
+**T113 端到端接上了**（探针 `t137/thread.lean`，`exit 0`）：`flucGainUpTo_of_minorDiff` = `flucGain_of_minorDiffGain` 的证明体加一条长度假设穿过，随后在 `M = 2p`（`hM := le_rfl`）处喂给分级消费者，**不再残留任何 `FlucGain`**。
+**一处被 import 方向挡住、而非被数学挡住的**：该桥用到 `minorDiff`/`applyOps_eq_applyOps_minorDiff`，它们在 `FlucIterHigh.lean`（反向 import `FlucIter`），故 8 行的桥只能放在 `Gauss/FlucIterHigh.lean`——本单只许改一个文件，所以它目前只存在于探针里。**这是个很小的后续。**
+
+**⚠ 一个值得记的发现：当前威力是 `Ψ·η_t⁻¹` 而非 `Ψ²`。** 原因是 T113 的 `B` 取的是确定性包络 `2(η_t⁻¹+1)`，因为其空字分支用 `norm_flucDiagSet_le_env`；
+而根因在 **`MinorGood`（`MinorDiffGain.lean:436`）带 (4.1) 与 (4.3)，但不带 (4.2)**——没有 `‖G^{(S)}_{aa} − m‖ ≤ Ψ` 这个字段，`m = 0` 那一档就改进不到 `B ≍ Ψ`。
+**补上该字段并在空字分支使用它，就是把这条现已打通的路线做到 (4.12) 论文尺寸的下一步**（是对 `MinorDiffGain.lean` 的编辑，自然的下一张单）。paper-deltas #85 已更新，另加 #90。

@@ -1723,4 +1723,567 @@ theorem trace_green_sub_mul_Eblk_stochDom_iter (d : Dims) (hκ0 : 0 < κ) (hκ1 
 
 end Avg
 
+/-! ### The length-graded gain interface
+
+`RBM.Gauss.FlucGain` asks for the higher-order minor expansion at **every** word length, and
+that is strictly more than the `2p`-th moment expansion ever uses: the words the iteration
+builds carry one letter per pivot, the pivots are lone slots, so the words have length at most
+`#ι = 2p`.  The distinction is not cosmetic.  T113
+(`RBM.Gauss.integral_prod_applyOps_minorDiff_le`) proves the estimate with a constant
+`minorDiffC M` that grows in the length bound `M` — the `m`-fold difference of an inverse is a
+sum over set partitions, so even the sharpest form grows like `m! C^m` — and shows that **no
+single gain parameter can serve all lengths**.  So the unbounded interface is not provable at
+`ρ ≍ Ψ`, while the graded one is exactly what T113 delivers.
+
+`RBM.Gauss.FlucGainUpTo … M` is `RBM.Gauss.FlucGain` restricted to words of length `≤ M`.  The
+ungraded interface implies every graded one (`RBM.Gauss.FlucGain.upTo`), so nothing below
+weakens what is already available; the point is the converse direction, which is now usable.
+
+The reason no extra length bookkeeping has to be threaded through the iteration is
+`RBM.Gauss.OpsOkOut.length_le`: the induction invariant already *says* that the letters of a
+word are rows of distinct slots outside the set `R` of remaining pivots, so a word is
+automatically shorter than `#ι - #R`.  The graded lemmas below are therefore the ungraded ones
+with the gain hypothesis restricted to words of length `≤ #ι`, and with that restriction
+discharged, at the one place it is used, from the invariant itself. -/
+
+section Graded
+
+open Filter
+
+/-! #### Words are automatically short -/
+
+section GradedWords
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **The induction invariant bounds the length.**  A word admissible outside `R` uses
+pairwise distinct rows, each the row of a slot outside `R`; the slots realizing them are
+therefore distinct, so the word has at most `#ι - #R` letters.  In particular a word arising in
+`RBM.Gauss.norm_integral_prod_applyOps_le` never has more than `#ι = 2p` letters, which is why
+the gain interface only ever needs to hold up to that length. -/
+theorem OpsOkOut.length_le {k : ι → d.Idx N} {i : ι} {R : Finset ι}
+    {l : List (Bool × d.Idx N)} (h : OpsOkOut k i R l) :
+    l.length + R.card ≤ Fintype.card ι := by
+  classical
+  have hsub : (l.map Prod.snd).toFinset ⊆ (Finset.univ \ R).image k := by
+    intro x hx
+    rw [List.mem_toFinset] at hx
+    obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+    obtain ⟨⟨j, hjR, hxj⟩, _⟩ := h.2 y hy
+    exact Finset.mem_image.2 ⟨j, Finset.mem_sdiff.2 ⟨Finset.mem_univ j, hjR⟩, hxj.symm⟩
+  have h1 : (l.map Prod.snd).toFinset.card = l.length := by
+    rw [List.toFinset_card_of_nodup h.1, List.length_map]
+  have h2 : ((Finset.univ \ R).image k).card ≤ (Finset.univ \ R).card := Finset.card_image_le
+  have h3 : (Finset.univ \ R : Finset ι).card = Fintype.card ι - R.card := by
+    rw [Finset.card_sdiff_of_subset (Finset.subset_univ R), Finset.card_univ]
+  have h4 := Finset.card_le_card hsub
+  have hR : R.card ≤ Fintype.card ι := Finset.card_le_univ R
+  omega
+
+end GradedWords
+
+/-! #### The interface -/
+
+/-- **The gain interface, graded by word length.**  `FlucGainUpTo d N u z m B ρ M` is
+`RBM.Gauss.FlucGain d N u z m B ρ` with the words restricted to length at most `M`:
+
+  `E ∏_i ‖P_{C_i} Q_{A_i} Z_{k_i}‖ ≤ B^{#slots} ρ^{∑_i #A_i}`   for `#(C_i ∪ A_i) ≤ M`.
+
+This is the form T113 proves (`RBM.Gauss.integral_prod_applyOps_minorDiff_le`, via
+`RBM.Gauss.flucGain_of_minorDiffGain`'s identity), and — by
+`RBM.Gauss.OpsOkOut.length_le` — the only form the `2p`-th moment expansion consumes, with
+`M = 2p`.  Allowing `B` and `ρ` to depend on `M` is the whole point: the constants of the
+`m`-fold minor difference grow with `m`, so the unbounded statement is unavailable. -/
+def FlucGainUpTo (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (B ρ : ℝ) (M : ℕ) : Prop :=
+  0 ≤ B ∧ 0 ≤ ρ ∧
+    ∀ (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N)),
+      (∀ i, ((L i).map Prod.snd).Nodup) → (∀ i, ∀ x ∈ L i, x.2 ≠ k i) →
+      (∀ i, (L i).length ≤ M) →
+      ∫ ω, ∏ i, ‖applyOps d N (L i) (flucDiag d N u z m (k i)) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)
+
+theorem FlucGainUpTo.B_nonneg {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M : ℕ}
+    (h : FlucGainUpTo d N u z m B ρ M) : 0 ≤ B := h.1
+
+theorem FlucGainUpTo.rho_nonneg {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M : ℕ}
+    (h : FlucGainUpTo d N u z m B ρ M) : 0 ≤ ρ := h.2.1
+
+theorem FlucGainUpTo.gain {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M : ℕ}
+    (h : FlucGainUpTo d N u z m B ρ M) (ι : Type) [Fintype ι] (k : ι → d.Idx N)
+    (L : ι → List (Bool × d.Idx N)) (h1 : ∀ i, ((L i).map Prod.snd).Nodup)
+    (h2 : ∀ i, ∀ x ∈ L i, x.2 ≠ k i) (h3 : ∀ i, (L i).length ≤ M) :
+    ∫ ω, ∏ i, ‖applyOps d N (L i) (flucDiag d N u z m (k i)) ω‖ ∂(P d)
+      ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i) := h.2.2 ι k L h1 h2 h3
+
+/-- **The ungraded interface implies every graded one.**  Nothing that used
+`RBM.Gauss.FlucGain` loses anything by being restated with `RBM.Gauss.FlucGainUpTo`; in
+particular `RBM.Gauss.flucGain_env` still witnesses non-vacuity at every grade. -/
+theorem FlucGain.upTo {u : ℝ} {z m : ℂ} {B ρ : ℝ} (h : FlucGain d N u z m B ρ) (M : ℕ) :
+    FlucGainUpTo d N u z m B ρ M :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 _ => h.2.2 ι k L h1 h2⟩
+
+/-- A gain valid up to length `M` is valid up to any shorter length. -/
+theorem FlucGainUpTo.mono {u : ℝ} {z m : ℂ} {B ρ : ℝ} {M M' : ℕ} (hM : M' ≤ M)
+    (h : FlucGainUpTo d N u z m B ρ M) : FlucGainUpTo d N u z m B ρ M' :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 hlen => h.2.2 ι k L h1 h2 fun i => le_trans (hlen i) hM⟩
+
+/-- Relaxing the parameters.  Used to absorb the `M`-dependence of the constants of T113 into
+an `M`-independent control times an `M`-dependent factor. -/
+theorem FlucGainUpTo.mono_params {u : ℝ} {z m : ℂ} {B ρ B' ρ' : ℝ} {M : ℕ}
+    (hB : B ≤ B') (hρ : ρ ≤ ρ') (h : FlucGainUpTo d N u z m B ρ M) :
+    FlucGainUpTo d N u z m B' ρ' M := by
+  refine ⟨le_trans h.1 hB, le_trans h.2.1 hρ, fun ι _ k L h1 h2 hlen => ?_⟩
+  refine le_trans (h.2.2 ι k L h1 h2 hlen) ?_
+  exact mul_le_mul (pow_le_pow_left₀ h.1 hB _) (pow_le_pow_left₀ h.2.1 hρ _)
+    (pow_nonneg h.2.1 _) (pow_nonneg (le_trans h.1 hB) _)
+
+/-! #### The iteration, against the graded interface -/
+
+section GradedIterate
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **`RBM.Gauss.norm_integral_prod_applyOps_le` with the gain assumed only for short words.**
+
+Identical statement and proof, except that the gain hypothesis is restricted to words of length
+at most `#ι`, and that restriction is discharged where the hypothesis is used — at the bottom of
+the induction — from the invariant `RBM.Gauss.OpsOkOut` itself
+(`RBM.Gauss.OpsOkOut.length_le`).  No extra bookkeeping is carried. -/
+theorem norm_integral_prod_applyOps_le_graded {k : ι → d.Idx N}
+    {X : ι → Ω d → ℂ} (hX : ∀ i, BddMeas d (X i)) (hXd : ∀ i, FinDep d (X i))
+    {B ρ : ℝ} (hB : 0 ≤ B) (hρ : 0 ≤ ρ)
+    (hgain : ∀ L : ι → List (Bool × d.Idx N), (∀ i, OpsOk k i (L i)) →
+      (∀ i, (L i).length ≤ Fintype.card ι) →
+      ∫ ω, ∏ i, ‖applyOps d N (L i) (qRow d N (k i) (X i)) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)) :
+    ∀ (r : ℕ) (R : Finset ι) (L : ι → List (Bool × d.Idx N)), R.card = r →
+      (∀ i₀ ∈ R, ∀ j, j ≠ i₀ → k j ≠ k i₀) →
+      (∀ i, OpsOkOut k i R (L i)) →
+      ‖∫ ω, ∏ i, applyOps d N (L i) (qRow d N (k i) (X i)) ω ∂(P d)‖
+        ≤ (2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r
+          * (B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)) := by
+  classical
+  intro r
+  induction r with
+  | zero =>
+      intro R L _ _ hL
+      simp only [Nat.mul_zero, pow_zero, one_mul]
+      refine le_trans (norm_integral_le_integral_norm _) ?_
+      refine le_trans (le_of_eq ?_)
+        (hgain L (fun i => (hL i).opsOk)
+          (fun i => le_trans (Nat.le_add_right _ _) (hL i).length_le))
+      exact integral_congr_ae (Filter.Eventually.of_forall fun ω => norm_prod _ _)
+  | succ r ih =>
+      intro R L hR hlone hL
+      obtain ⟨i₀, hi₀⟩ : R.Nonempty := Finset.card_pos.1 (by omega)
+      have hFb : ∀ i, BddMeas d (applyOps d N (L i) (qRow d N (k i) (X i))) :=
+        fun i => ((hX i).qRow (k i)).applyOps (L i)
+      have hFd : ∀ i, FinDep d (applyOps d N (L i) (qRow d N (k i) (X i))) :=
+        fun i => finDep_applyOps (L i) (finDep_qRow (k i) (hXd i))
+      have h0 : condRow d N (k i₀) (applyOps d N (L i₀) (qRow d N (k i₀) (X i₀))) = 0 :=
+        condRow_applyOps_qRow d N (k i₀) (L i₀) (hX i₀)
+      have htcard : (Finset.univ.erase i₀).card = Fintype.card ι - 1 := by
+        rw [Finset.card_erase_of_mem (Finset.mem_univ i₀), Finset.card_univ]
+      have hM1 : (1 : ℝ) ≤ max 1 ρ := le_max_left _ _
+      have hM0 : (0 : ℝ) ≤ max 1 ρ := le_trans zero_le_one hM1
+      have hA0 : (0 : ℝ) ≤ (2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r
+          * B ^ Fintype.card ι := by positivity
+      have hexp : ∫ ω, ∏ i, applyOps d N (L i) (qRow d N (k i) (X i)) ω ∂(P d)
+          = ∑ S ∈ (Finset.univ.erase i₀).powerset,
+              ∫ ω, ∏ i, pivotFam d N (k i₀) i₀ S
+                (fun j => applyOps d N (L j) (qRow d N (k j) (X j))) i ω ∂(P d) := by
+        rw [← integral_finsetSum _ fun S _ =>
+          (bddMeas_prod _ fun i _ => bddMeas_pivotFam d N (k i₀) i₀ S hFb i).integrable]
+        exact integral_congr_ae (Filter.Eventually.of_forall fun ω =>
+          prod_eq_sum_pivotFam d N (k i₀) i₀
+            (fun j => applyOps d N (L j) (qRow d N (k j) (X j))) ω)
+      have hterm : ∀ S ∈ (Finset.univ.erase i₀).powerset,
+          ‖∫ ω, ∏ i, pivotFam d N (k i₀) i₀ S
+              (fun j => applyOps d N (L j) (qRow d N (k j) (X j))) i ω ∂(P d)‖
+            ≤ ((2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r * B ^ Fintype.card ι)
+                * ρ ^ (∑ i, numQ (L i)) * (ρ * max 1 ρ ^ (Fintype.card ι - 1)) := by
+        intro S hSmem
+        have hSt : S ⊆ Finset.univ.erase i₀ := Finset.mem_powerset.1 hSmem
+        by_cases hSe : S = ∅
+        · subst hSe
+          rw [integral_prod_pivotFam_empty d N hFb hFd h0, norm_zero]
+          positivity
+        · have hc1 : 1 ≤ S.card := Finset.card_pos.2 (Finset.nonempty_of_ne_empty hSe)
+          have hc2 : S.card ≤ Fintype.card ι - 1 := htcard ▸ Finset.card_le_card hSt
+          have hrw : ∀ ω : Ω d, ∏ i, pivotFam d N (k i₀) i₀ S
+              (fun j => applyOps d N (L j) (qRow d N (k j) (X j))) i ω
+              = ∏ i, applyOps d N (pivotWords k i₀ S L i) (qRow d N (k i) (X i)) ω :=
+            fun ω => Finset.prod_congr rfl fun i _ => by
+              rw [pivotFam_eq_applyOps d N (X := X) L i]
+          have hL' : ∀ i, OpsOkOut k i (R.erase i₀) (pivotWords k i₀ S L i) := by
+            intro i
+            by_cases h : i = i₀
+            · have hw : pivotWords k i₀ S L i = L i₀ := by simp [pivotWords, h]
+              rw [hw, h]
+              exact (hL i₀).mono (Finset.erase_subset _ _)
+            · by_cases hi : i ∈ S
+              · have hw : pivotWords k i₀ S L i = (true, k i₀) :: L i := by
+                  simp [pivotWords, h, hi]
+                rw [hw]; exact (hL i).cons (hlone i₀ hi₀) hi₀ h true
+              · have hw : pivotWords k i₀ S L i = (false, k i₀) :: L i := by
+                  simp [pivotWords, h, hi]
+                rw [hw]; exact (hL i).cons (hlone i₀ hi₀) hi₀ h false
+          have hstep := ih (R.erase i₀) (pivotWords k i₀ S L)
+            (by rw [Finset.card_erase_of_mem hi₀, hR]; omega)
+            (fun i₁ hi₁ => hlone i₁ (Finset.mem_of_mem_erase hi₁)) hL'
+          rw [sum_numQ_pivotWords hSt L] at hstep
+          rw [integral_congr_ae (Filter.Eventually.of_forall hrw)]
+          refine le_trans hstep ?_
+          have hpow : ρ ^ S.card ≤ ρ * max 1 ρ ^ (Fintype.card ι - 1) := by
+            obtain ⟨c, hc⟩ : ∃ c, S.card = c + 1 := ⟨S.card - 1, by omega⟩
+            rw [hc, pow_succ]
+            have h1 : ρ ^ c ≤ max 1 ρ ^ c := pow_le_pow_left₀ hρ (le_max_right 1 ρ) c
+            have h2 : max 1 ρ ^ c ≤ max 1 ρ ^ (Fintype.card ι - 1) :=
+              pow_le_pow_right₀ hM1 (by omega)
+            calc ρ ^ c * ρ ≤ max 1 ρ ^ (Fintype.card ι - 1) * ρ := by
+                  exact mul_le_mul_of_nonneg_right (le_trans h1 h2) hρ
+              _ = ρ * max 1 ρ ^ (Fintype.card ι - 1) := by ring
+          have hexpand : (2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r
+              * (B ^ Fintype.card ι * ρ ^ ((∑ i, numQ (L i)) + S.card))
+              = ((2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r * B ^ Fintype.card ι)
+                * ρ ^ (∑ i, numQ (L i)) * ρ ^ S.card := by
+            rw [pow_add]; ring
+          rw [hexpand]
+          exact mul_le_mul_of_nonneg_left hpow (by positivity)
+      calc ‖∫ ω, ∏ i, applyOps d N (L i) (qRow d N (k i) (X i)) ω ∂(P d)‖
+          = ‖∑ S ∈ (Finset.univ.erase i₀).powerset,
+              ∫ ω, ∏ i, pivotFam d N (k i₀) i₀ S
+                (fun j => applyOps d N (L j) (qRow d N (k j) (X j))) i ω ∂(P d)‖ := by
+            rw [hexp]
+        _ ≤ ∑ S ∈ (Finset.univ.erase i₀).powerset,
+              ‖∫ ω, ∏ i, pivotFam d N (k i₀) i₀ S
+                (fun j => applyOps d N (L j) (qRow d N (k j) (X j))) i ω ∂(P d)‖ :=
+            norm_sum_le _ _
+        _ ≤ ∑ _S ∈ (Finset.univ.erase i₀).powerset,
+              (((2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r * B ^ Fintype.card ι)
+                * ρ ^ (∑ i, numQ (L i)) * (ρ * max 1 ρ ^ (Fintype.card ι - 1))) :=
+            Finset.sum_le_sum hterm
+        _ = (2 : ℝ) ^ (Fintype.card ι - 1)
+              * (((2 * max 1 ρ) ^ ((Fintype.card ι - 1) * r) * ρ ^ r * B ^ Fintype.card ι)
+                * ρ ^ (∑ i, numQ (L i)) * (ρ * max 1 ρ ^ (Fintype.card ι - 1))) := by
+            rw [Finset.sum_const, Finset.card_powerset, htcard, nsmul_eq_mul]
+            norm_num
+        _ = (2 * max 1 ρ) ^ ((Fintype.card ι - 1) * (r + 1)) * ρ ^ (r + 1)
+              * (B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)) := by
+            rw [Nat.mul_succ, pow_add, mul_pow, pow_succ]
+            ring
+
+/-- **`RBM.Gauss.norm_integral_prod_qRow_le` against the graded gain.** -/
+theorem norm_integral_prod_qRow_le_graded {k : ι → d.Idx N} (R : Finset ι)
+    (hlone : ∀ i₀ ∈ R, ∀ j, j ≠ i₀ → k j ≠ k i₀)
+    {X : ι → Ω d → ℂ} (hX : ∀ i, BddMeas d (X i)) (hXd : ∀ i, FinDep d (X i))
+    {B ρ : ℝ} (hB : 0 ≤ B) (hρ : 0 ≤ ρ)
+    (hgain : ∀ L : ι → List (Bool × d.Idx N), (∀ i, OpsOk k i (L i)) →
+      (∀ i, (L i).length ≤ Fintype.card ι) →
+      ∫ ω, ∏ i, ‖applyOps d N (L i) (qRow d N (k i) (X i)) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)) :
+    ‖∫ ω, ∏ i, qRow d N (k i) (X i) ω ∂(P d)‖
+      ≤ (2 * max 1 ρ) ^ ((Fintype.card ι - 1) * R.card) * ρ ^ R.card
+        * B ^ Fintype.card ι := by
+  classical
+  have h := norm_integral_prod_applyOps_le_graded hX hXd hB hρ hgain R.card R (fun _ => [])
+    rfl hlone (fun i => opsOkOut_nil k i R)
+  simpa only [applyOps_nil, numQ_nil, Finset.sum_const, smul_eq_mul, mul_zero, pow_zero,
+    mul_one] using h
+
+end GradedIterate
+
+/-! #### The two consumers, re-derived -/
+
+section GradedFluc
+
+variable {E t : ℝ} {p : ℕ}
+
+/-- **`RBM.Gauss.norm_integral_prod_epsHom_flucDiag_le` against the graded gain.**
+
+The words built by the iteration have one letter per pivot and the pivots are the lone slots,
+so they never exceed `#ι = 2p` letters; a gain valid up to length `M ≥ 2p` is therefore enough.
+This is the statement T113's bounded-length estimate can supply. -/
+theorem norm_integral_prod_epsHom_flucDiag_le_graded (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {B ρ : ℝ} {M : ℕ} (hg : FlucGainUpTo d N u (zt E t) (mE E) B ρ M) (hM : 2 * p ≤ M)
+    (v : (Fin p ⊕ Fin p) → d.Idx N) (R : Finset (Fin p ⊕ Fin p))
+    (hlone : ∀ i₀ ∈ R, ∀ j, j ≠ i₀ → v j ≠ v i₀) :
+    ‖∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖
+      ≤ (2 * max 1 ρ) ^ ((2 * p - 1) * R.card) * ρ ^ R.card * B ^ (2 * p) := by
+  classical
+  have hcard : Fintype.card (Fin p ⊕ Fin p) = 2 * p := by
+    simp [Fintype.card_sum, two_mul]
+  set X : (Fin p ⊕ Fin p) → Ω d → ℂ :=
+    fun i ω => epsHom p i (greenDiagCentered d N u (zt E t) (mE E) (v i) ω) with hXdef
+  have hXb : ∀ i, BddMeas d (X i) := by
+    intro i
+    obtain ⟨C, hC⟩ := (bddMeas_greenDiagCentered hE ht u (v i)).bdd
+    refine ⟨((measurable_epsHom p i).comp
+      (bddMeas_greenDiagCentered (E := E) (t := t) hE ht u (v i)).meas), C, fun ω => ?_⟩
+    rw [hXdef]
+    simpa only [norm_epsHom] using hC ω
+  have hXd : ∀ i, FinDep d (X i) :=
+    fun i => (finDep_greenDiagCentered d N u (zt E t) (mE E) (v i)).imp
+      (fun _ h ω ω' hω => by rw [hXdef]; exact congrArg (epsHom p i) (h ω ω' hω))
+  have hq : ∀ i, qRow d N (v i) (X i)
+      = fun ω => epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) := by
+    intro i
+    have := applyOps_epsHom d N p i [] (greenDiagCentered d N u (zt E t) (mE E) (v i))
+    cases i with
+    | inl j => simp only [hXdef, epsHom_inl]; rfl
+    | inr j =>
+        simp only [hXdef, epsHom_inr]
+        exact qRow_conj d N (v (Sum.inr j)) (greenDiagCentered d N u (zt E t) (mE E) _)
+  have hgain : ∀ L : (Fin p ⊕ Fin p) → List (Bool × d.Idx N), (∀ i, OpsOk v i (L i)) →
+      (∀ i, (L i).length ≤ Fintype.card (Fin p ⊕ Fin p)) →
+      ∫ ω, ∏ i, ‖applyOps d N (L i) (qRow d N (v i) (X i)) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card (Fin p ⊕ Fin p) * ρ ^ ∑ i, numQ (L i) := by
+    intro L hL hlen
+    have hrw : ∀ ω : Ω d, ∏ i, ‖applyOps d N (L i) (qRow d N (v i) (X i)) ω‖
+        = ∏ i, ‖applyOps d N (L i) (flucDiag d N u (zt E t) (mE E) (v i)) ω‖ := by
+      intro ω
+      refine Finset.prod_congr rfl fun i _ => ?_
+      rw [hq i, applyOps_epsHom d N p i (L i) (flucDiag d N u (zt E t) (mE E) (v i)),
+        norm_epsHom]
+    rw [integral_congr_ae (Filter.Eventually.of_forall hrw)]
+    exact hg.gain (Fin p ⊕ Fin p) v L (fun i => (hL i).1) (fun i => (hL i).2)
+      (fun i => le_trans (hlen i) (by rw [hcard]; exact hM))
+  have h := norm_integral_prod_qRow_le_graded (k := v) R hlone hXb hXd hg.B_nonneg
+    hg.rho_nonneg hgain
+  rw [hcard] at h
+  simpa only [hq] using h
+
+/-- **`RBM.Gauss.integral_norm_flucAvg_pow_le_iter` against the graded gain.**
+
+The `2p`-th moment bound of (4.12) needs the gain only up to word length `2p`.  With T113's
+parameters — `ρ = 2Ψ`, `B = 2(η_t⁻¹ + 1) + 2 minorDiffC(2p) Ψ`, and the constant
+`minorDiffC(2p)` depending on `p` alone — the right-hand side is `C_p (Ψ B)^{2p}`. -/
+theorem integral_norm_flucAvg_pow_le_iter_graded (hE : |E| < 2) (ht : t < 1) {u : ℝ}
+    {B ρ c : ℝ} {M : ℕ} {A : Finset (d.Idx N)} {T : d.Idx N → ℝ}
+    (hg : FlucGainUpTo d N u (zt E t) (mE E) B ρ M) (hM : 2 * p ≤ M)
+    (hρ1 : ρ ≤ 1) (hcρ : c ≤ ρ ^ 2)
+    (hw : UniformWeight T c A) (hp : 2 * p ≤ A.card) :
+    ∫ ω, ‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) ∂(P d)
+      ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+        * ((2 : ℝ) ^ (2 * p - 1) * ρ * B) ^ (2 * p) := by
+  classical
+  have hcardι : Fintype.card (Fin p ⊕ Fin p) = 2 * p := by
+    simp [Fintype.card_sum, two_mul]
+  have hB := hg.B_nonneg
+  have hρ0 := hg.rho_nonneg
+  have hbm : ∀ (v : (Fin p ⊕ Fin p) → d.Idx N),
+      BddMeas d fun ω => ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) :=
+    fun v => bddMeas_prod _ fun i _ => bddMeas_epsHom_flucDiag hE ht u p i (v i)
+  have hI : ∫ ω, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ) ∂(P d)
+      = ∑ v : (Fin p ⊕ Fin p) → d.Idx N, (∏ i, (T (v i) : ℂ))
+          * ∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d) := by
+    have hexp : ∀ ω : Ω d, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ)
+        = ∑ v : (Fin p ⊕ Fin p) → d.Idx N, (∏ i, (T (v i) : ℂ))
+            * ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) :=
+      fun ω => prod_epsHom_sum_eq p T fun k => flucDiag d N u (zt E t) (mE E) k ω
+    simp_rw [hexp]
+    rw [integral_finsetSum _ fun v _ =>
+      ((bddMeas_const d (∏ i, (T (v i) : ℂ))).mul (hbm v)).integrable]
+    exact Finset.sum_congr rfl fun v _ => integral_const_mul _ _
+  have hf : ∀ v : (Fin p ⊕ Fin p) → d.Idx N,
+      ‖∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖
+        ≤ ((2 : ℝ) ^ (2 * p - 1)) ^ (loneSlots v).card * ρ ^ (loneSlots v).card
+          * B ^ (2 * p) := by
+    intro v
+    have hlone : ∀ i₀ ∈ loneSlots v, ∀ j, j ≠ i₀ → v j ≠ v i₀ :=
+      fun i₀ hi₀ => mem_loneSlots.1 hi₀
+    have key := norm_integral_prod_epsHom_flucDiag_le_graded hE ht u hg hM v (loneSlots v) hlone
+    rwa [max_eq_left hρ1, mul_one, pow_mul] at key
+  have hK : (1 : ℝ) ≤ (2 : ℝ) ^ (2 * p - 1) := one_le_pow₀ (by norm_num)
+  have hsum := sum_weighted_le (ι := Fin p ⊕ Fin p) hw hcardι hp hρ0 hρ1 hK hB hcρ hf
+  have hofR : (∫ ω, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ) ∂(P d))
+      = ((∫ ω, ‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) ∂(P d) : ℝ) : ℂ) :=
+    integral_complex_ofReal
+  have hreal : ∫ ω, ‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) ∂(P d)
+      = ‖∫ ω, ((‖flucAvg d N u (zt E t) (mE E) T ω‖ ^ (2 * p) : ℝ) : ℂ) ∂(P d)‖ := by
+    rw [hofR, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (integral_nonneg fun ω => by positivity)]
+  rw [hreal, hI]
+  refine le_trans (norm_sum_le _ _) ?_
+  have hterm : ∀ v : (Fin p ⊕ Fin p) → d.Idx N,
+      ‖(∏ i, (T (v i) : ℂ))
+          * ∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖
+        = (∏ i, |T (v i)|)
+          * ‖∫ ω, ∏ i, epsHom p i (flucDiag d N u (zt E t) (mE E) (v i) ω) ∂(P d)‖ := by
+    intro v
+    rw [norm_mul, norm_prod]
+    congr 1
+    exact Finset.prod_congr rfl fun i _ => by rw [Complex.norm_real, Real.norm_eq_abs]
+  simp_rw [hterm]
+  exact le_trans hsum (le_of_eq (by push_cast; ring))
+
+end GradedFluc
+
+/-! #### (4.12) and (4.5) against the graded gain
+
+`RBM.Gauss.MomentDom` fixes **one** control for every `p`, while the graded interface may carry
+a different `B` at every grade — T113's does, through `minorDiffC (2p)`.  The two are reconciled
+by letting the graded parameter factor,
+
+  `Bp p N ≤ Kp p * Bm N`,
+
+with the grade-dependence confined to `Kp`: the factor `Kp p ^ {2p}` is absorbed into the
+constant of `RBM.Gauss.MomentDom`, which is allowed to depend on `p`, and the control is the
+`p`-independent `ep N * Bm N`.  For T113 one may take `Bm N = 2(η_t⁻¹ + 1) + Ψ N` and
+`Kp p = 1 + 2 minorDiffC (2p)`. -/
+
+section GradedDom
+
+open Filter
+
+variable {E t : ℝ}
+
+/-- **The moment form of (4.12) from the graded gain.** -/
+theorem momentDom_flucAvg_iter_graded {U : ℕ → Type*} (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {Tw : ∀ N, U N → d.Idx N → ℝ} {cw : ℕ → ℝ} {Aw : ∀ N, U N → Finset (d.Idx N)}
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, FlucGainUpTo d N u (zt E t) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hρ1 : ∀ N, ep N ≤ 1) (hcρ : ∀ N, cw N ≤ ep N ^ 2)
+    (hw : ∀ N (a : U N), UniformWeight (Tw N a) (cw N) (Aw N a))
+    (hcardA : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ a : U N, 2 * p ≤ (Aw N a).card) :
+    MomentDom (P d) (fun N (a : U N) ω => ‖flucAvg d N u (zt E t) (mE E) (Tw N a) ω‖)
+      (fun N _ => ep N * Bm N) := by
+  intro ε hε p
+  have hK0 : (0 : ℝ) ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) :=
+    pow_nonneg (mul_nonneg (by positivity) (hKp p)) _
+  have hc1 : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p) := by positivity
+  have hcoef : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+      * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) := mul_nonneg hc1 hK0
+  refine ⟨((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+    * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) + 1, by linarith, ?_⟩
+  filter_upwards [hcardA p, eventually_ge_atTop 1] with N h2 hN1
+  intro a
+  have hrw : (fun ω => |‖flucAvg d N u (zt E t) (mE E) (Tw N a) ω‖| ^ (2 * p))
+      = fun ω => ‖flucAvg d N u (zt E t) (mE E) (Tw N a) ω‖ ^ (2 * p) := by
+    funext ω; rw [abs_norm]
+  rw [hrw]
+  have hmain := integral_norm_flucAvg_pow_le_iter_graded hE ht (hg p N) le_rfl (hρ1 N) (hcρ N)
+    (hw N a) (h2 a)
+  have hep0 : (0 : ℝ) ≤ ep N := (hg p N).rho_nonneg
+  have hBp0 : (0 : ℝ) ≤ Bp p N := (hg p N).B_nonneg
+  have hstep1 : ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
+      ≤ ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p) := by
+    rw [← mul_pow]
+    refine pow_le_pow_left₀ (by positivity) ?_ _
+    calc (2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N
+        ≤ (2 : ℝ) ^ (2 * p - 1) * ep N * (Kp p * Bm N) :=
+          mul_le_mul_of_nonneg_left (hBK p N) (by positivity)
+      _ = ((2 : ℝ) ^ (2 * p - 1) * Kp p) * (ep N * Bm N) := by ring
+  have hmain2 : ∫ ω, ‖flucAvg d N u (zt E t) (mE E) (Tw N a) ω‖ ^ (2 * p) ∂(P d)
+      ≤ (((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+          * ((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p)) * (ep N * Bm N) ^ (2 * p) := by
+    refine le_trans hmain ?_
+    calc ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+            * ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp p N) ^ (2 * p)
+        ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+            * (((2 : ℝ) ^ (2 * p - 1) * Kp p) ^ (2 * p) * (ep N * Bm N) ^ (2 * p)) :=
+          mul_le_mul_of_nonneg_left hstep1 hc1
+      _ = _ := by ring
+  have hNe : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) :=
+    Real.one_le_rpow (by exact_mod_cast hN1) (by positivity)
+  have hpow : (0 : ℝ) ≤ (ep N * Bm N) ^ (2 * p) :=
+    pow_nonneg (mul_nonneg hep0 (hBm N)) _
+  refine le_trans hmain2 ?_
+  nlinarith [mul_nonneg hcoef hpow, hpow, hNe, hcoef]
+
+/-- **(4.12) as a `≺` statement, from the graded gain.** -/
+theorem stochDom_flucAvg_iter_graded {U : ℕ → Type*} [∀ N, Fintype (U N)] {Ccard : ℝ}
+    (hcard : ∀ᶠ N : ℕ in atTop, (Fintype.card (U N) : ℝ) ≤ (N : ℝ) ^ Ccard)
+    (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {Tw : ∀ N, U N → d.Idx N → ℝ} {cw : ℕ → ℝ} {Aw : ∀ N, U N → Finset (d.Idx N)}
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, FlucGainUpTo d N u (zt E t) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1) (hcρ : ∀ N, cw N ≤ ep N ^ 2)
+    (hw : ∀ N (a : U N), UniformWeight (Tw N a) (cw N) (Aw N a))
+    (hcardA : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ a : U N, 2 * p ≤ (Aw N a).card) :
+    StochDom (P d) (fun N (a : U N) ω => ‖flucAvg d N u (zt E t) (mE E) (Tw N a) ω‖)
+      (fun N _ _ => ep N * Bm N) :=
+  stochDom_of_momentDom hcard (fun N _ => hpos N)
+    (fun p N _a => integrable_norm_flucAvg_pow (flucBound_env hE ht d N u).flucDiag_le p)
+    (momentDom_flucAvg_iter_graded hE ht u hg hKp hBm hBK hρ1 hcρ hw hcardA)
+
+/-- **(4.12) for the block average, from the graded gain.** -/
+theorem stochDom_flucAvg_blockAvg_iter_graded (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, FlucGainUpTo d N u (zt E t) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    StochDom (P d)
+      (fun N (a : ZMod (d.L N)) ω =>
+        ‖flucAvg d N u (zt E t) (mE E) (blkCoef (d.L N) (d.W N) a) ω‖)
+      (fun N _ _ => ep N * Bm N) :=
+  stochDom_flucAvg_iter_graded (U := fun N => ZMod (d.L N)) (card_ZMod_L_le d) hE ht u hg hKp
+    hBm hBK hpos hρ1 hcρ (fun N a => uniformWeight_blockAvg a)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN a
+      rw [card_blockAvg_support]; exact hN)
+
+/-- **(4.12) for the variance-profile row, from the graded gain.** -/
+theorem stochDom_flucAvg_Sblk_iter_graded (hE : |E| < 2) (ht : t < 1) (u : ℝ)
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, FlucGainUpTo d N u (zt E t) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    StochDom (P d)
+      (fun N (i : d.Idx N) ω =>
+        ‖flucAvg d N u (zt E t) (mE E) (fun j => Sblk (d.L N) (d.W N) i j) ω‖)
+      (fun N _ _ => ep N * Bm N) :=
+  stochDom_flucAvg_iter_graded (U := fun N => d.Idx N) (card_Idx_le d) hE ht u hg hKp
+    hBm hBK hpos hρ1 hcρ (fun N i => uniformWeight_Sblk i)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN i
+      rw [card_Sblk_support]
+      omega)
+
+end GradedDom
+
+section GradedAvg
+
+variable {E κ t : ℝ}
+
+/-- **(4.5) from the graded (4.12).**  Identical to
+`RBM.Gauss.trace_green_sub_mul_Eblk_stochDom_iter` except that the gain is assumed only up to
+word length `2p` at each `p` — the form T113 can supply. -/
+theorem trace_green_sub_mul_Eblk_stochDom_iter_graded (d : Dims) (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hE : |E| ≤ 2 - κ) (ht0 : 0 ≤ t) (ht1 : t < 1)
+    {Bp : ℕ → ℕ → ℝ} {Bm Kp ep : ℕ → ℝ}
+    (hg : ∀ p N, FlucGainUpTo d N t (zt E t) (mE E) (Bp p N) (ep N) (2 * p))
+    (hKp : ∀ p, 0 ≤ Kp p) (hBm : ∀ N, 0 ≤ Bm N) (hBK : ∀ p N, Bp p N ≤ Kp p * Bm N)
+    (hpos : ∀ N, 0 < ep N * Bm N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρW : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hcρS : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hctrlRow : StochDom (P d) (fun N (_ : d.Idx N) (_ : Ω d) => ep N * Bm N)
+      (fun N _ ω => Lmax (Hflow d N t ω) (zt E t)))
+    (hctrlBlk : StochDom (P d) (fun N (_ : ZMod (d.L N)) (_ : Ω d) => ep N * Bm N)
+      (fun N _ ω => Lmax (Hflow d N t ω) (zt E t)))
+    (hIBP : StochDom (P d)
+      (fun N (i : d.Idx N) ω => ‖condExpDiag d N t (zt E t) (mE E) i ω
+        - (t : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * (green (Hflow d N t ω) (zt E t) k k - mE E)‖)
+      (fun N _ ω => Lmax (Hflow d N t ω) (zt E t))) :
+    StochDom (P d)
+      (fun N (a : ZMod (d.L N)) ω => ‖Matrix.trace ((green (Hflow d N t ω) (zt E t)
+        - mE E • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)) * Eblk (d.L N) (d.W N) a)‖)
+      (fun N _ ω => Lmax (Hflow d N t ω) (zt E t)) := by
+  have hE' : |E| < 2 := by
+    have : |E| ≤ 2 - κ := hE
+    linarith
+  exact trace_green_sub_mul_Eblk_stochDom d hκ0 hκ1 hE ht0 ht1 hIBP
+    ((stochDom_flucAvg_Sblk_iter_graded hE' ht1 t hg hKp hBm hBK hpos hρ1 hcρS).trans hctrlRow)
+    ((stochDom_flucAvg_blockAvg_iter_graded hE' ht1 t hg hKp hBm hBK hpos hρ1
+      hcρW).trans hctrlBlk)
+
+end GradedAvg
+
+end Graded
+
 end RBM.Gauss

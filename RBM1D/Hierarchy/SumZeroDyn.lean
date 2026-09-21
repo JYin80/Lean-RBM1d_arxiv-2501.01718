@@ -1251,7 +1251,7 @@ bounded by `A_u^{-m} ψ' + ζ` (`A_u = c (1-u) ℓ_u`, the scale `W ℓ_u η_u`)
 `ρ = (1-s)/(1-v)`. -/
 theorem norm_Uker_sumZero_scale_le (hL : 3 ≤ L) {n : ℕ} {E : ℝ} (hE : |E| ≤ 2)
     (σ : Fin (n + 2) → Bool) {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v)
-    (hv0 : 0 < v) (hv1 : v < 1) {κA : ℝ} (hκA : 0 < κA) {K ψ ζ δ : ℝ} (hK : 1 ≤ K)
+    (hv0 : 0 ≤ v) (hv1 : v < 1) {κA : ℝ} (hκA : 0 < κA) {K ψ ζ δ : ℝ} (hK : 1 ≤ K)
     (hψ : 0 ≤ ψ) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ) {G : LoopArg L (n + 2) → ℂ}
     (hGM : ∀ b, ‖G b‖ ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ + ζ)
     (hG : FastDecay L (ellHat L (u : ℂ) * K) δ G) (hz : SumZero L G) (a : LoopArg L (n + 2)) :
@@ -2552,7 +2552,7 @@ theorem fastDecay_Qop_le (hL : 3 ≤ L) {n : ℕ} {t : ℝ} (ht0 : 0 ≤ t) (ht1
 `(ℓ_u K, δ)`-fast-decaying `G_u` of size `(W ℓ_u η_u)^{-m} ψ (1-u)^{-1} + ζ`: the main term is
 `C_m K^{2m} ψ log((1-s)/(1-v))` — there is no `(η_s/η_v)` prefactor. -/
 theorem integral_term_le (hL : 3 ≤ L) {n : ℕ} {E : ℝ} (hE : |E| ≤ 2) (σ : Fin (n + 2) → Bool)
-    {s v : ℝ} (hs0 : 0 ≤ s) (hsv : s ≤ v) (hv0 : 0 < v) (hv1 : v < 1) {κA : ℝ} (hκA : 0 < κA)
+    {s v : ℝ} (hs0 : 0 ≤ s) (hsv : s ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1) {κA : ℝ} (hκA : 0 < κA)
     {K ψ ζ δ : ℝ} (hK : 1 ≤ K) (hψ : 0 ≤ ψ) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
     {G : ℝ → LoopArg L (n + 2) → ℂ}
     (hG : ∀ u, s ≤ u → u ≤ v → SumZero L (G u) ∧ FastDecay L (ellHat L (u : ℂ) * K) δ (G u) ∧
@@ -2791,7 +2791,7 @@ theorem integral_term_stochDom (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ 
     refine ⟨h1, h2, fun b => ?_⟩
     have := h3 b
     rwa [Band.scale_eq] at this
-  have key := integral_term_le (B.L N) hL3 hE.le σ (hs0 N).le hsv hv0 hv1 hκA0 hK1 hψ0 hε0 hε0 hG' a
+  have key := integral_term_le (B.L N) hL3 hE.le σ (hs0 N).le hsv hv0.le hv1 hκA0 hK1 hψ0 hε0 hε0 hG' a
   rw [← Band.scale_eq B E N v] at key
   -- the scales
   have h1v : 0 < 1 - v := by linarith
@@ -3595,7 +3595,7 @@ theorem termI1 (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N)
     refine (hQmax b).trans (hmax.trans ?_)
     rw [← Band.scale_eq B E N (s N)]
     exact add_le_add le_rfl hζ
-  have key := norm_Uker_sumZero_scale_le (B.L N) hL3 hE.le σ hs0' le_rfl hsv hv0 hv1 hκA0 hK1
+  have key := norm_Uker_sumZero_scale_le (B.L N) hL3 hE.le σ hs0' le_rfl hsv hv0.le hv1 hκA0 hK1
     hψ0 hε0 hε0 hGM hδ (SumZero_Qop (B.L N) hL3 (norm_ofReal_lt_one hs0' hs1) _) a
   rw [← Band.scale_eq B E N v] at key
   have hAv0 : 0 < B.scale E N v := by linarith
@@ -3944,7 +3944,7 @@ theorem QV_Q_stochDom (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N �
       (QQ (B.L N) ((uu : ℝ) : ℂ) (H.EE N uu ω σ)) :=
     FastDecay.mono (B.L N) h3dec (le_of_eq (by ring)) le_rfl
   have hker := norm_Uker_fastDecay_le_sumZero (B.L N) (n := (n + 2) + (n + 2)) (by omega) hL3 hu0
-    huv hv0 hv1 (ξ := xi2 E σ) (xi2_ne_zero hE σ) (norm_xi2_le hE σ) (K := 4 * K) (M := e₃)
+    huv hv0.le hv1 (ξ := xi2 E σ) (xi2_ne_zero hE σ) (norm_xi2_le hE σ) (K := 4 * K) (M := e₃)
     (δ := δ₃) (by linarith) he₃0 hδ₃0 h3max hdec4
     (sumZeroAt_QQ (B.L N) hL3 (norm_ofReal_lt_one hu0 hu1) _) (Fin.append a a)
   rw [← hck, ← hce] at hker

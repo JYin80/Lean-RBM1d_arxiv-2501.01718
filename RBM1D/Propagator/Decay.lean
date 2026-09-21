@@ -486,6 +486,31 @@ theorem ellHat_ofReal (L : ℕ) {t : ℝ} (ht1 : t < 1) :
       Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
   rw [ellHat, h]
 
+/-! ### The endpoint `ξ = 0`
+
+Every estimate in this file routes through the closed form `ρ(ξ)`, which is unavailable at
+`ξ = 0` (the characteristic equation degenerates there).  But `Θ_0 = 1`, so all the bounds
+are trivially true at that endpoint; these three facts are what the `ξ = 0` branch of the
+extended ("primed") statements below uses. -/
+
+theorem ellHat_zero (L : ℕ) (hL : 3 ≤ L) : ellHat L 0 = 1 := by
+  rw [ellHat]; norm_num; omega
+
+/-- One lattice difference of `Θ_0 = 1` has norm at most `1`. -/
+theorem norm_Theta_zero_sub_shift_le (L : ℕ) [NeZero L] (hL : 3 ≤ L) (x y : ZMod L) :
+    ‖Theta L 0 x y - Theta L 0 x (y + 1)‖ ≤ 1 := by
+  have hne : y ≠ y + 1 := fun h => one_ne_zero_zmod L hL (by linear_combination -h)
+  simp only [Theta_zero, Matrix.one_apply]
+  split_ifs with h1 h2 h2 <;> simp_all
+
+/-- The off-diagonal second lattice difference of `Θ_0 = 1` has norm at most `1`. -/
+theorem norm_Theta_zero_second_diff_le (L : ℕ) [NeZero L] (hL : 3 ≤ L) {x y : ZMod L}
+    (hxy : x ≠ y) :
+    ‖2 * Theta L 0 x y - Theta L 0 x (y + 1) - Theta L 0 x (y - 1)‖ ≤ 1 := by
+  have hne : y + 1 ≠ y - 1 := fun h => two_ne_zero_zmod L hL (by linear_combination h)
+  simp only [Theta_zero, Matrix.one_apply]
+  split_ifs with h1 h2 h3 h3 <;> simp_all
+
 /-- **The core inequality behind the prefactor of (2.52).**
 `ℓ̂ · (1 - ρ) ≤ 4 (1 - ρ^L)`.  Both regimes of the `min` are used:
 
@@ -642,6 +667,33 @@ theorem norm_Theta_apply_le_of_real (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 
           ((1 - t) * ellHat L (t : ℂ)) := by
         field_simp
         ring
+
+/-- **(2.52) for real `ξ = t ∈ [0,1)`**, i.e. `norm_Theta_apply_le_of_real` extended to
+`t = 0`.  At `t = 0` the propagator is the identity (`Θ_0 = 1`) and `ℓ̂(0) = 1`, so the
+bound reads `|δ_{xy}| ≤ 8e·e^{-‖x-y‖}`, which holds: the only nonzero entry is `x = y`,
+where `‖x-y‖ = 0` and `8e ≥ 1`.
+
+The closed form `ρ(t)` -- which every proof in this file routes through -- is unavailable
+at `t = 0` (the characteristic equation degenerates), so the endpoint is supplied by a
+separate case split rather than by the `ρ` machinery. -/
+theorem norm_Theta_apply_le_of_real' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (x y : ZMod L) :
+    ‖Theta L (t : ℂ) x y‖ ≤
+      8 * Real.exp 1 * Real.exp (-(zdist L (x - y) : ℝ) / ellHat L (t : ℂ)) /
+        ((1 - t) * ellHat L (t : ℂ)) := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact norm_Theta_apply_le_of_real hL ht ht1 x y
+  · subst ht
+    rw [Complex.ofReal_zero, ellHat_zero L hL, Theta_zero]
+    by_cases hxy : x = y
+    · subst hxy
+      rw [Matrix.one_apply_eq, norm_one, sub_self, zdist_zero]
+      have h1 : (1 : ℝ) ≤ Real.exp 1 := by
+        have := Real.add_one_le_exp (1 : ℝ); linarith
+      norm_num
+      linarith
+    · rw [Matrix.one_apply_ne hxy, norm_zero]
+      positivity
 
 end Decay52
 
@@ -805,6 +857,22 @@ theorem norm_Theta_sub_shift_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t 
       ≤ 2 * ‖AA L (t : ℂ) * (1 - rho (t : ℂ))‖ := h1
     _ ≤ 2 * (4 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t))) := by linarith
     _ = 8 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t)) := by ring
+
+/-- **(2.53) for real `ξ = t ∈ [0,1)`**: `norm_Theta_sub_shift_le` extended to the endpoint
+`t = 0`, where `Θ_0 = 1`, `ℓ̂(0) = 1` and the difference has norm at most `1 ≤ 8√3`. -/
+theorem norm_Theta_sub_shift_le' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (x y : ZMod L) :
+    ‖Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1)‖ ≤
+      8 * Real.sqrt 3 / (ellHat L (t : ℂ) * Real.sqrt (1 - t)) := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact norm_Theta_sub_shift_le L hL ht ht1 x y
+  · subst ht
+    rw [Complex.ofReal_zero, ellHat_zero L hL]
+    have h3 : (1 : ℝ) ≤ Real.sqrt 3 := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]; exact Real.sqrt_le_sqrt (by norm_num)
+    refine (norm_Theta_zero_sub_shift_le L hL x y).trans ?_
+    rw [sub_zero, Real.sqrt_one, mul_one, le_div_iff₀ (by norm_num)]
+    linarith
 
 end Differences2
 
@@ -990,6 +1058,20 @@ theorem norm_Theta_second_diff_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : 
     _ ≤ 2 * (12 / ellHat L (t : ℂ)) := by linarith
     _ = 24 / ellHat L (t : ℂ) := by ring
 
+/-- **(2.54) for real `ξ = t ∈ [0,1)`, off the diagonal**: `norm_Theta_second_diff_le`
+extended to the endpoint `t = 0`, where `Θ_0 = 1`, `ℓ̂(0) = 1` and the second difference has
+norm at most `1 ≤ 24`. -/
+theorem norm_Theta_second_diff_le' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖
+      ≤ 24 / ellHat L (t : ℂ) := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact norm_Theta_second_diff_le L hL ht ht1 hxy
+  · subst ht
+    rw [Complex.ofReal_zero, ellHat_zero L hL]
+    refine (norm_Theta_zero_second_diff_le L hL hxy).trans ?_
+    norm_num
+
 end SecondDiff
 
 section InvDist
@@ -1104,6 +1186,38 @@ theorem norm_Theta_second_diff_le_inv_dist (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t
   refine hchain.trans ?_
   rw [div_mul_eq_mul_div, div_le_div_iff₀ hellpos (by positivity)]
   nlinarith [hkey]
+
+/-- **(2.54) in the paper's form, for real `ξ = t ∈ [0,1)`**:
+`norm_Theta_second_diff_le_inv_dist` extended to the endpoint `t = 0`.  There `Θ_0 = 1`, so
+the second difference vanishes unless `‖x-y‖ = 1`, where the right side is `60/2 = 30 ≥ 1`. -/
+theorem norm_Theta_second_diff_le_inv_dist' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖
+      ≤ 60 / ((zdist L (x - y) : ℝ) + 1) := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact norm_Theta_second_diff_le_inv_dist L hL ht ht1 hxy
+  · subst ht
+    rw [Complex.ofReal_zero]
+    rcases lt_or_ge (zdist L (x - y)) 2 with hsmall | hbig
+    · have hd1 : (zdist L (x - y) : ℝ) ≤ 1 := by
+        exact_mod_cast Nat.lt_succ_iff.1 hsmall
+      refine (norm_Theta_zero_second_diff_le L hL hxy).trans ?_
+      rw [le_div_iff₀ (by positivity)]
+      linarith
+    · -- `‖x-y‖ ≥ 2`: `Θ_0 = 1` has no entry among the three points involved
+      have hx1 : x ≠ y + 1 := by
+        rintro rfl
+        have h1 : y + 1 - y = 1 := by ring
+        have := zdist_one_le L hL
+        rw [← h1] at this; omega
+      have hx2 : x ≠ y - 1 := by
+        rintro rfl
+        have h1 : y - 1 - y = -1 := by ring
+        have := zdist_neg_one_le L hL
+        rw [← h1] at this; omega
+      simp only [Theta_zero, Matrix.one_apply, if_neg hxy, if_neg hx1, if_neg hx2]
+      norm_num
+      positivity
 
 end InvDist
 

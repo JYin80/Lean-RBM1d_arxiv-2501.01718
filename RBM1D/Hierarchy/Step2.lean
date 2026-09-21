@@ -451,7 +451,7 @@ and (7.2) (`RBM.norm_Uker_tail_le_ellStar`).  Let `η_x = (1 - x) m`, `ℓ_x = �
 For `‖a₁ - a₂‖ ≥ ℓ*_v` this is (7.2); below `ℓ*_v` it is Lemma 7.1, at the price
 `e^{(log W)^{3/4}} = W^{o(1)}` (the paper's `1(|a₁ - a₂| ≤ ℓ*)`-term). -/
 theorem norm_Uker_le_of_tail (hL : 3 ≤ L) {m : ℝ} (hm0 : 0 < m) (hm1 : m ≤ 1) {u v : ℝ}
-    (hu0 : 0 ≤ u) (huv : u ≤ v) (hv0 : 0 < v) (hv1 : v < 1) {W D M : ℝ} (hW : exp 1 ≤ W)
+    (hu0 : 0 ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1) {W D M : ℝ} (hW : exp 1 ≤ W)
     (hM : 0 ≤ M)
     (hAuv : W * ellHat L (v : ℂ) * ((1 - v) * m) ≤ W * ellHat L (u : ℂ) * ((1 - u) * m))
     {A : LoopArg L 2 → ℂ}
@@ -465,7 +465,7 @@ theorem norm_Uker_le_of_tail (hL : 3 ≤ L) {m : ℝ} (hm0 : 0 < m) (hm1 : m ≤
   have hL1 : 1 ≤ L := by omega
   have hu1 : u < 1 := huv.trans_lt hv1
   have hℓu : 1 ≤ ellHat L (u : ℂ) := one_le_ellHat_of_nonneg hL1 hu0 hu1
-  have hℓv : 1 ≤ ellHat L (v : ℂ) := one_le_ellHat_of_nonneg hL1 hv0.le hv1
+  have hℓv : 1 ≤ ellHat L (v : ℂ) := one_le_ellHat_of_nonneg hL1 hv0 hv1
   set ℓu := ellHat L (u : ℂ) with hℓudef
   set ℓv := ellHat L (v : ℂ) with hℓvdef
   have h1u : 0 < 1 - u := by linarith
@@ -566,7 +566,7 @@ theorem norm_Uker_le_of_tail (hL : 3 ≤ L) {m : ℝ} (hm0 : 0 < m) (hm1 : m ≤
       (hA b).trans (mul_le_mul_of_nonneg_left (tailT_antitone (by linarith) (Nat.cast_nonneg _)) hM)
     have hTu00 : 0 ≤ Tu0 := tailT_nonneg hW0.le _
     have ht : ∀ i : Fin 2, ‖(v : ℂ) * (fun _ => (1 : ℂ)) i‖ < 1 := by
-      intro i; simp [Complex.norm_real, abs_of_pos hv0, hv1]
+      intro i; simp [Complex.norm_real, abs_of_nonneg hv0, hv1]
     have hC : ∀ i : Fin 2, 1 + ‖((u : ℂ) - (v : ℂ)) * (fun _ => (1 : ℂ)) i‖ *
         (1 - ‖(v : ℂ) * (fun _ => (1 : ℂ)) i‖)⁻¹ ≤ r := by
       intro i
@@ -575,7 +575,7 @@ theorem norm_Uker_le_of_tail (hL : 3 ≤ L) {m : ℝ} (hm0 : 0 < m) (hm1 : m ≤
         rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, abs_of_nonpos (by linarith)]
         ring
       have e2 : ‖(v : ℂ) * (fun _ => (1 : ℂ)) i‖ = v := by
-        simp [Complex.norm_real, abs_of_pos hv0]
+        simp [Complex.norm_real, abs_of_nonneg hv0]
       rw [e1, e2, hr]
       apply le_of_eq
       field_simp
@@ -710,7 +710,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ
 /-- The kernel estimate `norm_Uker_le_of_tail` for the flow, `σ = (+,-)`:
 `|(U_{u,v,σ} ∘ A)_a| ≤ M (η_u/η_v)² Ξ T_{v,D}(‖a₁ - a₂‖)` if `|A_b| ≤ M T_{u,D}(‖b₁ - b₂‖)`. -/
 theorem norm_Uker_flow (hE : |E| < 2) {N : ℕ} {u v : ℝ} (hu0 : 0 ≤ u) (huv : u ≤ v)
-    (hv0 : 0 < v) (hv1 : v < 1) (hW : exp 1 ≤ (B.W N : ℝ)) {D M : ℝ} (hM : 0 ≤ M)
+    (hv0 : 0 ≤ v) (hv1 : v < 1) (hW : exp 1 ≤ (B.W N : ℝ)) {D M : ℝ} (hM : 0 ≤ M)
     {A : LoopArg (B.L N) 2 → ℂ}
     (hA : ∀ b, ‖A b‖ ≤ M * tT B E N D u (zdist (B.L N) (b 0 - b 1))) (a : LoopArg (B.L N) 2) :
     ‖Uker (B.L N) (xiOf (mSigma E) sigPM) (u : ℂ) (v : ℂ) A a‖ ≤
@@ -743,7 +743,7 @@ hierarchy (5.20) hold, let `(L-K)_s ≤ M_i T_s` ((2.69)), let the drift other t
 with constant `M_m`.  If `J*_{u,D} ≤ Λ(u)` for `u ∈ [s, v)`, then
 `|(L-K)_{v,a}| ≤ Φ_v T_{v,D}(‖a₁ - a₂‖)`. -/
 theorem step_bound (H : SumZeroDyn.Hierarchy X E s t 0) (hE : |E| < 2) {N : ℕ} {ω : Ω}
-    (hs0 : 0 < s N) (ht1 : t N < 1) (hW : exp 1 ≤ (B.W N : ℝ))
+    (hs0 : 0 ≤ s N) (ht1 : t N < 1) (hW : exp 1 ≤ (B.W N : ℝ))
     {D δ Mi Mg Mm : ℝ} (hMi : 0 ≤ Mi) (hMg : 0 ≤ Mg)
     (hinit : ∀ b, ‖lk X E N (s N) ω b‖ ≤ Mi * tT B E N D (s N) (zdist (B.L N) (b 0 - b 1)))
     (heG : ∀ u ∈ Set.Icc (s N) (t N), ∀ b,
@@ -760,7 +760,7 @@ theorem step_bound (H : SumZeroDyn.Hierarchy X E s t 0) (hE : |E| < 2) {N : ℕ}
   have hL3 := B.three_le_L N
   have hL1 : 1 ≤ B.L N := by omega
   have hW0 : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
-  have hv0 : 0 < v := hs0.trans_le hv.1
+  have hv0 : 0 ≤ v := hs0.trans hv.1
   have hv1 : v < 1 := hv.2.trans_lt ht1
   have hs1 : s N < 1 := hv.1.trans_lt hv1
   have hm0 := mE_im_pos hE
@@ -777,7 +777,7 @@ theorem step_bound (H : SumZeroDyn.Hierarchy X E s t 0) (hE : |E| < 2) {N : ℕ}
   have hR1 : 1 ≤ R := by rw [hRe, le_div_iff₀ h1v]; linarith [hv.1]
   set Λ := thr E s δ N v with hΛ
   set A := B.scale E N v with hA
-  have hApos : 0 < A := B.scale_pos hE N hv0 hv1
+  have hApos : 0 < A := B.scale_pos' hE N hv0 hv1
   set ε := (B.W N : ℝ) * B.L N * (B.W N : ℝ) ^ (-D) with hε
   have hε0 : 0 ≤ ε := by positivity
   set q := (B.ell N v / B.ell N (s N)) ^ 2 with hq
@@ -788,7 +788,7 @@ theorem step_bound (H : SumZeroDyn.Hierarchy X E s t 0) (hE : |E| < 2) {N : ℕ}
   -- (5.39): the initial term
   have hI : ‖Uker (B.L N) (xiOf (mSigma E) sigPM) (s N : ℂ) (v : ℂ) (lk X E N (s N) ω) a‖
       ≤ Mi * R ^ 2 * Ξ * Tv :=
-    norm_Uker_flow hE hs0.le hv.1 hv0 hv1 hW hMi hinit a
+    norm_Uker_flow hE hs0 hv.1 hv0 hv1 hW hMi hinit a
   -- (5.40) + (5.41): the drift, pointwise in `u ∈ [s, v)`
   set c := m⁻¹ * ((1 - s N) / (1 - v) ^ 2) with hcdef
   set K : ℝ := exp 1 * Λ ^ 2 * (36 * c * A⁻¹ + R ^ 2 * ε)
@@ -796,14 +796,14 @@ theorem step_bound (H : SumZeroDyn.Hierarchy X E s t 0) (hE : |E| < 2) {N : ℕ}
   have hdrift : ∀ u ∈ Set.Ico (s N) v,
       ‖Uker (B.L N) (xiOf (mSigma E) sigPM) (u : ℂ) (v : ℂ) (H.F N u ω sigPM) a‖ ≤ K * Ξ * Tv := by
     intro u hu
-    have hu0 : 0 < u := hs0.trans_le hu.1
+    have hu0 : 0 ≤ u := hs0.trans hu.1
     have hu1 : u < 1 := hu.2.trans hv1
     have huv : u ≤ v := hu.2.le
     have h1u : 0 < 1 - u := by linarith
     have huI : u ∈ Set.Icc (s N) (t N) := ⟨hu.1, huv.trans hv.2⟩
-    have hℓu1 : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg hL1 hu0.le hu1
+    have hℓu1 : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg hL1 hu0 hu1
     have hηu : 0 < etaT E u := etaT_pos' hE hu1
-    have hAu : 0 < B.scale E N u := B.scale_pos hE N hu0 hu1
+    have hAu : 0 < B.scale E N u := B.scale_pos' hE N hu0 hu1
     have hAuv : A ≤ B.scale E N u := flowScale_antitoneOn hW0.le (B.L N) E
       (Set.mem_Iic.2 hu1.le) (Set.mem_Iic.2 hv1.le) huv
     have hJ1 : 1 ≤ jS X E D N u ω := one_le_jStar hW0 (fun b => norm_nonneg _)
@@ -833,11 +833,11 @@ theorem step_bound (H : SumZeroDyn.Hierarchy X E s t 0) (hE : |E| < 2) {N : ℕ}
       have := norm_eLL_le hL3 hW0 hℓu1 hηu D (lk X E N u ω) b
       refine this.trans (le_of_eq ?_)
       rw [hM₁, hε]; rfl
-    have hU1 := norm_Uker_flow hE hu0.le huv hv0 hv1 hW hM₁0 h534 a
+    have hU1 := norm_Uker_flow hE hu0 huv hv0 hv1 hW hM₁0 h534 a
     set M₂ := Mg * ((etaT E u)⁻¹ * ((B.ell N u / B.ell N (s N)) ^ 2 +
           (B.scale E N u)⁻¹ ^ ((1 : ℝ) / 3) * J ^ 3)) with hM₂
     have hM₂0 : 0 ≤ M₂ := by positivity
-    have hU2 := norm_Uker_flow hE hu0.le huv hv0 hv1 hW hM₂0 (heG u huI) a
+    have hU2 := norm_Uker_flow hE hu0 huv hv0 hv1 hW hM₂0 (heG u huI) a
     refine (add_le_add hU1 hU2).trans ?_
     -- comparisons
     have hr2 : (etaT E u)⁻¹ * ru ^ 2 ≤ c := by
@@ -1310,7 +1310,7 @@ theorem continuousOn_thr (hE : |E| < 2) (δ : ℝ) (N : ℕ) {a b : ℝ} (hb : b
 Proof: on the intersection of the good events of (2.69), (5.35), (5.44)–(5.46) and path
 continuity, `step_bound` and `phi_arith` give the premise of `self_improving` with threshold
 `Λ(u) = N^δ (η_s/η_u)⁴` and improved bound `C N^{δ/4} (η_s/η_u)⁴ < Λ(u)`. -/
-theorem jS_highProb (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem jS_highProb (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hB : BoundsCore X E s) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
@@ -1324,7 +1324,7 @@ theorem jS_highProb (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
   have G2 := (Hy.eG D hD0).highProb hτ
   have G3 := (Hy.mart δ hδ0 hδ₀ D hD0).highProb hτ
   refine (((G1.inter G2).inter G3).inter Hy.cont).mono ?_
-  filter_upwards [eventually_step_facts hE (fun N => (hs0 N).le) hst ht1 hc0 hreg hδ0 hδ1 hδc hD] with N hF
+  filter_upwards [eventually_step_facts hE hs0 hst ht1 hc0 hreg hδ0 hδ1 hδc hD] with N hF
   rintro ω ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
   obtain ⟨hWe, hx1, hCx, hΞ, hAs, hvF⟩ := hF
   simp only [Set.mem_ofPred_eq] at h1 h2 h3 h4 ⊢
@@ -1368,7 +1368,7 @@ theorem jS_highProb (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
     exact mul_lt_mul_of_pos_right this hR4
   · -- one step
     intro v hv hbelow
-    have hv0 : 0 < v := (hs0 N).trans_le hv.1
+    have hv0 : 0 ≤ v := (hs0 N).trans hv.1
     have hv1 : v < 1 := hv.2.trans_lt (ht1 N)
     have hmart : ∀ a : LoopArg (B.L N) 2, ‖Hy.H.mart N v ω sigPM a‖ ≤
         x * ((etaT E (s N) / etaT E v) ^ 2 + 1) * tT B E N D v (zdist (B.L N) (a 0 - a 1)) := by
@@ -1417,7 +1417,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ
 
 /-- **(5.47)** `J*_{u,D} ≺ (η_s/η_u)⁴`, uniformly in `u ∈ [s, t]`, for every `D ≥ 60`.
 (In particular `P(T ≤ t)` is negligible for the stopping time (5.43).) -/
-theorem jS_stochDom (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem jS_stochDom (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hB : BoundsCore X E s) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N))
@@ -1434,7 +1434,7 @@ theorem jS_stochDom (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
     linarith
   have hδ1 : δ ≤ 1 := (min_le_right _ _).trans (min_le_right _ _)
   refine ⟨_, jS_highProb X Hy hE hs0 hst ht1 hB hc0 hreg hδ0 hδ1 hδc hδ₀ hD, ?_⟩
-  filter_upwards [eventually_step_facts (B := B) hE (fun N => (hs0 N).le) hst ht1 hc0 hreg hδ0 hδ1 hδc hD,
+  filter_upwards [eventually_step_facts (B := B) hE hs0 hst ht1 hc0 hreg hδ0 hδ1 hδc hD,
     eventually_ge_atTop 1] with N hF hN1 ω hω u
   obtain ⟨-, hx1, hCx, -⟩ := hF
   have hN : (1 : ℝ) ≤ N := by exact_mod_cast hN1
@@ -1485,7 +1485,7 @@ theorem tT_le_decayProf {N : ℕ} {u D D₀ : ℝ} (hDD : D₀ + 4 ≤ D) (hA1 :
 `σ = (+,-)` and every `D > 0`,
 `|L_{u,σ,a} - K_{u,σ,a}| ≺ (η_s/η_u)⁴ (W ℓ_u η_u)^{-2} (e^{-(|a₁-a₂|/ℓ_u)^{1/2}} + W^{-D})`,
 uniformly in `u ∈ [s, t]` and `a`. -/
-theorem aprioriDecay (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
+theorem aprioriDecay (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hB : BoundsCore X E s) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N)) :
@@ -1518,7 +1518,7 @@ theorem aprioriDecay (Hy : Hyp X E s t) (hE : |E| < 2) (hs0 : ∀ N, 0 < s N)
     have hA := B.scale_nonneg E N (p.1.2.2.trans (ht1 N).le)
     have : 0 ≤ B.decayProf N p.1 D₀ p.2.1 p.2.2 := by unfold Band.decayProf; positivity
     positivity
-  · filter_upwards [SumZeroDyn.flow_crude hE (fun N => (hs0 N).le) hst ht1 h272,
+  · filter_upwards [SumZeroDyn.flow_crude hE hs0 hst ht1 h272,
       eventually_le_W_sq B] with
       N hcr hW2 p ω
     obtain ⟨-, -, -, hsc⟩ := hcr
@@ -2015,7 +2015,7 @@ Inputs: (2.68)–(2.70) at `s` (`RBM.BoundsCore`; Step 2 uses (2.69)), (2.72) wi
 along the flow) and of Step 2 (`Hyp`). -/
 theorem step2 {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ) (Hy : Hyp X E s t)
     (h1 : Step1.Hyp X E s t) (hB : BoundsCore X E s)
-    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
     (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
       B.scale E N (t N)) :
     StochDom B.P
@@ -2032,8 +2032,8 @@ theorem step2 {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - �
   have hreg' : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N) := by
     filter_upwards [eventually_R4_le_scale (B := B) hE hst ht1 hc0 hreg] with N hN
     exact (hN ⟨t N, hst N, le_rfl⟩).2
-  have h274 := Step1.weakLaw X hκ0 hEκ hB (fun N => (hs0 N).le) hst ht1 hc272 hc0 hreg' h1
-  exact ⟨localLaw X hκ0 hκ1 hEκ (fun N => (hs0 N).le) hst ht1 hc0 hreg h276 h274 h1.lemma41,
+  have h274 := Step1.weakLaw X hκ0 hEκ hB hs0 hst ht1 hc272 hc0 hreg' h1
+  exact ⟨localLaw X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg h276 h274 h1.lemma41,
     h276⟩
 
 end Step2Main

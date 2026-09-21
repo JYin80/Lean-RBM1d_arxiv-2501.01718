@@ -80,6 +80,10 @@ variable (L : ℕ) [NeZero L]
 noncomputable def Theta (ξ : ℂ) : Matrix (ZMod L) (ZMod L) ℂ :=
   Ring.inverse (1 - ξ • SB L)
 
+/-- `Θ_0 = 1`: at `ξ = 0` the propagator is the identity. -/
+theorem Theta_zero : Theta L 0 = 1 := by
+  simp [Theta]
+
 theorem isUnit_one_sub_smul_SB (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) :
     IsUnit (1 - ξ • SB L) :=
   ⟨Units.oneSub _ (norm_smul_SB_lt_one L hL hξ), Units.val_oneSub _ _⟩

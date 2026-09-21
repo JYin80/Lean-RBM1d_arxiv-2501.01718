@@ -90,9 +90,6 @@ section Example215
 noncomputable def kTwo (W : ℕ) (m : Bool → ℂ) (t : ℝ) (σ₁ σ₂ : Bool) (a₁ a₂ : ZMod L) : ℂ :=
   (W : ℂ)⁻¹ * (m σ₁ * m σ₂) * Theta L (t * (m σ₁ * m σ₂)) a₁ a₂
 
-theorem Theta_zero : Theta L 0 = 1 := by
-  simp [Theta]
-
 /-- **Example 2.15**: (2.57) solves (2.55) wherever `‖t m₁ m₂‖ < 1`. -/
 theorem hasDerivAt_kTwo (hL : 3 ≤ L) (W : ℕ) [NeZero W] (m : Bool → ℂ) {t : ℝ}
     (σ₁ σ₂ : Bool) (ht : ‖(t : ℂ) * (m σ₁ * m σ₂)‖ < 1) (a₁ a₂ : ZMod L) :

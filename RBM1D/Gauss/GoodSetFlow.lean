@@ -194,4 +194,96 @@ theorem highProb_goodSetFlow_of_localLaw (d : Dims) {τ : ℝ} (hτ : 0 < τ) (h
   filter_upwards [hmargin] with N hN ω hω u hu x y
   exact (hω (⟨u, hu⟩, (x, y))).trans hN
 
+/-! ### Producing `hll` from Step 2 — T150
+
+`RBM.Gauss.LocalLawUnifIcc` is the *fixed-time* weak local law with constants uniform in `u`:
+the union over `u` is **outside** the probability.  (2.75) of Step 2
+(`RBM.LocalLawFlow`, T149's split of the field `RBM.Steps.localLaw`) is the **stronger**
+statement with the union *inside*, so the implication below is the easy direction — one
+`measure_mono` — and the only other ingredient is a time-*independent* majorant for the control
+`(W ℓ_u η_u)^{-1/2}`, which (2.72) supplies through `RBM.Step3.Scales.le_A`.
+
+This is what the introduction above means by "this is the input that Steps 1/2 ((2.74)/(2.75))
+supply"; before T150 the two were never connected. -/
+
+/-- **A `≺` with the time inside the index set gives `RBM.Gauss.UnifDomIcc`.**
+
+The failure event at one `u ∈ [s_N, t_N]` and one index `a` is contained in the failure event
+of the union over `u` and `a`, so the same probability bound holds; the converse needs a net
+(`RBM.Gauss.stochDom_timeIcc_of_unifDom`). -/
+theorem unifDomIcc_of_stochDom_timeIcc {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {V : ℕ → Type*} {s t : ℕ → ℝ} {ξ ζ : ∀ N, ℝ → V N → Ω → ℝ}
+    (h : StochDom P (U := fun N => RBM.TimeIcc s t N × V N)
+      (fun N p ω => ξ N (p.1 : ℝ) p.2 ω) (fun N p ω => ζ N (p.1 : ℝ) p.2 ω)) :
+    UnifDomIcc P s t ξ ζ := by
+  intro τ hτ D hD
+  filter_upwards [h τ hτ D hD] with N hN u hu a
+  refine le_trans (measure_mono ?_) hN
+  intro ω hω
+  exact ⟨(⟨u, hu⟩, a), hω⟩
+
+/-- **Step 2's (2.75) gives the `hll` slot** — `RBM.Gauss.LocalLawUnifIcc`.
+
+`hmaj` is the time-independent majorant: any `Ψ_N` with `(W ℓ_u η_u)^{-1/2} ≤ Ψ_N` for every
+`u ∈ [s_N, t_N]`, eventually in `N`.  See
+`RBM.Gauss.localLawUnifIcc_of_localLawFlow_scales` for the canonical choice, read off (2.72). -/
+theorem localLawUnifIcc_of_localLawFlow (hLL : RBM.LocalLawFlow (sample d) E s t)
+    (hmaj : ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
+      ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 2) ≤ Ψ N) :
+    LocalLawUnifIcc d E s t Ψ := by
+  intro τ hτ D hD
+  filter_upwards [hLL τ hτ D hD, hmaj] with N hN hM u hu ij
+  refine le_trans (measure_mono ?_) hN
+  intro ω hω
+  refine ⟨(⟨u, hu⟩, ij), ?_⟩
+  have hτ0 : (0 : ℝ) ≤ (N : ℝ) ^ τ := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have h1 : (N : ℝ) ^ τ * ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 2) ≤ (N : ℝ) ^ τ * Ψ N :=
+    mul_le_mul_of_nonneg_left (hM u hu) hτ0
+  have h2 : (N : ℝ) ^ τ * Ψ N
+      < ‖green (Hflow d N u ω) (zt E u) ij.1 ij.2 - (if ij.1 = ij.2 then mE E else 0)‖ := hω
+  show (N : ℝ) ^ τ * ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 2) < (sample d).llErr E N u ω ij
+  rw [(sample d).llErr_eq N u ω ij]
+  show (N : ℝ) ^ τ * ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 2)
+    < ‖green (Hflow d N u ω) (zt E u) ij.1 ij.2 - (if ij.1 = ij.2 then mE E else 0)‖
+  linarith
+
+/-- **The time-independent majorant of (2.75), read off (2.72).**
+
+`RBM.Step3.Scales.le_A` is `R_N^2 (W ℓ_s η_s)^{3/4} ≤ W ℓ_u η_u` for every `u ∈ [s_N, t_N]` — a
+consequence of (2.72) (`RBM.Step3.scales_of_cond272`) — so
+`Ψ_N = (R_N^2 As_N^{3/4})^{-1/2}` dominates `(W ℓ_u η_u)^{-1/2}` uniformly in `u`. -/
+theorem le_inv_rpow_half_of_scales {As R : ℕ → ℝ}
+    (hsc : RBM.Step3.Scales (U := fun N => RBM.TimeIcc s t N) As R
+      (fun N u => (band d).scale E N (u : ℝ))) :
+    ∀ᶠ N : ℕ in atTop, ∀ u ∈ Set.Icc (s N) (t N),
+      ((band d).scale E N u)⁻¹ ^ ((1 : ℝ) / 2)
+        ≤ ((R N ^ 2 * As N ^ ((3 : ℝ) / 4))⁻¹) ^ ((1 : ℝ) / 2) := by
+  filter_upwards [hsc.le_A, hsc.one_le_R] with N hle hR u hu
+  have hAs : 0 < As N := hsc.As_pos N
+  have hAs34 : (0 : ℝ) < As N ^ ((3 : ℝ) / 4) := Real.rpow_pos_of_pos hAs _
+  have hR2 : (0 : ℝ) < R N ^ 2 := by nlinarith
+  have hApos : (0 : ℝ) < R N ^ 2 * As N ^ ((3 : ℝ) / 4) := mul_pos hR2 hAs34
+  have h := hle ⟨u, hu⟩
+  exact Real.rpow_le_rpow (le_of_lt (inv_pos.2 (lt_of_lt_of_le hApos h)))
+    (inv_anti₀ hApos h) (by norm_num)
+
+/-- **`hll` from Step 2 and (2.72)**, with the canonical `Ψ`.  This is the wiring T147 §6(c)
+records as missing: (2.75) together with `RBM.Step3.Scales.le_A` fills the `hll` slot of
+`RBM.Gauss.highProb_goodSetFlow_of_localLaw` and of every consumer in
+`RBM1D/Gauss/CondStableFlow.lean`. -/
+theorem localLawUnifIcc_of_localLawFlow_scales {As R : ℕ → ℝ}
+    (hLL : RBM.LocalLawFlow (sample d) E s t)
+    (hsc : RBM.Step3.Scales (U := fun N => RBM.TimeIcc s t N) As R
+      (fun N u => (band d).scale E N (u : ℝ))) :
+    LocalLawUnifIcc d E s t (fun N => ((R N ^ 2 * As N ^ ((3 : ℝ) / 4))⁻¹) ^ ((1 : ℝ) / 2)) :=
+  localLawUnifIcc_of_localLawFlow hLL (le_inv_rpow_half_of_scales hsc)
+
+/-- **The bundle-shaped corollary** (T149's house pattern): `RBM.Steps.localLaw` is verbatim
+`RBM.LocalLawFlow`, so the `hll` slot is filled by Step 2 of `RBM.Steps` directly. -/
+theorem localLawUnifIcc_of_steps {As R : ℕ → ℝ} (hS : RBM.Steps (sample d) E s t)
+    (hsc : RBM.Step3.Scales (U := fun N => RBM.TimeIcc s t N) As R
+      (fun N u => (band d).scale E N (u : ℝ))) :
+    LocalLawUnifIcc d E s t (fun N => ((R N ^ 2 * As N ^ ((3 : ℝ) / 4))⁻¹) ^ ((1 : ℝ) / 2)) :=
+  localLawUnifIcc_of_localLawFlow_scales hS.localLaw hsc
+
 end RBM.Gauss

@@ -3740,3 +3740,121 @@ master `eG_le` 原样不动。
   + `G†E_bG` 的块结构。这轮把 3-loop 那一层（(5.56)/(5.58)/(5.60)）打穿了，**6-loop 那一层没动**。
 * `h572`（`(G†E_bG)_{x₁x₁'} ≤ max_{y∈I_b}|G_{x₁y}||G_{x₁'y}|`）仍是假设。
 * `eG_le`/`ee_le` 到 `Step2.Hyp.eG` / `Hyp.mart` 的接线没做；(5.51)/(5.22) 与 `H.F − eLL` 的关系仍是老缺口（T163）。
+
+## T161：`Θ_t` 差分估计延拓到 `t = 0`，`Step2.step2` 在 `0 ≤ s` 下打通（2026-09-21，Claude Code）
+
+**全量 `lake build RBM1D` exit=0、`errors: 0`**，`axiom audit: 8805 declarations in `RBM`, all within [propext, Classical.choice, Quot.sound]`。
+**没有改过任何结论**：全部改动要么是新增声明，要么是把 `0 < t` / `0 < s` 放宽成 `0 ≤ t` / `0 ≤ s`（单调加强）。
+
+### 第 0 步（工单要求的依赖清点）：**矩路线一条都不需要**
+
+`Hierarchy/Step2Moment.lean` 的 `jS_stochDom` / `aprioriDecay_of_jS` / `aprioriDecay` / `step2`
+**签名里本来就是 `hs0 : ∀ N, 0 ≤ s N`**。它们走 `MomentHyp`（矩输入束）+ `stochDom_timeIcc_of_holder`，
+**完全不经过 `step_bound` / `norm_Uker_flow` / `Θ_t` 差分**。所以「矩路线需要放宽哪些」的答案是**空集**。
+
+真正卡住的是**旧的逐路径路线**，链条只有一条、而且很短：
+
+```
+Step2.step2 → Step2.aprioriDecay → jS_stochDom → jS_highProb → Step2.step_bound
+            → RBM.norm_Uker_flow → norm_Uker_le_of_tail → norm_Uker_tail_le_ellStar
+            → norm_Uker_tail_le → norm_edgeKer_one_sub_one_le → norm_Theta_apply_le_of_real
+```
+
+**底只有一条**：`Propagator/Decay.lean` 的 `norm_Theta_apply_le_of_real`（(2.52) 实参数版，经 `ρ(t)`）。
+中间各层的 `0 < t` 全是顺着传下来的，只有三处真用到严格正性：`abs_of_pos`（→ `abs_of_nonneg`）、
+`B.scale_pos`（→ T149 已有的 `scale_pos'`）、以及 `(t:ℂ)*ξ ≠ 0`（复数版 (2.53) 的 `hξ0`）。
+
+### 验收：**过了**（scratchpad `T161Probe.lean`，不入库）
+
+`steps_of_inputs`（= T149 探针的逐字同一条链 1→2→3→4/5→6，结论 `Steps X E s t`）现在收
+`hs0 : ∀ N, 0 ≤ s N`，**Step 2 的两个输出由 `Step2.step2` 现场生产、不再当假设收**，
+`#print axioms` 只有 `[propext, Classical.choice, Quot.sound]`。T149 (b) 的缺口到此闭合。
+
+### 改动清单
+
+**新增（带撇版，旧签名一字未动、成为一行推论；`Propagator/Decay.lean`）**
+`norm_Theta_apply_le_of_real'`、`norm_Theta_sub_shift_le'`、`norm_Theta_second_diff_le'`、
+`norm_Theta_second_diff_le_inv_dist'`，外加三条 `ξ = 0` 的支撑引理
+`ellHat_zero`（`ℓ̂(0) = 1`）、`norm_Theta_zero_sub_shift_le`、`norm_Theta_zero_second_diff_le`。
+
+**新增（`Propagator/DiffComplex.lean`，去掉 `hξ0 : ξ ≠ 0`）**
+`norm_Theta_sub_shift_le_complex'`、`norm_Theta_second_diff_le_complex'`、
+`norm_Theta_second_diff_le_inv_dist_complex'`。
+
+**新增（`Propagator/LongDiff.lean`，`ht0` 一族）**
+`sum_norm_Theta_zero_shift`、`norm_Theta_sub_shift_le_uniform'`、`norm_Theta_second_diff_le_three'`、
+`sum_norm_Theta_sub_shift_le'`、`sum_norm_Theta_second_diff_le'`。
+
+**就地放宽（只动假设，调用点全在同文件内，已逐一核对无外部调用者）**
+* `Hierarchy/KernelDecay.lean`：`norm_edgeKer_one_sub_one_le`、`norm_Uker_tail_le`、
+  `norm_Uker_tail_le_ellStar`、`norm_Uker_tail_le_sigma`、`norm_Theta_mul_sub_le`、
+  `norm_edgeKer_sub_one_sub_le`、`norm_Uker_fastDecay_le_sumZero`、
+  `norm_Uker_fastDecay_le_sumZero_sigma`（`0 < t` → `0 ≤ t`）
+* `Hierarchy/Step2.lean`：`norm_Uker_le_of_tail`、`norm_Uker_flow`（`0 < v` → `0 ≤ v`）；
+  `step_bound`（`0 < s N` → `0 ≤ s N`）；`jS_highProb`、`jS_stochDom`、`aprioriDecay`、`step2`
+  （`∀ N, 0 < s N` → `∀ N, 0 ≤ s N`）
+* `Hierarchy/SumZeroDyn.lean`：`norm_Uker_sumZero_scale_le`、`integral_term_le`（`0 < v` → `0 ≤ v`）
+
+**下沉**：`Theta_zero : Theta L 0 = 1` 从 `Loop/Primitive.lean` 移到 `Propagator/Basic.lean`
+（同名同签名同命名空间，`Loop/` 的六处使用者不受影响）——`Propagator/` 不能 import `Loop/`。
+
+### 没做完的：`SumZeroDyn` 的流层扫尾**被持有中的文件挡住**
+
+`SumZeroDyn` 的两条底（`norm_Uker_sumZero_scale_le`、`integral_term_le`）已经放宽，
+但它上面还有 22 条 `hs0 : ∀ N, 0 < s N` 的流层签名（`integral_term_stochDom`、`termI1`–`termI4`、
+`termM`、`termP`、`QV_Q_stochDom`、`F_stochDom`、`EE_stochDom`、`mart_of_QV`、`QV1_stochDom`、
+`bound_qGood`、`bound_nonAlt`、`lemma514_flow`/`lemma514_flow'` 等）。这一串**全是机械的**
+（`(hs0 N).trans_le` → `.trans`、`B.scale_pos` → `scale_pos'`），但终点
+`SumZeroDyn.lemma514_flow'` 的**唯一外部调用者是 `Hierarchy/LKDecayQuant.lean:608`**
+（`lemma514_flow_of_flowInputs`），该文件当前由别的 agent 持有，按协议没动。
+在那之前扫这 22 条签名没有可观测收益，所以**整串原样保留**。
+工单已声明旧路线「顺带即可」，且 `SumZeroDyn.Hierarchy` 带 fiat 风险、终将被矩路线替换。
+
+### 顺带发现（未动）
+`Propagator/Edges.lean` 的 `norm_Theta_long_edge_le`、`sum_norm_Theta_long_edge_le`（(3.35)/(3.36) 长边）
+也只对 `0 < t` 证过，底是 `norm_Theta_apply_le_of_real` 与 `sum_norm_Theta_row_of_real`。
+前者现在有带撇版可直接用；后者要另配 `t = 0` 支。不在 T161 的清单里，没动。
+
+## T150：四条接线全部落地（2026-09-21）
+
+1. **`hll : LocalLawUnifIcc`**（`Gauss/GoodSetFlow.lean` 追加）：通用的
+   `unifDomIcc_of_stochDom_timeIcc`（证明就是探针 P7 那句 `measure_mono`——把 `(⟨u,hu⟩, a)` 塞进 `badSet` 的存在量词）
+   + `localLawUnifIcc_of_localLawFlow`（桥接用 `llErr_eq`）+ `le_inv_rpow_half_of_scales`（由 `Step3.Scales.le_A` 给出时间无关上界，
+   规范取 `Ψ N = (R²·As^{3/4})^{-1/2}`）+ 合成版 `localLawUnifIcc_of_localLawFlow_scales` / `localLawUnifIcc_of_steps`。
+   **既有签名未改。**
+2. **Step 6 的 `hint1`**：`Gauss.int1_gauss`（`integrable_sample_Lval` 取 `η := etaT E v`；`oneLoop` 的 `WF` 与长度条件都是 `rfl`/`le_rfl`）。
+3. **Thm 2.5 的 `hint_pp`/`hint_pm`**：**新文件 `Gauss/Thm25Gauss.lean`**——全树没有同时 import `Flow/Universality`（`trGG`）
+   与 `Gauss/Hierarchy`（`integrable_gloop_Hflow`）的文件，塞进 `DistEq` 会让一大片子树的依赖闭包变重。
+   产出 `Hflow_one`、`integrable_trGG_Xmat`/`_trGGs_Xmat`、`int_pp/pm_thm25_gauss`，以及
+   **`theorem2_5_gauss`：高斯模型的 Theorem 2.5，唯一剩下的假设是 `RBM.Thm221 (sample d) κ`。**
+4. **三个时间 Hölder 模**（`Gauss/CondStableFlow.lean` 追加 `section Holder`）：T129 的 docstring 描述的组装方式**原样可行**，
+   没有一处需要新估计。`wFluc`/`wDiag` + `norm_wFluc_sub_le`/`norm_wDiag_sub_le`（`∑|c_k| ≤ 1` 合成 T106 的 Green 模与 `condExpDiag` 模）
+   ⟹ `holFluc_of_inputs` ⟹ `holRow_of_inputs`/`holBlk_of_inputs`；`holIBP_of_inputs` 另走 `‖uA_u − vA_v‖ ≤ |u|‖A_u−A_v‖ + |u−v|‖A_v‖`。
+   **唯一的新假设 `HolConst` 是 regime 条件**（`η_{t_N}⁻¹ ≤ N^c`，来自 (2.72)），与 `Step1Hyp` 已携带的 `hη` 同类。
+   三条的结论逐字就是槽位形状，**与消费者无关**，`eq45Flow_of_localLaw_gain` 与分级版 `'` 都能直接吃。
+
+## T161：`Θ_t` 延拓到 `t = 0`；**矩路线一条都不需要**（2026-09-21）
+
+### 第 0 步的答案是空集
+`Step2Moment` 的 `jS_stochDom`/`aprioriDecay`/`step2` **签名里本来就是 `0 ≤ s N`**——它们走 `MomentHyp` +
+`stochDom_timeIcc_of_holder`，**完全不经过 `step_bound`/`norm_Uker_flow`/`Θ_t` 差分**。
+卡住的只有**旧逐路径路线**，链条短而唯一：
+`Step2.step2 → aprioriDecay → jS_stochDom → jS_highProb → step_bound → norm_Uker_flow → norm_Uker_le_of_tail
+→ norm_Uker_tail_le_ellStar → norm_Uker_tail_le → norm_edgeKer_one_sub_one_le → norm_Theta_apply_le_of_real`。
+**底只有一条**（`Propagator/Decay.lean` 的 `norm_Theta_apply_le_of_real`）；中间各层的 `0 < t` 全是传下来的，
+真用到严格正性的只有三处：`abs_of_pos`、`B.scale_pos`（换 T149 的 `scale_pos'`）、`(t:ℂ)*ξ ≠ 0`。
+
+### 验收：过了
+T149 探针逐字同一条链现在只收 `hs0 : ∀ N, 0 ≤ s N`，**Step 2 的两个输出由 `Step2.step2` 现场生产、不再当假设收**。
+**T149 (b) 的缺口闭合。**
+
+新增带撇版覆盖 `Propagator/Decay.lean`、`DiffComplex.lean`（顺带去掉 `hξ0 : ξ ≠ 0`）、`LongDiff.lean`；
+就地放宽 `Hierarchy/KernelDecay.lean` 七条、`Hierarchy/Step2.lean` 七条、`SumZeroDyn` 两条（调用点全在同文件内，已 grep 核对）。
+`Theta_zero` 从 `Loop/Primitive.lean` 下沉到 `Propagator/Basic.lean`（`Propagator/` 不能 import `Loop/`），六处使用者不受影响。
+
+### 余留（未做，理由明确）
+* `SumZeroDyn` 流层还有 **22 条 `0 < s`**（`termI1–I4`、`termM`、`QV_Q_stochDom`、`lemma514_flow'` 等），两条底已放宽、
+  剩下全是机械替换；但终点 `lemma514_flow'` 的**唯一外部调用者 `LKDecayQuant.lean:608` 当时是持有中的文件**，
+  在那之前扫这 22 条没有可观测收益。
+* `Propagator/Edges.lean` 的 `norm_Theta_long_edge_le`/`sum_norm_Theta_long_edge_le`（(3.35)/(3.36)）同样只对 `0 < t` 证过；
+  前者可直接用带撇版接，后者还要给 `sum_norm_Theta_row_of_real` 配 `t = 0` 支。不在本单清单内。

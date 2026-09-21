@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.GoodSetFlow
 import RBM1D.Gauss.CondStableInst
+import RBM1D.Gauss.CondExpMod
 
 /-!
 # `hfixIBP`: the time-uniform form of the integration-by-parts input of (4.5) — T136
@@ -82,6 +83,11 @@ reason the diagonal term `k = i` is handled here by `RBM.Gauss.unifDomIcc_ibpRem
 * `RBM.Gauss.eq45Flow_of_unifDom_ibp`, `RBM.Gauss.eq45Flow_of_localLaw_gain` — the compile-time
   checks that the above fills the frozen slot of `RBM.Gauss.eq45Flow_of_unifDom`, and that with
   T128's two fluctuation inputs all three `hfix` of (4.5) are now supplied.
+* `RBM.Gauss.holIBP_of_inputs`, `RBM.Gauss.holRow_of_inputs`, `RBM.Gauss.holBlk_of_inputs`
+  (T150) — **the three time-Hölder moduli** `hHolIBP` / `hHolRow` / `hHolBlk` that both
+  `RBM.Gauss.eq45Flow_of_localLaw_gain` and `RBM.Gauss.eq45Flow_of_localLaw_gain'` still carry,
+  assembled from T106's Green modulus and T129's `condExpDiag` modulus under the single regime
+  hypothesis `RBM.Gauss.HolConst`.
 
 No signature in `RBM1D/Gauss/Eq45FlowInputs.lean`, `RBM1D/Gauss/CondStableInst.lean`,
 `RBM1D/Gauss/CondDom.lean` or `RBM1D/Gauss/GoodSetFlow.lean` is touched.
@@ -1294,3 +1300,339 @@ theorem eq45Flow_of_localLaw_gain' (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 :
 
 end Slot
 
+/-! ### The three time-Hölder moduli of (4.5) — T150
+
+`RBM.Gauss.eq45Flow_of_localLaw_gain` and `RBM.Gauss.eq45Flow_of_localLaw_gain'` still carry
+`hHolIBP` / `hHolRow` / `hHolBlk`: the three quantities of (4.5) whose `≺` T124's net engine
+transports along the flow must be Hölder-`1/2` in the time, with a deterministic constant `N^K`
+on `RBM.Gauss.flowNetEvent`.  T147 §6(b)③ lists their assembly as bookkeeping that was never
+done.  This section does it; there is no new estimate, only the two halves that already exist:
+
+* the **Green half**, T106's `RBM.Gauss.norm_green_flow_sub_le_sqrt`:
+  `‖G_u - G_v‖ ≤ η_{t_N}^{-2}(‖X‖+1)|u-v|^{1/2}`, made deterministic by `‖X‖ ≤ N`, which is the
+  second half of `RBM.Gauss.flowNetEvent`;
+* the **`condExpDiag` half**, T129's `RBM.Gauss.norm_condExpDiag_flow_sub_le_rpow`:
+  `‖E_k(G_u)_{kk} - E_k(G_v)_{kk}‖ ≤ N^{Kc}|u-v|^{1/2}` on the same event.
+
+Everything else is `|‖x‖ - ‖y‖| ≤ ‖x - y‖`, the triangle inequality, and the fact that the two
+weights that appear — `S^{(B)}_{ik}` and `blkCoef` — are sub-probability weights
+(`RBM.sum_Sblk_row`, `RBM.sum_abs_blkCoef`), so a weighted sum of entries is bounded by the
+worst entry.  This is exactly the assembly that the docstring of
+`RBM.Gauss.norm_condExpDiag_flow_sub_le_rpow` describes.
+
+The three statements are stated independently of the consumer, so the same theorems fill the
+slots of both `RBM.Gauss.eq45Flow_of_localLaw_gain` and the graded
+`RBM.Gauss.eq45Flow_of_localLaw_gain'` (T151).
+
+`RBM.Gauss.HolConst` is the one regime hypothesis: `η_{t_N}` is bounded below by a power of `N`.
+It is the same `hη` that `RBM1D/Gauss/Step1Hyp.lean` and
+`RBM.Gauss.norm_condExpDiag_flow_sub_le_rpow` already carry, and it comes from (2.72); nothing
+here proves it.
+-/
+
+section Holder
+
+open scoped Matrix.Norms.L2Operator
+
+/-- The weighted centred fluctuation `∑_k c_k ((G_u)_{kk} - m - E_k(G_u)_{kk})` of the two
+fluctuation-averaging inputs of (4.5): `c = S^{(B)}_{i·}` gives the row input, `c = blkCoef a`
+the block input. -/
+noncomputable def wFluc (d : Dims) (N : ℕ) (E : ℝ) (c : d.Idx N → ℝ) (u : ℝ) (ω : Ω d) : ℂ :=
+  ∑ k, (c k : ℂ) * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+    - condExpDiag d N u (zt E u) (mE E) k ω)
+
+/-- The weighted centred diagonal `∑_k c_k ((G_u)_{kk} - m)` of the integration-by-parts input
+of (4.5). -/
+noncomputable def wDiag (d : Dims) (N : ℕ) (E : ℝ) (c : d.Idx N → ℝ) (u : ℝ) (ω : Ω d) : ℂ :=
+  ∑ k, (c k : ℂ) * (green (Hflow d N u ω) (zt E u) k k - mE E)
+
+/-- **The modulus of `RBM.Gauss.wFluc` in the time.**  A sub-probability weight `c` turns the
+two entrywise moduli — the Green half `‖G_u - G_v‖` and the `condExpDiag` half `Cc |u-v|^{1/2}`
+— into a bound on the weighted sum, because `∑_k |c_k| ≤ 1`. -/
+theorem norm_wFluc_sub_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {s t : ℝ}
+    (hs0 : 0 ≤ s) (ht1 : t < 1) (ω : Ω d) (c : d.Idx N → ℝ) (hc : ∑ k, |c k| ≤ 1)
+    {u v : ℝ} (hu : u ∈ Set.Icc s t) (hv : v ∈ Set.Icc s t) {Cc : ℝ} (hCc : 0 ≤ Cc)
+    (hcc : ∀ k, ‖condExpDiag d N u (zt E u) (mE E) k ω
+        - condExpDiag d N v (zt E v) (mE E) k ω‖ ≤ Cc * |u - v| ^ ((1 : ℝ) / 2)) :
+    ‖wFluc d N E c u ω - wFluc d N E c v ω‖
+      ≤ ((etaT E t)⁻¹ * (etaT E t)⁻¹ * (‖Xmat d N ω‖ + 1) + Cc) * |u - v| ^ ((1 : ℝ) / 2) := by
+  set h : ℝ := |u - v| ^ ((1 : ℝ) / 2) with hh_def
+  have hh0 : (0 : ℝ) ≤ h := Real.rpow_nonneg (abs_nonneg _) _
+  set Cg : ℝ := (etaT E t)⁻¹ * (etaT E t)⁻¹ * (‖Xmat d N ω‖ + 1) with hCg_def
+  have hCg0 : 0 ≤ Cg := by
+    have h1 : 0 < etaT E t := etaT_pos_of_lt_one' hE ht1
+    have h2 : (0:ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+    positivity
+  have hG : ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)‖ ≤ Cg * h := by
+    have := norm_green_flow_sub_le_sqrt d N hE hs0 ht1 ω hu hv
+    rwa [show Real.sqrt |u - v| = h from Real.sqrt_eq_rpow _] at this
+  calc ‖wFluc d N E c u ω - wFluc d N E c v ω‖
+      = ‖∑ k, ((c k : ℂ) * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+            - condExpDiag d N u (zt E u) (mE E) k ω)
+          - (c k : ℂ) * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+            - condExpDiag d N v (zt E v) (mE E) k ω))‖ := by
+        rw [wFluc, wFluc, ← Finset.sum_sub_distrib]
+    _ ≤ ∑ k, |c k| * ((Cg + Cc) * h) := by
+        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+        rw [← mul_sub, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+        refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+        have he : ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)
+            - ((green (Hflow d N v ω) (zt E v) k k - mE E)
+              - condExpDiag d N v (zt E v) (mE E) k ω)
+            = (green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)) k k
+              - (condExpDiag d N u (zt E u) (mE E) k ω
+                - condExpDiag d N v (zt E v) (mE E) k ω) := by
+          simp only [Matrix.sub_apply]; ring
+        rw [he]
+        refine (norm_sub_le _ _).trans ?_
+        have h1 : ‖(green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)) k k‖
+            ≤ Cg * h := (norm_apply_le_l2_opNorm _ _ _).trans hG
+        have h2 := hcc k
+        linarith
+    _ = (∑ k, |c k|) * ((Cg + Cc) * h) := by rw [← Finset.sum_mul]
+    _ ≤ 1 * ((Cg + Cc) * h) := by
+        refine mul_le_mul_of_nonneg_right hc ?_
+        have : (0:ℝ) ≤ Cg + Cc := by linarith
+        positivity
+    _ = (Cg + Cc) * h := one_mul _
+
+/-- **The modulus of `RBM.Gauss.wDiag` in the time**, the `condExpDiag`-free half of
+`RBM.Gauss.norm_wFluc_sub_le`. -/
+theorem norm_wDiag_sub_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {s t : ℝ}
+    (hs0 : 0 ≤ s) (ht1 : t < 1) (ω : Ω d) (c : d.Idx N → ℝ) (hc : ∑ k, |c k| ≤ 1)
+    {u v : ℝ} (hu : u ∈ Set.Icc s t) (hv : v ∈ Set.Icc s t) :
+    ‖wDiag d N E c u ω - wDiag d N E c v ω‖
+      ≤ ((etaT E t)⁻¹ * (etaT E t)⁻¹ * (‖Xmat d N ω‖ + 1)) * |u - v| ^ ((1 : ℝ) / 2) := by
+  set h : ℝ := |u - v| ^ ((1 : ℝ) / 2) with hh_def
+  have hh0 : (0 : ℝ) ≤ h := Real.rpow_nonneg (abs_nonneg _) _
+  set Cg : ℝ := (etaT E t)⁻¹ * (etaT E t)⁻¹ * (‖Xmat d N ω‖ + 1) with hCg_def
+  have hCg0 : 0 ≤ Cg := by
+    have h1 : 0 < etaT E t := etaT_pos_of_lt_one' hE ht1
+    have h2 : (0:ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+    positivity
+  have hG : ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)‖ ≤ Cg * h := by
+    have := norm_green_flow_sub_le_sqrt d N hE hs0 ht1 ω hu hv
+    rwa [show Real.sqrt |u - v| = h from Real.sqrt_eq_rpow _] at this
+  calc ‖wDiag d N E c u ω - wDiag d N E c v ω‖
+      = ‖∑ k, ((c k : ℂ) * (green (Hflow d N u ω) (zt E u) k k - mE E)
+          - (c k : ℂ) * (green (Hflow d N v ω) (zt E v) k k - mE E))‖ := by
+        rw [wDiag, wDiag, ← Finset.sum_sub_distrib]
+    _ ≤ ∑ k, |c k| * (Cg * h) := by
+        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+        rw [← mul_sub, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+        refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+        have he : (green (Hflow d N u ω) (zt E u) k k - mE E)
+              - (green (Hflow d N v ω) (zt E v) k k - mE E)
+            = (green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)) k k := by
+          simp only [Matrix.sub_apply]; ring
+        rw [he]
+        exact (norm_apply_le_l2_opNorm _ _ _).trans hG
+    _ = (∑ k, |c k|) * (Cg * h) := by rw [← Finset.sum_mul]
+    _ ≤ 1 * (Cg * h) := by
+        refine mul_le_mul_of_nonneg_right hc ?_
+        positivity
+    _ = Cg * h := one_mul _
+
+/-- **`RBM.Gauss.wDiag` is bounded by `η_t^{-1} + 1`**, from `‖G_v‖ ≤ η_v^{-1}`, `|m| = 1` and
+`∑_k |c_k| ≤ 1`.  This is the factor that multiplies `|u - v|` in the modulus of the
+integration-by-parts input, where the prefactor `u` itself varies. -/
+theorem norm_wDiag_le (d : Dims) (N : ℕ) {E : ℝ} (hE : |E| < 2) {t : ℝ} (ht1 : t < 1)
+    (ω : Ω d) (c : d.Idx N → ℝ) (hc : ∑ k, |c k| ≤ 1) {v : ℝ} (hv1 : v ≤ t) :
+    ‖wDiag d N E c v ω‖ ≤ (etaT E t)⁻¹ + 1 := by
+  have hηt : 0 < etaT E t := etaT_pos_of_lt_one' hE ht1
+  have hηv : 0 < etaT E v := etaT_pos_of_lt_one' hE (lt_of_le_of_lt hv1 ht1)
+  have hiv : (etaT E v)⁻¹ ≤ (etaT E t)⁻¹ := inv_anti₀ hηt (etaT_le_of_le hE hv1)
+  have hGn : ‖green (Hflow d N v ω) (zt E v)‖ ≤ (etaT E v)⁻¹ :=
+    norm_green_le (Hflow_isHermitian d N v ω) hηv (by rw [← etaT_eq_zt_im, abs_of_pos hηv])
+  have hent : ∀ k : d.Idx N, ‖green (Hflow d N v ω) (zt E v) k k - mE E‖ ≤ (etaT E t)⁻¹ + 1 := by
+    intro k
+    refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+    · exact ((norm_apply_le_l2_opNorm _ _ _).trans hGn).trans hiv
+    · exact le_of_eq (norm_mE hE.le)
+  have hb0 : (0:ℝ) ≤ (etaT E t)⁻¹ + 1 := by positivity
+  calc ‖wDiag d N E c v ω‖
+      ≤ ∑ k, ‖(c k : ℂ) * (green (Hflow d N v ω) (zt E v) k k - mE E)‖ := norm_sum_le _ _
+    _ ≤ ∑ k, |c k| * ((etaT E t)⁻¹ + 1) := by
+        refine Finset.sum_le_sum fun k _ => ?_
+        rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
+        exact mul_le_mul_of_nonneg_left (hent k) (abs_nonneg _)
+    _ = (∑ k, |c k|) * ((etaT E t)⁻¹ + 1) := by rw [← Finset.sum_mul]
+    _ ≤ 1 * ((etaT E t)⁻¹ + 1) := mul_le_mul_of_nonneg_right hc hb0
+    _ = (etaT E t)⁻¹ + 1 := one_mul _
+
+/-- `S^{(B)}` is a probability weight on each row (`RBM.sum_Sblk_row`, which needs `3 ≤ L`). -/
+theorem sum_abs_Sblk_le_one (d : Dims) (N : ℕ) (i : d.Idx N) :
+    ∑ k, |Sblk (d.L N) (d.W N) i k| ≤ 1 := by
+  rw [show (∑ k, |Sblk (d.L N) (d.W N) i k|) = ∑ k, Sblk (d.L N) (d.W N) i k from
+    Finset.sum_congr rfl fun k _ => abs_of_nonneg (Sblk_nonneg _ _)]
+  exact (sum_Sblk_row (d.three_le_L N) i).le
+
+variable {d : Dims} {E : ℝ} {s t δ : ℕ → ℝ} {K Kc : ℝ}
+
+/-- **The regime hypothesis of the three moduli**: the three constants — `N^{Kc}` of T129's
+`condExpDiag` modulus, `η_{t_N}^{-2}(N+1)` of T106's Green modulus, and `η_{t_N}^{-1}+1` of the
+prefactor — add up to at most `N^K`.  It holds as soon as `η_{t_N}^{-1} ≤ N^c` for some `c` and
+`K` is taken large enough; that lower bound on `η_{t_N}` is (2.72). -/
+def HolConst (E : ℝ) (t : ℕ → ℝ) (Kc K : ℝ) : Prop :=
+  ∀ᶠ N : ℕ in atTop,
+    (N : ℝ) ^ Kc + (etaT E (t N))⁻¹ * (etaT E (t N))⁻¹ * ((N : ℝ) + 1)
+      + ((etaT E (t N))⁻¹ + 1) ≤ (N : ℝ) ^ K
+
+/-- **The time-Hölder modulus of the two fluctuation-averaging inputs of (4.5)**, for an
+arbitrary sub-probability weight.  `hHolRow` and `hHolBlk` are its two instances. -/
+theorem holFluc_of_inputs (d : Dims) {V : ℕ → Type*} (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (ht1 : ∀ N, t N < 1)
+    (hKc : ∀ᶠ N : ℕ in atTop,
+      ((etaT E (t N))⁻¹) ^ 2 * (2 * (N : ℝ) ^ 2 + (N : ℝ) + 7 / 2) ≤ (N : ℝ) ^ Kc)
+    (hKtot : HolConst E t Kc K)
+    (c : ∀ N, V N → d.Idx N → ℝ) (hc : ∀ N i, ∑ k, |c N i k| ≤ 1) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : V N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (c N i k : ℂ) * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (c N i k : ℂ) * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+              - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2) := by
+  filter_upwards [norm_condExpDiag_flow_sub_le_rpow (δ := δ) (K := Kc) d hE hs0 ht1 hKc, hKtot]
+    with N hcED hKN ω hω i u hu v hv
+  have hηt : 0 < etaT E (t N) := etaT_pos_of_lt_one' hE (ht1 N)
+  have hh0 : (0:ℝ) ≤ |u - v| ^ ((1:ℝ)/2) := Real.rpow_nonneg (abs_nonneg _) _
+  have hX : ‖Xmat d N ω‖ ≤ (N:ℝ) := hω.2
+  have hX0 : (0:ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+  have hKc0 : (0:ℝ) ≤ (N:ℝ) ^ Kc := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have key := norm_wFluc_sub_le d N hE (hs0 N) (ht1 N) ω (c N i) (hc N i) hu hv
+    hKc0 (fun k => hcED ω hω k u hu v hv)
+  refine le_trans (abs_norm_sub_norm_le _ _) (le_trans key ?_)
+  refine mul_le_mul_of_nonneg_right ?_ hh0
+  have hinv : (0:ℝ) < (etaT E (t N))⁻¹ := inv_pos.2 hηt
+  nlinarith [hKN, hX, hX0, hinv]
+
+/-- **`hHolRow`** of `RBM.Gauss.eq45Flow_of_localLaw_gain` and of
+`RBM.Gauss.eq45Flow_of_localLaw_gain'`. -/
+theorem holRow_of_inputs (d : Dims) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hKc : ∀ᶠ N : ℕ in atTop,
+      ((etaT E (t N))⁻¹) ^ 2 * (2 * (N : ℝ) ^ 2 + (N : ℝ) + 7 / 2) ≤ (N : ℝ) ^ Kc)
+    (hKtot : HolConst E t Kc K) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2) :=
+  holFluc_of_inputs (δ := δ) d hE hs0 ht1 hKc hKtot
+    (fun N (i : d.Idx N) k => Sblk (d.L N) (d.W N) i k) fun N i => sum_abs_Sblk_le_one d N i
+
+/-- **`hHolBlk`** of `RBM.Gauss.eq45Flow_of_localLaw_gain` and of
+`RBM.Gauss.eq45Flow_of_localLaw_gain'`. -/
+theorem holBlk_of_inputs (d : Dims) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hKc : ∀ᶠ N : ℕ in atTop,
+      ((etaT E (t N))⁻¹) ^ 2 * (2 * (N : ℝ) ^ 2 + (N : ℝ) + 7 / 2) ≤ (N : ℝ) ^ Kc)
+    (hKtot : HolConst E t Kc K) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2) :=
+  holFluc_of_inputs (δ := δ) d hE hs0 ht1 hKc hKtot
+    (fun N (a : ZMod (d.L N)) k => blkCoef (d.L N) (d.W N) a k)
+    fun _N a => (sum_abs_blkCoef a).le
+
+/-- **`hHolIBP`** of `RBM.Gauss.eq45Flow_of_localLaw_gain` and of
+`RBM.Gauss.eq45Flow_of_localLaw_gain'`.
+
+Here the time also enters through the explicit prefactor `u`, so besides the two moduli the
+proof uses `‖u A_u - v A_v‖ ≤ |u| ‖A_u - A_v‖ + |u - v| ‖A_v‖` with
+`‖A_v‖ ≤ η_{t_N}^{-1} + 1` (`RBM.Gauss.norm_wDiag_le`) and `|u - v| ≤ |u - v|^{1/2}`. -/
+theorem holIBP_of_inputs (d : Dims) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hKc : ∀ᶠ N : ℕ in atTop,
+      ((etaT E (t N))⁻¹) ^ 2 * (2 * (N : ℝ) ^ 2 + (N : ℝ) + 7 / 2) ≤ (N : ℝ) ^ Kc)
+    (hKtot : HolConst E t Kc K) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖condExpDiag d N u (zt E u) (mE E) i ω
+              - (u : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N u ω) (zt E u) k k - mE E)‖
+          - ‖condExpDiag d N v (zt E v) (mE E) i ω
+              - (v : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N v ω) (zt E v) k k - mE E)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2) := by
+  filter_upwards [norm_condExpDiag_flow_sub_le_rpow (δ := δ) (K := Kc) d hE hs0 ht1 hKc, hKtot]
+    with N hcED hKN ω hω i u hu v hv
+  have hηt : 0 < etaT E (t N) := etaT_pos_of_lt_one' hE (ht1 N)
+  have hinv : (0:ℝ) < (etaT E (t N))⁻¹ := inv_pos.2 hηt
+  have hh0 : (0:ℝ) ≤ |u - v| ^ ((1:ℝ)/2) := Real.rpow_nonneg (abs_nonneg _) _
+  have hu0 : (0:ℝ) ≤ u := (hs0 N).trans hu.1
+  have hu1 : u ≤ 1 := le_of_lt (lt_of_le_of_lt hu.2 (ht1 N))
+  have hv0 : (0:ℝ) ≤ v := (hs0 N).trans hv.1
+  have hv1 : v ≤ 1 := le_of_lt (lt_of_le_of_lt hv.2 (ht1 N))
+  have hd1 : |u - v| ≤ 1 := by rw [abs_le]; constructor <;> linarith
+  have hlin : |u - v| ≤ |u - v| ^ ((1:ℝ)/2) := self_le_rpow_half (abs_nonneg _) hd1
+  have hX : ‖Xmat d N ω‖ ≤ (N:ℝ) := hω.2
+  have hX0 : (0:ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+  have hc : ∑ k, |Sblk (d.L N) (d.W N) i k| ≤ 1 := sum_abs_Sblk_le_one d N i
+  have hWsub := norm_wDiag_sub_le d N hE (hs0 N) (ht1 N) ω
+    (fun k => Sblk (d.L N) (d.W N) i k) hc hu hv
+  have hWv := norm_wDiag_le d N hE (ht1 N) ω (fun k => Sblk (d.L N) (d.W N) i k) hc hv.2
+  have hcd := hcED ω hω i u hu v hv
+  have key : ‖(condExpDiag d N u (zt E u) (mE E) i ω
+        - (u : ℂ) * mE E ^ 2 * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω)
+      - (condExpDiag d N v (zt E v) (mE E) i ω
+        - (v : ℂ) * mE E ^ 2 * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)‖
+      ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2) := by
+    rw [show (condExpDiag d N u (zt E u) (mE E) i ω
+          - (u : ℂ) * mE E ^ 2 * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω)
+        - (condExpDiag d N v (zt E v) (mE E) i ω
+          - (v : ℂ) * mE E ^ 2 * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)
+        = (condExpDiag d N u (zt E u) (mE E) i ω - condExpDiag d N v (zt E v) (mE E) i ω)
+          - mE E ^ 2 * ((u : ℂ)
+              * (wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω
+                - wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)
+            + ((u : ℂ) - (v : ℂ)) * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω) from
+      by ring]
+    refine (norm_sub_le _ _).trans ?_
+    rw [norm_mul, show ‖mE E ^ 2‖ = 1 from by rw [norm_pow, norm_mE hE.le, one_pow], one_mul]
+    have h1 : ‖(u : ℂ) * (wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω
+          - wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)‖
+        ≤ ((etaT E (t N))⁻¹ * (etaT E (t N))⁻¹ * (‖Xmat d N ω‖ + 1))
+          * |u - v| ^ ((1:ℝ)/2) := by
+      rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hu0]
+      have hn0 := norm_nonneg (wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω
+        - wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)
+      nlinarith [hWsub, hn0, hu0, hu1]
+    have h2 : ‖((u : ℂ) - (v : ℂ))
+          * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω‖
+        ≤ |u - v| ^ ((1:ℝ)/2) * ((etaT E (t N))⁻¹ + 1) := by
+      rw [show ((u : ℂ) - (v : ℂ)) = (((u - v : ℝ)) : ℂ) from by push_cast; ring,
+        norm_mul, Complex.norm_real, Real.norm_eq_abs]
+      exact mul_le_mul hlin hWv (norm_nonneg _) hh0
+    have h3 := (norm_add_le ((u : ℂ) * (wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω
+      - wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω))
+      (((u : ℂ) - (v : ℂ)) * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω))
+    have hCgle : (etaT E (t N))⁻¹ * (etaT E (t N))⁻¹ * (‖Xmat d N ω‖ + 1)
+        ≤ (etaT E (t N))⁻¹ * (etaT E (t N))⁻¹ * ((N : ℝ) + 1) :=
+      mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    have h1' : ‖(u : ℂ) * (wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω
+          - wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)‖
+        ≤ ((etaT E (t N))⁻¹ * (etaT E (t N))⁻¹ * ((N : ℝ) + 1)) * |u - v| ^ ((1:ℝ)/2) :=
+      h1.trans (mul_le_mul_of_nonneg_right hCgle hh0)
+    have hbig : ‖condExpDiag d N u (zt E u) (mE E) i ω
+          - condExpDiag d N v (zt E v) (mE E) i ω‖
+        + ‖(u : ℂ) * (wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) u ω
+              - wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω)
+            + ((u : ℂ) - (v : ℂ))
+              * wDiag d N E (fun k => Sblk (d.L N) (d.W N) i k) v ω‖
+        ≤ ((N : ℝ) ^ Kc + (etaT E (t N))⁻¹ * (etaT E (t N))⁻¹ * ((N : ℝ) + 1)
+            + ((etaT E (t N))⁻¹ + 1)) * |u - v| ^ ((1:ℝ)/2) := by
+      linarith [hcd, h1', h2, h3]
+    exact hbig.trans (mul_le_mul_of_nonneg_right hKN hh0)
+  exact le_trans (abs_norm_sub_norm_le _ _) key
+
+end Holder

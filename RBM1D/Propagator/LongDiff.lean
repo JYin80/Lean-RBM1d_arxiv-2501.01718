@@ -302,6 +302,92 @@ theorem sum_norm_Theta_second_diff_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht
     _ ≤ 4 * (3 / 2) := by rw [hkey]; gcongr
     _ = 6 := by norm_num
 
+/-! ### The endpoint `t = 0`
+
+Every statement above goes through `ρ(t)`, which does not exist at `t = 0`; but `Θ_0 = 1`, so
+each bound is trivially true there.  These are the `0 ≤ t` ("primed") forms; the originals are
+unchanged and remain the `0 < t` special case. -/
+
+/-- `∑_y ‖(Θ_0)_{x,y+c}‖ = 1` for every shift `c`: `Θ_0 = 1` has one nonzero entry per row. -/
+theorem sum_norm_Theta_zero_shift (x c : ZMod L) :
+    ∑ y : ZMod L, ‖Theta L 0 x (y + c)‖ = 1 := by
+  rw [Theta_zero]
+  have := Fintype.sum_equiv (Equiv.addRight c)
+    (fun y : ZMod L => ‖(1 : Matrix (ZMod L) (ZMod L) ℂ) x (y + c)‖)
+    (fun y : ZMod L => ‖(1 : Matrix (ZMod L) (ZMod L) ℂ) x y‖) (fun y => rfl)
+  rw [this]
+  simp only [Matrix.one_apply, apply_ite norm, norm_one, norm_zero]
+  simp
+
+/-- `norm_Theta_sub_shift_le_uniform` extended to `t = 0`, where the difference is at most
+`1 ≤ 3/2`. -/
+theorem norm_Theta_sub_shift_le_uniform' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (x y : ZMod L) : ‖Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1)‖ ≤ 3 / 2 := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact norm_Theta_sub_shift_le_uniform L hL ht ht1 x y
+  · subst ht
+    rw [Complex.ofReal_zero]
+    exact (norm_Theta_zero_sub_shift_le L hL x y).trans (by norm_num)
+
+/-- `norm_Theta_second_diff_le_three` extended to `t = 0`.  The proof is the original one: it
+only ever uses the uniform first-difference bound, now in its `0 ≤ t` form. -/
+theorem norm_Theta_second_diff_le_three' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (x y : ZMod L) :
+    ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖ ≤ 3 := by
+  have e : 2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)
+      = (Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1))
+        - (Theta L (t : ℂ) x (y - 1) - Theta L (t : ℂ) x (y - 1 + 1)) := by
+    rw [sub_add_cancel]; ring
+  rw [e]
+  refine (norm_sub_le _ _).trans ?_
+  have := norm_Theta_sub_shift_le_uniform' L hL ht0 ht1 x y
+  have := norm_Theta_sub_shift_le_uniform' L hL ht0 ht1 x (y - 1)
+  linarith
+
+/-- `sum_norm_Theta_sub_shift_le` extended to `t = 0`, where `ℓ̂(0) = 1` and the row sum is
+`≤ 2 ≤ 3`. -/
+theorem sum_norm_Theta_sub_shift_le' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (x : ZMod L) :
+    ∑ y : ZMod L, ‖Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1)‖ ≤ 3 * ellHat L (t : ℂ) := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact sum_norm_Theta_sub_shift_le L hL ht ht1 x
+  · subst ht
+    rw [Complex.ofReal_zero, ellHat_zero L hL]
+    have h : ∑ y : ZMod L, ‖Theta L 0 x y - Theta L 0 x (y + 1)‖
+        ≤ ∑ y : ZMod L, (‖Theta L 0 x y‖ + ‖Theta L 0 x (y + 1)‖) :=
+      Finset.sum_le_sum fun y _ => norm_sub_le _ _
+    rw [Finset.sum_add_distrib] at h
+    have h0 := sum_norm_Theta_zero_shift L x 0
+    have h1 := sum_norm_Theta_zero_shift L x 1
+    simp only [add_zero] at h0
+    rw [h0, h1] at h
+    linarith
+
+/-- `sum_norm_Theta_second_diff_le` extended to `t = 0`, where the row sum is `≤ 4 ≤ 6`. -/
+theorem sum_norm_Theta_second_diff_le' (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1)
+    (x : ZMod L) :
+    ∑ y : ZMod L,
+      ‖2 * Theta L (t : ℂ) x y - Theta L (t : ℂ) x (y + 1) - Theta L (t : ℂ) x (y - 1)‖ ≤ 6 := by
+  rcases ht0.lt_or_eq with ht | ht
+  · exact sum_norm_Theta_second_diff_le L hL ht ht1 x
+  · subst ht
+    rw [Complex.ofReal_zero]
+    have h : ∑ y : ZMod L, ‖2 * Theta L 0 x y - Theta L 0 x (y + 1) - Theta L 0 x (y - 1)‖
+        ≤ ∑ y : ZMod L, (2 * ‖Theta L 0 x y‖ + ‖Theta L 0 x (y + 1)‖
+          + ‖Theta L 0 x (y - 1)‖) := by
+      refine Finset.sum_le_sum fun y _ => ?_
+      refine ((norm_sub_le _ _).trans (add_le_add ((norm_sub_le _ _).trans
+        (add_le_add (le_of_eq ?_) le_rfl)) le_rfl))
+      rw [norm_mul]; norm_num
+    rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum] at h
+    have h0 := sum_norm_Theta_zero_shift L x 0
+    have h1 := sum_norm_Theta_zero_shift L x 1
+    have h2 := sum_norm_Theta_zero_shift L x (-1)
+    simp only [add_zero] at h0
+    simp only [← sub_eq_add_neg] at h2
+    rw [h0, h1, h2] at h
+    linarith
+
 end LongDiff
 
 end RBM

@@ -1006,18 +1006,17 @@ theorem norm_Theta_mul_apply_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : 
 
 /-- (2.53) at `tξ`, `|ξ| ≤ 1`, `ξ ≠ 0`, `t > 0`, turned into a Lipschitz bound in the
 second index: `|Θ_{x,c} - Θ_{x,c'}| ≤ 144 ‖c - c'‖ / (ℓ_t η_t^{1/2})`. -/
-theorem norm_Theta_mul_sub_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) {ξ : ℂ}
+theorem norm_Theta_mul_sub_le (hL : 3 ≤ L) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) {ξ : ℂ}
     (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ ≤ 1) (x c c' : ZMod L) :
     ‖Theta L ((t : ℂ) * ξ) x c - Theta L ((t : ℂ) * ξ) x c'‖
       ≤ 144 / (ellHat L (t : ℂ) * √(1 - t)) * zdist L (c - c') := by
-  have hζ := norm_ofReal_mul_lt_one ht0.le ht1 hξ
-  have hζ0 : (t : ℂ) * ξ ≠ 0 := mul_ne_zero (by exact_mod_cast ht0.ne') hξ0
+  have hζ := norm_ofReal_mul_lt_one ht0 ht1 hξ
   have hden : 0 < ellHat L (t : ℂ) * √(1 - t) :=
-    mul_pos (lt_of_lt_of_le (by norm_num) (half_le_ellHat_real L hL ht0.le ht1))
+    mul_pos (lt_of_lt_of_le (by norm_num) (half_le_ellHat_real L hL ht0 ht1))
       (Real.sqrt_pos.2 (by linarith))
-  have hmono := sqrt_one_sub_mul_ellHat_le L ht1 (one_sub_le_norm_one_sub_mul ht0.le hξ)
+  have hmono := sqrt_one_sub_mul_ellHat_le L ht1 (one_sub_le_norm_one_sub_mul ht0 hξ)
   refine norm_sub_le_zdist_mul L (fun y => Theta L ((t : ℂ) * ξ) x y) (fun y => ?_) c c'
-  refine (norm_Theta_sub_shift_le_complex L hL hζ0 hζ x y).trans ?_
+  refine (norm_Theta_sub_shift_le_complex' L hL hζ x y).trans ?_
   refine div_le_div_of_nonneg_left (by norm_num) hden ?_
   linarith [mul_comm (ellHat L (t : ℂ)) √(1 - t),
     mul_comm (ellHat L ((t : ℂ) * ξ)) √‖1 - (t : ℂ) * ξ‖]
@@ -1123,11 +1122,11 @@ theorem sum_norm_edgeKer_sub_one_le_short (hL : 3 ≤ L) {s t : ℝ} (hst : s �
 
 /-- Lipschitz bound for `Ξ` in its second index, from (2.53):
 `|Ξ_{xc} - Ξ_{xc'}| ≤ (t - s) · 144/(ℓ_t η_t^{1/2}) · ‖c - c'‖`. -/
-theorem norm_edgeKer_sub_one_sub_le (hL : 3 ≤ L) {s t : ℝ} (hst : s ≤ t) (ht0 : 0 < t)
+theorem norm_edgeKer_sub_one_sub_le (hL : 3 ≤ L) {s t : ℝ} (hst : s ≤ t) (ht0 : 0 ≤ t)
     (ht1 : t < 1) {ξ : ℂ} (hξ0 : ξ ≠ 0) (hξ : ‖ξ‖ ≤ 1) (x c c' : ZMod L) :
     ‖(edgeKer L ξ s t - 1) x c - (edgeKer L ξ s t - 1) x c'‖
       ≤ (t - s) * (144 / (ellHat L (t : ℂ) * √(1 - t))) * zdist L (c - c') := by
-  have hζ := norm_ofReal_mul_lt_one ht0.le ht1 hξ
+  have hζ := norm_ofReal_mul_lt_one ht0 ht1 hξ
   rw [edgeKer_sub_one_apply L hL hζ, edgeKer_sub_one_apply L hL hζ, ← mul_sub, norm_mul,
     norm_neg, mul_assoc]
   exact mul_le_mul (norm_sub_ofReal_mul_le hst hξ)
@@ -1488,7 +1487,7 @@ coordinate `j`; the paper's is `j = 0`), then for `n ≥ 2`, `0 ≤ s ≤ t < 1`
 `|(U_{s,t,σ} ∘ A)_a| ≤ C_n K^{2n} (ℓ_sη_s/(ℓ_tη_t))^n M + C'_n Lⁿ (η_s/η_t)^n δ`.
 The paper's `W^{-D + C_n}` is our `C'_n Lⁿ (η_s/η_t)ⁿ δ` with `δ = W^{-D}`. -/
 theorem norm_Uker_fastDecay_le_sumZero {n : ℕ} (hn : 2 ≤ n) (hL : 3 ≤ L) {s t : ℝ}
-    (hs0 : 0 ≤ s) (hst : s ≤ t) (ht0 : 0 < t) (ht1 : t < 1) {ξ : Fin n → ℂ}
+    (hs0 : 0 ≤ s) (hst : s ≤ t) (ht0 : 0 ≤ t) (ht1 : t < 1) {ξ : Fin n → ℂ}
     (hξ0 : ∀ i, ξ i ≠ 0) (hξ : ∀ i, ‖ξ i‖ ≤ 1) {K M δ : ℝ}
     (hK : 1 ≤ K) (hM : 0 ≤ M) (hδ : 0 ≤ δ) {A : LoopArg L n → ℂ} (hAM : ∀ b, ‖A b‖ ≤ M)
     (hA : FastDecay L (ellHat L (s : ℂ) * K) δ A) {j : Fin n} (hz : SumZeroAt L j A)
@@ -1498,7 +1497,7 @@ theorem norm_Uker_fastDecay_le_sumZero {n : ℕ} (hn : 2 ≤ n) (hL : 3 ≤ L) {
         * ((1 - s) * ellHat L (s : ℂ) / ((1 - t) * ellHat L (t : ℂ))) ^ n * M
         + cKerSumZeroErr n * (L : ℝ) ^ n * ((1 - s) / (1 - t)) ^ n * δ := by
   have hs := ellHat_real_pos L hL hs0 (hst.trans_lt ht1)
-  have ht := ellHat_real_pos L hL ht0.le ht1
+  have ht := ellHat_real_pos L hL ht0 ht1
   have hℓ : 0 < ellHat L (s : ℂ) * K := mul_pos hs (by linarith)
   set R := (1 - s) * ellHat L (s : ℂ) / ((1 - t) * ellHat L (t : ℂ)) with hRdef
   set e := (t - s) * (cTwo52 / ((1 - t) * ellHat L (t : ℂ))) with hedef
@@ -1513,8 +1512,8 @@ theorem norm_Uker_fastDecay_le_sumZero {n : ℕ} (hn : 2 ≤ n) (hL : 3 ≤ L) {
   have hN0 : 0 ≤ N := by positivity
   rw [Uker_eq_kerOp]
   have key := norm_kerOp_sumZero_le L (X := fun i => edgeKer L (ξ i) s t - 1) hℓ hM hδ hAM hA hz
-    he0 he'0 (fun i x c => norm_edgeKer_sub_one_apply_le L hL hst ht0.le ht1 (hξ i) x c)
-    (fun i x => sum_norm_edgeKer_sub_one_le L hL hst ht0.le ht1 (hξ i) x)
+    he0 he'0 (fun i x c => norm_edgeKer_sub_one_apply_le L hL hst ht0 ht1 (hξ i) x c)
+    (fun i x => sum_norm_edgeKer_sub_one_le L hL hst ht0 ht1 (hξ i) x)
     (fun i y c c' => norm_edgeKer_sub_one_sub_le L hL hst ht0 ht1 (hξ0 i) (hξ i) y c c') a
   refine key.trans (add_le_add ?_ ?_)
   · -- the main term
@@ -1615,7 +1614,7 @@ theorem norm_Uker_fastDecay_le_of_eq {n : ℕ} [NeZero n] (hL : 3 ≤ L) {E κ :
 alternation assumption on `σ` is needed: the proof only uses `0 < |ξᵢ| ≤ 1`.) -/
 theorem norm_Uker_fastDecay_le_sumZero_sigma {n : ℕ} [NeZero n] (hn : 2 ≤ n) (hL : 3 ≤ L)
     {E : ℝ} (hE : |E| ≤ 2) (σ : Fin n → Bool) {s t : ℝ} (hs0 : 0 ≤ s) (hst : s ≤ t)
-    (ht0 : 0 < t) (ht1 : t < 1) {K M δ : ℝ} (hK : 1 ≤ K) (hM : 0 ≤ M) (hδ : 0 ≤ δ)
+    (ht0 : 0 ≤ t) (ht1 : t < 1) {K M δ : ℝ} (hK : 1 ≤ K) (hM : 0 ≤ M) (hδ : 0 ≤ δ)
     {A : LoopArg L n → ℂ} (hAM : ∀ b, ‖A b‖ ≤ M)
     (hA : FastDecay L (ellHat L (s : ℂ) * K) δ A) (hz : SumZeroAt L 0 A) (a : LoopArg L n) :
     ‖Uker L (xiOf (mSigma E) σ) s t A a‖ ≤
@@ -1778,14 +1777,14 @@ theorem sum_exp_neg_half_sqrt_le {ℓ' : ℝ} (hℓ' : 1 / 2 ≤ ℓ') (c : ZMod
 
 /-- The kernel of the long edge `ξ = 1` ((7.7), (7.10)):
 `|(Θ_t Θ_s^{-1} - 1)_{xc}| ≤ 8e³ (t-s)/((1-t)ℓ_t) · e^{-‖x - c‖/ℓ_t}`. -/
-theorem norm_edgeKer_one_sub_one_le (hL : 3 ≤ L) {s t : ℝ} (hst : s ≤ t) (ht0 : 0 < t)
+theorem norm_edgeKer_one_sub_one_le (hL : 3 ≤ L) {s t : ℝ} (hst : s ≤ t) (ht0 : 0 ≤ t)
     (ht1 : t < 1) (x c : ZMod L) :
     ‖(edgeKer L 1 s t - 1) x c‖
       ≤ 8 * exp 3 * (t - s) / ((1 - t) * ellHat L (t : ℂ))
         * exp (-((zdist L (x - c) : ℝ) / ellHat L (t : ℂ))) := by
   have hξ : ‖(1 : ℂ)‖ ≤ 1 := by simp
-  have hζ := norm_ofReal_mul_lt_one ht0.le ht1 hξ
-  have hℓ := half_le_ellHat_real L hL ht0.le ht1
+  have hζ := norm_ofReal_mul_lt_one ht0 ht1 hξ
+  have hℓ := half_le_ellHat_real L hL ht0 ht1
   have hℓ0 : 0 < ellHat L (t : ℂ) := by linarith
   have h1t : 0 < 1 - t := by linarith
   set ℓ := ellHat L (t : ℂ) with hℓdef
@@ -1801,7 +1800,7 @@ theorem norm_edgeKer_one_sub_one_le (hL : 3 ≤ L) {s t : ℝ} (hst : s ≤ t) (
       have h1 : (zdist L (x - w) : ℝ) ≤ 1 := by exact_mod_cast hxw
       linarith
     rw [mul_one]
-    refine (norm_Theta_apply_le_of_real hL ht0 ht1 w c).trans ?_
+    refine (norm_Theta_apply_le_of_real' hL ht0 ht1 w c).trans ?_
     rw [hB]
     refine div_le_div_of_nonneg_right ?_ (by positivity)
     have hexp : exp (-(zdist L (w - c) : ℝ) / ℓ) ≤ exp 2 * exp (-((zdist L (x - c) : ℝ) / ℓ)) := by
@@ -2123,7 +2122,7 @@ theorem ellHat_ratio_le_ratio (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hst : 
 `d = ‖a₁ - a₂‖ ≥ ℓ_t`
 `|(U_{s,t,σ} ∘ A)_a| ≤ C (1 + (ℓ_t/ℓ_s) e^{-d/(8ℓ_t)}) T_t(d) + (η_s/η_t)² W^{-D}`,
 with `T_t(d) = (W ℓ_t η_t)^{-2} e^{-√(d/ℓ_t)}` as in (7.3). -/
-theorem norm_Uker_tail_le (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hst : s ≤ t) (ht0 : 0 < t)
+theorem norm_Uker_tail_le (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hst : s ≤ t) (ht0 : 0 ≤ t)
     (ht1 : t < 1) {W D : ℝ} (hW : 0 < W) {A : LoopArg L 2 → ℂ}
     (hA : ∀ b, ‖A b‖ ≤ tailT W (ellHat L (s : ℂ)) (1 - s) D (zdist L (b 0 - b 1)))
     (a : LoopArg L 2) (hd : ellHat L (t : ℂ) ≤ zdist L (a 0 - a 1)) :
@@ -2142,9 +2141,9 @@ theorem norm_Uker_tail_le (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hst : s �
   set F : ZMod L → ZMod L → ℝ := fun x y => exp (-√((zdist L (x - y) : ℝ) / ℓs)) with hF
   set Ps := ((W * ℓs * (1 - s)) ^ 2)⁻¹ with hPs
   have hsh := half_le_ellHat_real L hL hs0 (hst.trans_lt ht1)
-  have hth := half_le_ellHat_real L hL ht0.le ht1
+  have hth := half_le_ellHat_real L hL ht0 ht1
   have hs := ellHat_real_pos L hL hs0 (hst.trans_lt ht1)
-  have ht := ellHat_real_pos L hL ht0.le ht1
+  have ht := ellHat_real_pos L hL ht0 ht1
   have h1t : 0 < 1 - t := by linarith
   have h1s : 0 < 1 - s := by linarith
   have hsl : ℓs ≤ ℓt := ellHat_real_mono L hst ht1
@@ -2169,12 +2168,12 @@ theorem norm_Uker_tail_le (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hst : s �
   have hrow : ∀ x, ∑ c : ZMod L, ‖K x c‖ ≤ (1 - s) / (1 - t) := by
     intro x
     have h := sum_norm_edgeKer_row_le L hL (ξ := 1) (s := s) (t := t)
-      (norm_ofReal_mul_lt_one ht0.le ht1 (by simp)) x
+      (norm_ofReal_mul_lt_one ht0 ht1 (by simp)) x
     have e1 : ‖((s : ℂ) - t) * 1‖ = t - s := by
       rw [mul_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
         abs_of_nonpos (by linarith)]; ring
     have e2 : ‖(t : ℂ) * 1‖ = t := by
-      rw [mul_one, Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht0]
+      rw [mul_one, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg ht0]
     rw [e1, e2, one_add_row_eq ht1] at h
     exact h
   -- the sum over `b`
@@ -2313,7 +2312,7 @@ theorem cTail_nonneg : 0 ≤ cTail := by
 as `L ≤ W^C`, so this is the paper's `≺ T_t(a₁ - a₂) + W^{-D}(η_s/η_t)²` with an explicit
 constant. -/
 theorem norm_Uker_tail_le_ellStar (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hst : s ≤ t)
-    (ht0 : 0 < t) (ht1 : t < 1) {W D : ℝ} (hW : exp 1 ≤ W) {A : LoopArg L 2 → ℂ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) {W D : ℝ} (hW : exp 1 ≤ W) {A : LoopArg L 2 → ℂ}
     (hA : ∀ b, ‖A b‖ ≤ tailT W (ellHat L (s : ℂ)) (1 - s) D (zdist L (b 0 - b 1)))
     (a : LoopArg L 2) (hd : ellStar W (ellHat L (t : ℂ)) ≤ zdist L (a 0 - a 1)) :
     ‖Uker L (fun _ => 1) s t A a‖ ≤
@@ -2324,7 +2323,7 @@ theorem norm_Uker_tail_le_ellStar (hL : 3 ≤ L) {s t : ℝ} (hs0 : 0 ≤ s) (hs
   have hW0 : 0 < W := lt_of_lt_of_le (exp_pos 1) hW
   have hlog : 1 ≤ log W := by rw [← log_exp 1]; exact log_le_log (exp_pos 1) hW
   have hlog32 : 1 ≤ log W ^ (3 / 2 : ℝ) := Real.one_le_rpow hlog (by norm_num)
-  have ht := ellHat_real_pos L hL ht0.le ht1
+  have ht := ellHat_real_pos L hL ht0 ht1
   have hsh := half_le_ellHat_real L hL hs0 (hst.trans_lt ht1)
   have hstar : ellHat L (t : ℂ) ≤ ellStar W (ellHat L (t : ℂ)) := by
     unfold ellStar; nlinarith
@@ -2358,7 +2357,7 @@ theorem xiOf_mSigma_true_false {E : ℝ} (hE : |E| ≤ 2) :
 
 /-- **Lemma 7.2 (7.2)** with the paper's `U_{s,t,σ}`, `σ = (+,-)`, `|E| ≤ 2`. -/
 theorem norm_Uker_tail_le_sigma (hL : 3 ≤ L) {E : ℝ} (hE : |E| ≤ 2) {s t : ℝ} (hs0 : 0 ≤ s)
-    (hst : s ≤ t) (ht0 : 0 < t) (ht1 : t < 1) {W D : ℝ} (hW : exp 1 ≤ W)
+    (hst : s ≤ t) (ht0 : 0 ≤ t) (ht1 : t < 1) {W D : ℝ} (hW : exp 1 ≤ W)
     {A : LoopArg L 2 → ℂ}
     (hA : ∀ b, ‖A b‖ ≤ tailT W (ellHat L (s : ℂ)) (1 - s) D (zdist L (b 0 - b 1)))
     (a : LoopArg L 2) (hd : ellStar W (ellHat L (t : ℂ)) ≤ zdist L (a 0 - a 1)) :

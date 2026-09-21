@@ -55,8 +55,9 @@ the ones that are reachable for the moment-route Gaussian model `RBM.Gauss.sampl
   general-`RBM.Sample` statements keep `hint`: nothing outside the Gaussian model can supply it,
   since it rests on (5.2) along the flow together with continuity of the loop in `ω`.
 
-`hint1` is `RBM.Gauss.integrable_sample_Lval` (T76) and `h5132` is literally
-`(hb : RBM.Bounds _ E s).expect`; both were already available and are not restated here.
+`hint1` is `RBM.Gauss.int1_gauss` (T150), `RBM.Gauss.integrable_sample_Lval` (T76) read at
+`η := η_v` and quantified over `v ∈ [s_N, t_N]`; `h5132` is literally
+`(hb : RBM.Bounds _ E s).expect` and is not restated here.
 
 ## What is not discharged, and why
 
@@ -79,6 +80,7 @@ everything this file provides; only those four goals remain.)
 
 ## Main results
 
+* `RBM.Gauss.int1_gauss` — `hint1`.
 * `RBM.Gauss.integrable_sample_lkErr_mul`, `RBM.Gauss.int2_gauss` — `hint2`;
   `RBM.Gauss.integrable_sample_lkErr_mul_real` — its `ℝ`-valued form, the `hint` of the bridge.
 * `RBM.Gauss.trace_mul_Eblk_eq_sum`, `RBM.Gauss.gloop_oneLoop_eq_trace`,
@@ -159,6 +161,21 @@ theorem integrable_sample_lkErr_mul_real (d : Dims) (N : ℕ) {E u : ℝ} (hE : 
       (sample d).lkErr E N u ω I * (sample d).lkErr E N u ω J) (band d).P :=
   ((integrable_sample_lkErr_mul d N hE hu I J hI hIn hJ hJn).norm).congr
     (Filter.Eventually.of_forall fun _ω => norm_mul _ _)
+
+/-- **`hint1` of `RBM.Step6.sharpExpect_step6` for the Gaussian model** (T150): the `1`-loop
+`L_{v,(+),(a₁)}` is integrable at every time `v ∈ [s_N, t_N]`.
+
+This is `RBM.Gauss.integrable_sample_Lval` (T76) at `η := η_v`, with `η_v ≤ |Im z_v|` from
+`RBM.Gauss.abs_im_zt`; the well-formedness and length conditions of `RBM.Step6.oneLoop`
+(`⟨[true], [a₁]⟩`) are `rfl`.  The header of this file records `hint1` as "already available";
+T147 §6(c) found it was never stated in the shape the slot takes, so it is stated here. -/
+theorem int1_gauss (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (ht1 : ∀ N, t N < 1) :
+    ∀ (N : ℕ) (v : TimeIcc s t N) (a₁ : ZMod ((band d).L N)),
+      Integrable (fun ω => (sample d).Lval E N v ω (Step6.oneLoop a₁)) (band d).P := by
+  intro N v a₁
+  have hv1 : (v : ℝ) < 1 := v.2.2.trans_lt (ht1 N)
+  exact integrable_sample_Lval (etaT_pos_of_lt_one hE hv1) (abs_im_zt E hE hv1).ge
+    (Step6.oneLoop a₁) rfl le_rfl
 
 /-- **`hint2` of `RBM.Step6.sharpExpect_step6` for the Gaussian model**: the products of (5.134)
 are integrable. -/

@@ -225,6 +225,17 @@ theorem norm_Theta_sub_shift_le_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ : 
   have hkey := ellHat_mul_sqrt_le L hL hξ0 hξ
   nlinarith [hkey, hden]
 
+/-- **(2.53) on the whole disc, `ξ = 0` included.**  The `ρ`-machinery needs `ξ ≠ 0`; at
+`ξ = 0` the propagator is the identity, `ℓ̂(0) = 1` and `‖1-0‖ = 1`, so the bound reads
+`1 ≤ 144`. -/
+theorem norm_Theta_sub_shift_le_complex' (hL : 3 ≤ L) (hξ : ‖ξ‖ < 1) (x y : ZMod L) :
+    ‖Theta L ξ x y - Theta L ξ x (y + 1)‖
+      ≤ 144 / (ellHat L ξ * Real.sqrt ‖1 - ξ‖) := by
+  rcases eq_or_ne ξ 0 with rfl | hξ0
+  · rw [ellHat_zero L hL, sub_zero, norm_one, Real.sqrt_one, mul_one]
+    exact (norm_Theta_zero_sub_shift_le L hL x y).trans (by norm_num)
+  · exact norm_Theta_sub_shift_le_complex L hL hξ0 hξ x y
+
 end Assemble
 
 section SecondDiffComplex
@@ -304,6 +315,33 @@ theorem norm_Theta_second_diff_le_complex (hL : 3 ≤ L) (hξ0 : ξ ≠ 0) (hξ 
     _ = 288 * ‖rho ξ‖ ^ (zdist L (x - y) - 1) / ellHat L ξ := by
         field_simp
         ring
+
+/-- **(2.54) with the decay retained, on the whole disc, `ξ = 0` included.**  At `ξ = 0` the
+propagator is the identity: for `‖x-y‖ ≥ 2` all three entries vanish, and for `‖x-y‖ = 1` the
+decay factor is `‖ρ‖^0 = 1` and the bound reads `1 ≤ 288`. -/
+theorem norm_Theta_second_diff_le_complex' (hL : 3 ≤ L) (hξ : ‖ξ‖ < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L ξ x y - Theta L ξ x (y + 1) - Theta L ξ x (y - 1)‖
+      ≤ 288 * ‖rho ξ‖ ^ (zdist L (x - y) - 1) / ellHat L ξ := by
+  rcases eq_or_ne ξ 0 with rfl | hξ0
+  · rw [ellHat_zero L hL]
+    rcases lt_or_ge (zdist L (x - y)) 2 with hsmall | hbig
+    · have hd : zdist L (x - y) - 1 = 0 := by omega
+      rw [hd, pow_zero]
+      exact (norm_Theta_zero_second_diff_le L hL hxy).trans (by norm_num)
+    · have hx1 : x ≠ y + 1 := by
+        rintro rfl
+        have h1 : y + 1 - y = 1 := by ring
+        have := zdist_one_le L hL
+        rw [← h1] at this; omega
+      have hx2 : x ≠ y - 1 := by
+        rintro rfl
+        have h1 : y - 1 - y = -1 := by ring
+        have := zdist_neg_one_le L hL
+        rw [← h1] at this; omega
+      simp only [Theta_zero, Matrix.one_apply, if_neg hxy, if_neg hx1, if_neg hx2]
+      norm_num
+  · exact norm_Theta_second_diff_le_complex L hL hξ0 hξ hxy
 
 
 /-- **(2.54) in the paper's form, complex `ξ`**:
@@ -399,6 +437,35 @@ theorem norm_Theta_second_diff_le_inv_dist_complex (hL : 3 ≤ L) (hξ0 : ξ ≠
   refine hstep.trans ?_
   rw [div_le_div_iff₀ hellpos (by positivity)]
   nlinarith [hkey, hellpos]
+
+/-- **(2.54) in the paper's form, on the whole disc, `ξ = 0` included.**  At `ξ = 0` the
+propagator is the identity: the second difference vanishes for `‖x-y‖ ≥ 2`, and for
+`‖x-y‖ = 1` the bound reads `1 ≤ 864`. -/
+theorem norm_Theta_second_diff_le_inv_dist_complex' (hL : 3 ≤ L) (hξ : ‖ξ‖ < 1)
+    {x y : ZMod L} (hxy : x ≠ y) :
+    ‖2 * Theta L ξ x y - Theta L ξ x (y + 1) - Theta L ξ x (y - 1)‖
+      ≤ 1728 / ((zdist L (x - y) : ℝ) + 1) := by
+  rcases eq_or_ne ξ 0 with rfl | hξ0
+  · rcases lt_or_ge (zdist L (x - y)) 2 with hsmall | hbig
+    · have hd1 : (zdist L (x - y) : ℝ) ≤ 1 := by exact_mod_cast Nat.lt_succ_iff.1 hsmall
+      refine (norm_Theta_zero_second_diff_le L hL hxy).trans ?_
+      rw [le_div_iff₀ (by positivity)]
+      linarith
+    · have hx1 : x ≠ y + 1 := by
+        rintro rfl
+        have h1 : y + 1 - y = 1 := by ring
+        have := zdist_one_le L hL
+        rw [← h1] at this; omega
+      have hx2 : x ≠ y - 1 := by
+        rintro rfl
+        have h1 : y - 1 - y = -1 := by ring
+        have := zdist_neg_one_le L hL
+        rw [← h1] at this; omega
+      simp only [Theta_zero, Matrix.one_apply, if_neg hxy, if_neg hx1, if_neg hx2]
+      norm_num
+      positivity
+  · exact norm_Theta_second_diff_le_inv_dist_complex L hL hξ0 hξ hxy
+
 end SecondDiffComplex
 
 end RBM

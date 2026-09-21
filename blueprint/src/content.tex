@@ -1916,6 +1916,20 @@
   are $\Psi$ and the inverse diagonal is $O(1)$, giving $\Psi^3$.
 \end{proof}
 
+\begin{theorem}[$\mathbb E\operatorname{Tr}X^{2p}\le C_pN$, hence $\|X\|\prec1$ unconditionally]\label{thm:trace-moment}
+  \lean{RBM.Gauss.hasDerivAt_matPow_apply, RBM.Gauss.tame_Xmat_pow_apply, RBM.Gauss.Bmat_sandwich_apply_add_of_ne, RBM.Gauss.sum_gvar_Bmat_sandwich_apply, RBM.Gauss.hasDerivAt_const_mul_Xmat_pow_update, RBM.Gauss.integral_Xmat_pow_succ_diag, RBM.Gauss.colSq, RBM.Gauss.colSq_sq_le, RBM.Gauss.pow_two_mul_apply_diag, RBM.Gauss.pow_le_pow_of_logConvex, RBM.Gauss.sqrt_colSq_le_rpow, RBM.Gauss.norm_mul_norm_pow_diag_le, RBM.Gauss.traceConst, RBM.Gauss.integral_colSq_one, RBM.Gauss.integral_colSq_le, RBM.Gauss.traceMomentBound_gauss, RBM.Gauss.stochDom_norm_Xmat_gauss, RBM.Gauss.opNormBound_gauss}
+  \leanok\uses{lem:opnorm, lem:ibp, def:gauss-model}
+  Gaussian integration by parts gives
+  $\mathbb E[(X^{m+1})_{aa}]=\sum_{k+l=m-1}\mathbb E[(\sum_jS_{aj}(X^k)_{jj})(X^l)_{aa}]$; the
+  recursion is closed not by Cauchy--Schwarz (which doubles the degree) but by log-convexity of the
+  column norms plus weighted AM--GM, giving $C_p=(2p-1)!!$ and discharging \texttt{OpNormBound}.
+\end{theorem}
+\begin{proof}\leanok
+  $u_m(i)=(X^{2m})_{ii}$ satisfies $u_m^2\le u_{m-1}u_{m+1}$ and $u_0=1$, so
+  $|(X^k)_{ii}|\le u_M(i)^{k/2M}$ and the product of two such is a convex combination -- the degrees
+  never double. Induction on $M$ with $\sum_jS_{ij}=1$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

@@ -2361,3 +2361,20 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 **概率那一半已经卸干净**——其内容里不再有任何条件期望，只剩 Green 函数的小行与局部律。`m = 2` 已无条件。
 按约束：`MinorDiffGain` 按**期望**陈述（逐点的 Ψ-尺度界是假的），**全程没有 `1_Ω`**（湮灭恒等式在任何截断之前使用，故 `E_κ[(1−E_κ)X]=0` 的障碍根本不出现）；`minorDiffGain_env` 是无增益（`ρ = 4`）的无条件实例，接口不空洞。
 `m ≥ 3` 需要 `Δ_κ` 在 (4.9) 分解上的 Leibniz 演算（`Δ_κ(XY) = (Δ_κ X)Y + X^{(κ)}(Δ_κ Y)`、`Δ_κ(1/X) = (Δ_κ X)/(X X^{(κ)})`）逐层传播，单步的子类型搬运机器已经就位（`insertRowEquiv`、`greenSetMat_insert_apply`）——**这是自然的下一张单**（我不写工单）。paper-deltas #66。
+
+### `RBM1D/Gauss/TraceMoment.lean` — `‖X‖ ≺ 1` 已完全证出（T109，Claude Code 并行 agent）
+
+**paper-deltas #49 这个公开缺口关闭。** `traceMomentBound_gauss` 对**所有 p** 成立 ⟹ `stochDom_norm_Xmat_gauss`（`‖X‖ ≺ 1` 无条件）⟹ **`opNormBound_gauss : OpNormBound d`**。
+`Gauss/Model.lean` 的 `OpNormBound` 与 `Gauss/OpNorm.lean` 的两个冻结接口一字未改——是**卸掉**，不是改写。**没有任何剩余假设。**
+
+**第 0 步验过了，因子 2 完全对得上**：`integral_Xmat_pow_succ_diag : E[(X^{m+1})_{aa}] = Σ_{k+l=m−1} E[(Σ_j S_{aj}(X^k)_{jj})·(X^l)_{aa}]`。
+路线即规格所述：`Xmat_eq_sum` 把 `X` 写成坐标和，逐坐标用 `gaussIBP.stein`（被积函数是 `Tame`），导数照抄 `IBP.lean` 的 `hasDerivAt_Hflow_update` 模式，坐标和由 `sum_gvar_Bmat_sandwich_apply` 塌缩。
+**非对角对的两个 tag 各带 `gvar = S_ij/2`，其非对角贡献相消，活下来的 `2·S_ij/2 = S_ij` 恰好正确**，没有多余因子。
+`p = 1` 体检通过：`m = 1` 时退化成 `E[(X²)_{aa}] = Σ_j S_{aj} = 1`，求和得 `E Tr(X²) = WL`，与 `traceMomentBound_one` 一致，`traceConst 1 = 1`。
+
+**⚠ 规格里的收口方式实际不成立，agent 换了一个**：Cauchy–Schwarz 把次数 `k → 2k`，而递推里 `k` 跑到 `2p−2`，于是 `A_p` 依赖 `A_{2p−2}`——`p ≥ 3` 时不是良基的。
+替代品同样不需要组合：列范数 `u_m(i) = Σ_r|(X^m)_{ri}|² = (X^{2m})_{ii}` 的**对数凸性** `u_m² ≤ u_{m−1}u_{m+1}`（对 `(X^{2m})_{ii} = ⟨X^{m−1}e_i, X^{m+1}e_i⟩` 用 Cauchy–Schwarz）加 `u_0 = 1`，
+给出 `u_k^M ≤ u_M^k`（`pow_le_pow_of_logConvex`，除法-free 的离散证明），故 `‖(X^k)_{ii}‖ ≤ u_M(i)^{k/(2M)}`；再由加权 AM–GM，`k+l = 2M` 时两者之积被**凸组合**控制，**次数不再翻倍**。
+配 `Σ_j S_{ij} = 1` 与对 M 的归纳得 `E[(X^{2M})_{ii}] ≤ C_M`（`C_0 = 1`、`C_{M+1} = (2M+1)C_M`，即 `(2M−1)!!`），对 `i` 与 `N` 一致；求和得 `E Tr(X^{2p}) ≤ C_p·N`。
+
+**矩路线现在只剩一个公开前提**：`RBM.Gauss.Dims` 仍无实例（给出具体的 `W, L, c` 即可，唯一不平凡处是 (2.2) 的 `rpow` 估计）。paper-deltas #67。

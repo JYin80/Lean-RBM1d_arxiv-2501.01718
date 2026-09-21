@@ -4082,3 +4082,40 @@ F_{u,σ,a} = Ẽ_{u,σ,a} + ∑_{l_K ≥ 3} [K ∼ (L−K)]^{l_K}_{u,σ,a} + E^{
 
 **无新 paper-delta**：`∑_{l_K>2}` 的范围是证出来的而非假设的；`Gauss.eGterm` 与 `Decay.eG` 是同一对象。
 `F_le` 的 Ξ-记账留给 T165，本单已把它需要的三座桥全部铺好。
+
+## T158：截断方案的定量导数界（`Gauss/CutoffBounds.lean`，734 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **8965** 条。namespace `RBM.Cutoff`。
+
+**1. 光滑 max 与权重和界（工单的「初等一半」，全部证完）**：`smoothMax`/`cutWeight`、`le_smoothMax`/`smoothMax_le`、
+**`rpow_card_le_exp_one`（`r ≥ log(card ι) ⟹ (card ι)^{1/r} ≤ e`——这就是 `r ≍ log N` 给出 `O(1)` 的那一步）**、
+`sum_cutWeight_le`（走 Hölder，仓库里没有现成的，用 Mathlib 的 `Real.inner_le_weight_mul_Lp_of_nonneg`）、
+`hasDerivAt_smoothMax`（链式法则是**定理**，不是假设）。
+**自带锐性自检**：一条 `example` 证明 `a ≡ 1`、`ι = Fin 2` 时 `∑ cutWeight = 2^{1/r}` **取等**——`cutWeight` 的指数抄错会当场编译失败。
+
+**2. `∑S|∂J|²` 以 `T_{u,D}` 归一化**：加权 Cauchy–Schwarz → `sum_cutWeight_quadForm_le`；
+`W^{−D}` 地板把**不正比于 `T²` 的加性余项**吸收进 `T²` 归一化（代价 `W^{2D}`）；
+`ee_shape` 把 T156 的 `ee_le`/`ee_le_paper` 的结论形状重排成 `B·T² + R`；
+合起来 `∑ₓ Sₓ(∂ₓJ)² ≤ (card ι)^{2/r}(B + R·W^{2D})`。
+
+**3. `∂_u T_{u,D}`**：第二项对 `ℓ` **确实不一致有界**，但 `ℓ'_u ≥ 0` 时符号有利可丢，得到**对 `ℓ` 一致**的
+`−∂_u log T ≤ 2(∂_u log A_u)₊`。**`W^{−D}` 地板区的「单独处理」结论是：它不需要单独处理**——
+地板与 `u` 无关故对 `T'` 贡献 0，只通过 `0 ≤ W^{−D} ⟹ (T−W^{−D})/T ≤ 1` 进入，同一条界就覆盖。
+
+**4. 门槛的时间依赖（工单原先漏的那一项）**：`Θ̇_u/Θ_u = 4m/η_u`（`hasDerivAt_threshold`），
+缺口上 `J/Θ ∈ [1,2]` ⟹ 该项 `≤ 8C_χ m/η_u`，**与其它漂移项同为 `η_u^{−1}` 阶**。
+
+**5. 额外做掉的二阶导**：`hasDerivAt_deriv_smoothMax` 给出**恒等式**，第三项符号非正可丢，`aᵢ ≥ 1`（(5.28) 的 `J ≥ 1`）
+⟹ `≤ (r−1)κb² + κc`。**光滑化的二阶代价恰好是一个 `r − 1 ≍ log N`，即 `N^{o(1)}`。**
+
+### 边界（如实）
+* **(5.36) 是按「形状」接的，不是直接 `apply Lemma57.ee_le`**——后者自带 `h273/h564/h566/h572/hsym` 一串假设，
+  属调用方（T167 钉死 `eeFun` 之后）。提供的是 `ee_shape` + `sum_cutWeight_quadForm_tailT_le`，**接线是平凡的 `linarith`，但尚未接上**。
+* **二阶是一维方向导数**，不是 Fréchet Hessian。对 `𝓛 = ½∑S_{ij}∂_{ij}∂_{ji}` 够用（它是方向二阶导之和），
+  若下游要 Fréchet 形式还需一层包装。
+* **没有构造具体的 `C²` 截断 `χ`**：所有关于 `χ` 的陈述都以 `HasDerivAt χ dχ ·` + `|dχ| ≤ C_χ` 为假设，
+  **文件里没有一条 `∀ ω` 的逐点量化**（刻意按 T164 的教训避开）。`ContDiffBump` 可作见证，未落 Lean。
+* 去截断（概率层面的穿越论证 + 时间网）不在本文件，按设计属 `MomentHyp.holder` + `stochDom_timeIcc_of_holder`。
+* 已按提醒**避开** T133 的 `BddC2C` 常数（无 `T_{u,D}` 归一化、差 `A^{O(1)}`），文件头写明它不能当缺口界用。
+* **指数预算未重算**：本文件只给「每一步的损失是什么」（`e`、`e²`、`r−1`、`W^{2D}`、`8C_χm/η`）。
+  T156 的更正（Case 2(1a) 是 `A^{−1/2}`）与 T155 的近场 `r³` **仍需在 T132c 实现前合并重算 `β*` 表**。

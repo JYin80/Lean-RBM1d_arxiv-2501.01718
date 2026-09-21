@@ -3432,3 +3432,12 @@ T146 报「唯一真正缺的引理」是 Lyapunov `‖·‖_p ≤ ‖·‖_{2p}
 **接线通了**：`Gauss.hEEmom_of_momNorm_two_mul` 让 `hrhs_of_moment_inputs` 的 `hEEmom` 由 `2p` 阶界直接得出，
 **常数 `C` 与控制 `ΦE` 原样不变**，可积性用的就是该定理已经在收的 `hintEE`，调用方零额外代价。
 于是 `hEEmom` 现在只差**输入**——把 T135 的 `stochDom_norm_eeField` 变成 `MomentDom` 要的确定性包络，那是 T157 的范围。
+
+## ⚠ Theorem 2.6 的保真缺口（Cowork 分析，2026-09-21；**暂不开单**，Jun：先做六步）
+
+`Flow/Universality.lean` 的 `OUFlow` 只记路径（Hermitian、`H_0 = H`），**未钉死分布**。取常值流 `H_t ≡ H`：
+`Claim223`/`StepTwoClaim` 平凡成立（差为 0），`GreenComparison` 的结论平凡，而 **`DBMUniversality F` 恰好就是 (2.18)**——
+`theorem2_6_of_steps` 实际上假设了结论。**任何人不得用常值流或其他 fiat 流去「卸」这些假设。**
+修法（六步完成后开单）：钉死 `H_t := e^{−t/2}H + (1−e^{−t})^{1/2}G`（`G` 为独立 GUE）；[51] 与 [37]/[70] 写成**对任意满足前提的模型**成立的一般形式，前提（能量窗一致的局部律等）由我们证；
+(2.25)（[70] Lemma 4.18）用带时间生成元恒等式自证（高斯情形是等式），(2.31)、`η Im m` 单调性自证。完整分析在项目文档 `claude/theorem-2.6-analysis.md`。
+

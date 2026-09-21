@@ -1901,6 +1901,21 @@
   power of their length, and $(t_1/t_2)^{n/2}\le1$ finishes the transfer.
 \end{proof}
 
+\begin{theorem}[The gain is multiplicative: $m$ fluctuations compose into the $m$-fold minor difference]\label{thm:fluc-high}
+  \lean{RBM.Gauss.AgreeOffRows, RBM.Gauss.FinDepOffRows, RBM.Gauss.qRow_of_finDepOffRows, RBM.Gauss.finDepOffRows_of_minorSet, RBM.Gauss.greenSetMat, RBM.Gauss.greenSetMat_empty_apply, RBM.Gauss.greenSetMat_singleton_apply, RBM.Gauss.flucDiagSet_singleton, RBM.Gauss.minorDiff, RBM.Gauss.qList, RBM.Gauss.applyOps_sub, RBM.Gauss.applyOps_eq_applyOps_minorDiff, RBM.Gauss.norm_applyOps_le_minorDiff, RBM.Gauss.norm_applyOps_flucDiag_le_of_minorDiff, RBM.Gauss.insertRowEquiv, RBM.Gauss.greenSetMat_insert_apply, RBM.Gauss.greenSetDiagCentered_sub_insert, RBM.Gauss.minorDiff_pair_greenSetDiagCentered, RBM.Gauss.norm_minorDiff_pair_greenSetDiagCentered_le, RBM.Gauss.MinorDiffGain, RBM.Gauss.flucGain_of_minorDiffGain, RBM.Gauss.minorDiffGain_env}
+  \leanok\uses{thm:fluc-iter, lem:fluc-vanish, lem:condrow, lem:4.2}
+  $Q_\kappa$ annihilates anything independent of row $\kappa$ and the $Q$'s commute, so peeling the
+  outermost one and passing to $\Delta_\kappa Y=Y_S-Y_{S\cup\{\kappa\}}$ loses nothing: an
+  \emph{exact} identity, not an estimate. Hence $\|Q_{\kappa_2}Q_{\kappa_1}Z_k\|\lesssim\Psi^3$ --
+  multiplicative, not $2\Psi^2$ -- and \texttt{FlucGain} follows for all $m$ from the size of the
+  iterated minor differences.
+\end{theorem}
+\begin{proof}\leanok
+  At $m=2$, after (4.9) the second difference is a difference of two triple products at levels
+  $\emptyset$ and $\{\kappa_2\}$; each factor differs from its partner by $\Psi^2$, the off-diagonals
+  are $\Psi$ and the inverse diagonal is $O(1)$, giving $\Psi^3$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

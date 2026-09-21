@@ -15,6 +15,7 @@ import RBM1D.Gauss.MinorReplace
 import RBM1D.Gauss.FlucVanish
 import RBM1D.Gauss.FlucCount
 import RBM1D.Gauss.FlucIter
+import RBM1D.Gauss.FlucIterHigh
 import RBM1D.Gauss.FlucAvg
 import RBM1D.Gauss.LDEQuad
 import RBM1D.Gauss.LDEQuadDom

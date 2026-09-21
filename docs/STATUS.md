@@ -2345,3 +2345,19 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 `Flow/Consequences.lean`、`Flow/Hypotheses.lean`、`Loop/ContinuityAssembly.lean`、`Gauss/Model.lean` 的签名一律未改。
 唯一新增假设：`loopScaling_gauss` 需 `0 < t₁ N` 与 `t₁ N ≤ t₂ N`（`RBM.LoopScaling` 本身未改；消费者 `RBM.lemma_5_1` 已自带 `0 < c ≤ t₁ N` 与 `t₁ N ≤ t₂ N`，白送）。
 **注**：矩路线整体仍条件于 T69 的 `OpNormBound`（`‖X‖ ≺ 1`，T109 在做）与 `Dims` 的具体实例。paper-deltas #65。
+
+### `RBM1D/Gauss/FlucIterHigh.lean` — 第 0 步结论：**增益是乘性的**（T110，Claude Code 并行 agent）
+
+**全队标记为最高风险的那一单通过了。** `‖Q_{κ₂} Q_{κ₁} Z_k‖ ≲ Ψ³`，不是 `2Ψ²`。
+
+**机制比预期的强：是恒等式，不是估计。** `Q_κ` 湮灭任何与第 κ 行严格独立的东西，且不同行的 `Q` 互相交换；
+于是剥掉最外层的 `Q_κ`、把**整个小行族** `Y` 换成 `Δ_κ Y : S ↦ Y S − Y (S ∪ {κ})`，**什么都没损失**——被减掉的 `Y {κ}` 当场被杀。
+迭代得到 **`applyOps_eq_applyOps_minorDiff`**：`applyOps L (Z_k) = applyOps L (Δ_{κ₁}⋯Δ_{κ_m} Z^{(·)}_k)`。
+**m 次涨落并非各自独立作用，而是复合成 m 重小行差**——这正是乘性的来源。
+`m = 2` 具体算完（`norm_minorDiff_pair_greenSetDiagCentered_le ≤ 10Ψ³`）：经 (4.9) 后二阶差是 `∅` 与 `{κ₂}` 两个层级上三元积 `G_{kκ₁}G_{κ₁k}/G_{κ₁κ₁}` 的差，
+每个因子与其对应者相差 `Ψ²`，非对角是 `Ψ`，对角的逆是 `O(1)`，合计 `Ψ²·Ψ + Ψ·Ψ² + Ψ²·Ψ² ≍ Ψ³`；**加性的话只有 `Ψ²`**——多出来的那个 `Ψ` 正是第二个 `Q` 作用在第一次替换误差上赚到的。
+
+**(4.12) 仍未完全无假设**，剩余输入是 `MinorDiffGain`（迭代小行差的**大小**，m ≥ 3）。但它**严格弱于**原来的 `FlucGain`：
+**概率那一半已经卸干净**——其内容里不再有任何条件期望，只剩 Green 函数的小行与局部律。`m = 2` 已无条件。
+按约束：`MinorDiffGain` 按**期望**陈述（逐点的 Ψ-尺度界是假的），**全程没有 `1_Ω`**（湮灭恒等式在任何截断之前使用，故 `E_κ[(1−E_κ)X]=0` 的障碍根本不出现）；`minorDiffGain_env` 是无增益（`ρ = 4`）的无条件实例，接口不空洞。
+`m ≥ 3` 需要 `Δ_κ` 在 (4.9) 分解上的 Leibniz 演算（`Δ_κ(XY) = (Δ_κ X)Y + X^{(κ)}(Δ_κ Y)`、`Δ_κ(1/X) = (Δ_κ X)/(X X^{(κ)})`）逐层传播，单步的子类型搬运机器已经就位（`insertRowEquiv`、`greenSetMat_insert_apply`）——**这是自然的下一张单**（我不写工单）。paper-deltas #66。

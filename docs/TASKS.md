@@ -1,6 +1,6 @@
 # 任务队列
 
-> ## ⭐⭐ 当前优先级：T122 > T123 > T58（2026-09-21，Cowork）
+> ## ⭐⭐ 当前优先级：T122 > T123 > T124 > T125 > T58（2026-09-21，Cowork）
 >
 > **Jun 已裁 paper-deltas #72（原 #66）：论文不缺数学，走 (c) 收窄引用，(2.76) 陈述不改。**
 > `(+,+)` 的来源是 **Lemma 5.11 在 `n = 2`**（非交错电荷，(7.16) 情形 1），p.70 只是把出处写成了 (2.76)。
@@ -286,6 +286,8 @@
 | T121 | **`Eq45Flow`**：(4.5) 对 `u ∈ [s,t]` 一致。(4.5) 本身已证（`avg_bound_stochDom`），差 p.51 的一致化 | `Gauss/Eq45Flow.lean`（新建） | Claude Code | **完成**（是 T108 的情形：不需要时间网；`Eq45Flow` 已卸，条件为三个带时间指标的输入，见 STATUS） |
 | T122 | **⭐⭐ 卸掉 `AprioriDecayPP`：Lemma 5.11 在 `n = 2` + 连续性自举**（Jun 裁 #72）。`(+,+)` 是非交错电荷，`SumZeroDyn.bound_nonAlt` 已覆盖；缺的只是 `n = 2` 自二次项的自举收口（`Step2Moment` 那一套）。**第 0 步：判定自举挂在 `≺` 层（前缀区间重新实例化）还是矩层（`MomentHypPP`）**，报告后再动手 | `Hierarchy/Step2PP.lean`（新建） | 待认领 | 未开工 |
 | T123 | **一阶矩反向桥**（T117 拆单 B，不依赖 T58）：`\|Y\| ≺ Φ` + 确定性包络 + 多项式下界 ⟹ `∫\|Y\| ≺ Φ`，卸 Step 6 的 `hq11`/`hq13`。**第 0 步：先看它是不是 `momentDom_of_stochDom`（p = 1）+ Jensen/Hölder 的两行推论**，是就别造新轮子 | `Gauss/Envelope.lean`（加定理）+ `Gauss/Step6Hyp.lean` | 待认领 | 未开工 |
+| T124 | **(4.5) 的三个带时间指标输入**（T121 余项）：`IBPFlow`/`FlucRowFlow`/`FlucBlkFlow` 的生产者。**照 T107 的做法**——固定时刻的证明若对 `(N, ω, u)` 逐点，就把 `StochDom.of_det` 在放大的指标集上重做，不用网。**第 0 步：逐条查 T119 `CondStableInst` 与 `Lemma41Glue.trace_green_sub_mul_Eblk_stochDom` 的证明是否逐点**；哪条不是就报告，别上网 | `Gauss/Eq45FlowInputs.lean`（新建） | 待认领 | 未开工 |
+| T125 | **`Step1.Hyp.lift` 的余项**（T116 余项，paper-deltas #74）：四样里 (1)–(3) 是确定性的（`gloop` 对 u 的连续模、`aprioriRhs` 的缓变区制、多项式下界）；(4) Lemma 5.1 在阈值 `2 + o(1)` 处的版本。**第 0 步：看 `Loop/ContinuityAssembly.lean` 的 `lemma_5_1`/`lemma_5_1'` 里阈值 2 是不是写死的**；若只是证明里的常数，就加一个阈值参数 `C ≥ 2` 的推广版，旧定理作为特例保留，**不改旧签名** | `Gauss/Step1Hyp.lean` + `Loop/ContinuityAssembly.lean`（加推广版） | 待认领 | 未开工 |
 
 ---
 

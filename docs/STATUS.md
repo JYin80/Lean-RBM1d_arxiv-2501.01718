@@ -5191,3 +5191,38 @@ T182 的 (5.77) 第 3 行之所以短一个 `A`，正是因为它把 3-loop 取�
 没有为了让 (5.135) 出来去调整任何定义。未实例化 `SumZeroDyn.Hierarchy`、未用 `Lemma510` 任何字段。
 剩下的假设全是样本侧或包络/可测/可积侧：`hKd`、`EGInputs` 的计数、`Env`/`hmeasLK`/`henvLK`、
 一圈的可积性 `hintL1`（**两个电荷都要**，比 T182 的 `hint1` 宽一点）。
+
+## ⭐⭐ T181：`Lemma514` 的矩路线打通——**六步链上最后一条 fiat 冲突消失**（`Gauss/Lemma514Moment.lean`，787 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9660** 条。
+**文件里没有任何 `SumZeroDyn.Hierarchy`、没有任何 `Lemma510` 字段**（grep 只在注释里出现），**全程只用 `0 ≤ s N`**。
+
+**端到端验收探针 `flow_sharpLmK_of_momentDuhamel` 通过**：产出喂进 `Step45.flow_sharpLmK` 的 `h514` 槽，**bare application**。
+
+### 链条上两处方法性的东西
+* **量词交换** `unifDomIcc_of_forall_stochDom`：「对每条终点时间序列都有 `≺`」⟹ `UnifDomIcc`。
+  **合法的唯一理由是 `τ,D` 排在 `∀ᶠ N` 之前、前面没有 `∃ C`**；并且证了**逆向** `forall_stochDom_of_unifDomIcc`
+  ——**两者等价，所以交换没有偷偷加强假设**。
+* `stochDom_xiLK_of_nonneg` 把 `0 < s N` 减弱成 `0 ≤ s N`（改用 `scale_pos'`）——**这就是矩路线不重新撕开 T161 那条缝的地方**。
+* T124 的网格引擎在常数控制下特化，`hζlow`/`hslow` **全免**，只剩 `hHol`。
+
+### ⚠ 负面发现：**量词交换对 `hrhs` 不适用**
+`hrhs_of_moment_inputs` 的结论是 `∃ C, ∀ᶠ N, …`，**`C` 排在 `∀ᶠ N` 前面，选择论证在那里不成立**。
+本文件因此把交换用在 `stochDom_of_momentDuhamel` 的**输出**上（此时 `C` 已被 Markov 吃掉）。
+而 `rhs514At_forall_of_moment_inputs` 又表明 **`hrhs` 侧根本不需要交换**——它本来就把 `v` 当参数收，`MomentDuhamelRhs.lean` 一字不用改。
+
+### 还短什么（精确到条，带归属）
+* **A. `H : ∀ n, MomentDuhamel.Hyp`** ——T180 产了 4/6，`momentDuhamel`/`momentDuhamelQ` 未闭合，短的正是 T187 写明的两块。
+  **归属 T187/T180 的余项。** 本单所有定理都是「从一个 `Hyp` 出发」，实例一出现就接上。
+* **B. `hHol`（本单新引入、唯一真正无主的一条）**：`u ↦ (Wℓ_uη_u)^m‖(L−K)_{u,σ,a}‖` 在高概率事件上的确定性 Hölder-γ 模。
+  现成材料是 T106 的**单个**预解式模；缺三块：(i) 传播到 `m` 个预解式的乘积；(ii) `Kval` 对 `u` 的模；(iii) `(Wℓ_uη_u)^m` 对 `u` 的模
+  （`ellHat` 显式，初等但没人证）。**该落在 `Gauss/FlowHolder.lean`。**
+* **C. `hrhs` 的输入**：`hinit`/`hFmom`/`hEEmom` **T157 已卸**（`hFmom` 由 T165 的 `hdom_of_driftInputs` 喂），只需把窗口读宽（机械）；
+  `hkerlt`/`hkerC`/`hker2lt`/`hker2C` 是 `edgeKer` 行和、纯记账、**无主**；**`hnum`（(5.92) 的数值收口）无主**。
+
+### 可满足性检查（都编译过，六条）
+`card_loopData_le`（`hcard` 不再是假设，显式 `Cv = m+1`）；量词交换的逆向；
+`rhs514At_self`（终点 `v = s` 时两个时间积分为 0，**逐字退化成 (2.68)**——六步本来就有的输入）；
+`hHol_of_window_degenerate`（**docstring 明确写了这只是相容性、不是真实估计的证据**）；逐条核过的量词序；
+以及 **`Lemma514Premises` 必须留着**——若删掉改为对所有 `(Λ,Φ)` 量化，则在 `Λ = Φ = 0` 处控制塌成 `scale_v^{−(n+2)}`，
+**假设不可满足、定理变空**。这正是今天反复撞到的那类陷阱。

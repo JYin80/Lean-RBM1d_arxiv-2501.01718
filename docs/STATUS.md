@@ -4278,7 +4278,7 @@ noncomputable def driftE (X : Sample B) (E : ℝ) : Step6.DriftTensor B :=
 合并用 `m ≥ 2 ⟹ 2m ≤ 4m²`；误差侧 `xiSum` 同时支配两项。
 
 ### 两个必须记录的发现
-1. **(5.77) 第 3 行短一个因子 `Ξ^{(L−K)}_{u,1}`** → paper-deltas #119。论文默认它 `≲ 1`（(2.68) 单圈）才丢掉，
+1. **(5.77) 第 3 行短一个因子 `Ξ^{(L−K)}_{u,1}`** → paper-deltas #121（原编 #119，撞号已改）。论文默认它 `≲ 1`（(2.68) 单圈）才丢掉，
    但**它既不是常数也不在 `xiRhs` 里，无法从另外两行推出**，故 Lean 侧显式列为假设。
 2. **⚠ `Decay.norm_couplingLen_le` 的 `hD` 假设过强，长度 0 处会炸**：它要求 `‖(L−K)_J‖ ≤ Φ·A^{−|J|}` 对**所有** `|J| < m`，
    含 `|J| = 0`；而 `L_∅ = ⟨1⟩ = L·W`、`K_∅ = 0`，于是逼出 `Φ ≥ LW`，**主项直接废掉**。
@@ -4288,3 +4288,57 @@ noncomputable def driftE (X : Sample B) (E : ℝ) : Step6.DriftTensor B :=
 ### 还剩什么
 `DriftInputs` 仍是假设而非定理——它装的是 Lemma 5.9 的衰减与 Step 3 的计数，**都不涉及漂移**，由别处产出
 （`Decay.lemma59` / Step 3）。这是下一环，不在 T165 范围内。
+
+## T167：(5.36) 接到钉死的 `E⊗E`，(5.22) 的展开补齐（`Hierarchy/EEDef.lean`，新文件 485 行，2026-09-21）
+
+`lake env lean RBM1D/Hierarchy/EEDef.lean` **exit=0**、0 sorry、0 axiom；
+`#print axioms`（跑完已删）对 11 条声明全部只含 `propext / Classical.choice / Quot.sound`。
+另改动两处纯文档：`Hierarchy/Lemma57.lean` 偏差表第 9 条（它说的「展开不在仓库里」现在过时了，已改写；
+文件重编 exit=0），和 `blueprint/src/content.tex` 新增节点 `lem:5.7c`。
+
+### 为什么开新文件
+`Lemma57.lean` 只 import `Analysis/StretchedExp` + `Loop/GLoop`，是纯确定性算术层；
+把接线写进去会让它 import `Gauss/MomentDuhamel`（整个 Gauss 栈），方向反了。
+新文件 `Hierarchy/EEDef.lean` 同时 import 两边，与 T163 的 `EGDef.lean` 同构。
+
+### ⭐ 关键发现：(5.22) 的展开**本来就在仓库里**
+`Lemma57.lean` 偏差表第 9 条写「`E⊗E ≤ W ∑_b L^{(1)}(b)` 的展开本身不在仓库里」——**是错的**。
+T74 的 `Gauss.eeEdge_eq_sum_SB` 经 T127 的 `EEBridge.eeEdge_eq_sum_gloop` 就是 (5.22)，
+`Gauss.eeTens` 又本来就是 `eeEdge` 对 `k ∈ range I.length` 的和。于是
+
+* `EEDef.glueSum` / `EEDef.eeL6`：把 `L^{(1)}(b)` 写成**定义** `∑_k ∑_{b'} ‖S^{(B)}_{bb'}‖·‖L_{glue(I,I',k,b,b')}‖`；
+* `EEDef.norm_eeTens_le_W_sum`：`‖E⊗E‖ ≤ W ∑_b L^{(1)}(b)` 是定理（三角不等式 + 一次 `Finset.sum_comm`）。
+
+### 接到钉死的对象
+`EEDef.norm_EEpath_le_W_sum` / `norm_eeField_le_W_sum` / `norm_eeFun_le_W_sum` 三条同一件事
+（`EEpath = eeField = eeFun ∘ X.H`，都是 `rfl`）。由此
+**`EEDef.ee_le_EEpath` / `ee_le_paper_EEpath` 的左端是 `‖MomentDuhamel.EEpath X E n N u ω σ c‖`**，
+`hEE`、`hL6`、`1 ≤ W` 三条假设全部卸掉（后者由 `B.W_pos`），`L^{(1)}` 不再是参数。
+`ee_le_EEpath_labels` 进一步把 `a₁ a₂` 钉成 loop 自己的前两个标号（`lab₁ c = leftArg c 0`、`lab₂ c = leftArg c 1`，
+`n = 0` 即 2-loop），于是 (5.36) 左端的归一化 `T_{u,D}(‖a₁−a₂‖)` 也不是自由选择。
+
+### 仍是假设的六条（逐条给了理由，写在文件 docstring 里）
+`h273`（(2.73) 的 `n = 6`）、`h564`（远 `b` 的显式余项 ρ）、`h42sq`（(4.2)/(4.5)+(5.31)）——都是别处的输入；
+**`h566`**（(5.65)/(5.66) 的 Cauchy–Schwarz）——要 6-loop 逐元展开，T156 只打穿了 3-loop 层，**没动**；
+**`h572`**——初等但没做；
+**`hsym`**——paper-deltas #113 ②：论文的「by symmetry」是 (5.22) 的 `k=1`/`k=2` 对称，
+不是 `k=1` 项内部的重标号，**已证不可能从 `k=1` 项推出**，本单**不尝试**。
+
+### 可满足性自检（按「先查可满足再证」的要求，已在 Lean 里证出）
+`EEDef.ee_hyp_consistent`：对任意 `X,E,N,u,ω,σ,c,a₁,a₂` 显式给出见证
+`ℓu = ℓs = 1`、`D = 0`、`ηu = (W(1+S))⁻¹`（`S = ∑_b eeL6 b`，于是 `A_u = (1+S)⁻¹`、(2.73) 预算 `A_u^{-5} = (1+S)^5 ≥ S`）、
+`J = μ = 1+S`、`ρ = S`、`Gsq` 取 (4.2) 的等号，六条假设**同时成立**。
+关键是 `D = 0` 时 `tailT` 的地板 `W^{-0} = 1`，四个 `tailT` 因子都 `≥ 1`。
+这不是论文的区制（那里 `A_u → ∞`），只用来排除「把 `L^{(1)}` 钉成具体量之后假设组自相矛盾 ⇒ 结论空洞」这一失效模式
+（T172 在 `MinorGood` 上抓到过的正是这个）。
+
+### fiat 审计
+左端每一个量都是定义：`EEpath`(T145) = `eeField`(T127) = `eeArg` = `Gauss.eeTens`（Def 5.4），
+在流自己的 `X.H N u ω` 与 `z_u` 上取值；右端 `eeL6` 也是定义；两者之间是定理不是假设。
+**陈述里没有任何结构字段**，**全程没有 `SumZeroDyn.Hierarchy` 实例**（T118 遵守）。
+调用者仍需提供的见证 `Gsq`、`μ`、`ρ` 只出现在假设里（master 形状的结论里还留 `Gsq`、`μ`，
+与 T163 `eG_le_reduced` 的 `Gm` 同性质；`ee_le_paper_EEpath` 把 `μ` 消掉了）。
+
+### 下一步
+`h566` 需要 `gloop_three_expand` 的 6 元版 + `G†E_bG` 的块结构；
+`hsym` 需要 (5.22) 的 `k=2` 项（仓库里没有），两者都可以在不改 `EEDef.lean` 的前提下单独补。

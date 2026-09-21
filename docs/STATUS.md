@@ -5924,3 +5924,28 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 **`Lemma514Moment.lean` 的接线清单是空的**：`hKb` 从来没出现在那个文件里。T192 的旧记载仍成立——`lemma514_forall_of_momentDuhamel` 的 `(K,γ)` 排在 `∀ m` 前面、要不到；`lemma514_forall_of_hHol_flow` 逐 `m` 组装已绕过。
 
 **待 T201 接线**：`hkerC_flow` / `hker2C_flow`（`Lemma514Holder.lean` 约 1240–1270 行）的 `@[deprecated]` 护栏——T203 收工时 T201 的文案还没到，按工单指示没动。
+
+## ⭐⭐ T204：不含 (2.71) 的 Theorem 2.21（`Flow/Thm221NoEL.lean`，747 行，2026-09-21）
+
+**没有造 `BoundsCore″`**：`Flow/Hypotheses.lean` 里的 `RBM.BoundsCore` **就是**「(2.71) 删掉」的那个包，`BoundsCore_of_Steps` 也已经是「不用 Step 6」的那一半。缺的只是定理和迭代——按「造轮子之前先查」直接复用。
+
+落地的：`Thm221NoEL`（收 D13 的 `Cond272Reg`）、`Thm221NoEL'`（收 `Cond272'`）、Lemmas 2.18–2.20 **去掉 (2.62)** 的重跑、(2.61)、Theorem 2.3 全条、**Theorem 2.4 的 (2.6)(2.7)**。结论**一字未改**——8 条 `rfl` 探针逐条验了 `localLaw_of_bounds hB = localLaw_of_boundsCore hB.toBoundsCore` 等，以及 `localSemicircleLaw_of_Thm221' = localSemicircleLaw_of_Thm221NoEL'`、`quantumDiffusion_of_Thm221'` 的第 1、2 个合取 = `quantumDiffusion_pm_pp_of_Thm221NoEL'` 的两项。(2.8)(2.9) 与 Theorem 2.5 仍吃 `Bounds.expect`，**没有挂到空假设上**（归 T205）。
+
+**可满足性（本单风险最高的一条）**
+* 正向见证 `boundsCore_gauss_witness` 用 T202 刚落地的 `Gauss.Dims.exampleGrow`（`L ≍ N^{1/4}`、`W ≍ N^{3/4}`），证 `BoundsCore (Gauss.sample exampleGrow) 0 0` **并且** `∀ᶠ N, N^{1/2} ≤ scale`——右端真的是 `≺ N^{−n/2}` 而不是 `≺ 1`，**不是退化的 0**。
+* 联立检查 `Band.cond272Reg_grid`：`τ′, c > 0, n₀` 先于 `E, t` 选定，网格 `u_k = min(1−W^{−kτ′}, t)` 的**每一步**都满足 `Cond272Reg`，且都在 D13 的窗口 `t ≤ 1−N^{−1+τ}` 里。**T195 挂掉的正是这类联立。**
+* `BoundsCore` 三个字段全是 `StochDom`/概率型，**没有 `∀ ω` 字段**——T164 的 `ω = 0` 缺陷在这里结构上不可能发生。
+* 诚实边界：`Thm221NoEL(')` 自身的见证 = 证明 Theorem 2.21，够不着；树里已有的 `Thm221`/`Thm221'`/`Thm221Reg` 同理，**不是本单新增的洞**。
+
+**⚠ 更正 T204 工单文本**：工单写「`Cond272Reg`（(2.72) 逐字 + `t ≤ 1 − N^{−1+τ}`）」。树里 `Flow/Thm221Bare.lean` 的实际定义是 `Cond272Reg B E s t c := Cond272 B E s t ∧ ∀ᶠ N, N^c ≤ B.scale E N (t N)`——第二项是**尺度下界**（Step 1 自带的 `hreg`），时间窗是**应用侧**产生它的来源。已按树里实际定义收口，并把「窗口 ⇒ 下界」编译成 `Band.eventually_rpow_le_scale`。
+
+**⚠ 更正 T176**：「`Bounds → Steps` 差 10 条具名假设」在 Steps 1–5 这半边现在是 **6 条**（`Step1.Hyp`、`MomentHypCut`、`hΘ`、`Lemma514`、`Eq45Flow`、`FlowEq548`）；`EntryBoundFlow`/`DiagBoundFlow` 已被 `Step1.Hyp.lemma41` 吸收（T107/T183），`MomentHyp` 已由 T197 的 `MomentHypCut` 取代。
+
+**⚠ Theorem 2.2 全仓没有组装**：`Delocalization.lean` 只有确定性内核，概率一半的输入是 `EnergyUniform.lean` 的 `localSemicircleLaw_of_Thm221N_of_z`。所以 T204 对下游「改吃 `Bounds″`」这一条**无事可做**——真正的组装归 T199。
+
+## ⚠ 无主的活（T204 交出，点名到字段级）
+
+1. **`Thm221NoEL`（`Cond272Reg` 形）产不出来，只产得出 `Thm221NoEL'`。** 这是 T186 留下的缺口：Step 2–5 **逐字**吃 `hregS = Cond272'`（`Gauss/MomentDuhamelCut.step2_cut`、`Hierarchy/Step2PP.flow_sharpLoop_glue_flowAs'`、`flow_steps45_glue_flowAs'`），而 `rpow_mul_rpow_le_of_pow_thirty` 在 `a = 1, b = 30` 处逼出 `e ≤ 0`，桥**一点增益都不给**。**Step 1 已经逐字对上**（`Step1.step1` 收的就是 `Cond272 + N^c ≤ A_t` = `Cond272Reg`）。收口要把那两个文件里的三个消费者改成吃 `Cond272Reg.hA_phi` / `hA_betaStar`。**没有单负责。**
+2. **`Flow/Consequences.lean` 的改吃 `BoundsCore`**（机械：`hB : Bounds …` → `hB : BoundsCore …`，**证明脚本一字不动**；T204 文件里已有逐字副本 + `rfl` 探针作模板）。应改的：`localLaw_of_bounds`、`loop1_of_bounds`、`partialTrace_of_bounds`、`trace_of_bounds`、`loop2_of_bounds`、`quantumDiffusion_pm/pp_of_bounds`、四条 `*_prob_of_bounds`、`localSemicircleLaw_of_Thm221` 整条，以及把 `quantumDiffusion_of_Thm221` 的**前两个合取**拆成独立定理。**不许动**：`expect_loop2_of_bounds`、`expect_quantumDiffusion_*`、`QDExpect.of_Thm221*`、`theorem2_5_of_Thm221*`（都要 (2.71)，归 T205）。**没有单负责。**
+3. **`Flow/EnergyUniform.lean` 的 `BoundsCoreN` 版**（`localSemicircleLaw_of_Thm221N*` 与 `*_of_z`）——Theorem 2.2 路线 (ii) 将来要吃的。归 T199 或其续单。
+4. **`RBM.Bounds` 在 `s > 0` 处仍无居民**（T202 查出；只有 `Flow/Iteration.lean:165 Bounds_zero`）。`BoundsCore` 这一侧已由 `boundsCore_gauss_witness` 解决，**带 `expect` 的那一侧没有**。归 T205。

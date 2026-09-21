@@ -1545,6 +1545,40 @@
   observation that $W\ge\sqrt{N/2}$ converts it into a power of $N$.
 \end{proof}
 
+\begin{theorem}[Theorem 2.21 without (2.71): the p.\,25 remark, Steps 1--5 only]\label{thm:2.21-no-el}
+  \lean{RBM.BoundsCore_zero, RBM.BoundsCore.congr, RBM.Thm221NoEL, RBM.Thm221NoEL.step, RBM.Thm221NoEL', RBM.Thm221NoEL'.step, RBM.Thm221NoEL.toThm221NoEL', RBM.Thm221NoEL.step_boundsCore, RBM.BoundsCore_of_Thm221NoEL', RBM.BoundsCore_of_Thm221NoEL, RBM.stochDom_norm_Lval_of_Thm221NoEL', RBM.Band.scale_zero_ge_rpow, RBM.Band.cond272Reg_grid, RBM.Band.eventually_rpow_le_scale, RBM.boundsCore_hyp_consistent, RBM.boundsCore_gauss_witness, RBM.BoundsCore_of_flow, RBM.boundsCore_step_of_flow, RBM.boundsCore_step_of_inputs, RBM.thm221NoEL'_of_inputs, RBM.SpecSeq.boundsCore, RBM.localLaw_of_boundsCore, RBM.loop1_of_boundsCore, RBM.partialTrace_of_boundsCore, RBM.loop2_of_boundsCore, RBM.quantumDiffusion_pm_of_boundsCore, RBM.quantumDiffusion_pp_of_boundsCore, RBM.trace_of_boundsCore, RBM.localSemicircleLaw_of_Thm221NoEL', RBM.quantumDiffusion_pm_pp_of_Thm221NoEL'}
+  \leanok\uses{thm:thm221-gain, thm:2.18-from-2.21, thm:2.3-2.4, def:flow-hypotheses, def:gauss-model}
+  The paper remarks on p.\,25, just after Step 6, that (2.71) is not needed for Steps 1--5, so
+  Theorem 2.21 holds with (2.71) removed from both the assumption and the statement.  In Lean this
+  is \texttt{Thm221NoEL} over the existing \texttt{BoundsCore} -- the three-field package already in
+  \texttt{Flow/Hypotheses.lean}, which is exactly \texttt{Bounds} with the \texttt{expect} field
+  dropped; no primed copy of the package was needed.  The remark is a claim about the \emph{proof},
+  so \texttt{Thm221NoEL} is an independent structure and \emph{not} comparable with
+  \texttt{Thm221}: the latter's step demands (2.71) at time $s$, which \texttt{BoundsCore} does not
+  carry (paper-deltas \#T204a).  Lemmas 2.18--2.20 and (2.61) are re-run over \texttt{BoundsCore}
+  with (2.62) dropped, and Theorems 2.3 and 2.4's (2.6)(2.7) are restated on it, their conclusions
+  word for word unchanged, checked by \texttt{rfl} probes against the \texttt{Bounds} versions.
+  Theorem 2.4's (2.8)(2.9) and Theorem 2.5 still need (2.71) and are deliberately left on
+  \texttt{Bounds} rather than hung on an empty hypothesis (paper-deltas \#T204b).
+
+  \emph{What the assembly can actually produce}: \texttt{Thm221NoEL'}, whose regularity condition is
+  the steps' own \texttt{Cond272'}.  \texttt{Thm221NoEL}, which takes D13's \texttt{Cond272Reg}, is
+  not yet produced: Step 1 already matches it word for word, but Steps 2--5 consume
+  \texttt{Cond272'} literally and the bridge gives no gain at all at $(a,b)=(1,30)$.  The
+  satisfiability witness is explicit and non-degenerate: \texttt{boundsCore\_gauss\_witness} builds
+  \texttt{BoundsCore} for the Gaussian model at the growing dimensions
+  ($L\asymp N^{1/4}$, $W\asymp N^{3/4}$) and proves the right-hand side really is $\prec N^{-n/2}$,
+  not $\prec1$; \texttt{cond272Reg\_grid} shows the paper's own time grid satisfies
+  \texttt{Cond272Reg} at every step inside D13's window, the joint constraint on which T195's
+  short-window condition failed.
+\end{theorem}
+\begin{proof}\leanok
+  Nothing in Steps 1--5 reads the \texttt{expect} field, so the existing producers compose over the
+  smaller package unchanged; the iteration's proof script is copied verbatim, and the downstream
+  restatements are the same terms with a weaker hypothesis, which is what the \texttt{rfl} probes
+  check.
+\end{proof}
+
 \begin{theorem}[The GUE phase, \S7.2: (7.25)--(7.47)]\label{thm:7.2-gue}
   \lean{RBM.GUEPhase.SBgue, RBM.GUEPhase.SBTilde_eq_add, RBM.GUEPhase.Stilde, RBM.GUEPhase.zetaU, RBM.GUEPhase.half_le_zetaU, RBM.GUEPhase.eq730, RBM.GUEPhase.ellHat_eq_L, RBM.GUEPhase.scale_eq_of_ell_eq_L, RBM.GUEPhase.primBilGUE, RBM.GUEPhase.primRhsGUE, RBM.GUEPhase.norm_primBilGUE_le, RBM.GUEPhase.norm_primRhsGUE_le, RBM.GUEPhase.eq742_of, RBM.GUEPhase.eq744_of, RBM.GUEPhase.continuity_argument, RBM.GUEPhase.K_bootstrap, RBM.GUEPhase.eq736, RBM.GUEPhase.eq736_detDom, RBM.GUEPhase.eq745_of_terms, RBM.GUEPhase.eq727, RBM.GUEPhase.eq728, RBM.GUEPhase.eq728_of_eq745, RBM.GUEPhase.kTwoGUE, RBM.GUEPhase.kTwoGUE_self, RBM.GUEPhase.hasDerivAt_kTwoGUE, RBM.GUEPhase.kTwoGUE_eq_ThetaTilde, RBM.GUEPhase.Eq747Inputs, RBM.GUEPhase.eq747_of_inputs, RBM.GUEPhase.que_flow_of_inputs}
   \leanok\uses{lem:zero-mode, def:flow-hypotheses, thm:2.5-2.6}

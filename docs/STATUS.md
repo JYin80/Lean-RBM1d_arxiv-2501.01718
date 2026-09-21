@@ -2531,3 +2531,20 @@ T75 的替代关系是：`Hyp.cont`（高概率）→ `MomentHyp.cont`（逐 ω�
 `hregS` 是全程唯一的正则性假设（`Cond272` 内部由 `Step2.cond272_of_strict` 导出），未引入 `hc`/`hreg`。
 
 **剩余**：`AprioriDecayAll`（**阻塞**，见上）；`Eq45Flow`（(4.5) 对 `u ∈ [s,t]` 一致——(4.5) 本身已证（`avg_bound_stochDom`），只差 p.51 的 `N^{-C}` 网连续性论证，与 `Step1.Lemma41Flow` 同一形状，**是形式化产物而非数学缺口**）。paper-deltas #72、#73。
+
+### `RBM1D/Gauss/Step1Hyp.lean` — T116：`cont` 已卸，`lift` 归约（Claude Code 并行 agent，2026-09-21）
+
+## 第 0 步结论：**`lift` 不能像 T108 的障碍那样绕开**
+
+T108 的障碍之所以消失，是因为 `Lemma41Flow` 是两个**本已时间一致**的支配之间的传递，时间可以搭在指标集里。`NetLift` 结构上不同，差别在 `RBM.badSet`（`Defs/StochDom.lean:71`）：
+**`StochDom` 把对指标集的并放在概率**里**。** 于是 `NetLift` 的假设只控制**每个 N 一个时刻**的 `P(A_{u(N)})`，而结论要 `P(⋃_{u ∈ [s_N,t_N]} A_u)`——不可数并。
+**其中恰好一半是免费的**，已抽成定理：「每个 N 选一个时刻」本身就是一个序列，故失败界对**任意 N-依赖的选择** `θ(N)` 同时成立（`eventually_forall_measure_slice_le`，纯 `by_contra` + `Classical.choice`，不用网也不用连续性）。不免费的是把并放进 `P` 里——那要网。
+**第二个独立发现**：即便有网，`lift` 对真实的族也不闭合——`Step1.loopInd` 带指示函数 `1(‖G_u‖_max ≤ 2)`，**它对 u 不连续**，网点上只能得到 `≤ 2 + o(1)`。（`Step1.lean` 的偏差清单已记过这一点。）故网引擎按**放宽形式**建：`netLift_of_relaxed`。
+
+**`cont` 无条件卸掉**：`cont_gauss`，事件取全空间——`u ↦ ‖G_u − m‖_max` 对**每个样本**在 `[s_N,t_N]` 上连续，因为 `‖G_u − G_{u'}‖ ≤ η_t^{−2}(‖X‖+1)|u−u'|^{1/2}`。
+假设只有 `|E| < 2`、`0 ≤ s N`、`t N < 1`；**不需要 `‖X‖ ≺ 1`**（常数是随机的但逐路径有限）。
+**完整的 `Step1.Hyp` 现在存在**（已编译）：`step1Hyp_gauss` = `scaling`(T111) + `lemma41`(T108) + `cont`(新) + `lift`（唯一的随机层输入），外带 T107 的 `EntryBoundFlow`/`DiagBoundFlow`（仍无生产者）。
+
+**`lift` 要闭合还缺四样**（按性质排）：(1) `‖L_{u,σ,a}‖` 对 u 的连续模——`gloop` 的望远镜估计，`Gauss/Envelope.lean` 只有包络与对**固定**核的差，都不是 u 的模；
+(2) `Step1.aprioriRhs` 的缓变 `ζ(u') ≤ 2ζ(u)`，在指数 `n−1` 处要求网距小于 `c_n(1−t_N)`，即一条区制假设（`Φ` 层的计算已有：`step1Phi_eq` + `Lemma41FlowGauss.lean` 的缓变一节）；
+(3) 多项式下界 `N^{−B} ≤ ζ`；(4) **Lemma 5.1 在阈值 `2 + o(1)` 处的版本——这是真正新的数学输入，且属 `Hierarchy/Step45.lean` 而非 `Gauss/`**。paper-deltas #74。

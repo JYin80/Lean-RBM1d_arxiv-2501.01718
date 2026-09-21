@@ -1985,6 +1985,22 @@
   gain in \texttt{hregS} supplies $(\eta_s/\eta_u)^4\le(W\ell_u\eta_u)^{1/4}$.
 \end{proof}
 
+\begin{lemma}[Step 1's continuity event, and the net lift reduced]\label{lem:step1hyp}
+  \lean{RBM.Gauss.continuousOn_of_sqrt_modulus, RBM.Gauss.norm_green_flow_sub_le_sqrt, RBM.Gauss.abs_llMax_sub_le_sqrt, RBM.Gauss.continuousOn_llMax, RBM.Gauss.highProb_norm_Xmat_le, RBM.Gauss.cont_gauss, RBM.Gauss.eventually_forall_measure_slice_le, RBM.Gauss.stochDom_reindex_of_forall_seq, RBM.Gauss.netTimeIcc, RBM.Gauss.stochDom_of_forall_seq_relaxed, RBM.Gauss.netLift_of_modulus_hp, RBM.Gauss.netLift_of_relaxed, RBM.Gauss.step1Hyp_gauss}
+  \leanok\uses{thm:step1, lem:holder-hp, thm:trace-moment, lem:disteq}
+  $u\mapsto\|G_u-m\|_{\max}$ is continuous on $[s_N,t_N]$ for \emph{every} sample, since
+  $\|G_u-G_{u'}\|\le\eta_t^{-2}(\|X\|+1)|u-u'|^{1/2}$. The net lift is not bypassable: \texttt{StochDom}
+  puts the union over the index set inside the probability, so the hypothesis controls one time per
+  $N$ while the conclusion needs an uncountable union. Half of that is free
+  (\texttt{eventually\_forall\_measure\_slice\_le}); the rest needs the net, in the relaxed form the
+  indicator forces.
+\end{lemma}
+\begin{proof}\leanok
+  A choice of one time per $N$ is a sequence, so the bound holds for every $N$-dependent choice by
+  \texttt{by\_contra} plus choice; the indicator $1(\|G_u\|_{\max}\le2)$ has no modulus in $u$, so
+  the net points must carry a raised threshold.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

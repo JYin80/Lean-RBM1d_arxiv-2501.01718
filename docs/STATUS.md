@@ -3858,3 +3858,59 @@ T149 探针逐字同一条链现在只收 `hs0 : ∀ N, 0 ≤ s N`，**Step 2 �
   在那之前扫这 22 条没有可观测收益。
 * `Propagator/Edges.lean` 的 `norm_Theta_long_edge_le`/`sum_norm_Theta_long_edge_le`（(3.35)/(3.36)）同样只对 `0 < t` 证过；
   前者可直接用带撇版接，后者还要给 `sum_norm_Theta_row_of_real` 配 `t = 0` 支。不在本单清单内。
+
+## ⚠⚠ T164 第 0 步：`MinorGood'` 按字面**是假命题**，`MinorDiffGain` 整支悬空（只读审计，2026-09-21）
+
+### 反例（三条支撑引理已编译验证）
+`Ω d := Coord d → ℝ`，所以 `ω = fun _ => 0` 是合法样本点。取 `E = 0`：
+`Hflow d N u 0 = 0` ⟹ `G^{(S)}_{aa} = −z_u⁻¹`，而 `z_u = (1−u)i`、`m_E = i`，故
+**`‖G^{(S)}_{aa} − m‖ = u/(1−u)`，与 `N` 无关**。
+`MinorGood'` 的 `diag_sub_le` 要它 `≤ Ψ`，而链条自带 `hΨhalf : 2Ψ ≤ 1`，于是 **`u ≤ 1/3`**。
+**只要 `u > 1/3` 这条假设就是假的**——而 Theorem 2.21 Step 2 的区制正是 `t > s ≥ 1/2`、`t → 1`。
+一般 `E`：`−1/z_u = m_E` 当且仅当 `u = 0`，**对任何 `u > 0` 都有一个不随 `N` 变小的固定缺口**。
+
+**不是零测例外**：`green` 在 `ω` 上连续、level-`N` 的 `G` 只依赖有限多个坐标，`{|ω_c| ≤ ε}` 有正测度，
+所以把 `∀ ω` 换成 `∀ᵐ ω` **同样假**。
+**不带撇的 `MinorGood` 一样不可满足**（`inv_le` 要 `|G^{(S)}_{aa}| ≥ 1/2`，取 `X = c·I`、`c` 大即破），
+所以 **T113 的 `η⁻¹` 包络版 `integral_prod_applyOps_minorDiff_le` 也站在假假设上**——
+这不只是 T142 锐版本的问题，**是整个 `MinorDiffGain` 分支的问题**。
+
+论文的对应做法是 **(4.2)(4.3) 都带 `1_Ω` 且是 `≺`**，从不声称逐点形式。
+
+### 论文里根本没有 `|S| ≥ 2` 的小行估计
+全文 grep：`G^{(i)}` 的每一处都是**单行**，且每一处都立刻用 **(4.9)** 把上标消掉。
+论文只提供①层级 0 的界 (4.2)(4.3)，②层级抬升**一步**的恒等式 (4.9)。
+迭代到 `|S| = m` 是**我们的构造**（论文允许，但没写，常数与条件得自己定，应记 paper-delta）。
+
+### 正面发现：层级 0 已经完全就位，抬升是纯确定性的
+* **`det` 是白送的定理**（探针编译过）：`isUnit_det_sub_smul_one` + `(Hflow …).submatrix` 的 Hermitian 性，
+  **不需要任何好事件、任何层级限制**。今天它却是 `MinorGood` 的一个 `hdet` 参数往上传，四处签名可以直接删掉。
+* **层级 0 恰好就是 `GoodEvent`**：`norm_offdiag_le`/`norm_diag_sub_le` 逐字就是 `off_le`/`diag_sub_le` 在 `S = ∅` 的实例，
+  而 `HighProb (P d) (goodSetFlow …)` 是**已证定理** `highProb_goodSetFlow_of_localLaw`——**正是论文 (4.1) 的 `Ω(t,c)`**。
+* **抬升的归纳纯代数、不需要新概率**：`gEnt_insert`（`MinorDiffGain.lean:537`）已经是 (4.9) 在一般层级 `S` 上的恒等式；
+  递推 `Ψ_{j+1} ≤ Ψ_j + 2Ψ_j²`，在 `Ψ ≤ 1/4`、`8MΨ ≤ 1` 下给 `Ψ_j ≤ 2Ψ`（`j ≤ M`），`inv_le` 随归纳一起走。
+* `|S| > M` 不可能（`Ψ_j ≲ 2^jΨ`）**也不需要**：实际到达的层级 `card ≤ 字长 ≤ M = 2p`。
+  障碍纯粹是 `DiffBd`（`MinorDiffGain.lean:243`）**对 `S` 无界量化**。
+* **穿过 `E_k` 的工具仓库已经有了**：`Gauss.norm_condRow_le_split`（`CondDom.lean:164`）与
+  `meas_measure_rowSlice_ge`（`:147`，Fubini + Markov，把无条件的 `P(Bad)` 换成**行条件概率**的小性），
+  `CondStableFlow.lean:285–320` 已是现成用例。**这比无条件高概率严格强，而这一步仓库做过。**
+
+### 循环性：绿灯
+`eq45Flow_of_localLaw_gain'` **本来就同时带着** `hll` 与 `hΩ`，生产者消费同一个假设是**删假设、不是加假设**。
+但为对齐论文的逻辑顺序，生产者应消费 `goodSetFlow`（= `Ω(t,c)`，阈值粗）而不是 (2.75) 本身。
+**尺度记账**：`highProb_goodSetFlow_of_localLaw` 要 `N^τΨ ≤ δ` 的余量，所以高概率拿到的是 `GoodEvent … (N^τΨ)`；
+产出的 Ψ 是 `Ψ' = N^τΨ`，下游 `hΨW`/`hΨlow`/`hΨhalf`/`hΨW'` 都是 τ-柔性的，自洽——**每次应用损一个 `N^τ`，正是 `≺` 允许的**。
+
+### 建议的后续（三张单 + 两条顺手活）——**待 Jun / Cowork 定，本节不开单**
+* **L1**（纯确定性，新文件，今天就能绿）：`MinorGoodLe`（带层级预算 `S.card ≤ M`）+
+  `minorGoodLe_of_goodEvent : GoodEvent … Ψ ⟹ MinorGoodLe … (2Ψ) M`。依赖方向 `Green/EntryBound → FlucIterHigh → 新文件`，
+  **`MinorDiffGain.lean` 一行不动**。
+* **L2**（机械，约 500 行，需独占 `MinorDiffGain.lean`）：给 `DiffBd` 加层级预算，消费点换成 `MinorGoodLe`。
+* **L3**（真正的墙）：把 `MinorDiffGain` 事件条件化——`hgood : ∀ ω ∉ Bad, …` 加 `hslice`（行条件概率）。
+  ⚠ **`MinorDiffGain.lean` 文件头「`MinorDiffGain` 里已经没有条件期望，所以拆积分是合法的」这句话不对**：
+  `flucDiagSet` 就是 `qRow`，`applyOps` 还会再叠 `E_κ`。正确工具是 `norm_condRow_le_split`。
+* 顺手一：把 `det` 从假设变成定理，删四处签名。
+* 顺手二：**(4.2)/(4.3) 在 Lean 里标反了**——`MinorDiffGain.lean:471` 把 `off_le` 标成 (4.3)、`:517` 把 `diag_sub_le` 标成 (4.2)，
+  论文里 (4.2) 是一般 entry、(4.3) 是对角 centered，正好相反；`paper-deltas.md` #103 与 `content.tex:1935` 一路沿用了反标。
+  纯文档层面，不影响证明。另：`diag_ne`/`inv_le` 被标成 (4.1)，但论文的 (4.1) 是**事件 `Ω(t,c)` 的定义**，
+  `|G_ii| = O(1)` 是它的推论、论文没编号。

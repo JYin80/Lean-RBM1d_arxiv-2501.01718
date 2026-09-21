@@ -268,7 +268,7 @@
 | T112 | **`≺` 在条件期望下的保持** + T83 剩下的两个输入 `hprod`/`hminor`。**规格见下文「T112 规格」** | `Gauss/CondDom.lean`（新建） | Claude Code | **完成**（通用工具 `stochDom_condRow_of_envelope`；`hIBP` 已在冻结签名下卸掉并编译验证；**发现 `hminor` 对角处为假**，见 STATUS） |
 | T113 | **`MinorDiffGain` (m ≥ 3)**：迭代小行差的大小，(4.12) 的最后一条输入。承 T110（`m ≤ 2` 已无条件，且已证增益是**乘性且由恒等式给出**）。**纯 Green 函数 + 局部律，概率那一半已卸干净** | `Gauss/MinorDiffGain.lean`（新建） | Claude Code | **完成（有界字长版）**（每阶估计已证，m=3 体检通过；`MinorDiffGain` 原定义因对 m 一致性不可能成立，见 STATUS） |
 | T114 | **Theorem 2.21 的总装**：由六步产出 `Steps`，再经已有的 `Bounds_of_Steps` 得 `Thm221`。**规格见下文「T114 规格」。等 T58** | `Flow/Thm221.lean`（新建） | Claude Code | 第 1 步**完成**（八字段全部逐字对上，对账表见 STATUS；暴露 `0 ≤ s` vs `0 < s` 的不匹配与三处 T58 消费点）；Lean 总装仍等 T58 |
-| T115 | **⭐⭐ 总装的确定性缺口**：`h0`/`h12`/`hs1`/`hs2` 全树无生产者，但按文档都可由 Steps 1–2 的产出推出。**纯确定性记账，不依赖 T58，现在就能开工**。规格见下文「T115 规格」 | `Hierarchy/StepGlue.lean`（新建） | Claude Code | 进行中 |
+| T115 | **⭐⭐ 总装的确定性缺口**：`h0`/`h12`/`hs1`/`hs2` 全树无生产者，但按文档都可由 Steps 1–2 的产出推出。**纯确定性记账，不依赖 T58，现在就能开工**。规格见下文「T115 规格」 | `Hierarchy/StepGlue.lean`（新建） | Claude Code | **完成（条件）**（`h0`、`h12`@m=1 无条件；`h12`@m=2 与 `hs1`/`hs2` 条件于 `AprioriDecayAll`/`Eq45Flow`。**发现论文真缺口：(2.76) 只有 `(+,−)`，`(+,+)` 无来源**，见 STATUS） |
 | T116 | **`Step1.Hyp` 的 `lift` 与 `cont`**：`NetLift`（把固定时刻的 `≺` 提升到时间网）与 `cont` 的高概率事件。注意 T108 已证「总装不需要时间网」，**先查 `lift` 是不是也可以整条绕开**（第 0 步） | `Gauss/Step1Hyp.lean`（新建） | 待认领 | 未开工 |
 | T117 | **Step 6 的七条随机层假设**在高斯实现下逐条落地（T114 勘察列为总装路上的一批）。**第 0 步：先把七条逐条列进 STATUS，标明哪几条已由现有定理供给**，再决定要不要拆单 | `Gauss/Step6Hyp.lean`（新建） | 待认领 | 未开工 |
 | T118 | **`SumZeroDyn.Lemma510` / `LKDecay` 与 T59 的形状不匹配**（`SumZeroDyn.lean:62` 自己记了「对不上」）。**第 0 步：说清楚是哪一侧该改**，不要两边硬凑；结论报 Cowork 裁 | `Hierarchy/SumZeroDyn.lean` 侧或新文件 | 待认领 | 未开工 |

@@ -2505,3 +2505,29 @@ T75 的替代关系是：`Hyp.cont`（高概率）→ `MomentHyp.cont`（逐 ω�
 `DecayComplex.lean` 的 `norm_Theta_apply_le_complex`/`_le_exists` 目前经 `Poisson.lean`+`Contour.lean` 到达复 (2.52)，常数是 `12π²/(1−e^{−c₀})+…`；
 换成 `norm_rho_pow_le_exp` 可得同样结论、常数初等、依赖锥短得多（**Poisson 路线并不浪费——`Symbol.lean` 的 Fourier 形式 (3.48) 仍然要用——只是 (2.52) 不必依赖它**）。
 `Decay.lean:577` 的 `norm_Theta_apply_le_of_real` 里内联重证的 `step3` 现在就是 `norm_rho_pow_le_exp`；`DiffComplex.lean` 的 `ellHat_mul_sqrt_le` 开头那段手工放缩就是 `sqrt_norm_one_sub_le_three_mul`。paper-deltas #71。
+
+### `RBM1D/Hierarchy/StepGlue.lean` — T115：四条确定性缺口（Claude Code 并行 agent，2026-09-21）
+
+## ⚠⚠ 第 0 步结论：**`m = 2` 的四电荷缺口是真的，而且缺在论文里，不在形式化里**（agent 查了 PDF 原文）
+
+(5.76)（p.64）把 `Ξ^{(L−K)}_{t,m}` 定义成对**所有** `σ` 取 max；(2.76)（p.24）逐字写「`σ = (+,−)`」，§5.3（p.56）开篇也说「只看 `(+,−)`，本小节略去下标 σ」；
+**p.70 却断言「由 (2.76)，`S(m,l)` 对任意 `l` 与 `m ≤ 2` 成立」**。`RBM.Steps.aprioriDecay` 与论文完全一致，所以缺的不是形式化。
+四个电荷的来源：`(+,−)` 免费（`aprioriDecay_pm`）；`(−,+)` 由迹的循环性（已有的 `gloop_rotate`）归约；`(−,−)` 由共轭归约到 `(+,+)`；**`(+,+)` 在 Steps 1–2 里没有任何来源**。
+**而且补不出来**：`S(2,l)` 在大 `l` 处要 `Ξ^{(L−K)}_{u,2} ≺ (Wℓ_sη_s)^{1/2}`，而 (2.73)+(2.59) 只给 `≺ R·A_u`、(2.75) 只给 `≺ A_u`——**都差整整一个 `A_u`**，正是 §5.3 单独硬论证的那个因子。
+缺的输入已具名为 **`def RBM.StepGlue.AprioriDecayAll`**（四个电荷的版本，`(+,−)` 那半就在旁边证好），**没有被默默假设**。
+**旁证**：Lemma 5.14 的证明（p.68）把 (5.96) 乃至整个 Step 3 的机器限制在**非常值** σ（「存在 k 使 σₖ = σₖ₊₁，即一对相反电荷」），**常值 σ 没有这样的对**——常值电荷在 §5 的**两处独立地**未被处理。**这需要 Jun 判断是补 §5.3 的论证还是改论文陈述。**
+
+## 四条的状态
+
+| | 状态 | 产出 |
+|---|---|---|
+| **`h0`** | **无条件证出** | `flow_S_zero`：由 (2.73)+(2.59)（经 `Step3.exists_norm_Kval_le`）。(2.73) 本身是 `max_{σ,a}` 界，故**覆盖全部电荷** |
+| **`h12`** | `m=1` **无条件**，`m=2` 条件于 `AprioriDecayAll` | `flow_S_one`（**只用 (2.75)，不需要 (2.76)**）、`flow_S_two`、`flow_S_le_two` |
+| **`hs2`** | 条件于 `AprioriDecayAll` + `hregS` | `flow_hs2`（经新证的 `eventually_R4_le_rpow_quarter`） |
+| **`hs1`** | 条件于 `Eq45Flow` | `flow_hs1`：`Eq45Flow` + `Steps.sharpLoop 2`（(2.77) 逐字喂入） |
+
+**编译验证（不是读签名）**：`flow_sharpLoop_glue` 与 `flow_steps45_glue` 把上面四条塞进 `Step3.flow_sharpLoop` 与 `Step45.flow_steps45` 的真实槽位，
+**无强制转换、无 `convert`、无 `precomp_param`**，结论恰是 `Steps.sharpLoop`/`sharpLmK`/`sharpDecay` 的形状。两条已从 `example` 提升为文件里的定理。
+`hregS` 是全程唯一的正则性假设（`Cond272` 内部由 `Step2.cond272_of_strict` 导出），未引入 `hc`/`hreg`。
+
+**剩余**：`AprioriDecayAll`（**阻塞**，见上）；`Eq45Flow`（(4.5) 对 `u ∈ [s,t]` 一致——(4.5) 本身已证（`avg_bound_stochDom`），只差 p.51 的 `N^{-C}` 网连续性论证，与 `Step1.Lemma41Flow` 同一形状，**是形式化产物而非数学缺口**）。paper-deltas #72、#73。

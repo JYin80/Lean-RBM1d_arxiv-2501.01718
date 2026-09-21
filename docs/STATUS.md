@@ -3914,3 +3914,34 @@ T149 探针逐字同一条链现在只收 `hs0 : ∀ N, 0 ≤ s N`，**Step 2 �
   论文里 (4.2) 是一般 entry、(4.3) 是对角 centered，正好相反；`paper-deltas.md` #103 与 `content.tex:1935` 一路沿用了反标。
   纯文档层面，不影响证明。另：`diag_ne`/`inv_le` 被标成 (4.1)，但论文的 (4.1) 是**事件 `Ω(t,c)` 的定义**，
   `|G_ii| = O(1)` 是它的推论、论文没编号。
+
+## ⭐ T163：(5.35) 的 fiat 洞堵上了——`E^{(G̃)}` 是定义，`F` 由恒等式钉死（`Hierarchy/EGDef.lean`，734 行，2026-09-21）
+
+`lake build RBM1D` exit=0，公理审计 **8846** 条。
+
+**1. 定义**：`EGDef.eGpm` 逐字抄 p.59 (5.51)，写成 `Gsig`/`Eblk`/`SB`/`gloop` 的显式表达式，**是 `def`、不是结构字段**；
+`eGpm_eq_eGterm` 证明它逐字等于 (2.47) 的 `Gauss.eGterm`——也就是 `generator_add_zMotion_gauss` 放进漂移里的那个 `Ẽ`。
+
+**2. 恒等式，逐项对账，没有第三项**（`F_eq_eGpm_add_quadGlue`）：
+```
+H.F N u M ![true,false] ![a₁,a₂] = eGpm … + primBil … (gloop − Kval) …
+```
+即 **(5.51) 的 `E^{(G̃)}` + (5.49) 的 `E^{((L−K)×(L−K))}`**，`H.F` 由 `Hyp.drift` 钉死（`Hyp.F_unique`）。
+「有没有别的项」是**证出来的否**：`couplingLen_two_of_len_two` 表明长度 2 时唯一的切割是 `(k,l) = (1,2)`、
+两个子 loop 长度都是 2，故整个耦合就等于它的 `l_K = 2` 分量，**`∑_{l_K>2}` 是空和**；再由 (5.19) 该分量 `= Θ_{u,σ}∘(L−K)`，
+而那正是 `Hyp.drift` 左端已有的 `SumZeroDyn.genS`（桥 `genS_eq_thetaGenLoop`）。
+
+途中补上两块**原本缺失的胶水**（T132b 会直接用上）：
+* `genLK_eq_split`：`MomentDuhamel.genLK`（对**裸** `gloop` 求矩阵二阶导）`= eGterm 0 + primRhs(gloop)`。
+  此前仓库只有 `loopIto_second_frozen`，它是对 `loopObs`（预合成 Hermitian 投影 `hermCLM`）说的，**两者不是同一个函数**。
+  桥是新证的通用引理 `fderiv2_comp_clm`（CLM `T` 固定基点与方向时 `∂²(Ψ∘T) = ∂²Ψ`）+ `contDiffAt_gloop_matrix` + `coordD2_sub_const`。
+* `hasDerivAt_Kval_two`：`B.Kval` 在 2-loop 上满足 (2.48)。
+
+**3. (5.52) 过了**：`norm_eGpm_le`（`S^{(B)}` 列和为 1）+ `eGpm_le_reduced`——**(5.35) 形状 2 直接作用在 `‖eGpm …‖` 上**。
+
+**4. fiat 审计**：(5.35) 左端每个量要么是**定义**（`eGpm`、`primBil`、`mSigma`），要么是**被恒等式钉死**（`H.F`），
+**没有一个可自由赋值的结构字段**，**全程没有 `SumZeroDyn.Hierarchy` 的实例**（T118 遵守）。
+值得记一笔的非洞项：`Gm` 是继承自 `eG_le_reduced` 的辅助控制函数，只出现在假设里、**不出现在结论**，是调用者必须提供的见证。
+
+**两条 paper-delta**：#114（(5.51) 的两个下标次序印反了，实际是 `(a₂,b₂,a₁)`；同一条共轭关系正是「`+ c.c.`」的严格含义）、
+#115（`+ c.c.` 的那个 2 在锐不等式里要显式安置为 `hκ : 2κ ≤ ℓ_u/ℓ_s`）。

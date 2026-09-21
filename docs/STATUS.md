@@ -3062,3 +3062,13 @@ T133 的常数**不能直接复用**（`v`-导数是 `D_M L[∂_v H_v]`，而 `�
 已证的是更正后的版本 `couplingLen_two_eq_thetaGenLoop`（配 `thetaGenLoop`），并附 `thetaGenLoop_three` 作指标自检——**逐字复现 Example 2.16 的三项展开**。
 **`RBM.ThetaOp` 未改**：19 条签名经过它，属冻结接口，该由 Cowork 决定。**而且这个疏漏是良性的**：`sum_Theta_mul_SB_row` 表明 `S^(B)` 行随机，故 `sum_ThetaOp_row`、`SumZero_ThetaOp` 与所有 ℓ^∞ 界**原样成立**，**只有恒等式 (5.19) 本身不成立**。
 顺带把 STATUS 里一直挂着的 `LoopIdx ↔ LoopArg` 桥补上了（`thetaGenLoop_ofFn`、`set_ofFn_eq_ofFn_update`）。
+
+## Cowork 裁定：(5.16) 漏 `S^(B)`（T140，paper-deltas #106/#107；2026-09-21 07:35）
+
+**核实**：p.53 (5.16) 写 `(Θ_{t,σ}∘A)_a = Σ_i Σ_{b_i} [m_i m_{i+1}/(1 − t m_i m_{i+1} S^(B))]_{a_i b_i} A_{a(i)}`；而 (5.18) 对 `t` 求导给出生成元 `ξ Θ_{tξ} S^(B)`，
+Example 2.16（p.20–21）的核也写作 `m₁m₂(Θ_{tm₁m₂}·S^(B))`。**agent 是对的：(5.16) 漏了右乘的 `S^(B)`，是笔误**，论文其余处都用对了。
+**处理**：
+* **论文**：按「小错误可自行修改」修正 (5.16)，p.53 补一个 `S^(B)`，零陈述改动——记为论文改动预算第 7 条。
+* **Lean**：`RBM.ThetaOp`（冻结，5 个文件引用）**不改**；其 docstring 由下一张碰到它的单补一句「按字面转写 (5.16)，缺 `S^(B)`；生成元请用 `SumZeroDyn.genS` / `thetaGenLoop`」。
+  既有结论不受影响（`sum_Theta_mul_SB_row`：`S^(B)` 行随机，ℓ^∞ 界与 sum-zero 原样成立），且 `SumZeroDyn.genS` 与 T132a 的 `drift` 字段**早已用的是带 `S^(B)` 的正确核**。
+

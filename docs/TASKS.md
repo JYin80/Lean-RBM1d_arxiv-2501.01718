@@ -1,6 +1,6 @@
 # 任务队列
 
-> ## ⭐⭐⭐ 当前优先级：T132（第 0 步）‖ T133 ‖ T134 > T126 > T127 > T128 > T130 > T129 > T131 > T58（2026-09-21，Cowork；T122–T125 已完成）
+> ## ⭐⭐⭐ 当前优先级：T132 ‖ T133 ‖ T134 > T137 > T136 > T135 > T138 > T58（2026-09-21，Cowork；T122–T131 已完成或部分完成）
 >
 > **T132 是随机层真正剩下的那堵墙**（T74/T76 判定逐路径 `duhamel`/`bdg` 在 `√u·X` 下不可卸，之后没人接手）。规格见下文「T132 规格」。T133、T134 是它的两块前置零件，可并行。
 >
@@ -299,6 +299,10 @@
 | T132 | **⭐⭐⭐ 矩 Duhamel**：`Φ(u,H) = (U_{u,t}∘(L−K)(H,z_u))_a`，对 `|Φ|^{2p}` 用**带显式时间的生成元恒等式**（只依赖一时刻律，故与模型无关）+ T72 的 QV 支点 ⟹ `‖(L−K)_t‖_{2p} ≤ ‖U(L−K)_s‖_{2p} + 2∫‖U∘F‖_{2p} + (C∫‖(U⊗U)∘(E⊗E)‖_p)^{1/2}`，即 (5.20)+(5.24) 的合体。替代全部 `Hierarchy.duhamel/bdg` 消费者（带撇变体）。**第 0 步只交消费者清单 + 接口草案，Cowork 审过再开工** | `Gauss/MomentDuhamel.lean`（新建） | Claude Code | 进行中 |
 | T133 | **loop 观测量的 `C²` 界**（T76 `TestFun` 缺口）：`L_{σ,a}` 与 `(U∘(L−K))_a` 对 `H` 为 `C²`，一二阶导有确定性 `η` 幂界。T132 的前置 | `Gauss/LoopC2.lean`（新建） | Claude Code | 进行中 |
 | T134 | **逐点漂移恒等式 + 动 `z_u`**（T76 `LoopIto` 与未做项）：`(∂_u + 𝓛)(L−K) = Θ∘(L−K) + F` 逐点成立；联合可微走 `ContDiff.comp`，绕开「偏导连续 ⟹ 可微」。T132 的前置 | `Gauss/LoopIto.lean`（新建） | Claude Code | 进行中 |
+| T135 | **`≺` 的可加余量吸收引理**（T127 余项）：界形如 `N^τ·Φ + m·W·L·N^{−D}` ⟹ `≺ Φ`，前提是控制 `Φ` 有**多项式下界** `N^{−B} ≤ Φ`。放 `Defs/StochDom.lean`（通用，**先 grep**：T123 `rpow_neg_le_aprioriRhs`、T125 同形引理可能已近似）。然后用它把 `EEBridge.norm_eeField_le` 升成 `Lemma510.EE_le` 的 `≺` 版，并给出该控制的多项式下界 | `Defs/StochDom.lean` + `Hierarchy/EEBridge.lean` | 待认领 | 未开工 |
+| T136 | **`hfixIBP`：`condExpDiag_stochDom_of_highProb` 的时间一致版**（T128 余项）。整条链 `stochDom_condRow_of_envelope`/`condStable_Lmax`/`stochDom_normSq_green_diag_sub_Lmax` 都是「先定 `t` 再量化 `N`」。**第 0 步：逐环查哪一环的 `∀ᶠ N` 阈值其实不依赖 `t`**（T128 对涨落侧就发现了这一点：矩界是逐 `(N,u)` 确定性的）；能重新量化的就做 `UnifDomIcc` 版，`hΩ` 用 T130 的 `highProb_goodSetFlow_of_localLaw`。**不改旧签名**，全部新增 | `Gauss/CondStableFlow.lean`（新建） | 待认领 | 未开工 |
+| T137 | **按字长分级的 `FlucGain` 接口**（T128 余项，paper-deltas #85）：T113 只证了有界字长的 gain，而 `norm_integral_prod_epsHom_flucDiag_le`/`integral_norm_flucAvg_pow_le_iter` 对**所有**字消费 `FlucGain`，实际只用到字长 ≤ `2p`。新增 `FlucGainUpTo (k)` 与消费者的带撇变体（只要 `k = 2p`），接上 T113 ⟹ `FlucGain` 在 `ρ ≍ Ψ` 处的所需部分成为定理 | `Gauss/FlucIter.lean`（追加） | 待认领 | 未开工 |
+| T138 | **`FlowInputs` 的生产者**（T126 余项，paper-deltas #86）：把 T130 的 `GoodEvent` 一致高概率、T91 的 `LDERow`/`LDECol`、(2.76)（`Steps.aprioriDecay`）打包成同一事件；数值束 `Φ_N√ε_N ≤ N^{−D'}` 由区制假设推出。**第 0 步：逐条列出 `FlowInputs` 字段与现有生产者的对应**，缺的报告 | `Hierarchy/LKDecayQuant.lean`（续） | 待认领 | 未开工 |
 
 ---
 

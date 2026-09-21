@@ -4003,6 +4003,8 @@ docstring 明说 generic、非高斯特有）+ `StochDom.of_forall_le`；而 **`
 
 ## ⚠ T152：Step 6 的四个洞里**两个是空洞**；另发现高斯漂移恒等式在 `v = 0` 处不可满足（`Gauss/Step6HierarchyGauss.lean`，557 行，2026-09-21）
 
+> **⚠ 后续更正（T182，2026-09-21）**：本节「`DLK`/`DG` 的拆分在 Lean 里毫无代价可省」**只对恒等式成立，对 size estimate 不成立**——单张量下 `eG` 那半比 (5.133) 恰好弱一个 `A`，该因子只能从期望的抵消 (5.134) 拿回。(5.133) 请用 `Gauss/Step6DriftSplit.lean` 的双张量版。
+
 `lake build RBM1D` exit=0，审计 **8864** 条。
 
 ### 产出
@@ -4193,6 +4195,8 @@ T164 的反例在这里表现为**前提不成立**，不构成矛盾。
 端点型只有 `Step6.hierarchy_of_hasDerivAt` / `Uker_duhamel` 在 `s N = 0` 不可满足，**但爆炸半径为 0**（T152 已给 `_Ioo` 版，且无外部消费者）。
 
 ## T173：Step 6 的单张量漂移钉死（`Gauss/Step6HierarchyGauss.lean` 557 → 905 行，2026-09-21）
+
+> **⚠ 后续更正（T182，2026-09-21）**：本节「`DLK`/`DG` 的拆分在 Lean 里毫无代价可省」**只对恒等式成立，对 size estimate 不成立**——单张量下 `eG` 那半比 (5.133) 恰好弱一个 `A`，该因子只能从期望的抵消 (5.134) 拿回。(5.133) 请用 `Gauss/Step6DriftSplit.lean` 的双张量版。
 
 单文件 `lake env lean` exit=0（全量构建此刻红在 `MinorDiffGain.lean`——T170 的 agent 正在改那个文件，与本单无关）。
 
@@ -4858,3 +4862,40 @@ docstring 同时写清：`hg` 槽要的正是 `B ≍ Ψ`；已编译的证据链
 下游的 `norm_sq_green_le_of_far_floor`/`loopDecay_gloop_of_event_floor`/`lemma59_floor`/整个 `Flow'` 节**一字未动**。
 
 **工单第 (3) 项未做**：`Decay.norm_couplingLen_le` 的 `hD` 带撇版要改 `Hierarchy/Decay.lean`，不在该 agent 的可写清单里（= STATUS 的 D8）。
+
+## ⭐ T182：Step 6 的 `hH`/`hFD`/`h5133` 全部卸掉——**但 T152 的单张量归约被推翻**（`Gauss/Step6DriftSplit.lean`，963 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9422** 条。`Step6HierarchyGauss.lean` 与四个只读文件**一字未动**。
+
+### ⚠⚠ 核心发现：**T152 的「拆成 `DLK`/`DG` 在 Lean 里毫无代价可省」对恒等式成立，对 size estimate 不成立**
+`driftBound_of_5133` 与 `driftBound_of_5134` 给出同一个界不假，**但证法不同**；单张量把两半绑死之后，
+**`eG` 那半在逐路径意义下比 (5.133) 恰好弱一个因子 `A = Wℓ_uη_u`**，而那个因子**只能从期望里的抵消**（论文 (5.134)）拿回来。
+逐路径拿不回来的理由是完整的：`Ξ^{(L)}_{u,3} ≲ 1`（(2.59)+(5.76)）与 `Ξ^{(L−K)}_{u,1} ≲ 1`（(2.68)，即 #119）**都已经用掉了**。
+
+**所以本单把漂移按论文拆回两个张量，两者都是 `def`**：`driftELK = E[primBil(L−K,L−K)]`、`driftEG = E[E^{(G)}]`，
+`driftE = driftELK + driftEG` 是**定理**（`driftE_eq_driftELK_add_driftEG`）。消费者改用**双张量的 `Step6.sharpExpect_step6`**
+（它本来就收 (5.134) 作 `hG`），不再走 `sharpExpect_step6_single`。
+**⚠ STATUS 的 T152 节与 T173 节据此加注，否则后来人会照着单张量再撞一次那个 `A^{−1}`。**
+
+### 另一处对 T165 的更正
+比 (5.77) 通用形状 `A^{−(n+2)}` 多出来的那个 `A^{−1}` **就长在 `Φ` 自己身上**（`Φ = Ξ_2·Ξ_2·A⁻¹`），不是变出来的。
+**`DriftBound.norm_driftF_le` 把三行并进一个 `cDrift` 时把它丢了**，所以那条界对 (5.133) 恰好弱一个 `A`。
+
+### 落地
+`norm_primBil_lkPath_le`（**(5.77) 第 2 行在 `n = 0` 处直接写成 (5.133) 的形状**）、
+`norm_integral_le_add_measure_compl`（好集外一阶矩记账，**不要求好集可测**，用 `toMeasurable` 的补绕过）、
+**`unifDetDom_driftELK`（(5.133) 落地）**、`fastDecay_integral_of_highProb`（**好集版**——T173 的版本要求对**每个** `ω` 成立，Lemma 5.9 给不出）、
+**`fastDecayHyp_driftSplit`（`hFD`）**、**`hierarchy_driftSplit`（`hH`，仍只用 `_Ioo`）**、
+**`sharpExpect_step6_driftSplit`（(2.80)，`hH`/`hFD`/`h5133` 全部卸掉）**。
+`hlow` **从假设变成了定理**（`eventually_rpow_neg_three_le_drift_target`，`Blow = 3`）——**T165 的同名假设至此也有了产出者**。
+工单建议的 `eGpm_le_reduced`/`norm_eLL_le` 两条路线**没用上**：`Decay` 的逐项界在 `n = 0` 处直接给出 (5.133) 的形状，更短。
+
+### 剩下什么、归谁（全部不提漂移）
+1. **`hG` = (5.134)**——**唯一还约束 `E E^{(G)}` 的假设**，本就是 `Step6.sharpExpect_step6` 的字段、不是本单新增的债。
+   ⚠ **但它与 T152 的 `hG_zero_right` 性质不同**：那里 `DG = 0` 可自由取所以空洞，**这里 `driftEG` 已钉死，`hG` 是真约束**。目前无人认领。
+2. `hin59`/`hinQ`——Lemma 5.9 的衰减 + (5.76) 的计数，与 T165 的 `DriftInputs` **同源**。
+3. `henvQ`/`henvG`/`hEnvpoly`/`hmeasQ`/`hmeasG`——与 `DriftBound.hFmom_of_driftInputs` 的 `henv`/`hEnvpoly`/`hmeas` **完全同形**，归包络那条线。
+4. `hEL` 已可产（T176 探针 P6）；`hcont`/`hintU` 是 T176 自列的盲区。
+
+**fiat 审计**：两个张量都是 `def`、无结构字段、无自由张量变量；**没有为了让 (5.133) 出来去调整任何定义**，短的那个因子如实报告。
+全程未实例化 `SumZeroDyn.Hierarchy`、未用 `Lemma510` 任何字段、只用 `_Ioo` 版。

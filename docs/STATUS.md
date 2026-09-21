@@ -2690,3 +2690,19 @@ paper-deltas：**无新增**（本单没有任何 Lean 陈述偏离论文）。
 **`Eq45Flow` 仍非无条件**，余下三类：(1) **`hΩ`**——(4.4) 在**每个** `u ∈ [s,t]` 上成立，即 T119 留下的那个 `hΩ` 的 u-一致版（它本身也是一条网命题）；
 (2) **三个 `hfix`**（固定时刻的输入作 `UnifDomIcc`）——**注意这些即便在固定时刻也还没有**：`stochDom_flucAvg_*` 仍带未卸的 `hsmall`（`FlucBound` 参数的**尺寸**；唯一无条件的实例 `stochDom_flucAvg_blockAvg_env` 控制是常数），`condExpDiag_stochDom_of_highProb` 仍带 `hΩ`；
 (3) **三个 `hHol`**（`u` 的模）——Green 函数那半是 T106 的 `norm_green_flow_sub_le`，而 **`condExpDiag` 那半是真正新的估计**，且**不是逐点模的推论**，因为随机常数 `‖X‖` 落在行积分内部。paper-deltas #79。
+
+### `RBM1D/Hierarchy/Step2PP.lean` — T122：常值电荷经 Lemma 5.11 `n = 2` 解决（Claude Code 并行 agent，2026-09-21）
+
+**⚠ 撤回一条此前的记载**：上面 T115、T120 两节写的「旁证：Lemma 5.14（p.68）排除常值 σ」是**误读**——「非常值」只出现在 (5.96) 的**交错**分支内部。
+`StepGlue.lean` 的文件头与 `AprioriDecayAll` 的 docstring 已由 agent 就地加了 Correction 说明；`ChargeReduce.lean` 的头里没有这句话（已核对全文）。
+
+**第 0 步的决定：挂在事件/逐路径层，既不是 `≺`-前缀层，也不是矩层。** 用 `RBM.le_of_bootstrap_prefix`，但**在高概率事件内逐路径跑**——正是 Step 2 路线 A（`Step2.jS_highProb`）对 `(+,−)` 已经在做的事。
+* **工单设想的 (a)（在前缀 `[s,v]` 上重新实例化 `Lemma514`）确实行不通**，工单自己的预判是对的：`Step3.Lemma514` 的假设与结论都是 `≺` 陈述（关于 `N → ∞` 的序列），而连续归纳要的是**每个固定 N** 上同一条路径取值之间的蕴含。前缀限制本身免费（`Cond272` 可限制），但没有东西可被自举。
+* **(b)（矩层，`Step2Moment` 那套）不需要**：`u ↦ Ξ^{(L−K)}_{u,2}(ω)` 是有限个连续函数的 max，**对每个 ω 都连续**。于是改进可假设在事件上、归纳逐路径跑、再用并界推回 `≺`——**比造 `MomentHypPP` 严格便宜**（不需控制收敛、不需 Hölder 网），而且这就是论文 §5.3 自己的结构。
+
+**`AprioriDecayPP` 没被卸掉，这条路线也卸不掉它**（paper-deltas #80：它严格强于 (5.83)@n=2 能给的）。
+**但它的所有消费者现在都不再需要它**：`flow_sharpLoop_glue_of`/`flow_steps45_glue_of`（及 `…_flowAs` 特化）直接产出 `Steps.sharpLoop`/`sharpLmK`/`sharpDecay` 的字面形状——探针做了类型指定验证，**无 `convert`、无 `precomp_param`、无强制转换**；第二遍 (5.83)（用 `Ξ_{u,1} ≺ 1`）**不需要第二次自举**，与工单预期一致。`ChargeReduce.aprioriDecayAll_of_pp` 一字未动。
+
+**剩余假设**：`BootPP.step`——Lemma 5.11 在 `n = 2` 的**事件（停止）形式**，即 `Step2.Hyp.mart` 的类比物。
+它的 `≺` 层影子 `xiLK_two_improve` **已在本文件证出**，所以被假设的东西是看得见的；推出 `step` 需要把 `SumZeroDyn.Hierarchy.bdg` 用到停止鞅上——与 Step 2 路线 A 是同一批随机层工作。
+下游不变：`h514`、`StepGlue.Eq45Flow`、`Step45.FlowEq548`、`hregS`、`Steps`。（小注：`xiLK_two_le` 与 `RBM.Step3.xiLK_two_le` 同名不同命名空间，无碍。）

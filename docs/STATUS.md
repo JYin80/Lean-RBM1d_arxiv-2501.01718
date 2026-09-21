@@ -4654,6 +4654,19 @@ T171 已编译证明 `MinorDiffGainUpTo` 在 `B ≍ Ψ` 处不可满足（其 `B
 耦合本身看不到这种圈（cut-and-glue 两边长度都 ≥ 2）。T165 用 `dTrunc` 绕过、**未改 `Decay.lean`**。
 **要定的**：是否开一张单把 `hD` 收紧成 `2 ≤ J.length → …`（那样 `dTrunc` 那一段就能删掉）。
 
+## D10 ⭐ 是否允许新建 `Gauss/MomentDuhamelCut.lean`（截断版矩 Duhamel 接口）（T132c）
+T132c 交付了 `BootPP.step` 与 (5.48) 的化归，但**两者的余项与 `MomentHyp.step` 的替代路径都压在同一个前提上**：
+**带截断的矩 Duhamel**——`χ(Ξ₂/Θ)` 在支撑上把自二次项线性化，且在前缀事件上截断与未截断的 loop 重合。
+现有 `MomentDuhamel.Hyp` 没有截断版本，而 `Gauss/MomentDuhamel*.lean` 对实现 agent 是只读的。
+**要定的**：(a) 新建 `Gauss/MomentDuhamelCut.lean` 作截断版接口（不动现有文件），还是 (b) 就地扩展 `Hyp`。
+**附带一条已证的事实**：`MomentHyp.step` 按**冻结形状不可证**，两条阻塞都编译成了定理
+（`bnd_poly` 不允许 `bnd` 带 `N` 的幂，而 `J*` 的并集界每阶要付 `L² ≍ N²`；矩层去截断的余项不小于门槛本身，
+压下去要把阶数乘 `(K+δ)/δ`，流上是天文数字）。**规格本来就写的是「`step` 冻结、新增 `MomentHypCut`」，所以这不是推翻规格、是确认它。**
+
+## D11 `hfar`：(5.48) 唯一缺的东西要不要改 `Step2.step_bound`（T132c）
+(5.39)/(5.41)/(5.44) 的三个指示函数必须**带过** one-step bound，而 `Step2.step_bound` 把它们全丢了。
+**要定的**：改 `Step2.step_bound`（冻结签名，需带撇版），还是在矩路线上重做一份带指示的 step bound。
+
 ## T168：Lemma 3.2 的组合模型（`Loop/CanonicalPartition.lean`，815 行，2026-09-21）
 
 `lake build RBM1D` exit=0，审计 **9309** 条。蓝图里最后一个「引用未证」节点现在是**部分形式化**（**没有加 `\leanok`**）。

@@ -228,7 +228,7 @@
 | T55 | Steps 4 与 5：(5.125) ⟹ (2.78)；两段劈分 ⟹ (2.79) | `Hierarchy/Step45.lean`（新建） | Claude Code | **完成** |
 | T56 | Step 6：(5.126)–(5.136) ⟹ (2.80) | `Hierarchy/Step6.lean`（新建） | Claude Code | **完成** |
 | T57 | Lemma 2.18/2.19/2.20 由 Theorem 2.21 推出（§2.7 p.24 的时间网格归纳） | `Flow/Iteration.lean`（新建） | Claude Code | **完成** |
-| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | Claude Code | 进行中（Claude Code agent） |
+| T58 | §5.2：(5.10)–(5.15) 的 `L−K` 层级重组、Def 5.4 的 `E⊗E`、(5.19)、积分形式 (5.20)(5.21) | `Hierarchy/Dynamics.lean` | Claude Code | **T118 (iii) 完成**（`Hierarchy/DriftDef.lean`，473 行，全量绿、审计 8899）：`driftF` 是 **`def`**，`F = Ẽ + ∑_{l_K≥3}[K∼(L−K)]^{l_K} + E^{((L−K)×(L−K))}` 由 `Hyp.F_unique` **证出**（`eGterm 0` 精确抵消，无第三项）。补上两条**本来缺失的桥**：`eGterm_eq_eG`（此前 `Decay.eG` 与漂移里的 `Gauss.eGterm` 一直在说不同的函数）、`sum_couplingLen_erase_two`（`∑_{l_K≠2} = ∑_{l_K>2}` 且截到 `l_K ≤ n`，两侧都是定理）。`F_decay` 的确定性内核 `fastDecay_driftF` 已给。fiat 审计干净、可满足性已验。**(5.19) 与表示桥在 T140 已完成**；`F_le` 的 Ξ-记账留 T165。见 STATUS |
 | T59 | §5.4：Def 5.8 快衰减、Lemma 5.9、Lemma 5.10 (5.77) 的幂计数、Lemma 5.11 (5.83) | `Hierarchy/Decay.lean`（新建） | Claude Code | **完成**（E⊗E 仅抽象形式，待 T58 Def 5.4） |
 | T60 | §5.5 的动力学半边：(5.88)(5.91)、**Lemma 5.14 (5.92)**、(5.95)–(5.101) | `Hierarchy/SumZeroDyn.lean`（新建） | Claude Code | **完成**（`lemma514_flow′` 给出 `Step3.Lemma514`；(5.77)(5.75) 仍为占位假设，见 STATUS） |
 | T61 | §5.3 Step 2：Lemma 5.6、Lemma 5.7 (5.34)(5.35)(5.36)、(5.39)–(5.48) 的自改进不等式 | `Hierarchy/Step2.lean`（新建） | Claude Code | **完成**（`step2` 给出 (2.75)(2.76)；(2.72) 需 `N^c` 增益，见 STATUS；(5.35) 为 T58 占位假设） |

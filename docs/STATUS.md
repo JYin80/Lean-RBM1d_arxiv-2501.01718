@@ -4040,3 +4040,45 @@ T132a 的 `hasDerivAt_Uker_apply` 是**把张量冻住**求导、积不出层级
   ——正是论文的 `E E^{((L−K)×(L−K))}`。**纯线性的那一半已做掉**（`integral_ThetaOp`），二次的那一半是剩余工作。
 * `h5133` 与 `hFD` 是 size estimate，依赖上一条把 `D` 定成论文的对象之后才谈得上。
 * **没有捏造 `DLK`/`DG` 的具体定义**——在上一条没有之前定义它们只是摆样子，反而会掩盖 `hH` 可 fiat 这件事。
+
+## ⭐ T58/T118(iii)：`F` 在**一般回路长度**上被具体钉死（`Hierarchy/DriftDef.lean`，473 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **8899** 条。
+
+### 第 0 步：`Lemma510` 四个字段的归属
+结构性前提要先说清楚：`SumZeroDyn.Lemma510` 的参数是 `SumZeroDyn.Hierarchy`，而 **T118 禁止实例化它**。
+所以**「`Lemma510` 作为结构被生产出来」在矩路线下永远不会发生——这不是缺口，是设计**
+（`Hierarchy` 的 `mart`/`martQ`/`duhamel`/`bdg` 就是 fiat 的那一半）。
+有意义的读法是把四个字段的**陈述**用 `MomentDuhamel.Hyp.Fpath` 与 `EEpath` 代入（类型逐字相同）：
+
+| 字段 | `F` 具体化之后 |
+|---|---|
+| `F_decay` | **解锁，本单已给出确定性内核** `fastDecay_driftF`（Definition 5.8 的衰减逐项证出，半径统一到 `2ℓ+1`）。剩下只是把 `FastDecay → StochDom` 接上已有的高概率输入，**没有新数学** |
+| `F_le` | **解锁但不免费**：三项各自对上 `Decay` 的一条界，但 `xiRhs` 右端与 `Decay` 的形状之间还有一整段 Ξ-记账（T165 第 (2) 项），本单未做 |
+| `EE_le` / `EE_decay` | **与 `F` 无关**（T127/T135/T144）；`≺` 版仍缺一条控制的多项式下界 |
+
+### 主结论：长度 2 的恒等式**确实推广，且只多一项**
+```
+F_{u,σ,a} = Ẽ_{u,σ,a} + ∑_{l_K ≥ 3} [K ∼ (L−K)]^{l_K}_{u,σ,a} + E^{((L−K)×(L−K))}_{u,σ,a}
+```
+`DriftDef.driftF` 是 `def`（不是结构字段），由 `drift_split_gen`/`F_eq_driftF` **证出**（走 `Hyp.F_unique`），不是按定义造的。
+逐项对账：`∂_u gloop(z_u) = eGterm(mSigma E) − eGterm 0`；`genLK = eGterm 0 + primRhs(gloop)`（T163 的 `genLK_eq_split` 本来就是一般长度的）；
+`∂_u Kval = primRhs(Kval)`（`hasDerivAt_Kgen_all`——**这是 T163 当时卡在长度 2 的唯一原因**，它只有 `hasDerivAt_Kval_two`）；
+`primRhs_sub` 分成三项；`Decay.sum_couplingLen` 分级，`l_K = 2` 那支由 (5.19) 等于 `genS`。
+**`eGterm 0` 精确抵消，没有第三项、没有余项。** `n = 0` 时求和为空，与 T163 的结论逐字一致——`E^{(G)}` 全仓库仍只有一套。
+
+### 两条**本来缺失**的桥（这才是让 `Decay` 的界能用上的东西）
+* **`eGterm_eq_eG`**：`Gauss.eGterm … = Decay.eG …`。此前 (5.77) 第 3 行（`Decay.norm_eG_le`、`fastDecay_eG`）说的是 `Decay.eG`，
+  而漂移里的是 `Gauss.eGterm`，**两者之前没有桥，一直在说不同的函数**。桥的内容是 `Kgen_one`（`K` 在 1-loop 上等于 `m(σ)`）+ `trace_Eblk`。
+* **`sum_couplingLen_erase_two`**：(5.15) 留下的 `∑_{l_K ≠ 2}` **等于**论文的 `∑_{l_K > 2}`，且上界截到 `l_K ≤ n`。
+  上下两侧都是定理（`two_le_length_cutGlueL/R`、`length_cutGlueL/R_le`），**不是约定**。
+  这正是 `Decay.norm_couplingLen_le`（前提 `3 ≤ l_K`）能逐项套用的前提。
+
+### fiat 审计
+`driftF` 是 `def`，三个加项全部 unfold 到 `M` 在 `z_u` 处的 Green 函数与 `Kgen`，**无任何可自由赋值的结构字段**；
+`F_eq_driftF` 的左端由 `Hyp.drift` 钉死，证明走 `HasDerivAt.unique` + `add_left_cancel`；
+**全程无 `SumZeroDyn.Hierarchy` 实例**。**可满足性已验**：`Fpath_eq_driftF_of_lt_one` 在 `|E| < 2`、`0 ≤ u < 1` 下卸掉两个副条件，
+**恒等式在流真正活动的区制里非空**。`fastDecay_driftF` 的假设就是 Lemma 5.9 的输出，不是凭空谓词。
+
+**无新 paper-delta**：`∑_{l_K>2}` 的范围是证出来的而非假设的；`Gauss.eGterm` 与 `Decay.eG` 是同一对象。
+`F_le` 的 Ξ-记账留给 T165，本单已把它需要的三座桥全部铺好。

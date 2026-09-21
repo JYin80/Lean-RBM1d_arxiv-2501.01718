@@ -33,6 +33,7 @@ this explicit function; no randomness is involved.
 * `tailT_antitone` : `T_{u,D}` is non-increasing
 * `tailT_sub_le`, `unifDetDom_tailT_sub` : (5.32), `T_{u,D}(ℓ - C ℓ*_u) ≺ T_{u,D}(ℓ)`, in explicit
   form (factor `exp(√C (log W)^{3/4})`) and as a `≺` statement
+* `inv_sq_le_tailT` : the near region `d ≤ C ℓ*_u`, `(W ℓ_u η_u)^{-2} ≺ T_{u,D}(d)`
 * `integral_exp_sqrt_triangle_le` : `∫_0^a exp(-√(a-x) - √x + √a) dx ≤ 16`, (5.49)
 * `integral_Ioi_exp_neg_sqrt` : `∫_0^∞ exp(-√x) dx = 2`, (5.49)
 * `integral_exp_half_sqrt_triangle_le` : the half-exponent variant used for (5.62)
@@ -354,6 +355,23 @@ theorem tailT_sub_le (hW : 1 ≤ W) (hℓu : 0 < ℓu) {C : ℝ} (hC : 0 ≤ C) 
   unfold tailT
   have := mul_le_mul_of_nonneg_left hexp hA
   nlinarith
+
+/-- **The near region.**  For `d ≤ C ℓ*_u` with `C ≥ 0`,
+`(W ℓ_u η_u)^{-2} ≤ exp(√C (log W)^{3/4}) T_{u,D}(d)`: on the scale `C ℓ*_u` the tail
+function is still within `W^{o(1)}` of its maximum.  This is (5.32) at the shift
+`C ℓ*_u`, applied at a `d` for which the shifted argument is already `≤ 0`.
+
+`RBM.Lemma57.inv_sq_le_tailT` (`C = 1`) and `RBM.Step45.inv_sq_le_tailT` (`C = 6`) are
+the two instances used in the proofs of (5.35) and of Step 5. -/
+theorem inv_sq_le_tailT {C d : ℝ} (hW : 1 ≤ W) (hℓu : 0 < ℓu) (hC : 0 ≤ C)
+    (hd : d ≤ C * ellStar W ℓu) :
+    ((W * ℓu * ηu) ^ 2)⁻¹ ≤ exp (√C * log W ^ (3 / 4 : ℝ)) * tailT W ℓu ηu D d := by
+  refine le_trans ?_ (tailT_sub_le (ℓu := ℓu) (ηu := ηu) (D := D) hW hℓu hC d)
+  have h0 : √((d - C * ellStar W ℓu) / ℓu) = 0 :=
+    Real.sqrt_eq_zero'.2 (div_nonpos_of_nonpos_of_nonneg (by linarith) hℓu.le)
+  have hWD : (0 : ℝ) ≤ W ^ (-D) := Real.rpow_nonneg (by linarith) _
+  rw [tailT, h0, neg_zero, Real.exp_zero, mul_one]
+  linarith
 
 /-- For every `τ > 0`, eventually `exp(C (log W)^{3/4}) ≤ W^τ`: the loss in (5.32) is
 `W^{o(1)}`. -/

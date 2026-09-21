@@ -307,16 +307,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {U : ℕ → Type*}
 variable {W : ℕ → ℝ} {ℓ η d : ∀ N, U N → ℝ}
 
 /-- The near region: for `d ≤ 6 ℓ*_u`,
-`(W ℓ_u η_u)^{-2} ≤ exp(√6 (log W)^{3/4}) T_{u,D}(d)` ((5.32) with `C = 6`). -/
+`(W ℓ_u η_u)^{-2} ≤ exp(√6 (log W)^{3/4}) T_{u,D}(d)` ((5.32) with `C = 6`).
+The `C = 6` instance of `RBM.inv_sq_le_tailT` (`Analysis/StretchedExp.lean`). -/
 theorem inv_sq_le_tailT {W ℓ η D d : ℝ} (hW : 1 ≤ W) (hℓ : 0 < ℓ)
     (hd : d ≤ 6 * ellStar W ℓ) :
-    ((W * ℓ * η) ^ 2)⁻¹ ≤ Real.exp (√6 * Real.log W ^ ((3 : ℝ) / 4)) * tailT W ℓ η D d := by
-  refine le_trans ?_ (tailT_sub_le (ηu := η) (D := D) hW hℓ (C := 6) (by norm_num) d)
-  have h0 : √((d - 6 * ellStar W ℓ) / ℓ) = 0 :=
-    Real.sqrt_eq_zero'.2 (div_nonpos_of_nonpos_of_nonneg (by linarith) hℓ.le)
-  have hWD : 0 ≤ W ^ (-D) := Real.rpow_nonneg (by linarith) _
-  rw [tailT, h0, neg_zero, Real.exp_zero, mul_one]
-  linarith
+    ((W * ℓ * η) ^ 2)⁻¹ ≤ Real.exp (√6 * Real.log W ^ ((3 : ℝ) / 4)) * tailT W ℓ η D d :=
+  RBM.inv_sq_le_tailT (ℓu := ℓ) (ηu := η) (D := D) hW hℓ (by norm_num) hd
 
 /-- `T_{u,D+2}(d) ≤ (W ℓ_u η_u)^{-2} (exp(-(d/ℓ_u)^{1/2}) + W^{-D})` when `W ℓ_u η_u ≤ W`. -/
 theorem tailT_add_two_le {W ℓ η D d : ℝ} (hW : 0 < W) (hA : 0 < W * ℓ * η)

@@ -56,6 +56,18 @@ and none of them is used.
   `RBM.MomentDuhamel.stochDom_of_momentDuhamel` by a bare application.
 * `RBM.Gauss.hFmom_of_momNormDom`, `RBM.Gauss.hinit_of_momNormDom` — the currying steps that
   put `momNormDom_of_stochDom`'s output into the shape `hrhs_of_moment_inputs` asks for.
+* `RBM.Gauss.MomNormDom.control_mono`, `RBM.Gauss.stochDom_control_det` — the two generic steps
+  T157 needs: weakening a `MomNormDom`'s control (used to make a *time-dependent* control
+  uniform over the window), and replacing a **random** factor of a `≺`-control by a
+  deterministic one given `Ξ ≺ Ψ`.  The second is exactly the step
+  `RBM.SumZeroDyn.F_stochDom` performs for the drift; it is isolated here because no analogue
+  existed for `E ⊗ E`.
+* `RBM.Gauss.hinit_of_stochDom`, `RBM.Gauss.hFmom_of_stochDom`,
+  `RBM.Gauss.stochDom_norm_eeFun_det`, `RBM.Gauss.hEEmom_of_stochDom` — **the discharge of the
+  three `‖·‖`-inputs (T157)**, each from the `≺` statement the random layer already proves and
+  the side conditions of T77's reverse bridge.  The `≺` inputs are consumed *verbatim*:
+  `RBM.BoundsCore.LmK (n+2)`, the conclusion of `RBM.SumZeroDyn.F_stochDom`, and
+  `RBM.EEBridge.stochDom_norm_eeField`.
 * `RBM.Gauss.hEEmom_of_momNorm_two_mul`, `RBM.Gauss.hEEmom_of_momNormDom` — the same for the
   `E ⊗ E` input, which `hrhs_of_moment_inputs` asks for at the **odd-admissible** exponent
   `p`; these are Lyapunov's inequality (`RBM.MomentDuhamel.momNorm_le_momNorm_of_exponent_le`,
@@ -88,19 +100,27 @@ carries the window length.
 
 ## What is *not* done
 
-* The three `‖·‖`-inputs are hypotheses, not theorems.  Two of them (`hinit`, `hFmom`) are
-  reduced to a `≺` with a **deterministic** control by `momNormDom_of_stochDom`;
-  `RBM.SumZeroDyn.Lemma510.F_le` has a *random* control (`xiRhs`), so the missing step is the
-  same `Ξ ≺ 1` replacement that `RBM.SumZeroDyn.F_stochDom` performs pathwise.
+* ~~The three `‖·‖`-inputs are hypotheses, not theorems.~~  **Done (T157).**  The three
+  hypotheses of `hrhs_of_moment_inputs` are now produced by `hinit_of_stochDom`,
+  `hFmom_of_stochDom` and `hEEmom_of_stochDom`, from `≺` statements with a *deterministic*
+  control.  The random control of `RBM.SumZeroDyn.Lemma510.F_le` (`xiRhs`) is not re-derived:
+  `RBM.SumZeroDyn.F_stochDom` already replaces it, and its conclusion is verbatim the `hdom`
+  of `hFmom_of_stochDom`.  For `E ⊗ E` the corresponding replacement did not exist and is
+  supplied here by `stochDom_norm_eeFun_det` (`stochDom_control_det` applied to T135's
+  `RBM.EEBridge.stochDom_norm_eeField` together with `Ξ^{(L)}_{u,2(n+2)+2} ≺ Ψ`, the `E ⊗ E`
+  instance of the hypothesis `hY` of `RBM.SumZeroDyn.xiRhs_stochDom`).  What remains on all
+  three is only the side conditions of T77's reverse bridge — measurability, a deterministic
+  envelope of polynomial size, and a polynomial *lower* bound on the control — which are
+  model-level facts, not statements about the hierarchy.
 * ~~The `E ⊗ E` input `hEEmom` needs Lyapunov's inequality.~~  **Done (T154(4)).**  `hEEmom`
   is a **`p`-th** moment norm, not a `2p`-th one (that is what (5.24) asks for, and what
   `Hyp.momentDuhamel` writes), while T77's reverse bridge produces only even moments.  The
   missing step, Lyapunov's inequality `‖·‖_p ≤ ‖·‖_{2p}` on a probability space, is now
   `RBM.MomentDuhamel.momNorm_le_momNorm_of_exponent_le`, next to `momNorm`; the currying that
   turns an even bound into `hEEmom` is `RBM.Gauss.hEEmom_of_momNorm_two_mul` (and, from a
-  `MomNormDom` on `RBM.Gauss.EEIdx`, `RBM.Gauss.hEEmom_of_momNormDom`) in this file.  What is
-  still missing for `hEEmom` is only the *input*: the deterministic envelope that turns
-  `RBM.EEBridge.stochDom_norm_eeField` into a `MomentDom`.
+  `MomNormDom` on `RBM.Gauss.EEIdx`, `RBM.Gauss.hEEmom_of_momNormDom`) in this file.  ~~What is
+  still missing for `hEEmom` is only the *input*.~~  **Done (T157)**, by
+  `RBM.Gauss.stochDom_norm_eeFun_det` followed by `RBM.Gauss.hEEmom_of_stochDom`.
 * `momentDuhamelQ` (the five-term `Q_t` route) has no consumer yet in
   `RBM1D/Gauss/MomentDuhamel.lean`, so there is nothing to discharge for it.
 
@@ -347,6 +367,40 @@ theorem momNormDom_of_stochDom [IsFiniteMeasure P] {U : ℕ → Type*} {Y : ∀ 
   momNormDom_of_momentDom (fun N u => (hΦ N u).le)
     (momentDom_of_stochDom hmeas hint hΦ hB hΦlow hEnv0 hKenv henv hEnvpoly hdom)
 
+/-- **Weakening the control of a `MomNormDom`.**
+
+Needed because the `≺` statements of `RBM.SumZeroDyn.Lemma510` control the drift by a quantity
+that depends on the **time** `u`, while `hrhs_of_moment_inputs` asks for a control that does
+not.  Going through `momNormDom_of_stochDom` with the time-dependent control and weakening
+*afterwards* is what avoids having to weaken the `≺` statement itself (which would need a
+`≺`-level control-monotonicity lemma from another file). -/
+theorem MomNormDom.control_mono {U : ℕ → Type*} {Y : ∀ N, U N → Ω → ℝ} {Φ Ψ : ∀ N, U N → ℝ}
+    (h : MomNormDom P Y Φ) (hle : ∀ N u, Φ N u ≤ Ψ N u) : MomNormDom P Y Ψ := by
+  intro ε hε p hp
+  obtain ⟨C, hC0, hN⟩ := h ε hε p hp
+  refine ⟨C, hC0, hN.mono fun N hNu u => (hNu u).trans ?_⟩
+  exact mul_le_mul_of_nonneg_left
+    (mul_le_mul_of_nonneg_left (hle N u) (Real.rpow_nonneg (Nat.cast_nonneg N) _)) hC0.le
+
+/-- **Replacing a random factor of a `≺`-control by a deterministic one.**
+
+`RBM.SumZeroDyn.Lemma510` controls the drift and `E ⊗ E` by `d(N,u) · Ξ(N,u,ω)` with `Ξ` a
+*random* power count, while T77's reverse bridge insists on a deterministic control.  Given
+`Ξ ≺ Ψ` with `Ψ` deterministic, the factor may simply be replaced: this is precisely the step
+`RBM.SumZeroDyn.F_stochDom` performs for the drift (with `Ξ = RBM.SumZeroDyn.xiRhs` and
+`Ψ = (2n+3) Φ`, the latter coming from `RBM.SumZeroDyn.xiRhs_stochDom`).  Isolating it here
+makes it available for the `E ⊗ E` control, for which no such theorem existed. -/
+theorem stochDom_control_det {U : ℕ → Type*} {Y : ∀ N, U N → Ω → ℝ} {d : ∀ N, U N → ℝ}
+    {Xi : ∀ N, U N → Ω → ℝ} {Ψ : ∀ N, U N → ℝ}
+    (hd : ∀ N u, 0 ≤ d N u) (hXi : ∀ N u ω, 0 ≤ Xi N u ω)
+    (hY : StochDom P Y (fun N u ω => d N u * Xi N u ω))
+    (hdom : StochDom P Xi (fun N u _ => Ψ N u)) :
+    StochDom P Y (fun N u (_ : Ω) => d N u * Ψ N u) := by
+  have hd' : ∀ N (u : U N) (_ : Ω), 0 ≤ d N u := fun N u _ => hd N u
+  have hm : StochDom P (fun N u ω => d N u * Xi N u ω) (fun N u (_ : Ω) => d N u * Ψ N u) :=
+    StochDom.mul hXi hd' (StochDom.refl hd') hdom
+  exact hY.trans hm
+
 /-! ### `hrhs`: the three terms of the moment Duhamel right-hand side -/
 
 section Rhs
@@ -454,6 +508,197 @@ theorem hEEmom_of_momNormDom [IsProbabilityMeasure (B.P)]
   hEEmom_of_momNorm_two_mul hintEE fun ε hε p hp => by
     obtain ⟨C, hC0, hN⟩ := h ε hε p hp
     exact ⟨C, hC0, hN.mono fun N hNi u hu1 hu2 q c => hNi (⟨u, hu1, hu2⟩, q, c)⟩
+
+/-! ### The three inputs, from `≺` with a deterministic control (T157)
+
+The three hypotheses of `hrhs_of_moment_inputs` are discharged here, each from the `≺`
+statement that the random layer already provides *with its random control already replaced*,
+plus the side conditions of T77's reverse bridge (measurability, integrability, a deterministic
+envelope of polynomial size, and a polynomial lower bound on the control).
+
+The replacement of the random control is **not** re-derived:
+
+* for the drift it is `RBM.SumZeroDyn.F_stochDom` (`xiRhs ≺ (2n+3) Φ` by
+  `RBM.SumZeroDyn.xiRhs_stochDom`), whose conclusion is *verbatim* the hypothesis `hdom` of
+  `hFmom_of_stochDom` with
+  `g N u = (Wℓ_uη_u)^{-(n+2)} η_u^{-1} ((2n+3) Φ N)`;
+* for the initial datum there was never a random control: `RBM.BoundsCore.LmK` — (2.68) — is
+  already stated with the deterministic `(Wℓ_{s}η_{s})^{-(n+2)}`, and is *verbatim* the
+  hypothesis `hLmK` of `hinit_of_stochDom`;
+* for `E ⊗ E` no analogue of `F_stochDom` existed, so `stochDom_norm_eeFun_det` supplies it
+  from `stochDom_control_det`, out of T135's `RBM.EEBridge.stochDom_norm_eeField` and a
+  `Ξ^{(L)}_{u,2(n+2)+2} ≺ Ψ` — the same hypothesis (`hY`) that `xiRhs_stochDom` takes for the
+  drift, at the loop length `2(n+2)+2` instead of `n+3`.
+-/
+
+/-- **`hinit` of `hrhs_of_moment_inputs`, discharged.**
+
+The hypothesis `hLmK` is `RBM.BoundsCore.LmK (n+2)` — (2.68) at the time `s_N` — verbatim,
+with the deterministic control named `Φ1`.  The remaining hypotheses are the side conditions
+of T77's reverse bridge; the integrability is taken from the field
+`RBM.MomentDuhamel.Hyp.integrable`, so the caller supplies nothing new for it. -/
+theorem hinit_of_stochDom [IsFiniteMeasure (B.P)] {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (H : Hyp X E s t n) (hst : ∀ N, s N ≤ t N)
+    {Φ1 : ℕ → ℝ} {Env : ℕ → ℝ} {Kenv Blow : ℝ}
+    (hmeas : ∀ (N : ℕ) (σ : Fin (n + 2) → Bool) (b : LoopArg (B.L N) (n + 2)),
+      Measurable fun ω => ‖SumZeroDyn.lkT X E N (s N) ω σ b‖)
+    (hΦ : ∀ N, 0 < Φ1 N) (hB : 0 ≤ Blow)
+    (hΦlow : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-Blow) ≤ Φ1 N)
+    (hEnv0 : ∀ N, 0 ≤ Env N) (hKenv : 0 ≤ Kenv)
+    (henv : ∀ (N : ℕ) (σ : Fin (n + 2) → Bool) (b : LoopArg (B.L N) (n + 2)) (ω : Ω),
+      ‖SumZeroDyn.lkT X E N (s N) ω σ b‖ ≤ Env N)
+    (hEnvpoly : ∀ᶠ N : ℕ in atTop, Env N ≤ (N : ℝ) ^ Kenv)
+    (hLmK : StochDom B.P
+      (fun N (w : LoopData (B.L N) (n + 2)) ω => X.lkErr E N (s N) ω w.idx)
+      (fun N _ _ => Φ1 N)) :
+    ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (q : LoopData (B.L N) (n + 2)) (b : LoopArg (B.L N) (n + 2)),
+        momNorm B.P (2 * p) (fun ω => ‖SumZeroDyn.lkT X E N (s N) ω q.1 b‖)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * Φ1 N) := by
+  refine hinit_of_momNormDom (Φ1 := fun N _ => Φ1 N) ?_
+  refine momNormDom_of_stochDom (Env := Env) (Kenv := Kenv) (Blow := Blow)
+    (fun N i => hmeas N i.1.1 i.2)
+    (fun r N i => H.integrable (2 * r) N (s N) le_rfl (hst N) i.1.1 i.2)
+    (fun N _ => hΦ N) hB (hΦlow.mono fun N hN _ => hN) hEnv0 hKenv
+    (fun N i ω => by simpa only [abs_norm] using henv N i.1.1 i.2 ω) hEnvpoly ?_
+  refine StochDom.of_le_left (fun N i ω => le_of_eq ?_)
+    (hLmK.precomp_param fun N (i : LoopData (B.L N) (n + 2) × LoopArg (B.L N) (n + 2)) =>
+      ((i.1.1, i.2) : LoopData (B.L N) (n + 2)))
+  rw [abs_norm, SumZeroDyn.norm_lkT]
+
+/-- **`hFmom` of `hrhs_of_moment_inputs`, discharged.**
+
+The hypothesis `hdom` is the conclusion of `RBM.SumZeroDyn.F_stochDom` verbatim, with the
+time-dependent deterministic control named `g`; `hgle` is the only genuinely new input, and it
+merely says that `g` is bounded on the window `[s_N, v_N]` by the time-independent `ΦF` that
+`hrhs_of_moment_inputs` wants.
+
+The window may be shorter than `[s_N, t_N]` (`hvt`), which is what lets the endpoint `v_N` of
+the Duhamel formula move inside the window of the `≺` statements. -/
+theorem hFmom_of_stochDom [IsFiniteMeasure (B.P)] {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (H : Hyp X E s t n) (v : ℕ → ℝ) (hvt : ∀ N, v N ≤ t N)
+    {g : ℕ → ℝ → ℝ} {ΦF : ℕ → ℝ} {Env : ℕ → ℝ} {Kenv Blow : ℝ}
+    (hmeas : ∀ (N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool) (b : LoopArg (B.L N) (n + 2)),
+      Measurable fun ω => ‖H.F N u (X.H N u ω) σ b‖)
+    (hintF : ∀ (r N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool) (b : LoopArg (B.L N) (n + 2)),
+      Integrable (fun ω => ‖H.F N u (X.H N u ω) σ b‖ ^ r) B.P)
+    (hg : ∀ N (u : ℝ), s N ≤ u → u ≤ v N → 0 < g N u) (hB : 0 ≤ Blow)
+    (hglow : ∀ᶠ N : ℕ in atTop, ∀ u : ℝ, s N ≤ u → u ≤ v N → (N : ℝ) ^ (-Blow) ≤ g N u)
+    (hEnv0 : ∀ N, 0 ≤ Env N) (hKenv : 0 ≤ Kenv)
+    (henv : ∀ (N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool) (b : LoopArg (B.L N) (n + 2)) (ω : Ω),
+      ‖H.F N u (X.H N u ω) σ b‖ ≤ Env N)
+    (hEnvpoly : ∀ᶠ N : ℕ in atTop, Env N ≤ (N : ℝ) ^ Kenv)
+    (hgle : ∀ N (u : ℝ), s N ≤ u → u ≤ v N → g N u ≤ ΦF N)
+    (hdom : StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) (n + 2)) ω =>
+        ‖H.F N (p.1 : ℝ) (X.H N (p.1 : ℝ) ω) p.2.1 p.2.2‖)
+      (fun N p _ => g N (p.1 : ℝ))) :
+    ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ (q : LoopData (B.L N) (n + 2))
+        (b : LoopArg (B.L N) (n + 2)),
+        momNorm B.P (2 * p) (fun ω => ‖H.F N u (X.H N u ω) q.1 b‖)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * ΦF N) := by
+  refine hFmom_of_momNormDom H v (ΦF := fun N _ => ΦF N) ?_
+  refine MomNormDom.control_mono (Φ := fun N (i : DriftIdx B s v n N) => g N (i.1 : ℝ)) ?_
+    (fun N i => hgle N (i.1 : ℝ) i.1.2.1 i.1.2.2)
+  refine momNormDom_of_stochDom (Env := Env) (Kenv := Kenv) (Blow := Blow)
+    (fun N i => hmeas N (i.1 : ℝ) i.2.1.1 i.2.2)
+    (fun r N i => by
+      simpa only [abs_norm] using hintF (2 * r) N (i.1 : ℝ) i.2.1.1 i.2.2)
+    (fun N i => hg N (i.1 : ℝ) i.1.2.1 i.1.2.2) hB
+    (hglow.mono fun N hN i => hN (i.1 : ℝ) i.1.2.1 i.1.2.2) hEnv0 hKenv
+    (fun N i ω => by
+      simpa only [abs_norm] using henv N (i.1 : ℝ) i.2.1.1 i.2.2 ω) hEnvpoly ?_
+  refine StochDom.of_le_left (fun N i ω => le_of_eq (abs_norm _))
+    (hdom.precomp_param fun N (i : DriftIdx B s v n N) =>
+      ((⟨(i.1 : ℝ), i.1.2.1, i.1.2.2.trans (hvt N)⟩ : TimeIcc s t N),
+        ((i.2.1.1, i.2.2) : LoopData (B.L N) (n + 2))))
+
+/-- **The `E ⊗ E` control of T135, with its random factor replaced by a deterministic one.**
+
+This is the missing analogue of `RBM.SumZeroDyn.F_stochDom` for `E ⊗ E`: the control of
+`RBM.EEBridge.stochDom_norm_eeField` (= the field `RBM.SumZeroDyn.Lemma510.EE_le`) carries the
+random power count `Ξ^{(L)}_{u,2(n+2)+2}`, and `hxiL` — the `E ⊗ E` instance of the hypothesis
+that `RBM.SumZeroDyn.xiRhs_stochDom` calls `hY` — replaces it. -/
+theorem stochDom_norm_eeFun_det {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ} {ΨE : ℕ → ℝ}
+    (hA0 : ∀ N (u : TimeIcc s t N), 0 ≤ B.scale E N (u : ℝ))
+    (hη0 : ∀ N (u : TimeIcc s t N), 0 ≤ etaT E (u : ℝ))
+    (hEE : StochDom B.P
+      (fun N (p : TimeIcc s t N ×
+          ((Fin (n + 2) → Bool) × LoopArg (B.L N) ((n + 2) + (n + 2)))) ω =>
+        ‖EEBridge.eeField X E n N (p.1 : ℝ) ω p.2.1 p.2.2‖)
+      (fun N p ω => (B.scale E N (p.1 : ℝ))⁻¹ ^ (2 * (n + 2)) * (etaT E (p.1 : ℝ))⁻¹
+        * X.xiL E N (p.1 : ℝ) ω (2 * (n + 2) + 2)))
+    (hxiL : StochDom B.P (Step3.flowXiL X E s t (2 * (n + 2) + 2)) (fun N _ _ => ΨE N)) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N ×
+          ((Fin (n + 2) → Bool) × LoopArg (B.L N) ((n + 2) + (n + 2)))) ω =>
+        ‖eeFun B E N (p.1 : ℝ) (X.H N (p.1 : ℝ) ω) p.2.1 p.2.2‖)
+      (fun N p _ => (B.scale E N (p.1 : ℝ))⁻¹ ^ (2 * (n + 2)) * (etaT E (p.1 : ℝ))⁻¹ * ΨE N) := by
+  set U : ℕ → Type := fun N => TimeIcc s t N ×
+    ((Fin (n + 2) → Bool) × LoopArg (B.L N) ((n + 2) + (n + 2))) with hU
+  set d : ∀ N, U N → ℝ := fun N p =>
+    (B.scale E N (p.1 : ℝ))⁻¹ ^ (2 * (n + 2)) * (etaT E (p.1 : ℝ))⁻¹ with hd
+  set Xi : ∀ N, U N → Ω → ℝ := fun N p ω => X.xiL E N (p.1 : ℝ) ω (2 * (n + 2) + 2) with hXi
+  have hY : StochDom B.P
+      (fun N (p : U N) ω => ‖eeFun B E N (p.1 : ℝ) (X.H N (p.1 : ℝ) ω) p.2.1 p.2.2‖)
+      (fun N p ω => d N p * Xi N p ω) :=
+    StochDom.of_le_left (fun N p ω => le_of_eq (by rw [eeFun_H])) hEE
+  have hx : StochDom B.P Xi (fun N (p : U N) (_ : Ω) => ΨE N) :=
+    hxiL.precomp_param fun N (p : U N) => p.1
+  exact stochDom_control_det
+    (fun N p => by have := hA0 N p.1; have := hη0 N p.1; positivity)
+    (fun N p ω => X.xiL_nonneg (hA0 N p.1)) hY hx
+
+/-- **The input of `hEEmom`, discharged.**
+
+Together with `hEEmom_of_momNorm_two_mul` (T154's Lyapunov step, already in place) this closes
+`hEEmom` of `hrhs_of_moment_inputs`.  The hypothesis `hdom` is the conclusion of
+`stochDom_norm_eeFun_det`, i.e. T135's `RBM.EEBridge.stochDom_norm_eeField` after the random
+factor of its control has been replaced; `gE` is that deterministic control read as a function
+of the time. -/
+theorem hEEmom_of_stochDom [IsProbabilityMeasure (B.P)] {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+    {n : ℕ} (v : ℕ → ℝ) (hvt : ∀ N, v N ≤ t N)
+    {gE : ℕ → ℝ → ℝ} {ΦE : ℕ → ℝ} {Env : ℕ → ℝ} {Kenv Blow : ℝ}
+    (hmeas : ∀ (N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool)
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      Measurable fun ω => ‖eeFun B E N u (X.H N u ω) σ c‖)
+    (hintEE : ∀ (r N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool)
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      Integrable (fun ω => ‖eeFun B E N u (X.H N u ω) σ c‖ ^ r) B.P)
+    (hg : ∀ N (u : ℝ), s N ≤ u → u ≤ v N → 0 < gE N u) (hB : 0 ≤ Blow)
+    (hglow : ∀ᶠ N : ℕ in atTop, ∀ u : ℝ, s N ≤ u → u ≤ v N → (N : ℝ) ^ (-Blow) ≤ gE N u)
+    (hEnv0 : ∀ N, 0 ≤ Env N) (hKenv : 0 ≤ Kenv)
+    (henv : ∀ (N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool)
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))) (ω : Ω),
+      ‖eeFun B E N u (X.H N u ω) σ c‖ ≤ Env N)
+    (hEnvpoly : ∀ᶠ N : ℕ in atTop, Env N ≤ (N : ℝ) ^ Kenv)
+    (hgle : ∀ N (u : ℝ), s N ≤ u → u ≤ v N → gE N u ≤ ΦE N)
+    (hdom : StochDom B.P
+      (fun N (p : TimeIcc s t N ×
+          ((Fin (n + 2) → Bool) × LoopArg (B.L N) ((n + 2) + (n + 2)))) ω =>
+        ‖eeFun B E N (p.1 : ℝ) (X.H N (p.1 : ℝ) ω) p.2.1 p.2.2‖)
+      (fun N p _ => gE N (p.1 : ℝ))) :
+    ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ (q : LoopData (B.L N) (n + 2))
+        (c : LoopArg (B.L N) ((n + 2) + (n + 2))),
+        momNorm B.P p (fun ω => ‖eeFun B E N u (X.H N u ω) q.1 c‖)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * ΦE N) := by
+  refine hEEmom_of_momNormDom (X := X) (E := E) (s := s) v (ΦE := fun N _ => ΦE N) hintEE ?_
+  refine MomNormDom.control_mono (Φ := fun N (i : EEIdx B s v n N) => gE N (i.1 : ℝ)) ?_
+    (fun N i => hgle N (i.1 : ℝ) i.1.2.1 i.1.2.2)
+  refine momNormDom_of_stochDom (Env := Env) (Kenv := Kenv) (Blow := Blow)
+    (fun N i => hmeas N (i.1 : ℝ) i.2.1.1 i.2.2)
+    (fun r N i => by
+      simpa only [abs_norm] using hintEE (2 * r) N (i.1 : ℝ) i.2.1.1 i.2.2)
+    (fun N i => hg N (i.1 : ℝ) i.1.2.1 i.1.2.2) hB
+    (hglow.mono fun N hN i => hN (i.1 : ℝ) i.1.2.1 i.1.2.2) hEnv0 hKenv
+    (fun N i ω => by
+      simpa only [abs_norm] using henv N (i.1 : ℝ) i.2.1.1 i.2.2 ω) hEnvpoly ?_
+  refine StochDom.of_le_left (fun N i ω => le_of_eq (abs_norm _))
+    (hdom.precomp_param fun N (i : EEIdx B s v n N) =>
+      ((⟨(i.1 : ℝ), i.1.2.1, i.1.2.2.trans (hvt N)⟩ : TimeIcc s t N),
+        ((i.2.1.1, i.2.2) : (Fin (n + 2) → Bool) × LoopArg (B.L N) ((n + 2) + (n + 2)))))
 
 /-- **`hrhs` for `RBM.MomentDuhamel.stochDom_of_momentDuhamel`.**
 

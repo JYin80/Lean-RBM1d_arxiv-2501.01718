@@ -3653,3 +3653,35 @@ cFar · (r·√r·(√A)⁻¹·J)  +  169 · (r·A⁻¹·(J·√J))
 本单新证的 6 条确定性带地板核是**纯矩阵引理、与 `Hierarchy/` 无关**，现在住在 `RBM.LKDecayQuant` 里。
 `Gauss/` 可以 import `Hierarchy/`（已有五处先例），所以技术上能直接复用；但更干净的是
 **下沉到新建的 `RBM1D/Green/EntryBoundFloor.lean`**，让 `LKDecayQuant` 与将来的 `Gauss/EntryBoundTime.lean` 都从那里取。
+
+## T157：`hrhs` 的三项输入全部卸掉（`Gauss/MomentDuhamelRhs.lean`，649 → 894 行，2026-09-21）
+
+`hrhs_of_moment_inputs` **一个字没动**，新增 6 条声明。
+
+**两条通用步骤**
+* `MomNormDom.control_mono`——关键的顺序发现：**`Lemma510` 的控制带时间 `u`，而 `hrhs` 要的控制不带**。
+  正确做法是**先**用带时间的控制过 T77 的桥，**之后**在矩的层面放宽。这样就**不需要 `≺` 层面的控制单调性**
+  （`Gauss.StochDom.control_mono` 在 `Gauss/Lemma41Glue.lean`，不在本文件的 import 闭包里；没有为它新加 import，也没有重证）。
+* `stochDom_control_det`：`Y ≺ d·Ξ`（`d` 确定性）+ `Ξ ≺ Ψ` ⟹ `Y ≺ d·Ψ`。
+  **这正是 `SumZeroDyn.F_stochDom` 对漂移做的那一步**，抽出来是因为 `E⊗E` 没有对应定理。
+
+**三项输入**
+1. **`hinit`**（`hinit_of_stochDom`）：`≺` 输入是 **`BoundsCore.LmK (n+2)` 逐字**——(2.68) 的控制本来就是确定性的
+   `(Wℓ_sη_s)^{−(n+2)}`，**这一项从来就没有随机控制问题**。可积性取自 `Hyp.integrable`，调用方零额外代价。
+2. **`hFmom`**（`hFmom_of_stochDom`）：`hdom` 的控制写成 `fun N p _ => g N (p.1 : ℝ)`，
+   **`SumZeroDyn.F_stochDom` 的结论逐字落进去**。唯一新增的实质假设是
+   `hgle : ∀ N u, s N ≤ u → u ≤ v N → g N u ≤ ΦF N`（把带时间的控制在窗口上取一致上界；窗口可短于 `[s_N,t_N]`）。
+3. **`hEEmom` 的输入**：两步。`stochDom_norm_eeFun_det` 收 **`EEBridge.stochDom_norm_eeField` 逐字**
+   （控制带随机因子 `Ξ^{(L)}_{u,2(n+2)+2}`）加 `hxiL`（就是 `xiRhs_stochDom` 收的那个 `hY`，换到回路长 `2(n+2)+2`），
+   输出确定性控制并顺带把 `eeField` 换成 `eeFun`；再接 T154 的 Lyapunov 产出 `p` 阶矩的 `hEEmom` 槽。
+
+**合成全部探针验证过**（exit=0，已删）：三者一起填满 `hrhs_of_moment_inputs` 的三个槽。
+
+### 剩下什么（边界诚实）
+* 三条新引理仍收 **T77 反向桥的侧条件**（可测性、确定性包络及其多项式增长、控制的多项式**下界**）。
+  这些是**模型层事实**、不是关于 hierarchy 的陈述，仓库里都有对应件
+  （`Gauss.integrable_lkT_pow`、`norm_gloop_sub_le_det`、`det_envelope_le_rpow`、`EEBridge.rpow_neg_le_eeControl`），接上是另一单。
+* **`hFmom` 那条链的最后一环仍在文件外**：`hFmom_of_stochDom` 本身不需要 `Hierarchy`，但**要用 `F_stochDom` 生产 `hdom`**，
+  调用方就得有一个 `SumZeroDyn.Hierarchy` 且其 `F` 等于 `Hyp.Fpath`——**T118 禁止实例化 `Hierarchy`**。
+  这一环没有被绕过也没有被伪造：`hdom` 留成假设，形状与 `F_stochDom` 的结论完全一致。**它指向 T58/T163。**
+* `momentDuhamelQ`（五项 `Q_t` 路线）依旧无消费者，不需要卸。

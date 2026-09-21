@@ -58,7 +58,13 @@ a structure as a hypothesis; the axiom audit sees only `propext`, `Classical.cho
   `RBM.Bounds X E s` adds (2.71)/(2.62).  These are the statements of Lemmas 2.18–2.20
   at time `s` and the hypotheses of Theorem 2.21.
 * `RBM.Cond272 B E s t` — the step condition (2.72).
+* `RBM.Cond272' B E s t c` — (2.72) **with the `N^c` gain** the grid of p. 24 supplies; this is
+  the form `hregS` that the six steps of §2.7 consume, and it is strictly stronger than
+  `RBM.Cond272` (T179; `docs/paper-deltas.md` #47/#54/#73).
 * `RBM.Thm221 X κ` — Theorem 2.21: `Bounds s → (2.72) → Bounds t`.
+* `RBM.Thm221' X κ` — the same with `RBM.Cond272'` in place of `RBM.Cond272`; weaker than
+  `RBM.Thm221` (`RBM.Thm221.toThm221'`) and still enough for Lemmas 2.18–2.20
+  (`RBM.Bounds_of_Thm221'`).
 * `RBM.Steps X E s t` — the eight conclusions (2.73)–(2.80) of Steps 1–6 (Section 5).
 * `RBM.Transfer X` — the band matrix `H` itself and (2.39)/(2.66) (equality in law) written as
   **transfer of `≺`-bounds** from `G_t` to `G(z)` (no pushforward measures).
@@ -290,11 +296,42 @@ structure Bounds (X : Sample B) (E : ℝ) (s : ℕ → ℝ) : Prop extends Bound
 def Cond272 (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
   ∀ᶠ N : ℕ in atTop, (B.scale E N (t N))⁻¹ ≤ ((1 - t N) / (1 - s N)) ^ 30
 
+/-- **(2.72) with the `N^c` gain the grid of p. 24 actually supplies** (T179):
+`N^c (η_s/η_t)^{30} ≤ W ℓ_t η_t`.
+
+This is **literally** the hypothesis `hregS` that the six steps of §2.7 consume
+(`RBM.Step2PP.harith_flowAs`, `RBM.Step2PP.flow_sharpLoop_glue_flowAs'`, …), and it is
+**strictly stronger** than `RBM.Cond272`: inverting, it reads
+`(W ℓ_t η_t)^{-1} ≤ N^{-c} ((1-t)/(1-s))^{30}`.  The paper's (2.72) has no `N^c`
+(`docs/paper-deltas.md` #47/#54/#73); the gain is free on the grid of p. 24, where
+`W ℓ_t η_t ≥ Im m^{(E)} W^{τ/2}` while a grid step costs only `W^{30τ'}` with `60τ' < τ`
+(`RBM.flow_grid_2_72_gain`, `RBM.Band.eventually_flow_grid'`).
+
+`RBM.Cond272'.toCond272` (`Flow/Iteration.lean`) recovers `RBM.Cond272`. -/
+def Cond272' (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (c : ℝ) : Prop :=
+  ∀ᶠ N : ℕ in atTop,
+    (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤ B.scale E N (t N)
+
 /-- **Theorem 2.21** (as a hypothesis): for `|E| ≤ 2 - κ` and times `0 ≤ s ≤ t < 1` satisfying
 (2.72), the bounds (2.68)–(2.71) at `s` imply them at `t`. -/
 structure Thm221 (X : Sample B) (κ : ℝ) : Prop where
   step : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
     (∀ N, t N < 1) → Cond272 B E s t → Bounds X E s → Bounds X E t
+
+/-- **Theorem 2.21 with the gained (2.72)** (T179): same as `RBM.Thm221`, except that the step
+hypothesis is `RBM.Cond272'`, i.e. (2.72) *with* the `N^c` gain, for every `c > 0`.
+
+`RBM.Thm221` implies this (`RBM.Thm221.toThm221'`), and `RBM.Bounds_of_Thm221'` shows that this
+weaker statement is all Lemmas 2.18–2.20 need — the grid of p. 24 supplies the gained form
+(`RBM.Band.eventually_flow_grid'`).  This is the version the six steps of §2.7 can actually
+produce: they consume `hregS`, i.e. `RBM.Cond272'`, not the bare `RBM.Cond272`.
+
+The `c` is quantified *inside* the field, so a producer must handle every `c > 0`; that is what
+the arithmetic of §2.7 does (`RBM.Step2PP.harith_flowAs` and `RBM.Step2.eventually_step_facts`
+take `c` as a parameter with `0 < c` and choose the remaining exponents from it). -/
+structure Thm221' (X : Sample B) (κ : ℝ) : Prop where
+  step : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ c : ℝ, 0 < c → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) →
+    (∀ N, s N ≤ t N) → (∀ N, t N < 1) → Cond272' B E s t c → Bounds X E s → Bounds X E t
 
 /-- The times `u ∈ [s, t]` at index `N`. -/
 abbrev TimeIcc (s t : ℕ → ℝ) (N : ℕ) : Type := ↥(Set.Icc (s N) (t N))

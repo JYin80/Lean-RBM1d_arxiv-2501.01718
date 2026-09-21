@@ -36,6 +36,22 @@ flow); everything else is proved.
 
 No hypothesis beyond `RBM.Thm221` is needed: the interface of `Flow/Hypotheses.lean` suffices.
 
+## The `N^c` gain of (2.72) (T179)
+
+`RBM.Thm221` takes the **bare** (2.72) `RBM.Cond272`, but the six steps of §2.7 consume (2.72)
+**with an `N^c` gain** (`hregS`, i.e. `RBM.Cond272'`), which is strictly stronger; so `RBM.Thm221`
+as stated is not what the six steps produce.  The grid of p. 24 supplies the gain for free, and
+the primed statements say so:
+
+* `RBM.Band.eventually_flow_grid'` — the grid with `N^c ((1-u_k)/(1-u_{k+1}))^{30} ≤ W ℓ η`,
+  `c = min(τ,1)/32` (from `RBM.flow_grid_2_72_gain` and (2.2) `W ≥ N^{1/2+c_B}`).
+* `RBM.Cond272'.toCond272`, `RBM.Thm221.toThm221'` — the gained condition is stronger, hence
+  `RBM.Thm221'` is the *weaker* theorem, and nothing is lost.
+* `RBM.Bounds_of_Thm221'`, `RBM.stochDom_norm_Lval_of_Thm221'` — Lemmas 2.18–2.20 and (2.61)
+  from `RBM.Thm221'`, with no gain hypothesis inserted by hand.
+
+See `docs/paper-deltas.md` #47/#54/#73.
+
 ## The induction
 
 Since `≺` is a `Prop` (Definition 2.1: "for every `τ > 0`, `D > 0`, for `N ≥ N₀(τ, D)`"), the
@@ -264,6 +280,70 @@ theorem eventually_flow_grid {κ τ : ℝ} (hκ : 0 < κ) (hτ : 0 < τ) :
     hA.trans (Real.rpow_le_one_of_one_le_of_nonpos (B.one_le_W N) (by linarith))
   exact ⟨hgrid, (inv_le_one₀ hpos).1 hA1, ht1, hstep⟩
 
+/-- **The grid of p. 24 for the band model, with the `N^c` gain it actually carries** (T179).
+
+Same as `RBM.Band.eventually_flow_grid`, except that the last conjunct is the *gained* (2.72)
+`N^c ((1 - u_k)/(1 - u_{k+1}))^{30} ≤ W ℓ_{u_{k+1}} η_{u_{k+1}}`,
+with `c = min(τ,1)/32 > 0` depending on `τ` only.  Two inputs, both already in the tree:
+`RBM.flow_grid_2_72_gain` gives the gain `W^{τ₀/8}` along the grid (`τ₀ = min(τ,1)/2`), and
+(2.2) `W ≥ N^{1/2 + c_B}` turns it into `N^{τ₀/16}`.
+
+This is what makes `RBM.Thm221'` usable: `RBM.Cond272'` — the `hregS` of the six steps of
+§2.7 — is strictly stronger than `RBM.Cond272`, so the bare grid of `eventually_flow_grid`
+does **not** supply it (T176, probes P2/P3). -/
+theorem eventually_flow_grid' {κ τ : ℝ} (hκ : 0 < κ) (hτ : 0 < τ) :
+    ∃ τ' : ℝ, 0 < τ' ∧ ∃ c : ℝ, 0 < c ∧ ∃ n₀ : ℕ, ∀ E : ℝ, |E| ≤ 2 - κ → ∀ t : ℕ → ℝ,
+      (∀ N, 0 ≤ t N) → (∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) →
+      ∀ᶠ N : ℕ in atTop, gridT (B.W N) τ' (t N) n₀ = t N ∧ 1 ≤ B.scale E N (t N) ∧
+        t N < 1 ∧ ∀ k : ℕ, (N : ℝ) ^ c * ((1 - gridT (B.W N) τ' (t N) k) /
+            (1 - gridT (B.W N) τ' (t N) (k + 1))) ^ 30 ≤
+          B.scale E N (gridT (B.W N) τ' (t N) (k + 1)) := by
+  set τ₀ := min τ 1 / 2 with hτ₀
+  have hτ₀0 : 0 < τ₀ := by have := lt_min hτ one_pos; rw [hτ₀]; linarith
+  have hτ₀1 : τ₀ ≤ 1 := by have := min_le_right τ 1; rw [hτ₀]; linarith
+  have hτ₀τ : τ₀ ≤ τ / 2 := by have := min_le_left τ 1; rw [hτ₀]; linarith
+  set τ' := τ₀ / 120 with hτ'
+  have hτ'0 : 0 < τ' := by rw [hτ']; positivity
+  set n₀ := ⌈2 / τ'⌉₊ with hn₀
+  have hn : 2 ≤ (n₀ : ℝ) * τ' := (div_le_iff₀ hτ'0).1 (Nat.le_ceil _)
+  obtain ⟨W₀, -, hW⟩ := flow_grid_2_72_gain hκ hτ₀0.le hτ'0 (by rw [hτ']; linarith) hn
+  have hexp : τ₀ / 4 - 15 * τ' = τ₀ / 8 := by rw [hτ']; ring
+  refine ⟨τ', hτ'0, τ₀ / 16, by positivity, n₀, fun E hE t ht0 ht => ?_⟩
+  filter_upwards [B.eventually_le_W W₀, B.eventually_L_le_W,
+    B.eventually_rpow_WL_le hτ hτ₀0.le hτ₀1 hτ₀τ, ht, eventually_ge_atTop 1, B.bandwidth]
+    with N hWN hLW hWL htN hN1 hbw
+  have hN0 : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
+  have ht1 : t N < 1 := by have := Real.rpow_pos_of_pos hN0 (-1 + τ); linarith
+  obtain ⟨-, hgrid, -, hA, hstep⟩ :=
+    hW (B.W N) hWN (B.L N) (B.one_le_L N) hLW E hE (t N) (ht0 N) (hWL.trans htN)
+  have hE2 : |E| < 2 := by linarith
+  have hpos : 0 < B.scale E N (t N) :=
+    flowScale_pos (by linarith [B.one_le_W N]) (B.one_le_L N) hE2 ht1
+  have hA1 : (B.scale E N (t N))⁻¹ ≤ 1 :=
+    hA.trans (Real.rpow_le_one_of_one_le_of_nonpos (B.one_le_W N) (by linarith))
+  -- `N^{τ₀/16} ≤ W^{τ₀/8}`, by (2.2) `W ≥ N^{1/2 + c_B}`
+  have hNW : (N : ℝ) ^ (τ₀ / 16) ≤ (B.W N : ℝ) ^ (τ₀ / 8) := by
+    have hhalf : (N : ℝ) ^ ((1 : ℝ) / 2) ≤ (B.W N : ℝ) :=
+      (Real.rpow_le_rpow_of_exponent_le hN1' (by linarith [B.c_pos])).trans hbw
+    calc (N : ℝ) ^ (τ₀ / 16) = ((N : ℝ) ^ ((1 : ℝ) / 2)) ^ (τ₀ / 8) := by
+          rw [← Real.rpow_mul (Nat.cast_nonneg N)]; ring_nf
+      _ ≤ (B.W N : ℝ) ^ (τ₀ / 8) :=
+          Real.rpow_le_rpow (Real.rpow_nonneg (Nat.cast_nonneg N) _) hhalf (by positivity)
+  refine ⟨hgrid, (inv_le_one₀ hpos).1 hA1, ht1, fun k => ?_⟩
+  have hk := hstep k
+  rw [hexp] at hk
+  have hr0 : 0 ≤ (1 - gridT (B.W N) τ' (t N) k) / (1 - gridT (B.W N) τ' (t N) (k + 1)) := by
+    have h1 := gridT_le (W := (B.W N : ℝ)) (τ' := τ') (t N) k
+    have h2 := gridT_le (W := (B.W N : ℝ)) (τ' := τ') (t N) (k + 1)
+    exact div_nonneg (by linarith) (by linarith)
+  calc (N : ℝ) ^ (τ₀ / 16) * ((1 - gridT (B.W N) τ' (t N) k) /
+          (1 - gridT (B.W N) τ' (t N) (k + 1))) ^ 30
+      ≤ (B.W N : ℝ) ^ (τ₀ / 8) * ((1 - gridT (B.W N) τ' (t N) k) /
+          (1 - gridT (B.W N) τ' (t N) (k + 1))) ^ 30 :=
+        mul_le_mul_of_nonneg_right hNW (pow_nonneg hr0 30)
+    _ ≤ _ := hk
+
 end Band
 
 /-! ### Lemmas 2.18, 2.19, 2.20 -/
@@ -271,6 +351,34 @@ end Band
 section Main
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ}
+
+/-- **The gained (2.72) implies the bare (2.72)** (T179): `N^c ≥ 1` is thrown away and
+`η_s/η_t = (1-s)/(1-t)` is inverted.
+
+Same content as `RBM.Step2.cond272_of_strict`, which is not available here
+(`Hierarchy/Step2.lean` is downstream of this file). -/
+theorem Cond272'.toCond272 {s t : ℕ → ℝ} (hE : |E| < 2) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 ≤ c) (h : Cond272' B E s t c) : Cond272 B E s t := by
+  filter_upwards [h, eventually_ge_atTop 1] with N hN hN1
+  have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
+  have hs1 : s N < 1 := (hst N).trans_lt (ht1 N)
+  rw [etaT_div_etaT hE] at hN
+  have h1t : 0 < 1 - t N := by linarith [ht1 N]
+  have h1s : 0 < 1 - s N := by linarith
+  have hR0 : 0 < (1 - s N) / (1 - t N) := div_pos h1s h1t
+  have hc : 1 ≤ (N : ℝ) ^ c := Real.one_le_rpow hN1' hc0
+  have hpos : 0 < ((1 - s N) / (1 - t N)) ^ 30 := pow_pos hR0 30
+  have h1 : ((1 - s N) / (1 - t N)) ^ 30 ≤ B.scale E N (t N) := by nlinarith
+  calc (B.scale E N (t N))⁻¹ ≤ (((1 - s N) / (1 - t N)) ^ 30)⁻¹ := inv_anti₀ hpos h1
+    _ = ((1 - t N) / (1 - s N)) ^ 30 := by rw [← inv_pow, inv_div]
+
+/-- **Theorem 2.21 implies its gained form** (T179): `RBM.Thm221'` is the weaker statement, so
+nothing downstream of `RBM.Thm221` is lost by moving to `RBM.Thm221'`. -/
+theorem Thm221.toThm221' {X : Sample B} {κ : ℝ} (hκ : 0 < κ) (hT : Thm221 X κ) :
+    Thm221' X κ where
+  step E hE c hc0 s t hs0 hst ht1 hcond hB :=
+    hT.step E hE s t hs0 hst ht1
+      (hcond.toCond272 (by linarith [abs_nonneg E]) hst ht1 hc0.le) hB
 
 /-- **Proof of Lemmas 2.18, 2.19 and 2.20 (p. 24), assuming Theorem 2.21.**  For `κ, τ > 0`,
 `|E| ≤ 2 - κ` and every time sequence with `0 ≤ t` and `t ≤ 1 - N^{-1+τ}` (for large `N`), the
@@ -299,6 +407,40 @@ theorem Bounds_of_Thm221 {κ : ℝ} (hκ : 0 < κ) (hT : Thm221 X κ) (hE : |E| 
       · exact gridT_mono (B.one_le_W N) hτ'.le (t N) (Nat.le_succ k)
       · exact (min_le_left _ _).trans_lt (gridS_lt_one (by linarith [B.one_le_W N]) _)
       · filter_upwards [hg] with N hN
+        exact hN.2.2.2 k
+  exact (key n₀).congr X (by filter_upwards [hg] with N hN; exact hN.1)
+
+/-- **Lemmas 2.18, 2.19 and 2.20 from the *gained* Theorem 2.21** (T179).  This, and not
+`RBM.Bounds_of_Thm221`, is the form the assembly can use: the six steps of §2.7 produce
+`RBM.Thm221'`, not `RBM.Thm221`.
+
+Verbatim the statement of `RBM.Bounds_of_Thm221`, with `RBM.Thm221'` in place of `RBM.Thm221`.
+The grid of p. 24 supplies the gained (2.72) by itself (`RBM.Band.eventually_flow_grid'`), so no
+gain hypothesis is inserted by hand; the `c > 0` handed to `RBM.Thm221'.step` is the one the grid
+produces (`min(τ,1)/32`).  `RBM.Bounds_of_Thm221` is the corollary along
+`RBM.Thm221.toThm221'`. -/
+theorem Bounds_of_Thm221' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221' X κ) (hE : |E| ≤ 2 - κ) {τ : ℝ}
+    (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : Bounds X E t := by
+  obtain ⟨τ', hτ', c, hc0, n₀, hgrid⟩ := B.eventually_flow_grid' hκ hτ
+  have hg := hgrid E hE t ht0 ht
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE2' : |E| < 2 := by linarith
+  let u : ℕ → ℕ → ℝ := fun k N => gridT (B.W N) τ' (t N) k
+  have key : ∀ k, Bounds X E (u k) := by
+    intro k
+    induction k with
+    | zero =>
+      have h0 : u 0 = fun _ => 0 := funext fun N => gridT_zero (ht0 N)
+      rw [h0]
+      exact Bounds_zero X hE2
+    | succ k ih =>
+      refine hT.step E hE c hc0 (u k) (u (k + 1)) (fun N => ?_) (fun N => ?_) (fun N => ?_) ?_ ih
+      · exact le_min (gridS_nonneg (B.one_le_W N) hτ'.le k) (ht0 N)
+      · exact gridT_mono (B.one_le_W N) hτ'.le (t N) (Nat.le_succ k)
+      · exact (min_le_left _ _).trans_lt (gridS_lt_one (by linarith [B.one_le_W N]) _)
+      · filter_upwards [hg] with N hN
+        rw [etaT_div_etaT hE2']
         exact hN.2.2.2 k
   exact (key n₀).congr X (by filter_upwards [hg] with N hN; exact hN.1)
 
@@ -537,6 +679,40 @@ theorem stochDom_norm_Lval_of_Thm221 {κ : ℝ} (hκ : 0 < κ) (hT : Thm221 X κ
   have hA : ∀ᶠ N : ℕ in atTop, 1 ≤ B.scale E N (t' N) := by
     filter_upwards [hg, htt'] with N h1 h2; rw [← h2]; exact h1.2.1
   have hB := Bounds_of_Thm221 X hκ hT hE hτ ht'0 ht''
+  have h := stochDom_norm_Lval_of_LmK X hk0 (min_le_right κ 1) hEk ht'0 ht'1 hA hn
+    (hB.LmK n (by omega))
+  exact h.congr_eventually (by filter_upwards [htt'] with N hN; rw [hN])
+    (by filter_upwards [htt'] with N hN; rw [hN])
+
+/-- **Lemma 2.18, (2.61), from the *gained* Theorem 2.21** (T179): verbatim the statement of
+`RBM.stochDom_norm_Lval_of_Thm221`, with `RBM.Thm221'` in place of `RBM.Thm221`. -/
+theorem stochDom_norm_Lval_of_Thm221' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221' X κ)
+    (hE : |E| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) {n : ℕ} (hn : 1 ≤ n) :
+    StochDom B.P (fun N (u : LoopData (B.L N) n) ω => ‖X.Lval E N (t N) ω u.idx‖)
+      (fun N _ _ => (B.scale E N (t N))⁻¹ ^ (n - 1)) := by
+  obtain ⟨τ', -, c, -, n₀, hgrid⟩ := B.eventually_flow_grid' hκ hτ
+  -- replace `t` by a sequence `t'` with `t' < 1` for every `N`, equal to `t` for large `N`
+  set t' : ℕ → ℝ := fun N => if t N < 1 then t N else 0 with ht'
+  have ht'0 : ∀ N, 0 ≤ t' N := fun N => by
+    simp only [ht']; split_ifs
+    · exact ht0 N
+    · exact le_rfl
+  have ht'1 : ∀ N, t' N < 1 := fun N => by
+    simp only [ht']; split_ifs with h
+    · exact h
+    · exact zero_lt_one
+  have hg := hgrid E hE t ht0 ht
+  have htt' : ∀ᶠ N : ℕ in atTop, t N = t' N := by
+    filter_upwards [hg] with N hN
+    simp only [ht', ite_eq_left hN.2.2.1]
+  have ht'' : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t' N := by
+    filter_upwards [ht, htt'] with N h1 h2; rwa [← h2]
+  have hk0 : 0 < min κ 1 := lt_min hκ one_pos
+  have hEk : |E| ≤ 2 - min κ 1 := hE.trans (by linarith [min_le_left κ 1])
+  have hA : ∀ᶠ N : ℕ in atTop, 1 ≤ B.scale E N (t' N) := by
+    filter_upwards [hg, htt'] with N h1 h2; rw [← h2]; exact h1.2.1
+  have hB := Bounds_of_Thm221' X hκ hT hE hτ ht'0 ht''
   have h := stochDom_norm_Lval_of_LmK X hk0 (min_le_right κ 1) hEk ht'0 ht'1 hA hn
     (hB.LmK n (by omega))
   exact h.congr_eventually (by filter_upwards [htt'] with N hN; rw [hN])

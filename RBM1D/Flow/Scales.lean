@@ -235,6 +235,47 @@ theorem gridT_step_2_72 (hW : 1 ≤ W) (hτ : 0 ≤ τ') {L : ℕ} (hL : 1 ≤ L
     _ = (W ^ (-τ')) ^ 30 := (rpow_neg_pow_thirty hW0).symm
     _ ≤ _ := pow_le_pow_left₀ hq0.le hratio 30
 
+theorem rpow_pow_thirty (hW : 0 < W) : (W ^ τ') ^ 30 = W ^ (30 * τ') := by
+  rw [← Real.rpow_natCast, ← Real.rpow_mul hW.le]
+  congr 1
+  push_cast
+  ring
+
+/-- **(2.72) along the truncated grid, with a gain `g`** (T179).  The grid step is insensitive
+to a multiplicative gain: if `g W^{30τ'} ≤ W ℓ_t η_t`, then for **every** `k`,
+`u = gridT W τ' t`,
+`g ((1 - u_k)/(1 - u_{k+1}))^{30} ≤ W ℓ_{u_{k+1}} η_{u_{k+1}}`,
+which for `g = 1` is `gridT_step_2_72` after inverting.  Only `1 - u_{k+1} ≥ W^{-τ'} (1 - u_k)`
+(`rpow_neg_mul_one_sub_gridT_le`) and the monotonicity of `u ↦ W ℓ_u η_u` are used. -/
+theorem gridT_step_2_72_gain (hW : 1 ≤ W) (hτ : 0 ≤ τ') {L : ℕ} {E : ℝ}
+    {t : ℝ} (ht1 : t < 1) {g : ℝ} (hg0 : 0 ≤ g)
+    (hA : g * W ^ (30 * τ') ≤ flowScale W L E t) (k : ℕ) :
+    g * ((1 - gridT W τ' t k) / (1 - gridT W τ' t (k + 1))) ^ 30 ≤
+      flowScale W L E (gridT W τ' t (k + 1)) := by
+  have hW0 : 0 < W := by linarith
+  have hq0 : 0 < W ^ (-τ') := Real.rpow_pos_of_pos hW0 _
+  have hu : 0 < 1 - gridT W τ' t k := by have := gridT_le (W := W) (τ' := τ') t k; linarith
+  have hu1 : 0 < 1 - gridT W τ' t (k + 1) := by
+    have := gridT_le (W := W) (τ' := τ') t (k + 1); linarith
+  have hratio : (1 - gridT W τ' t k) / (1 - gridT W τ' t (k + 1)) ≤ W ^ τ' := by
+    rw [div_le_iff₀ hu1]
+    have h := rpow_neg_mul_one_sub_gridT_le hW hτ ht1 k
+    have hmul : W ^ τ' * (W ^ (-τ') * (1 - gridT W τ' t k)) ≤
+        W ^ τ' * (1 - gridT W τ' t (k + 1)) :=
+      mul_le_mul_of_nonneg_left h (Real.rpow_nonneg hW0.le _)
+    have hcancel : W ^ τ' * W ^ (-τ') = 1 := by
+      rw [← Real.rpow_add hW0]; simp
+    nlinarith [hcancel]
+  have hmono : flowScale W L E t ≤ flowScale W L E (gridT W τ' t (k + 1)) :=
+    flowScale_antitoneOn hW0.le L E (Set.mem_Iic.mpr (by linarith))
+      (Set.mem_Iic.mpr ht1.le) (gridT_le t (k + 1))
+  calc g * ((1 - gridT W τ' t k) / (1 - gridT W τ' t (k + 1))) ^ 30
+      ≤ g * (W ^ τ') ^ 30 := by
+        refine mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hratio 30) hg0
+    _ = g * W ^ (30 * τ') := by rw [rpow_pow_thirty hW0]
+    _ ≤ flowScale W L E t := hA
+    _ ≤ _ := hmono
+
 end Grid
 
 section Choice
@@ -361,11 +402,93 @@ theorem flow_grid_2_72 {κ τ τ' : ℝ} (hκ : 0 < κ) (hτ : 0 ≤ τ) (hτ' :
   exact ⟨gridT_zero ht0, gridT_of_le htn, gridT_mono hW1 hτ'0 t, hA,
     gridT_step_2_72 hW1 hτ'0 hL hE2 ht1 hA⟩
 
+/-- **The time grid of p. 24 with the gain `W^{τ/4 - 15τ'}` that it actually carries** (T179).
+
+Same statement as `flow_grid_2_72`, except that the last conjunct is the *gained* form of (2.72):
+`W^{τ/4 - 15τ'} ((1 - u_k)/(1 - u_{k+1}))^{30} ≤ W ℓ_{u_{k+1}} η_{u_{k+1}}`,
+a positive power of `W` because `60 τ' < τ`.  Nothing new is proved: `flowScale_ge` already gives
+`W ℓ_t η_t ≥ Im m^{(E)} W^{τ/2}`, while a grid step only costs `W^{30τ'}`, and
+`Im m^{(E)} ≥ W^{-(τ/4 - 15τ')}` for `W` large (`exists_inv_le_rpow`, `mE_im_ge`); the surplus
+`W^{τ/2 - 30τ'}` is split in half, one half absorbing `Im m^{(E)}` and one half left as the gain.
+`RBM.gridT_step_2_72_gain` carries it through the grid.
+
+This is the form the six steps of §2.7 consume (`RBM.Step2PP.harith_flowAs`'s `hregS`): the bare
+(2.72) of `flow_grid_2_72` is strictly weaker, see `RBM.Cond272'`. -/
+theorem flow_grid_2_72_gain {κ τ τ' : ℝ} (hκ : 0 < κ) (hτ : 0 ≤ τ) (hτ' : 0 < τ')
+    (hττ' : 60 * τ' < τ) {n₀ : ℕ} (hn₀ : 2 ≤ (n₀ : ℝ) * τ') :
+    ∃ W₀ : ℝ, 1 ≤ W₀ ∧ ∀ W : ℝ, W₀ ≤ W → ∀ L : ℕ, 1 ≤ L → (L : ℝ) ≤ W →
+      ∀ E : ℝ, |E| ≤ 2 - κ → ∀ t : ℝ, 0 ≤ t → (W * L) ^ (-1 + τ) ≤ 1 - t →
+        gridT W τ' t 0 = 0 ∧ gridT W τ' t n₀ = t ∧ Monotone (gridT W τ' t) ∧
+        (flowScale W L E t)⁻¹ ≤ W ^ (-(30 * τ')) ∧
+        ∀ k : ℕ, W ^ (τ / 4 - 15 * τ') *
+            ((1 - gridT W τ' t k) / (1 - gridT W τ' t (k + 1))) ^ 30 ≤
+          flowScale W L E (gridT W τ' t (k + 1)) := by
+  set δ := τ / 4 - 15 * τ' with hδdef
+  have hδ0 : 0 < δ := by rw [hδdef]; linarith
+  set k₀ := min κ 2 with hk₀
+  have hk0 : 0 < k₀ := lt_min hκ (by norm_num)
+  have hk2 : k₀ ≤ 2 := min_le_right _ _
+  set c₀ := Real.sqrt (2 * k₀) / 2 with hc₀
+  have hc0 : 0 < c₀ := by rw [hc₀]; have := Real.sqrt_pos.mpr (by linarith : 0 < 2 * k₀); linarith
+  obtain ⟨W₀, hW₀, hW⟩ := exists_inv_le_rpow (δ := δ) hδ0 hc0
+  refine ⟨W₀, hW₀, fun W hW₀W L hL hLW E hE t ht0 ht => ?_⟩
+  have hL1 : (1 : ℝ) ≤ L := by exact_mod_cast hL
+  have hW1 : 1 ≤ W := hL1.trans hLW
+  have hW0 : 0 < W := by linarith
+  have hτ'0 : 0 ≤ τ' := hτ'.le
+  have hE' : |E| ≤ 2 - k₀ := hE.trans (by linarith [min_le_left κ 2])
+  have hE2 : |E| < 2 := by linarith
+  have hN1 : 1 ≤ W * L := by nlinarith
+  have hN0 : 0 < W * L := by linarith
+  have ht1 : t < 1 := by have := Real.rpow_pos_of_pos hN0 (-1 + τ); linarith
+  -- `Im m^{(E)} ≥ c₀ ≥ W^{-δ}`
+  have hmδ : ((mE E).im)⁻¹ ≤ W ^ δ :=
+    (inv_anti₀ hc0 (mE_im_ge hk0 hk2 hE')).trans (hW W hW₀W)
+  have hbig : ((mE E).im)⁻¹ ≤ W ^ (τ / 2 - 30 * τ') :=
+    hmδ.trans (Real.rpow_le_rpow_of_exponent_le hW1 (by rw [hδdef]; linarith))
+  have hA := flowScale_inv_le_rpow hL hLW hE2 hτ ht hbig
+  have hW2 : W ^ (-2 : ℝ) ≤ 1 - t := by
+    have h1 : (W * L) ^ (-1 : ℝ) ≤ (W * L) ^ (-1 + τ) :=
+      Real.rpow_le_rpow_of_exponent_le hN1 (by linarith)
+    have h2 : W ^ (-2 : ℝ) ≤ (W * L) ^ (-1 : ℝ) := by
+      rw [Real.rpow_neg hW0.le, Real.rpow_neg_one, Real.rpow_two]
+      exact inv_anti₀ hN0 (by nlinarith)
+    linarith
+  have htn : t ≤ gridS W τ' n₀ := le_gridS_of hW1 hn₀ hW2
+  -- the gained hypothesis of `gridT_step_2_72_gain`: `W^δ W^{30τ'} ≤ W ℓ_t η_t`
+  have hm := mE_im_pos hE2
+  have hgain : W ^ δ * W ^ (30 * τ') ≤ flowScale W L E t := by
+    have hge := flowScale_ge hL hLW E hτ ht
+    have hsplit : W ^ δ * W ^ (30 * τ') = W ^ (τ / 2) * W ^ (-δ) := by
+      rw [← Real.rpow_add hW0, ← Real.rpow_add hW0]
+      congr 1
+      rw [hδdef]; ring
+    have hinv : W ^ (-δ) ≤ (mE E).im := by
+      rw [Real.rpow_neg hW0.le]
+      exact (inv_le_comm₀ hm (Real.rpow_pos_of_pos hW0 δ)).mp hmδ
+    calc W ^ δ * W ^ (30 * τ') = W ^ (τ / 2) * W ^ (-δ) := hsplit
+      _ ≤ W ^ (τ / 2) * (mE E).im :=
+          mul_le_mul_of_nonneg_left hinv (Real.rpow_nonneg hW0.le _)
+      _ = (mE E).im * W ^ (τ / 2) := by ring
+      _ ≤ _ := hge
+  exact ⟨gridT_zero ht0, gridT_of_le htn, gridT_mono hW1 hτ'0 t, hA,
+    gridT_step_2_72_gain hW1 hτ'0 ht1 (Real.rpow_nonneg hW0.le _) hgain⟩
+
 end Choice
 
 section Dictionary
 
 /-! ### The scale dictionary of p. 21–22 -/
+
+/-- `η_a/η_b = (1-a)/(1-b)`: the factor `Im m^{(E)}` of `η_t = (1-t) Im m^{(E)}` cancels.
+
+Same statement as `RBM.Step2.etaT_ratio`, which is not available here (`Hierarchy/Step2.lean` is
+downstream of this file); it is needed already at the level of `RBM.Cond272'` (T179). -/
+theorem etaT_div_etaT {E : ℝ} (hE : |E| < 2) (a b : ℝ) :
+    etaT E a / etaT E b = (1 - a) / (1 - b) := by
+  have := mE_im_pos hE
+  rw [etaT, etaT]
+  field_simp
 
 /-- `η_t ≤ 1 - t`. -/
 theorem etaT_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht : t ≤ 1) : etaT E t ≤ 1 - t := by

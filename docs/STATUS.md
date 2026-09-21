@@ -6065,3 +6065,107 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 1. **第 (2) 步（边界可积性）——仍属本条线，一条都没做。** `momentIneq_of_derivBound` 每个 `(p,N,σ,v,a)` 要八件东西，T206 只给了最后一件（逐点不等式）与桥。缺的五件：`ψ` 的窗口界、`u ↦ E|Ψ₁|^{2p}` 的 `ContinuousOn`、`φ′` 的区间可积、`u ↦ ‖U∘F_u‖_{2p}` 与 `u ↦ ‖(U⊗U)∘(E⊗E)‖_p` 的区间可积、乘积 `ψ·f` 的可积。机制上都该由确定性包络 `‖G‖ ≤ (Im z_u)^{−1}` + 控制收敛给出（仿 `integrable_lkT_pow` 的定时版）。
 2. **⚠ 无主：二次变差还不是接口要的 `E⊗E`。** `MomentIneq` 右端要 `‖(U⊗U)∘(E⊗E)_{a,a}‖_p`（`Uker` 在 `SumZeroDyn.xi2` 上作用于 `eeFun`）。仓库有的是 `quadVarPairs_Uker`（`quadVar(Ψ₁) = ∑_{ij}‖(U∘E^{(M)}(i,j))_a‖²`）与**单条 loop** 的 `eeRaw_self_eq_quadVarPairs` + (5.22) `eeEdge_eq_sum_SB`。**缺的是该胶合的双线性、`U` 共轭版**：`∑_{ij}(U∘E^{(M)}(i,j))_a·conj((U∘E^{(M)}(i,j))_{a′}) = (U⊗U∘eeArg)_{a,a′}`。已核：`Hierarchy/EEBridge.lean` 里**一个 `RBM.Uker` 都没有**。归 `EEBridge`/`DischargeBDG` 那条线，**没有单负责**。
 3. **⚠ 无主：`Q_t` 路线（`MomentIneqQ`）完全没碰。** 它的漂移恒等式要 `∂_u Q_u`，由此才生出 (5.91) 的 `SumZeroDyn.commS` 与 `varthetaDot` 两项；**仓库里没有对 `Qop` 求时间导数的任何东西**。**没有单负责。**（注意这与 T201 的 `Q_u` + (7.16) 是同一个 `Q`，两条线应当合看。）
+
+## ⭐ T199：**Theorem 2.2 落地**——能量网 + `‖∂_E Im G‖ ≤ η^{-2}`（`Flow/EnergyUniform.lean` 续 + `Delocalization.lean`，2026-09-21）
+
+`lake build RBM1D` exit=0，`build.log` `errors: 0`、审计 **10661** 条（全在 `propext/Classical.choice/Quot.sound`）。0 sorry、0 axiom。
+
+### 落地的声明
+`Delocalization.lean`（确定性，**不动既有签名**，只新增 4 条）：
+`sum_sq_norm_eigenvectorBasis`（`∑_l |ψ_l(x)|² = 1`）、`abs_poisson_sub_le`（单个 Poisson 核的 `wη^{-2}`-Lipschitz）、
+**`im_green_lipschitz_energy`**（`|Im G_xx(E+iη) − Im G_xx(E′+iη)| ≤ |E−E′|η^{-2}`）、
+**`sq_norm_eigenvector_le_of_norm_green_le_near`**（(2.10) 在**邻近确定性能量**处：`|λ_k−E| ≤ d` 且 `‖G_xx(E+iη)‖ ≤ C` ⟹ `|ψ_k(x)|² ≤ ηC + d/η`）。
+⭐ 全部只用谱分解，**不需要算子范数、不需要预解式恒等式**——所以能住在 `Delocalization.lean` 现有的两个 Mathlib import 之内。
+
+`Flow/EnergyUniform.lean`（新增 13 条）：
+`eventually_forall_measure_index_le` + **`StochDom.of_forall_seq`**（网引擎）、
+`netDen`/`netDen_pos`/`netDen_cast_pos`/`bulkNet`/`abs_bulkNet_le`/`exists_bulkNet_close`/`card_bulkNet_le`/`netDen_inv_div_rpow_le`（能量网）、
+**`Band.rpow_le_zScale`**（`η = N^{-1+θ}`、`θ ≤ c` ⟹ `Wℓ(z)η ≥ N^θ/2`，即论文的「𝓁 ∼ L」，**(2.2) 只在这里用**）、
+**`delocalization_of_Thm221N'`**（承重）与 **`delocalization_of_Thm221N`**（沿 `Thm221N.toThm221N'` 的一行推论）。
+
+### ⚠ 更正 T199 工单：**Theorem 2.2 不能放在 `Delocalization.lean`**
+工单写「`Delocalization.lean`（Theorem 2.2 的最终陈述所在）」。**方向反了**：`Loop/GLoop.lean:7` import 了 `RBM1D.Delocalization`，而 `Flow/Hypotheses ← Loop/GLoop`，所以 `Delocalization.lean` 在 `Flow/` **上游**，import `Flow/EnergyUniform` 会成环。
+处理：概率版 Theorem 2.2 放 `Flow/EnergyUniform.lean`，`Delocalization.lean` 只收确定性的 Lipschitz 四条（并在文件头写清两边的分工）。
+
+### 陈述（逐字对照 p.8）
+```
+∀ᶠ N in atTop, B.P {ω | ∃ p : Idx N × Idx N, (N:ℝ)^(-1+τ) <
+    ‖(T.hermitian N ω).eigenvectorBasis p.1 p.2‖^2 *
+      Set.indicator (Set.Icc (-2+κ) (2-κ)) (fun _ => 1) ((T.hermitian N ω).eigenvalues p.1)}
+  ≤ ENNReal.ofReal ((N:ℝ)^(-D))
+```
+指示函数**在体内**（论文如此）；`max_k ‖ψ_k‖²_∞` 写成 `∃ (k,x)`（失败事件），`P(成立) > 1−N^{-D}` 写成 `P(失败) ≤ N^{-D}`——都是 `Flow/` 全文件的既有约定。
+**量词次序 = 论文**：`∀ κ τ D, ∀ᶠ N in atTop`（不是 `∀ κ τ D N`）。
+
+### Theorem 2.2 的完整假设表（是否「无条件」）
+| 假设 | 来源 | 论文里有吗 |
+|---|---|---|
+| `B : Band Ω` | 模型；含 (2.2) `W ≥ N^{1/2+c}` | 有 |
+| `X : Sample B` | (2.34)/(2.36) 的流 | 有（§2.4） |
+| `T : Transfer X` | (2.39)/(2.66) 写成 `≺` 转移 | 论文里是「同分布」这件事实 |
+| `hκ : 0 < κ`、`hτ : 0 < τ`、`hD : 0 < D` | 论文 | 有 |
+| `hT : Thm221N' X κ`（或 `Thm221N X κ`） | Theorem 2.21（`N` 依赖能量） | 有 |
+**没有别的**：不需要 `TransferLoop1`（只用逐元素的 (2.3)）、不需要 `κ ≤ 2`（`κ > 2` 时体内指示函数恒 0，单独一支证空事件）、不需要任何网的参数假设（网是**造**出来的，三条性质都是定理）。
+所以：**相对 `Thm221N′` + 模型是无条件的**，但绝对意义上仍挂在 `Thm221N′`（六步）与 `Transfer` 上——与 Theorem 2.3/2.4 完全同级，本单没有新增任何悬空假设。
+
+### 可满足性见证（两条 `example`，已编译）
+1. **网的粗细联立**：`∀ᶠ N`，同一个 `bulkNet κ N` 同时满足 (i) `∀|E| ≤ 2−κ, ∃j, |E−E_j| ≤ 1/(N+1)^4`、(ii) `#net ≤ N^5`（并集界付得起）、(iii) `mesh/η ≤ η`（`η = N^{-1+θ}`）。三条是**同一组参数**、全是定理不是假设——T199 工单担心的 (a) 结构上不存在。
+2. **指示函数会亮、且界会失败**：`1×1` 零矩阵的特征值 `0 ∈ [−2+κ, 2−κ]`（`Matrix.IsHermitian.eigenvalues_eq_zero_iff`），而 `|ψ_0(0)|² = 1 > N^{-1+τ}`（`N ≥ 2`、`τ < 1`）。所以结论事件**既不恒真**（否则定理空洞）**也不恒假**——这正是工单 (d) 要的「有特征值落在区间内的见证」，而且顺带证明了本定理是真正的概率陈述。
+3. 逐点不等式全部在好事件 `ω ∈ Good N` 里推（工单 (c)）：结论只是一个概率界，`ω = 0` 处（`H = 0`）事件确实可以失败——见上一条。
+
+### 造轮子的说明
+`StochDom.of_forall_seq` 与 `Gauss.stochDom_reindex_of_forall_seq`（`Gauss/Step1Hyp.lean:269`）是**同一个论证**（by_contra + 逐 `N` 选一个坏指标 = 一条序列 + `of_forall_le` 的并集界），差别只在指标集：那边写死成 `TimeIcc s t N` 并带 `θ` 重标，这里是任意 `[Fintype][Nonempty]` 的 `J N`、`θ = id`。
+**不能复用**：`Gauss/` 在 `Flow/` **下游**（`Gauss/Step1Hyp ← Hierarchy ← Flow`）。按 CLAUDE.md 该下沉到 `RBM1D/Defs/`（它本来就 generic），本单协议只允许动两个文件，**没做**。
+**待定夺（Jun / Cowork）**：开一张小单，把 `StochDom.of_forall_seq` 下沉到 `RBM1D/Defs/StochDom.lean`，再让 `Gauss.stochDom_reindex_of_forall_seq` 变成它的一行推论（`J N := TimeIcc s t N` 经 `θ`）。纯机械，无新数学。
+
+### 未做 / 归谁
+* **蓝图**：`thm:2.2` 节点的 `\lean{RBM.delocalization_of_Thm221N}` + `\leanok` 没补——`blueprint/` 归 T193，本单协议只允许动两个 Lean 文件。
+* **Theorem 2.4 的 `N` 版**（T194 已记）仍未做；Theorem 2.2 用不到。
+* **`Loop/SumZero.norm_Alayer_le` 的 `ι = (mE E).im` 非一致**（T153/T194 已记）仍未修，不在本单路径上。
+* **T204 落地后要改吃 `Bounds″` 的是哪几条**：见下一节。
+
+### 若 T204 落地（已核实际命名：`Thm221NoEL`/`Thm221NoEL'` + 既有的 `BoundsCore`，**不是** `Bounds″`）
+收工时 `Flow/Thm221NoEL.lean` 已有 `Thm221NoEL`/`Thm221NoEL'`、`BoundsCore_of_Thm221NoEL(')`、`SpecSeq.boundsCore`、`localLaw_of_boundsCore`、`localSemicircleLaw_of_Thm221NoEL'`——**它复用既有的 `BoundsCore`，没有新建 `Bounds″` 结构**（工单文字过时，更正之），而且全部是**固定能量**（`SpecSeq`）版。
+
+Theorem 2.2 **只用局部律 (2.3)**，而 (2.3) 只吃 `BoundsCore.localLaw`（(2.70)/(2.64)），**完全不碰 `expect`/(2.71)**。所以要改吃的恰好是三处，全在 `Flow/EnergyUniform.lean`：
+1. `localLaw_of_boundsN` 的参数 `hB : BoundsN X E _` → `BoundsCoreN X E _`（证明里只用 `hB.localLaw`，**证明一个字都不用改**；调用点补 `.toBoundsCoreN`）；
+2. `SpecSeqN.boundsN'` → 需要 `SpecSeqN.boundsCoreN`，其输入是 `BoundsCoreN_of_Thm221NoELN'`；
+3. `BoundsN_of_Thm221N'` → `BoundsCoreN_of_Thm221NoELN'`，即把 `Flow/Thm221NoEL.lean` 的 `BoundsCore_zero`/`BoundsCore.congr`/`BoundsCore_of_Thm221NoEL'` 照 T194 的办法镜像到 `E : ℕ → ℝ`（**纯机械照抄**，`BoundsN_zero`/`BoundsN.congr` 的 `expect` 分量直接删掉即可）。
+
+`delocalization_of_Thm221N'` 本身只要把 `(hspec j).boundsN' X hκ hT hθ0` 换成 `(hspec j).boundsCoreN X hκ hT hθ0`，其余逐字不动。`StochDom.of_forall_seq`、能量网四条、`Band.rpow_le_zScale`、`Delocalization.lean` 的四条 Lipschitz **与 (2.71) 无关，完全不受影响**。
+
+## ⭐⭐⭐ T201：(7.16) 的矩形式落地，(7.1) 档的否定结论**入库**；但工单那一步**在原地做不到**（`Gauss/Lemma514Q716.lean`，917 行、31 条，2026-09-21）
+
+**⚠⚠ 更正 T201 工单本身（本单最重要的发现）**：工单说「把矩路线里用 `edgeKer` 裸行和的地方**逐处换成** `Q_u` 投影后的 (7.16) 档」——**这一步在原地做不到，也不该这么描述**。`hrhs_of_moment_inputs` 里 `U` 下面的三个张量是 `SumZeroDyn.lkT`、`H.F`、`eeFun`，**它们本身不是 sum-zero 的**，(7.16) 对它们不适用。`Q_u` 投影过的版本是**另一条陈述**，就是 `MomentDuhamel.Hyp.momentDuhamelQ`（五项，每个张量都已投影）。
+
+**所以：带撇的 `hrhs_of_moment_inputs`（结论一字不改）做不出来。** 正确的路线是**矩路线改以 `momentDuhamelQ` 为接口** —— 这是范围问题，见下面的 D14。
+
+**落地的**
+* **(7.1) 档的否定结论入库**（T193 查出 T195 的 7 条探针从未入库，现已补）：`one_add_norm_edge_eq`（`‖ξ‖=1` 时 `hkerC` 左端**恒等于** `η_u/η_w`，逐字 Lemma 7.1）、`gridS_window_len`（网格上 `(t−s)/(1−t) = W^{τ′}−1`，**等式**）、**`no_const_hkerC_on_gridS`/`no_const_hker2C_on_gridS`**（假设是 `hrhs_of_moment_inputs` 的槽**逐字原形**，结论 `False`）。
+* **Minkowski**：`momNorm_le_affine`。T146 的 `momNorm_le_of_le_weighted_sum` **是 Jensen**，只在各项共用同一个 `M` 时才等于 Minkowski；(7.16) 的主项随机、误差项确定，必须要真的 Minkowski。
+* **(7.16) 的矩形式**（T195 点名的缺口 (i)）：`momNorm_Uker_sumZero_scale_le` 及任意 `ξ` 的带撇版（`E⊗E` 的电荷 `xi2` 是 `Fin.append`，不是 `xiOf`）。
+* **`momentDuhamelQ` 五项的 (7.16) 界**：`momNorm_Uker_Qop_le`（第 1、2 项）、`momNorm_Uker_commS_le`（(5.99)）、`momNorm_Uker_PsumVarthetaDot_le`（(5.100)）、`momNorm_Uker_QQ_le`（(5.103)）。**每一条里 (7.16) 的 sum-zero 前提都是定理而非假设。**
+* **好事件拆分** `momNorm_le_affine_on_event`：(7.13) 只在高概率事件上成立，损失是 `Env·P(Ξᶜ)^{1/q}`。
+
+**可满足性见证 `gridS_Q716_witness`**：网格是**论文自己的 p.24 网格** `1 − s_j = W^{−jτ′}`，取一格窗口；假设只有 `1 ≤ W`、`0 ≤ τ′`、`3 ≤ L`、`0 < κA`，**不带任何短窗口假设**。三合一结论：`witTensor ≠ 0`（**`Q_u` 之后的对象非零**）、`Qop` 确实不杀它、矩界常数 `cKerSumZero(m+2)·3^{2(m+2)}` **与 `N` 无关**。同一窗口上 `momNorm_Uker_apply_le` 的常数是 `(W^{τ′})^{m+2}`——**正向见证与 T195 的反证一并入库，互为对照**。
+
+**事实核对（与工单描述有出入）**：`SumZeroDyn.norm_Uker_sumZero_scale_le` **已经**是归一化后「无前因子」的形式（`integral_term_le` 的 docstring 甚至已写着 "there is no `(η_s/η_v)` prefactor"）。「三档齐备」是对的；路径层面缺的只有矩形式（本单补上）+ Q 半边接线。
+
+**已按 T201 的文案接线（协调者做的）**：`Gauss/Lemma514Holder.lean` 的 `one_add_norm_mul_le` / `hkerC_flow` / `hker2C_flow` 三条加了 `@[deprecated "RETIRED (T201): …"]`（全仓无外部消费者，零新 warning）；文件头那段与 :1150 那段**事实错误的 docstring**（「That last point is a genuine hypothesis and not bookkeeping」）已按 T195/T201 的结论改写。`hkerlt_flow`/`hker2lt_flow` **没有**加——它们无条件，(7.16) 档仍要用。
+
+## ⭐ 待 Jun 定夺 D14（T201 逼出来的唯一范围问题）
+
+**矩路线的接口是否从 `Hyp.momentDuhamel` 改为 `Hyp.momentDuhamelQ`？**
+
+* **改**：要新开两张单——① **`P∘(L−K)` 半边**（从 `‖Q_v∘(L−K)_v‖` 回到 `‖(L−K)_v‖`，即 `A = Q_t A + (P·A)ϑ_t` 里 `Psum` 那一项的界；`SumZeroDyn.norm_le_norm_Qop_add` 与 `norm_Psum_lkT_le` 都是现成的，但没接到矩路线）；② **`stochDom_of_momentDuhamelQ`**（`stochDom_of_momentDuhamel` 的 Q 类比；本单已交付它需要的五个核估计，总装定理没写）。
+* **不改**：**Lemma 5.14 的矩路线在总装窗口上永远是空真的**——`hkerC` 在那里不可满足（已编译证明），而 (7.16) 对未投影的张量不适用。
+
+T201 没有权限做这个决定。
+
+**另附：第三块（`FastDecay` 的生产者）**——五个张量沿流的 `FastDecay` 是 (7.13) 的前提，也是**唯一一个关于模型而不是关于核的前提**；`SumZeroDyn.lean:3093/3549` 有 `fastDecay_Qop_le` 的用法但都在好事件上、没接到矩路线。归随机层（T163/T167 的后继），**目前无主**。
+
+## T201 给协调者的其余接线（尚未做，记档）
+
+* `Gauss/Lemma514Holder.lean:919 one_add_norm_mul_le` 可改成 `one_add_norm_edge_eq` 的一行推论（已 deprecated，改不改无碍）。
+* `Gauss/MomentDuhamelRhs.lean:265 momNorm_Uker_apply_le` **不删**（(7.1) 档在别处仍合法），但 docstring 的「with the same constant `C^n` as Lemma 7.1」下面该加一句指向 `no_const_hkerC_on_gridS`：**在总装窗口上这个 `C` 不存在**。
+* `Hierarchy/SumZeroDyn.lean:1252 norm_Uker_sumZero_scale_le` 现在是 `Gauss.norm_Uker_sumZero_scale_le'` 的特例，但方向是新文件依赖旧文件，要改须把带撇版下沉——**建议先不动**。

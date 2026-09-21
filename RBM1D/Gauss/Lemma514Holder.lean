@@ -77,7 +77,9 @@ hypothesis but (2.59)–(2.60), and it is now discharged, so the two probes abov
 
 * `RBM.Gauss.hkerlt_flow`, `RBM.Gauss.hker2lt_flow` — unconditional
 * `RBM.Gauss.hkerC_flow`,  `RBM.Gauss.hker2C_flow`  — with `C_k = 1 + κ`, **given** the short
-  window `t_N - s_N ≤ κ(1-t_N)`, which is not optional (see that section's docstring)
+  window `t_N - s_N ≤ κ(1-t_N)`.  ⚠ **Both are `@[deprecated]` (T201): that window is FALSE on
+  the six-step grid**, so these are true theorems whose hypothesis nobody can discharge where the
+  assembly needs them.  Use the (7.16) tier of `RBM1D/Gauss/Lemma514Q716.lean` instead.
 
 ### 3. `hnum`
 
@@ -1147,9 +1149,15 @@ bulk (`RBM.norm_xiOf_mSigma`).  So
   short compared with the distance to the edge of the flow,
   `t_N - s_N ≤ κ (1 - t_N)`, and then `C_k = 1 + κ`.
 
-That last point is a genuine hypothesis and not bookkeeping: without it the `hkerC` slot of
-`RBM.Gauss.rhs514At_forall_of_moment_inputs` is unsatisfiable as `t_N ↑ 1` at fixed window
-length, since `(1 - t_N)^{-1} → ∞`. -/
+⚠ **That last paragraph used to say the short window is "a genuine hypothesis and not
+bookkeeping".  That was wrong, and T195/T201 proved it wrong**: on the six-step grid of p. 24,
+`1 - s_j = W^{-jτ'}`, the ratio is an *equality* `(t-s)/(1-t) = W^{τ'} - 1`
+(`RBM.Gauss.gridS_window_len`), which grows with `N`, so no `N`-independent `C_k` exists
+(`RBM.Gauss.no_const_hkerC_on_gridS`, `no_const_hker2C_on_gridS`).  Filling the `hkerC` slot with
+`hkerC_flow` therefore makes Step 3 vacuous on the very window the assembly runs on.  The left-hand
+side is verbatim Lemma 7.1 (`RBM.Gauss.one_add_norm_edge_eq`), while (5.92) says Lemma 5.14 holds
+with **no** prefactor depending on `η_s/η_t`; the route that does hold is the (7.16) tier, in
+`RBM1D/Gauss/Lemma514Q716.lean`. -/
 
 /-- `‖ξ_i‖ = 1` for the doubled loop of (5.85)/(5.103) as well. -/
 theorem norm_xi2_mSigma {E : ℝ} (hE : |E| ≤ 2) {n : ℕ} (σ : Fin (n + 2) → Bool)
@@ -1167,6 +1175,14 @@ theorem norm_mul_xi_lt_one {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : �
   exact lt_of_le_of_lt hw.2 (ht1 N)
 
 /-- The common content of `hkerC` and `hker2C`. -/
+@[deprecated "RETIRED (T201): the `hwin` slot `t N - s N ≤ κ (1 - t N)` is FALSE on the \
+six-step grid of p. 24.  `RBM.Gauss.gridS_window_len` gives `(t-s)/(1-t) = W^{τ'} - 1` as an \
+EQUALITY, and `RBM.Gauss.no_const_hkerC_on_gridS` / `no_const_hker2C_on_gridS` derive a \
+contradiction from any `N`-independent `Ck`.  The left-hand side is verbatim Lemma 7.1 \
+(`RBM.Gauss.one_add_norm_edge_eq`), while (5.92) asserts Lemma 5.14 holds with NO prefactor \
+depending on `η_s/η_t`.  Filling `hkerC` with this makes Step 3 vacuous.  Use the (7.16) tier: \
+`RBM.Gauss.momNorm_Uker_sumZero_scale_le` and the five `RBM.Gauss.momNorm_Uker_*_le` of \
+`RBM1D/Gauss/Lemma514Q716.lean`." (since := "2026-09-21")]
 theorem one_add_norm_mul_le {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
     {κ : ℝ} (hκ0 : 0 ≤ κ) (hwin : ∀ N, t N - s N ≤ κ * (1 - t N))
     {N : ℕ} {w : ℝ} (hw : w ∈ Set.Icc (s N) (t N)) {u : ℝ} (hsu : s N ≤ u) (huw : u ≤ w)
@@ -1211,6 +1227,14 @@ theorem hker2lt_flow {E : ℝ} (hE : |E| ≤ 2) {s t : ℕ → ℝ} (hs0 : ∀ N
 
 /-- **`hkerC`** of `RBM.Gauss.rhs514At_forall_of_moment_inputs`, with `C_k = 1 + κ`, from the
 short-window condition `t_N - s_N ≤ κ(1 - t_N)`. -/
+@[deprecated "RETIRED (T201): the `hwin` slot `t N - s N ≤ κ (1 - t N)` is FALSE on the \
+six-step grid of p. 24.  `RBM.Gauss.gridS_window_len` gives `(t-s)/(1-t) = W^{τ'} - 1` as an \
+EQUALITY, and `RBM.Gauss.no_const_hkerC_on_gridS` / `no_const_hker2C_on_gridS` derive a \
+contradiction from any `N`-independent `Ck`.  The left-hand side is verbatim Lemma 7.1 \
+(`RBM.Gauss.one_add_norm_edge_eq`), while (5.92) asserts Lemma 5.14 holds with NO prefactor \
+depending on `η_s/η_t`.  Filling `hkerC` with this makes Step 3 vacuous.  Use the (7.16) tier: \
+`RBM.Gauss.momNorm_Uker_sumZero_scale_le` and the five `RBM.Gauss.momNorm_Uker_*_le` of \
+`RBM1D/Gauss/Lemma514Q716.lean`." (since := "2026-09-21")]
 theorem hkerC_flow {E : ℝ} (hE : |E| ≤ 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) {κ : ℝ} (hκ0 : 0 ≤ κ) (hwin : ∀ N, t N - s N ≤ κ * (1 - t N))
     (n : ℕ) :
@@ -1222,6 +1246,14 @@ theorem hkerC_flow {E : ℝ} (hE : |E| ≤ 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 
     one_add_norm_mul_le hs0 ht1 hκ0 hwin hw hsu huw (norm_xiOf_mSigma hE σ i)
 
 /-- **`hker2C`** of `RBM.Gauss.rhs514At_forall_of_moment_inputs`, with `C_{k,2} = 1 + κ`. -/
+@[deprecated "RETIRED (T201): the `hwin` slot `t N - s N ≤ κ (1 - t N)` is FALSE on the \
+six-step grid of p. 24.  `RBM.Gauss.gridS_window_len` gives `(t-s)/(1-t) = W^{τ'} - 1` as an \
+EQUALITY, and `RBM.Gauss.no_const_hkerC_on_gridS` / `no_const_hker2C_on_gridS` derive a \
+contradiction from any `N`-independent `Ck`.  The left-hand side is verbatim Lemma 7.1 \
+(`RBM.Gauss.one_add_norm_edge_eq`), while (5.92) asserts Lemma 5.14 holds with NO prefactor \
+depending on `η_s/η_t`.  Filling `hkerC` with this makes Step 3 vacuous.  Use the (7.16) tier: \
+`RBM.Gauss.momNorm_Uker_sumZero_scale_le` and the five `RBM.Gauss.momNorm_Uker_*_le` of \
+`RBM1D/Gauss/Lemma514Q716.lean`." (since := "2026-09-21")]
 theorem hker2C_flow {E : ℝ} (hE : |E| ≤ 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N)
     (ht1 : ∀ N, t N < 1) {κ : ℝ} (hκ0 : 0 ≤ κ) (hwin : ∀ N, t N - s N ≤ κ * (1 - t N))
     (n : ℕ) :

@@ -59,16 +59,30 @@ in `Flow/Iteration.lean`, the primed one is the load-bearing one: it is the weak
   `RBM.localSemicircleLaw_of_Thm221N'_of_z` — the same for an **arbitrary** sequence of spectral
   parameters, with no energy parameter left in the statement.  This is what route (ii) needs.
 
+* `RBM.StochDom.of_forall_seq` — `≺` with the union over a polynomially small `N`-dependent
+  index set *inside* the probability, from a `≺`-bound along every sequence of indices (T199).
+* `RBM.netDen`, `RBM.bulkNet`, `RBM.exists_bulkNet_close`, `RBM.card_bulkNet_le`,
+  `RBM.netDen_inv_div_rpow_le` — the energy net of `[-2+κ, 2-κ]` and the three facts about it.
+* `RBM.Band.rpow_le_zScale` — `W ℓ(z) η ≥ N^θ/2` at `η = N^{-1+θ}`, `θ ≤ c` (this is where
+  (2.2) enters).
+* `RBM.delocalization_of_Thm221N'`, `RBM.delocalization_of_Thm221N` — **Theorem 2.2**.
+
 Theorem 2.4 (`RBM.quantumDiffusion_of_Thm221`) is *not* mirrored here: the probabilistic half of
-Theorem 2.2 only uses the local law (`RBM.sq_norm_eigenvector_le_of_norm_green_le` of
+Theorem 2.2 only uses the local law (`RBM.sq_norm_eigenvector_le_of_norm_green_le_near` of
 `Delocalization.lean` needs a bound on `G_xx`).  Its `N`-dependent version is the same verbatim
 copy of `Flow/Consequences.lean`, on top of `RBM.BoundsN_of_Thm221N'`.
 
 ## Deviations from the paper
 
-None new: `RBM.Thm221N` is the paper's Theorem 2.21 with the energy allowed to depend on `N`,
-which the paper's proof does uniformly in `|E| ≤ 2 - κ` anyway.  It **retires** the "fixed energy
-slice" deviation (`docs/paper-deltas.md` #38) for everything proved here.
+`RBM.Thm221N` is the paper's Theorem 2.21 with the energy allowed to depend on `N`, which the
+paper's proof does uniformly in `|E| ≤ 2 - κ` anyway.  It **retires** the "fixed energy slice"
+deviation (`docs/paper-deltas.md` #38) for everything proved here.
+
+For Theorem 2.2 see `docs/paper-deltas.md` (T199): the paper's `η = N^{-1+τ}` uses the same `τ`
+for the scale and for the conclusion and then writes `|ψ_k|² ≤ Cη ≤ N^{-1+τ}`; we take
+`η = N^{-1+θ}` with `θ = min(τ, min(c,1))/2 < τ`, so that the constant is absorbed.  The
+hypothesis is `RBM.Thm221N'`/`RBM.Thm221N` (Theorem 2.21 at an `N`-dependent energy) rather
+than `RBM.Thm221'`/`RBM.Thm221`, because the local law has to be evaluated at a moving energy.
 -/
 
 namespace RBM
@@ -681,5 +695,512 @@ example {κ τ : ℝ} {z : ℕ → ℂ} (him_pos : ∀ N, 0 < (z N).im) (him_le_
   ⟨_, SpecSeqN.of_z him_pos him_le_one habs_re him_ge⟩
 
 end Satisfiable
+
+
+/-! ## The probabilistic half of Theorem 2.2 (T199)
+
+Theorem 2.3 controls `G(z)` at a **deterministic** sequence of spectral parameters, while
+(2.10) has to be read at `z = λ_k(ω) + iη`, whose energy is *random*.  The paper closes the gap
+in one sentence ("Following a standard delocalization argument … Applying (2.3) and the fact
+that `ℓ ∼ L`, we obtain `G - m ≪ 1`", p. 9); in Lean it costs three ingredients:
+
+1. an **energy net** `RBM.bulkNet κ N` of `4(N+1)^4 + 1` points of `[-2+κ, 2-κ]`, whose union
+   bound sits *inside* the probability — this is what `RBM.StochDom.of_forall_seq` provides,
+   from the local law along *every sequence* of net points (`RBM.localLaw_of_boundsN` at the
+   `N`-dependent energies of this file, which is exactly why route (i) had to come first);
+2. the **deterministic Lipschitz continuity of `G` in the energy**,
+   `RBM.im_green_lipschitz_energy` of `RBM1D/Delocalization.lean`
+   (`|Im G_xx(E+iη) - Im G_xx(E'+iη)| ≤ |E-E'| η^{-2}`), which transports the net bound to the
+   random energy `λ_k(ω)`;
+3. the lower bound `RBM.Band.rpow_le_zScale`: at `η = N^{-1+θ}` with `θ ≤ c` the scale
+   `W ℓ(z) η` is at least `N^θ/2`, which is the paper's "`ℓ ∼ L`" step and is where (2.2) is
+   used.
+
+No probabilistic modulus of continuity is needed: a choice of one net point per `N` *is* a
+sequence, and the `ω`-dependence of `λ_k(ω)` is handled pointwise on the good event.
+
+### A `≺`-bound along every sequence of net points
+
+`RBM.StochDom.of_forall_seq` is the energy analogue of `RBM.Gauss.stochDom_reindex_of_forall_seq`
+(`RBM1D/Gauss/Step1Hyp.lean`), which cannot be imported here: `Gauss/` sits *below* `Flow/`.
+The generic version should be sunk to `RBM1D/Defs/` once a ticket owns that file. -/
+
+section NetEngine
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- **A bound along every sequence of indices is eventually a bound at every index.**  If for
+every choice function `j : ∀ N, J N` the family `ξ(N, j N, ·) ≺ ζ(N, j N, ·)`, then for large
+`N` the failure probability is below `N^{-D}` *simultaneously for all* `j ∈ J(N)` — the point
+being that `N₀` does not depend on `j`.  The proof is the contrapositive: a bad `j` for
+infinitely many `N` assembles (by choice) into a bad sequence. -/
+theorem eventually_forall_measure_index_le {J V : ℕ → Type*} [∀ N, Nonempty (J N)]
+    {ξ ζ : ∀ N, J N × V N → Ω → ℝ}
+    (h : ∀ j : ∀ N, J N, StochDom P (fun N v ω => ξ N (j N, v) ω) (fun N v ω => ζ N (j N, v) ω))
+    {τ : ℝ} (hτ : 0 < τ) {D : ℝ} (hD : 0 < D) :
+    ∀ᶠ N : ℕ in atTop, ∀ j : J N,
+      P {ω | ∃ v : V N, (N : ℝ) ^ τ * ζ N (j, v) ω < ξ N (j, v) ω}
+        ≤ ENNReal.ofReal ((N : ℝ) ^ (-D)) := by
+  classical
+  by_contra hcon
+  rw [Filter.not_eventually] at hcon
+  set bad : ℕ → Prop := fun N => ∃ j : J N,
+    ¬ (P {ω | ∃ v : V N, (N : ℝ) ^ τ * ζ N (j, v) ω < ξ N (j, v) ω}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) with hbad_def
+  have hcon' : ∃ᶠ N : ℕ in atTop, bad N := by
+    refine hcon.mono fun N hN => ?_
+    simpa only [hbad_def, not_forall] using hN
+  set u : ∀ N, J N := fun N => if hN : bad N then hN.choose else Classical.arbitrary (J N)
+    with hu_def
+  have hseq := h u τ hτ D hD
+  obtain ⟨N, hNbad, hNgood⟩ := (hcon'.and_eventually hseq).exists
+  have huN : u N = hNbad.choose := by rw [hu_def]; exact dite_eq_left hNbad
+  refine hNbad.choose_spec ?_
+  rw [← huN]
+  exact hNgood
+
+/-- **`≺` from a `≺`-bound along every sequence of indices**, with the union over a
+polynomially small index set `J(N)` *inside* the probability. -/
+theorem StochDom.of_forall_seq {J V : ℕ → Type*} [∀ N, Fintype (J N)] [∀ N, Nonempty (J N)]
+    {ξ ζ : ∀ N, J N × V N → Ω → ℝ}
+    (h : ∀ j : ∀ N, J N, StochDom P (fun N v ω => ξ N (j N, v) ω) (fun N v ω => ζ N (j N, v) ω))
+    {C : ℝ} (hC : 0 ≤ C)
+    (hcard : ∀ᶠ N : ℕ in atTop, (Fintype.card (J N) : ℝ) ≤ (N : ℝ) ^ C) :
+    StochDom P ξ ζ := by
+  intro τ hτ D hD
+  filter_upwards [hcard, eventually_forall_measure_index_le h hτ (by linarith : 0 < D + C),
+    eventually_ge_atTop 1] with N hcardN hslice hN1
+  have hp : (0 : ℝ) ≤ (N : ℝ) ^ (-(D + C)) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have hset : badSet ξ ζ τ N
+      = ⋃ j : J N, {ω | ∃ v : V N, (N : ℝ) ^ τ * ζ N (j, v) ω < ξ N (j, v) ω} := by
+    ext ω
+    simp only [badSet, Set.mem_ofPred_eq, Set.mem_iUnion, Prod.exists]
+  calc P (badSet ξ ζ τ N)
+      ≤ ∑ j : J N, P {ω | ∃ v : V N, (N : ℝ) ^ τ * ζ N (j, v) ω < ξ N (j, v) ω} := by
+        rw [hset]; exact measure_iUnion_fintype_le P _
+    _ ≤ ∑ _j : J N, ENNReal.ofReal ((N : ℝ) ^ (-(D + C))) :=
+        Finset.sum_le_sum fun j _ => hslice j
+    _ = ENNReal.ofReal (Fintype.card (J N) * (N : ℝ) ^ (-(D + C))) := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+          ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast]
+    _ ≤ ENNReal.ofReal ((N : ℝ) ^ C * (N : ℝ) ^ (-(D + C))) :=
+        ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right hcardN hp)
+    _ = ENNReal.ofReal ((N : ℝ) ^ (-D)) := by rw [rpow_mul_rpow_neg_add hN1]
+
+end NetEngine
+
+/-! ### The energy net
+
+`RBM.bulkNet κ N` is the arithmetic net of `[-2+κ, 2-κ]` of mesh `(N+1)^{-4}`, clamped to the
+interval.  The two requirements on a net pull in opposite directions and both are **proved**
+here, for one and the same net, rather than assumed (`RBM.exists_bulkNet_close`: fine enough;
+`RBM.card_bulkNet_le`: coarse enough for the union bound; `RBM.netDen_inv_div_rpow_le`: fine
+enough for the Lipschitz step at `η = N^{-1+θ}`). -/
+
+/-- The reciprocal mesh `(N+1)^4` of the energy net of Theorem 2.2. -/
+def netDen (N : ℕ) : ℕ := (N + 1) ^ 4
+
+theorem netDen_pos (N : ℕ) : 0 < netDen N := pow_pos N.succ_pos 4
+
+theorem netDen_cast_pos (N : ℕ) : (0 : ℝ) < (netDen N : ℝ) := by exact_mod_cast netDen_pos N
+
+/-- The energy net of the bulk `[-2+κ, 2-κ]`, of mesh `(N+1)^{-4}`. -/
+noncomputable def bulkNet (κ : ℝ) (N : ℕ) (j : Fin (4 * netDen N + 1)) : ℝ :=
+  min (2 - κ) (-2 + κ + (j : ℕ) / (netDen N : ℝ))
+
+/-- Every net point lies in the bulk. -/
+theorem abs_bulkNet_le {κ : ℝ} (hκ : κ ≤ 2) (N : ℕ) (j : Fin (4 * netDen N + 1)) :
+    |bulkNet κ N j| ≤ 2 - κ := by
+  have hd := netDen_cast_pos N
+  have hj : (0 : ℝ) ≤ (j : ℕ) / (netDen N : ℝ) := by positivity
+  rw [abs_le]
+  refine ⟨?_, min_le_left _ _⟩
+  rw [bulkNet, le_min_iff]
+  exact ⟨by linarith, by linarith⟩
+
+/-- **The net is `(N+1)^{-4}`-dense in the bulk.** -/
+theorem exists_bulkNet_close {κ : ℝ} (hκ0 : 0 ≤ κ) (N : ℕ) {E : ℝ}
+    (hE : |E| ≤ 2 - κ) :
+    ∃ j : Fin (4 * netDen N + 1), |E - bulkNet κ N j| ≤ 1 / (netDen N : ℝ) := by
+  have hd := netDen_cast_pos N
+  obtain ⟨hE1, hE2⟩ := abs_le.1 hE
+  have hd0 : (0 : ℝ) ≤ E + 2 - κ := by linarith
+  have hmle : (⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ : ℝ) ≤ (E + 2 - κ) * (netDen N : ℝ) :=
+    Nat.floor_le (by positivity)
+  have hmlt : (E + 2 - κ) * (netDen N : ℝ) < (⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ : ℝ) + 1 :=
+    Nat.lt_floor_add_one _
+  have hmbound : ⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ ≤ 4 * netDen N := by
+    have h1 : ((⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ : ℕ) : ℝ) ≤ ((4 * netDen N : ℕ) : ℝ) := by
+      push_cast
+      nlinarith
+    exact_mod_cast h1
+  refine ⟨⟨⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊, by omega⟩, ?_⟩
+  set q : ℝ := (⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ : ℝ) / (netDen N : ℝ) with hq
+  have hq0 : (0 : ℝ) ≤ q := by rw [hq]; positivity
+  have hqd : q ≤ E + 2 - κ := by rw [hq, div_le_iff₀ hd]; linarith
+  have hdq : E + 2 - κ - q ≤ 1 / (netDen N : ℝ) := by
+    have h1 : E + 2 - κ ≤ ((⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ : ℝ) + 1) / (netDen N : ℝ) := by
+      rw [le_div_iff₀ hd]; linarith
+    have h2 : ((⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊ : ℝ) + 1) / (netDen N : ℝ)
+        = q + 1 / (netDen N : ℝ) := by rw [hq]; ring
+    linarith [h1, h2.le, h2.ge]
+  have hval : bulkNet κ N ⟨⌊(E + 2 - κ) * (netDen N : ℝ)⌋₊, by omega⟩ = -2 + κ + q := by
+    rw [bulkNet, min_eq_right]
+    exact (by linarith : -2 + κ + q ≤ 2 - κ)
+  rw [hval, abs_le]
+  exact ⟨by linarith, by linarith⟩
+
+/-- The net has polynomially many points. -/
+theorem card_bulkNet_le : ∀ᶠ N : ℕ in atTop,
+    (Fintype.card (Fin (4 * netDen N + 1)) : ℝ) ≤ (N : ℝ) ^ (5 : ℝ) := by
+  filter_upwards [eventually_ge_atTop 9] with N hN
+  have hNR : (9 : ℝ) ≤ N := by exact_mod_cast hN
+  rw [Fintype.card_fin]
+  have hstep : ((4 * netDen N + 1 : ℕ) : ℝ) = 4 * ((N : ℝ) + 1) ^ 4 + 1 := by
+    rw [netDen]; push_cast; ring
+  rw [hstep]
+  have h5 : (N : ℝ) ^ (5 : ℝ) = (N : ℝ) ^ (5 : ℕ) := by
+    rw [← Real.rpow_natCast (N : ℝ) 5]; norm_num
+  rw [h5]
+  nlinarith [pow_le_pow_left₀ (by linarith : (0:ℝ) ≤ (N:ℝ) + 1) (by linarith : (N:ℝ) + 1 ≤ 2 * N) 4,
+    pow_nonneg (by linarith : (0:ℝ) ≤ (N:ℝ)) 4, pow_nonneg (by linarith : (0:ℝ) ≤ (N:ℝ)) 5]
+
+
+
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **The scale `W ℓ(z) η` at `η = N^{-1+θ}` is at least `N^θ / 2`**, for `0 < θ ≤ c`. -/
+theorem Band.rpow_le_zScale (B : Band Ω) {θ : ℝ} (hθ0 : 0 < θ) (hθc : θ ≤ B.c) :
+    ∀ᶠ N : ℕ in atTop, ∀ z : ℂ, z.im = (N : ℝ) ^ (-1 + θ) →
+      (N : ℝ) ^ θ / 2 ≤ B.zScale N z := by
+  filter_upwards [B.bandwidth, B.dim, eventually_ge_atTop 1] with N hbw hdim hN1 z hz
+  have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < N := by linarith
+  have hη : 0 < z.im := by rw [hz]; exact Real.rpow_pos_of_pos hN0 _
+  have hW0 : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+  have hL0 : (0 : ℝ) < B.L N := by exact_mod_cast (B.three_le_L N).trans_lt' (by norm_num)
+  have hmin : min (1 / Real.sqrt z.im) (B.L N : ℝ) ≤ ellZ (B.L N) z := by
+    rw [ellZ, ellOf]; linarith
+  have hkey : (N : ℝ) ^ θ / 2 ≤ (B.W N : ℝ) * min (1 / Real.sqrt z.im) (B.L N : ℝ) * z.im := by
+    rcases le_total (1 / Real.sqrt z.im) (B.L N : ℝ) with h | h
+    · rw [min_eq_left h]
+      -- `W * η / √η = W √η ≥ N^{1/2+c} N^{(-1+θ)/2} = N^{c+θ/2} ≥ N^θ`
+      have hsq : Real.sqrt z.im = (N : ℝ) ^ ((-1 + θ) / 2) := by
+        rw [hz, Real.sqrt_eq_rpow, ← Real.rpow_mul hN0.le]
+        congr 1; ring
+      have hval : (B.W N : ℝ) * (1 / Real.sqrt z.im) * z.im
+          = (B.W N : ℝ) * Real.sqrt z.im := by
+        have h1 : Real.sqrt z.im * Real.sqrt z.im = z.im := Real.mul_self_sqrt hη.le
+        have h2 : Real.sqrt z.im ≠ 0 := by positivity
+        field_simp
+        nlinarith [h1]
+      rw [hval, hsq]
+      have hexp : (N : ℝ) ^ ((1 : ℝ) / 2 + B.c) * (N : ℝ) ^ ((-1 + θ) / 2)
+          = (N : ℝ) ^ (B.c + θ / 2) := by
+        rw [← Real.rpow_add hN0]; congr 1; ring
+      have hmono : (N : ℝ) ^ θ ≤ (N : ℝ) ^ (B.c + θ / 2) :=
+        Real.rpow_le_rpow_of_exponent_le hN1' (by linarith)
+      have hpos : (0 : ℝ) < (N : ℝ) ^ ((-1 + θ) / 2) := Real.rpow_pos_of_pos hN0 _
+      calc (N : ℝ) ^ θ / 2 ≤ (N : ℝ) ^ θ := by
+            have := Real.rpow_pos_of_pos hN0 θ; linarith
+        _ ≤ (N : ℝ) ^ (B.c + θ / 2) := hmono
+        _ = (N : ℝ) ^ ((1 : ℝ) / 2 + B.c) * (N : ℝ) ^ ((-1 + θ) / 2) := hexp.symm
+        _ ≤ (B.W N : ℝ) * (N : ℝ) ^ ((-1 + θ) / 2) := by gcongr
+    · rw [min_eq_right h]
+      -- `W L η ≥ (N/2) η = N^θ/2`
+      have hWL : (N : ℝ) ≤ 2 * ((B.W N : ℝ) * (B.L N : ℝ)) := by
+        have := hdim.2
+        have hc : ((2 * (B.W N * B.L N) : ℕ) : ℝ) = 2 * ((B.W N : ℝ) * (B.L N : ℝ)) := by
+          push_cast; ring
+        calc (N : ℝ) ≤ ((2 * (B.W N * B.L N) : ℕ) : ℝ) := by exact_mod_cast this
+          _ = _ := hc
+      have hexp : (N : ℝ) * (N : ℝ) ^ (-1 + θ) = (N : ℝ) ^ θ := by
+        nth_rewrite 1 [show (N : ℝ) = (N : ℝ) ^ (1 : ℝ) from (Real.rpow_one _).symm]
+        rw [← Real.rpow_add hN0]; congr 1; ring
+      rw [hz]
+      have hη' : (0 : ℝ) < (N : ℝ) ^ (-1 + θ) := Real.rpow_pos_of_pos hN0 _
+      nlinarith [hη', hWL, hexp]
+  calc (N : ℝ) ^ θ / 2 ≤ (B.W N : ℝ) * min (1 / Real.sqrt z.im) (B.L N : ℝ) * z.im := hkey
+    _ ≤ (B.W N : ℝ) * ellZ (B.L N) z * z.im := by
+        have : (0 : ℝ) ≤ (B.W N : ℝ) := hW0.le
+        gcongr
+    _ = B.zScale N z := rfl
+
+
+
+/-- The mesh of the net is fine enough for the Lipschitz error: at `η = N^{-1+θ}` the error
+`mesh / η = N^{-3-θ}` is below `η` itself.  Together with `RBM.card_bulkNet_le` (the net is
+coarse enough for the union bound) this is the pair of competing requirements on the mesh. -/
+theorem netDen_inv_div_rpow_le {θ : ℝ} (hθ : 0 ≤ θ) {N : ℕ} (hN : 1 ≤ N) :
+    (1 : ℝ) / (netDen N : ℝ) / (N : ℝ) ^ (-1 + θ) ≤ (N : ℝ) ^ (-1 + θ) := by
+  have hR0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  have hR1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hpos : (0 : ℝ) < (N : ℝ) ^ (-1 + θ) := Real.rpow_pos_of_pos hR0 _
+  have hden : (1 : ℝ) / (netDen N : ℝ) ≤ (N : ℝ) ^ (-4 : ℝ) := by
+    have h4 : (N : ℝ) ^ (4 : ℕ) ≤ (netDen N : ℝ) := by
+      rw [netDen]; push_cast
+      exact pow_le_pow_left₀ hR0.le (by linarith) 4
+    have h4pos : (0 : ℝ) < (N : ℝ) ^ (4 : ℕ) := by positivity
+    have hrw : (N : ℝ) ^ (-4 : ℝ) = 1 / (N : ℝ) ^ (4 : ℕ) := by
+      rw [show (-4 : ℝ) = -(4 : ℕ) by norm_num, Real.rpow_neg hR0.le, Real.rpow_natCast]
+      exact (one_div _).symm
+    rw [hrw]
+    exact one_div_le_one_div_of_le h4pos h4
+  have h1 : (1 : ℝ) / (netDen N : ℝ) / (N : ℝ) ^ (-1 + θ)
+      ≤ (N : ℝ) ^ (-4 : ℝ) / (N : ℝ) ^ (-1 + θ) := by gcongr
+  have h2 : (N : ℝ) ^ (-4 : ℝ) / (N : ℝ) ^ (-1 + θ) = (N : ℝ) ^ (-3 - θ) := by
+    rw [← Real.rpow_sub hR0]; congr 1; ring
+  have h3 : (N : ℝ) ^ (-3 - θ) ≤ (N : ℝ) ^ (-1 + θ) :=
+    Real.rpow_le_rpow_of_exponent_le hR1 (by linarith)
+  linarith [h1, h2.le, h2.ge, h3]
+
+/-! ### The scale `W ℓ(z) η` at `η = N^{-1+θ}` -/
+
+section Deloc
+
+open scoped Matrix
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B}
+
+/-- **Theorem 2.2 (Delocalization), p. 8.**  Under (2.2) (`RBM.Band.bandwidth`), for any small
+`κ, τ > 0` and large `D > 0`, for all large `N`,
+
+`P( max_k ‖ψ_k‖²_∞ · 1(λ_k ∈ [-2+κ, 2-κ]) ≤ N^{-1+τ} ) > 1 - N^{-D}`,
+
+written — as everywhere in `Flow/` — as a bound on the probability that the estimate *fails*,
+with the max over `k` (and over the sites `x` inside `‖·‖_∞`) as an existential in the event.
+The indicator is in the body, as in the paper.
+
+The proof is the paper's, with the gap of p. 9 filled: `η := N^{-1+θ}` with
+`θ := min(τ, min(c, 1))/2` (so `θ ≤ τ/2` and `θ ≤ c`, the latter being the paper's
+`η ≤ (W/N)²`); on the net of `RBM.bulkNet κ N` the local law gives `|G_xx - m| ≤ 1` and hence
+`|G_xx| ≤ 2` (`RBM.norm_msc_lt_one` and `RBM.Band.rpow_le_zScale`); the Lipschitz estimate
+`RBM.sq_norm_eigenvector_le_of_norm_green_le_near` moves that to `λ_k(ω)` at a cost
+`mesh/η ≤ η`; and `|ψ_k(x)|² ≤ 2η + η = 3N^{-1+θ} ≤ N^{-1+τ}`.
+
+The hypotheses are the model (`RBM.Band`, `RBM.Sample`), the identity in law
+`RBM.Transfer` (2.39) and Theorem 2.21 at an `N`-dependent energy.  `RBM.TransferLoop1` is
+*not* needed: only the entrywise law (2.3) enters. -/
+theorem delocalization_of_Thm221N' (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N' X κ)
+    {τ D : ℝ} (hτ : 0 < τ) (hD : 0 < D) :
+    ∀ᶠ N : ℕ in atTop,
+      B.P {ω | ∃ p : B.Idx N × B.Idx N, (N : ℝ) ^ (-1 + τ) <
+        ‖(T.hermitian N ω).eigenvectorBasis p.1 p.2‖ ^ 2 *
+          Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
+            ((T.hermitian N ω).eigenvalues p.1)}
+        ≤ ENNReal.ofReal ((N : ℝ) ^ (-D)) := by
+  rcases lt_or_ge 2 κ with hκ2 | hκ2
+  · -- the bulk is empty, so the indicator vanishes and the bad event is empty
+    filter_upwards [eventually_ge_atTop 1] with N hN1
+    have hN0 : (0 : ℝ) ≤ N := Nat.cast_nonneg N
+    have hempty : {ω | ∃ p : B.Idx N × B.Idx N, (N : ℝ) ^ (-1 + τ) <
+        ‖(T.hermitian N ω).eigenvectorBasis p.1 p.2‖ ^ 2 *
+          Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
+            ((T.hermitian N ω).eigenvalues p.1)} = (∅ : Set Ω) := by
+      ext ω
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_exists, not_lt]
+      intro p
+      have hind : Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
+          ((T.hermitian N ω).eigenvalues p.1) = 0 := by
+        refine Set.indicator_of_notMem ?_ _
+        simp only [Set.mem_Icc, not_and, not_le]
+        intro h; linarith
+      rw [hind, mul_zero]
+      exact Real.rpow_nonneg hN0 _
+    rw [hempty, measure_empty]
+    exact zero_le
+  -- the main case `κ ≤ 2`
+  have hcpos := B.c_pos
+  obtain ⟨θ, hθ0, hθτ, hθc, hθ1⟩ :
+      ∃ θ : ℝ, 0 < θ ∧ θ ≤ τ / 2 ∧ θ ≤ B.c ∧ θ ≤ 1 / 2 := by
+    refine ⟨min τ (min B.c 1) / 2, ?_, ?_, ?_, ?_⟩
+    · have h1 : 0 < min B.c 1 := lt_min hcpos one_pos
+      have h2 := lt_min hτ h1
+      linarith
+    · have := min_le_left τ (min B.c 1); linarith
+    · have h1 := min_le_right τ (min B.c 1)
+      have h2 := min_le_left B.c 1
+      linarith
+    · have h1 := min_le_right τ (min B.c 1)
+      have h2 := min_le_right B.c 1
+      linarith
+  obtain ⟨η, hη0, hη1, hηN⟩ :
+      ∃ η : ℕ → ℝ, (∀ N, 0 < η N) ∧ (∀ N, η N ≤ 1) ∧
+        (∀ N : ℕ, 1 ≤ N → η N = (N : ℝ) ^ (-1 + θ)) := by
+    refine ⟨fun N => (max (N : ℝ) 1) ^ (-1 + θ), fun N => ?_, fun N => ?_, fun N hN => ?_⟩
+    · exact Real.rpow_pos_of_pos (lt_of_lt_of_le one_pos (le_max_right _ _)) _
+    · exact Real.rpow_le_one_of_one_le_of_nonpos (le_max_right _ _) (by linarith)
+    · have h : max (N : ℝ) 1 = (N : ℝ) := max_eq_left (by exact_mod_cast hN)
+      simp only [h]
+  obtain ⟨znet, hzeq⟩ : ∃ znet : ∀ N : ℕ, Fin (4 * netDen N + 1) → ℂ,
+      ∀ (N : ℕ) (j : Fin (4 * netDen N + 1)),
+        znet N j = ((bulkNet κ N j : ℝ) : ℂ) + ((η N : ℝ) : ℂ) * Complex.I :=
+    ⟨_, fun N j => rfl⟩
+  have hzre : ∀ (N : ℕ) (j : Fin (4 * netDen N + 1)), (znet N j).re = bulkNet κ N j := by
+    intro N j; rw [hzeq]; simp
+  have hzim : ∀ (N : ℕ) (j : Fin (4 * netDen N + 1)), (znet N j).im = η N := by
+    intro N j; rw [hzeq]; simp
+  have hspec : ∀ j : ∀ N, Fin (4 * netDen N + 1),
+      SpecSeqN κ θ (fun N => lemE (znet N (j N))) (fun N => znet N (j N)) := by
+    intro j
+    refine SpecSeqN.of_z (fun N => ?_) (fun N => ?_) (fun N => ?_) ?_
+    · rw [hzim]; exact hη0 N
+    · rw [hzim]; exact hη1 N
+    · rw [hzre]; exact abs_bulkNet_le hκ2 N (j N)
+    · filter_upwards [eventually_ge_atTop 1] with N hN
+      rw [hzim, hηN N hN]
+  have hsd : StochDom B.P
+      (fun N (p : Fin (4 * netDen N + 1) × (B.Idx N × B.Idx N)) ω =>
+        ‖(green (T.Hband N ω) (znet N p.1) -
+          msc (znet N p.1) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) p.2.1 p.2.2‖)
+      (fun N p _ => (B.zScale N (znet N p.1))⁻¹ ^ ((1 : ℝ) / 2)) := by
+    refine StochDom.of_forall_seq (fun j => ?_) (by norm_num : (0:ℝ) ≤ 5) card_bulkNet_le
+    -- the type ascription is load-bearing: without it the elaborator beta-reduces the pair
+    -- projections only through a very slow `isDefEq`
+    exact show StochDom B.P (fun N (v : B.Idx N × B.Idx N) ω =>
+        ‖(green (T.Hband N ω) (znet N (j N)) -
+          msc (znet N (j N)) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) v.1 v.2‖)
+      (fun N (_ : B.Idx N × B.Idx N) (_ : Ω) => (B.zScale N (znet N (j N)))⁻¹ ^ ((1 : ℝ) / 2))
+      from localLaw_of_boundsN T hκ (hspec j) ((hspec j).boundsN' X hκ hT hθ0)
+  have hgood := hsd.highProb (τ := θ / 4) (by positivity)
+  filter_upwards [hgood D hD, eventually_ge_atTop 1, B.rpow_le_zScale hθ0 hθc,
+    eventually_le_rpow (Real.sqrt 2) (by positivity : (0:ℝ) < θ / 4),
+    eventually_le_rpow 3 (half_pos hτ)] with N hN hN1 hzs hs2 h3
+  refine (measure_mono ?_).trans hN
+  intro ω hω hmem
+  obtain ⟨p, hp⟩ := hω
+  have hR0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+  have hR1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  by_cases hIcc : (T.hermitian N ω).eigenvalues p.1 ∈ Set.Icc (-2 + κ) (2 - κ)
+  swap
+  · rw [Set.indicator_of_notMem hIcc, mul_zero] at hp
+    exact absurd hp (not_lt.2 (Real.rpow_nonneg hR0.le _))
+  simp only [Set.indicator_of_mem hIcc, mul_one] at hp
+  obtain ⟨hIcc1, hIcc2⟩ := hIcc
+  have habs : |(T.hermitian N ω).eigenvalues p.1| ≤ 2 - κ := abs_le.2 ⟨by linarith, hIcc2⟩
+  obtain ⟨j, hj⟩ := exists_bulkNet_close hκ.le N habs
+  have hzspos : (0 : ℝ) < (N : ℝ) ^ θ / 2 := by positivity
+  have hzs' : (N : ℝ) ^ θ / 2 ≤ B.zScale N (znet N j) :=
+    hzs (znet N j) (by rw [hzim, hηN N hN1])
+  have hzpos : 0 < B.zScale N (znet N j) := lt_of_lt_of_le hzspos hzs'
+  -- the local law at the net point `j`, on the diagonal entry `x = p.2`
+  have hentry := hmem (j, (p.2, p.2))
+  have hdiag : (green (T.Hband N ω) (znet N j) -
+      msc (znet N j) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) p.2 p.2
+      = green (T.Hband N ω) (znet N j) p.2 p.2 - msc (znet N j) := by
+    simp [Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_eq]
+  rw [hdiag] at hentry
+  -- `N^{θ/4} (W ℓ η)^{-1/2} ≤ 1`
+  have hsmall : (N : ℝ) ^ (θ / 4) * (B.zScale N (znet N j))⁻¹ ^ ((1 : ℝ) / 2) ≤ 1 := by
+    have hinv : (B.zScale N (znet N j))⁻¹ ≤ 2 * (N : ℝ) ^ (-θ) := by
+      have h1 : (B.zScale N (znet N j))⁻¹ ≤ ((N : ℝ) ^ θ / 2)⁻¹ := inv_anti₀ hzspos hzs'
+      have h2 : ((N : ℝ) ^ θ / 2)⁻¹ = 2 * (N : ℝ) ^ (-θ) := by
+        rw [Real.rpow_neg hR0.le]
+        field_simp
+      linarith [h1, h2.le, h2.ge]
+    have e1 : (2 * (N : ℝ) ^ (-θ)) ^ ((1 : ℝ) / 2)
+        = Real.sqrt 2 * (N : ℝ) ^ (-(θ / 2)) := by
+      have hmul : (-θ) * ((1 : ℝ) / 2) = -(θ / 2) := by ring
+      rw [Real.mul_rpow (by norm_num) (Real.rpow_nonneg hR0.le _), ← Real.sqrt_eq_rpow,
+        ← Real.rpow_mul hR0.le, hmul]
+    have e2 : (N : ℝ) ^ (θ / 4) * (N : ℝ) ^ (-(θ / 2)) = (N : ℝ) ^ (-(θ / 4)) := by
+      rw [← Real.rpow_add hR0]; congr 1; ring
+    have e3 : (N : ℝ) ^ (θ / 4) * (N : ℝ) ^ (-(θ / 4)) = 1 := by
+      rw [← Real.rpow_add hR0]; simp
+    calc (N : ℝ) ^ (θ / 4) * (B.zScale N (znet N j))⁻¹ ^ ((1 : ℝ) / 2)
+        ≤ (N : ℝ) ^ (θ / 4) * (2 * (N : ℝ) ^ (-θ)) ^ ((1 : ℝ) / 2) := by
+          have hnn : (0 : ℝ) ≤ (B.zScale N (znet N j))⁻¹ := inv_nonneg.2 hzpos.le
+          have := Real.rpow_le_rpow hnn hinv (by norm_num : (0:ℝ) ≤ (1:ℝ)/2)
+          have hpn : (0 : ℝ) ≤ (N : ℝ) ^ (θ / 4) := Real.rpow_nonneg hR0.le _
+          exact mul_le_mul_of_nonneg_left this hpn
+      _ = Real.sqrt 2 * ((N : ℝ) ^ (θ / 4) * (N : ℝ) ^ (-(θ / 2))) := by rw [e1]; ring
+      _ = Real.sqrt 2 * (N : ℝ) ^ (-(θ / 4)) := by rw [e2]
+      _ ≤ (N : ℝ) ^ (θ / 4) * (N : ℝ) ^ (-(θ / 4)) := by
+          have hnn : (0 : ℝ) ≤ (N : ℝ) ^ (-(θ / 4)) := Real.rpow_nonneg hR0.le _
+          exact mul_le_mul_of_nonneg_right hs2 hnn
+      _ = 1 := e3
+  -- `|G_xx| ≤ 2` at the net point
+  have hGxx : ‖green (T.Hband N ω) (znet N j) p.2 p.2‖ ≤ 2 := by
+    have hm : ‖msc (znet N j)‖ < 1 := norm_msc_lt_one (by rw [hzim]; exact hη0 N)
+    have hle : ‖green (T.Hband N ω) (znet N j) p.2 p.2 - msc (znet N j)‖ ≤ 1 :=
+      le_trans hentry hsmall
+    have hsub := norm_sub_norm_le (green (T.Hband N ω) (znet N j) p.2 p.2) (msc (znet N j))
+    linarith
+  rw [hzeq] at hGxx
+  have hpsi := sq_norm_eigenvector_le_of_norm_green_le_near (T.hermitian N ω) (hη0 N) p.1 p.2
+    (bulkNet κ N j) hj hGxx
+  -- the final arithmetic
+  have hηeq : η N = (N : ℝ) ^ (-1 + θ) := hηN N hN1
+  have hdiv : (1 : ℝ) / (netDen N : ℝ) / η N ≤ (N : ℝ) ^ (-1 + θ) := by
+    rw [hηeq]; exact netDen_inv_div_rpow_le hθ0.le hN1
+  have hb : (N : ℝ) ^ (-1 + θ) * 3 ≤ (N : ℝ) ^ (-1 + τ) := by
+    have e : (N : ℝ) ^ (-1 + θ) = (N : ℝ) ^ (-1 + τ) * (N : ℝ) ^ (θ - τ) := by
+      rw [← Real.rpow_add hR0]; congr 1; ring
+    have h1 : (N : ℝ) ^ (θ - τ) ≤ (N : ℝ) ^ (-(τ / 2)) :=
+      Real.rpow_le_rpow_of_exponent_le hR1 (by linarith)
+    have hnn : (0 : ℝ) ≤ (N : ℝ) ^ (-(τ / 2)) := Real.rpow_nonneg hR0.le _
+    have e2 : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (-(τ / 2)) = 1 := by
+      rw [← Real.rpow_add hR0]; simp
+    have h2 : 3 * (N : ℝ) ^ (-(τ / 2)) ≤ 1 := by nlinarith [h3, e2, hnn]
+    have hpos : (0 : ℝ) < (N : ℝ) ^ (-1 + τ) := Real.rpow_pos_of_pos hR0 _
+    nlinarith [e, h1, h2, hpos, Real.rpow_nonneg hR0.le (θ - τ)]
+  have hη2 : η N * 2 = (N : ℝ) ^ (-1 + θ) * 2 := by rw [hηeq]
+  have hpos1 : (0 : ℝ) < (N : ℝ) ^ (-1 + θ) := Real.rpow_pos_of_pos hR0 _
+  linarith [hp, hpsi, hdiv, hb, hη2.le, hη2.ge]
+
+
+/-- **Theorem 2.2 from the paper-literal Theorem 2.21** (`RBM.Thm221N`), along
+`RBM.Thm221N.toThm221N'`. -/
+theorem delocalization_of_Thm221N (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N X κ)
+    {τ D : ℝ} (hτ : 0 < τ) (hD : 0 < D) :
+    ∀ᶠ N : ℕ in atTop,
+      B.P {ω | ∃ p : B.Idx N × B.Idx N, (N : ℝ) ^ (-1 + τ) <
+        ‖(T.hermitian N ω).eigenvectorBasis p.1 p.2‖ ^ 2 *
+          Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
+            ((T.hermitian N ω).eigenvalues p.1)}
+        ≤ ENNReal.ofReal ((N : ℝ) ^ (-D)) :=
+  delocalization_of_Thm221N' T hκ (hT.toThm221N' hκ) hτ hD
+
+/-! ### Satisfiability probes for Theorem 2.2 -/
+
+/-- **The two competing demands on the mesh are met by one and the same net.**  Finer and finer
+would break the union bound, coarser and coarser would break the Lipschitz step; the net
+`RBM.bulkNet κ N` of `4 (N+1)^4 + 1` points satisfies both at once, together with the
+comparison `mesh / η ≤ η` at `η = N^{-1+θ}` that the proof actually uses. -/
+example {κ θ : ℝ} (hκ0 : 0 ≤ κ) (hθ0 : 0 < θ) :
+    ∀ᶠ N : ℕ in atTop,
+      (∀ E : ℝ, |E| ≤ 2 - κ → ∃ j : Fin (4 * netDen N + 1),
+        |E - bulkNet κ N j| ≤ 1 / (netDen N : ℝ)) ∧
+      ((Fintype.card (Fin (4 * netDen N + 1)) : ℝ) ≤ (N : ℝ) ^ (5 : ℝ)) ∧
+      (1 : ℝ) / (netDen N : ℝ) / (N : ℝ) ^ (-1 + θ) ≤ (N : ℝ) ^ (-1 + θ) := by
+  filter_upwards [card_bulkNet_le, eventually_ge_atTop 1] with N hcard hN1
+  exact ⟨fun E hE => exists_bulkNet_close hκ0 N hE, hcard, netDen_inv_div_rpow_le hθ0.le hN1⟩
+
+/-- **The indicator of Theorem 2.2 is not identically zero, and the bound inside it can fail.**
+For the `1 × 1` zero matrix every eigenvalue is `0`, which lies in the bulk `[-2+κ, 2-κ]` for
+`0 < κ ≤ 2`, and the eigenvector has `|ψ_0(0)|² = 1 > N^{-1+τ}`.  So the event of Theorem 2.2 is
+a genuine event: it is neither always true (which would make the theorem empty) nor always false
+(which would make it unprovable), and the indicator really does switch on. -/
+example {τ : ℝ} (hτ1 : τ < 1) {N : ℕ} (hN : 2 ≤ N) {κ : ℝ} (hκ2 : κ ≤ 2) :
+    (N : ℝ) ^ (-1 + τ) <
+      ‖(Matrix.isHermitian_zero (n := Fin 1) (α := ℂ)).eigenvectorBasis 0 0‖ ^ 2 *
+        Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
+          ((Matrix.isHermitian_zero (n := Fin 1) (α := ℂ)).eigenvalues 0) := by
+  have hev : (Matrix.isHermitian_zero (n := Fin 1) (α := ℂ)).eigenvalues 0 = 0 := by
+    have h := (Matrix.IsHermitian.eigenvalues_eq_zero_iff
+      (hA := Matrix.isHermitian_zero (n := Fin 1) (α := ℂ))).2 rfl
+    exact congrFun h 0
+  have hmem : (Matrix.isHermitian_zero (n := Fin 1) (α := ℂ)).eigenvalues 0 ∈
+      Set.Icc (-2 + κ) (2 - κ) := by
+    rw [hev]; constructor <;> [linarith; linarith]
+  have hsum := sum_sq_norm_eigenvectorBasis (Matrix.isHermitian_zero (n := Fin 1) (α := ℂ)) 0
+  have hone : ‖(Matrix.isHermitian_zero (n := Fin 1) (α := ℂ)).eigenvectorBasis 0 0‖ ^ 2 = 1 := by
+    simpa using hsum
+  rw [hone, Set.indicator_of_mem hmem, mul_one]
+  have hN2 : (1 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  exact Real.rpow_lt_one_of_one_lt_of_neg hN2 (by linarith)
+
+end Deloc
 
 end RBM

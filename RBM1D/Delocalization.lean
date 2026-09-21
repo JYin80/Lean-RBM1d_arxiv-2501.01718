@@ -27,6 +27,23 @@ bound on `G` comes from the local law (Theorem 2.3) with high probability and
 * `RBM.im_green_apply_self`     : `Im G_xx(E + iη) = ∑_l η |ψ_l(x)|² / ((λ_l - E)² + η²)`
 * `RBM.sq_norm_eigenvector_le_sum`, `RBM.sq_norm_eigenvector_le_im_green` : (2.10)
 * `RBM.sq_norm_eigenvector_le_of_norm_green_le` : `|G_xx| ≤ C ⇒ |ψ_k(x)|² ≤ C η`
+
+## The energy is random, the local law is not
+
+The spectral parameter in (2.10) is `λ_k(ω) + iη`, which moves with `ω`, while the local law
+(Theorem 2.3) is a statement about a *deterministic* sequence of spectral parameters.  The gap
+is closed by a net of deterministic energies together with the **deterministic Lipschitz
+continuity of `G` in the energy**, proved here:
+
+* `RBM.sum_sq_norm_eigenvectorBasis` : `∑_l |ψ_l(x)|² = 1` (the rows of the eigenvector matrix
+  are unit vectors);
+* `RBM.im_green_lipschitz_energy` : `|Im G_xx(E + iη) - Im G_xx(E' + iη)| ≤ |E - E'| / η²`;
+* `RBM.sq_norm_eigenvector_le_of_norm_green_le_near` : (2.10) evaluated at a *nearby*
+  deterministic energy — `|λ_k - E| ≤ d` and `|G_xx(E + iη)| ≤ C` give
+  `|ψ_k(x)|² ≤ η C + d / η`.
+
+`RBM.delocalization_of_Thm221N` in `RBM1D/Flow/EnergyUniform.lean` is the probabilistic half
+(Theorem 2.2 itself); it consumes exactly the last of these.
 -/
 
 namespace RBM
@@ -147,5 +164,118 @@ theorem sq_norm_eigenvector_le_of_norm_green_le {η C : ℝ} (hη : 0 < η) (k x
   rw [mul_comm C]
   refine mul_le_mul_of_nonneg_left ?_ hη.le
   exact (Complex.im_le_norm _).trans hG
+
+/-! ### Lipschitz continuity in the energy
+
+The local law is available only at *deterministic* spectral parameters, whereas (2.10) is
+evaluated at `λ_k(ω) + iη`.  The bridge is a net of deterministic energies plus the bound
+`|Im G_xx(E + iη) - Im G_xx(E' + iη)| ≤ |E - E'| η^{-2}` of `RBM.im_green_lipschitz_energy`,
+which is proved here from the spectral decomposition alone — no operator norm, no resolvent
+identity, so it stays inside this file's imports. -/
+
+/-- **The rows of the eigenvector matrix are unit vectors**: `∑_l |ψ_l(x)|² = 1`.  This is the
+normalization that makes the Lipschitz constant in `RBM.im_green_lipschitz_energy` exactly
+`η^{-2}`. -/
+theorem sum_sq_norm_eigenvectorBasis (x : n) : ∑ l, ‖hH.eigenvectorBasis l x‖ ^ 2 = 1 := by
+  have hUU' : (hH.eigenvectorUnitary : Matrix n n ℂ) *
+      star (hH.eigenvectorUnitary : Matrix n n ℂ) = 1 := Unitary.coe_mul_star_self _
+  have h := congrArg (fun M : Matrix n n ℂ => M x x) hUU'
+  simp only [Matrix.mul_apply, Matrix.star_apply, Matrix.one_apply_eq,
+    IsHermitian.eigenvectorUnitary_apply, RCLike.star_def] at h
+  have h2 : ∑ l, ((‖hH.eigenvectorBasis l x‖ ^ 2 : ℝ) : ℂ) = (1 : ℂ) := by
+    rw [← h]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq]
+  exact_mod_cast h2
+
+/-- The single-eigenvalue Lipschitz estimate behind `RBM.im_green_lipschitz_energy`: the Poisson
+kernel `E ↦ η w / ((a - E)² + η²)` is `w η^{-2}`-Lipschitz.
+
+The proof is the elementary chain `|Q - P| = |E - E'| |2a - E - E'|`,
+`η |2a - E - E'| ≤ (P + Q)/2` (two applications of `2ηu ≤ u² + η²`) and
+`(P + Q) η² / 2 ≤ P Q` (from `η² ≤ P`, `η² ≤ Q`). -/
+theorem abs_poisson_sub_le {η : ℝ} (hη : 0 < η) (a E E' w : ℝ) (hw : 0 ≤ w) :
+    |η * w / ((a - E) ^ 2 + η ^ 2) - η * w / ((a - E') ^ 2 + η ^ 2)|
+      ≤ w * |E - E'| / η ^ 2 := by
+  set P : ℝ := (a - E) ^ 2 + η ^ 2 with hPdef
+  set Q : ℝ := (a - E') ^ 2 + η ^ 2 with hQdef
+  have hη2 : 0 < η ^ 2 := by positivity
+  have hP : η ^ 2 ≤ P := by rw [hPdef]; nlinarith [sq_nonneg (a - E)]
+  have hQ : η ^ 2 ≤ Q := by rw [hQdef]; nlinarith [sq_nonneg (a - E')]
+  have hP0 : 0 < P := lt_of_lt_of_le hη2 hP
+  have hQ0 : 0 < Q := lt_of_lt_of_le hη2 hQ
+  have hsub : η * w / P - η * w / Q = η * w * (Q - P) / (P * Q) := by
+    field_simp
+  rw [hsub, abs_div, abs_of_pos (mul_pos hP0 hQ0), div_le_div_iff₀ (mul_pos hP0 hQ0) hη2]
+  have hQP : Q - P = (E - E') * (2 * a - E - E') := by rw [hPdef, hQdef]; ring
+  have habs : |η * w * (Q - P)| = η * w * (|E - E'| * |2 * a - E - E'|) := by
+    rw [hQP]
+    simp only [abs_mul, abs_of_pos hη, abs_of_nonneg hw, mul_assoc]
+  rw [habs]
+  have hkey : η * |2 * a - E - E'| ≤ (P + Q) / 2 := by
+    have h1 : |2 * a - E - E'| ≤ |a - E| + |a - E'| := by
+      have h : 2 * a - E - E' = (a - E) + (a - E') := by ring
+      rw [h]; exact abs_add_le _ _
+    have h2 : 2 * (η * |a - E|) ≤ (a - E) ^ 2 + η ^ 2 := by
+      nlinarith [sq_nonneg (|a - E| - η), sq_abs (a - E), abs_nonneg (a - E)]
+    have h3 : 2 * (η * |a - E'|) ≤ (a - E') ^ 2 + η ^ 2 := by
+      nlinarith [sq_nonneg (|a - E'| - η), sq_abs (a - E'), abs_nonneg (a - E')]
+    rw [hPdef, hQdef]
+    nlinarith [hη.le, h1]
+  have hE : 0 ≤ |E - E'| := abs_nonneg _
+  have hPQ : (P + Q) / 2 * η ^ 2 ≤ P * Q := by nlinarith
+  calc η * w * (|E - E'| * |2 * a - E - E'|) * η ^ 2
+      = w * |E - E'| * ((η * |2 * a - E - E'|) * η ^ 2) := by ring
+    _ ≤ w * |E - E'| * ((P + Q) / 2 * η ^ 2) := by gcongr
+    _ ≤ w * |E - E'| * (P * Q) := by gcongr
+
+include hH in
+/-- **`Im G_xx` is `η^{-2}`-Lipschitz in the energy**:
+`|Im G_xx(E + iη) - Im G_xx(E' + iη)| ≤ |E - E'| / η²`.
+
+This is what lets a local law proved at a net of *deterministic* energies be evaluated at the
+*random* energy `λ_k(ω)` of (2.10). -/
+theorem im_green_lipschitz_energy {η : ℝ} (hη : 0 < η) (E E' : ℝ) (x : n) :
+    |(green H (E + η * Complex.I) x x).im - (green H (E' + η * Complex.I) x x).im|
+      ≤ |E - E'| / η ^ 2 := by
+  rw [im_green_apply_self hH E hη.ne' x, im_green_apply_self hH E' hη.ne' x,
+    ← Finset.sum_sub_distrib]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+  have hbd : ∀ l ∈ Finset.univ,
+      |η * Complex.normSq (hH.eigenvectorBasis l x) / ((hH.eigenvalues l - E) ^ 2 + η ^ 2)
+        - η * Complex.normSq (hH.eigenvectorBasis l x) / ((hH.eigenvalues l - E') ^ 2 + η ^ 2)|
+      ≤ ‖hH.eigenvectorBasis l x‖ ^ 2 * (|E - E'| / η ^ 2) := by
+    intro l _
+    have h := abs_poisson_sub_le hη (hH.eigenvalues l) E E' (‖hH.eigenvectorBasis l x‖ ^ 2)
+      (by positivity)
+    rw [Complex.normSq_eq_norm_sq]
+    calc _ ≤ ‖hH.eigenvectorBasis l x‖ ^ 2 * |E - E'| / η ^ 2 := h
+      _ = _ := by ring
+  refine (Finset.sum_le_sum hbd).trans ?_
+  rw [← Finset.sum_mul, sum_sq_norm_eigenvectorBasis hH x, one_mul]
+
+/-- **The deterministic core of Theorem 2.2, at a nearby deterministic energy.**  If the
+deterministic energy `E` is within `d` of the eigenvalue `λ_k` and `|G_xx(E + iη)| ≤ C`, then
+`|ψ_k(x)|² ≤ η C + d / η`.
+
+`RBM.sq_norm_eigenvector_le_of_norm_green_le` is the case `E = λ_k`, `d = 0`.  With
+`η = N^{-1+θ}`, `d = N^{-A}` for `A` large and `C = O(1)` from the local law, the right-hand
+side is `O(N^{-1+θ})`, which is the bound of Theorem 2.2. -/
+theorem sq_norm_eigenvector_le_of_norm_green_le_near {η C d : ℝ} (hη : 0 < η) (k x : n) (E : ℝ)
+    (hd : |hH.eigenvalues k - E| ≤ d)
+    (hG : ‖green H (E + η * Complex.I) x x‖ ≤ C) :
+    ‖hH.eigenvectorBasis k x‖ ^ 2 ≤ η * C + d / η := by
+  have h1 := sq_norm_eigenvector_le_im_green hH hη k x
+  have h2 := im_green_lipschitz_energy hH hη (hH.eigenvalues k) E x
+  have h3 : (green H (E + η * Complex.I) x x).im ≤ C := (Complex.im_le_norm _).trans hG
+  have h4 : |hH.eigenvalues k - E| / η ^ 2 ≤ d / η ^ 2 := by gcongr
+  have h5 : (green H ((hH.eigenvalues k : ℝ) + η * Complex.I) x x).im ≤ C + d / η ^ 2 := by
+    have h := (abs_le.1 h2).2
+    linarith
+  have hfin : η * (C + d / η ^ 2) = η * C + d / η := by field_simp
+  calc ‖hH.eigenvectorBasis k x‖ ^ 2
+      ≤ η * (green H ((hH.eigenvalues k : ℝ) + η * Complex.I) x x).im := h1
+    _ ≤ η * (C + d / η ^ 2) := by gcongr
+    _ = η * C + d / η := hfin
 
 end RBM

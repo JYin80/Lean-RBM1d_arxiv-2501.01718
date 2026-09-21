@@ -12,6 +12,7 @@ import RBM1D.Gauss.DominationHolder
 import RBM1D.Gauss.DistEq
 import RBM1D.Gauss.Thm25Gauss
 import RBM1D.Gauss.Lemma41FlowGauss
+import RBM1D.Gauss.EntryBoundTime
 import RBM1D.Gauss.Step1Hyp
 import RBM1D.Gauss.Step6Hyp
 import RBM1D.Gauss.Step6HierarchyGauss

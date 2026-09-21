@@ -4527,3 +4527,29 @@ STATUS 的 T173 节写「`hEL` 仍挂 `MatrixStein`(T70) 与 `hjoint`(T141)」�
 `‖Z_k‖_∞ ≥ 64/65` 是 T171/T172 的结论、**两条反例当时都只在探针里未入库**，本次未重跑，
 且 `L^n → L^∞` 那一步需要 `ω ↦ Z_k(ω)` 的连续性，**T171 没有写出这一步**；
 `hregS` 能否从强化后的网格真正推出，P3 只证了「网格步能带任意增益」，**最后一段是读证明得出的、未编译**。
+
+## T107：`EntryBoundFlow` 接上了——**(4.2) 已从 `Step1.Hyp` 的假设表里消失**（`Gauss/EntryBoundTime.lean`，501 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9206** 条。`Gauss/Lemma41FlowGauss.lean` **一个字没动**（新增全在新文件）。
+
+**先回答 T166 那个警告：row/col 侧确实有同样的缺口，而且更严重**——`Green/EntryBoundFloor.lean` 里
+**只有对角版的指标加宽** `diag_bound_stochDom_floor_idx`，**没有 (4.2) 的对应物**。本单补了
+`Gauss.entry_bound_stochDom_floor_idx`（确定性内核直接取 T166 的 `norm_sq_green_le_blk_floor`，**没有重证任何东西**）。
+**建议下沉到 `Green/EntryBoundFloor.lean` 与对角版并排。**
+**控制侧则确实逐字对上**：`stochDom_ldeRow/ldeCol_flow_floor` 塞进槽位零改写、`exact` 直接过。
+
+**产出** `entryBoundFlow_floor : EntryBoundFlow' d E s t (fun N => 2·N^{−B})`——`EntryBoundFlow` 的陈述逐字不变、
+控制多一项地板，**无任何大偏差假设**，其余全是与 T148/T166 同一批的区制条件。
+（无地板的 `EntryBoundFlow` **没有也不可能被证出来**——那正是 T148 判定为假的形状。）
+
+**四条下游陈述真的逐字不变，而且是编译验证的不是目测**：用 `have : h1 = h2 := rfl` 探针（`Prop` 相等要求两侧 defeq）
+对 `stochDom_indicator_offdiag_flow`、`stochDom_indicator_llMax_sq_flow`、`lemma41Flow`、`Step1.Lemma41Flow` **四条全过**。
+
+**地板代价为零，按 T160 的估计兑现**：与无条件的 `W⁻¹` 复合，由 `3W ≤ WL ≤ N` 取 `B := 1`。
+（实际比估的 15 行多些：吸收引理 ~25 行、`3W ≤ N` ~15 行、`offdiag'` ~35 行。）
+
+**额外落地（零新增假设）**：`step1Hyp_gauss_of_scale'` 与原版**结论与假设逐字相同，只是删掉了 `hEntry`**
+（同样 `rfl` 验证）——两条区制输入都能从 `step1` 自带的 `N^c ≤ Wℓ_tη_t` **免费推出**。
+**于是 (4.2) 已从 `Step1.Hyp` 的假设表里彻底消失，那里只剩 `DiagBoundFlow`。**
+
+`LKDecayQuant.lean` 的八条重复副本仍在；本单只用 `Green/` 那一套，**既没让它们更好删、也没挡着删**。

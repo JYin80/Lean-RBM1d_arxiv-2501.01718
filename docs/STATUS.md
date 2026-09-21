@@ -5194,6 +5194,8 @@ T182 的 (5.77) 第 3 行之所以短一个 `A`，正是因为它把 3-loop 取�
 
 ## ⭐⭐ T181：`Lemma514` 的矩路线打通——**六步链上最后一条 fiat 冲突消失**（`Gauss/Lemma514Moment.lean`，787 行，2026-09-21）
 
+> **⚠ 后续更正（T192，2026-09-21）**：本节说 `hHol` 缺三块——**第一块其实早就存在**（T116 的 `Gauss.norm_gloop_sub_le`/`norm_Lval_sub_le_sqrt` 就是 `m` 个预解式乘积的伸缩模），真正无主的是后两块。另：**`lemma514_forall_of_momentDuhamel` 把 `(K, γ)` 排在 `∀ m` 前面，要一个常数通吃所有环长——这个要不到**（`m` 个预解式的模必带 `η^{−(m+1)}`，常数按 `m` 几何增长）。好在该定理的证明只用 `hHol (n+2)`，**正确接口是单 `m` 的 `lemma514_of_momentDuhamel`**；T192 另给了 `lemma514_forall_of_hHol_flow`，逐 `m` 取自己的 `K` 组装出同样的结论。
+
 `lake build RBM1D` exit=0，审计 **9660** 条。
 **文件里没有任何 `SumZeroDyn.Hierarchy`、没有任何 `Lemma510` 字段**（grep 只在注释里出现），**全程只用 `0 ≤ s N`**。
 
@@ -5250,3 +5252,78 @@ T182 的 (5.77) 第 3 行之所以短一个 `A`，正是因为它把 3-loop 取�
 **没有发现论文任何一条按字面为假**，与 T168 的外部穷举完全一致。
 
 **命名检查是手动做的**：97 个顶层名字逐个全仓 grep，零冲突——**单文件编译查不出跨文件重名**。
+
+## ⭐⭐ T192：`Lemma514` 矩路线的三块余项全部落地（`Gauss/Lemma514Holder.lean`，新建 1071 行，2026-09-21）
+
+`lake env lean RBM1D/Gauss/Lemma514Holder.lean` **exit=0**，0 sorry、0 axiom，
+八条主定理 `#print axioms` 只出现 `propext / Classical.choice / Quot.sound`（审完已删 print）。
+**`Gauss/Lemma514Moment.lean` 一字未动**；新文件名不是 T181 建议的 `FlowHolder.lean`——那个名字
+**已被 T106 占用**（预解式单条模），所以另起 `Lemma514Holder.lean`。
+（本单**没有**改 `RBM1D.lean` 的 import，按协调者要求由他加。）
+
+### (1) `hHol` —— T181 标「唯一真正无主的一块」，已证出
+
+T181 列的三个缺口里，**第一个其实早就有了**：
+`RBM.Gauss.norm_gloop_sub_le` / `norm_Lval_sub_le_sqrt`（T116，在 `Gauss/Step1Hyp.lean`）
+就是 `m` 个预解式乘积的伸缩模。真正缺的是后两个，本单补上：
+
+* **`Kval` 对 `u` 的模**（核心）：`RBM.norm_primRhs_le`——(2.48) 右端是 `≤ n²` 对 `(k,l)` 的和，
+  每项 `∑_{a,b} K(G^L) S^{(B)}_{ab} K(G^R)`，两条剪接环长度都在 `[2, n]`，`S^{(B)}` 行和为 1，
+  故 `‖primRhs‖ ≤ W n² L B²`；配 `hasDerivAt_Kgen_all` + 中值不等式得
+  `RBM.norm_Kgen_sub_le` / `norm_Kgen_sub_le'`（后者去掉 `2 ≤ n` 限制：长度 0/1 时 `K` 与 `u` 无关）。
+  **`K` 这一半是 Lipschitz 的，不是 1/2-Hölder。**
+* **`(Wℓ_uη_u)^m` 对 `u` 的模**：`RBM.abs_ellHat_sub_le`——`ℓ̂ = min((1−u)^{-1/2}, L)`
+  在 `u → 1` 附近**只有 1/2-Hölder**，常数 `(1−T)⁻¹`；这和流的 `√u` 给出同一个 `γ = 1/2`。
+
+成品：`RBM.Gauss.abs_scaleLK_sub_le`（**全显式**常数）→ `scaleLK_const_le`（塌成 `(m²+5m)R^{3m+4}`）
+→ **`RBM.Gauss.hHol_flow`**：`γ = 1/2`，`K = c(3m+4)+1`。三个输入是
+`hreg`（`η_{t_N} ≥ N^{-c}`，论文自己的 `t ≤ 1−N^{-1+τ}`）、`hXΞ`（`‖X‖ ≺ 1`，T100）、
+`hKb`（`K` 的多项式包络）。**全程只用 `0 ≤ s N`。**
+
+**验收探针 `lemma514_of_hHol_flow`**：裸应用喂进 `lemma514_of_momentDuhamel` 的 `hHol` 槽，编译通过。
+
+### ⚠ 负面发现：`lemma514_forall_of_momentDuhamel` 的 `hHol` 量词序要不到
+
+那条定理把 `(K, γ)` 排在 `∀ m` **前面**——要求一个常数对所有环长通用。
+**这个做不到**：`m` 个预解式乘积的模带 `η^{-(m+1)}`，而 `η⁻¹` 在区制里是 `N` 的正幂，
+常数按 `m` 几何增长。但**它的证明只用 `hHol (n+2)`**，所以正确的接口是
+`lemma514_of_momentDuhamel`（单个 `m`）；本单给出 `lemma514_forall_of_hHol_flow`，
+逐个 `m` 取自己的 `K` 组装出 `∀ m, 2 ≤ m → Step3.Lemma514`，结论一样（`Lemma514` 本身不带常数）。
+
+### (2) `edgeKer` 行和：`hkerlt`/`hker2lt` 无条件，`hkerC`/`hker2C` **需要短窗口**
+
+`‖xiOf (mSigma E) σ i‖` 在体内**恰好等于 1**（`norm_xiOf_mSigma`），于是
+
+* `hkerlt_flow`、`hker2lt_flow`：化归为 `w < 1`，**无条件成立**（只要 `0 ≤ s N`、`t N < 1`）；
+* `hkerC_flow`、`hker2C_flow`：左端恰是 `1 + (w−u)/(1−w)`，**常数 `Ck` 存在当且仅当
+  `t_N − s_N ≤ κ(1−t_N)`**，此时 `Ck = 1 + κ`。
+  **这一条不是记账，是真假设**：固定窗长而 `t_N ↑ 1` 时 `(1−t_N)⁻¹ → ∞`，该槽不可满足。
+  配套 `norm_xi2_mSigma`（双环的 `‖ξ‖ = 1`）。
+
+### (3) `hnum`：两端点归约
+
+`hnum_of_endpoints`——(5.92) 的 `w` 依赖在两侧单调方向相反：左端只通过 `w − s_N` 且系数非负，
+右端 `(Wℓ_wη_w)^{-(n+2)}` 因 `flowScale_antitoneOn`（p. 24）单调不减。
+所以全窗口的 (5.92) 只要在**左端 `w = t_N`、右端 `w = s_N`** 各验一次。
+再配 `hnum_endpoint_of_three` 把三项（初值 (2.68)、漂移 T165、`E⊗E` (5.24)）各按 `c_N/3` 分账。
+
+### 可满足性检查（都编译过）
+
+* `exists_highProb_normX`：`‖X‖ ≺ 1`（T100）真的造出满足 `hXΞ` 的高概率事件 `Ξ`——
+  否则 `Ξ = ∅` 会让 `hXΞ` 空真，`hHol_flow` 里除它以外没有任何东西约束 `Ξ`。
+* `norm_Kval_two_le_rpow`：长度 2 处 `hKb` **是定理**（`norm_Kgen_two_le` 给 `W⁻¹(1−T)⁻¹`，
+  被 `hreg` 吃掉），所以包络假设在基础长度上非空真。长度 ≥ 3 对应 (2.59) `norm_Kgen_le`，本单没装。
+
+### 还短什么
+
+* `hKb` 在长度 `≥ 3` 上没有装配（(2.59) `norm_Kgen_le` 比需要的强，但它要 `0 < t` 且只覆盖 `3 ≤ len`，
+  接缝没缝）。
+* `hkerC`/`hker2C` 的短窗口条件 `t_N − s_N ≤ κ(1−t_N)` 目前是假设，没有从六步的窗口构造里导出。
+* `hnum` 的三项各自的界仍归 T146/T157/T165。
+* `MomentDuhamel.Hyp` 的 `momentDuhamel`/`momentDuhamelQ` 仍是 T187/T180 的余项（本单不碰）。
+
+### 命名检查（手动，单文件编译查不出跨文件重名）
+
+30 个新顶层名逐个全仓 grep：**撞了一个** —— `RBM.ellHat_nonneg` 已存在于
+`Propagator/Rate.lean`（我的 import 链够不到它，单文件编译发现不了，全量 `lake build` 才会炸）。
+已删掉重复声明、改成内联。其余 29 个零冲突。

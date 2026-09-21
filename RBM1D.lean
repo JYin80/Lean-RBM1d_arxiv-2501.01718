@@ -33,6 +33,7 @@ import RBM1D.Gauss.MomentDuhamelRhs
 import RBM1D.Gauss.MomentDuhamelGauss
 import RBM1D.Gauss.MomentDuhamelHyp
 import RBM1D.Gauss.Lemma514Moment
+import RBM1D.Gauss.Lemma514Holder
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.CondRow
 import RBM1D.Gauss.MinorReplace

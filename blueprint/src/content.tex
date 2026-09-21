@@ -2107,6 +2107,20 @@
   inputs come from (2.73), (2.75) and (2.68) at $s$; the second pass needs no second bootstrap.
 \end{proof}
 
+\begin{theorem}[Lemma 5.1 at a raised threshold, and \texttt{Step1.Hyp} complete]\label{thm:step1lift}
+  \lean{RBM.StochDom.continuity_recursion_thr, RBM.Sample.gmaxEventThr, RBM.Sample.gmaxEvent_eq_thr, RBM.Sample.gmaxEventThr_mono, RBM.lemma_5_1_thr, RBM.lemma_5_1'_thr, RBM.Gauss.norm_Gsig_sub_le_green_sub, RBM.Gauss.norm_gchain_sub_le, RBM.Gauss.norm_gloop_sub_le, RBM.Gauss.norm_Lval_sub_le_sqrt, RBM.Gauss.aprioriRhs_eq, RBM.Gauss.pow_one_sub_le_two_mul, RBM.Gauss.aprioriRhs_le_two_mul, RBM.Gauss.rpow_neg_le_aprioriRhs, RBM.Gauss.eq58_seq_thr, RBM.Gauss.eventually_master_small, RBM.Gauss.netLift_gauss, RBM.Gauss.rpow_neg_one_le_one_sub_of_scale_ge, RBM.Gauss.step1Hyp_gauss_of_regime, RBM.Gauss.step1Hyp_gauss_of_scale}
+  \leanok\uses{lem:5.1, lem:step1hyp, thm:step1, thm:trace-moment}
+  The threshold $2$ is a proof constant of \S6, not mathematics: rescaling $Y_n\mapsto\lambda^nY_n$
+  leaves (6.4) and (6.13) invariant and turns $Y_1\le C_0$ into $Y_1\le2$, so
+  \texttt{lemma\_5\_1\_thr} holds at any threshold with no part of \S6 reproved. With it,
+  \texttt{lift} closes and \texttt{Step1.Hyp} is complete under exactly the hypotheses
+  \texttt{Step1.step1} already takes.
+\end{theorem}
+\begin{proof}\leanok
+  $(\ell_u/\ell_s)^{n-1}(W\ell_u\eta_u)^{-n+1}=(\ell_sW\eta_u)^{-n+1}$: the right side of (2.73)
+  depends on the time only through $\eta_u$, so slow variation collapses to Bernoulli.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

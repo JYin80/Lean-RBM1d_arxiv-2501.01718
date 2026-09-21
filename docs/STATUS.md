@@ -2706,3 +2706,23 @@ paper-deltas：**无新增**（本单没有任何 Lean 陈述偏离论文）。
 **剩余假设**：`BootPP.step`——Lemma 5.11 在 `n = 2` 的**事件（停止）形式**，即 `Step2.Hyp.mart` 的类比物。
 它的 `≺` 层影子 `xiLK_two_improve` **已在本文件证出**，所以被假设的东西是看得见的；推出 `step` 需要把 `SumZeroDyn.Hierarchy.bdg` 用到停止鞅上——与 Step 2 路线 A 是同一批随机层工作。
 下游不变：`h514`、`StepGlue.Eq45Flow`、`Step45.FlowEq548`、`hregS`、`Steps`。（小注：`xiLK_two_le` 与 `RBM.Step3.xiLK_two_le` 同名不同命名空间，无碍。）
+
+### T125：`Step1.Hyp.lift` 已闭合，`Step1.Hyp` 完整（Claude Code 并行 agent，2026-09-21）
+
+**第 0 步结论：阈值 `2` 只是证明常数，推广走通了——于是 T116 标为「真正新的数学输入」的第 (4) 项根本不是新数学。**
+`2` 只出现在三处浅层：事件 `gmaxEvent` 的定义、`continuity_recursion` 的假设 `hY1`、以及 `lemma_5_1` 证明里用 `loopMax_one_le` 卸 `hY1`。它**只通过基例 (5.6)** 进入 §6 的归纳，从不碰 (6.4)、(6.10)–(6.13) 或最后的 `X ≺ A + A^{1/2}X^{1/2}`。
+agent 没有复制粘贴，而是**从现有 `C₀ = 2` 的机器重标度推出**推广版：取 `λ = 2/(C₀+2) ≤ 1`，`Y_n ↦ λ^n Y_n`、`T_n ↦ λ^n T_n`——指数 `2l+1` 与 `2(m−l)−1` 相加为 `2m`，故 (6.4)(6.13) **不变**，而 `Y₁ ≤ C₀` 变成 `Y₁ ≤ 2`。**§6 一行都没有重证。**
+新增（`Loop/ContinuityAssembly.lean`，纯追加）：`continuity_recursion_thr`、`gmaxEventThr`（+ `gmaxEvent_eq_thr` 在 `C = 2` 处为 `rfl`、`gmaxEventThr_mono`）、`lemma_5_1_thr`、`lemma_5_1'_thr`。
+
+**四项全部卸掉**（`Gauss/Step1Hyp.lean`，纯追加）：
+(1) `u` 的模——`norm_gchain_sub_le` 是对 `gchain` 的确定性望远镜估计，`norm_Gsig_sub_le_green_sub`（`G(−) = G(+)ᴴ`）让**两个电荷一次处理完**，不需要另写共轭预解式的估计；高斯形式 `norm_Lval_sub_le_sqrt`。
+(2) 缓变——承重的观察是 **`aprioriRhs_eq`：两个 `ℓ_u` 相消，(2.73) 右端只通过 `η_u` 依赖时间**，于是缓变塌成 Bernoulli（`pow_one_sub_le_two_mul`）。
+(3) 多项式下界 `rpow_neg_le_aprioriRhs`（由 `ℓ_s·W·η_u ≤ W·L ≤ N`）。
+(4) `eq58_seq_thr`（把 `lemma_5_1'` 换成 `lemma_5_1'_thr`），**固定阈值 `C₀ = 3`**，不是 `2 + o(1)`。
+
+**`lift` 已闭合**：`netLift_gauss`（用 T116 的 `netLift_of_relaxed`，事件取 `{‖X‖ ≤ N}` 即 T109 的 `‖X‖ ≺ 1`，网距 `N^{−A}`，`A = 2(c(n+1)+n+3)`）。
+**两个完整的 `Step1.Hyp` 生产者**，其中要紧的是 **`step1Hyp_gauss_of_scale`**：`rpow_neg_one_le_one_sub_of_scale_ge` 表明区制假设是**免费的**——`N^c ≤ Wℓ_tη_t` 配 `Wℓ_t ≤ WL ≤ N` 给出 `η_t ≥ N^{c−1} ≥ N^{−1}`，而 `η_t ≤ 1 − t_N`（因 `Im m ≤ 1`）；**而 `N^c ≤ Wℓ_tη_t` 本来就是 `Step1.step1` 的假设**。
+于是 `step1Hyp_gauss_of_scale` 在**恰好是 `Step1.step1` 已有的那组假设**下造出完整的 `Step1.Hyp`，**随机层输入 `hlift` 消失且没有任何未生产的东西顶替它**；只余 T107 的 `EntryBoundFlow`/`DiagBoundFlow`。
+
+**一处可回收的重复（留给将来允许改那两个文件的工单）**：`eq58_seq_thr` 与 `Step1.eq58_seq` 重复约 50 行，`lemma_5_1_thr` 与 `lemma_5_1` 重复约 130 行；
+若允许改 `Hierarchy/Step1.lean` 与 `Loop/ContinuityAssembly.lean`，应把旧的定义成新的在 `C₀ = 2`/`C = 2` 处的特例并删掉重复。paper-deltas #74 已改写为已解决，另加 #81、#82。

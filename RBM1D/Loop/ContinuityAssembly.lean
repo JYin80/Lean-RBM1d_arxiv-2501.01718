@@ -47,6 +47,9 @@ This file puts them together.
 * `Sample.gmaxEvent`: the event (5.6) `Ω = {‖G_{t₂}‖_max ≤ 2}`.
 * `lemma_5_1`: **Lemma 5.1**, `1_Ω max_{σ,a}|L_{t₂,σ,a}| ≺ (Wℓ₁η₂)^{-n+1}`;
   `lemma_5_1'`: the same with the right side `(ℓ₂/ℓ₁)^{n-1}(Wℓ₂η₂)^{-n+1}` of (5.7).
+* `Sample.gmaxEventThr`, `StochDom.continuity_recursion_thr`, `lemma_5_1_thr`,
+  `lemma_5_1'_thr`: the same with the threshold `2` of (5.6) replaced by an arbitrary
+  `C₀ ≥ 0` (T125).  The threshold is a proof constant of §6, not a structural one.
 
 ## Deviations from the paper
 
@@ -1183,5 +1186,275 @@ theorem lemma_5_1' (X : Sample B) {E κ c : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 
   field_simp
 
 end Lemma51
+
+/-! ### The threshold `2` of (5.6) is a proof constant, not a structural one (T125)
+
+`RBM.Sample.gmaxEvent` fixes the threshold `2`, and `RBM.StochDom.continuity_recursion` takes
+`Y 1 ≤ 2`; but the `2` enters the induction of §6 *only* through the base case (5.6).  The
+declarations below carry an arbitrary threshold `C₀ ≥ 0` through, so that the net argument of
+p. 51 may use Lemma 5.1 at the raised threshold `2 + o(1)` that it actually needs.  The general
+statements are proved from the `C₀ = 2` machinery by the rescaling `Y_n ↦ λ^n Y_n`,
+`T_n ↦ λ^n T_n` with `λ = 2/(C₀+2) ≤ 1` (which leaves (6.4) and (6.13) invariant and turns
+`Y_1 ≤ C₀` into `Y_1 ≤ 2`), so nothing of §6 is re-proved. -/
+
+section ThrRecursion
+
+open Filter MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {U : ℕ → Type*}
+
+theorem StochDom.continuity_recursion_thr {Y T : ℕ → ∀ N, U N → Ω → ℝ} {a a1 K : ℕ → ℝ}
+    {C C₀ : ℝ}
+    (hY0 : ∀ n N u ω, 0 ≤ Y n N u ω) (hT0 : ∀ n N u ω, 0 ≤ T n N u ω)
+    (ha1 : ∀ N, 0 < a1 N) (ha1a : ∀ N, a1 N ≤ a N) (hK0 : ∀ N, 0 ≤ K N) (hC : 0 ≤ C)
+    (hK : ∀ N, K N * a1 N ≤ C * a N) (hN : ∀ᶠ N : ℕ in atTop, (a1 N)⁻¹ ≤ N)
+    (hT : ∀ n, 1 ≤ n → StochDom P (T n) (fun N _ _ => a1 N ^ (n - 1)))
+    (hC₀ : 0 ≤ C₀) (hY1 : ∀ N u ω, Y 1 N u ω ≤ C₀)
+    (hodd : ∀ l, 1 ≤ l → ∀ N u ω,
+      Y (2 * l + 1) N u ω ^ 2 ≤ Y (2 * l) N u ω * Y (2 * l + 2) N u ω)
+    (hrec : ∀ m, 1 ≤ m → ∀ p, 1 ≤ p → ∀ N u ω, Y (2 * m) N u ω ≤ (m + 1 : ℝ) *
+      (T (2 * m) N u ω + K N * ∑ l ∈ Finset.range m,
+        Y (2 * l + 1) N u ω * T (p * (2 * (m - l) - 1)) N u ω ^ (1 / (p : ℝ)))) :
+    ∀ n, 1 ≤ n → StochDom P (Y n) (fun N _ _ => a N ^ (n - 1)) := by
+  have ha0 : ∀ N, 0 < a N := fun N => (ha1 N).trans_le (ha1a N)
+  set lam : ℝ := 2 / (C₀ + 2) with hlam_def
+  have hlam0 : 0 < lam := by rw [hlam_def]; positivity
+  have hlam1 : lam ≤ 1 := by
+    rw [hlam_def, div_le_one (by linarith)]; linarith
+  have hlamC : lam * C₀ ≤ 2 := by
+    rw [hlam_def, div_mul_eq_mul_div, div_le_iff₀ (by linarith)]; nlinarith
+  have key := StochDom.continuity_recursion (P := P)
+    (Y := fun n N u ω => lam ^ n * Y n N u ω) (T := fun n N u ω => lam ^ n * T n N u ω)
+    (a := a) (a1 := a1) (K := K) (C := C)
+    (fun n N u ω => mul_nonneg (by positivity) (hY0 n N u ω))
+    (fun n N u ω => mul_nonneg (by positivity) (hT0 n N u ω))
+    ha1 ha1a hK0 hC hK hN
+    (fun n hn => StochDom.const_mul_left (by positivity)
+      (fun N _ _ => pow_nonneg (ha1 N).le _) (hT n hn))
+    (fun N u ω => by
+      have h := hY1 N u ω
+      have : lam ^ 1 * Y 1 N u ω ≤ lam * C₀ := by
+        rw [pow_one]; exact mul_le_mul_of_nonneg_left h hlam0.le
+      linarith)
+    (fun l hl N u ω => by
+      have h := hodd l hl N u ω
+      have e1 : (lam ^ (2 * l + 1) * Y (2 * l + 1) N u ω) ^ 2
+          = lam ^ (4 * l + 2) * Y (2 * l + 1) N u ω ^ 2 := by
+        rw [mul_pow, ← pow_mul]; ring_nf
+      have e2 : lam ^ (2 * l) * Y (2 * l) N u ω * (lam ^ (2 * l + 2) * Y (2 * l + 2) N u ω)
+          = lam ^ (4 * l + 2) * (Y (2 * l) N u ω * Y (2 * l + 2) N u ω) := by
+        rw [show (4 * l + 2) = 2 * l + (2 * l + 2) by omega, pow_add]; ring
+      rw [e1, e2]
+      exact mul_le_mul_of_nonneg_left h (by positivity))
+    (fun m hm p hp N u ω => by
+      have h := hrec m hm p hp N u ω
+      have hlp : ∀ l ∈ Finset.range m,
+          lam ^ (2 * l + 1) * Y (2 * l + 1) N u ω
+            * (lam ^ (p * (2 * (m - l) - 1)) * T (p * (2 * (m - l) - 1)) N u ω) ^ (1 / (p : ℝ))
+          = lam ^ (2 * m)
+            * (Y (2 * l + 1) N u ω * T (p * (2 * (m - l) - 1)) N u ω ^ (1 / (p : ℝ))) := by
+        intro l hl
+        have hl' := Finset.mem_range.mp hl
+        have hk : 2 * l + 1 + (2 * (m - l) - 1) = 2 * m := by omega
+        rw [Real.mul_rpow (by positivity) (hT0 _ N u ω)]
+        have e1 : (lam ^ (p * (2 * (m - l) - 1))) ^ (1 / (p : ℝ)) = lam ^ (2 * (m - l) - 1) := by
+          rw [Nat.mul_comm, pow_mul, one_div,
+            Real.pow_rpow_inv_natCast (by positivity) (by omega)]
+        rw [e1, ← hk, pow_add]
+        ring
+      calc lam ^ (2 * m) * Y (2 * m) N u ω
+          ≤ lam ^ (2 * m) * ((m + 1 : ℝ) * (T (2 * m) N u ω + K N * ∑ l ∈ Finset.range m,
+              Y (2 * l + 1) N u ω * T (p * (2 * (m - l) - 1)) N u ω ^ (1 / (p : ℝ)))) :=
+            mul_le_mul_of_nonneg_left h (by positivity)
+        _ = (m + 1 : ℝ) * (lam ^ (2 * m) * T (2 * m) N u ω + K N *
+              ∑ l ∈ Finset.range m, lam ^ (2 * l + 1) * Y (2 * l + 1) N u ω
+                * (lam ^ (p * (2 * (m - l) - 1))
+                  * T (p * (2 * (m - l) - 1)) N u ω) ^ (1 / (p : ℝ))) := by
+            rw [Finset.sum_congr rfl hlp, ← Finset.mul_sum]
+            ring)
+  intro n hn
+  have h2 := StochDom.const_mul_left (P := P) (c := (lam ^ n)⁻¹) (by positivity)
+    (fun N (_ : U N) (_ : Ω) => pow_nonneg (ha0 N).le (n - 1)) (key n hn)
+  refine StochDom.of_le_left (fun N u ω => ?_) h2
+  rw [inv_mul_cancel_left₀ (by positivity)]
+
+end ThrRecursion
+
+
+section Lemma51Thr
+
+open Filter MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **The event (5.6) with a general threshold** `Ω_C = {‖G_t‖_max ≤ C}`.  `C = 2` is
+`RBM.Sample.gmaxEvent`. -/
+def Sample.gmaxEventThr (X : Sample B) (E : ℝ) (t : ℕ → ℝ) (C : ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ i j, ‖X.G E N (t N) ω i j‖ ≤ C}
+
+theorem Sample.gmaxEvent_eq_thr (X : Sample B) (E : ℝ) (t : ℕ → ℝ) (N : ℕ) :
+    X.gmaxEvent E t N = X.gmaxEventThr E t 2 N := rfl
+
+theorem Sample.gmaxEventThr_mono (X : Sample B) (E : ℝ) (t : ℕ → ℝ) {C C' : ℝ} (h : C ≤ C')
+    (N : ℕ) : X.gmaxEventThr E t C N ⊆ X.gmaxEventThr E t C' N :=
+  fun _ hω i j => (hω i j).trans h
+
+/-- **Lemma 5.1 at a general threshold** `C₀ ≥ 0`. -/
+theorem lemma_5_1_thr (X : Sample B) {E κ c C₀ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hc : 0 < c)
+    (hC₀ : 0 ≤ C₀)
+    {t₁ t₂ : ℕ → ℝ} (h₁ : ∀ N, c ≤ t₁ N) (h₁₂ : ∀ N, t₁ N ≤ t₂ N) (h₂ : ∀ N, t₂ N < 1)
+    (hS : LoopScaling X E t₁ t₂)
+    (h55 : ∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (u : LoopData (B.L N) n) ω => ‖X.Lval E N (t₁ N) ω u.idx‖)
+      (fun N _ _ => (B.scale E N (t₁ N))⁻¹ ^ (n - 1))) :
+    ∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (u : LoopData (B.L N) n) ω =>
+        (X.gmaxEventThr E t₂ C₀ N).indicator (fun ω => ‖X.Lval E N (t₂ N) ω u.idx‖) ω)
+      (fun N _ _ => ((B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₂ N))⁻¹ ^ (n - 1)) := by
+  have hE2 : |E| < 2 := by linarith
+  obtain ⟨C, hC0, hC⟩ := ztTilde_arith hc hκ
+  set a : ℕ → ℝ := fun N => ((B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₂ N))⁻¹ with ha_def
+  set a1 : ℕ → ℝ := fun N => (B.scale E N (t₁ N))⁻¹ with ha1_def
+  set zz : ℕ → ℂ := fun N => zt E (t₂ N)
+  set zw : ℕ → ℂ := fun N => ztTilde E (t₁ N) (t₂ N)
+  set K : ℕ → ℝ := fun N => ‖zz N - zw N‖ ^ 2 * ((zz N).im * (zw N).im)⁻¹ with hK_def
+  have ht₁0 : ∀ N, 0 < t₁ N := fun N => hc.trans_le (h₁ N)
+  have ht₁1 : ∀ N, t₁ N < 1 := fun N => (h₁₂ N).trans_lt (h₂ N)
+  have hW : ∀ N, (0 : ℝ) < B.W N := fun N => by exact_mod_cast B.W_pos N
+  have hℓ : ∀ N, 1 ≤ B.ell N (t₁ N) := fun N =>
+    one_le_ellHat (B.L N) (B.three_le_L N) (ht₁0 N) (ht₁1 N)
+  have hη1 : ∀ N, 0 < etaT E (t₁ N) := fun N => etaT_pos hE2 (ht₁1 N)
+  have hη2 : ∀ N, 0 < etaT E (t₂ N) := fun N => etaT_pos hE2 (h₂ N)
+  have hmIm : 0 ≤ (mE E).im := (mE_im_pos hE2).le
+  have hη12 : ∀ N, etaT E (t₂ N) ≤ etaT E (t₁ N) := fun N => by
+    unfold etaT
+    exact mul_le_mul_of_nonneg_right (by linarith [h₁₂ N]) hmIm
+  have hzz : ∀ N, (zz N).im = etaT E (t₂ N) := fun N => (etaT_eq_zt_im E (t₂ N)).symm
+  have harith := fun N => hC E (t₁ N) (t₂ N) (h₁ N) (h₁₂ N) (h₂ N).le hE
+  have hzw : ∀ N, etaT E (t₁ N) ≤ (zw N).im := fun N => (harith N).2.2.2.1
+  have hzw0 : ∀ N, 0 < (zw N).im := fun N => (hη1 N).trans_le (hzw N)
+  have hA2 : ∀ N, 0 < (B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₂ N) := fun N =>
+    mul_pos (mul_pos (hW N) (by linarith [hℓ N])) (hη2 N)
+  have ha1 : ∀ N, 0 < a1 N := fun N => inv_pos.mpr (B.scale_pos hE2 N (ht₁0 N) (ht₁1 N))
+  have ha1a : ∀ N, a1 N ≤ a N := fun N => by
+    simp only [ha1_def, ha_def, Band.scale]
+    refine inv_anti₀ (hA2 N) ?_
+    have hℓ0 : (0 : ℝ) < B.ell N (t₁ N) := by linarith [hℓ N]
+    exact mul_le_mul_of_nonneg_left (hη12 N) (mul_pos (hW N) hℓ0).le
+  have hK0 : ∀ N, 0 ≤ K N := fun N =>
+    mul_nonneg (sq_nonneg _) (inv_nonneg.mpr (mul_nonneg (by rw [hzz]; exact (hη2 N).le)
+      (hzw0 N).le))
+  have hK : ∀ N, K N * a1 N ≤ C * a N := by
+    intro N
+    have hsq := (harith N).2.1
+    set x := ‖zz N - zw N‖ ^ 2
+    have hx : x ≤ C * etaT E (t₁ N) * (zw N).im := by
+      calc x ≤ C * etaT E (t₁ N) ^ 2 := hsq
+        _ = C * etaT E (t₁ N) * etaT E (t₁ N) := by ring
+        _ ≤ C * etaT E (t₁ N) * (zw N).im :=
+            mul_le_mul_of_nonneg_left (hzw N) (mul_nonneg hC0.le (hη1 N).le)
+    simp only [hK_def, ha1_def, ha_def, Band.scale, hzz]
+    have hq := hzw0 N
+    have hℓ0 : 0 < B.ell N (t₁ N) := by linarith [hℓ N]
+    have hden : 0 < etaT E (t₂ N) * (zw N).im := mul_pos (hη2 N) hq
+    calc x * (etaT E (t₂ N) * (zw N).im)⁻¹ * ((B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₁ N))⁻¹
+        ≤ (C * etaT E (t₁ N) * (zw N).im) * (etaT E (t₂ N) * (zw N).im)⁻¹
+          * ((B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₁ N))⁻¹ := by
+          have hA1 : 0 < (B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₁ N) :=
+            mul_pos (mul_pos (hW N) hℓ0) (hη1 N)
+          exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hx
+            (inv_nonneg.mpr hden.le)) (inv_nonneg.mpr hA1.le)
+      _ = C * ((B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₂ N))⁻¹ := by
+          have := hη1 N; have := hη2 N; have := hW N
+          field_simp
+  have hNev : ∀ᶠ N : ℕ in atTop, (a1 N)⁻¹ ≤ N := by
+    filter_upwards [B.dim] with N hdim
+    simp only [ha1_def, inv_inv, Band.scale]
+    have hWL : (B.W N : ℝ) * B.L N ≤ N := by exact_mod_cast hdim.1
+    have hℓL : B.ell N (t₁ N) ≤ B.L N := min_le_right _ _
+    have hη1' : etaT E (t₁ N) ≤ 1 := by
+      unfold etaT
+      have hm1 : (mE E).im ≤ 1 := (le_abs_self _).trans ((Complex.abs_im_le_norm _).trans
+        (norm_mE (by linarith)).le)
+      have : 1 - t₁ N ≤ 1 := by linarith [ht₁0 N]
+      nlinarith [ht₁1 N]
+    calc (B.W N : ℝ) * B.ell N (t₁ N) * etaT E (t₁ N) ≤ (B.W N : ℝ) * B.L N * 1 :=
+          mul_le_mul (mul_le_mul_of_nonneg_left hℓL (hW N).le) hη1' (hη1 N).le
+            (mul_nonneg (hW N).le (Nat.cast_nonneg _))
+      _ ≤ N := by rw [mul_one]; exact hWL
+  set Ωs := X.gmaxEventThr E t₂ C₀ with hΩs
+  set Y : ℕ → ∀ N, (fun _ => Unit) N → Ω → ℝ := fun n N _ ω =>
+    (Ωs N).indicator (fun ω => loopMax (B.L N) (B.W N) (X.H N (t₂ N) ω) (zz N) n) ω with hY
+  set T : ℕ → ∀ N, (fun _ => Unit) N → Ω → ℝ := fun n N _ ω =>
+    loopMax (B.L N) (B.W N) (X.H N (t₂ N) ω) (zw N) n with hT
+  have hY0 : ∀ n N u ω, 0 ≤ Y n N u ω := fun n N u ω =>
+    Set.indicator_nonneg (fun ω _ => loopMax_nonneg _) ω
+  have hT0 : ∀ n N u ω, 0 ≤ T n N u ω := fun n N u ω => loopMax_nonneg _
+  have hTd : ∀ n, 1 ≤ n → StochDom B.P (T n) (fun N _ _ => a1 N ^ (n - 1)) := fun n hn =>
+    stochDom_loopMax_of_loopData (hS.transfer n hn _ (h55 n hn))
+  have hY1 : ∀ N u ω, Y 1 N u ω ≤ C₀ := by
+    intro N u ω
+    by_cases hω : ω ∈ Ωs N
+    · simp only [hY, Set.indicator_of_mem hω]
+      exact loopMax_one_le (X.hermitian N (t₂ N) ω) (fun i => hω i i)
+    · simp only [hY, Set.indicator_of_notMem hω]
+      exact hC₀
+  have hodd : ∀ l, 1 ≤ l → ∀ N u ω,
+      Y (2 * l + 1) N u ω ^ 2 ≤ Y (2 * l) N u ω * Y (2 * l + 2) N u ω := by
+    intro l hl N u ω
+    by_cases hω : ω ∈ Ωs N
+    · simp only [hY, Set.indicator_of_mem hω]
+      exact loopMax_odd_sq_le (X.hermitian N (t₂ N) ω) hl
+    · simp [hY, Set.indicator_of_notMem hω]
+  have hrec : ∀ m, 1 ≤ m → ∀ p, 1 ≤ p → ∀ N u ω, Y (2 * m) N u ω ≤ (m + 1 : ℝ) *
+      (T (2 * m) N u ω + K N * ∑ l ∈ Finset.range m,
+        Y (2 * l + 1) N u ω * T (p * (2 * (m - l) - 1)) N u ω ^ (1 / (p : ℝ))) := by
+    intro m hm p hp N u ω
+    by_cases hω : ω ∈ Ωs N
+    · simp only [hY, hT, Set.indicator_of_mem hω]
+      have hz : 0 < (zz N).im := by rw [hzz]; exact hη2 N
+      refine (loopMax_two_mul_le_tilde (X.hermitian N (t₂ N) ω) hz (hzw0 N) hm hp).trans
+        (le_of_eq ?_)
+      simp only [hK_def]
+      ring
+    · simp only [hY, hT, Set.indicator_of_notMem hω, zero_mul, Finset.sum_const_zero,
+        mul_zero, add_zero]
+      exact mul_nonneg (by positivity) (loopMax_nonneg _)
+  have hmain := StochDom.continuity_recursion_thr (P := B.P) hY0 hT0 ha1 ha1a hK0 hC0.le hK hNev
+    hTd hC₀ hY1 hodd hrec
+  intro n hn
+  have h1 := (hmain n hn).precomp_param (fun N (_ : LoopData (B.L N) n) => ())
+  refine StochDom.of_le_left (fun N u ω => ?_) h1
+  exact Set.indicator_le_indicator
+    (norm_gloop_le_loopMax u.idx (by simp [LoopData.idx]) (by simp [LoopData.idx]))
+
+/-- **Lemma 5.1 at a general threshold, (5.7) form.** -/
+theorem lemma_5_1'_thr (X : Sample B) {E κ c C₀ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hc : 0 < c)
+    (hC₀ : 0 ≤ C₀)
+    {t₁ t₂ : ℕ → ℝ} (h₁ : ∀ N, c ≤ t₁ N) (h₁₂ : ∀ N, t₁ N ≤ t₂ N) (h₂ : ∀ N, t₂ N < 1)
+    (hS : LoopScaling X E t₁ t₂)
+    (h55 : ∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (u : LoopData (B.L N) n) ω => ‖X.Lval E N (t₁ N) ω u.idx‖)
+      (fun N _ _ => (B.scale E N (t₁ N))⁻¹ ^ (n - 1))) :
+    ∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (u : LoopData (B.L N) n) ω =>
+        (X.gmaxEventThr E t₂ C₀ N).indicator (fun ω => ‖X.Lval E N (t₂ N) ω u.idx‖) ω)
+      (fun N _ _ => (B.ell N (t₂ N) / B.ell N (t₁ N)) ^ (n - 1)
+        * (B.scale E N (t₂ N))⁻¹ ^ (n - 1)) := by
+  intro n hn
+  have h := lemma_5_1_thr X hκ hE hc hC₀ h₁ h₁₂ h₂ hS h55 n hn
+  have hE2 : |E| < 2 := by linarith
+  convert h using 3 with N u ω
+  have ht₂0 : 0 < t₂ N := (hc.trans_le (h₁ N)).trans_le (h₁₂ N)
+  have hℓ1 : 0 < B.ell N (t₁ N) := lt_of_lt_of_le zero_lt_one
+    (one_le_ellHat (B.L N) (B.three_le_L N) (hc.trans_le (h₁ N)) ((h₁₂ N).trans_lt (h₂ N)))
+  have hℓ2 : 0 < B.ell N (t₂ N) := lt_of_lt_of_le zero_lt_one
+    (one_le_ellHat (B.L N) (B.three_le_L N) ht₂0 (h₂ N))
+  have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+  have hη : 0 < etaT E (t₂ N) := etaT_pos hE2 (h₂ N)
+  rw [← mul_pow, Band.scale]
+  field_simp
+
+end Lemma51Thr
 
 end RBM

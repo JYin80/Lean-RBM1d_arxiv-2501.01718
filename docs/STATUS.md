@@ -4116,7 +4116,7 @@ F_{u,σ,a} = Ẽ_{u,σ,a} + ∑_{l_K ≥ 3} [K ∼ (L−K)]^{l_K}_{u,σ,a} + E^{
 * **二阶是一维方向导数**，不是 Fréchet Hessian。对 `𝓛 = ½∑S_{ij}∂_{ij}∂_{ji}` 够用（它是方向二阶导之和），
   若下游要 Fréchet 形式还需一层包装。
 * **没有构造具体的 `C²` 截断 `χ`**：所有关于 `χ` 的陈述都以 `HasDerivAt χ dχ ·` + `|dχ| ≤ C_χ` 为假设，
-  **文件里没有一条 `∀ ω` 的逐点量化**（刻意按 T164 的教训避开）。`ContDiffBump` 可作见证，未落 Lean。
+  **文件里没有一条 `∀ ω` 的逐点量化**（刻意按 T164 的教训避开）。~~`ContDiffBump` 可作见证，未落 Lean~~ **→ 更正（T175）：Mathlib 的 `ContDiffBump`/`smoothTransition` 不能作为**定量**见证（两者都只有 `nonneg`/`le_one`/`ContDiff`，**没有导数公式、没有导数界**），已改用五次 Hermite 截断。**
 * 去截断（概率层面的穿越论证 + 时间网）不在本文件，按设计属 `MomentHyp.holder` + `stochDom_timeIcc_of_holder`。
 * 已按提醒**避开** T133 的 `BddC2C` 常数（无 `T_{u,D}` 归一化、差 `A^{O(1)}`），文件头写明它不能当缺口界用。
 * **指数预算未重算**：本文件只给「每一步的损失是什么」（`e`、`e²`、`r−1`、`W^{2D}`、`8C_χm/η`）。
@@ -5100,3 +5100,32 @@ T171/T172/T177 都没写出这一步。它只影响「旧接口不可满足」�
 * `content.tex:1488`（T72 节点）：`RBM.Gauss.genMomentPt_le'`
 * `content.tex:2263`（T132b 含时恒等式节点）：`RBM.Gauss.TestFunT'`、`TestFunT'.herm`、
   `hasDerivAt_integral_Psi'`、`hasDerivAt_integral_Psi_pairs'`、`hasDerivAt_integral_Psi_pairs_of_herm`
+
+
+## T175：具体的 `C²` 截断 `χ`（`Gauss/CutoffChi.lean`，416 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9605** 条。
+
+**先查后建的结论：Mathlib 的光滑过渡在这里用不了。** `Real.smoothTransition` 与 `ContDiffBump` 都只证了
+`nonneg`/`le_one`/`monotone`/`ContDiff`——**没有导数公式、没有导数界、没有 Lipschitz 常数**。
+而 `abs_threshold_drift_le` 要的是一个**真正的数** `C_χ`；`smoothTransition` 的 `‖χ′‖∞` 没有闭式，二阶更甚。
+**没有硬编常数，而是换了构造。**
+
+用**五次 Hermite 截断**（恰好 `C²`，正是 T158 与生成元 `𝓛` 所需），写在截断幂基里：
+`cutChi x = 1 − (6u⁵−15u⁴+10u³) + (6v⁵+15v⁴+10v³)`，`u = (x−1)₊`、`v = (x−2)₊`。
+`[2,∞)` 上恒为 0 靠恒等式 `P(s+1) = 1 + Q(s)`；**`C²` 是由通用引理 `hasDerivAt_maxPow` 推出来的、不靠手工拼接条件**
+（`(·)₊^{n+2}` 含断点可导，用 `HasDerivWithinAt.union` + `Set.Iic_union_Ici`）。
+
+| 常数 | 值 |
+|---|---|
+| `abs_cutChiD_le` | `‖χ′‖∞ ≤ 15/8`，**紧的**（`cutChiD_three_halves` 证 `χ′(3/2) = −15/8` 取等） |
+| `abs_cutChiDD_le` | `‖χ″‖∞ ≤ 15`（真值 `10/√3 ≈ 5.77`，按「常数不求最优」未收紧） |
+
+`χ′` 的支集含于 `[1,2]`——**恰好就是 T158 的 gap `J_u/Θ_u ∈ [1,2]`**。
+
+**T158 里关于 `χ` 的假设已全部关闭**：grep 确认 `CutoffBounds.lean` 只有两条声明量化了 `χ`，两条都已卸
+（`hasDerivAt_cutComp_cutChi`、`abs_threshold_drift_cutChi_le`，后者取 `C_χ = 15/8` 得**数值**界 `≤ 15m/η`）。
+`abs_cutChiDD_le` 目前**没有消费者**，是为 T132c 的生成元项提前备好的。
+
+**可满足性（已编译）**：`cutChi_spec` 把 T158 对 `χ` 的**整包**要求合成一条定理并证明有居留，**排除了「同时不可满足」**；
+另有数值自检（`χ(3/2) = 1/2`、`χ′(3/2) = −15/8`、`χ″(5/4) = −45/8` 说明 χ″ 界不是关于零函数的陈述）——**抄错系数会当场编译失败**。

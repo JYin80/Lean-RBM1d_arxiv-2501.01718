@@ -2270,6 +2270,20 @@
   bound feeds Markov with no cardinality hypothesis and no good event.
 \end{proof}
 
+\begin{lemma}[The joint derivative in flow time and spectral time]\label{lem:loopjoint}
+  \lean{RBM.Gauss.bddC2C_loopObs_ball, RBM.Gauss.testFun_momentFun_loopObs_ball, RBM.Gauss.half_abs_im_le_abs_im_of_mem_ball, RBM.Gauss.green_mul_self_mul_green, RBM.Gauss.norm_fderiv_Gsig_flow_le, RBM.Gauss.BddC1On, RBM.Gauss.bddC1On_clm_apply, RBM.Gauss.bddC1On_matrix_mul, RBM.Gauss.bddC1On_gloopProdFlow, RBM.Gauss.bddC1On_gloop_flow, RBM.Gauss.hasFDerivAt_Gsig_flow, RBM.Gauss.clm_prod_eq_smulRight, RBM.Gauss.measurable_deriv_of_hasDerivAt_zero, RBM.Gauss.differentiableAt_integral_gloop_flow}
+  \leanok\uses{lem:loopc2, thm:loopito, def:gauss-model}
+  Uniformity in $z$ is free, but it is not what was needed: the joint derivative also moves the
+  flow, and $\partial_vH_v=(2v)^{-1}H_v$ -- the direction \emph{is} the matrix, so
+  $GMG=G+\zeta G^2$ lets the resolvent absorb it and the dominating function is a \emph{constant},
+  with no moments of $\|X\|$.
+\end{lemma}
+\begin{proof}\leanok
+  Measurability of $\omega\mapsto\mathrm{fderiv}$ is obtained with no formula for the derivative: a
+  functional on $\mathbb R\times\mathbb R$ is determined by its two coordinate values, each a
+  pointwise limit of difference quotients.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

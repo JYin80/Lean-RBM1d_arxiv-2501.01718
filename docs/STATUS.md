@@ -3015,3 +3015,19 @@ T124 引擎里的 `hζlow` **只用于吸收网误差**，于是 agent 用吸收
 
 **`LKDecay` 仍是三条实质假设**（探针端到端验证）：`hΩ`（T130）、`hdecay`（= `Steps.aprioriDecay`，Step 2）、以及取代 `LDEFlowDom` 的 `LDENetClose`。
 **这笔交易是**：把一条「对时间一致的概率性假设」换成了「高概率事件上逐 ω 的逐点假设」。`ldeFlowDom_of_close` 以裸 `:=` 闭合 `LDEFlowDom` 并直接喂进 `lkDecay_of_inputs`。paper-deltas #104。
+
+### T141：`hjoint` 已卸，T134 的余项只剩两条（Claude Code 并行 agent，2026-09-21）
+
+**`z`-一致性确实是免费的**（agent 直说了，没有粉饰）：T133 的常数全由 `η`、loop 长度与 `Fintype.card` 构成，谱参数只经假设 `η ≤ |z.im|` 进入，故球版都是一行。
+**但那并不是 T134 真正需要的——这是本单的实质发现**：`hjoint` 讲的是 `(v,w) ↦ ∫ L(H_v, z_w)` 的**联合**导数（流时间 × 谱时间），不是 T133 界住的矩阵导数；
+T133 的常数**不能直接复用**（`v`-导数是 `D_M L[∂_v H_v]`，而 `∂_v H_v = (2√v)⁻¹X(ω)` 对 `ω` 无界），且 T133 根本没有 `z`-导数的界。真正的工作是从头搭联合界。
+
+**`hjoint` 已卸**：`differentiableAt_integral_gloop_flow`，其假设**恰好是 T134 两条定理已经携带的那些**，**没有引入任何新假设**；`LoopIto.lean` 一字未动（探针 `t141/probe.lean` 验证）。
+**关键手法（界是确定性的，不需要 `‖X‖` 的任何矩）**：`green_mul_self_mul_green`（`G M G = G + ζG²`）——因为 `∂_v H_v = (2v)⁻¹H_v`，**流的方向就是矩阵本身**，预解式把它吸收掉，
+于是控制函数是**常数**，`integrable_const` 收口，避开了朴素路线所需的 `‖Xmat‖` 全部矩与多项式可积性。
+另两件可复用的机器：`BddC1On`（一阶、集合局部化版的 `BddC2C`，对乘积封闭，`foldr` 又是一次归纳）；
+**`ω ↦ fderiv` 的可测性在没有导数公式的情况下拿到**——`ℝ×ℝ` 上的泛函由两个坐标值决定，而每个坐标值是差商的逐点极限（`clm_prod_eq_smulRight` + `measurable_deriv_of_hasDerivAt_zero`），
+绕开了 `(ℝ×ℝ) →L[ℝ] ℂ` 没有 `MeasurableSpace`/`BorelSpace` 实例这一点。
+**注**：T134 的 `contDiffAt_gloop_flow` 只在**对角线 `(u,u)`** 上陈述，供不出邻域上的可微性，这就是非对角版必须在此重做的原因。
+
+**T134 的余项现在精确地只剩两条**：`MatrixStein`（T70）与 `LoopIto.second` 的冻结形式（**T140**）。`TestFun` 由 T133 供给。paper-deltas：**无新增**（球半径内部收缩到 `min ε (u/2)` 纯属证明手段）。

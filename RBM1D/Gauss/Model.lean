@@ -82,7 +82,8 @@ diagonal case of `gvar` are right.
 * `RBM.Gauss.Hflow` — `H_u = √u • X`.
 * `RBM.Gauss.band : RBM.Band (Ω d)` and `RBM.Gauss.sample : RBM.Sample (band d)` — the
   instantiation of the interface of `RBM1D/Flow/Hypotheses.lean`.
-* `RBM.Gauss.OpNormBound` — `‖X‖ ≺ 1`, carried as a **hypothesis** (see below).
+* `RBM.Gauss.OpNormBound` — `‖X‖ ≺ 1`.  Declared here as a one-field structure, but **proved**
+  in `RBM1D/Gauss/TraceMoment.lean` (`RBM.Gauss.opNormBound_gauss`, T109); see below.
 
 ## Main results
 
@@ -99,18 +100,22 @@ diagonal case of `gvar` are right.
   `MeasureTheory.Measure.pi` of the corresponding one-dimensional Gaussians.  This is the
   entry point for the Stein identity of T70.
 
-## What is **not** done here
+## Two items this header used to list as missing — both are now closed
 
-`‖X‖ ≺ 1` (the Gaussian tail of the operator norm) is **not proved**.  It is the norm of an
-`N × N` Gaussian matrix; Mathlib has neither the moment method nor Gaussian concentration for
-it, and proving it would be a ticket of its own.  It is packaged as the one-field structure
-`RBM.Gauss.OpNormBound`, to be taken as a hypothesis by the downstream files, exactly like the
-fields of `RBM.Bounds` in `RBM1D/Flow/Hypotheses.lean`.  **No `axiom` is introduced.**
+* **`‖X‖ ≺ 1`** (the Gaussian tail of the operator norm) **is proved** (T109):
+  `RBM.Gauss.opNormBound_gauss : ∀ d : Dims, OpNormBound d` in `RBM1D/Gauss/TraceMoment.lean`,
+  via `E Tr(X^{2p}) ≤ C_p N` and `RBM.Gauss.opNormBound_of_traceMomentBound`
+  (`RBM1D/Gauss/OpNorm.lean`).  The one-field structure `RBM.Gauss.OpNormBound` below is kept
+  (it is a frozen signature, taken as a hypothesis by a number of downstream statements), but
+  it is no longer an open assumption: it is discharged unconditionally.
+  `docs/paper-deltas.md` #49 is closed.
+* **An inhabitant of `RBM.Gauss.Dims`** is produced in `RBM1D/Gauss/DimsExample.lean` (T202):
+  `RBM.Gauss.Dims.example` (`L ≡ 3`, `W = max 1 ⌊N/3⌋`, `c = 1/4`) and the non-degenerate
+  `RBM.Gauss.Dims.exampleGrow` (`L ≈ N^{1/4} → ∞`, `W ≈ N^{3/4} → ∞`, `c = 1/8`).  So the
+  moment route is no longer conditional on `Dims` being non-empty, and the statements
+  quantified over `d : Dims` are not vacuous.
 
-Also not done: an *inhabitant* of `RBM.Gauss.Dims`, i.e. a concrete `W, L` satisfying (2.2) and
-`W L ≤ N ≤ 2 W L` eventually (e.g. `L = 3`, `W = N / 3`, `c = 1/4`).  Nothing here depends on
-it, and `RBM.Band` has carried exactly the same fields since `RBM1D/Flow/Hypotheses.lean` was
-written, but until it is produced the whole moment route is conditional on a non-empty `Dims`.
+**No `axiom` is introduced anywhere in this file.**
 -/
 
 namespace RBM.Gauss
@@ -435,10 +440,14 @@ theorem norm_Hflow_sub (d : Dims) (N : ℕ) (u u' : ℝ) (ω : Ω d) :
 
 /-- **`‖X‖ ≺ 1`**, the Gaussian tail of the operator norm of the band matrix.
 
-This is *not* proved: it is the operator norm of an `N × N` Gaussian matrix, for which Mathlib
-has neither the moment method nor Gaussian concentration.  It is carried as a hypothesis, in
-the style of `RBM.Bounds` in `RBM1D/Flow/Hypotheses.lean`.  The parameter set is `Unit`
-(no parameter); the `≺` is `RBM.StochDom` of `RBM1D/Defs/StochDom.lean`. -/
+Packaged as a one-field structure so that downstream files can take it as a hypothesis, in the
+style of `RBM.Bounds` in `RBM1D/Flow/Hypotheses.lean`.  The parameter set is `Unit`
+(no parameter); the `≺` is `RBM.StochDom` of `RBM1D/Defs/StochDom.lean`.
+
+**It is a theorem** (T109), not an open assumption:
+`RBM.Gauss.opNormBound_gauss : ∀ d : Dims, OpNormBound d` in `RBM1D/Gauss/TraceMoment.lean`,
+proved from `E Tr(X^{2p}) ≤ C_p N`.  The structure is kept only because a number of frozen
+downstream signatures take it as an argument. -/
 structure OpNormBound (d : Dims) : Prop where
   /-- `‖X‖ ≺ 1`.  (`RBM.NormStochDom` cannot be used: its value type is a single type, while
   `Xmat d N ω` lives in an `N`-dependent matrix type.  This is the same statement, with the

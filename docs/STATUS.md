@@ -5881,3 +5881,46 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 ⑦ **检查器本身要有总数守恒的断言**（蓝图静默丢节点三次）；⑧ `decide` 不可伸缩时把自检搬出 Lean 并说明范围；
 ⑨ **派单 prompt 的八段骨架**；⑩ 协调者自己的纪律（**无主的活要点名到字段级**——T182 那句「归包络那条线」没有收件人，结果那条线根本没有单）；
 ⑪ **最值得保留的产出形态是带证明的否定结论**（六条，全部编译成了定理，其中一条反转了裁定）。
+
+## ⭐⭐ T202：`Gauss.Dims` **有居民了**——全高斯层的空真风险解除（`Gauss/DimsExample.lean`，新文件，2026-09-21）
+
+滞留审计 B.2 的第 0 条：`Gauss.band d` / `Gauss.sample d` 全部量化在 `d : Dims` 上，`Dims` 若无居民，**整条矩路线都是空真的**，而 `lake build` 永远绿。现在两个完整见证都编译了：
+
+* `Dims.example`（工单建议值 `L ≡ 3`、`W = max 1 ⌊N/3⌋`、`c = 1/4`）——**原样可行**。工单 ⚠ 里担心的 `dim` 与 `bandwidth` 联立不可满足**不成立**：`N^{3/4} ≤ ⌊N/3⌋` 等价于 `N³ ≤ ⌊N/3⌋⁴`，从 `N ≥ 100` 起成立（`dim` 从 `N ≥ 4` 起），`∀ᶠ N` 够用。
+* `Dims.exampleGrow`（`L ≈ N^{1/4}`、`W ≈ N^{3/4}`、`c = 1/8`）——**非退化见证**：`L N → ∞` 且 `W N → ∞`（`tendsto_growL` / `tendsto_growW`），(2.2) 还留着 `N^{3/4}` 对 `N^{5/8}` 的余量。加这一个是因为 `L ≡ 3` 是 `three_le_L` 允许的最小值、也是论文真正关心的区制之外的平均场端点。
+
+**`Dims` 的四个字段一个没削弱**，`dim` / `bandwidth` 都保持 `∀ᶠ N in atTop`。
+
+**往下挪一层也查了**（空真风险最容易从一层挪到下一层）：
+* `Dims.nonempty_Idx`——指标型 `ZMod (L N) × Fin (W N)` 对**任意** `d : Dims` 非空（空指标型会让所有逐元陈述空真）；
+* `Dims.exists_Sblk_pos`——方差廓线 `S` **不恒为零**（由 `sum_Sblk_row = 1` 反证）。这条挡的正是 `ω = 0` 型事故：`S ≡ 0` 的模型满足一大堆估计的字面而无内容；
+* `band d` / `sample d` 是**定义**不是结构假设，故 `Dims` 一有居民它们就有（`band_example` / `sample_example`、`nonempty_Omega`）；
+* 顺带确认 `GaussIBP d`（`Gauss/IBPPoly.lean:243`）与 `TraceMomentBound d`（`Gauss/TraceMoment.lean:935`）都是**对每个 `d : Dims` 的定理**，所以它们现在是真有居民的结构。
+
+**顺手项 (a)：`OpNormBound` 已卸。** `RBM.Gauss.opNormBound_gauss (d : Dims) : OpNormBound d`（`Gauss/TraceMoment.lean:964`）**无条件**、公理干净。`Gauss/Model.lean` 文件头那段「What is **not** done here」已按事实改写（**只改注释，定义与签名一字未动**）；`paper-deltas` #49 关闭。
+
+**顺手项 (b)：`hminor` 护栏已加。** `Gauss/IBP.lean` 的 `condExpDiag_stochDom_of_pieces` 加了 `@[deprecated "RETIRED (T112/T202): …"]`——`hminor` 在对角 `k = i` 处断言的量是涨落 `−(1−E_i)(G_ii−m)`，尺度 `Ψ` 而非 `Ψ²`，故假设不可满足、定理空真。活的入口是 `condExpDiag_stochDom_of_localLaw`（`Gauss/CondDom.lean`，只要对角外的 `hminor`）。全仓无 Lean 调用点，加护栏不产生新 warning；声明保留只因 `blueprint/src/content.tex` 引了它。
+
+**未闭合（T202 顺手查到，不在本单范围）**：`RBM.Bounds` 的居民只有 `Flow/Iteration.lean:165 Bounds_zero`（`s ≡ 0` 处），**`s > 0` 的居民仍无**——归 T204 / T205。
+
+## ⭐ T203：`hKb` 在所有环长上装配完毕，(2.59) 的接缝缝上了（`Gauss/Lemma514Holder.lean` 续，1071 → 1321 行，2026-09-21）
+
+`hKb` 从**假设**变成了**定理**（`hKb_flow`），所以「`hKb` 空真」这个风险从结构上消失。端到端探针 `lemma514_forall_of_hHol_flow` 与新的 `flow_sharpLmK_of_hHol_flow` 的假设表里都**没有 `hKb`**（后者连 `hHol` 也没有）。
+
+**工单的猜测成立**：`Flow/Iteration.lean:598 norm_Kval_le` 确实只差接线，**没有数学缺口**，`η` 的幂对长度 ≥ 3 是够的。但形状有一处**真差别、必须显式付**：
+
+* `norm_Kval_le` 给 `C_n·(Wℓ_wη_w)^{−(n−1)}`，`hKb` 要 `≤ N^c`。压过去要 (a) `(Wℓ_wη_w)^{−1} → η_w^{−1}`（靠 `W ≥ 1`、`ℓ̂_w ≥ 1`），(b) `η_w^{−1} → η_{t_N}^{−1}`（`η_u = (1−u)·Im m` 反单调），再用 `hreg`。
+* **代价是指数从 `c` 变成 `c·m + 1`**（每条边一个 `N^c`，`+1` 吞常数 `C_n`）。这不是记账错误、是真实的归一化差额；无害是因为 `hreg`/`hXΞ` 对 `c` **单调变弱**，两条探针内部把调用者给的 `c` 抬到 `c(n+2)+1` 再喂 `hHol_flow`，**对外签名不变**。
+* 每条长度各有自己的 `C_n`，所以先要 `exists_norm_Kval_le_upto` 取 max——`hKb` 量化在一个长度**集合**上，不是单个长度。
+
+**冻结签名的改动（两条，是去掉一条假设、不是弱化结论）**：`lemma514_of_hHol_flow` 与 `lemma514_forall_of_hHol_flow` 的 `hKb` 参数**已删**，内部由 `hKb_flow` 产出。两条全仓无外部消费者，故没留带撇版。`hHol_flow` 本身不变。
+
+**与 T201 的边界干净**：全程**没有用到**短窗口条件 `t_N − s_N ≤ κ(1−t_N)`（T195 判为在总装窗口上不可满足），`s` 在整条链上根本不出现，`0 < s N` 也没用到。
+
+**可满足性见证 `exists_hHol_flow_inputs`**：一次性造出**同一个 `c = 2`** 下的全部输入（`hreg`、`hXΞ`、导出的 `hKb`），取**临界标度**而非退化点——`t_N = 1 − (N ∨ 1)^{−1}`，即 `η_{t_N} = N^{−1}·Im m`（论文 `t ≤ 1 − N^{−1+τ}` 允许的最小尺度，只差 `N^τ`），`ℓ̂_{t_N} = min(N^{1/2}, L)` 真的在长，窗口不塌缩。**包络若差一个 `W` 或 `L` 的幂，这个见证就造不出来。**
+
+**仍在假设表里的**：`hrhs`（含 `hnum` + `edgeKer` 行和）→ **T201**；`MomentDuhamel.Hyp` 的 `H` → T191/T196/T206；Step 3 的 `h0/h12/h1/h2`、`Cond272` → 不在本单范围。
+
+**`Lemma514Moment.lean` 的接线清单是空的**：`hKb` 从来没出现在那个文件里。T192 的旧记载仍成立——`lemma514_forall_of_momentDuhamel` 的 `(K,γ)` 排在 `∀ m` 前面、要不到；`lemma514_forall_of_hHol_flow` 逐 `m` 组装已绕过。
+
+**待 T201 接线**：`hkerC_flow` / `hker2C_flow`（`Lemma514Holder.lean` 约 1240–1270 行）的 `@[deprecated]` 护栏——T203 收工时 T201 的文案还没到，按工单指示没动。

@@ -56,8 +56,22 @@ T181 lists the three gaps.  The first turns out to be **already in the repositor
 * `RBM.Gauss.lemma514_of_hHol_flow` — the acceptance probe: `hHol_flow` fills the `hHol` slot of
   `RBM.Gauss.lemma514_of_momentDuhamel`, applied
 * `RBM.Gauss.lemma514_forall_of_hHol_flow` — the `∀ m` assembly, one `m` at a time
+* `RBM.Gauss.flow_sharpLmK_of_hHol_flow`   — end to end into Step 4's (2.78)
 * `RBM.Gauss.exists_highProb_normX`,
-  `RBM.Gauss.norm_Kval_two_le_rpow` — the satisfiability witnesses
+  `RBM.Gauss.norm_Kval_two_le_rpow`,
+  `RBM.Gauss.exists_hHol_flow_inputs` — the satisfiability witnesses
+
+### 1b. `hKb`, on every ring length (T203)
+
+`hHol_flow` asks for a polynomial envelope on `K` over the loop lengths `2 … m`.  That is not a
+hypothesis but (2.59)–(2.60), and it is now discharged, so the two probes above and
+`flow_sharpLmK_of_hHol_flow` have **no `hKb` slot**.
+
+* `RBM.Gauss.exists_norm_Kval_le_upto` — one constant for all lengths `2 … m`, from
+  `RBM.Band.norm_Kval_le` ((2.59) for `n ≥ 3`, Example 2.15 for `n = 2`, (2.60) for `n = 1`)
+* `RBM.Gauss.hKb_flow`                — the slot itself, exponent `c·m + 1`
+* `RBM.Gauss.eventually_le_rpow_mono` — raising `hreg`/`hXΞ` to that exponent
+* `RBM.Gauss.eventually_etaT_inv_le_rpow` — `hreg` from the paper's own time window
 
 ### 2. The `edgeKer` inputs
 
@@ -775,32 +789,188 @@ theorem hHol_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
   rw [Real.sqrt_eq_rpow]
   exact mul_le_mul_of_nonneg_right hfinal (Real.rpow_nonneg (abs_nonneg _) _)
 
+/-! ### `hKb` on **every** ring length — (2.59) assembled (T203)
+
+`RBM.Gauss.hHol_flow` above takes the envelope `‖K_{w,σ,a}‖ ≤ N^c` on the loops of length
+`2 … m` as a hypothesis.  It is not one: it is (2.59)–(2.60), which the repository proves for
+every length.  T192 closed only the base length `2`
+(`RBM.Gauss.norm_Kval_two_le_rpow`, from Example 2.15); this section closes all of them and
+removes the slot from the acceptance probes.
+
+The chain is
+
+`‖K_{w,σ,a}‖ ≤ C_n (W ℓ_w η_w)^{-n+1}`   (2.59) for `n ≥ 3`, (2.60) for `n = 1`, Example 2.15
+                                          for `n = 2` — all three are `RBM.Band.norm_Kval_le`
+`(W ℓ_w η_w)^{-1} ≤ η_w^{-1}`             because `W ≥ 1` and `ℓ̂_w ≥ 1` (`RBM.one_le_ellHat`)
+`η_w^{-1} ≤ η_{t_N}^{-1} ≤ N^c`           because `η_u = (1-u) Im m` is antitone, and `hreg`.
+
+**The normalization**: the exponent that comes out is `c·m + 1`, not `c` — one factor of
+`N^c` per edge of the loop (`c(m-1)`, rounded up), plus one to swallow `C_n`.  That is harmless
+downstream because `hreg` and `hXΞ` only get *easier* as `c` grows
+(`RBM.Gauss.eventually_le_rpow_mono`), so the probes below raise the single exponent `c` they
+are given and hand `RBM.Gauss.hHol_flow` the larger one.  Nothing is assumed about the window
+beyond `t_N < 1`: in particular **no short-window condition** `t_N - s_N ≤ κ(1-t_N)` of the kind
+T195 showed to be unsatisfiable, and `s` does not occur at all. -/
+
+section Kenvelope
+
+variable {Ωb : Type*} [MeasurableSpace Ωb]
+
+/-- A spectral gap `k` out of `|E| < 2`: `RBM.Band.norm_Kval_le` is stated with the bulk
+parameter `k` of (2.4), and every consumer here carries only `|E| < 2`. -/
+theorem exists_gap_of_abs_lt_two {E : ℝ} (hE : |E| < 2) :
+    ∃ k : ℝ, 0 < k ∧ k ≤ 1 ∧ |E| ≤ 2 - k := by
+  refine ⟨min 1 (2 - |E|), lt_min one_pos (by linarith), min_le_left _ _, ?_⟩
+  have := min_le_right (1 : ℝ) (2 - |E|)
+  linarith
+
+/-- **(2.59)/(2.60) with a single constant for all loop lengths `2 … m`.**
+
+`RBM.Band.norm_Kval_le` gives one constant `C_n` per length `n`; the envelope hypothesis of
+`RBM.Gauss.hHol_flow` ranges over a *set* of lengths, so the constants have to be maximized.
+Induction on `m`, taking `max` at each step; the exponent of the scale stays the sharp
+`J.length - 1`. -/
+theorem exists_norm_Kval_le_upto (B : Band Ωb) {E : ℝ} (hE : |E| < 2) (m : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (N : ℕ) (w : ℝ), 0 ≤ w → w < 1 →
+      ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ m →
+        ‖B.Kval E N w J‖ ≤ C * (B.scale E N w)⁻¹ ^ (J.length - 1) := by
+  obtain ⟨k, hk0, hk1, hEk⟩ := exists_gap_of_abs_lt_two hE
+  induction m with
+  | zero => exact ⟨0, le_rfl, fun _ _ _ _ _ _ h2 hle => absurd hle (by omega)⟩
+  | succ m ih =>
+      obtain ⟨C, hC0, hC⟩ := ih
+      obtain ⟨C', hC'0, hC'⟩ := B.norm_Kval_le hk0 hk1 hEk (n := m + 1) (by omega)
+      refine ⟨max C C', le_max_of_le_left hC0, fun N w hw0 hw1 J hJ h2 hle => ?_⟩
+      have hs0 : (0 : ℝ) ≤ (B.scale E N w)⁻¹ :=
+        inv_nonneg.2 (B.scale_pos' hE N hw0 hw1).le
+      rcases le_or_gt J.length m with h | h
+      · exact (hC N w hw0 hw1 J hJ h2 h).trans
+          (mul_le_mul_of_nonneg_right (le_max_left _ _) (pow_nonneg hs0 _))
+      · have hlen : J.length = m + 1 := by omega
+        have h' := hC' N w hw0 hw1 J hJ hlen
+        rw [hlen]
+        exact h'.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (pow_nonneg hs0 _))
+
+/-- **The `hKb` slot of `RBM.Gauss.hHol_flow`, on every ring length, from (2.59).**
+
+Unconditional except for the regime `η_{t_N}^{-1} ≤ N^c` that `hHol_flow` already assumes for
+its own reasons.  The window enters only through `w ≤ t_N < 1`; `s` does not occur, and neither
+does any short-window condition.
+
+The exponent is `c·m + 1`: `c(m-1)` for the `m-1` inverse scales of (2.59) (rounded up to
+`c·m`), and `+1` to absorb the constant of `RBM.Gauss.exists_norm_Kval_le_upto`. -/
+theorem hKb_flow (B : Band Ωb) {E : ℝ} (hE : |E| < 2) {t : ℕ → ℝ} (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c) (m : ℕ)
+    (hreg : ∀ᶠ N : ℕ in atTop, (etaT E (t N))⁻¹ ≤ (N : ℝ) ^ c) :
+    ∀ᶠ N : ℕ in atTop, ∀ w ∈ Set.Icc (0 : ℝ) (t N),
+      ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ m →
+        ‖B.Kval E N w J‖ ≤ (N : ℝ) ^ (c * (m : ℝ) + 1) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_Kval_le_upto B hE m
+  have hlt : c * (m : ℝ) < c * (m : ℝ) + 1 := by linarith
+  filter_upwards [hreg, eventually_ge_atTop 1, eventually_const_mul_rpow_le_rpow C hlt]
+    with N hregN hN1 hnumN w hw J hJ hJ2 hJm
+  have hw0 : (0 : ℝ) ≤ w := hw.1
+  have hw1 : w < 1 := lt_of_le_of_lt hw.2 (ht1 N)
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hRc : (1 : ℝ) ≤ (N : ℝ) ^ c := Real.one_le_rpow hN1' hc0
+  have hηw : 0 < etaT E w := etaT_pos_of_lt_one' hE hw1
+  have hηt : 0 < etaT E (t N) := etaT_pos_of_lt_one' hE (ht1 N)
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hell : (1 : ℝ) ≤ B.ell N w := one_le_ellHat (B.L N) (B.three_le_L N) hw0 hw1
+  -- `η_w ≤ W ℓ_w η_w`
+  have hge : etaT E w ≤ B.scale E N w := by
+    have h : (1 : ℝ) * 1 * etaT E w ≤ (B.W N : ℝ) * B.ell N w * etaT E w :=
+      mul_le_mul_of_nonneg_right (mul_le_mul hW1 hell zero_le_one (by linarith)) hηw.le
+    simpa [Band.scale] using h
+  -- `(W ℓ_w η_w)^{-1} ≤ η_w^{-1} ≤ η_{t_N}^{-1} ≤ N^c`
+  have hinv : (B.scale E N w)⁻¹ ≤ (N : ℝ) ^ c :=
+    le_trans (inv_anti₀ hηw hge) (le_trans (inv_anti₀ hηt (etaT_le_of_le hE hw.2)) hregN)
+  have hbig : (B.scale E N w)⁻¹ ^ (J.length - 1) ≤ ((N : ℝ) ^ c) ^ m := by
+    calc (B.scale E N w)⁻¹ ^ (J.length - 1)
+        ≤ ((N : ℝ) ^ c) ^ (J.length - 1) :=
+          pow_le_pow_left₀ (inv_nonneg.2 (B.scale_pos' hE N hw0 hw1).le) hinv _
+      _ ≤ ((N : ℝ) ^ c) ^ m := pow_le_pow_right₀ hRc (by omega)
+  have hpow : ((N : ℝ) ^ c) ^ m = (N : ℝ) ^ (c * (m : ℝ)) := by
+    rw [← Real.rpow_natCast ((N : ℝ) ^ c) m, ← Real.rpow_mul (Nat.cast_nonneg N)]
+  calc ‖B.Kval E N w J‖ ≤ C * (B.scale E N w)⁻¹ ^ (J.length - 1) :=
+        hC N w hw0 hw1 J hJ hJ2 hJm
+    _ ≤ C * ((N : ℝ) ^ c) ^ m := mul_le_mul_of_nonneg_left hbig hC0
+    _ = C * (N : ℝ) ^ (c * (m : ℝ)) := by rw [hpow]
+    _ ≤ (N : ℝ) ^ (c * (m : ℝ) + 1) := hnumN
+
+/-- A polynomial envelope only gets weaker as its exponent grows.  This is what lets the probes
+below feed `RBM.Gauss.hHol_flow` the larger exponent that `RBM.Gauss.hKb_flow` produces without
+asking their callers for anything new. -/
+theorem eventually_le_rpow_mono {f : ℕ → ℝ} {c c' : ℝ} (hcc : c ≤ c')
+    (h : ∀ᶠ N : ℕ in atTop, f N ≤ (N : ℝ) ^ c) :
+    ∀ᶠ N : ℕ in atTop, f N ≤ (N : ℝ) ^ c' := by
+  filter_upwards [h, eventually_ge_atTop 1] with N hN hN1
+  exact hN.trans (Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hN1) hcc)
+
+/-- **The regime hypothesis `hreg` from the paper's own time window.**  `η_u = (1-u) Im m^{(E)}`,
+so `1 - t_N ≥ N^{-a}` gives `η_{t_N}^{-1} ≤ N^{a} (Im m)^{-1} ≤ N^{a+1}`.  The paper's
+`t ≤ 1 - N^{-1+τ}` is `a = 1 - τ`. -/
+theorem eventually_etaT_inv_le_rpow {E : ℝ} (hE : |E| < 2) {t : ℕ → ℝ} {a : ℝ}
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-a) ≤ 1 - t N) :
+    ∀ᶠ N : ℕ in atTop, (etaT E (t N))⁻¹ ≤ (N : ℝ) ^ (a + 1) := by
+  have hm : 0 < (mE E).im := mE_im_pos hE
+  filter_upwards [ht, eventually_ge_atTop 1, eventually_le_rpow (mE E).im⁻¹ one_pos]
+    with N hN hN1 hmN
+  have hN0 : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hpos : (0 : ℝ) < (N : ℝ) ^ (-a) := Real.rpow_pos_of_pos hN0 _
+  have hge : (N : ℝ) ^ (-a) * (mE E).im ≤ etaT E (t N) :=
+    mul_le_mul_of_nonneg_right hN hm.le
+  have hlow : 0 < (N : ℝ) ^ (-a) * (mE E).im := mul_pos hpos hm
+  have h1 : (etaT E (t N))⁻¹ ≤ ((N : ℝ) ^ (-a) * (mE E).im)⁻¹ := inv_anti₀ hlow hge
+  have h2 : ((N : ℝ) ^ (-a) * (mE E).im)⁻¹ = (N : ℝ) ^ a * (mE E).im⁻¹ := by
+    rw [mul_inv, Real.rpow_neg hN0.le, inv_inv]
+  have h3 : (N : ℝ) ^ a * (mE E).im⁻¹ ≤ (N : ℝ) ^ a * (N : ℝ) ^ (1 : ℝ) := by
+    refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hN0.le _)
+    simpa using hmN
+  have h4 : (N : ℝ) ^ a * (N : ℝ) ^ (1 : ℝ) = (N : ℝ) ^ (a + 1) :=
+    (Real.rpow_add hN0 a 1).symm
+  linarith [h1, h2 ▸ h3]
+
+end Kenvelope
+
 /-- **Acceptance probe: `RBM.Gauss.hHol_flow` fills the `hHol` slot of
 `RBM.Gauss.lemma514_of_momentDuhamel`, applied** — no `convert`, no coercion.
 
-The three remaining arguments are exactly the ones T181 records as belonging elsewhere: `H`
+The two remaining arguments are exactly the ones T181 records as belonging elsewhere: `H`
 (T180/T187's `RBM.MomentDuhamel.Hyp`) and `hrhs` (T146/T157/T165, plus `hnum` and the `edgeKer`
-row sums).  `hcard` is discharged by `RBM.Gauss.card_loopData_le`. -/
+row sums).  `hcard` is discharged by `RBM.Gauss.card_loopData_le`, and **`hKb` is discharged by
+(2.59)** (`RBM.Gauss.hKb_flow`, T203) — it used to be an argument here.
+
+The envelope's exponent is `c(n+2) + 1`, not `c`; `hreg` and `hXΞ` are raised to it by
+`RBM.Gauss.eventually_le_rpow_mono`, which is why the caller still supplies only one `c`. -/
 theorem lemma514_of_hHol_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
     (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {n : ℕ} (H : MomentDuhamel.Hyp (sample d) E s t n)
     {Ξ : ℕ → Set (Ω d)} (hΞ : HighProb (band d).P Ξ) {c : ℝ} (hc1 : 1 ≤ c)
     (hreg : ∀ᶠ N : ℕ in atTop, (etaT E (t N))⁻¹ ≤ (N : ℝ) ^ c)
     (hXΞ : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N, ‖Xmat d N ω‖ + 1 ≤ (N : ℝ) ^ c)
-    (hKb : ∀ᶠ N : ℕ in atTop, ∀ w ∈ Set.Icc (0 : ℝ) (t N),
-      ∀ J : LoopIdx (ZMod ((band d).L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
-        ‖(band d).Kval E N w J‖ ≤ (N : ℝ) ^ c)
     (hrhs : ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) → (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) →
       Lemma514Premises (sample d) E s t (n + 2) Λ Φ →
       ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
         Rhs514At H (fun N => Λ N ^ ((1 : ℝ) / 2) + Φ N) v) :
     Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
-      (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) (n + 2) :=
-  haveI := (band d).isProbabilityMeasure
-  lemma514_of_momentDuhamel hE hs0 hst ht1 H (card_loopData_le (n + 2))
-    (K := c * (3 * ((n + 2 : ℕ) : ℝ) + 4) + 1) (γ := (1 : ℝ) / 2)
-    (by positivity) (by norm_num) hΞ
-    (hHol_flow d hE hs0 ht1 hc1 (by omega) hreg hXΞ hKb) hrhs
+      (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) (n + 2) := by
+  have := (band d).isProbabilityMeasure
+  have hn2 : (1 : ℝ) ≤ ((n + 2 : ℕ) : ℝ) := by
+    exact_mod_cast Nat.one_le_iff_ne_zero.2 (by omega)
+  have hc0 : (0 : ℝ) ≤ c := by linarith
+  have hcc : c ≤ c * ((n + 2 : ℕ) : ℝ) + 1 := by nlinarith
+  have hc1' : (1 : ℝ) ≤ c * ((n + 2 : ℕ) : ℝ) + 1 := by nlinarith
+  have hXΞ' : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N,
+      ‖Xmat d N ω‖ + 1 ≤ (N : ℝ) ^ (c * ((n + 2 : ℕ) : ℝ) + 1) := by
+    filter_upwards [hXΞ, eventually_ge_atTop 1] with N hN hN1 ω hω
+    exact (hN ω hω).trans (Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hN1) hcc)
+  exact lemma514_of_momentDuhamel hE hs0 hst ht1 H (card_loopData_le (n + 2))
+    (K := (c * ((n + 2 : ℕ) : ℝ) + 1) * (3 * ((n + 2 : ℕ) : ℝ) + 4) + 1) (γ := (1 : ℝ) / 2)
+    (by nlinarith) (by norm_num) hΞ
+    (hHol_flow d hE hs0 ht1 hc1' (show 1 ≤ n + 2 by omega)
+      (eventually_le_rpow_mono hcc hreg) hXΞ'
+      (hKb_flow (band d) hE ht1 hc0 (n + 2) hreg)) hrhs
 
 /-- **The `∀ m` form of Steps 3–5's `h514` from `RBM.Gauss.hHol_flow`.**
 
@@ -814,9 +984,6 @@ theorem lemma514_forall_of_hHol_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : 
     {Ξ : ℕ → Set (Ω d)} (hΞ : HighProb (band d).P Ξ) {c : ℝ} (hc1 : 1 ≤ c)
     (hreg : ∀ᶠ N : ℕ in atTop, (etaT E (t N))⁻¹ ≤ (N : ℝ) ^ c)
     (hXΞ : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N, ‖Xmat d N ω‖ + 1 ≤ (N : ℝ) ^ c)
-    (hKb : ∀ m : ℕ, ∀ᶠ N : ℕ in atTop, ∀ w ∈ Set.Icc (0 : ℝ) (t N),
-      ∀ J : LoopIdx (ZMod ((band d).L N)), J.WF → 2 ≤ J.length → J.length ≤ m →
-        ‖(band d).Kval E N w J‖ ≤ (N : ℝ) ^ c)
     (hrhs : ∀ n : ℕ, ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
       (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises (sample d) E s t (n + 2) Λ Φ →
       ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
@@ -825,7 +992,44 @@ theorem lemma514_forall_of_hHol_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {s t : 
       (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) m := by
   intro m hm
   obtain ⟨n, rfl⟩ : ∃ n, m = n + 2 := ⟨m - 2, by omega⟩
-  exact lemma514_of_hHol_flow d hE hs0 hst ht1 (H n) hΞ hc1 hreg hXΞ (hKb (n + 2)) (hrhs n)
+  exact lemma514_of_hHol_flow d hE hs0 hst ht1 (H n) hΞ hc1 hreg hXΞ (hrhs n)
+
+/-- **End-to-end probe for the flow: Step 4's (2.78) with neither `hHol` nor `hKb` open.**
+
+`RBM.Gauss.flow_sharpLmK_of_momentDuhamel` is the same conclusion with the Hölder modulus left
+abstract; here the modulus is `RBM.Gauss.hHol_flow` and its envelope is (2.59)
+(`RBM.Gauss.hKb_flow`), so the hypothesis list is the model, the window, `H`, `hrhs`, the
+regime `hreg`/`hXΞ` on a high-probability `Ξ`, and Step 3's own `h0`, `h12`, `h1`, `h2`.
+
+No `RBM.SumZeroDyn.Hierarchy`, no `RBM.SumZeroDyn.Lemma510` field, no `0 < s N`, and no
+short-window condition. -/
+theorem flow_sharpLmK_of_hHol_flow (d : Dims) {E : ℝ} {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hcond : Cond272 (band d) E s t)
+    (H : ∀ n, MomentDuhamel.Hyp (sample d) E s t n)
+    {Ξ : ℕ → Set (Ω d)} (hΞ : HighProb (band d).P Ξ) {c : ℝ} (hc1 : 1 ≤ c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (etaT E (t N))⁻¹ ≤ (N : ℝ) ^ c)
+    (hXΞ : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N, ‖Xmat d N ω‖ + 1 ≤ (N : ℝ) ^ c)
+    (hrhs : ∀ n : ℕ, ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
+      (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises (sample d) E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+        Rhs514At (H n) (fun N => Λ N ^ ((1 : ℝ) / 2) + Φ N) v)
+    (h0 : ∀ m, 1 ≤ m → Step3.S (band d).P (Step3.flowXiLK (sample d) E s t)
+      (Step3.flowAs (band d) E s) (Step3.flowR (band d) s t)
+      (Step3.flowA (band d) E s t) m 0)
+    (h12 : ∀ m l, 1 ≤ m → m ≤ 2 → Step3.S (band d).P (Step3.flowXiLK (sample d) E s t)
+      (Step3.flowAs (band d) E s) (Step3.flowR (band d) s t)
+      (Step3.flowA (band d) E s t) m l)
+    (h1 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 1) fun _ _ _ => 1)
+    (h2 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 2)
+      fun N u _ => Step3.flowA (band d) E s t N u ^ ((1 : ℝ) / 4)) :
+    ∀ n : ℕ, 1 ≤ n → StochDom (band d).P
+      (fun N (p : RBM.TimeIcc s t N × LoopData ((band d).L N) n) ω =>
+        (sample d).lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => ((band d).scale E N p.1)⁻¹ ^ n) :=
+  Step45.flow_sharpLmK (sample d) hκ0 hκ1 hEκ hs0 hst ht1 hcond
+    (lemma514_forall_of_hHol_flow d (by linarith) hs0 hst ht1 H hΞ hc1 hreg hXΞ hrhs)
+    h0 h12 h1 h2
 
 /-! ### Satisfiability
 
@@ -862,8 +1066,9 @@ Example 2.15 and `RBM.norm_Kgen_two_le` bounds it *explicitly* by `W^{-1}(1-T)^{
 regime hypothesis `hreg` already makes `≤ N^c`.  So the envelope hypothesis of
 `RBM.Gauss.hHol_flow` is a theorem at the base length, and in particular not vacuous.
 
-(For length `≥ 3` the corresponding statement is (2.59), `RBM.norm_Kgen_le`, which is
-strictly stronger than what `hKb` asks; it is not assembled here.) -/
+(Superseded for the probes by `RBM.Gauss.hKb_flow`, T203, which covers every length; kept
+because it is sharper — it needs only `(1-t_N)^{-1} ≤ N^c`, not `η_{t_N}^{-1} ≤ N^c`, and it
+does not pay the `c(m-1)` of the general assembly.) -/
 theorem norm_Kval_two_le_rpow (d : Dims) {E : ℝ} (hE : |E| < 2) {t : ℕ → ℝ} (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hreg : ∀ᶠ N : ℕ in atTop, (1 - t N)⁻¹ ≤ (N : ℝ) ^ c) :
     ∀ᶠ N : ℕ in atTop, ∀ w ∈ Set.Icc (0 : ℝ) (t N),
@@ -883,6 +1088,51 @@ theorem norm_Kval_two_le_rpow (d : Dims) {E : ℝ} (hE : |E| < 2) {t : ℕ → �
     _ ≤ 1 * (1 - t N)⁻¹ := mul_le_mul_of_nonneg_right hinv hT0
     _ = (1 - t N)⁻¹ := one_mul _
     _ ≤ (N : ℝ) ^ c := hregN
+
+/-- **Positive satisfiability witness for the whole input bundle of
+`RBM.Gauss.lemma514_forall_of_hHol_flow` that this file owns** — the window, the event and the
+envelope, at **one** exponent `c = 2`, on a **critical** time window.
+
+The window is `t_N = 1 - (N ∨ 1)^{-1}`, i.e. `η_{t_N} = N^{-1}\,\mathrm{Im}\,m`: the *smallest*
+scale the paper's regime `t ≤ 1 - N^{-1+τ}` allows, up to the `N^{τ}`.  It is not degenerate:
+`η_{t_N} → 0` and `ℓ̂_{t_N} = min(N^{1/2}, L)` is genuinely growing, so this is the regime in
+which a misplaced power of `W` or `L` in the envelope would show up as an unsatisfiable
+hypothesis.  The last conjunct is the `hKb` that `RBM.Gauss.hKb_flow` produces, and it is
+**derived, not assumed** — which is the point: `hKb` can no longer be silently vacuous.
+
+Every conjunct holds simultaneously, so the hypothesis set is consistent and `Ξ` is nonempty
+(`HighProb` on a probability space forces `P(Ξ_N) > 0` eventually). -/
+theorem exists_hHol_flow_inputs (d : Dims) (h : TraceMomentBound d) {E : ℝ} (hE : |E| < 2) :
+    ∃ (t : ℕ → ℝ) (Ξ : ℕ → Set (Ω d)),
+      (∀ N, 0 ≤ t N) ∧ (∀ N, t N < 1) ∧ HighProb (band d).P Ξ ∧
+      (∀ᶠ N : ℕ in atTop, (etaT E (t N))⁻¹ ≤ (N : ℝ) ^ (2 : ℝ)) ∧
+      (∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N, ‖Xmat d N ω‖ + 1 ≤ (N : ℝ) ^ (2 : ℝ)) ∧
+      (∀ m : ℕ, ∀ᶠ N : ℕ in atTop, ∀ w ∈ Set.Icc (0 : ℝ) (t N),
+        ∀ J : LoopIdx (ZMod ((band d).L N)), J.WF → 2 ≤ J.length → J.length ≤ m →
+          ‖(band d).Kval E N w J‖ ≤ (N : ℝ) ^ (2 * (m : ℝ) + 1)) := by
+  obtain ⟨Ξ, hΞ, hXΞ⟩ := exists_highProb_normX d h (c := (2 : ℝ)) le_rfl
+  have ht1 : ∀ N : ℕ, 1 - (max (N : ℝ) 1)⁻¹ < 1 := by
+    intro N
+    have h1 : (0 : ℝ) < max (N : ℝ) 1 := lt_of_lt_of_le one_pos (le_max_right _ _)
+    have : (0 : ℝ) < (max (N : ℝ) 1)⁻¹ := inv_pos.2 h1
+    linarith
+  have hreg : ∀ᶠ N : ℕ in atTop,
+      (etaT E (1 - (max (N : ℝ) 1)⁻¹))⁻¹ ≤ (N : ℝ) ^ (2 : ℝ) := by
+    have ht : ∀ᶠ N : ℕ in atTop,
+        (N : ℝ) ^ (-(1 : ℝ)) ≤ 1 - (1 - (max (N : ℝ) 1)⁻¹) := by
+      filter_upwards [eventually_ge_atTop 1] with N hN1
+      have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+      rw [show (1 : ℝ) - (1 - (max (N : ℝ) 1)⁻¹) = (max (N : ℝ) 1)⁻¹ from by ring,
+        max_eq_left hN1', Real.rpow_neg_one]
+    have hh := eventually_etaT_inv_le_rpow (E := E) hE (a := (1 : ℝ)) ht
+    rw [show (1 : ℝ) + 1 = 2 from by norm_num] at hh
+    exact hh
+  refine ⟨fun N => 1 - (max (N : ℝ) 1)⁻¹, Ξ, ?_, ht1, hΞ, hreg, hXΞ, ?_⟩
+  · intro N
+    have h1 : (1 : ℝ) ≤ max (N : ℝ) 1 := le_max_right _ _
+    have : (max (N : ℝ) 1)⁻¹ ≤ 1 := by rw [inv_le_one_iff₀]; right; exact h1
+    linarith
+  · exact fun m => hKb_flow (band d) hE ht1 (by norm_num) m hreg
 
 /-! ### The `edgeKer` inputs `hkerlt`, `hkerC`, `hker2lt`, `hker2C`
 

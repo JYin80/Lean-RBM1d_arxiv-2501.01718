@@ -1210,7 +1210,24 @@ signature, reduced to
 * `hprod`: `E_i[(G_{ii}-m)(G_{kk}-m)] ≺ L_max` — the local law, squared;
 * `hminor`: `E_i(G_{kk}-m) - (G_{kk}-m) ≺ L_max` — the minor replacement (4.9) of T85.
 
-Nothing else is missing: `condExpDiag_eq_sum_Sblk` is an identity. -/
+Nothing else is missing: `condExpDiag_eq_sum_Sblk` is an identity.
+
+**⚠ RETIRED (T112, guard added by T202).**  `hminor` is quantified over *every* pair
+`(i, k)`, the diagonal `k = i` included, and there it is **false**: the quantity
+`E_i(G_{ii}-m) - (G_{ii}-m)` is the fluctuation `-(1 - E_i)(G_{ii}-m)`, of size `Ψ`, not `Ψ²`,
+and the diagonal has no row-independent surrogate.  A theorem with an unsatisfiable hypothesis
+is vacuously true and the compiler never complains, so the declaration is kept only because
+`blueprint/src/content.tex` cites it.  The live entry point is
+`RBM.Gauss.condExpDiag_stochDom_of_localLaw` (`RBM1D/Gauss/CondDom.lean`), which goes through
+`condExpDiag_stochDom_of_offdiag` and needs `hminor` **off the diagonal only**, the diagonal
+being absorbed by `S_{ii} ≤ 2 L_max` against the deterministic envelope of `ibpRem`.
+See `docs/paper-deltas.md`. -/
+@[deprecated "RETIRED (T112/T202): `hminor` is asserted at every pair `(i,k)`, but on the \
+diagonal `k = i` it is false — `E_i(G_ii - m) - (G_ii - m)` is the fluctuation \
+`-(1 - E_i)(G_ii - m)`, of size `Ψ`, not `Ψ²` — so the hypothesis is unsatisfiable and the \
+theorem is vacuous.  Use `RBM.Gauss.condExpDiag_stochDom_of_localLaw` \
+(`RBM1D/Gauss/CondDom.lean`), which needs `hminor` off the diagonal only."
+  (since := "2026-09-21")]
 theorem condExpDiag_stochDom_of_pieces (hG : GaussIBP d) (hE : |E| < 2) (ht0 : 0 ≤ t)
     (ht : t < 1)
     (hprod : StochDom (P d) (fun N (q : d.Idx N × d.Idx N) ω =>

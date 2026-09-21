@@ -1396,7 +1396,7 @@
 \end{proof}
 
 \begin{theorem}[Lemma 5.14, (5.92): the sum-zero dynamics of \S5.5, and its moment route]\label{lem:5.14}
-  \lean{RBM.SumZeroDyn.varthetaDot, RBM.SumZeroDyn.hasDerivAt_vartheta, RBM.SumZeroDyn.fastDecay_varthetaDot, RBM.SumZeroDyn.norm_le_norm_Qop_add, RBM.SumZeroDyn.genS, RBM.SumZeroDyn.commS, RBM.SumZeroDyn.commOp_eq, RBM.SumZeroDyn.SumZero_commS, RBM.SumZeroDyn.hasDerivAt_Qop_hierarchy, RBM.SumZeroDyn.norm_Psum_le_of_ward, RBM.SumZeroDyn.stochDom_of_logBound, RBM.SumZeroDyn.QV_Q_stochDom, RBM.SumZeroDyn.QV1_stochDom, RBM.SumZeroDyn.bound_qGood, RBM.SumZeroDyn.bound_nonAlt, RBM.SumZeroDyn.Hierarchy, RBM.SumZeroDyn.Lemma510, RBM.SumZeroDyn.LKDecay, RBM.SumZeroDyn.wardP_holds, RBM.SumZeroDyn.lemma514_flow, RBM.SumZeroDyn.lemma514_flow', RBM.Gauss.unifDomIcc_of_forall_stochDom, RBM.Gauss.forall_stochDom_of_unifDomIcc, RBM.Gauss.stochDom_xiLK_of_nonneg, RBM.Gauss.card_loopData_le, RBM.Gauss.Lemma514Premises, RBM.Gauss.lemma514_of_seq, RBM.Gauss.Rhs514At, RBM.Gauss.hrhs514_of_moment_inputs, RBM.Gauss.rhs514At_forall_of_moment_inputs, RBM.Gauss.rhs514At_self, RBM.Gauss.lemma514_of_momentDuhamel, RBM.Gauss.lemma514_forall_of_momentDuhamel, RBM.Gauss.flow_sharpLmK_of_momentDuhamel, RBM.Gauss.hHol_of_window_degenerate, RBM.abs_ellHat_sub_le, RBM.norm_primRhs_le, RBM.norm_Kgen_sub_le, RBM.norm_Kgen_sub_le', RBM.Gauss.abs_scaleLK_sub_le, RBM.Gauss.scaleLK_const_le, RBM.Gauss.hHol_flow, RBM.Gauss.lemma514_of_hHol_flow, RBM.Gauss.lemma514_forall_of_hHol_flow, RBM.Gauss.exists_highProb_normX, RBM.Gauss.norm_Kval_two_le_rpow, RBM.Gauss.hkerlt_flow, RBM.Gauss.hker2lt_flow, RBM.Gauss.hkerC_flow, RBM.Gauss.hker2C_flow, RBM.Gauss.hnum_of_endpoints, RBM.Gauss.hnum_endpoint_of_three}
+  \lean{RBM.SumZeroDyn.varthetaDot, RBM.SumZeroDyn.hasDerivAt_vartheta, RBM.SumZeroDyn.fastDecay_varthetaDot, RBM.SumZeroDyn.norm_le_norm_Qop_add, RBM.SumZeroDyn.genS, RBM.SumZeroDyn.commS, RBM.SumZeroDyn.commOp_eq, RBM.SumZeroDyn.SumZero_commS, RBM.SumZeroDyn.hasDerivAt_Qop_hierarchy, RBM.SumZeroDyn.norm_Psum_le_of_ward, RBM.SumZeroDyn.stochDom_of_logBound, RBM.SumZeroDyn.QV_Q_stochDom, RBM.SumZeroDyn.QV1_stochDom, RBM.SumZeroDyn.bound_qGood, RBM.SumZeroDyn.bound_nonAlt, RBM.SumZeroDyn.Hierarchy, RBM.SumZeroDyn.Lemma510, RBM.SumZeroDyn.LKDecay, RBM.SumZeroDyn.wardP_holds, RBM.SumZeroDyn.lemma514_flow, RBM.SumZeroDyn.lemma514_flow', RBM.Gauss.unifDomIcc_of_forall_stochDom, RBM.Gauss.forall_stochDom_of_unifDomIcc, RBM.Gauss.stochDom_xiLK_of_nonneg, RBM.Gauss.card_loopData_le, RBM.Gauss.Lemma514Premises, RBM.Gauss.lemma514_of_seq, RBM.Gauss.Rhs514At, RBM.Gauss.hrhs514_of_moment_inputs, RBM.Gauss.rhs514At_forall_of_moment_inputs, RBM.Gauss.rhs514At_self, RBM.Gauss.lemma514_of_momentDuhamel, RBM.Gauss.lemma514_forall_of_momentDuhamel, RBM.Gauss.flow_sharpLmK_of_momentDuhamel, RBM.Gauss.hHol_of_window_degenerate, RBM.abs_ellHat_sub_le, RBM.norm_primRhs_le, RBM.norm_Kgen_sub_le, RBM.norm_Kgen_sub_le', RBM.Gauss.abs_scaleLK_sub_le, RBM.Gauss.scaleLK_const_le, RBM.Gauss.hHol_flow, RBM.Gauss.lemma514_of_hHol_flow, RBM.Gauss.lemma514_forall_of_hHol_flow, RBM.Gauss.exists_highProb_normX, RBM.Gauss.norm_Kval_two_le_rpow, RBM.Gauss.hkerlt_flow, RBM.Gauss.hker2lt_flow, RBM.Gauss.hkerC_flow, RBM.Gauss.hker2C_flow, RBM.Gauss.hnum_of_endpoints, RBM.Gauss.hnum_endpoint_of_three, RBM.Gauss.one_add_norm_mul_le, RBM.norm_Uker_fastDecay_le_sumZero, RBM.SumZeroDyn.norm_Uker_sumZero_scale_le}
   \leanok\uses{def:5.12, lem:7.3, thm:step3, thm:momentduhamel, lem:momentduhamelrhs}
   Under the integrated hierarchy (5.20)/(5.91) with the quadratic-variation/BDG bounds
   (5.85)(5.103) as the only random inputs, and with (5.77) and (5.75) as hypotheses:
@@ -1433,12 +1433,47 @@
   \emph{Still hypothetical.}  A \texttt{MomentDuhamel.Hyp} is not yet produced in full
   (\ref{thm:momentduhamel}).  Among the right-hand side inputs, \texttt{hkerlt}/\texttt{hker2lt}
   are unconditional, but \texttt{hkerC}/\texttt{hker2C} hold \emph{if and only if} the window is
-  short, $t_N-s_N\le\kappa(1-t_N)$, with $C_k=1+\kappa$: at fixed window length and $t_N\to1$ the
-  slot is unsatisfiable, so this is a real hypothesis and not bookkeeping, and it has not been
-  derived from the six-step window construction.  The polynomial envelope for $K$ is instantiated
-  only at loop length $2$; lengths $\ge3$ are covered by (2.59) but with a $0<t$ restriction that
-  is not yet bridged.  Finally, \texttt{Lemma514Premises} must stay: quantifying instead over all
-  $(\Lambda,\Phi)$ collapses the control at $\Lambda=\Phi=0$ and makes the theorem vacuous.
+  short, $t_N-s_N\le\kappa(1-t_N)$, with $C_k=1+\kappa$ -- and that condition is not merely
+  underived, it is \emph{false} where it would be used; see the next paragraph.  The polynomial
+  envelope for $K$ is instantiated only at loop length $2$; lengths $\ge3$ are covered by (2.59)
+  but with a $0<t$ restriction that is not yet bridged.  Finally, \texttt{Lemma514Premises} must
+  stay: quantifying instead over all $(\Lambda,\Phi)$ collapses the control at $\Lambda=\Phi=0$
+  and makes the theorem vacuous.
+
+  \emph{The short-window condition is false on the paper's own grid, and the reason is that the
+  moment route is using the wrong lemma.}  On the grid $1-s_k=W^{-k\tau'}$ of p.\,24 one
+  has $(t-s)/(1-t)=W^{\tau'}-1$ \emph{exactly}, so an $N$-independent $C_k$ would force
+  $W_N^{\tau'}\le C_k$ against $W_N\to\infty$.  Hence \texttt{hkerC\_flow} and
+  \texttt{hker2C\_flow} are true theorems whose window slot is unsatisfiable on the assembly
+  window, and filling the right-hand side with them would make Step 3 vacuous.  The root cause is
+  structural: when $\|\xi\|=1$ the left side of \texttt{hkerC} is identically $\eta_u/\eta_w$, so
+  the constant it demands is $(\eta_s/\eta_t)^{n+2}$ -- which is exactly Lemma 7.1's prefactor.
+  And (5.92)'s own remark that there is \emph{no} prefactor depending on $\eta_s/\eta_t$ is
+  precisely the statement that Lemma 5.14 may not use Lemma 7.1: reading \S5.5, every term of its
+  proof projects through $Q_u$ and then uses (7.16), never (7.1).  Writing $\rho=rR$, the three
+  tiers already present in the library pay $\rho^n=R^nr^n$ for (7.1), $R\,r^n$ for (7.14) and
+  $r^n$ for (7.16), and it is the $r^n$ that cancels the $A^{-n}$ normalization -- that
+  cancellation \emph{is} the absence of a prefactor.  The moment route is using the weakest of the
+  three and overpays $R^{n+2}$.
+
+  Absorbing the loss into a constant $C\,R^k$ does not close either.  There is an explicit triple
+  satisfying all seven fields of \texttt{Step3.Scales} for which $R^nA_s^{1/2}>A$ at every
+  $n\ge5$, so the extra $R^n$ is already outside the budget; and, more decisively, that power of
+  $R$ multiplies $\Lambda^{1/2}$ while the floor in the Step 3 induction is independent of the
+  second index, so raising that index -- the channel Step 3's double induction uses to absorb
+  powers of $R$ -- is closed against this particular loss.  Retreating to (7.14) brings the loss
+  down to $R^1$, which does fit inside \texttt{Scales}, but it multiplies $\Lambda^{1/2}$ just the
+  same and still breaks the floor.  Only (7.16)'s $r^n$ is lossless.  \emph{The paper is
+  self-consistent here; the gap is on the formalization's side} (paper-deltas \#131).  What has to
+  be built is the moment form of (7.16), on top of
+  \texttt{norm\_Uker\_fastDecay\_le\_sumZero} and \texttt{norm\_Uker\_sumZero\_scale\_le}, plus a
+  consumer for \texttt{Hyp.momentDuhamelQ}, which to date has none; two seams are known in
+  advance, that sum-zero after $Q$ is a free algebraic identity while fast decay holds only on a
+  high-probability event, and that the left side of \texttt{momentDuhamelQ} is $Q_v\circ(L-K)_v$,
+  so returning to $(L-K)_v$ still needs the projection's other half.  \emph{Honestly}: this
+  paragraph is a read-only audit whose seven theorems -- the grid computation, the contradiction,
+  the identity for the left side and the \texttt{Scales} witness -- were compiled but
+  \emph{not} committed to the library, so no Lean name is claimed for them here.
 \end{theorem}
 \begin{proof}\leanok
   $Q_t\circ(L-K)$ satisfies (5.88); the $\dot\vartheta$ term is controlled by Ward's identity
@@ -1473,6 +1508,41 @@
   (2.14) by the spectral decomposition of $\operatorname{Im}G$; (2.15) trace algebra with the
   $\Theta$-oscillation from (2.53) and the gap (2.16); (2.17) and Markov; the bad event $B_y$ of
   Step 3 via (2.27).
+\end{proof}
+
+\begin{theorem}[Theorem 2.21 in the gained form the six steps actually produce]\label{thm:thm221-gain}
+  \lean{RBM.Cond272', RBM.Thm221', RBM.Cond272'.toCond272, RBM.Thm221.toThm221', RBM.Band.eventually_flow_grid', RBM.gridT_step_2_72_gain, RBM.flow_grid_2_72_gain, RBM.Bounds_of_Thm221', RBM.stochDom_norm_Lval_of_Thm221', RBM.SpecSeq.bounds', RBM.localSemicircleLaw_of_Thm221', RBM.quantumDiffusion_of_Thm221', RBM.QDExpect.of_Thm221', RBM.theorem2_5_of_Thm221'}
+  \leanok\uses{thm:2.3-2.4, thm:2.5-2.6, def:flow-hypotheses, lem:flow-scales}
+  Theorem 2.21 as stated takes the bare (2.72) as its regularity condition, but every consumer
+  inside the six steps needs the version carrying an $N^c$ gain, which is strictly stronger.  So
+  the statement as written is not provable from what the steps deliver, and the point of
+  \texttt{Cond272'} -- which is the steps' own condition word for word -- and \texttt{Thm221'} is
+  to make it provable at all.  The unprimed \texttt{Cond272} and \texttt{Thm221} are untouched,
+  and the direction is recorded both ways: \texttt{Cond272'.toCond272} and
+  \texttt{Thm221.toThm221'} say the gained condition is stronger, hence \texttt{Thm221'} is the
+  \emph{weaker} theorem and nothing downstream is lost.  The downstream restatements --
+  Lemmas 2.18--2.20 and (2.61) (\texttt{Bounds\_of\_Thm221'},
+  \texttt{stochDom\_norm\_Lval\_of\_Thm221'}), then Theorems 2.3/2.4 and 2.5
+  (\texttt{SpecSeq.bounds'}, \texttt{localSemicircleLaw\_of\_Thm221'},
+  \texttt{quantumDiffusion\_of\_Thm221'}, \texttt{theorem2\_5\_of\_Thm221'}) -- have conclusions
+  word for word unchanged, checked by \texttt{rfl} probes.  Theorem 2.21 enters the whole assembly
+  at exactly one place, the spectral-sequence bounds.
+
+  The gain itself comes from the time grid of p.\,24: \texttt{gridT\_step\_2\_72\_gain} shows the
+  grid step carries an arbitrary gain, \texttt{flow\_grid\_2\_72\_gain} and
+  \texttt{eventually\_flow\_grid'} produce it along the flow, and the concrete value
+  $c=\min(\tau,1)/32$ comes straight from (2.2)'s $W\ge N^{1/2+c_B}$, with no detour through the
+  dimension.  \ \emph{One constraint that dictates the shape of the statement}: the grid's gain is
+  bounded above by roughly $\tau/16$, so $c$ cannot be asked for arbitrarily large; \texttt{Thm221'}
+  therefore has to hold for every arbitrarily small $c>0$, which is why $c$ is quantified
+  \emph{inside} \texttt{step} rather than outside the structure.  This is a deviation of the
+  formalization from the paper's wording only (paper-deltas \#125); the literal, un-gained route
+  is a separate open item, and this node describes the tree as it stands.
+\end{theorem}
+\begin{proof}\leanok
+  The proof of the grid estimate already contained a gain internally, $60\tau'<\tau$ making it a
+  positive power of $W$; exposing it needed no new mathematics, only a primed field and the
+  observation that $W\ge\sqrt{N/2}$ converts it into a power of $N$.
 \end{proof}
 
 \begin{theorem}[The GUE phase, \S7.2: (7.25)--(7.47)]\label{thm:7.2-gue}
@@ -1615,9 +1685,56 @@
   $N$-dependent interval $[s_N,t_N]$.
 \end{proof}
 
+\begin{lemma}[Derivative bounds for the smooth truncation: every loss it costs is $N^{o(1)}$]\label{lem:cutoff-bounds}
+  \lean{RBM.Cutoff.smoothMax, RBM.Cutoff.smoothMax_nonneg, RBM.Cutoff.le_smoothMax, RBM.Cutoff.smoothMax_le, RBM.Cutoff.rpow_card_le_exp_one, RBM.Cutoff.sum_rpow_sub_one_le, RBM.Cutoff.cutWeight, RBM.Cutoff.cutWeight_nonneg, RBM.Cutoff.sum_cutWeight_le, RBM.Cutoff.hasDerivAt_smoothMax, RBM.Cutoff.abs_sum_cutWeight_mul_le, RBM.Cutoff.sq_sum_weighted_le, RBM.Cutoff.sum_weighted_quadForm_le, RBM.Cutoff.sum_cutWeight_quadForm_le, RBM.Cutoff.logDerivA, RBM.Cutoff.hasDerivAt_tailT_flow, RBM.Cutoff.neg_deriv_tailT_le, RBM.Cutoff.neg_deriv_tailT_div_le, RBM.Cutoff.tailT_le_tailT_of_flow, RBM.Cutoff.one_le_rpow_mul_tailT_sq, RBM.Cutoff.inv_tailT_sq_le, RBM.Cutoff.sum_cutWeight_quadForm_tailT_le, RBM.Cutoff.ee_shape, RBM.Cutoff.hasDerivAt_threshold, RBM.Cutoff.hasDerivAt_cutComp, RBM.Cutoff.abs_threshold_drift_le, RBM.Cutoff.hasDerivAt_deriv_smoothMax, RBM.Cutoff.smoothMax_second_le}
+  \leanok\uses{thm:step2-moment, lem:stretched-exp, lem:5.7b}
+  The smooth truncation that the moment route puts where \S5.3 has a stopping time, with every
+  cost it incurs \emph{quantified} rather than assumed -- and every one of them is $N^{o(1)}$.
+  The $\ell^r$ smoothing of $\max_a$ costs $(\#\iota)^{1/r}$, which is at most $e$ as soon as
+  $r\ge\log\#\iota$ (\texttt{rpow\_card\_le\_exp\_one}) -- this is the step that makes
+  $r\asymp\log N$ give $O(1)$; the sum of the weights is bounded by H\"older
+  (\texttt{sum\_cutWeight\_le}), and the chain rule \texttt{hasDerivAt\_smoothMax} is a theorem,
+  not a hypothesis.  The second derivative is an \emph{identity}
+  (\texttt{hasDerivAt\_deriv\_smoothMax}) whose third term has a favourable sign, so with
+  $a_i\ge1$ -- which is (5.28)'s $J\ge1$ -- smoothing at second order costs exactly one factor
+  $r-1\asymp\log N$.
+
+  Two points where the expected extra work turned out not to be needed.  In $\partial_uT_{u,D}$
+  the second term is genuinely not bounded uniformly in $\ell$, but its sign is favourable when
+  $\ell'_u\ge0$ and it may simply be dropped, leaving the $\ell$-uniform
+  $-\partial_u\log T\le2(\partial_u\log A_u)_+$.  And the $W^{-D}$ floor region needs \emph{no}
+  separate treatment: the floor does not depend on $u$, so it contributes nothing to $T'$ and
+  enters only through $(T-W^{-D})/T\le1$, which the same bound already covers.  The remaining
+  piece, the time dependence of the threshold, is
+  $\dot\Theta_u/\Theta_u=4m/\eta_u$ (\texttt{hasDerivAt\_threshold}), so on the gap
+  $J/\Theta\in[1,2]$ it is $\le8C_\chi m/\eta_u$ -- the same order $\eta_u^{-1}$ as the other
+  drift terms, and not a new obstruction.  For $\sum_xS_x(\partial_xJ)^2$ normalized by
+  $T_{u,D}$, weighted Cauchy--Schwarz gives \texttt{sum\_cutWeight\_quadForm\_le} and the floor
+  absorbs the additive remainder that is not proportional to $T^2$, at cost $W^{2D}$.
+
+  \emph{Boundaries, stated as they are.}  (5.36) is connected by \emph{shape}
+  (\texttt{ee\_shape} rearranges \ref{lem:5.7b}'s conclusion into $B\,T^2+R$) and not by applying
+  it: the wiring is a one-line \texttt{linarith} but has not been done.  The second derivative
+  here is a one-dimensional directional derivative, not a Fr\'echet Hessian -- enough for
+  $\mathcal L=\tfrac12\sum S_{ij}\partial_{ij}\partial_{ji}$, which is a sum of directional second
+  derivatives, but a consumer wanting the Fr\'echet form needs a wrapper.  No concrete $\chi$
+  lives here: every statement about it is under the hypotheses $\mathrm{HasDerivAt}\,\chi$ and
+  $|\chi'|\le C_\chi$, and the file contains \emph{no} pointwise quantifier over $\omega$
+  anywhere, deliberately; the concrete $\chi$ is in \ref{thm:step2-momentstep}.  Removing the
+  truncation again -- the crossing argument and the time net -- is by design not here.  Finally,
+  this node gives only what each step loses ($e$, $e^2$, $r-1$, $W^{2D}$, $8C_\chi m/\eta$); the
+  exponent budget itself is recomputed in \ref{thm:step2-momentstep}.
+\end{lemma}
+\begin{proof}\leanok
+  A self-check guards the weight exponent: at $a\equiv1$ and $\iota=\mathrm{Fin}\,2$ the weight sum
+  is \emph{exactly} $2^{1/r}$, so a mistyped exponent fails to compile.  The constants of the
+  globally bounded $C^2$ class are deliberately avoided here -- they carry no $T_{u,D}$
+  normalization and would be off by a power of $A$, which the file header records.
+\end{proof}
+
 \begin{theorem}[The one-step improvement of Step 2 in moment form: the power counting, (5.48), and why \texttt{MomentHyp.step} is the wrong target]\label{thm:step2-momentstep}
   \lean{RBM.Step2MomentStep.cStep', RBM.Step2MomentStep.phi_arith', RBM.Step2MomentStep.hq_of_ratio, RBM.Step2MomentStep.hbeta_of_reg, RBM.Step2MomentStep.hgamma_of_reg, RBM.Step2MomentStep.beta_star_margin, RBM.Step2MomentStep.side_conditions_of_reg, RBM.Step2MomentStep.nearInt, RBM.Step2MomentStep.nearInt_le, RBM.Step2MomentStep.integral_nearInt_le, RBM.Step2MomentStep.coarse_sq_ge, RBM.Step2MomentStep.phi_lt_threshold, RBM.Step2MomentStep.le_of_gap_crossing, RBM.Step2MomentStep.netSet, RBM.Step2MomentStep.exists_netPoint_le, RBM.Step2MomentStep.le_of_gap_net, RBM.Step2MomentStep.hclose_of_modulus, RBM.Step2MomentStep.bootPP_step_of_net, RBM.Step2MomentStep.bootPP_of_net, RBM.Step2MomentStep.bootPP_of_modulus, RBM.Step2MomentStep.xiLK_two_apriori, RBM.Step2MomentStep.no_finite_pass, RBM.Step2MomentStep.linearize_on_support, RBM.Step2MomentStep.eq548_of_near_far, RBM.Step2MomentStep.flowEq548_of_near_far, RBM.Step2MomentStep.bnd_poly_excludes_pow, RBM.Step2MomentStep.detrunc_remainder_ge_thr, RBM.Step2MomentStep.detrunc_order_needed, RBM.Step2MomentStep.sat_phi_arith', RBM.Step2MomentStep.sat_hbeta_sharp, RBM.Step2MomentStep.sat_hgamma_sharp, RBM.Step2MomentStep.sat_le_of_gap_net, RBM.Step2MomentStep.sat_hclose, RBM.Step2MomentStep.sat_no_finite_pass, RBM.Step2MomentStep.sat_detrunc_sharp, RBM.Cutoff.hasDerivAt_maxPow, RBM.Cutoff.cutChi, RBM.Cutoff.cutChiD, RBM.Cutoff.cutChiDD, RBM.Cutoff.hasDerivAt_cutChi, RBM.Cutoff.hasDerivAt_cutChiD, RBM.Cutoff.cutChi_eq_one, RBM.Cutoff.cutChi_eq_zero, RBM.Cutoff.cutChi_antitone, RBM.Cutoff.contDiff_cutChi, RBM.Cutoff.abs_cutChiD_le, RBM.Cutoff.abs_cutChiDD_le, RBM.Cutoff.cutChiD_three_halves, RBM.Cutoff.hasDerivAt_cutComp_cutChi, RBM.Cutoff.abs_threshold_drift_cutChi_le, RBM.Cutoff.cutChi_spec}
-  \leanok\uses{thm:step2-moment, thm:step2pp, thm:step45, lem:5.7a, lem:5.7b, lem:momentduhamelgauss}
+  \leanok\uses{thm:step2-moment, thm:step2pp, thm:step45, lem:5.7a, lem:5.7b, lem:momentduhamelgauss, lem:cutoff-bounds}
   Two of the three deliverables land.  \texttt{BootPP.step}: the quantifier over the continuum of
   times is reduced to finitely many fixed times on a net (\texttt{bootPP\_step\_of\_net}), and
   \texttt{bootPP\_of\_net} / \texttt{bootPP\_of\_modulus} build the whole \texttt{BootPP}, the
@@ -2626,14 +2743,27 @@
   absorbs.  Stated through the row sums of \texttt{edgeKer}, so independent of (5.16).
 \end{proof}
 
-\begin{lemma}[The IBP input of (4.5), uniformly in time]\label{lem:condstableflow}
-  \lean{RBM.Gauss.unifDomIcc_condRow_of_envelope, RBM.Gauss.unifDomIcc_condRow_sub_self, RBM.Gauss.condRowReal_const, RBM.Gauss.inv_etaT_le_inv_etaT, RBM.Gauss.unifDomIcc_greenDiagCentered_sub_minor, RBM.Gauss.unifDomIcc_ibpRem_diag, RBM.Gauss.unifDomIcc_ibpRem, RBM.Gauss.unifDomIcc_condExpDiag_flow, RBM.Gauss.eq45Flow_of_unifDom_ibp, RBM.Gauss.eq45Flow_of_localLaw_gain, RBM.Gauss.eq45Flow_of_localLaw_gain'}
+\begin{lemma}[The IBP input of (4.5), uniformly in time -- with its two closing lemmas retired]\label{lem:condstableflow}
+  \lean{RBM.Gauss.unifDomIcc_condRow_of_envelope, RBM.Gauss.unifDomIcc_condRow_sub_self, RBM.Gauss.condRowReal_const, RBM.Gauss.inv_etaT_le_inv_etaT, RBM.Gauss.unifDomIcc_greenDiagCentered_sub_minor, RBM.Gauss.unifDomIcc_ibpRem_diag, RBM.Gauss.unifDomIcc_ibpRem, RBM.Gauss.unifDomIcc_condExpDiag_flow, RBM.Gauss.eq45Flow_of_unifDom_ibp, RBM.Gauss.eq45Flow_of_localLaw_gain, RBM.Gauss.eq45Flow_of_localLaw_gain', RBM.Gauss.unifDomIcc_flucRow_condExpDiag_psi, RBM.Gauss.unifDomIcc_flucBlk_condExpDiag_psi}
   \leanok\uses{lem:condstable, lem:goodsetflow, lem:eq45inputs, lem:condrow}
   Run with the \emph{deterministic} control $\Psi^2$ instead of $L^{\max}$, the conditional
   expectation acts as the identity on the control, so the stability comparison degenerates and
   $\mathbb E_i[L^{\max}]\prec L^{\max}$ is never needed. $L^{\max}$ survives only through its lower
   half, which costs no power of $\eta$ -- so the fixed-time restriction of T119 is avoided rather
   than patched.
+
+  \emph{\texttt{eq45Flow\_of\_localLaw\_gain} and its primed form are retired.}  Their gain slot
+  asks for the unbudgeted interface at $B\asymp\Psi$, which \ref{thm:eq412-cond} shows cannot be
+  filled; the unprimed one feeds into the same wall a fortiori.  Both now carry
+  \texttt{@[deprecated]}, so that anyone using them again is warned by the compiler and not merely
+  by a docstring -- the earlier experience with the all-levels good event is why that distinction
+  was made.  The names stay in the list above because the declarations still exist; the live
+  replacements are \texttt{eq45Flow\_of\_localLaw\_gain\_budget} and
+  \texttt{eq45Flow\_of\_goodSetFlow\_budget} (\ref{thm:eq412-cond}), and end to end
+  \texttt{eq45Flow\_of\_goodSetFlow\_highProb} (\ref{lem:eq412-small}).  Two consumers have
+  \emph{not} been moved: \texttt{unifDomIcc\_flucRow\_condExpDiag\_psi} and its block twin still
+  feed the retired form, still stand on the unbudgeted interface, and carry no warning of their
+  own.
 \end{lemma}
 \begin{proof}\leanok
   At \texttt{UnifDomIcc} level no union over indices is taken, so the ported tool needs no
@@ -2777,6 +2907,43 @@
   missing for a floorless statement is not a Gaussian-process tool -- a polynomial net already
   beats the tail $e^{-N^{2\tau}}$ -- but an anti-concentration lower bound on the minor Green
   column, which is in neither the repository nor the paper.
+\end{proof}
+
+\begin{lemma}[(4.2) and (4.3) uniformly in time with a floor, and \texttt{Step1.Hyp} needing neither]\label{lem:entrybound-time}
+  \lean{RBM.Gauss.EntryBoundFlow', RBM.Gauss.entry_bound_stochDom_floor_idx, RBM.diag_bound_stochDom_floor_idx, RBM.Gauss.stochDom_indicator_add_const, RBM.Gauss.eventually_two_rpow_neg_one_le_W_inv, RBM.Gauss.entryBoundFlow_floor, RBM.Gauss.stochDom_indicator_offdiag_flow', RBM.Gauss.stochDom_indicator_llMax_sq_flow_of, RBM.Gauss.stochDom_indicator_llMax_sq_flow', RBM.Gauss.lemma41Flow', RBM.Gauss.rpow_neg_one_le_etaT_of_scale_ge, RBM.Gauss.flowDelta_le_rpow_neg, RBM.Gauss.step1Hyp_gauss_of_scale', RBM.Gauss.DiagBoundFlow', RBM.Gauss.stochDom_normSq_Hflow_diag_idx, RBM.Gauss.eventually_rpow_neg_one_le_W_inv, RBM.Gauss.diagBoundFlow_floor, RBM.Gauss.stochDom_indicator_diag_flow', RBM.Gauss.lemma41Flow_of_diagBoundFlow, RBM.Gauss.lemma41Flow'', RBM.Gauss.lemma41Flow_gauss, RBM.Gauss.step1Hyp_gauss_of_scale''}
+  \leanok\uses{lem:ldenetclose, lem:4.1, lem:step1hyp, thm:step1lift, lem:ldeflow}
+  (4.2) and (4.3) along the flow, uniformly in $u\in[s_N,t_N]$: \texttt{EntryBoundFlow'} and
+  \texttt{DiagBoundFlow'} restate them word for word with one additive floor $N^{-B}$ added to the
+  control, and \texttt{entryBoundFlow\_floor} / \texttt{diagBoundFlow\_floor} prove them with no
+  large-deviation hypothesis left, only the regime conditions.  The floorless forms are not merely
+  unproved -- they are exactly the shape \ref{lem:ldenetclose} identifies as unavailable.  The
+  floor costs nothing downstream: composed with the unconditional $W^{-1}$ bound and
+  $3W\le WL\le N$, one may take $B:=1$.
+
+  \emph{The consequence is that (4.2) and (4.3) have disappeared from \texttt{Step1.Hyp}.}
+  \texttt{step1Hyp\_gauss\_of\_scale'} and \texttt{step1Hyp\_gauss\_of\_scale''} have hypothesis
+  lists word-identical to the original minus \texttt{hEntry} and then also minus \texttt{hDiag},
+  with nothing substituted for either; the two regime inputs they would have needed follow for
+  free from the $N^c\le W\ell_t\eta_t$ the step already carries.  That the four downstream
+  statements really are unchanged is \emph{compiled} rather than eyeballed, by
+  $\texttt{h}_{\text{unprimed}}=\texttt{h}_{\text{primed}}$ \texttt{:= rfl} probes, which at the
+  level of \texttt{Prop} demand definitional equality.
+
+  Two things worth recording.  The row and column side had no analogue of the diagonal's
+  index-widening at all -- a sharper gap than the one the diagonal had -- so
+  \texttt{entry\_bound\_stochDom\_floor\_idx} was supplied and now sits beside
+  \texttt{diag\_bound\_stochDom\_floor\_idx}, the two being the two halves of (4.2)/(4.3); its
+  deterministic kernel is taken unchanged from the quadratic-form bound, nothing being reproved.
+  And one shape difference that is \emph{not} a new assumption and not a paper-delta: (4.3)'s
+  deterministic kernel carries a stability factor in $\kappa$, so \texttt{diagBoundFlow\_floor}
+  takes $0<\kappa\le1$ with $|E|\le2-\kappa$ rather than $|E|<2$ -- free at the
+  \texttt{Step1.Hyp} level, which carries both already.
+\end{lemma}
+\begin{proof}\leanok
+  The time-uniform diagonal input is free but not automatic:
+  $\|H_{u,ii}\|^2=u\,\omega_c^2\le\omega_c^2=\|H_{1,ii}\|^2$ with a control independent of $u$,
+  so the bad event at any time is contained in the bad event at $u=1$; transferring it needs the
+  subset lemma applied to a union, since the index types differ.
 \end{proof}
 
 \begin{lemma}[The joint derivative in flow time and spectral time]\label{lem:loopjoint}

@@ -1020,6 +1020,84 @@ theorem lDecay_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t
 
 end Produce
 
+/-! ### T144(a): the Definition-5.8 decay of the flow's `G`-loops
+
+`RBM.EEBridge.stochDom_norm_eeField` (T135) — the `≺` form of `Lemma510.EE_le` for the
+concrete `E ⊗ E` of Definition 5.4 — carries one decay input, `RBM.EEBridge.eeDecayEvent`:
+at every `u ∈ [s_N, t_N]` the *`G`-loops* of the flow of length `2(n+2)+2` have the
+`(ℓ_u N^τ, N^{-D})` decay of Definition 5.8, with high probability at every `(τ, D)`.
+T135 records that its producer is "the analogue of `RBM.Decay.lemma59` for the glued
+`(2m+2)`-loops of the flow".
+
+That analogue is already in this file.  `RBM.LKDecayQuant.highProb_loopDecay_pair` produces,
+at every loop length `m` and every `(τ, D)`, exactly that decay for `I ↦ L_{u,σ,a}`; and
+`RBM.Sample.Lval` **is** `RBM.gloop` of the flow, by definition.  So the glued length
+`m = 2(n+2)+2` is just an instance, and the only thing this section adds is the statement in
+the `RBM.gloop` shape — no new estimate.
+
+The section deliberately does **not** import `RBM1D/Hierarchy/EEBridge.lean` in order to state
+its conclusion as `HighProb B.P (RBM.EEBridge.eeDecayEvent X E s t n τ D)`: that file imports
+`RBM1D/Gauss/DischargeBDG.lean`, and T138 kept `RBM1D/Hierarchy/` free of any dependence on
+`RBM1D/Gauss/`.  `RBM.LKDecayQuant.GLoopDecayEvent` is instead *definitionally* that event
+(both sides unfold to the same `Set`), so `RBM.LKDecayQuant.highProb_eeDecay_of_flowInputs`
+fills the `hdec` slot of `RBM.EEBridge.stochDom_norm_eeField` by `exact`. -/
+
+section GLoopDecay
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The Definition-5.8 decay of the flow's `G`-loops of length `m`**, at every
+`u ∈ [s_N, t_N]`: two labels of the loop at distance `≥ ℓ_u N^τ` force `|L| ≤ N^{-D}`.
+
+This is `RBM.LKDecayQuant.LDecayEvent` with the loop function written as `RBM.gloop` rather
+than as `RBM.Sample.Lval` (`RBM.LKDecayQuant.gLoopDecayEvent_eq_lDecayEvent`); at
+`m = 2(n+2)+2` it is, definitionally, `RBM.EEBridge.eeDecayEvent`. -/
+def GLoopDecayEvent (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (m : ℕ) (τ D : ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N, Decay.LoopDecay (B.L N) m (B.ell N (u : ℝ) * (N : ℝ) ^ τ)
+        ((N : ℝ) ^ (-D)) (gloop (B.L N) (B.W N) (X.H N (u : ℝ) ω) (zt E (u : ℝ)))}
+
+/-- `RBM.Sample.Lval` is `RBM.gloop` of the flow, so the two events are the same set. -/
+theorem gLoopDecayEvent_eq_lDecayEvent (m : ℕ) (τ D : ℝ) (N : ℕ) :
+    GLoopDecayEvent X E s t m τ D N = LDecayEvent X E s t m τ D N := rfl
+
+/-- **The decay of the flow's `G`-loops, with high probability**, at every loop length and
+every `(τ, D)` — `RBM.LKDecayQuant.lDecay_of_flowInputs` read in the `RBM.gloop` shape. -/
+theorem highProb_gLoopDecay_of_flowInputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (ht1 : ∀ N, t N < 1) (h : FlowInputs X E s t) {m : ℕ} (hm : 1 ≤ m) {τ : ℝ} (hτ : 0 < τ)
+    {D : ℝ} (hD : 0 < D) : HighProb B.P (GLoopDecayEvent X E s t m τ D) :=
+  (highProb_loopDecay_pair hE hs0 ht1 h hm hτ hD).mono
+    (Filter.Eventually.of_forall fun _ _ hω u => (hω u).1)
+
+/-- **T144(a): the `hdec` input of `RBM.EEBridge.stochDom_norm_eeField`.**
+
+At the glued loop length `2(n+2)+2` of Definition 5.4, for every `τ > 0` and every `D > 0`,
+the `G`-loops of the flow have the `(ℓ_u N^τ, N^{-D})` decay of Definition 5.8 at every
+`u ∈ [s_N, t_N]`, with high probability.  The conclusion is *definitionally*
+`∀ τ > 0, ∀ D > 0, HighProb B.P (RBM.EEBridge.eeDecayEvent X E s t n τ D)`. -/
+theorem highProb_eeDecay_of_flowInputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (ht1 : ∀ N, t N < 1) (h : FlowInputs X E s t) (n : ℕ) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ),
+      HighProb B.P (GLoopDecayEvent X E s t (2 * (n + 2) + 2) τ D) :=
+  fun _τ hτ _D hD =>
+    highProb_gLoopDecay_of_flowInputs hE hs0 ht1 h (by omega) hτ hD
+
+/-- **T144(a) from the three inputs of T138**, with `RBM.LKDecayQuant.FlowInputs` eliminated:
+the good event (4.1)/(4.4) at every `u`, the two large deviations (4.2) uniformly in `u`, and
+(2.76) verbatim. -/
+theorem highProb_eeDecay_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) (n : ℕ) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ),
+      HighProb B.P (GLoopDecayEvent X E s t (2 * (n + 2) + 2) τ D) :=
+  highProb_eeDecay_of_flowInputs hE hs0 ht1 (flowInputs_of_inputs hE hs0 ht1 hΩ hlde hdecay) n
+
+end GLoopDecay
+
 end LKDecayQuant
 
 end RBM

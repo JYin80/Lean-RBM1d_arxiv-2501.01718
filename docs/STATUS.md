@@ -3031,3 +3031,18 @@ T133 的常数**不能直接复用**（`v`-导数是 `D_M L[∂_v H_v]`，而 `�
 **注**：T134 的 `contDiffAt_gloop_flow` 只在**对角线 `(u,u)`** 上陈述，供不出邻域上的可微性，这就是非对角版必须在此重做的原因。
 
 **T134 的余项现在精确地只剩两条**：`MatrixStein`（T70）与 `LoopIto.second` 的冻结形式（**T140**）。`TestFun` 由 T133 供给。paper-deltas：**无新增**（球半径内部收缩到 `min ε (u/2)` 纯属证明手段）。
+
+### T144：T135 携带的两条输入都产出了（Claude Code 并行 agent，2026-09-21）
+
+**(a) `eeDecayEvent`——关键发现是不需要任何新估计。** `Sample.Lval` **按定义就是**流的 `gloop`，而 T126 的 `highProb_loopDecay_pair` 本来就对**每个** loop 长度 `m` 给出 Def 5.8 的衰减，
+故粘合后的长度 `2(n+2)+2` 只是它的一个实例；新增的一节只是把它重述成 `gloop` 的形状。
+**刻意不 import `EEBridge`**（那会拖进 `Gauss/DischargeBDG`，破坏 T138 的 `Hierarchy ⊬ Gauss` 分层）；`GLoopDecayEvent … = EEBridge.eeDecayEvent …` **按 `rfl` 成立**，两侧只在探针里相遇。
+
+**(b) `xiLowEvent`——已产出，且除常设区制与 (2.72) 外无任何假设**；唯一的概率输入是 T109 的 `‖X‖ ≺ 1`（无条件），只在 `τ = 1/2` 一个指数处用到。
+**T135 草图的那条路没走通，这是本单的实质发现**（见 paper-deltas #105）：它需要 PSD 的幂平均不等式，Mathlib 没有可用形式。
+改走**对标号求和**：`∑_a L_{σ,a} = W^{-m} Tr(∏_i G(σ_i))`，一条迹就从下方界住最大值；交错电荷处 `G` 与 `Gᴴ` 交换，迹化为 `∑_{x,y}|(G^k)_{xy}|²`，显然为正。**谱、PSD 序、Cauchy–Schwarz 全避开。**
+确定性内核 `inv_le_loopMax` 对**任意** Hermitian `H`（`H − z` 可逆）成立，`rpow_neg_le_xiL` 则对一般 `Sample B` 成立。
+
+**`EE_le` 现在还差什么**：从「两条携带假设 + `FlowInputs` + T58」变成「**`FlowInputs` + T58**」。
+其一是 `H.EE` 仍是 `SumZeroDyn.Hierarchy` 的无约束字段（T58 的决定；**注意 T145 已在 `MomentDuhamel` 那边把对应字段删掉了，但 `SumZeroDyn` 一侧仍未动**）——探针 C 表明一旦有 `H.EE = eeField`，该字段立刻闭合；
+其二是 `FlowInputs` 自身的余项（T130 的 `hΩ`/弱局部律、`LDEFlowDom`、(2.76)）。`Lemma510` 的另外三个字段未动。

@@ -2284,6 +2284,20 @@
   pointwise limit of difference quotients.
 \end{proof}
 
+\begin{lemma}[The two carried inputs of \texttt{EE\_le}]\label{lem:xilow}
+  \lean{RBM.LKDecayQuant.GLoopDecayEvent, RBM.LKDecayQuant.gLoopDecayEvent_eq_lDecayEvent, RBM.LKDecayQuant.highProb_gLoopDecay_of_flowInputs, RBM.LKDecayQuant.highProb_eeDecay_of_flowInputs, RBM.LKDecayQuant.highProb_eeDecay_of_inputs, RBM.Gauss.sum_gloop_ofFn, RBM.Gauss.commute_green, RBM.Gauss.entryMax, RBM.Gauss.inv_le_loopMax, RBM.Gauss.rpow_neg_le_xiL, RBM.Gauss.highProb_xiLowEvent}
+  \leanok\uses{lem:absorb, thm:lkdecayquant, thm:trace-moment, lem:eebridge}
+  The decay input needed no new estimate: the sample's loop \emph{is} \texttt{gloop} of the flow, so
+  the existing decay at every length gives the glued one as an instance. The lower bound on
+  $\Xi^{(L)}$ is proved by \emph{summing} over labels rather than maximising:
+  $\sum_aL_{\sigma,a}=W^{-m}\operatorname{Tr}\prod_iG(\sigma_i)$, and at the alternating charge
+  $G$ commutes with $G^\dagger$, so the trace is $\sum_{xy}|(G^k)_{xy}|^2$ -- manifestly positive.
+\end{lemma}
+\begin{proof}\leanok
+  Spectrum, positive-semidefinite order and Cauchy--Schwarz are all avoided; the quantitative part
+  is entrywise bookkeeping against $\operatorname{Tr}G^k(H-z)^k=\mathrm{card}$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

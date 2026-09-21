@@ -2772,3 +2772,17 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 与涨落平均那侧不同，**这里没有单一的逐 `(N,u)` 确定性估计可供重新量化**，要一致化就得重跑那条链，而那些文件不在本单可改范围。
 **还有一处接口缺口**：`FlucGain` 在 `ρ ≍ Ψ` 处仍非定理——T113 只证了**有界字长**形式，而 `norm_integral_prod_epsHom_flucDiag_le`/`integral_norm_flucAvg_pow_le_iter` 却对**所有**字消费 `FlucGain`，尽管它们实际构造的字长 ≤ `2p`。
 **补上这个「按字长分级的 gain 接口」是 `Gauss/FlucIter.lean` 的一张单**（不是本单能改的文件）。paper-deltas #85。
+
+### `RBM1D/Hierarchy/LKDecayQuant.lean` — T126：`LKDecay` 定量闭合（Claude Code 并行 agent，2026-09-21）
+
+**`lkDecay_of_flowInputs : |E| < 2 → 0 ≤ s → t < 1 → FlowInputs → SumZeroDyn.LKDecay`**——即 **`LKDecay` 在 T130 的输入之外无条件**，没有别的假设。
+探针 `lemma514_flow_of_flowInputs` 把它以 `exact` 填进 `SumZeroDyn.lemma514_flow'` 的 `hdec` 槽，无 `convert`、无强制转换。
+
+**(1)(2) 两条定量输入都闭合了。** 半径取 `ℓ = ℓ_u·N^{τ/2}`（`radius_le`），误差两半各自成引理（`term1_le`/`term2_le`）。
+**这里需要一件仓库里没有的分析输入**：`Decay.cKdecay` 的**多项式上界** `cKdecay_le_bound`（`cKexp m = m + 2m² + 1`），由 `cor35Const_le_bound` 经 `2/(1−e^{−λ}) ≤ 4/λ` 得出。
+**一个值得记的结构性事实**：衰减指数对 `u` **一致**有下界，靠的是一个两边都有利的二分（`ℓ̂(u) = min((1−u)^{-1/2}, L)`）——
+`L√(1−u) < 1` 时 `ℓ_u = L`，而目标半径 `ℓ_u N^τ` 已超过环的直径，**陈述本身是空的**（`loopDecay_of_half_lt`）；
+`1 ≤ L√(1−u)` 时 `ℓ_u√(1−u) = 1` **恰好**成立，故 `cor35Rate(1−u)·2m(ℓ+2) ≥ (c₀/2)N^{τ/2}` **与 `u` 无关**，同时 `1−u ≥ N^{-2}` 使 `cKdecay` 保持多项式。
+
+**(3) 按指示作具名假设 `FlowInputs`**：它把 T130 负责的 `GoodEvent` 高概率一致性，与 `LDERow`/`LDECol`/(2.76) 的条款打包成**同一个事件**，外加数值束 `Φ_N√(ε_N) ≤ N^{-D'}`（paper-deltas #86）。
+**`LDecay`（(5.75) 的 `|L|` 半）也顺手出来了**，按 Cowork 的裁定作**独立谓词**、不并进 `LKDecay`；确实是同一个证明——`Decay.lemma59` 返回合取，两条结论取自同一事件的 `.1`/`.2`。`SumZeroDyn.LKDecay` 一字未动。paper-deltas #78 已改写。

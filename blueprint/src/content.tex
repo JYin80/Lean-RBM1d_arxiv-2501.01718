@@ -2160,6 +2160,20 @@
   part never mentions the time.
 \end{proof}
 
+\begin{theorem}[Lemma 5.9 quantitatively: \texttt{LKDecay} unconditional modulo the flow good event]\label{thm:lkdecayquant}
+  \lean{RBM.LKDecayQuant.radius_le, RBM.LKDecayQuant.two_div_one_sub_exp_le, RBM.LKDecayQuant.cor35Const_le_bound, RBM.LKDecayQuant.cKexp, RBM.LKDecayQuant.cKbound, RBM.LKDecayQuant.cKdecay_le_bound, RBM.LKDecayQuant.term1_le, RBM.LKDecayQuant.term2_le, RBM.LKDecayQuant.loopDecay_of_half_lt, RBM.LKDecayQuant.FlowGoodSet, RBM.LKDecayQuant.FlowInputs, RBM.LKDecayQuant.highProb_loopDecay_pair, RBM.LKDecayQuant.lkDecay_of_flowInputs, RBM.LKDecayQuant.LDecayEvent, RBM.LKDecayQuant.LDecay, RBM.LKDecayQuant.lDecay_of_highProb, RBM.LKDecayQuant.lDecay_of_flowInputs, RBM.LKDecayQuant.lemma514_flow_of_flowInputs}
+  \leanok\uses{lem:decaybridge, lem:5.10, lem:goodsetflow, lem:5.14}
+  Radius $\ell_uN^{\tau/2}$ and the two error halves close explicitly. The decay exponent is bounded
+  below \emph{uniformly in $u$} by a two-regime split that is favourable on both sides: where
+  $\hat\ell=L$ the statement is vacuous because the target radius already exceeds the ring, and
+  otherwise $\hat\ell\sqrt{1-u}=1$ exactly. The $|L|$ half of (5.75) comes out of the same proof as
+  a separate predicate.
+\end{theorem}
+\begin{proof}\leanok
+  A polynomial majorant for \texttt{cKdecay}, via $2/(1-e^{-\lambda})\le4/\lambda$, is the analytic
+  input the repository lacked.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

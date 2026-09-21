@@ -65,6 +65,23 @@ The `L`-side term `27Φ√δ₂ max(1,|Im z_u|⁻¹)^m` is handled by asking `Φ
 * `RBM.LKDecayQuant.lemma514_flow_of_flowInputs` — the check that the result really fills
   the `hdec` slot of `RBM.SumZeroDyn.lemma514_flow'`.
 
+## T138: `FlowInputs` itself
+
+The last section takes `FlowInputs` apart into its four clauses
+(`RBM.LKDecayQuant.FlowGoodEv`, `FlowLDE`, `FlowDec`), fixes the numerical bundle at
+`δ_N = N^{-1}`, `Φ_N = N`, `ε_N = N^{-2(D'+1)}` (`RBM.LKDecayQuant.flowNum_choice`) and
+reduces the whole of it to three inputs (`RBM.LKDecayQuant.flowInputs_of_inputs`,
+`lkDecay_of_inputs`):
+
+* the good event (4.1)/(4.4) at every `u`, which is **T130's**
+  `RBM.Gauss.highProb_goodSetFlow_of_localLaw` (and thence the weak local law of Steps 1/2);
+* `RBM.LKDecayQuant.LDEFlowDom`, the two large-deviation bounds (4.2) with the time inside
+  the index set of `≺` — a theorem at each fixed `u` (`RBM.Gauss.stochDom_ldeRow`,
+  `stochDom_ldeCol`), open uniformly in `u`;
+* **(2.76) verbatim**, i.e. the field `RBM.Steps.aprioriDecay` of Step 2, from which the
+  quantitative clause `RBM.LKDecayQuant.FlowDec` is *proved*
+  (`RBM.LKDecayQuant.highProb_flowDec_of_aprioriDecay`).
+
 ## Deviations
 
 * Obligation (3) is a hypothesis, not a theorem (T130).
@@ -592,6 +609,416 @@ theorem lemma514_flow_of_flowInputs {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (lkDecay_of_flowInputs (by linarith) (fun N => (hs0 N).le) ht1 hfi)
 
 end Plug
+
+/-! ### T138: a producer for `RBM.LKDecayQuant.FlowInputs`
+
+`FlowInputs` is the single remaining hypothesis of `RBM.LKDecayQuant.lkDecay_of_flowInputs`.
+This section takes it apart into its four clauses, proves the numerical bundle at an explicit
+choice of `(δ_N, Φ_N, ε_N)`, and reduces each clause to an input that is either proved
+elsewhere in the repository or is recognisably a deliverable of Steps 1/2. -/
+
+section Produce
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **Clause (i) of `RBM.LKDecayQuant.FlowGoodSet`**: the good event (4.1)/(4.4)
+`‖G_u - m‖_max ≤ δ_N` at *every* `u ∈ [s_N, t_N]`.
+
+This is, verbatim up to the subtype `RBM.TimeIcc` versus `u ∈ Set.Icc (s N) (t N)`, the set
+`RBM.Gauss.goodSetFlow` that T130 (`RBM1D/Gauss/GoodSetFlow.lean`) produces. -/
+def FlowGoodEv (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (gdel : ℕ → ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N, GoodEvent (X.G E N (u : ℝ) ω) (mE E) (gdel N)}
+
+/-- **Clauses (ii) and (iii) of `RBM.LKDecayQuant.FlowGoodSet`**: the two large-deviation
+bounds (4.2) with factor `Φ_N`, at every `u ∈ [s_N, t_N]`. -/
+def FlowLDE (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (Phi : ℕ → ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N,
+      LDERow (X.H N (u : ℝ) ω) (X.G E N (u : ℝ) ω) (Sblk (B.L N) (B.W N)) (Phi N)
+    ∧ LDECol (X.H N (u : ℝ) ω) (X.G E N (u : ℝ) ω) (Sblk (B.L N) (B.W N)) (Phi N)}
+
+/-- **Clause (iv) of `RBM.LKDecayQuant.FlowGoodSet`**: the decay (2.76) of the `(+,-)`
+two-point function beyond the radius `ℓ_u N^{τ/2}`, at every `u ∈ [s_N, t_N]`. -/
+def FlowDec (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (eps : ℕ → ℝ) (τ : ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N, ∀ a b : ZMod (B.L N),
+      B.ell N (u : ℝ) * (N : ℝ) ^ (τ / 2) ≤ (zdist (B.L N) (a - b) : ℝ) →
+        Lre (X.H N (u : ℝ) ω) (zt E (u : ℝ)) a b ≤ eps N}
+
+/-- The four clauses are exactly `RBM.LKDecayQuant.FlowGoodSet`. -/
+theorem flowGoodSet_of_pieces (gdel Phi eps : ℕ → ℝ) (τ : ℝ) (N : ℕ) :
+    FlowGoodEv X E s t gdel N ∩ (FlowLDE X E s t Phi N ∩ FlowDec X E s t eps τ N)
+      ⊆ FlowGoodSet X E s t gdel Phi eps τ N :=
+  fun _ hω u => ⟨hω.1 u, (hω.2.1 u).1, (hω.2.1 u).2, hω.2.2 u⟩
+
+/-- Three high-probability clauses give the high-probability event of `FlowInputs`. -/
+theorem highProb_flowGoodSet {gdel Phi eps : ℕ → ℝ} {τ : ℝ}
+    (hΩ : HighProb B.P (FlowGoodEv X E s t gdel))
+    (hlde : HighProb B.P (FlowLDE X E s t Phi))
+    (hdec : HighProb B.P (FlowDec X E s t eps τ)) :
+    HighProb B.P (FlowGoodSet X E s t gdel Phi eps τ) :=
+  (hΩ.inter (hlde.inter hdec)).mono
+    (Filter.Eventually.of_forall fun N => flowGoodSet_of_pieces gdel Phi eps τ N)
+
+/-! #### Clauses (ii)–(iii): the large deviation bounds -/
+
+/-- **The `u`-uniform form of the two large-deviation bounds (4.2)**: `RBM.StochDom` with the
+time *inside* the index set.
+
+At one fixed `u` these are theorems for the Gaussian flow
+(`RBM.Gauss.stochDom_ldeRow`, `RBM.Gauss.stochDom_ldeCol`, `RBM1D/Gauss/LDEHyp.lean`).  Moving
+the time inside the index set is the same question T130 answered for the good event, but the
+net engine `RBM.Gauss.stochDom_timeIcc_of_unifDom` cannot be used here: it requires a
+polynomial lower bound `N^{-B} ≤ ζ` on the control, and the control `ldeRowRHS` of (4.2) is a
+sum of squared Green-function entries, which has no such lower bound (it vanishes
+identically when the corresponding minor entries do).  So this is left as a named
+hypothesis. -/
+def LDEFlowDom (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  StochDom B.P
+      (fun N (p : TimeIcc s t N × OffPair B.L B.W N) ω =>
+        ldeRowLHS (X.H N (p.1 : ℝ) ω) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2)
+      (fun N p ω =>
+        ldeRowRHS (Sblk (B.L N) (B.W N)) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2)
+    ∧ StochDom B.P
+      (fun N (p : TimeIcc s t N × OffPair B.L B.W N) ω =>
+        ldeColLHS (X.H N (p.1 : ℝ) ω) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2)
+      (fun N p ω =>
+        ldeColRHS (Sblk (B.L N) (B.W N)) (X.G E N (p.1 : ℝ) ω) p.2.1.1 p.2.1.2)
+
+/-- **Clauses (ii)–(iii) of `FlowInputs` from `RBM.LKDecayQuant.LDEFlowDom`**, at the factor
+`Φ_N = N^b` for any `b > 0`.  This is just `RBM.StochDom.highProb` read off the two index
+sets. -/
+theorem highProb_flowLDE_of_dom (h : LDEFlowDom X E s t) {b : ℝ} (hb : 0 < b) :
+    HighProb B.P (FlowLDE X E s t (fun N => (N : ℝ) ^ b)) := by
+  refine ((h.1.highProb hb).inter (h.2.highProb hb)).mono
+    (Filter.Eventually.of_forall fun N ω hω u => ⟨fun i j hij => ?_, fun k j hkj => ?_⟩)
+  · exact hω.1 (u, ⟨(i, j), hij⟩)
+  · exact hω.2 (u, ⟨(k, j), hkj⟩)
+
+/-- **The numerical bundle of `RBM.LKDecayQuant.FlowInputs` at an explicit choice.**
+
+`δ_N = N^{-1}`, `Φ_N = N`, `ε_N = N^{-2(D'+1)}` meets every requirement of
+`RBM.Decay.lemma59` (`δ ≤ 1/2`, `Φ ≥ 1`, `36 Φ δ² ≤ 1`) together with the smallness
+`Φ_N √(ε_N) = N · N^{-(D'+1)} = N^{-D'}`. -/
+theorem flowNum_choice {D' : ℝ} :
+    ∀ᶠ N : ℕ in atTop,
+      (N : ℝ) ^ (-(1 : ℝ)) ≤ 1 / 2 ∧ 1 ≤ (N : ℝ) ^ (1 : ℝ)
+        ∧ 36 * (N : ℝ) ^ (1 : ℝ) * ((N : ℝ) ^ (-(1 : ℝ))) ^ 2 ≤ 1
+        ∧ 0 ≤ (N : ℝ) ^ (-(2 * (D' + 1)))
+        ∧ (N : ℝ) ^ (1 : ℝ) * Real.sqrt ((N : ℝ) ^ (-(2 * (D' + 1)))) ≤ (N : ℝ) ^ (-D') := by
+  filter_upwards [eventually_ge_atTop 36] with N hN36
+  have hN36' : (36 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN36
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have h1 : (N : ℝ) ^ (1 : ℝ) = (N : ℝ) := Real.rpow_one _
+  have hm1 : (N : ℝ) ^ (-(1 : ℝ)) = (N : ℝ)⁻¹ := Real.rpow_neg_one _
+  refine ⟨?_, ?_, ?_, Real.rpow_nonneg hN0.le _, ?_⟩
+  · rw [hm1, inv_eq_one_div]
+    exact one_div_le_one_div_of_le (by norm_num) (by linarith)
+  · rw [h1]; linarith
+  · rw [h1, hm1]
+    have he : 36 * (N : ℝ) * ((N : ℝ)⁻¹) ^ 2 = 36 / (N : ℝ) := by field_simp
+    rw [he, div_le_one hN0]; linarith
+  · rw [Real.sqrt_eq_rpow, ← Real.rpow_mul hN0.le,
+      show -(2 * (D' + 1)) * (1 / 2 : ℝ) = -(D' + 1) by ring, ← Real.rpow_add hN0,
+      show (1 : ℝ) + -(D' + 1) = -D' by ring]
+
+/-! #### Clause (iv): the decay (2.76) at the radius `ℓ_u N^{τ/2}` -/
+
+/-- Moving a factor `N^c` to the other side of a bound. -/
+theorem le_rpow_neg_of_mul_le {N : ℕ} (hN0 : (0 : ℝ) < (N : ℝ)) {x y c : ℝ}
+    (h : x * (N : ℝ) ^ c ≤ y) : x ≤ y * (N : ℝ) ^ (-c) :=
+  calc x = x * (N : ℝ) ^ c * (N : ℝ) ^ (-c) := by
+        rw [mul_assoc, ← Real.rpow_add hN0]; simp
+    _ ≤ y * (N : ℝ) ^ (-c) := mul_le_mul_of_nonneg_right h (Real.rpow_nonneg hN0.le _)
+
+/-- **The prefactor of (2.76) is polynomially bounded in the regime `1 ≤ L √(1-u)`.**
+
+`(η_s/η_u)^4 (W ℓ_u η_u)^{-2} ≤ N^{13}`.  The two `Im m^{(E)}` in `η_s/η_u = (1-s)/(1-u)`
+cancel, and `1 - u ≥ N^{-2}` is what the regime `1 ≤ L √(1-u)` gives (with `L ≤ N`); the
+remaining `(Im m^{(E)})^{-2}` is an `N`-independent constant, absorbed by `hCE`. -/
+theorem prefactor_le (hE : |E| < 2) {N : ℕ} {sv uv : ℝ} (hs0 : 0 ≤ sv) (hsu : sv ≤ uv)
+    (hu1 : uv < 1) (hvN : 1 / (1 - uv) ≤ (N : ℝ) ^ 2) (hN1 : (1 : ℝ) ≤ (N : ℝ))
+    (hell : (1 : ℝ) ≤ B.ell N uv)
+    (hCE : (max 1 ((mE E).im)⁻¹) ^ 2 ≤ (N : ℝ)) :
+    (etaT E sv / etaT E uv) ^ 4 * (B.scale E N uv)⁻¹ ^ 2 ≤ (N : ℝ) ^ (13 : ℝ) := by
+  have hm0 : 0 < (mE E).im := mE_im_pos hE
+  have hv0 : (0 : ℝ) < 1 - uv := by linarith
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hηu : etaT E uv = (1 - uv) * (mE E).im := rfl
+  have hηs : etaT E sv = (1 - sv) * (mE E).im := rfl
+  have hηu0 : 0 < etaT E uv := by rw [hηu]; positivity
+  have hinv : (1 - uv)⁻¹ ≤ (N : ℝ) ^ 2 := by rwa [← one_div]
+  have hratio : etaT E sv / etaT E uv = (1 - sv) / (1 - uv) := by
+    rw [hηu, hηs]; field_simp
+  have hr0 : 0 ≤ etaT E sv / etaT E uv := by
+    rw [hratio]; exact div_nonneg (by linarith) hv0.le
+  have hr1 : etaT E sv / etaT E uv ≤ (N : ℝ) ^ 2 := by
+    rw [hratio]
+    calc (1 - sv) / (1 - uv) ≤ 1 / (1 - uv) := by gcongr; linarith
+      _ ≤ (N : ℝ) ^ 2 := hvN
+  have hp4 : (etaT E sv / etaT E uv) ^ 4 ≤ ((N : ℝ) ^ 2) ^ 4 := pow_le_pow_left₀ hr0 hr1 4
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hWl : (1 : ℝ) ≤ (B.W N : ℝ) * B.ell N uv := by nlinarith
+  have hsc : etaT E uv ≤ B.scale E N uv := by
+    show etaT E uv ≤ (B.W N : ℝ) * B.ell N uv * etaT E uv
+    nlinarith
+  have hsc0 : (0 : ℝ) < B.scale E N uv := lt_of_lt_of_le hηu0 hsc
+  have hCE1 : (1 : ℝ) ≤ max 1 ((mE E).im)⁻¹ := le_max_left _ _
+  have hscinv : (B.scale E N uv)⁻¹ ≤ (N : ℝ) ^ 2 * max 1 ((mE E).im)⁻¹ := by
+    have h1 : (B.scale E N uv)⁻¹ ≤ (etaT E uv)⁻¹ := by
+      simpa [one_div] using one_div_le_one_div_of_le hηu0 hsc
+    refine h1.trans ?_
+    rw [hηu, mul_inv]
+    exact mul_le_mul hinv (le_max_right _ _) (by positivity) (by positivity)
+  have hp2 : ((B.scale E N uv)⁻¹) ^ 2 ≤ ((N : ℝ) ^ 2 * max 1 ((mE E).im)⁻¹) ^ 2 :=
+    pow_le_pow_left₀ (by positivity) hscinv 2
+  have hmul : (etaT E sv / etaT E uv) ^ 4 * (B.scale E N uv)⁻¹ ^ 2
+      ≤ ((N : ℝ) ^ 2) ^ 4 * ((N : ℝ) ^ 2 * max 1 ((mE E).im)⁻¹) ^ 2 :=
+    mul_le_mul hp4 hp2 (by positivity) (by positivity)
+  refine hmul.trans ?_
+  have hnat : (N : ℝ) ^ (13 : ℝ) = (N : ℝ) ^ (13 : ℕ) := by
+    rw [show (13 : ℝ) = ((13 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+  rw [hnat]
+  have hexp : ((N : ℝ) ^ 2) ^ 4 * ((N : ℝ) ^ 2 * max 1 ((mE E).im)⁻¹) ^ 2
+      = (N : ℝ) ^ (12 : ℕ) * (max 1 ((mE E).im)⁻¹) ^ 2 := by ring
+  rw [hexp, pow_succ]
+  exact mul_le_mul_of_nonneg_left hCE (by positivity)
+
+/-- **Clause (iv) of `RBM.LKDecayQuant.FlowInputs`, from (2.76).**
+
+`hdecay` is *verbatim* the field `RBM.Steps.aprioriDecay`: (2.76) of Step 2, already stated
+with the time inside the index set of `≺`.  Nothing else is assumed.
+
+The two contributions to `L^{re}_{(+,-),(a,b)} ≤ |L - K| + |K|` are handled separately.
+
+* `|L - K|` is `≺` the profile `(η_s/η_u)^4 (Wℓ_uη_u)^{-2}(exp(-(|a-b|/ℓ_u)^{1/2}) + W^{-D})`;
+  at distance `≥ ℓ_u N^{τ/2}` the exponential is `≤ exp(-N^{τ/4})`, the `W^{-D}` is
+  `≤ N^{-D/2}` by (2.2), and the prefactor is `≤ N^{13}` (`prefactor_le`).
+* `|K|` decays by `RBM.Decay.loopDecay_Kgen` at loop length `2`, and the resulting
+  `C_2(1-u) e^{-c(1-u) ℓ_u N^{τ/2}}` is beaten by `RBM.LKDecayQuant.term2_le` — the very
+  estimate obligations (1)–(2) already needed, through the same dichotomy on `ℓ̂(u)`. -/
+theorem highProb_flowDec_of_aprioriDecay (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (ht1 : ∀ N, t N < 1) {τ : ℝ} (hτ : 0 < τ) {c : ℝ} (hc : 0 < c)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    HighProb B.P (FlowDec X E s t (fun N => (N : ℝ) ^ (-c)) τ) := by
+  classical
+  have hD₀0 : (0 : ℝ) < 30 + 2 * c := by linarith
+  have hc0 := cZero_pos
+  refine ((hdecay (30 + 2 * c) hD₀0).highProb one_pos).mono ?_
+  filter_upwards [eventually_L_le (B := B), B.bandwidth,
+    SumZeroDyn.eventually_exp_small 4 (14 + c) 1 one_pos (show (0 : ℝ) < τ / 4 by linarith),
+    SumZeroDyn.eventually_exp_small (2 * cKbound 2) (((2 * cKexp 2 : ℕ) : ℝ) + c) (cZero / 2)
+      (by linarith) (show (0 : ℝ) < τ / 2 / 2 by linarith),
+    (tendsto_natCast_atTop_atTop (R := ℝ)).eventually_ge_atTop ((max 1 ((mE E).im)⁻¹) ^ 2),
+    SumZeroDyn.eventually_const_mul_rpow_le 2 (show τ / 4 < τ / 2 by linarith),
+    eventually_ge_atTop 4] with N hLN hWN hexp1 hexp2 hCE h2N hN4
+  intro ω hω u a b hfar
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast (by omega : 1 ≤ N)
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hN4' : (4 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN4
+  set uu : ℝ := (u : ℝ) with huu
+  have hu0 : 0 ≤ uu := le_trans (hs0 N) u.2.1
+  have hu1 : uu < 1 := lt_of_le_of_lt u.2.2 (ht1 N)
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have hL0 : (0 : ℝ) < (B.L N : ℝ) := by exact_mod_cast (by omega : 0 < B.L N)
+  have hA1 : (1 : ℝ) ≤ (N : ℝ) ^ (τ / 2) :=
+    Real.one_le_rpow hN1 (by linarith)
+  by_cases hcut : 1 ≤ (B.L N : ℝ) * Real.sqrt (1 - uu)
+  · -- the cut-off in `ℓ̂` is inactive: `ℓ_u √(1-u) = 1`
+    have hell : B.ell N uu * Real.sqrt (1 - uu) = 1 := ellHat_mul_sqrt_eq_one _ hu1 hcut
+    have hell1 : (1 : ℝ) ≤ B.ell N uu := one_le_ellHat_of_nonneg (by omega : 1 ≤ B.L N) hu0 hu1
+    have hell0 : 0 < B.ell N uu := lt_of_lt_of_le one_pos hell1
+    have hsqrt0 : 0 < Real.sqrt (1 - uu) := Real.sqrt_pos.2 (by linarith)
+    have hv0 : (0 : ℝ) < 1 - uu := by linarith
+    have hv1 : (1 : ℝ) - uu ≤ 1 := by linarith
+    have hsqN : 1 / (N : ℝ) ≤ Real.sqrt (1 - uu) := by
+      rw [div_le_iff₀ hN0]; nlinarith
+    have hvN : 1 / (1 - uu) ≤ (N : ℝ) ^ 2 := by
+      have hsq : Real.sqrt (1 - uu) * Real.sqrt (1 - uu) = 1 - uu := Real.mul_self_sqrt (by linarith)
+      have hm2 : 1 / (N : ℝ) * (1 / (N : ℝ)) ≤ 1 - uu := by
+        rw [← hsq]; exact mul_le_mul hsqN hsqN (by positivity) (Real.sqrt_nonneg _)
+      rw [div_le_iff₀ hv0]
+      calc (1 : ℝ) = (N : ℝ) ^ 2 * (1 / (N : ℝ) * (1 / (N : ℝ))) := by field_simp
+        _ ≤ (N : ℝ) ^ 2 * (1 - uu) := mul_le_mul_of_nonneg_left hm2 (by positivity)
+    -- `L^{re} ≤ |L - K| + |K|`
+    have hre : Lre (X.H N uu ω) (zt E uu) a b ≤ ‖X.Lval E N uu ω (pmLoop a b)‖ := by
+      have habs := Complex.abs_re_le_norm (X.Lval E N uu ω (pmLoop a b))
+      have h0 : (X.Lval E N uu ω (pmLoop a b)).re = Lre (X.H N uu ω) (zt E uu) a b := rfl
+      rw [h0] at habs
+      exact le_trans (le_abs_self _) habs
+    have hsplit : Lre (X.H N uu ω) (zt E uu) a b
+        ≤ X.lkErr E N uu ω (pmLoop a b) + ‖B.Kval E N uu (pmLoop a b)‖ := by
+      refine hre.trans ?_
+      have h2 : X.Lval E N uu ω (pmLoop a b)
+          = (X.Lval E N uu ω (pmLoop a b) - B.Kval E N uu (pmLoop a b))
+            + B.Kval E N uu (pmLoop a b) := by ring
+      rw [h2]
+      exact norm_add_le _ _
+    -- the `L - K` half
+    have hpre : (etaT E (s N) / etaT E uu) ^ 4 * (B.scale E N uu)⁻¹ ^ 2 ≤ (N : ℝ) ^ (13 : ℝ) :=
+      prefactor_le hE (hs0 N) u.2.1 hu1 hvN hN1 hell1 hCE
+    have hprof : B.decayProf N uu (30 + 2 * c) a b
+        ≤ exp (-((N : ℝ) ^ (τ / 4))) + (N : ℝ) ^ (-(15 + c)) := by
+      have hfar' : (N : ℝ) ^ (τ / 2) ≤ (zdist (B.L N) (a - b) : ℝ) / B.ell N uu := by
+        rw [le_div_iff₀ hell0]; linarith [hfar]
+      have hmono : (N : ℝ) ^ (τ / 4)
+          ≤ ((zdist (B.L N) (a - b) : ℝ) / B.ell N uu) ^ ((1 : ℝ) / 2) := by
+        have he : (N : ℝ) ^ (τ / 4) = ((N : ℝ) ^ (τ / 2)) ^ ((1 : ℝ) / 2) := by
+          rw [← Real.rpow_mul hN0.le]; ring_nf
+        rw [he]
+        exact Real.rpow_le_rpow (Real.rpow_nonneg hN0.le _) hfar' (by norm_num)
+      have hW : (N : ℝ) ^ ((1 : ℝ) / 2) ≤ (B.W N : ℝ) := by
+        refine le_trans ?_ hWN
+        exact Real.rpow_le_rpow_of_exponent_le hN1 (by linarith [B.c_pos])
+      have hWpow : (B.W N : ℝ) ^ (-(30 + 2 * c)) ≤ (N : ℝ) ^ (-(15 + c)) := by
+        have hx0 : (0 : ℝ) < (N : ℝ) ^ ((1 : ℝ) / 2) := Real.rpow_pos_of_pos hN0 _
+        have h1 : ((N : ℝ) ^ ((1 : ℝ) / 2)) ^ (30 + 2 * c) ≤ ((B.W N : ℝ)) ^ (30 + 2 * c) :=
+          Real.rpow_le_rpow hx0.le hW hD₀0.le
+        have h2 : ((N : ℝ) ^ ((1 : ℝ) / 2)) ^ (30 + 2 * c) = (N : ℝ) ^ (15 + c) := by
+          rw [← Real.rpow_mul hN0.le]; ring_nf
+        rw [Real.rpow_neg (by positivity), Real.rpow_neg hN0.le]
+        rw [h2] at h1
+        simpa [one_div] using one_div_le_one_div_of_le (Real.rpow_pos_of_pos hN0 _) h1
+      unfold Band.decayProf
+      exact add_le_add (Real.exp_le_exp.2 (by linarith)) hWpow
+    have hlk : X.lkErr E N uu ω (pmLoop a b)
+        ≤ (N : ℝ) ^ (1 : ℝ) * ((N : ℝ) ^ (13 : ℝ)
+            * (exp (-((N : ℝ) ^ (τ / 4))) + (N : ℝ) ^ (-(15 + c)))) := by
+      refine (hω (u, (a, b))).trans ?_
+      have hp0 : (0 : ℝ) ≤ B.decayProf N uu (30 + 2 * c) a b := by
+        unfold Band.decayProf; positivity
+      refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hN0.le _)
+      exact mul_le_mul hpre hprof hp0 (Real.rpow_nonneg hN0.le _)
+    -- the three numerical bounds
+    have hpow14 : (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ (13 : ℝ) = (N : ℝ) ^ (14 : ℝ) := by
+      rw [← Real.rpow_add hN0]; norm_num
+    have hb1 : (N : ℝ) ^ (14 : ℝ) * exp (-((N : ℝ) ^ (τ / 4))) ≤ 1 / 4 * (N : ℝ) ^ (-c) := by
+      refine le_rpow_neg_of_mul_le hN0 ?_
+      have hk : (N : ℝ) ^ (14 + c) = (N : ℝ) ^ (14 : ℝ) * (N : ℝ) ^ c := Real.rpow_add hN0 _ _
+      rw [hk, one_mul] at hexp1
+      nlinarith [Real.exp_pos (-((N : ℝ) ^ (τ / 4))), Real.rpow_nonneg hN0.le (14 : ℝ),
+        Real.rpow_nonneg hN0.le c]
+    have hb2 : (N : ℝ) ^ (14 : ℝ) * (N : ℝ) ^ (-(15 + c)) ≤ 1 / 4 * (N : ℝ) ^ (-c) := by
+      refine le_rpow_neg_of_mul_le hN0 ?_
+      rw [mul_assoc, ← Real.rpow_add hN0, ← Real.rpow_add hN0,
+        show (14 : ℝ) + (-(15 + c) + c) = -1 by ring, Real.rpow_neg_one]
+      rw [inv_eq_one_div, div_le_div_iff₀ hN0 (by norm_num)]
+      linarith
+    -- the `K` half
+    have hK : ‖B.Kval E N uu (pmLoop a b)‖
+        ≤ Decay.cKdecay 2 (1 - uu)
+            * exp (-(cor35Rate (1 - uu) * (B.ell N uu * (N : ℝ) ^ (τ / 2)))) := by
+      have hKd := Decay.loopDecay_Kgen (B.L N) hL3 (B.W N) (norm_mSigma_le_one hE) hu0 hu1
+        (δ := 1 - uu) hv0 (Decay.one_sub_le_norm_one_sub (norm_mSigma_le_one hE) hu0) 2
+        (ℓ := B.ell N uu * (N : ℝ) ^ (τ / 2)) (by positivity)
+      exact hKd (pmLoop a b) rfl (by norm_num [LoopIdx.length, pmLoop]) a (by simp [pmLoop])
+        b (by simp [pmLoop]) hfar
+    have hexpo : cZero / 2 * (N : ℝ) ^ (τ / 2 / 2)
+        ≤ cor35Rate (1 - uu) * (B.ell N uu * (N : ℝ) ^ (τ / 2)) := by
+      have hid : cor35Rate (1 - uu) * (B.ell N uu * (N : ℝ) ^ (τ / 2))
+          = cZero / 4 * (N : ℝ) ^ (τ / 2) * (B.ell N uu * Real.sqrt (1 - uu)) := by
+        unfold cor35Rate; ring
+      rw [hid, hell, mul_one, show τ / 2 / 2 = τ / 4 by ring]
+      nlinarith [Real.rpow_nonneg hN0.le (τ / 4)]
+    have hterm2 : Decay.cKdecay 2 (1 - uu)
+        * exp (-(cor35Rate (1 - uu) * (B.ell N uu * (N : ℝ) ^ (τ / 2))))
+        ≤ 1 / 2 * (N : ℝ) ^ (-c) :=
+      term2_le (m := 2) (τ := τ / 2) hN0 hv0 hv1 hvN hexpo hexp2
+    calc Lre (X.H N uu ω) (zt E uu) a b
+        ≤ X.lkErr E N uu ω (pmLoop a b) + ‖B.Kval E N uu (pmLoop a b)‖ := hsplit
+      _ ≤ (N : ℝ) ^ (1 : ℝ) * ((N : ℝ) ^ (13 : ℝ)
+            * (exp (-((N : ℝ) ^ (τ / 4))) + (N : ℝ) ^ (-(15 + c))))
+          + Decay.cKdecay 2 (1 - uu)
+            * exp (-(cor35Rate (1 - uu) * (B.ell N uu * (N : ℝ) ^ (τ / 2)))) :=
+          add_le_add hlk hK
+      _ ≤ (N : ℝ) ^ (-c) := by
+          have he : (N : ℝ) ^ (1 : ℝ) * ((N : ℝ) ^ (13 : ℝ)
+              * (exp (-((N : ℝ) ^ (τ / 4))) + (N : ℝ) ^ (-(15 + c))))
+              = (N : ℝ) ^ (14 : ℝ) * exp (-((N : ℝ) ^ (τ / 4)))
+                + (N : ℝ) ^ (14 : ℝ) * (N : ℝ) ^ (-(15 + c)) := by
+            rw [← hpow14]; ring
+          rw [he]
+          linarith
+  · -- the cut-off is active: `ℓ_u = L`, and the radius already exceeds the diameter `L/2`
+    push Not at hcut
+    have hellL : B.ell N uu = (B.L N : ℝ) := ellHat_eq_L _ hu1 hcut
+    have hhalf : (B.L N : ℝ) / 2 < B.ell N uu * (N : ℝ) ^ (τ / 2) := by
+      rw [hellL]
+      have h1 : (B.L N : ℝ) * 1 ≤ (B.L N : ℝ) * (N : ℝ) ^ (τ / 2) :=
+        mul_le_mul_of_nonneg_left hA1 hL0.le
+      linarith
+    exact absurd (lt_of_lt_of_le (lt_of_le_of_lt (zdist_le_half (a - b)) hhalf) hfar) (lt_irrefl _)
+
+/-- **`RBM.LKDecayQuant.FlowInputs` from its three clauses**, each asked for at a free
+polynomial parameter.  The numerical bundle is discharged by `flowNum_choice` at
+`δ_N = N^{-1}`, `Φ_N = N`, `ε_N = N^{-2(D'+1)}`. -/
+theorem flowInputs_of_highProb
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : ∀ b : ℝ, 0 < b → HighProb B.P (FlowLDE X E s t (fun N => (N : ℝ) ^ b)))
+    (hdec : ∀ τ > (0 : ℝ), ∀ c > (0 : ℝ),
+      HighProb B.P (FlowDec X E s t (fun N => (N : ℝ) ^ (-c)) τ)) :
+    FlowInputs X E s t := fun τ hτ D' hD' =>
+  ⟨_, _, _, flowNum_choice,
+    highProb_flowGoodSet (hΩ 1 one_pos) (hlde 1 one_pos)
+      (hdec τ hτ (2 * (D' + 1)) (by linarith))⟩
+
+/-! #### The assembly -/
+
+/-- **`RBM.LKDecayQuant.FlowInputs` from the good event, the large deviations and (2.76).**
+
+Three inputs, none of them numerical bookkeeping:
+
+* `hΩ` — the good event (4.1)/(4.4) at every `u ∈ [s_N, t_N]`, at any polynomial threshold.
+  This is **T130's `RBM.Gauss.highProb_goodSetFlow_of_localLaw`**, whose conclusion
+  `HighProb (P d) (RBM.Gauss.goodSetFlow d E s t δ)` is `RBM.LKDecayQuant.FlowGoodEv` of the
+  Gaussian sample (the only difference is `u ∈ Set.Icc (s N) (t N)` versus the subtype
+  `RBM.TimeIcc`); T130 in turn reduces it to the weak local law of Steps 1/2.
+* `hlde` — the two large-deviation bounds (4.2) with the time inside the index set of `≺`
+  (`RBM.LKDecayQuant.LDEFlowDom`); a theorem at each fixed `u`
+  (`RBM.Gauss.stochDom_ldeRow` / `stochDom_ldeCol`), open uniformly in `u`.
+* `hdecay` — **(2.76) verbatim**, i.e. the field `RBM.Steps.aprioriDecay`, which is Step 2's
+  deliverable and already carries the time in its index set. -/
+theorem flowInputs_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    FlowInputs X E s t :=
+  flowInputs_of_highProb hΩ (fun _b hb => highProb_flowLDE_of_dom hlde hb)
+    (fun _τ hτ _c hc => highProb_flowDec_of_aprioriDecay hE hs0 ht1 hτ hc hdecay)
+
+/-- **`RBM.SumZeroDyn.LKDecay` from the good event, the large deviations and (2.76)** — the
+composition of `RBM.LKDecayQuant.flowInputs_of_inputs` with
+`RBM.LKDecayQuant.lkDecay_of_flowInputs`.  `RBM.LKDecayQuant.FlowInputs` no longer appears. -/
+theorem lkDecay_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    SumZeroDyn.LKDecay X E s t :=
+  lkDecay_of_flowInputs hE hs0 ht1 (flowInputs_of_inputs hE hs0 ht1 hΩ hlde hdecay)
+
+/-- The `|L|` half of (5.75) under the same three inputs. -/
+theorem lDecay_of_inputs (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hΩ : ∀ a : ℝ, 0 < a → HighProb B.P (FlowGoodEv X E s t (fun N => (N : ℝ) ^ (-a))))
+    (hlde : LDEFlowDom X E s t)
+    (hdecay : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2)) :
+    LDecay X E s t :=
+  lDecay_of_flowInputs hE hs0 ht1 (flowInputs_of_inputs hE hs0 ht1 hΩ hlde hdecay)
+
+end Produce
 
 end LKDecayQuant
 

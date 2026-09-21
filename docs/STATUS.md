@@ -2888,3 +2888,21 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 **⚠ 一个值得记的发现：当前威力是 `Ψ·η_t⁻¹` 而非 `Ψ²`。** 原因是 T113 的 `B` 取的是确定性包络 `2(η_t⁻¹+1)`，因为其空字分支用 `norm_flucDiagSet_le_env`；
 而根因在 **`MinorGood`（`MinorDiffGain.lean:436`）带 (4.1) 与 (4.3)，但不带 (4.2)**——没有 `‖G^{(S)}_{aa} − m‖ ≤ Ψ` 这个字段，`m = 0` 那一档就改进不到 `B ≍ Ψ`。
 **补上该字段并在空字分支使用它，就是把这条现已打通的路线做到 (4.12) 论文尺寸的下一步**（是对 `MinorDiffGain.lean` 的编辑，自然的下一张单）。paper-deltas #85 已更新，另加 #90。
+
+### T138：`FlowInputs` 被拆解，`LKDecay` 只剩三条实质假设（Claude Code 并行 agent，2026-09-21）
+
+**`lkDecay_of_inputs`**：由 `|E| < 2`、`0 ≤ s N`、`t N < 1` 加**三条实质假设**给出 `SumZeroDyn.LKDecay`——**`FlowInputs` 本身不再出现**。
+
+| 条款 | 新名 | 状态 |
+|---|---|---|
+| (4.4) 好事件（每个 `u`） | `FlowGoodEv` | 假设 `hΩ`，但**就是 T130 的定理**（见下），即 Steps 1/2 的弱局部律 |
+| `LDERow`/`LDECol`（每个 `u`） | `FlowLDE` → `LDEFlowDom` | 假设 `hlde`——**对 `u` 一致这一版确实还开着** |
+| (2.76) 在半径 `ℓ_u·N^{τ/2}` 的定量形式 | `FlowDec` | **已证**（`highProb_flowDec_of_aprioriDecay`） |
+| 数值束 | `flowNum_choice` | **已证** |
+
+**本单的实质新工作是 (2.76) 那条**：`highProb_flowDec_of_aprioriDecay` **逐字消费 `RBM.Steps.aprioriDecay`**（Step 2 的交付物，本来就带 `u` 指标）。
+`L^re ≤ |L−K| + |K|`；`|L−K|` 半边用 `Steps.aprioriDecay`（取 `D = 30+2c`）、profile 界 `exp(−N^{τ/4})`、由 (2.2) 得的 `W^{-D} ≤ N^{-D/2}`，以及**已证而非假设**的前因子界 `prefactor_le`（两个 `Im m` 在 `η_s/η_u = (1−s)/(1−u)` 里相消）；`|K|` 半边用 `Decay.loopDecay_Kgen`@长度 2 加本文件已有的 `term2_le`，走同一个 `ℓ̂(u)` 二分。
+
+**T130 的产出无需适配即可对接**：`Gauss.goodSetFlow ⊆ FlowGoodEv` 是 `fun ω hω u => hω u u.2`，`(Gauss.band d).P = Gauss.P d` 是 `rfl`；探针验证了 T130 → `hΩ` 端到端。
+**为什么 LDE 那半没做出来**：T130 用的网引擎需要控制的多项式下界 `N^{-B} ≤ ζ`，而 (4.2) 的控制 `ldeRowRHS` 是小行 Green 元素平方和，**没有这种下界（它可以为零）**——已记进 `LDEFlowDom` 的 docstring。固定时刻的生产者 `Gauss.stochDom_ldeRow`/`stochDom_ldeCol` 恰是删掉 `TimeIcc` 因子的同一陈述。
+**分层选择**：没有给 `LKDecayQuant.lean` 加 `Gauss` 的 import——高斯侧的对接只在探针里验证，以免 `Hierarchy` 依赖 `Gauss`。paper-deltas #91（#86 的附录）。

@@ -3113,3 +3113,88 @@ fun a => ∑ i : Fin n, ∑ c : ZMod L,
 ② `parse` 直接数 `\begin{...}` 环境的个数，与产出的节点数不符就**报错退出**。
 丢节点再也躲不进「名字全部存在」后面了。节点数 161 → 162，名字数 2165 → 2201
 （找回的那个节点本来就已形式化，别无变化）。
+
+## T147：总装还差什么（自上而下的精确清单，2026-09-21，Claude Code 并行 agent）
+
+方法：七个 scratch 探针，全部用 `lake env lean` 编译过（树是绿的）。下面标 **[探针]** 的是编译验证过的，
+标 **[读码]** 的是读代码 + grep 得到的。没有新建或修改任何仓库文件。
+
+### 0. 两个跟数学无关、但目前让总装根本不可能的拦路石
+
+**0a. `Steps` 当假设用是循环的——纯记账，无主，挡住一切。**
+`RBM.Steps`（`Flow/Hypotheses.lean:294`）是 8 个字段的包。**生产**它后面字段的那些 glue 定理，把**整个包**当假设收。
+**[探针 P2]** `Step2PP.flow_sharpLoop_glue_flowAs` 在喂进一个四个 sharp 字段全是 `sorry` 的 `Steps` 时照样编译——
+即「要证 `sharpLoop` 必须先有 `sharpLoop`」。Step 6 同样（**[探针 P5]**：`quad11/13_unifDetDom_gauss` 收 `hsteps : Steps`，而 Step 6 生产 `sharpExpect`）。
+**[读码]** 全树只取了 5 个投影（`apriori`、`localLaw`、`aprioriDecay`、`sharpLoop 2`、`sharpLmK 1/3`），
+依赖序 1→2→3→4/5→6 **是无环的，循环只在打包上**。
+**修法：约 8 条签名里把 `hSteps : Steps X E s t` 换成用到的那几个字段。零新数学。这是清单上杠杆最大的一项。**
+
+**0b. `Thm221.step` 的 `0 ≤ s` vs `0 < s` 仍然在，而且是承重的。**
+**[探针 P3]** `mkSteps` 只要 `0 ≤ s` 时，`Bounds_of_Steps` 恰好填满 `Thm221.step`（零 sorry）；要 `0 < s` 时是硬错误。
+躲不掉：`Bounds_of_Thm221`（`Flow/Iteration.lean:282`）沿 `u₀ ≡ 0` 的网格用 `hT.step`，`s ≡ 0` 真的出现。
+**好消息是它很浅**：`hs0` 全部经 `Band.scale_pos` → `one_le_ellHat`，而 `0 ≤ t` 版 **[探针 P4]** 用现成的
+`RBM.one_le_ellHat_of_nonneg`（`Flow/Scales.lean:416`）五行就出来。属记账，无主。
+
+### 1. Theorem 2.2：没有总装，且不只是记账
+`Delocalization.lean` 只有确定性内核，`sq_norm_eigenvector_le_of_norm_green_le` **[读码] 除 `Test/Sanity.lean` 的公理打印外无任何消费者**。
+缺的是「Thm 2.3 在 `z = λ_k + iη` ⟹ `‖G_xx‖ ≤ C` 高概率 ⟹ (2.10)」，两个超出记账的障碍：谱参数是**随机的**（`λ_k(ω)`），
+而 `localSemicircleLaw_of_Thm221` 是对确定性列 `z : ℕ → ℂ` 陈述的；且 `SpecSeq` 把能量钉成与 `N` 无关，`E` 方向没有一致性。
+要改 `Bounds`/`Thm221` 的接口（`N` 依赖的能量）加覆盖论证。paper-delta #5。**无主、无工单。**
+
+### 2. Theorem 2.3 / 2.4：已完全归约到 `Thm221` ✅
+**[探针 P6a] 零 sorry 编译**：`Transfer`、`TransferLoop1` 在矩路线模型上**是定理**（`Gauss.transfer_gauss`、`transferLoop1_gauss`，T111）。
+STATUS 早前几节仍把它们列为待办输入，**那是过时的**。
+
+### 3. Theorem 2.5：`Thm221` + 两个可积性槽 ✅⚠
+**[探针 P6b] 零 sorry**。`hint_pp`/`hint_pm` **[读码]** 可由 `Gauss.integrable_gloop_Hflow` 在 `u = 1` 处 + `gloop_pm_eq`/`gloop_pp_eq` 卸掉。记账，无主，便宜。
+
+### 4. Theorem 2.6：三个假设，两个按设计是外部文献，一个是本文的开放数学
+`DBMUniversality`、`GreenComparison` 是外部引用（设计如此）；**`StepTwoClaim`（即 (2.23)）是本文自己的数学**，要 (2.25)–(2.33)。**无主。**
+QUE 那一半已形式化，但压在 `RBM.Eq747`（T65 的占位符）上，**无生产者**。
+
+### 5. `Thm221 ← Steps` 与六步
+
+**T58 有四项交付物**（T114 当时找到三项，Step 6 那项是第四）：① `SumZeroDyn.Hierarchy … 0`（Step 2 路线 A）；
+② `∀ n, Hierarchy` + `∀ n, Lemma510`（Lemma 5.14，**不论 Step 2 走哪条路都在关键路径上**）；③ `Fin n` 侧的推论；
+④ `Step6.Hierarchy` + `FastDecayHyp`——**是另一个对象**（无 ω、无鞅、漂移拆成 `DLK + DG`、已经在期望里）。
+**[读码] 全树没有任何 `SumZeroDyn.Hierarchy` 实例，也没有任何 `Step6.Hierarchy` 实例。**
+
+* **Step 1**：`Step1.Hyp` 四个字段现已全部由 `Gauss.step1Hyp_gauss_of_scale` 在 `step1` 自己的假设下供给。
+  **仍携带**：`EntryBoundFlow`/`DiagBoundFlow`（(4.2)/(4.3) 的 `TimeIcc` 版），**无生产者**——这是 T107。
+  **审计发现**：它们的定时版建在 `stochDom_ldeRow/Col` 上，而 T148 的 `LDENetClose` 正是这两条的 `u`-一致版。
+  **T107 与 T143/T148 缺的是同一个输入**，规划时值得合并。
+* **Step 2**：两条互斥路线**都开着**。路线 A 的 `Step2.Hyp` **无生产者**，其 `eG` 的陈述提到 `H.F`，**T58 钉死 `F` 之前连陈述都写不出**；
+  路线 B 的 `MomentHyp` **无生产者**，硬字段是 `step`（T132c）。
+* **Steps 3/4/5**：入口 `Step2PP.flow_*_glue_flowAs` 的 `h0/h12/h1/h2` 都已卸。剩：
+  `h514` ← T58 ②③；其中 `Lemma510.EE_le` 是**已证但没接线**（`EEBridge.stochDom_norm_eeField` 一个裸 `:=` 就闭合，
+  **只要 `SumZeroDyn.Hierarchy.EE` 像 T145 钉 `MomentDuhamel` 那样钉住**——那边钉了，这边**还是无约束数据字段**）；
+  `hdec` ← `LKDecayQuant.lkDecay_of_inputs`，`hΩ`✅`hdecay`✅，只差 `LDENetClose`（T148）；
+  `hΘ` ← `BootPP`，**`BootPP` 无生产者，无工单**；`h548 : Step45.FlowEq548` **无生产者、无工单**（T61 余留）。
+  `eq45Flow_of_localLaw_gain` 内部余留：三个时间 Hölder 模 `hHolIBP/hHolRow/hHolBlk`（T129 + T106 有料，组装没做）；
+  **`hg : FlucGain` 是接口错配**——T137/T142 做的是**分级**的 `FlucGainUpTo`，而消费者要**不分级**的那个，两边没桥；
+  `hΨW`/`hΦW` 要按 `ρB ≍ Ψ²` 重算；`hll : LocalLawUnifIcc` **已证但没接线**：**[探针 P7]** 由 `Steps.localLaw` +
+  `Step3.Scales.le_A` 十行 `measure_mono` 即得（这正是 `GoodSetFlow.lean` docstring 里说「(2.74)/(2.75) 给的就是它」的那句，**从没接过**）。
+  矩路线的替代 `stochDom_of_momentDuhamel` **[读码]** 只给**固定终点 `v`** 的 `≺`，时间一致性仍得走 T124 的网，
+  故**今天它严格落后于 T58**。
+* **Step 6**：**[探针 P5]** 高斯模型下 `sharpExpect_step6` 只剩五个洞，全是裸应用、无 `convert`：`h5132` = `hB.expect` 逐字✅，
+  `h527`✅(T117)、`hq11/hq13`✅(T123+T131)、`hint2`✅；`hint1` **[探针 P5b]** 由 `Gauss.integrable_sample_Lval` 取 `η := etaT E u` 闭合，**只是没接**；
+  `hH`/`hFD`/`h5133`/`hG` 四个全部量化 `DLK`/`DG`，**无生产者 = T58 ④**。
+
+### 6. 三个桶
+
+**(a) 真正开放的数学**：T58（四项，Steps 2–6 全在其关键路径上；且 `DischargeBDG.lean:70ff` 记的约束仍在：
+`duhamel` 按定义造出来会让 `Lemma510` 为假，交付物是三元组「具体的 `F` + 对它可证的 `Lemma510` + 可证的 `bdg`」）；
+`BootPP.step`（无工单）；`Step45.FlowEq548`（无工单）；`LDENetClose`（T148，同时解锁 T107）；
+`MomentHyp.step`（T132c，若走路线 B）；`StepTwoClaim`（无工单）；Theorem 2.2 的概率一半（无工单）。
+
+**(b) 纯记账、必须有人做**：① 拆 `Steps` 包（挡住全部总装，**应最先做**）；② `0 < s` 放宽到 `0 ≤ s`；
+③ 由 T129 + T106 组装三个 Hölder 模；④ 把 `eq45Flow_of_localLaw_gain` 搬到**分级**的 `FlucGainUpTo` 接口并按 `ρB ≍ Ψ²` 重算 `hΦW`/`hΨW`；
+⑤ 落地 T142 那条只存在于探针里的分级桥 `flucGainUpTo_of_minorDiff`。
+
+**(c) 别处已卸、只是没接线**（全部有探针或逐字依据）：`hll`、Step 6 的 `hint1`、`0 ≤ t` 的 `Band.scale_pos`、
+`Transfer`/`TransferLoop1`、Step 6 的 `h5132`/`hq11`/`hq13`/`h527`/`hint2`、Thm 2.5 的两个可积性、`Lemma510.EE_le`、`Step1.Hyp` 四字段。
+
+### 7. 到绿色 `Thm221` 的最短路径（供估算）
+① §0a + §0b 的记账（解开整个证明的形状）→ ② 接线 (c)（零新数学）→ ③ 选 Step 2 的路线（**A 与 B 今天都落在 T58 后面**）→
+④ T58 无论如何都绕不过（Steps 3/4/5 与 6 都要）→ ⑤ `BootPP.step`、`FlowEq548`、`LDENetClose`（顺带给 T107）、Hölder 模、分级 `FlucGain` 的改接。
+**②和⑤与 T58 无关，可并行。**

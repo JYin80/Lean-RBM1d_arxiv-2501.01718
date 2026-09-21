@@ -6184,3 +6184,18 @@ T201 没有权限做这个决定。
 * 新单：**T218**（`P∘(L−K)` 半边接到矩路线）、**T219**（`stochDom_of_momentDuhamelQ` 总装 + Lemma 5.14 矩路线改吃 `Q` 接口）、**T220**（(7.13) 的前提 `FastDecay` 沿流的生产者，T201 另附的第三块）。
 * **T214**（`∂_u Q_u`，`MomentIneqQ` 的漂移恒等式）因此进入关键路径：`momentDuhamelQ` 的生产者要它。
 * T201 列的「给协调者的其余接线」三条（docstring 指针等）不开单，由协调者顺手做。
+
+## T211：`Flow/Consequences.lean` 改吃 `BoundsCore`（13 条新名 + 15 条 `rfl` 探针，2026-09-21）
+
+**⚠ 更正 T211 工单（用编译探针核过）**：工单让「与 T204 重复的部分改成一行推论指向它」——**不可行**。`Flow/Thm221NoEL.lean` 是 `Flow/Consequences.lean` 的**下游**（`Thm221NoEL → Thm221Bare → ⋯ → Consequences`），不是上游；Consequences 既不能引用它，也不能复用它已占掉的七个裸名。所以七条核心定理放进 **`namespace Core`**（`RBM.Core.*_of_boundsCore`）与 T204 的裸名并存。**这是本单唯一的重复劳动，在「只写一个文件」的前提下消除不掉。**
+
+落地：`Core` 内七条（证明脚本与旧版**一字不动**）+ `RBM` 内六条全新（四条 `*_prob_of_boundsCore`、`localSemicircleLaw_of_boundsCore` = **Theorem 2.3 整条**、`quantumDiffusion_pm_pp_of_boundsCore` = `quantumDiffusion_of_Thm221` 的**前两个合取**拆出来）。**13 条旧名签名一字未改**，全部降为一行推论。`Thm221Gain`/`EnergyUniform`/`Universality`/`DistEq`/`Thm25Gauss` 全部无改动即通过。
+
+**越界检查（本单真正的风险不是空真而是越界）**：全仓 `grep "\.expect"` 在本文件只命中一处（`:611`，`expect_loop2_of_bounds` 的 `hB.expect.precomp_param`），沿依赖链因此**保持在 `Bounds` 上**的是六条：`expect_loop2_of_bounds`、`expect_quantumDiffusion_pm/pp_of_bounds`、两条 `_W_` 版、以及 `quantumDiffusion_of_Thm221` 的**第 3、4 合取**（(2.8)(2.9)）。**没有把任何一条挂到空假设上**——另加两条**反向** `rfl` 探针把 (2.8)(2.9) 钉死在 `expect_*_W_of_bounds` 上，证明它们仍然吃 (2.71)。
+
+**paper-delta 不需新号**：结论一字未改；假设弱化那条偏差已由 **#134（原 T204b）** 覆盖，本单只是把同一拆分搬到了上游文件。
+
+## ⚠ 无主的活（T211 交出）
+
+1. **合并 T204 与 T211 的重复七条**：T209 交还 `Flow/Thm221NoEL.lean` 后，删掉它 §6 里与 `RBM.Core.*_of_boundsCore` 逐字相同的七条，把 Consequences 的 `Core.` 前缀去掉；`localSemicircleLaw_of_Thm221NoEL'` / `quantumDiffusion_pm_pp_of_Thm221NoEL'` 改成一行推论指向 `RBM.localSemicircleLaw_of_boundsCore` / `RBM.quantumDiffusion_pm_pp_of_boundsCore`。**归 `Thm221NoEL.lean` 的持有者（T209 之后）。**
+2. **`Flow/EnergyUniform.lean` 的 `SpecSeqN` 一套（:506/:521/:542/:552/:568）是第三份同样的证明脚本**——归 T199 的后继。

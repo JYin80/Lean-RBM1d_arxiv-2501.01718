@@ -6412,3 +6412,29 @@ T201 没有权限做这个决定。
 2. **`step_bound_far'` 拆成两半**：初值项+漂移积分那段 = `Step2FarMart.norm_init_add_drift_le`；拆完 `step_bound_far'` 与 `lkErr_far_le'` 都可改写成 `far_bound_of_farMart(_tT)` 的一行推论。
 3. **`farInputs_of_farInputs'` 的 `hmartAll`（对**所有** `a` 要鞅界）按 T208b 不可满足**——建议加 `@[deprecated]`。`FarInputs'` 自身只在远场要求，是对的。（`Step2FarInputs.lean` 当时在 T215 手里，故未加。）
 4. **`FarInputs'`/`HighProb` 的形状 vs `StochDom`**：`flowEq548_of_farInputs'_detDom` 要一条**确定性**的 `M_m ≺ 1` 加高概率事件，而矩路线的自然输出是 `StochDom`，两者之间要一次对角抽取（`τ_N → 0`）。**本单没做**，也是建议直接走 `flowEq548_of_jSfar` 的理由之一。
+
+## ⭐⭐ T215：`M_gf(1−s) ≺ 1` 的显式指数账**合上了，有余量**（`Hierarchy/Step2FarInputs.lean` 917 → 1982 行、38 条，2026-09-21）
+
+记 `r = ℓ_u/ℓ_s`、`A_u = Wℓ_uη_u`、`R_u = η_s/η_u`、`x = N^{δ/8}`、`m = Im m_E`。两块基石：`etaT_inv_mul_one_sub_ratio`（`η_u^{−1}(1−s) = m^{−1}R_u`，**一次 `R`**）与 T207 的锐化 (5.47)（`J ≤ N^δR_u² = x⁸R_u²`，**两次 `R`**）。
+
+| 项 | 侧条件 | 化为 | **β\*** | 相对 (2.72) 的余量 |
+|---|---|---|---|---|
+| `c_far·r^{3/2}A^{−1/2}J` | `β x⁸R³ ≤ 1` | `x^{32}R^{15} ≤ A²` | **7.5** | `R`：15 vs 60，**余 R^{45}**；`N`：`N^{4δ}` vs `N^{2c}`（`4δ ≤ 2c`）；`W`：0 次 |
+| `169·rA^{−1}J^{3/2}` | `γ x^{12}R⁴ ≤ 1` | `x^{24}R⁹ ≤ A²` | **4.5** | `R`：9 vs 60，**余 R^{51}** |
+
+第二行**逐字就是 `Step2MomentStep.hgamma_of_reg`**（T132c 原件，一行新算术都没加）。**按旧的 `J* ≺ R⁴` 重算**：两行变成 β\* = 11.5 与 6.5——**T207 的锐化在这里各省 4 和 2 个 β\***，且让 γ 行退回成已有引理。两条都 **< 30**，**(2.72) 的指数不动**。
+
+`c_far(W, ℓ_u) ≤ c_far(W,1) ≤ 12W^{τ/2} ≤ N^τ`（`eventually_cFar_one_le`，`W^{o(1)}`，0 次）。合账：`mfEG·(1−s) = m^{−1}(c_far(W,1) + 169) + (1−s) ≺ 1`（`detDom_mfEG_mul_one_sub`）。**账合上了，有余量，没有弱化任何结论。**
+
+近场常数顺带：`M_gn(u)(1−s) ≤ m^{−1}(c_near(W,1)R_t³ + c_far(W,1) + 169)`，**不是 `≺ 1`**（带 `R_t³`）——这是对的，`M_n` 只出现在 `FarResidue'` 里对着 `e^{−(5/4)(log W)^{3/2}}`。
+
+**`flowEq548_of_egData` 把四个槽由定理填掉**：`hMn`/`hMf` 非负（`one_le_mnEG`/`one_le_mfEG`）、**`hMf'`**（`detDom_mf_mul_one_sub`，本单的指数账）、漂移两条高概率（`highProb_farInputs'_of_egData`）。**剩下的唯一漂移输入是 `M_qf(1−s) ≺ 1`**（(5.34) 的二次粘合项）。
+
+**可满足性**：`cFarStep'_detDom_mfEG` 取**临界标度** `1−s_N = 1/(N+1)`（**正是 T208 证明 `cFarStep` 不是 `≺1` 的那个点**），`M_f` 取的就是本单产出的 `mfEG`、**不是 0**；配 `one_le_mfEG`/`one_le_mnEG`/`mGF_pos` 与已有的 `farDrift_eq_zero_of_farInputs'_zero`，说明**不是 T198 那个 `F = 0` 的 fiat 见证**。反向（空真）检查：`rhs535` 对 `Jf`、`ρf` **单调递增**而 `hJ`、`hrem` 从上面压住它们，**两边方向相反**，不是「取大就行」的平凡满足。
+
+## ⚠ 无主的活（T215 交出，第 1 条是新发现）
+
+1. **⭐ `J` 的桥（新发现）**：`EGDef.eGpm_le_reduced` 的 `J` 经 `h531`/`h42` 进来，而这两条在仓库里是对 **`gloop`（即 `L` 本身）** 陈述的；T207 的锐化 (5.47) 是对 **`Step2.jS = J*(‖L−K‖)`** 的。要把 `Jf := Step2.jS` 代进去，需要一条 `|L_{u,(+,−)}(x,y)| ≲ J*·T_{u,D}`（`|x−y| ≥ ℓ*_u/2`）的桥，即 **`|K_{u,(+,−)}(x,y)| ≲ T_{u,D}` 的远场衰减**。`Band.norm_Kval_le` 在 `n = 2` 只给 `A^{−1}`（比 `T ≈ A^{−2}` 大得多），要用的是 `norm_Kgen_le_exp` 的**指数衰减**。⚠ **T215 把 `Jf` 留成显式参数、只要求 `Jf ≤ N^δR_u²`，所以本单的账不受影响**；但这条桥不接上，**`Jf := jS` 的实例化不成立**。**没有单负责。**
+2. **`M_qf(1−s) ≺ 1`**（(5.34) 的二次粘合项 `primBil(L−K, L−K)`）——T208 列出过，**仍无主**。本单已把 `M_f = mfEG + M_qf` 的**第一半**变成定理。
+3. **`Step2FarInputs.lean` 的文件头 import**：加 `RBM1D.Flow.Thm221Bare` 与 `RBM1D.Hierarchy.Step2Near47` 后，可删掉 `margin_pow_le`（与 `Step2Near47.margin_of_reg` 重复，docstring 已注明「没有新内容」），并把 `hdet` 换成 `Cond272Reg.margin` 直供。本单按「只许追加」没动文件头。
+4. **T208a 的 `L¹` 权积分形一步界**（彻底去掉 `1−s`，与论文字面一致）——未做。

@@ -915,3 +915,1068 @@ end Sat
 
 end Step2FarInputs
 end RBM
+
+/-! ## T215: the far-field constant `M_gf` of (5.35), and its exponent account
+
+`RBM.Step2FarInputs.farInputs'_of_eG_of_quad` (T208) reduced the two drift inputs of
+`RBM.Step2FarInputs.FarInputs'` to bounds on the two summands of `RBM.Step2FarInputs.farDrift`:
+`RBM.EGDef.eGpm`, governed by (5.35), and the quadratic gluing term of (5.34).  This part of
+the file carries out the first half: it puts the right-hand side of (5.35), shape 2
+(`RBM.EGDef.eGpm_le_reduced`), into the shape `M_gf · T_{u,D}` that `FarInputs'` asks for, and
+checks the exponent budget of `M_gf (1-s) ≺ 1`.
+
+The factor `1 - s` is not cosmetic: (5.35)'s prefactor carries `η_u^{-1}`, which is as large as
+`η_t^{-1}`, i.e. `N^{1-τ}`, while `η_u^{-1}(1-s) = (Im m_E)^{-1}(η_s/η_u)` — a constant times
+the window ratio `R_u` (`RBM.Step2FarInputs.etaT_inv_mul_one_sub_ratio`).  That one power of
+`R_u`, together with the **two** powers of `T207`'s sharp (5.47) `J*_{u,D} ≺ (η_s/η_u)²`, is
+the whole exponent account:
+
+| term of (5.35) | coefficient | budget needed | `β*` |
+| --- | --- | --- | --- |
+| `c_far r^{3/2} A^{-1/2} J` | `β = r^{3/2}A^{-1/2}` | `β x⁸ R³ ≤ 1` | `7.5` |
+| `169 r A^{-1} J^{3/2}` | `γ = r A^{-1}` | `γ x^{12} R⁴ ≤ 1` | `4.5` |
+
+Both are strictly below (2.72)'s exponent `30`, so **(2.72) is not touched**; with the older
+`J* ≺ (η_s/η_u)⁴` the same two rows would read `β x⁸ R⁵ ≤ 1` (`β* = 11.5`) and
+`γ x^{12} R⁷ ≤ 1` (`β* = 7.5`) — still inside the budget, but the sharp (5.47) is what makes
+the `γ` row *literally* `RBM.Step2MomentStep.hgamma_of_reg`, with no new arithmetic at all.
+
+### Deviations from the paper
+
+* **`T215a`** — (5.35)'s additive residue.  `RBM.EGDef.eGpm_le_reduced` ends in
+  `+ r (ℓ_u η_u)^{-1} L ρ`, with `ρ` the (5.54) tail of the `3`-loop; the paper displays
+  (5.35) purely as `(prefactor) · T_{u,D}`.  To reach the `M · T` shape that
+  `RBM.Step2FarInputs.FarInputs'` asks for, this file assumes the residue is at most **one**
+  unit of `W^{-D'} ≤ T_{u,D'}` (the hypothesis `hrem` of
+  `RBM.Step2FarInputs.rhs535_far_le`), and the constant becomes `M_gf + 1`.  (5.54) makes `ρ`
+  stretched-exponentially small, so this is free, but it is an added hypothesis and not a
+  step the paper writes.
+* **`T215b`** — the near-field constant.  `FarInputs'` asks for a **plain constant** on the
+  diagonal band (T198's shape, not the paper's), so
+  `RBM.Step2FarInputs.rhs535_le_const` evaluates the tail at its maximum
+  `T_{u,D}(0) = A_u^{-2} + W^{-D} ≤ 2`, which needs `1 ≤ A_u` and `0 ≤ D'`.  The paper never
+  states a near-field constant in this form.
+-/
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 7. (5.35), shape 2, split into `M_gn` (near) and `M_gf` (far) -/
+
+section Shape
+
+/-- **`β = r^{3/2} A^{-1/2}`**, the leading far-field coefficient of (5.35), shape 2, with
+`r = ℓ_u/ℓ_s` and `A = W ℓ_u η_u`.  Written exactly as it occurs in
+`RBM.EGDef.eGpm_le_reduced` and in `RBM.Step2MomentStep.hbeta_of_reg`. -/
+noncomputable def mgfBeta (Wr ℓu ℓs ηu : ℝ) : ℝ :=
+  ℓu / ℓs * √(ℓu / ℓs) * (√(Wr * ℓu * ηu))⁻¹
+
+/-- **`γ = r A^{-1}`**, the subleading far-field coefficient of (5.35), shape 2. -/
+noncomputable def mgfGamma (Wr ℓu ℓs ηu : ℝ) : ℝ := ℓu / ℓs * (Wr * ℓu * ηu)⁻¹
+
+/-- **`M_gf`: the far-field constant of (5.35), shape 2** —
+`η_u^{-1}(c_far β J + 169 γ J^{3/2})`.  It is exactly the prefactor of
+`RBM.EGDef.eGpm_le_reduced` off the diagonal band, where the indicator vanishes. -/
+noncomputable def mGF (Wr ℓu ℓs ηu J : ℝ) : ℝ :=
+  ηu⁻¹ * (Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * J)
+    + 169 * (mgfGamma Wr ℓu ℓs ηu * (J * √J)))
+
+/-- **`M_gn`: the near-field constant of (5.35), shape 2** — `M_gf` plus the indicator term
+`η_u^{-1} c_near r³` that (5.35) carries on the diagonal band `‖a₁-a₂‖ ≤ ℓ*_u`. -/
+noncomputable def mGN (Wr ℓu ℓs ηu J : ℝ) : ℝ :=
+  ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3) + mGF Wr ℓu ℓs ηu J
+
+/-- **The right-hand side of (5.35), shape 2** — the conclusion of
+`RBM.EGDef.eGpm_le_reduced`, as a function of the scales.  `Wr`, `Lr` are the real casts of
+`W`, `L`, and `d` is `‖a₁ - a₂‖`. -/
+noncomputable def rhs535 (Wr Lr ℓu ℓs ηu D J ρ d : ℝ) : ℝ :=
+  ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3 * (if d ≤ ellStar Wr ℓu then 1 else 0)
+      + Lemma57.cFar Wr ℓu * (ℓu / ℓs * √(ℓu / ℓs) * (√(Wr * ℓu * ηu))⁻¹ * J)
+      + 169 * (ℓu / ℓs * (Wr * ℓu * ηu)⁻¹ * (J * √J)))
+    * tailT Wr ℓu ηu D d
+  + ℓu / ℓs * (ℓu * ηu)⁻¹ * Lr * ρ
+
+theorem mgfBeta_nonneg {Wr ℓu ℓs ηu : ℝ} (hr0 : 0 ≤ ℓu / ℓs) : 0 ≤ mgfBeta Wr ℓu ℓs ηu := by
+  unfold mgfBeta; positivity
+
+theorem mgfGamma_nonneg {Wr ℓu ℓs ηu : ℝ} (hr0 : 0 ≤ ℓu / ℓs) (hA0 : 0 ≤ Wr * ℓu * ηu) :
+    0 ≤ mgfGamma Wr ℓu ℓs ηu := by
+  unfold mgfGamma; positivity
+
+theorem mGF_nonneg {Wr ℓu ℓs ηu J : ℝ} (hW : 1 ≤ Wr) (hℓu : 0 < ℓu) (hηu : 0 < ηu)
+    (hr0 : 0 ≤ ℓu / ℓs) (hJ0 : 0 ≤ J) : 0 ≤ mGF Wr ℓu ℓs ηu J := by
+  have hcF : 0 ≤ Lemma57.cFar Wr ℓu := Lemma57.cFar_nonneg hW hℓu
+  have hA0 : (0:ℝ) ≤ Wr * ℓu * ηu := by positivity
+  have hb := mgfBeta_nonneg (Wr := Wr) (ℓu := ℓu) (ℓs := ℓs) (ηu := ηu) hr0
+  have hg := mgfGamma_nonneg (Wr := Wr) (ℓu := ℓu) (ℓs := ℓs) (ηu := ηu) hr0 hA0
+  have hsJ : (0:ℝ) ≤ √J := Real.sqrt_nonneg _
+  have hηi : (0:ℝ) ≤ ηu⁻¹ := by positivity
+  unfold mGF
+  have h1 : 0 ≤ Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * J) := by positivity
+  have h2 : (0:ℝ) ≤ 169 * (mgfGamma Wr ℓu ℓs ηu * (J * √J)) := by positivity
+  positivity
+
+theorem mGN_nonneg {Wr ℓu ℓs ηu J : ℝ} (hW : 1 ≤ Wr) (hℓu : 0 < ℓu) (hηu : 0 < ηu)
+    (hr0 : 0 ≤ ℓu / ℓs) (hJ0 : 0 ≤ J) : 0 ≤ mGN Wr ℓu ℓs ηu J := by
+  have hcN : 0 ≤ Lemma57.cNear Wr ℓu := Lemma57.cNear_nonneg hW hℓu
+  have h1 : (0:ℝ) ≤ ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3) := by positivity
+  have := mGF_nonneg (Wr := Wr) (ℓu := ℓu) (ℓs := ℓs) (ηu := ηu) (J := J) hW hℓu hηu hr0 hJ0
+  unfold mGN
+  linarith
+
+/-- **(5.35) in the shape `FarInputs'` asks for, off the diagonal band.**  The indicator of
+(5.35) vanishes there, and the residue `r (ℓ_u η_u)^{-1} L ρ` — the contribution of the (5.54)
+tail `ρ` — is absorbed into one unit of `W^{-D} ≤ T_{u,D}`. -/
+theorem rhs535_far_le {Wr Lr ℓu ℓs ηu D J ρ d : ℝ} (hfar : ¬ d ≤ ellStar Wr ℓu)
+    (hrem : ℓu / ℓs * (ℓu * ηu)⁻¹ * Lr * ρ ≤ Wr ^ (-D)) :
+    rhs535 Wr Lr ℓu ℓs ηu D J ρ d ≤ (mGF Wr ℓu ℓs ηu J + 1) * tailT Wr ℓu ηu D d := by
+  have h1 : Wr ^ (-D) ≤ tailT Wr ℓu ηu D d := rpow_neg_le_tailT d
+  have hind : (if d ≤ ellStar Wr ℓu then (1:ℝ) else 0) = 0 := by simp [hfar]
+  have hkey : ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3 * 0
+      + Lemma57.cFar Wr ℓu * (ℓu / ℓs * √(ℓu / ℓs) * (√(Wr * ℓu * ηu))⁻¹ * J)
+      + 169 * (ℓu / ℓs * (Wr * ℓu * ηu)⁻¹ * (J * √J))) * tailT Wr ℓu ηu D d
+      = mGF Wr ℓu ℓs ηu J * tailT Wr ℓu ηu D d := by
+    unfold mGF mgfBeta mgfGamma; ring
+  rw [rhs535, hind, hkey,
+    show (mGF Wr ℓu ℓs ηu J + 1) * tailT Wr ℓu ηu D d
+      = mGF Wr ℓu ℓs ηu J * tailT Wr ℓu ηu D d + tailT Wr ℓu ηu D d from by ring]
+  linarith
+
+/-- **(5.35) as a plain constant, on the diagonal band.**  `FarInputs'` asks for a constant
+there, so the tail is thrown away at its maximum `T_{u,D}(0) = A_u^{-2} + W^{-D}`. -/
+theorem rhs535_le_const {Wr Lr ℓu ℓs ηu D J ρ d : ℝ} (hW : 1 ≤ Wr) (hℓu : 0 < ℓu)
+    (hηu : 0 < ηu) (hr0 : 0 ≤ ℓu / ℓs) (hJ0 : 0 ≤ J) (hd : 0 ≤ d)
+    (hrem : ℓu / ℓs * (ℓu * ηu)⁻¹ * Lr * ρ ≤ Wr ^ (-D)) :
+    rhs535 Wr Lr ℓu ℓs ηu D J ρ d
+      ≤ (mGN Wr ℓu ℓs ηu J + 1) * (((Wr * ℓu * ηu) ^ 2)⁻¹ + Wr ^ (-D)) := by
+  have hW0 : (0:ℝ) < Wr := by linarith
+  have hcN : 0 ≤ Lemma57.cNear Wr ℓu := Lemma57.cNear_nonneg hW hℓu
+  have hηi : (0:ℝ) ≤ ηu⁻¹ := by positivity
+  have hWD : (0:ℝ) ≤ Wr ^ (-D) := Real.rpow_nonneg hW0.le _
+  have hAi2 : (0:ℝ) ≤ ((Wr * ℓu * ηu) ^ 2)⁻¹ := by positivity
+  have hT0 : tailT Wr ℓu ηu D 0 = ((Wr * ℓu * ηu) ^ 2)⁻¹ + Wr ^ (-D) := by
+    rw [tailT]; simp
+  have hTd : tailT Wr ℓu ηu D d ≤ ((Wr * ℓu * ηu) ^ 2)⁻¹ + Wr ^ (-D) := by
+    rw [← hT0]; exact tailT_antitone hℓu hd
+  have hTd0 : (0:ℝ) ≤ tailT Wr ℓu ηu D d := tailT_nonneg hW0.le _
+  have hbr : ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3 * (if d ≤ ellStar Wr ℓu then 1 else 0)
+      + Lemma57.cFar Wr ℓu * (ℓu / ℓs * √(ℓu / ℓs) * (√(Wr * ℓu * ηu))⁻¹ * J)
+      + 169 * (ℓu / ℓs * (Wr * ℓu * ηu)⁻¹ * (J * √J)))
+      ≤ mGN Wr ℓu ℓs ηu J := by
+    have hind : (if d ≤ ellStar Wr ℓu then (1:ℝ) else 0) ≤ 1 := by split_ifs <;> norm_num
+    have hind0 : (0:ℝ) ≤ if d ≤ ellStar Wr ℓu then (1:ℝ) else 0 := by split_ifs <;> norm_num
+    have hnn : (0:ℝ) ≤ Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3 := by positivity
+    have hmul : Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3
+        * (if d ≤ ellStar Wr ℓu then (1:ℝ) else 0)
+        ≤ Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3 := by nlinarith
+    have hrw : mGN Wr ℓu ℓs ηu J
+        = ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3
+          + Lemma57.cFar Wr ℓu * (ℓu / ℓs * √(ℓu / ℓs) * (√(Wr * ℓu * ηu))⁻¹ * J)
+          + 169 * (ℓu / ℓs * (Wr * ℓu * ηu)⁻¹ * (J * √J))) := by
+      unfold mGN mGF mgfBeta mgfGamma; ring
+    rw [hrw]
+    have := mul_le_mul_of_nonneg_left hmul hηi
+    nlinarith
+  have hbr0 : (0:ℝ) ≤ mGN Wr ℓu ℓs ηu J := mGN_nonneg hW hℓu hηu hr0 hJ0
+  have hmul : ηu⁻¹ * (Lemma57.cNear Wr ℓu * (ℓu / ℓs) ^ 3
+      * (if d ≤ ellStar Wr ℓu then 1 else 0)
+      + Lemma57.cFar Wr ℓu * (ℓu / ℓs * √(ℓu / ℓs) * (√(Wr * ℓu * ηu))⁻¹ * J)
+      + 169 * (ℓu / ℓs * (Wr * ℓu * ηu)⁻¹ * (J * √J))) * tailT Wr ℓu ηu D d
+      ≤ mGN Wr ℓu ℓs ηu J * (((Wr * ℓu * ηu) ^ 2)⁻¹ + Wr ^ (-D)) := by
+    calc _ ≤ mGN Wr ℓu ℓs ηu J * tailT Wr ℓu ηu D d :=
+          mul_le_mul_of_nonneg_right hbr hTd0
+      _ ≤ mGN Wr ℓu ℓs ηu J * (((Wr * ℓu * ηu) ^ 2)⁻¹ + Wr ^ (-D)) :=
+          mul_le_mul_of_nonneg_left hTd hbr0
+  rw [rhs535]
+  nlinarith [hmul, hrem, hWD, hAi2]
+
+end Shape
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 7b. (5.35) itself, folded into `rhs535` -/
+
+section Link
+
+variable {L W : ℕ} [NeZero L] [NeZero W]
+  {M : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
+
+/-- **(5.35), shape 2, with the right-hand side folded.**  `RBM.EGDef.eGpm_le_reduced`
+verbatim, with its conclusion read through `RBM.Step2FarInputs.rhs535` and at
+`d = ‖a₁ - a₂‖` (`RBM.zdist` is symmetric).  Nothing is assumed here that
+`RBM.EGDef.eGpm_le_reduced` does not assume. -/
+theorem eGpm_le_rhs535 {ℓu ℓs ηu D J : ℝ} (hM : M.IsHermitian) (hL : 3 ≤ L)
+    (hW : 1 ≤ (W : ℝ)) (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu : 0 < ηu) (hJ : 1 ≤ J)
+    (hA : 1 ≤ (W : ℝ) * ℓu * ηu) (hr : 1 ≤ ℓu / ℓs)
+    (hD : (L : ℝ) * Real.sqrt ((W : ℝ) ^ (-D)) ≤ ℓu * ((W : ℝ) * ℓu * ηu)⁻¹)
+    (a₁ a₂ : ZMod L) {Gm : ZMod L → ZMod L → ℝ} {ρ κ : ℝ}
+    (hρ : 0 ≤ ρ) (hGm : ∀ x y, 0 ≤ Gm x y)
+    (h273 : ∀ b, ‖gloop L W M z ⟨[false, true, true], [a₂, b, a₁]⟩‖ ≤
+      (ℓu / ℓs) ^ 2 * (((W : ℝ) * ℓu * ηu) ^ 2)⁻¹)
+    (h554 : ∀ b, Lemma57.ellStarStar (W : ℝ) ℓu < (zdist L (a₂ - b) : ℝ) →
+      ‖gloop L W M z ⟨[false, true, true], [a₂, b, a₁]⟩‖ ≤ ρ)
+    (h531 : ∀ x y : ZMod L, ellStar (W : ℝ) ℓu / 2 ≤ (zdist L (x - y) : ℝ) →
+      (gloop L W M z ⟨[true, false], [x, y]⟩).re ≤
+        J * tailT (W : ℝ) ℓu ηu D (zdist L (x - y)))
+    (h42 : ∀ x y : ZMod L, ellStar (W : ℝ) ℓu / 2 ≤ (zdist L (x - y) : ℝ) →
+      Gm x y ≤ Real.sqrt J * Real.sqrt (tailT (W : ℝ) ℓu ηu D (zdist L (x - y))))
+    (h557C : ∀ (x y : ZMod L) (p : ZMod L × Fin W), p.1 = y →
+      ∑ r : ZMod L × Fin W, Lemma57.blkW L W r x * ‖green M z r p‖ ≤
+        Real.sqrt (ℓu / ℓs) * (Real.sqrt ((W : ℝ) * ℓu * ηu))⁻¹)
+    (h557R : ∀ (x y : ZMod L) (r : ZMod L × Fin W), r.1 = x →
+      ∑ p : ZMod L × Fin W, Lemma57.blkW L W p y * ‖green M z r p‖ ≤
+        Real.sqrt (ℓu / ℓs) * (Real.sqrt ((W : ℝ) * ℓu * ηu))⁻¹)
+    (h560 : ∀ b, ‖gloop L W M z ⟨[false, true, true], [a₂, b, a₁]⟩‖ ≤
+      Gm a₂ b * Gm a₁ b * Gm a₂ a₁)
+    (m : Bool → ℂ)
+    (hone : ∀ σ b, ‖Matrix.trace ((Gsig M z σ
+        - m σ • (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ)) * Eblk L W b)‖
+      ≤ κ * ((W : ℝ) * ℓu * ηu)⁻¹)
+    (hκ : 2 * κ ≤ ℓu / ℓs) :
+    ‖EGDef.eGpm L W m M z a₁ a₂‖
+      ≤ rhs535 (W : ℝ) (L : ℝ) ℓu ℓs ηu D J ρ (zdist L (a₁ - a₂)) := by
+  rw [rhs535, Lemma57.zdist_sub_comm L a₁ a₂]
+  exact EGDef.eGpm_le_reduced hM hL hW hℓu hℓs hηu hJ hA hr hD a₁ a₂ hρ hGm h273 h554 h531
+    h42 h557C h557R h560 m hone hκ
+
+end Link
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 8. The exponent account of `M_gf (1-s)` -/
+
+section Account
+
+/-- **`η_u^{-1}(1-s) = (Im m_E)^{-1}(η_s/η_u)`.**  The generalization of
+`RBM.Step2FarInputs.etaT_inv_mul_one_sub` (which is the case `s = u`) that the far-field
+account needs: the length of `[s,v]` cancels `η_u^{-1}` up to **one** power of the window
+ratio `R_u = η_s/η_u`. -/
+theorem etaT_inv_mul_one_sub_ratio {E : ℝ} (hE : |E| < 2) {s u : ℝ} (hu : u < 1) :
+    (etaT E u)⁻¹ * (1 - s) = ((mE E).im)⁻¹ * (etaT E s / etaT E u) := by
+  have hm := mE_im_pos hE
+  have h1u : (0:ℝ) < 1 - u := by linarith
+  rw [Step2.etaT_ratio hE s u, Step2.etaT_eq]
+  field_simp
+
+/-- **`β* = 7.5`.**  The leading far-field coefficient of (5.35), shape 2, is
+`β = r^{3/2}A^{-1/2}`, and `M_gf(1-s) ≺ 1` needs `β x⁸ R³ ≤ 1` — one power of `R` from
+`η_u^{-1}(1-s)`, two from the sharp (5.47) `J*_{u,D} ≺ R²` (T207).  Squaring, this is
+`r³ x^{16} R⁶ ≤ A`; with `r⁶ ≤ R³` it follows from `A² ≥ x^{32} R^{15}`.
+
+Compare `RBM.Step2MomentStep.hbeta_of_reg` (`β x⁸ R² ≤ 1`, `β* = 5.5`): the extra power of `R`
+costs exactly `2` in `β*`, and `7.5 < 30`, so (2.72)'s exponent is untouched. -/
+theorem hbeta_far_of_reg {x R r A : ℝ} (hR : 1 ≤ R) (hr0 : 0 ≤ r) (hr : r ^ 2 ≤ R)
+    (hA0 : 0 < A) (hA : x ^ 32 * R ^ 15 ≤ A ^ 2) :
+    (r * √r * (√A)⁻¹) * (x ^ 8 * R ^ 3) ≤ 1 := by
+  have hR0 : (0:ℝ) < R := by linarith
+  have hsA : (0:ℝ) < √A := Real.sqrt_pos.2 hA0
+  have hR3 : (0:ℝ) ≤ R ^ 3 := pow_nonneg hR0.le 3
+  have hx8R3 : (0:ℝ) ≤ x ^ 8 * R ^ 3 := by
+    have : (0:ℝ) ≤ x ^ 8 := by positivity
+    exact mul_nonneg this hR3
+  set β : ℝ := r * √r * (√A)⁻¹ with hβdef
+  have hβ0 : 0 ≤ β := by rw [hβdef]; positivity
+  have hβsq : β ^ 2 = r ^ 3 * A⁻¹ := by
+    rw [hβdef, mul_pow, mul_pow, Real.sq_sqrt hr0, ← Real.sqrt_inv,
+      Real.sq_sqrt (by positivity)]
+    ring
+  have h6 : (r ^ 3) ^ 2 ≤ R ^ 3 := by
+    calc (r ^ 3) ^ 2 = (r ^ 2) ^ 3 := by ring
+      _ ≤ R ^ 3 := by gcongr
+  have hkey : r ^ 3 * (x ^ 16 * R ^ 6) ≤ A := by
+    have hR6 : (0:ℝ) ≤ R ^ 6 := pow_nonneg hR0.le 6
+    have hlhs0 : (0:ℝ) ≤ r ^ 3 * (x ^ 16 * R ^ 6) := by
+      have h1 : (0:ℝ) ≤ x ^ 16 := by positivity
+      exact mul_nonneg (pow_nonneg hr0 3) (mul_nonneg h1 hR6)
+    have hsqle : (r ^ 3 * (x ^ 16 * R ^ 6)) ^ 2 ≤ A ^ 2 := by
+      have hR12 : (0:ℝ) ≤ R ^ 12 := pow_nonneg hR0.le 12
+      have hx32 : (0:ℝ) ≤ x ^ 32 := by positivity
+      calc (r ^ 3 * (x ^ 16 * R ^ 6)) ^ 2 = (r ^ 3) ^ 2 * (x ^ 32 * R ^ 12) := by ring
+        _ ≤ R ^ 3 * (x ^ 32 * R ^ 12) := by
+            exact mul_le_mul_of_nonneg_right h6 (mul_nonneg hx32 hR12)
+        _ = x ^ 32 * R ^ 15 := by ring
+        _ ≤ A ^ 2 := hA
+    nlinarith [hA0.le, hlhs0]
+  have hsq : (β * (x ^ 8 * R ^ 3)) ^ 2 ≤ 1 := by
+    have heq : (β * (x ^ 8 * R ^ 3)) ^ 2 = (r ^ 3 * A⁻¹) * (x ^ 16 * R ^ 6) := by
+      rw [mul_pow, hβsq]; ring
+    rw [heq, mul_comm (r ^ 3) A⁻¹, mul_assoc, ← div_eq_inv_mul, div_le_one hA0]
+    exact hkey
+  nlinarith [mul_nonneg hβ0 hx8R3]
+
+/-- **(2.72) with a gain, at every monomial `x^j R^k` with `j ≤ 32`, `k ≤ 60`.**
+
+This is `RBM.Step2Near47.margin_of_reg`; `RBM1D/Hierarchy/Step2Near47.lean` is **not** in this
+file's import chain (it sits on the `MomentDuhamelCut` branch), so the six-line argument is
+repeated here rather than imported.  Nothing new is claimed. -/
+theorem margin_pow_le {x R A N c δ : ℝ} (hN : 1 ≤ N) (hR : 1 ≤ R) (hδ0 : 0 ≤ δ)
+    (hδ : 4 * δ ≤ 2 * c) (hx : x = N ^ (δ / 8)) (hA0 : 0 < A) (hA : N ^ c * R ^ 30 ≤ A)
+    {j k : ℕ} (hj : j ≤ 32) (hk : k ≤ 60) : x ^ j * R ^ k ≤ A ^ 2 := by
+  have hN0 : (0:ℝ) < N := by linarith
+  have hR0 : (0:ℝ) < R := by linarith
+  have hx1 : (1:ℝ) ≤ x := by rw [hx]; exact Real.one_le_rpow hN (by linarith)
+  have h1 : x ^ j * R ^ k ≤ x ^ 32 * R ^ 60 :=
+    mul_le_mul (pow_le_pow_right₀ hx1 hj) (pow_le_pow_right₀ hR hk)
+      (pow_nonneg hR0.le k) (pow_nonneg (by linarith) 32)
+  have hx32 : x ^ 32 = N ^ (4 * δ) := by
+    rw [hx, ← Real.rpow_natCast (N ^ (δ / 8)) 32, ← Real.rpow_mul hN0.le]
+    congr 1
+    push_cast
+    ring
+  have hNc2 : (N ^ c) ^ 2 = N ^ (2 * c) := by
+    rw [← Real.rpow_natCast (N ^ c) 2, ← Real.rpow_mul hN0.le]
+    congr 1
+    push_cast
+    ring
+  have h2c : N ^ (4 * δ) ≤ N ^ (2 * c) := Real.rpow_le_rpow_of_exponent_le hN hδ
+  have hAsq : (N ^ c * R ^ 30) ^ 2 ≤ A ^ 2 := by
+    have h0 : (0:ℝ) ≤ N ^ c * R ^ 30 := by positivity
+    nlinarith
+  refine h1.trans ?_
+  have hR60 : (0:ℝ) ≤ R ^ 60 := pow_nonneg hR0.le 60
+  calc x ^ 32 * R ^ 60 = N ^ (4 * δ) * R ^ 60 := by rw [hx32]
+    _ ≤ N ^ (2 * c) * R ^ 60 := mul_le_mul_of_nonneg_right h2c hR60
+    _ = (N ^ c * R ^ 30) ^ 2 := by rw [mul_pow, hNc2]; ring
+    _ ≤ A ^ 2 := hAsq
+
+/-- **The exponent account of `M_gf (1-s)`, at a fixed time.**
+
+`M_gf · d = (η_u^{-1} d)(c_far β J + 169 γ J^{3/2})`, and with `η_u^{-1} d = m^{-1} R`
+(`etaT_inv_mul_one_sub_ratio`) and `J ≤ x⁸ R²` (the sharp (5.47)) the two summands are
+`c_far · β x⁸ R³` and `169 · γ x^{12} R⁴` — exactly the two side conditions. -/
+theorem mGF_mul_le {Wr ℓu ℓs ηu J x R mm dd : ℝ} (hmm : 0 < mm) (hx : 1 ≤ x) (hR : 1 ≤ R)
+    (hJ : J ≤ x ^ 8 * R ^ 2) (hcF : 0 ≤ Lemma57.cFar Wr ℓu)
+    (hr0 : 0 ≤ ℓu / ℓs) (hA0 : 0 ≤ Wr * ℓu * ηu)
+    (hd : ηu⁻¹ * dd = mm⁻¹ * R)
+    (hbeta : mgfBeta Wr ℓu ℓs ηu * (x ^ 8 * R ^ 3) ≤ 1)
+    (hgamma : mgfGamma Wr ℓu ℓs ηu * (x ^ 12 * R ^ 4) ≤ 1) :
+    mGF Wr ℓu ℓs ηu J * dd ≤ mm⁻¹ * (Lemma57.cFar Wr ℓu + 169) := by
+  have hb0 := mgfBeta_nonneg (Wr := Wr) (ℓu := ℓu) (ℓs := ℓs) (ηu := ηu) hr0
+  have hg0 := mgfGamma_nonneg (Wr := Wr) (ℓu := ℓu) (ℓs := ℓs) (ηu := ηu) hr0 hA0
+  have hx0 : (0:ℝ) < x := by linarith
+  have hR0 : (0:ℝ) < R := by linarith
+  have hsJ : √J ≤ x ^ 4 * R := by
+    have h2 : (0:ℝ) ≤ x ^ 4 * R := by positivity
+    have h1 : J ≤ (x ^ 4 * R) ^ 2 := by nlinarith
+    calc √J ≤ √((x ^ 4 * R) ^ 2) := Real.sqrt_le_sqrt h1
+      _ = x ^ 4 * R := Real.sqrt_sq h2
+  have hsJ0 : (0:ℝ) ≤ √J := Real.sqrt_nonneg _
+  have hJJ : J * √J ≤ x ^ 12 * R ^ 3 := by
+    have h := mul_le_mul hJ hsJ hsJ0 (by positivity : (0:ℝ) ≤ x ^ 8 * R ^ 2)
+    calc J * √J ≤ (x ^ 8 * R ^ 2) * (x ^ 4 * R) := h
+      _ = x ^ 12 * R ^ 3 := by ring
+  have hterm1 : mgfBeta Wr ℓu ℓs ηu * (R * J) ≤ 1 := by
+    have hRJ : R * J ≤ x ^ 8 * R ^ 3 := by nlinarith [mul_le_mul_of_nonneg_left hJ hR0.le]
+    nlinarith [mul_le_mul_of_nonneg_left hRJ hb0]
+  have hterm2 : mgfGamma Wr ℓu ℓs ηu * (R * (J * √J)) ≤ 1 := by
+    have hRJ : R * (J * √J) ≤ x ^ 12 * R ^ 4 := by
+      nlinarith [mul_le_mul_of_nonneg_left hJJ hR0.le]
+    nlinarith [mul_le_mul_of_nonneg_left hRJ hg0]
+  have hexp : mGF Wr ℓu ℓs ηu J * dd
+      = (ηu⁻¹ * dd) * (Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * J)
+        + 169 * (mgfGamma Wr ℓu ℓs ηu * (J * √J))) := by unfold mGF; ring
+  rw [hexp, hd,
+    show mm⁻¹ * R * (Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * J)
+        + 169 * (mgfGamma Wr ℓu ℓs ηu * (J * √J)))
+      = mm⁻¹ * (Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * (R * J))
+        + 169 * (mgfGamma Wr ℓu ℓs ηu * (R * (J * √J)))) from by ring]
+  have hmm0 : (0:ℝ) ≤ mm⁻¹ := by positivity
+  have h1 : Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * (R * J)) ≤ Lemma57.cFar Wr ℓu := by
+    nlinarith
+  have h2 : (169:ℝ) * (mgfGamma Wr ℓu ℓs ηu * (R * (J * √J))) ≤ 169 := by nlinarith
+  exact mul_le_mul_of_nonneg_left (by linarith) hmm0
+
+end Account
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 9. The account on the flow, and the `u`-free far-field constant -/
+
+section Flow
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **`M_gf(1-s) ≤ (Im m)^{-1}(c_far + 169)` at every `u ∈ [s,1)`.**
+
+The two side conditions are discharged from (2.72) with a gain exactly as T132c's are
+(`RBM.Step2MomentStep.side_conditions_of_reg`): `β* = 7.5` for the leading term
+(`RBM.Step2FarInputs.hbeta_far_of_reg`) and `β* = 4.5` for the subleading one — the latter is
+*literally* `RBM.Step2MomentStep.hgamma_of_reg`, unchanged.  The hypothesis `hJ` is the sharp
+(5.47) of T207, `J*_{u,D} ≤ N^δ (η_s/η_u)²`. -/
+theorem mGF_flow_mul_one_sub_le (hE : |E| < 2) {N : ℕ} {u : ℝ} (hs0 : 0 ≤ s N) (hsu : s N ≤ u)
+    (hu1 : u < 1) {c δ : ℝ} (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c) (hN1 : 1 ≤ (N : ℝ))
+    (hA : (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    {J : ℝ} (hJ : J ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2) :
+    mGF (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) J * (1 - s N)
+      ≤ ((mE E).im)⁻¹ * (Lemma57.cFar (B.W N : ℝ) (B.ell N u) + 169) := by
+  have hL : 1 ≤ B.L N := by have := B.three_le_L N; omega
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hs1 : s N < 1 := hsu.trans_lt hu1
+  have hℓs : 0 < B.ell N (s N) := Step3.ellHat_pos_of_lt_one hL hs1
+  have hℓu : 0 < B.ell N u := Step3.ellHat_pos_of_lt_one hL hu1
+  have hr0 : (0:ℝ) ≤ B.ell N u / B.ell N (s N) := by positivity
+  have hr := Step2MomentStep.ratio_sq_le (B := B) (s := s) hE hsu hu1
+  have hm := mE_im_pos hE
+  have hηu : 0 < etaT E u := Step2.etaT_pos' hE hu1
+  have hR1 : (1:ℝ) ≤ etaT E (s N) / etaT E u := by
+    rw [Step2.etaT_ratio hE, le_div_iff₀ (by linarith), one_mul]; linarith
+  have hA0 : 0 < B.scale E N u := B.scale_pos' hE N (hs0.trans hsu) hu1
+  have hscale : B.scale E N u = (B.W N : ℝ) * B.ell N u * etaT E u := rfl
+  have hx1 : (1:ℝ) ≤ (N : ℝ) ^ (δ / 8) := Real.one_le_rpow hN1 (by linarith)
+  have hx8 : ((N : ℝ) ^ (δ / 8)) ^ 8 = (N : ℝ) ^ δ := by
+    rw [Step2.natCast_rpow_pow]; norm_num
+  have h15 := margin_pow_le (x := (N : ℝ) ^ (δ / 8)) (R := etaT E (s N) / etaT E u)
+    (A := B.scale E N u) hN1 hR1 hδ0 hδ rfl hA0 hA (j := 32) (k := 15)
+    (by norm_num) (by norm_num)
+  have h9 := margin_pow_le (x := (N : ℝ) ^ (δ / 8)) (R := etaT E (s N) / etaT E u)
+    (A := B.scale E N u) hN1 hR1 hδ0 hδ rfl hA0 hA (j := 24) (k := 9)
+    (by norm_num) (by norm_num)
+  have hbeta := hbeta_far_of_reg hR1 hr0 hr hA0 h15
+  have hgamma := Step2MomentStep.hgamma_of_reg hx1 hR1 hr0 hr hA0 h9
+  refine mGF_mul_le (x := (N : ℝ) ^ (δ / 8)) (R := etaT E (s N) / etaT E u) hm hx1 hR1 ?_
+    (Lemma57.cFar_nonneg hW1 hℓu) hr0 ?_ (etaT_inv_mul_one_sub_ratio hE hu1) ?_ ?_
+  · rw [hx8]; exact hJ
+  · rw [← hscale]; exact hA0.le
+  · unfold mgfBeta; rw [← hscale]; exact hbeta
+  · unfold mgfGamma; rw [← hscale]; exact hgamma
+
+/-- **`c_far(W,ℓ) ≤ c_far(W,1)` for `ℓ ≥ 1`.**  The only `ℓ`-dependence of
+`RBM.Lemma57.cFar` is the summand `8/ℓ`, so the supremum over `u` is at `ℓ_u = 1`. -/
+theorem cFar_le_cFar_one {Wr ℓu : ℝ} (hW : 1 ≤ Wr) (hℓu : 1 ≤ ℓu) :
+    Lemma57.cFar Wr ℓu ≤ Lemma57.cFar Wr 1 := by
+  have hlog : (0:ℝ) ≤ log Wr := Real.log_nonneg hW
+  have hloss : (0:ℝ) < Lemma57.loss32 Wr := Lemma57.loss32_pos Wr
+  have hℓ0 : (0:ℝ) < ℓu := by linarith
+  have h8 : (8:ℝ) / ℓu ≤ 8 / 1 := by
+    rw [div_one, div_le_iff₀ hℓ0]; nlinarith
+  have h34 : (0:ℝ) ≤ 4 * log Wr ^ (3 / 2 : ℝ) := by positivity
+  unfold Lemma57.cFar
+  nlinarith
+
+/-- **`c_near(W,ℓ) ≤ c_near(W,1)` for `ℓ ≥ 1`.**  As for `RBM.Lemma57.cFar`, the only
+`ℓ`-dependence is the summand `2/ℓ`. -/
+theorem cNear_le_cNear_one {Wr ℓu : ℝ} (hW : 1 ≤ Wr) (hℓu : 1 ≤ ℓu) :
+    Lemma57.cNear Wr ℓu ≤ Lemma57.cNear Wr 1 := by
+  have hlog : (0:ℝ) ≤ log Wr := Real.log_nonneg hW
+  have hexp : (0:ℝ) < exp (log Wr ^ (3 / 4 : ℝ)) := exp_pos _
+  have hℓ0 : (0:ℝ) < ℓu := by linarith
+  have h2 : (2:ℝ) / ℓu ≤ 2 / 1 := by
+    rw [div_one, div_le_iff₀ hℓ0]; nlinarith
+  have h3 : (0:ℝ) ≤ 2 * log Wr ^ (3 : ℝ) := by positivity
+  unfold Lemma57.cNear
+  nlinarith
+
+/-- **`c_far(W,1) ≺ 1`.**  `c_far(W,1) = (4(log W)^{3/2} + 8) e^{√(1/2)(log W)^{3/4}}`, and
+`(log W)^{3/2} = ((log W)^{3/4})² ≤ e^{2(log W)^{3/4}}`, so the whole thing is at most
+`12 e^{(2+√(1/2))(log W)^{3/4}} ≤ 12 W^{τ/2} ≤ N^τ`. -/
+theorem eventually_cFar_one_le (B : Band Ω) {τ : ℝ} (hτ : 0 < τ) :
+    ∀ᶠ N : ℕ in atTop, Lemma57.cFar (B.W N : ℝ) 1 ≤ (N : ℝ) ^ τ := by
+  have hτ2 : 0 < τ / 2 := by linarith
+  filter_upwards [B.dim, (Step2.tendsto_W B).eventually_ge_atTop 1,
+    (Step2.tendsto_W B).eventually (eventually_exp_mul_log_rpow_le (2 + √(1 / 2 : ℝ)) hτ2),
+    eventually_le_rpow 12 hτ2, Filter.eventually_ge_atTop 1] with
+    N hdim hW1 hWexp h12 hN1
+  have hN : (1:ℝ) ≤ N := by exact_mod_cast hN1
+  have hN0 : (0:ℝ) < N := by linarith
+  have hL1 : 1 ≤ B.L N := by have := B.three_le_L N; omega
+  have hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ) := by exact_mod_cast hdim.1
+  have hL1' : (1:ℝ) ≤ (B.L N : ℝ) := by exact_mod_cast hL1
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := by linarith
+  have hWN : (B.W N : ℝ) ≤ (N : ℝ) := by nlinarith
+  have hlogW : (0:ℝ) ≤ log (B.W N : ℝ) := Real.log_nonneg hW1
+  set T : ℝ := log (B.W N : ℝ) ^ (3 / 4 : ℝ) with hTdef
+  have hT0 : (0:ℝ) ≤ T := Real.rpow_nonneg hlogW _
+  have hlog32 : log (B.W N : ℝ) ^ (3 / 2 : ℝ) = T ^ 2 := by
+    rw [hTdef, ← Real.rpow_natCast (log (B.W N : ℝ) ^ (3 / 4 : ℝ)) 2, ← Real.rpow_mul hlogW]
+    norm_num
+  have hte : T ≤ exp T := by linarith [Real.add_one_le_exp T]
+  have hexp2 : exp T * exp T = exp (2 * T) := by rw [← Real.exp_add]; ring_nf
+  have hT2 : T ^ 2 ≤ exp (2 * T) := by nlinarith [exp_pos T]
+  have he1 : (1:ℝ) ≤ exp (2 * T) := Real.one_le_exp (by linarith)
+  have hnum : 4 * log (B.W N : ℝ) ^ (3 / 2 : ℝ) + 8 / 1 ≤ 12 * exp (2 * T) := by
+    rw [hlog32]; nlinarith
+  have hloss : Lemma57.loss32 (B.W N : ℝ) = exp (√(1 / 2 : ℝ) * T) := rfl
+  have hprod : exp (2 * T) * exp (√(1 / 2 : ℝ) * T) = exp ((2 + √(1 / 2 : ℝ)) * T) := by
+    rw [← Real.exp_add]; ring_nf
+  have hlossp : (0:ℝ) < exp (√(1 / 2 : ℝ) * T) := exp_pos _
+  have hkey : Lemma57.cFar (B.W N : ℝ) 1 ≤ 12 * exp ((2 + √(1 / 2 : ℝ)) * T) := by
+    unfold Lemma57.cFar
+    rw [hloss, ← hprod]
+    nlinarith
+  have hWexp' : exp ((2 + √(1 / 2 : ℝ)) * T) ≤ (N : ℝ) ^ (τ / 2) := by
+    refine hWexp.trans ?_
+    exact Real.rpow_le_rpow hW0.le hWN hτ2.le
+  have h3 : (1:ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.one_le_rpow hN hτ2.le
+  have hsplit : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ := by
+    rw [← Real.rpow_add hN0]; ring_nf
+  calc Lemma57.cFar (B.W N : ℝ) 1 ≤ 12 * exp ((2 + √(1 / 2 : ℝ)) * T) := hkey
+    _ ≤ (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) := by
+        exact mul_le_mul h12 hWexp' (exp_pos _).le (by linarith)
+    _ = (N : ℝ) ^ τ := hsplit
+
+/-- **The `u`-free far-field constant of (5.35)**: `(Im m_E)^{-1}(c_far(W,1) + 169)`.  By
+`RBM.Step2FarInputs.mGF_flow_mul_one_sub_le` and `RBM.Step2FarInputs.cFar_le_cFar_one` it
+dominates `M_gf(u)(1-s)` for **every** `u ∈ [s, 1)`, which is what `FarInputs'` needs. -/
+noncomputable def mgfBar (B : Band Ω) (E : ℝ) (N : ℕ) : ℝ :=
+  ((mE E).im)⁻¹ * (Lemma57.cFar (B.W N : ℝ) 1 + 169)
+
+theorem mgfBar_pos (B : Band Ω) {E : ℝ} (hE : |E| < 2) (N : ℕ) : 0 < mgfBar B E N := by
+  have hm := mE_im_pos hE
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have := Lemma57.cFar_nonneg hW1 (by norm_num : (0:ℝ) < 1)
+  unfold mgfBar
+  positivity
+
+/-- **`M_gf(u)(1-s) ≤ mgfBar`, uniformly in `u ∈ [s,1)`.** -/
+theorem mGF_flow_mul_one_sub_le_bar (hE : |E| < 2) {N : ℕ} {u : ℝ} (hs0 : 0 ≤ s N)
+    (hsu : s N ≤ u) (hu1 : u < 1) {c δ : ℝ} (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    (hN1 : 1 ≤ (N : ℝ))
+    (hA : (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    {J : ℝ} (hJ : J ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2) :
+    mGF (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) J * (1 - s N) ≤ mgfBar B E N := by
+  have hL : 1 ≤ B.L N := by have := B.three_le_L N; omega
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hℓu1 : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg hL (hs0.trans hsu) hu1
+  have hm := mE_im_pos hE
+  have hstep := mGF_flow_mul_one_sub_le (B := B) (s := s) hE hs0 hsu hu1 hδ0 hδ hN1 hA hJ
+  have hc := cFar_le_cFar_one hW1 hℓu1
+  have hmi : (0:ℝ) ≤ ((mE E).im)⁻¹ := by positivity
+  unfold mgfBar
+  nlinarith
+
+/-- **`mgfBar ≺ 1`.** -/
+theorem detDom_mgfBar (B : Band Ω) {E : ℝ} (hE : |E| < 2) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, mgfBar B E N ≤ (N : ℝ) ^ τ := by
+  intro τ hτ
+  have hτ2 : 0 < τ / 2 := by linarith
+  have hm := mE_im_pos hE
+  filter_upwards [eventually_cFar_one_le B hτ2,
+    eventually_le_rpow (((mE E).im)⁻¹ * 170) hτ2, Filter.eventually_ge_atTop 1] with
+    N hcF hconst hN1
+  have hN : (1:ℝ) ≤ N := by exact_mod_cast hN1
+  have hx1 : (1:ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.one_le_rpow hN hτ2.le
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hcF0 := Lemma57.cFar_nonneg hW1 (by norm_num : (0:ℝ) < 1)
+  have hmi : (0:ℝ) ≤ ((mE E).im)⁻¹ := by positivity
+  have hsplit : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ := by
+    rw [← Real.rpow_add (by linarith : (0:ℝ) < N)]; ring_nf
+  have hle : mgfBar B E N ≤ (((mE E).im)⁻¹ * 170) * (N : ℝ) ^ (τ / 2) := by
+    unfold mgfBar
+    nlinarith
+  calc mgfBar B E N ≤ (((mE E).im)⁻¹ * 170) * (N : ℝ) ^ (τ / 2) := hle
+    _ ≤ (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) := by
+        exact mul_le_mul_of_nonneg_right hconst (by linarith)
+    _ = (N : ℝ) ^ τ := hsplit
+
+end Flow
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 10. The two drift constants of `FarInputs'`, produced from (5.35) -/
+
+section Produce535
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **`M_f` for the `E^{(G̃)}` half of the drift.**  `M_gf(u) ≤ mgfBar/(1-s)` uniformly in
+`u ∈ [s,t)` (`RBM.Step2FarInputs.mGF_flow_mul_one_sub_le_bar`), and the `+1` is the one unit of
+`W^{-D}` that absorbs the (5.54) residue of (5.35). -/
+noncomputable def mfEG (B : Band Ω) (E : ℝ) (s : ℕ → ℝ) (N : ℕ) : ℝ :=
+  mgfBar B E N * (1 - s N)⁻¹ + 1
+
+/-- **`M_n` for the `E^{(G̃)}` half of the drift.**  On the diagonal band `FarInputs'` asks for
+a plain constant, so the tail is thrown away at its maximum
+`T_{u,D'}(0) = A_u^{-2} + W^{-D'} ≤ 1 + W^{-D'}`.  `M_n` is *not* required to be `≺ 1`: it
+enters only `RBM.Step2FarInputs.FarResidue'`, against `e^{-(5/4)(log W)^{3/2}}`. -/
+noncomputable def mnEG (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (D' : ℝ) (N : ℕ) : ℝ :=
+  (1 + (B.W N : ℝ) ^ (-D'))
+    * (((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1 * (etaT E (s N) / etaT E (t N)) ^ 3
+      + Lemma57.cFar (B.W N : ℝ) 1 + 169) * (1 - s N)⁻¹ + 1)
+
+/-- **`M_f (1-s) ≺ 1` for the `E^{(G̃)}` half** — the conclusion T208 asked for. -/
+theorem detDom_mfEG_mul_one_sub (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (hs1 : ∀ N, s N < 1) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, mfEG B E s N * (1 - s N) ≤ (N : ℝ) ^ τ := by
+  intro τ hτ
+  have hτ2 : 0 < τ / 2 := by linarith
+  filter_upwards [detDom_mgfBar B hE (τ / 2) hτ2, eventually_le_rpow 2 hτ2,
+    Filter.eventually_ge_atTop 1] with N hbar h2 hN1
+  have hN : (1:ℝ) ≤ N := by exact_mod_cast hN1
+  have h1s : (0:ℝ) < 1 - s N := by linarith [hs1 N]
+  have h1s' : (1 - s N) ≤ 1 := by linarith [hs0 N]
+  have hx1 : (1:ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.one_le_rpow hN hτ2.le
+  have hsplit : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ := by
+    rw [← Real.rpow_add (by linarith : (0:ℝ) < N)]; ring_nf
+  have heq : mfEG B E s N * (1 - s N) = mgfBar B E N + (1 - s N) := by
+    unfold mfEG
+    field_simp
+  rw [heq]
+  nlinarith
+
+/-- **The far drift input of `FarInputs'`, for the `E^{(G̃)}` half**, from (5.35), shape 2, the
+sharp (5.47) (`hJ`) and (2.72) with a gain (`hA`).  The constant is the `u`-free
+`RBM.Step2FarInputs.mfEG`. -/
+theorem eGfar_le_of_rhs535 (hE : |E| < 2) {N : ℕ} {ω : Ω} {D' c δ : ℝ}
+    (hs0 : 0 ≤ s N) (hs1 : s N < 1) (hN1 : 1 ≤ (N : ℝ)) (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    {Jf ρf : ℝ → ℝ}
+    (h535 : ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+        ≤ rhs535 (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) D'
+            (Jf u) (ρf u) (zdist (B.L N) (b 0 - b 1)))
+    (ht1 : t N < 1)
+    (hA : ∀ u ∈ Set.Ico (s N) (t N),
+      (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    (hJ : ∀ u ∈ Set.Ico (s N) (t N), Jf u ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2)
+    (hrem : ∀ u ∈ Set.Ico (s N) (t N),
+      B.ell N u / B.ell N (s N) * (B.ell N u * etaT E u)⁻¹ * (B.L N : ℝ) * ρf u
+        ≤ (B.W N : ℝ) ^ (-D')) :
+    ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ¬ ((zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u)) →
+        ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+          ≤ mfEG B E s N * Step2.tT B E N D' u (zdist (B.L N) (b 0 - b 1)) := by
+  intro u hu b hb
+  have hu1 : u < 1 := hu.2.trans ht1
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := by
+    have : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+    linarith
+  have h1s : (0:ℝ) < 1 - s N := by linarith
+  have hT0 : (0:ℝ) ≤ tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D'
+      (zdist (B.L N) (b 0 - b 1)) := tailT_nonneg hW0.le _
+  have hstep := (h535 u hu b).trans (rhs535_far_le hb (hrem u hu))
+  have hbar := mGF_flow_mul_one_sub_le_bar (B := B) (s := s) hE hs0 hu.1 hu1 hδ0 hδ hN1
+    (hA u hu) (hJ u hu)
+  have hmg : mGF (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u)
+      ≤ mgfBar B E N * (1 - s N)⁻¹ := by
+    have h := mul_le_mul_of_nonneg_right hbar (inv_nonneg.2 h1s.le)
+    rwa [mul_assoc, mul_inv_cancel₀ h1s.ne', mul_one] at h
+  have hle : mGF (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) + 1
+      ≤ mfEG B E s N := by unfold mfEG; linarith
+  refine hstep.trans ?_
+  exact mul_le_mul_of_nonneg_right hle hT0
+
+/-- **The near drift input of `FarInputs'`, for the `E^{(G̃)}` half.**  Same data; the
+constant is the `u`-free `RBM.Step2FarInputs.mnEG`.  `M_n` is *not* required to be `≺ 1` —
+it enters only `RBM.Step2FarInputs.FarResidue'`, against `e^{-(5/4)(log W)^{3/2}}`. -/
+theorem eGnear_le_of_rhs535 (hE : |E| < 2) {N : ℕ} {ω : Ω} {D' c δ : ℝ}
+    (hs0 : 0 ≤ s N) (hs1 : s N < 1) (ht1 : t N < 1) (hN1 : 1 ≤ (N : ℝ))
+    (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    {Jf ρf : ℝ → ℝ}
+    (h535 : ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+        ≤ rhs535 (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) D'
+            (Jf u) (ρf u) (zdist (B.L N) (b 0 - b 1)))
+    (hscale1 : ∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+    (hA : ∀ u ∈ Set.Ico (s N) (t N),
+      (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    (hJ0 : ∀ u ∈ Set.Ico (s N) (t N), 0 ≤ Jf u)
+    (hJ : ∀ u ∈ Set.Ico (s N) (t N), Jf u ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2)
+    (hrem : ∀ u ∈ Set.Ico (s N) (t N),
+      B.ell N u / B.ell N (s N) * (B.ell N u * etaT E u)⁻¹ * (B.L N : ℝ) * ρf u
+        ≤ (B.W N : ℝ) ^ (-D')) :
+    ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ((zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u)) →
+        ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+          ≤ mnEG B E s t D' N := by
+  intro u hu b _
+  have hsu : s N ≤ u := hu.1
+  have hut : u < t N := hu.2
+  have hu1 : u < 1 := hut.trans ht1
+  have hL : 1 ≤ B.L N := by have := B.three_le_L N; omega
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := by linarith
+  have h1s : (0:ℝ) < 1 - s N := by linarith
+  have hℓs : 0 < B.ell N (s N) := Step3.ellHat_pos_of_lt_one hL hs1
+  have hℓu : 0 < B.ell N u := Step3.ellHat_pos_of_lt_one hL hu1
+  have hℓu1 : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg hL (hs0.trans hsu) hu1
+  have hηu : 0 < etaT E u := Step2.etaT_pos' hE hu1
+  have hm := mE_im_pos hE
+  have hmi : (0:ℝ) ≤ ((mE E).im)⁻¹ := by positivity
+  have hr0 : (0:ℝ) ≤ B.ell N u / B.ell N (s N) := by positivity
+  have hscale : B.scale E N u = (B.W N : ℝ) * B.ell N u * etaT E u := rfl
+  have hstep := (h535 u hu b).trans (rhs535_le_const (Lr := (B.L N : ℝ)) (ρ := ρf u)
+    hW1 hℓu hηu hr0 (hJ0 u hu) (by positivity) (hrem u hu))
+  -- `T_{u,D}(0) = A_u^{-2} + W^{-D} ≤ 2`
+  have hA1 : (1:ℝ) ≤ (B.W N : ℝ) * B.ell N u * etaT E u := by
+    rw [← hscale]; exact hscale1 u hu
+  have hAi : (((B.W N : ℝ) * B.ell N u * etaT E u) ^ 2)⁻¹ ≤ 1 :=
+    inv_le_one_of_one_le₀ (by nlinarith)
+  have hWD0 : (0:ℝ) ≤ (B.W N : ℝ) ^ (-D') := Real.rpow_nonneg hW0.le _
+  have hsum : (((B.W N : ℝ) * B.ell N u * etaT E u) ^ 2)⁻¹ + (B.W N : ℝ) ^ (-D')
+      ≤ 1 + (B.W N : ℝ) ^ (-D') := by linarith
+  -- the window ratios
+  have hR0 : (0:ℝ) ≤ etaT E (s N) / etaT E u := by
+    rw [Step2.etaT_ratio hE]; positivity
+  have hR1 : (1:ℝ) ≤ etaT E (s N) / etaT E u := by
+    rw [Step2.etaT_ratio hE, le_div_iff₀ (by linarith), one_mul]; linarith
+  have hRt : etaT E (s N) / etaT E u ≤ etaT E (s N) / etaT E (t N) := by
+    rw [Step2.etaT_ratio hE, Step2.etaT_ratio hE]
+    have h1t : (0:ℝ) < 1 - t N := by linarith
+    exact div_le_div_of_nonneg_left h1s.le h1t (by linarith)
+  have h3 : (etaT E (s N) / etaT E u) ^ 3 ≤ (etaT E (s N) / etaT E (t N)) ^ 3 :=
+    pow_le_pow_left₀ hR0 hRt 3
+  have hq := Step2MomentStep.hq_of_ratio hR1 hr0
+    (Step2MomentStep.ratio_sq_le (B := B) (s := s) hE hsu hu1)
+  have hcN := cNear_le_cNear_one hW1 hℓu1
+  have hcN0 : (0:ℝ) ≤ Lemma57.cNear (B.W N : ℝ) 1 := Lemma57.cNear_nonneg hW1 (by norm_num)
+  have hr3 : (0:ℝ) ≤ (B.ell N u / B.ell N (s N)) ^ 3 := by positivity
+  have hbar := mGF_flow_mul_one_sub_le_bar (B := B) (s := s) hE hs0 hsu hu1 hδ0 hδ hN1
+    (hA u hu) (hJ u hu)
+  -- the near summand of `M_gn`, times `1 - s`
+  have hnearterm : (etaT E u)⁻¹ * (Lemma57.cNear (B.W N : ℝ) (B.ell N u)
+      * (B.ell N u / B.ell N (s N)) ^ 3) * (1 - s N)
+      ≤ ((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1
+        * (etaT E (s N) / etaT E (t N)) ^ 3) := by
+    have hid := etaT_inv_mul_one_sub_ratio (E := E) (s := s N) hE hu1
+    have hrw : (etaT E u)⁻¹ * (Lemma57.cNear (B.W N : ℝ) (B.ell N u)
+        * (B.ell N u / B.ell N (s N)) ^ 3) * (1 - s N)
+        = ((etaT E u)⁻¹ * (1 - s N)) * (Lemma57.cNear (B.W N : ℝ) (B.ell N u)
+          * (B.ell N u / B.ell N (s N)) ^ 3) := by ring
+    rw [hrw, hid, mul_assoc]
+    refine mul_le_mul_of_nonneg_left ?_ hmi
+    calc (etaT E (s N) / etaT E u) * (Lemma57.cNear (B.W N : ℝ) (B.ell N u)
+          * (B.ell N u / B.ell N (s N)) ^ 3)
+        ≤ (etaT E (s N) / etaT E u) * (Lemma57.cNear (B.W N : ℝ) 1
+            * (etaT E (s N) / etaT E u) ^ 2) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul hcN hq hr3 hcN0) hR0
+      _ = Lemma57.cNear (B.W N : ℝ) 1 * (etaT E (s N) / etaT E u) ^ 3 := by ring
+      _ ≤ Lemma57.cNear (B.W N : ℝ) 1 * (etaT E (s N) / etaT E (t N)) ^ 3 :=
+          mul_le_mul_of_nonneg_left h3 hcN0
+  -- `M_gn(u)(1-s) ≤ C`
+  have hgn : mGN (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) * (1 - s N)
+      ≤ ((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1 * (etaT E (s N) / etaT E (t N)) ^ 3
+        + Lemma57.cFar (B.W N : ℝ) 1 + 169) := by
+    have hexp : mGN (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) * (1 - s N)
+        = (etaT E u)⁻¹ * (Lemma57.cNear (B.W N : ℝ) (B.ell N u)
+            * (B.ell N u / B.ell N (s N)) ^ 3) * (1 - s N)
+          + mGF (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) * (1 - s N) := by
+      unfold mGN; ring
+    have hbar' : mGF (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) * (1 - s N)
+        ≤ ((mE E).im)⁻¹ * (Lemma57.cFar (B.W N : ℝ) 1 + 169) := hbar
+    have hring : ((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1
+          * (etaT E (s N) / etaT E (t N)) ^ 3)
+        + ((mE E).im)⁻¹ * (Lemma57.cFar (B.W N : ℝ) 1 + 169)
+        = ((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1
+          * (etaT E (s N) / etaT E (t N)) ^ 3 + Lemma57.cFar (B.W N : ℝ) 1 + 169) := by ring
+    rw [hexp, ← hring]
+    linarith
+  have hgn' : mGN (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u)
+      ≤ ((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1 * (etaT E (s N) / etaT E (t N)) ^ 3
+        + Lemma57.cFar (B.W N : ℝ) 1 + 169) * (1 - s N)⁻¹ := by
+    have h := mul_le_mul_of_nonneg_right hgn (inv_nonneg.2 h1s.le)
+    rwa [mul_assoc, mul_inv_cancel₀ h1s.ne', mul_one] at h
+  have hgn0 : (0:ℝ) ≤ mGN (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) :=
+    mGN_nonneg hW1 hℓu hηu hr0 (hJ0 u hu)
+  refine hstep.trans ?_
+  unfold mnEG
+  calc (mGN (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) + 1)
+        * ((((B.W N : ℝ) * B.ell N u * etaT E u) ^ 2)⁻¹ + (B.W N : ℝ) ^ (-D'))
+      ≤ (mGN (B.W N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) (Jf u) + 1)
+          * (1 + (B.W N : ℝ) ^ (-D')) :=
+        mul_le_mul_of_nonneg_left hsum (by linarith)
+    _ ≤ (((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1
+          * (etaT E (s N) / etaT E (t N)) ^ 3 + Lemma57.cFar (B.W N : ℝ) 1 + 169)
+          * (1 - s N)⁻¹ + 1) * (1 + (B.W N : ℝ) ^ (-D')) :=
+        mul_le_mul_of_nonneg_right (by linarith) (by linarith)
+    _ = (1 + (B.W N : ℝ) ^ (-D')) * (((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1
+          * (etaT E (s N) / etaT E (t N)) ^ 3 + Lemma57.cFar (B.W N : ℝ) 1 + 169)
+          * (1 - s N)⁻¹ + 1) := by ring
+
+end Produce535
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 11. `FarInputs'` with the `E^{(G̃)}` half of the drift produced -/
+
+section Assemble
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The per-sample data of (5.35), (5.34) and (5.45) at `(N, ω)`.**
+
+`Jf` and `ρf` are *given* functions, not existentials: the caller instantiates `Jf` by
+`RBM.Step2.jS` (5.29) and `ρf` by the (5.54) tail, so nothing about the model can be chosen
+after the fact.  The left-hand sides are `RBM.EGDef.eGpm`, `RBM.primBil` of `L - K` and
+`RBM.Step2FarInputs.farMart` — all three definitions in the Green function of `H_u`. -/
+def EGData (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D' δ : ℝ) (Mi Mq Mqf Mm : ℕ → ℝ)
+    (Jf ρf : ℕ → Ω → ℝ → ℝ) (N : ℕ) (ω : Ω) : Prop :=
+  (∀ b : LoopArg (B.L N) 2, ‖Step2.lk X E N (s N) ω b‖
+      ≤ Mi N * Step2.tT B E N D' (s N) (zdist (B.L N) (b 0 - b 1)))
+  ∧ (∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+        ≤ rhs535 (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) D'
+            (Jf N ω u) (ρf N ω u) (zdist (B.L N) (b 0 - b 1)))
+  ∧ (∀ u ∈ Set.Ico (s N) (t N), 0 ≤ Jf N ω u)
+  ∧ (∀ u ∈ Set.Ico (s N) (t N), Jf N ω u ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2)
+  ∧ (∀ u ∈ Set.Ico (s N) (t N),
+      B.ell N u / B.ell N (s N) * (B.ell N u * etaT E u)⁻¹ * (B.L N : ℝ) * ρf N ω u
+        ≤ (B.W N : ℝ) ^ (-D'))
+  ∧ (∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      (zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u) →
+        ‖primBil (B.L N) (B.W N)
+            (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+            (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+            ⟨[true, false], [b 0, b 1]⟩‖ ≤ Mq N)
+  ∧ (∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ¬ ((zdist (B.L N) (b 0 - b 1) : ℝ) ≤ ellStar (B.W N : ℝ) (B.ell N u)) →
+        ‖primBil (B.L N) (B.W N)
+            (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+            (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+            ⟨[true, false], [b 0, b 1]⟩‖
+          ≤ Mqf N * Step2.tT B E N D' u (zdist (B.L N) (b 0 - b 1)))
+  ∧ (∀ v : TimeIcc s t N, ∀ x y : ZMod (B.L N),
+      6 * ellStar (B.W N : ℝ) (B.ell N (v : ℝ)) ≤ (zdist (B.L N) (x - y) : ℝ) →
+        ‖farMart X E s N (v : ℝ) ω ![x, y]‖
+          ≤ Mm N * Step2.tT B E N D' (v : ℝ) (zdist (B.L N) (x - y)))
+
+/-- **The two drift inputs of `FarInputs'` are now theorems.**  Compare
+`RBM.Step2FarInputs.farInputs'_of_eG_of_quad`, whose `heGnear`/`heGfar` were *hypotheses* with
+unexplained constants: here they are produced from (5.35), shape 2, with the explicit constants
+`RBM.Step2FarInputs.mnEG` and `RBM.Step2FarInputs.mfEG`. -/
+theorem farInputs'_of_egData (hE : |E| < 2) {N : ℕ} {ω : Ω} {D' c δ : ℝ}
+    {Mi Mq Mqf Mm : ℕ → ℝ} {Jf ρf : ℕ → Ω → ℝ → ℝ}
+    (hs0 : 0 ≤ s N) (hs1 : s N < 1) (ht1 : t N < 1) (hN1 : 1 ≤ (N : ℝ))
+    (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    (hscale1 : ∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+    (hA : ∀ u ∈ Set.Ico (s N) (t N),
+      (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    (h : EGData X E s t D' δ Mi Mq Mqf Mm Jf ρf N ω) :
+    FarInputs' X E s t D' Mi (fun N => mnEG B E s t D' N + Mq N)
+      (fun N => mfEG B E s N + Mqf N) Mm N ω := by
+  obtain ⟨hinit, h535, hJ0, hJ, hrem, hQnear, hQfar, hmart⟩ := h
+  exact farInputs'_of_eG_of_quad X hinit
+    (eGnear_le_of_rhs535 X hE hs0 hs1 ht1 hN1 hδ0 hδ h535 hscale1 hA hJ0 hJ hrem)
+    hQnear
+    (eGfar_le_of_rhs535 X hE hs0 hs1 hN1 hδ0 hδ h535 ht1 hA hJ hrem)
+    hQfar hmart
+
+/-- **The same, at the level of `HighProb`.** -/
+theorem highProb_farInputs'_of_egData (hE : |E| < 2) {D' c δ : ℝ}
+    {Mi Mq Mqf Mm : ℕ → ℝ} {Jf ρf : ℕ → Ω → ℝ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (hs1 : ∀ N, s N < 1) (ht1 : ∀ N, t N < 1)
+    (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    (hdet : ∀ᶠ N : ℕ in atTop, 1 ≤ (N : ℝ)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N),
+          (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u))
+    (hHP : HighProb B.P (fun N => {ω | EGData X E s t D' δ Mi Mq Mqf Mm Jf ρf N ω})) :
+    HighProb B.P (fun N => {ω | FarInputs' X E s t D' Mi (fun N => mnEG B E s t D' N + Mq N)
+      (fun N => mfEG B E s N + Mqf N) Mm N ω}) := by
+  refine hHP.mono ?_
+  filter_upwards [hdet] with N hN ω hω
+  exact farInputs'_of_egData X hE (hs0 N) (hs1 N) (ht1 N) hN.1 hδ0 hδ hN.2.1 hN.2.2 hω
+
+/-- **`M_f (1-s) ≺ 1` for the produced far constant**, given the (5.34) half.  The `E^{(G̃)}`
+half is `RBM.Step2FarInputs.detDom_mfEG_mul_one_sub`, a theorem; only the quadratic gluing
+term's constant is still an input. -/
+theorem detDom_mf_mul_one_sub (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (hs1 : ∀ N, s N < 1) {Mqf : ℕ → ℝ}
+    (hq : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mqf N * (1 - s N) ≤ (N : ℝ) ^ τ) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      (mfEG B E s N + Mqf N) * (1 - s N) ≤ (N : ℝ) ^ τ := by
+  intro τ hτ
+  have hτ2 : 0 < τ / 2 := by linarith
+  filter_upwards [detDom_mfEG_mul_one_sub B hE hs0 hs1 (τ / 2) hτ2, hq (τ / 2) hτ2,
+    eventually_le_rpow 2 hτ2, Filter.eventually_ge_atTop 1] with N h1 h2 h3 hN1
+  have hN : (1:ℝ) ≤ N := by exact_mod_cast hN1
+  have hx1 : (1:ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.one_le_rpow hN hτ2.le
+  have hsplit : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ := by
+    rw [← Real.rpow_add (by linarith : (0:ℝ) < N)]; ring_nf
+  have hexp : (mfEG B E s N + Mqf N) * (1 - s N)
+      = mfEG B E s N * (1 - s N) + Mqf N * (1 - s N) := by ring
+  rw [hexp]
+  nlinarith
+
+end Assemble
+
+/-! ### 12. The produced constants are non-degenerate -/
+
+section NonDegenerate
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **`1 ≤ M_f`.**  `RBM.Step2FarInputs.farDrift_eq_zero_of_farInputs'_zero` says that
+`M_n = M_f = 0` forces the model's own drift to vanish; what (5.35) actually produces is at
+least `1`, so the witnesses below are **not** the fiat witness of T198
+(`RBM.Step2MomentStep.farInputs_of_remainder`, which takes `F = 0`). -/
+theorem one_le_mfEG (B : Band Ω) {E : ℝ} (hE : |E| < 2) (s : ℕ → ℝ) {N : ℕ}
+    (hs1 : s N < 1) : 1 ≤ mfEG B E s N := by
+  have h1s : (0:ℝ) < 1 - s N := by linarith
+  have hbar := (mgfBar_pos B hE N).le
+  have : (0:ℝ) ≤ mgfBar B E N * (1 - s N)⁻¹ := by positivity
+  unfold mfEG; linarith
+
+/-- **`1 ≤ M_n`.** -/
+theorem one_le_mnEG (B : Band Ω) {E : ℝ} (hE : |E| < 2) (s t : ℕ → ℝ) (D' : ℝ) {N : ℕ}
+    (hs1 : s N < 1) (ht1 : t N < 1) : 1 ≤ mnEG B E s t D' N := by
+  have h1s : (0:ℝ) < 1 - s N := by linarith
+  have hm := mE_im_pos hE
+  have hW1 : (1:ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hcN := Lemma57.cNear_nonneg hW1 (by norm_num : (0:ℝ) < 1)
+  have hcF := Lemma57.cFar_nonneg hW1 (by norm_num : (0:ℝ) < 1)
+  have hR0 : (0:ℝ) ≤ etaT E (s N) / etaT E (t N) := by
+    rw [Step2.etaT_ratio hE]; positivity
+  have hR3 : (0:ℝ) ≤ (etaT E (s N) / etaT E (t N)) ^ 3 := by positivity
+  have hmi : (0:ℝ) ≤ ((mE E).im)⁻¹ := by positivity
+  have hinv : (0:ℝ) ≤ (1 - s N)⁻¹ := by positivity
+  have hterm : (0:ℝ) ≤ ((mE E).im)⁻¹ * (Lemma57.cNear (B.W N : ℝ) 1
+      * (etaT E (s N) / etaT E (t N)) ^ 3 + Lemma57.cFar (B.W N : ℝ) 1 + 169)
+      * (1 - s N)⁻¹ := by positivity
+  have hW0 : (0:ℝ) < (B.W N : ℝ) := by linarith
+  have hWD0 : (0:ℝ) ≤ (B.W N : ℝ) ^ (-D') := Real.rpow_nonneg hW0.le _
+  unfold mnEG; nlinarith
+
+/-- **The satisfiability witness, at the critical scaling, with the produced far constant.**
+
+`1 - s_N = 1/(N+1)` — the regime `η_s^{-1} ≍ N`, where T198's `RBM.Step2MomentStep.cFarStep`
+is *not* `≺ 1` (`RBM.Step2FarInputs.cFarStep_not_detDom`) — and `M_f` is the constant (5.35)
+really produces, `RBM.Step2FarInputs.mfEG`, which is `≥ 1` by
+`RBM.Step2FarInputs.one_le_mfEG`: the drift is **not** taken to be `0`. -/
+theorem cFarStep'_detDom_mfEG (B : Band Ω) {E : ℝ} (hE : |E| < 2) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      cFarStep' B E (fun N => 1 - 1 / ((N : ℝ) + 1)) (fun _ => 1)
+          (mfEG B E (fun N => 1 - 1 / ((N : ℝ) + 1))) (fun _ => 1) N ≤ (N : ℝ) ^ τ := by
+  set s : ℕ → ℝ := fun N => 1 - 1 / ((N : ℝ) + 1) with hs
+  have hpos : ∀ N : ℕ, (0:ℝ) < (N : ℝ) + 1 := fun N => by positivity
+  have hs0 : ∀ N, 0 ≤ s N := by
+    intro N
+    have h1 : (1:ℝ) / ((N : ℝ) + 1) ≤ 1 := by
+      rw [div_le_one (hpos N)]
+      have : (0:ℝ) ≤ (N : ℝ) := Nat.cast_nonneg N
+      linarith
+    rw [hs]; simp only []; linarith
+  have hs1 : ∀ N, s N < 1 := by
+    intro N
+    have : (0:ℝ) < 1 / ((N : ℝ) + 1) := by positivity
+    rw [hs]; simp only []; linarith
+  refine detDom_cFarStep' B E (fun N => (hs1 N).le) (fun _ => zero_le_one)
+    (fun N => le_trans zero_le_one (one_le_mfEG B hE s (hs1 N))) ?_ ?_ ?_
+  · intro τ hτ
+    filter_upwards [eventually_le_rpow 1 hτ] with N hN using hN
+  · exact detDom_mfEG_mul_one_sub B hE hs0 hs1
+  · intro τ hτ
+    filter_upwards [eventually_le_rpow 1 hτ] with N hN using hN
+
+end NonDegenerate
+
+/-! ### 13. (5.48) end to end, with the `E^{(G̃)}` half of the drift produced -/
+
+section EndToEnd535
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(5.48) with the drift's `E^{(G̃)}` half produced from (5.35).**
+
+`RBM.Step2FarInputs.flowEq548_of_farInputs'_detDom` with its `FarInputs'` slot filled by
+`RBM.Step2FarInputs.highProb_farInputs'_of_egData` and its `M_f (1-s) ≺ 1` slot by
+`RBM.Step2FarInputs.detDom_mf_mul_one_sub`.  What is left of the far-field drift is exactly
+the **quadratic gluing term** of (5.34) — the constants `Mq`, `Mqf` — and the martingale
+`Mm` of (5.45); the `E^{(G̃)}` half of (5.35) is no longer a hypothesis. -/
+theorem flowEq548_of_egData (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c δ : ℝ} (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    {Mi Mq Mqf Mm : ℝ → ℕ → ℝ} {Jf ρf : ℝ → ℕ → Ω → ℝ → ℝ}
+    (hMi : ∀ D' N, 0 ≤ Mi D' N) (hMq : ∀ D' N, 0 ≤ Mq D' N) (hMqf : ∀ D' N, 0 ≤ Mqf D' N)
+    (hMm : ∀ D' N, 0 ≤ Mm D' N)
+    (hMi' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mi D' N ≤ (N : ℝ) ^ τ)
+    (hMqf' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mqf D' N * (1 - s N) ≤ (N : ℝ) ^ τ)
+    (hMm' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mm D' N ≤ (N : ℝ) ^ τ)
+    (hdet : ∀ᶠ N : ℕ in atTop, 1 ≤ (N : ℝ)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N),
+          (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u))
+    (hHP : ∀ D' : ℝ, HighProb B.P (fun N => {ω |
+      EGData X E s t D' δ (Mi D') (Mq D') (Mqf D') (Mm D') (Jf D') (ρf D') N ω}))
+    (hres : ∀ D : ℝ, 0 < D → ∃ D' : ℝ, D ≤ D' ∧ ∀ᶠ N : ℕ in atTop,
+      exp 1 ≤ (B.W N : ℝ) ∧ FarResidue' B E s t D D' (Mi D')
+        (fun N => mnEG B E s t D' N + Mq D' N) (fun N => mfEG B E s N + Mqf D' N) N)
+    (hnear : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+        tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+          (zdist (B.L N) (p.2.1 - p.2.2)))) :
+    Step45.FlowEq548 X E s t := by
+  have hs1 : ∀ N, s N < 1 := fun N => lt_of_le_of_lt (hst N) (ht1 N)
+  refine flowEq548_of_farInputs'_detDom X hE hs0 hst ht1
+    (Mn := fun D' N => mnEG B E s t D' N + Mq D' N)
+    (Mf := fun D' N => mfEG B E s N + Mqf D' N)
+    hMi (fun D' N => ?_) (fun D' N => ?_) hMm hMi' (fun D' => ?_) hMm'
+    (fun D' => highProb_farInputs'_of_egData X hE hs0 hs1 ht1 hδ0 hδ hdet (hHP D'))
+    hres hnear
+  · have := one_le_mnEG B hE s t D' (hs1 N) (ht1 N)
+    have := hMq D' N
+    linarith
+  · have := one_le_mfEG B hE s (hs1 N)
+    have := hMqf D' N
+    linarith
+  · exact detDom_mf_mul_one_sub B hE hs0 hs1 (hMqf' D')
+
+end EndToEnd535
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 14. The constants are not vacuously zero -/
+
+section NonVacuous
+
+/-- **`M_gf > 0` whenever `J > 0`.**  (5.35)'s far-field constant is a genuine positive
+quantity — the `169 r A^{-1} J^{3/2}` term alone is positive — so
+`RBM.Step2FarInputs.mGF_mul_le` and the bound it feeds are not statements about `0`. -/
+theorem mGF_pos {Wr ℓu ℓs ηu J : ℝ} (hW : 1 ≤ Wr) (hℓs : 0 < ℓs) (hℓu : 0 < ℓu)
+    (hηu : 0 < ηu) (hJ : 0 < J) : 0 < mGF Wr ℓu ℓs ηu J := by
+  have hW0 : (0:ℝ) < Wr := by linarith
+  have hr0 : (0:ℝ) < ℓu / ℓs := by positivity
+  have hcF : 0 ≤ Lemma57.cFar Wr ℓu := Lemma57.cFar_nonneg hW hℓu
+  have hb0 := mgfBeta_nonneg (Wr := Wr) (ℓu := ℓu) (ℓs := ℓs) (ηu := ηu) hr0.le
+  have hsJ : (0:ℝ) < √J := Real.sqrt_pos.2 hJ
+  have hg0 : 0 < mgfGamma Wr ℓu ℓs ηu := by
+    unfold mgfGamma; positivity
+  have h1 : (0:ℝ) ≤ Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * J) := by positivity
+  have h2 : (0:ℝ) < 169 * (mgfGamma Wr ℓu ℓs ηu * (J * √J)) := by positivity
+  have hηi : (0:ℝ) < ηu⁻¹ := by positivity
+  unfold mGF
+  have : (0:ℝ) < Lemma57.cFar Wr ℓu * (mgfBeta Wr ℓu ℓs ηu * J)
+      + 169 * (mgfGamma Wr ℓu ℓs ηu * (J * √J)) := by linarith
+  positivity
+
+end NonVacuous
+
+end Step2FarInputs
+end RBM

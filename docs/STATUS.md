@@ -5967,3 +5967,81 @@ Jun 要求把 Claude Code 侧这一天的经验写下来，**由 Cowork 做成 s
 * **R3（`OUFlow` 的保真）**：现有 `OUFlow` **未钉死分布**，常值流使 Theorem 2.6 的三条假设**全部平凡**（fiat）。是现在就钉死 `H_t := e^{−t/2}H + (1−e^{−t})^{1/2}G`，还是等六步完成？**在钉死之前，报告不能把 `theorem2_6_of_steps` 算作 Theorem 2.6 的形式化。**
 * **R4（Step 6 与 D12/D13 的联动）**：**已被 D12/D13 回答**（选 (a)，T204 今日落地第一遍）。剩下的是 Step 6 样本侧四个好集（`FDInputs`/`QuadInputs`/`EGInputs`/`DriftInputs`）的开单时机——按 D12 归 T205。**此条可视为已裁定，留档备查。**
 * **R5（否定结论怎么呈现）**：`LDENetClose` 按字面不可证、`MinorGood` 恒假、`MomentHyp.step` 在冻结形状下不可证、裸 `Cond272` 不够——四条都**编译成了定理**，是本项目的真实产出。最终报告单列一节（「形式化查出的论文/草图缺陷」）还是只作脚注？T200 建议单列；涉及论文措辞，请 Jun 定。
+
+## ⭐⭐ T207：(5.47) 锐化到 `(η_s/η_u)²` —— **两次幂不是丢了，是从来没取出来过**（`Hierarchy/Step2Near47.lean`，939 行、38 条，2026-09-21）
+
+**第 0 步的答案：工单列的三个候选一个都不是机制。**
+
+* **(a) `⁴` 是 bootstrap 的归一化，不是估计的损失。** `Hierarchy/Step2Moment.lean:150` 的 `jSnorm := Step2.jS / ratR^4` 把 (5.29)/(5.43) 的**先验门槛** `(η_s/η_u)^4` 写死进整条链（`MomentHypCut.cut` → `stochDom_jSnorm_cut` → `jS_stochDom_cut`）。证出 `J* ≺ (η_s/η_u)^4` 就是论文那句「hence `P(T ≤ t)` is negligible」。**论文的 (5.47) 是同一条一步界的第二次读法**（p.58），**仓库从来没做这第二次读**。
+* **(b) 记账层唯一真是 `R⁴` 的那一项是 `phi_arith'` 的 `t4`**（`Step2MomentStep.lean:158–161`）：它把 (5.41) drift 近场的两个 `u`-依赖因子 `(η_u/η_t)²` 与 `(ℓ_u/ℓ_s)³` **分开各取上确界**。其余六项（(5.39) 初值、(5.40) 两项、(5.41) 两个远场、(5.45) 鞅）已经是 `R²` 或 `O(1)`。
+* **(c) ⚠ 更正工单候选 ①**：`integral_nearInt_le` **做了，但积的是另一条积分，而且全仓无消费者**——它积的是 **(5.44) 二次变差**的被积函数（预算本来就是 `R⁴`，开方给 (5.45) 的 `R²`，已经对）；**(5.41) 的 drift 被积函数从来没被积过**。顺带查到 **`phi_arith'` 本身也没有消费者**，整个记账层与 `CutHyp.moment` 字段是断开的（T132c 留下的形态，本单没有改变它）。
+* **(d) 候选 ②③ 都不是**：T174 说的「(5.36) 的 `(ℓ_u/ℓ_s)^{3/2}` 在 (5.44) 的积分里免费」属实；`η_s/η_t` 与 `η_s/η_u` 没有混用，后者是子窗口读法、**更强**，方向有利。
+
+**补齐的办法**：把 (5.41) drift 近场**联合积分**。机制与 (5.44) 那条**相反**——`nearInt` 关于 `η_u` 单增（sup 在左端，sup×长度够用），而 drift 的被积函数 `= η_u^{−1/2}η_s^{3/2}η_v^{−2}` 关于 `η_u` 单**减**，sup×长度只给到 `m⁻¹R^{5/2}`（`sup_mul_len_driftNearInt_eq`），**还差半个幂**；必须真做原函数 `∫(1−u)^{−1/2}du = 2(√(1−s)−√(1−v))`，做完是 `2m⁻¹R²`（`integral_driftNearInt_le`）。
+
+**核心结论（`phi_arith_second_pass`）**：**只改 `t4` 一项、`J*` 仍停在已建立的 `x⁸R⁴` 先验水平，输出就已经是 `R²`——不需要第二次 bootstrap。** 唯一代价是两个远场边条件从 `β* = 5.5/4.5` 变成 `9.5/6.5`，而 `second_pass_side_conditions_of_reg` 证明它们由 (2.72)+增益在**同一个 `4δ ≤ 2c`** 下给出。**锐化在指数预算上是零成本**；近场那一行反而从 `β* = 4`（零余量）降到 `β* = 2`。
+
+**可满足性**：`phi_arith_sharp_flow` 把 `qI` 取成**真实积分** `∫_s^v driftNearInt`，近场假设由 `integral_driftNearInt_le` 兑现——**不是假设 `R²` 而是算出 `R²`**（主要的反 fiat 见证）。非退化：`driftNearInt_pos`（被积函数严格正，预算不是靠零被积函数满足）、`sharp_lt_blunt`（`R > 1` 时 `R² < R⁴`，是真增益）、`jSnorm2_left`（`u = s_N` 处两种归一化重合，**初值条件一字未加强**，(2.69) 原样）。**否定结论也编译了**：`crude_exceeds_budget`——`R > 4` 时分开取 sup 严格超预算，**那两次幂是真花掉的**，不是记账产物。
+
+**`flowEq548_of_near_far` / `_farInputs` 一字不用改**：`hnear` 槽由 `hnear_sharp` 填，`flowEq548_of_sharp_farInputs` 是现成的一行封装。
+
+**未闭合**：`MomentHypCutSharp.cut` 仍是具名假设，与 T197 的 `MomentHypCut.cut` **同级**（本单证了它**不比钝版要求更多**，`jSnorm_le_jSnorm2`）——归 `CutHyp.moment` 的生产者那条线。
+
+## ⚠ 无主的活（T207 交出）
+
+**`MomentDuhamelCut.CutHyp` 的 `Θ : ℕ → ℝ` 要推广成 `Θ : ℕ → ℝ → ℝ`。** 真正的「第二遍」接口现在**表达不出来**：`phi_arith_second_pass` 说第二遍只要钝版前缀，那么正确接口应是「截断水平取自钝版结论、结论关于 `jSnorm2`」的 `CutHyp`，而钝版水平换算到 `jSnorm2` 单位是 `N^{2δ}(η_s/η_u)²`，**带 `u`**；现有 `Θ` 没有 `u`-依赖。推广后能把 T207 §3 的那条假设**彻底去掉**（数学上已经证完）。**没有单负责。**
+
+## T207 给 `Step2MomentStep.lean` 的文档接线（等 T208 交出后由协调者做）
+
+`Step2MomentStep.lean` 当时在 T208 手里，以下只是文档指针，**不删任何东西**：
+1. `phi_arith'`（:104）、`phi_lt_threshold`（:933）——无消费者，加 `See also Step2Near47.phi_arith_second_pass` / `phi_lt_threshold_sharp`。**不建议删**：它们仍是钝版路线诚实的记账。
+2. `integral_nearInt_le`/`nearInt_le`/`coarse_sq_ge`（:307/:343/:378）——全仓无消费者，**不要删**（是 (5.44) 二次变差的预算与其锐性）；但文件头第 32 行那一格应改成「这是 **(5.44) 二次变差**的近场积分；(5.41) **drift** 的孪生积分在 `Step2Near47.integral_driftNearInt_le`，机制相反，**那一条才是两次幂的所在**」。
+3. `hq_of_ratio`（:194）保留加说明；`side_conditions_of_reg`（:442）的 `.2.1`/`.2.2` 被 `sharp_side_conditions_of_reg` **原样复用**（这就是「指数表没动」的编译证据）。
+4. `jS_stochDom_cut`/`Step2Moment.jS_stochDom` **不要 deprecate**——`jS_stochDom_of_sharp` 证明锐版逐字蕴含它们，`aprioriDecay_of_sharp` 证明同一假设束也供得起 (2.76)。
+
+---
+
+## ⭐ T208：(5.48) 的漂移钉死了；`cFarStep ≺ 1` **按 T198 的形状为假**，修正形 `cFarStep' ≺ 1` 已证（新建 `Hierarchy/Step2FarInputs.lean`，917 行，2026-09-21）
+
+`lake env lean RBM1D/Hierarchy/Step2FarInputs.lean` exit=0；`lake build RBM1D` exit=0，审计 **10635**（本文件尚未进 `RBM1D.lean`，import 待协调者加；20 条声明逐条 `#print axioms` 干净）。**`Hierarchy/Step2MomentStep.lean` 一字未动**（T207 在只读引用它；本单不需要改它，见下）。
+
+### 1. fiat 审计：T198 的 `FarInputs` 里漂移**确实是自由字段**
+`FarInputs` 的形状是 `∀ v, ∃ F Fn : ℝ → LoopArg L 2 → ℂ, ∃ Mrt, …`——`F`（漂移）、`Fn`（近场部分）、`Mrt`（鞅）**三个都是自由张量**，所以 `farInputs_of_remainder` 能取 `F = Fn = 0` 把一切塞进 `Mrt`。逐字段：
+
+| `FarInputs` 字段 | T198 | `FarInputs'`（本单） |
+|---|---|---|
+| Duhamel 恒等式 (5.21) | 对自由 `F`、`Mrt` 断言 | **定义**：`farMart` 就定义成 Duhamel 亏量，恒等式是 `ring` |
+| 漂移 `F` | 自由 | **钉死** `farDrift = DriftDef.driftF`（`n = 0`, `σ = (+,−)`），`= eGpm + primBil(L−K,L−K)`（`farDrift_eq_eGpm_add_quadGlue`），且 `= MomentDuhamel.Hyp.Fpath`（`Fpath_eq_farDrift`） |
+| 近场部分 `Fn` | 自由 | **定义**：`farDriftNear` = `farDrift` 在 `‖b₁−b₂‖ ≤ ℓ*_u` 上的限制，所以两条漂移条件是对 `farDrift` 本身在两个区域上的陈述 |
+| 鞅 `Mrt` | 自由 | **定义**：`farMart` = 亏量（假设只剩「亏量小」，即 (5.20)+(5.45) 合成一条，严格弱于分别假设两条） |
+| (2.69) 初值 | 关于 `Step2.lk` | 同 |
+
+**反 fiat 证书（编译过）**：`farDrift_eq_zero_of_farInputs'_zero`——`M_n = M_f = 0` **迫使模型自身的漂移在 `[s,t)` 上恒为 0**。T198 的包没有这个性质（`farInputs_of_remainder` 对任意样本都能取 `M_n = M_f = 0`）。
+
+### 2. ⚠ 核心否定结论：**`cFarStep ≺ 1` 按 T198 的形状不成立**
+`cFarStep = Ξ(M_i + M_f) + M_m + 1`，其中 `M_f` 是 (5.35) 远场前因子在 `u ∈ [s,v)` 上的 **sup**。(5.35) shape 2（`EGDef.eGpm_le_reduced`）的前因子是
+
+`η_u^{-1}( c_far (ℓ_u/ℓ_s)^{3/2} A_u^{-1/2} J* + 169 (ℓ_u/ℓ_s) A_u^{-1} (J*)^{3/2} )`，
+
+`η_u^{-1}` 在 `u = s` 处是 `η_s^{-1}`，最大到 `N^{1−τ}`，**不是 `N^{o(1)}`**。真正 `≺ 1` 的是**时间积分**：`step_bound_far` 把 `∫_s^v du` 放成 `sup_u × |v−s|` 之后**又把 `|v−s| ≤ 1` 扔掉**，而 `|v−s| ≤ 1−s = η_s/Im m` 恰好抵消 `η_s^{-1}`（`etaT_inv_mul_one_sub`：`η_u^{-1}(1−u) = (Im m_E)^{-1}`，常数）。
+
+两条编译过的对照：
+* `cFarStep'_detDom_critical`：在**临界标度** `M_f N = N+1`、`1−s N = 1/(N+1)`、`M_i = M_m = 1` 上，`cFarStep' ≺ 1` **成立**；
+* `cFarStep_not_detDom`：同一组数据上 `cFarStep ≺ 1` **为假**（用 `1 ≤ Ξ`，即 `one_le_xiK`）。
+
+`s = 0` 时两者逐字相等（`cFarStep'_eq_cFarStep`），所以 **T198 的 §11 不是错的，只是只在 `s` 远离 1 时可用**——而 Lemmas 2.18–2.20 的网格 `1−s_k = W^{-kτ'}` 正是 `s → 1`。记 paper-delta **T208a**。
+
+### 3. 交付（`RBM1D/Hierarchy/Step2FarInputs.lean`，6 节）
+1. `farDrift` / `farDriftNear` / `farMart`（定义）、`farDrift_duhamel`、`farDrift_eq_eGpm_add_quadGlue`、`Fpath_eq_farDrift`；
+2. `step_bound_far'` / `lkErr_far_le'`——`step_bound_far` 保留区间长度 `len`，且**鞅界只在用到的那个远场 `a` 上要求**（T198 要求在所有 `a` 上，配 `M_m ≺ 1` 按字面不可满足，记 **T208b**）；
+3. `FarInputs'`（**无任何存在量词**）、`cFarStep'`、`FarResidue'`、`far_le_of_farInputs'`、`stochDom_far_of_farInputs'`、**`flowEq548_of_farInputs'`**（产出 `Step45.FlowEq548`）、`farInputs_of_farInputs'`（把钉死的三个对象喂进 T198 的包）;
+4. **`eventually_xiK_le`：`Ξ ≺ 1` 是定理不是假设**（只用 `W L ≤ N`、(2.2)、`N ≤ W²`，与流无关）；`detDom_cFarStep'`：`cFarStep' ≺ 1`；4b. `flowEq548_of_farInputs'_detDom`——端到端，`hpoly` 不再是假设；
+5. `farInputs'_of_eG_of_quad`：两条漂移输入由 **(5.35)（`eGpm`）+ (5.34)（`primBil` 二次粘合项）** 逐项产出——漂移只有这两项，所以这就是全部输入；
+6. `farDrift_eq_zero_of_farInputs'_zero`、`etaT_inv_mul_one_sub`、`cFarStep'_detDom_critical`、`cFarStep_not_detDom`。
+
+### 4. 没做的部分（**要点名接手人**）
+* **`M_m ≺ 1`（(5.45) 的远场鞅界）仍是假设**——要 BDG，属随机层（CLAUDE.md 规则 6）。`FarInputs'` 的第四条就是它，左端是钉死的 `farMart`。**无主**。
+* **`M_i ≺ 1`（(2.69)）**由 Step 1 给，`FarInputs'` 直接收。
+* **`M_f(1−s) ≺ 1` 还没从 `eGpm_le_reduced` 机械地推出来**：`farInputs'_of_eG_of_quad` 把它化归到「`‖eGpm‖ ≤ M_gf·T` 且 `‖primBil‖ ≤ M_qf·T`（远场）」，但把 `eGpm_le_reduced` 的右端（含指示函数项与 `(r/(ℓ_uη_u))·L·ρ` 余项）整理成这个形状、并核出 `M_gf(1−s) ≺ 1` 的显式指数账，**本单没做**。建议开新单，输入是 (2.72)/(2.73) 与 `J* ≺ (η_s/η_u)²`（T207）。
+* **把一步界改成带 `L¹` 权的积分形**（`∫_s^v η_u^{-1}du = (Im m)^{-1}log R`）可以彻底去掉 `1−s`，与论文字面一致；需要漂移的可积性假设，**本单没做**（T208a 已记）。
+* **没动 `Step2MomentStep.lean`**：里面没有按字面为假的陈述（`cFarStep` 是定义，`flowEq548_of_near_farInputs` 在 `s = 0` 可用），加 `@[deprecated]` 会在该文件内部产生约 8 条弃用警告、干扰正在只读它的 T207。守卫以**定理**形式放在 `Step2FarInputs.lean`（`cFarStep_not_detDom`），`grep -rn "cFarStep"` 一定命中。

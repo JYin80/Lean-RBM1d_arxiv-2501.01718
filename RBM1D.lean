@@ -34,6 +34,7 @@ import RBM1D.Gauss.MomentDuhamelGauss
 import RBM1D.Gauss.MomentDuhamelHyp
 import RBM1D.Gauss.MomentDuhamelTime
 import RBM1D.Gauss.MomentDuhamelCut
+import RBM1D.Hierarchy.Step2Near47
 import RBM1D.Gauss.MomentDuhamelBddT
 import RBM1D.Gauss.Lemma514Moment
 import RBM1D.Gauss.Lemma514Holder

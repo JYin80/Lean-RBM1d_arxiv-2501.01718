@@ -1930,6 +1930,20 @@
   never double. Induction on $M$ with $\sum_jS_{ij}=1$.
 \end{proof}
 
+\begin{theorem}[The $m$-fold minor difference: a Leibniz calculus for $\Delta_\kappa$]\label{thm:minordiff}
+  \lean{RBM.Gauss.deltaFam, RBM.Gauss.shiftFam, RBM.Gauss.iterDeltaFam, RBM.Gauss.minorDiff_eq_iterDeltaFam, RBM.Gauss.deltaFam_mul, RBM.Gauss.deltaFam_inv_apply, RBM.Gauss.deltaFam_shiftFam, RBM.Gauss.iterDeltaFam_shiftFam, RBM.Gauss.gFam, RBM.Gauss.gInvFam, RBM.Gauss.MinorGood, RBM.Gauss.minorGood_of_half_le, RBM.Gauss.deltaFam_gFam, RBM.Gauss.deltaFam_gInvFam, RBM.Gauss.DiffBd, RBM.Gauss.DiffBd.mul, RBM.Gauss.atomC, RBM.Gauss.diffBd_atom, RBM.Gauss.deltaFam_greenSetDiagCentered, RBM.Gauss.minorDiffC, RBM.Gauss.norm_minorDiff_greenSetDiagCentered_le, RBM.Gauss.norm_minorDiff_triple_le, RBM.Gauss.minorDiff_qRow, RBM.Gauss.norm_minorDiff_flucDiagSet_le, RBM.Gauss.integral_prod_applyOps_minorDiff_le, RBM.Gauss.minorDiffGain_of_pointwise}
+  \leanok\uses{thm:fluc-high, lem:4.2, lem:condrow}
+  $\Delta_\kappa(YZ)=(\Delta_\kappa Y)Z+Y^{(\kappa)}\Delta_\kappa Z$ and
+  $\Delta_\kappa(1/Y)=-(\Delta_\kappa Y)/(YY^{(\kappa)})$, with (4.9) as
+  $\Delta_\kappa G_{ab}=G_{a\kappa}G_{\kappa b}G_{\kappa\kappa}^{-1}$: each difference gains one
+  $\Psi$, so $\|\Delta_{\kappa_1}\cdots\Delta_{\kappa_m}(G^{(\cdot)}_{kk}-m)\|\le C_m\Psi^{m+1}$ for
+  every $m$, on the event where the local law holds at every minor level.
+\end{theorem}
+\begin{proof}\leanok
+  Atoms carry a base level, so the class is closed under the level shift and the induction closes;
+  the freshness condition is exactly what the grading needs.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

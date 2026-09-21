@@ -2378,3 +2378,20 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 配 `Σ_j S_{ij} = 1` 与对 M 的归纳得 `E[(X^{2M})_{ii}] ≤ C_M`（`C_0 = 1`、`C_{M+1} = (2M+1)C_M`，即 `(2M−1)!!`），对 `i` 与 `N` 一致；求和得 `E Tr(X^{2p}) ≤ C_p·N`。
 
 **矩路线现在只剩一个公开前提**：`RBM.Gauss.Dims` 仍无实例（给出具体的 `W, L, c` 即可，唯一不平凡处是 (2.2) 的 `rpow` 估计）。paper-deltas #67。
+
+### `RBM1D/Gauss/MinorDiffGain.lean` — m 重小行差的 Leibniz 演算（T113，Claude Code 并行 agent）
+
+**估计在每一阶都有了，但 `MinorDiffGain` 按其现有定义仍未卸掉——(4.12) 不是无假设的。** 两条输入，文件里都具名：
+
+1. **例外集**：全部条件于 `MinorGood d N u z ω Ψ`——(4.1) 加上**每个小行层级**上的 (4.2)(4.3)，且在**每个** ω 上。
+   去掉它要拆积分、在坏事件上付 `η_t⁻¹`（在这里是合法的：`MinorDiffGain` 内部已无条件期望，不会有指示函数被乘进 `Q_κ`，文件里也确实没有引入），但需要仓库目前没有的那种形状的定量局部律。
+2. **对 m 的一致性**：常数满足 `c_{m+1} = 16^m c_m^5`。**这不只是宽松**——倒数的 m 重差是对集合分拆的求和，即便最锐的版本也按 `m!C^m` 增长，
+   **没有固定的 `ρ ≍ Ψ` 能对所有 `m ≤ N` 压住 `m!C^m Ψ^{m+1}`**。但**消费者根本不需要**：`2p` 阶矩展开只用到 `numQ (L i) ≤ 字长 ≤ 2p`。
+   **所以有用的、也是已证的，是有界字长版本**（`integral_prod_applyOps_minorDiff_le`、`minorDiffGain_of_pointwise`）。
+   **建议**：考虑给 `MinorDiffGain` 一个按字长有界的后继接口（agent 未建工单，我也不写）。
+
+**已证的 Leibniz 规则（都是恒等式）**：`deltaFam_mul`、`deltaFam_inv_apply`（需两值非零）、`deltaFam_shiftFam`/`iterDeltaFam_shiftFam`（层级平移，子类型搬运只做一次）、
+`deltaFam_gFam`（(4.9)：`Δ_κ G_{ab} = G_{aκ}G_{κb}(G_{κκ})⁻¹`，在**所有**层级含退化情形都成立）、`deltaFam_gInvFam`（五个原子，一次赚两个幂）。
+**使归纳闭合的设计要点**：原子带一个基层级 `T`（`gFam a b T S = G^{(S∪T)}_{ab}`，指标被删时延拓为 0），于是这一类对层级平移封闭；而 `MinorDiffGain` 的 `Nodup`/新鲜性条件**正好**是分级所需要的。
+**m=3 体检**：`norm_minorDiff_triple_le ≤ 2^91·Ψ⁴`；幂的阶梯 `Ψ²`(T85, m=1) → `10Ψ³`(T110, m=2) → `Ψ⁴`(此处) 对上了。
+`FlucIterHigh`/`FlucIter`/`FlucCount`/`FlucAvg`/`EntryBound` 的签名一律未动，`MinorDiffGain` 的定义未改（被 `minorDiffGain_of_pointwise` 原样消费）。paper-deltas #68。

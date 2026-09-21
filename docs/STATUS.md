@@ -2636,3 +2636,23 @@ T116 的另外两个障碍也不存在——**`Eq45Flow` 完全没有指示函�
 再代一次得 `≺ R^{5/2}`，足够 `hs2`）。工单 **T122**；paper-deltas #72（原误编 #66 的重复行已删）。
 **更正**：上文 T115、T120 两节的「旁证：Lemma 5.14（p.68）排除常值 σ」是误读——(5.96) 的「非常值」只出现在交错分支内部，常值 σ 走 Lemma 5.11。
 
+### `RBM1D/Hierarchy/DecayBridge.lean` — T118 裁定：**两侧都不该改**（Claude Code 并行 agent，2026-09-21）
+
+**`SumZeroDyn.lean:62` 那条注记的前提是错的**：两侧并非「形状对不上、必有一侧写错了」。
+* **(a) 事件 vs `≺`**：`LKDecay` 是**忠于论文**的一侧——(5.75) 在论文里**本来就是** Def 2.1(i) 形式的概率界（p.63），其证明用的 (4.2) 本身也是高概率的；而 `Decay.lemma59` 的「事件上」形式是 T59 **有意的确定性内核**（`Decay.lean` 文件头自己写明，paper-delta #42），且它的 Deviations 一节**早就点名**了缺的那一步。**缺的是一个 wrapper，不是重塑。该 wrapper 现已写好并编译通过。**
+* **(b) 抽象的 `F`/`EE`**：**根本不是形状不匹配**。`Lemma510` 约束的是 `Hierarchy` 的两个**无约束数据字段**，而 `Decay.lean` 界的是**具体**项；要接上就得**定义** `F`、`EE`——**那是 T58 的交付物**，不是 T118 的。
+
+**决定性的不对称**：`F` 一旦具体，**`Lemma510` 是逐路径可证的**——它的 Ξ-输入不是假设，`Sample.xiLK` 本就**定义**为最小的这种界（`lkMax = ⨆ …`，`lkErr_le_lkMax` 已证），故 `Decay` 的假设 `‖D J‖ ≤ Φ A^{-|J|}` 对每个 ω 成立（取 `Φ := xiLK`）。`Lemma510` 一侧唯一真正随机的成分是衰减误差 `δ`。
+
+**依赖计数（实测非猜测）**：`Hierarchy/Decay.lean` 的外部导入者 **0**（只有根文件 `RBM1D.lean`，全仓库没有任何 `RBM.Decay.*` 引用）——是叶子；`SumZeroDyn` 的两条占位符则被 **19 条签名**穿进 `lemma514_flow'`。**但成本不决定本案**：(a) 上 `Decay.lean` 没错，(b) 上两个定义都没错。
+
+**⚠ fiat 风险（最重要的一条）**：`Gauss/DischargeBDG.lean:70ff` 警告 `duhamel` 可对**任意** `F` 按定义造出来。反过来读就是——**`Lemma510` 是防住这个 fiat 构造的唯一结构性护栏**（它说「这个 `F` 真的是 (5.15) 的漂移、且大小如 (5.77)」）。
+**因此：把 `Lemma510` 弱化/重塑成「更好卸」是本工单上最危险的一步**，会让 fiat 的 `F` 更容易被合法化。安全方向是把 `F` **具体定义**成 `Decay` 的 `couplingLen + primBil + eG`，那时 `Lemma510` 变成可证且非平凡，内容正确地转移到 `duhamel`/`bdg`。
+本文件**无 fiat 风险**：不加任何 `Hierarchy` 实例，不定义 `F`/`EE`/`mart`，只把 `LKDecay` 归约成关于 `X.Lval − B.Kval` 的**严格确定性逐路径命题**。
+
+**已证**：`lkDecay_of_highProb`（wrapper：高概率的 `LKDecayEvent` ⟹ `SumZeroDyn.LKDecay`，**这把差异 (a) 作为陈述形状问题整个关掉了**）、`farInd_mul_le_of_loopDecay`（两种 Def 5.8 编码是同一个定义）、`mem_lkDecayEvent_of_loopDecay`、
+**`loopDecay_lk_of_event`**——关键发现：这是**纯粹的重述**（`exact (Decay.lemma59 …).2`），因为 `X.Lval = gloop …` 与 `B.Kval = Kgen …` **按 `rfl` 成立**。**T59 的定理本来就是在讲 `LKDecay` 所讲的那个对象，什么都不需要翻译。**
+
+**T74 的具体 `E⊗E` 改变了多少**：从「没有对象」变成「对象有了，还差一条恒等式与两个适配器」——仍缺 (i) `glueLoop = gloop (J k b b')`（T74 自己的 open item），(ii) `Gauss.eeTens : LoopIdx → LoopIdx → ℂ` 与 `Hierarchy.EE : … → LoopArg L ((n+2)+(n+2)) → ℂ` 的类型适配，(iii) **全仓库没有 `Band → Dims` 的转换**——每次 `Gauss → Hierarchy` 交接都会需要这块小管道。`F` 那一半 T74 没碰。
+
+**给 Cowork/Jun 的建议**：(1) 不动 `Lemma510`/`LKDecay` 的形状，**唯一该做的改动是给 `LKDecay` 补上缺失的 `|L|` 一半**（见 paper-deltas #78，是补强，下游零成本）；(2) 不动 `Decay.lean`（叶子且按设计正确）；(3) 余下工作拆三张，**没有一张叫「调和两侧」**：(i) 把 `lkDecay_of_highProb` 的三个输入定量闭合 ⟹ 无条件的 `LKDecay`；(ii) `glueLoop = gloop` + `Band → Dims` 适配器 ⟹ 从 `Decay.norm_eTens_le` 解锁 `Lemma510.EE_le`；(iii) T58 的具体 `F` ⟹ `Lemma510` 其余部分（届时**逐路径**可证，但需要 `Ξ^{(L−K)}` 的先验多项式界——**此前无人记过**）。

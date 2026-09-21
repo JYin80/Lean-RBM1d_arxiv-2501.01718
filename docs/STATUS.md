@@ -4468,3 +4468,62 @@ T74 的 `Gauss.eeEdge_eq_sum_SB` 经 T127 的 `EEBridge.eeEdge_eq_sum_gloop` 就
 T156 发现、Cowork 对照原文核实：(5.67) 之后那行（「Next, applying (2.73) on L term in (5.66), together with (5.67) we obtain that」）与 (5.71) 都带 `(ℓ_u/ℓ_s)^{3/2}`，乘 (5.22) 的 `W∑_b` 后情形 (1a) 贡献 `η_u^{−1}(ℓ_u/ℓ_s)^{3/2}(Wη_uℓ_u)^{−1/2}(J*)²`，而 (5.36) 第二项 `η_t^{−1}(Wη_uℓ_u)^{−1/2}(J*)³` 在 `u` 近 `t` 时盖不住它。
 Jun：「你理解的正确，这个地方补上这个 factor（可能当时忙乱了）」。**论文改动**：(5.36) 第二项乘 `(ℓ_u/ℓ_s)^{3/2}`（paper-deltas #113 ③、论文改动预算第 13 条）。**Lean 不改**（`ee_le_paper` 已带该因子）；T174 按补正后的 (5.36) 算指数表。
 另：页码约定写入 `CLAUDE.md`——以编号为准，仓库页码 ≠ Jun 手上版本的页码。
+
+## ⭐ T176：六步循环剩余具名假设的**当前**清单（只读审计，6 个编译探针，2026-09-21）
+
+**从 `Bounds X E s` 到 `Steps X E s t` 现在只差 10 条具名假设**（探针 P1 编译通过，公理干净）。
+链条 `Step1.step1 → Step2Moment.step2 → Step2PP.flow_sharpLoop_glue_flowAs' → flow_steps45_glue_flowAs' → sharpExpect_step6_driftE`，
+**假设里没有 `Steps`、没有 `Step2.Hyp`、没有 `SumZeroDyn.Hierarchy`、没有自由张量**，且**全程只收 `hs0 : ∀ N, 0 ≤ s N`**。
+
+| # | 假设 | 状态 |
+|---|---|---|
+| 1–2 | `EntryBoundFlow` / `DiagBoundFlow` | 在飞（T107；T166 已推倒 `ldeQuad` 的墙，剩 `hLdiag` 带时间版 + `DiagBoundFlow'`） |
+| 3–4 | `MomentHyp` / `hΘ`（`BootPP`） | 在飞（T132c 一张单同交 3 条） |
+| **5** | **`h514 : Lemma514`** | 🔴 **无主，且在 T118 禁用的 fiat 路线上** |
+| 6 | `Eq45Flow` | 生产者已在（探针 P4），但其 `hg` 不可满足，见下 |
+| 7 | `FlowEq548` | 在飞（T132c） |
+| 8–10 | `hH` / `hFD` / `h5133` | `hH` 部分；`hFD` 已归约到 Lemma 5.9；🔴 **`h5133` 的 Ξ-记账无主** |
+
+### ⚠⚠ 一条 T147 没写、今天才浮出来的接口错配（探针 P2/P3）
+**`Thm221.step` 只收 `Cond272`（裸 (2.72)），而六步全链要的是带 `N^c` 增益的 `hregS`。**
+`Cond272` 严格更弱——paper-deltas #47/#54/#73 记过这条偏差，**但没人记它把 `Thm221` 的陈述变成了不可证**。
+`eventually_flow_grid` 也只产出裸 (2.72)，所以 `Bounds_of_Thm221` 一侧同样对不上。
+**好消息（探针 P3 编译通过）**：`gridT_step_2_72_gain` 证明 p.24 的网格**能带任意增益 `g`**，
+而 `flow_grid_2_72` 的证明内部本来就有 `g = Im m·W^{τ/2−30τ'}`（由 `60τ' < τ` 是 `W` 的正幂）。
+**结论：纯记账 + 一条 `eventually_flow_grid'` + 一个 `Thm221'` 字段，零新数学，但目前无人负责，且它挡在总装的最后一米上。**
+
+### ⚠ 另一处：同一堵墙就在**活路径**上，比 T171 说的高一层（探针 P5）
+`integral_pow_norm_flucDiag_le_of_flucGainUpTo`（已编译）：**`FlucGainUpTo` 自己的 `B` 就支配 `Z_k` 的每一个 `L^n` 范数**
+——而 `FlucGainUpTo` 正是 `eq45Flow_of_localLaw_gain'` 在 `hg` 槽吃的接口。配上 `‖Z_k‖_∞ ≥ 64/65`，
+**`hg` + `hBK : Bp ≤ Kp·Ψ` 在 `Ψ → 0` 时不可满足**。
+→ **修基数预算的那张单必须把 `FlucGainUpTo` 一并写进规格**，只点名 `MinorDiffGainUpTo` 会修了下层、上层接口仍然塌。
+
+### T147 条目的时效性
+* §0a **`Steps` 打包循环**：**已解**（探针 P1 的结论是 `Steps` 而假设里没有 `Steps`）。
+* §0b **`0 ≤ s`**：**已闭合**。⚠ 但 `lemma514_flow'` 仍要 `0 < s N`——若 `h514` 回到 SumZeroDyn 路线，**这条缝会重新裂开**。
+* §6(c) 九处「已卸未接」：**八处已接**；唯一未接的 `Lemma510.EE_le` **已成死项**（它只喂被 T118 禁用的 `lemma514_flow'`）。
+* §6(b)④⑤：均已过时（T151）。
+* **「T58 是瓶颈」：部分过时，但换了个更糟的形状。** ①④ 已解决，**但 ②③（`Lemma514`）并没有被 T146 重新生产**
+  ——T146 交付的是 `hrhs`。`stochDom_of_momentDuhamel` 只给**固定终点**的 `≺`，且其 `Hyp` 本身**也无生产者**。
+  **⚠ TASKS 顶部「②③ → T146（完成）」是错的：`Lemma514` 现在无主。**
+
+### fiat 审计：活路径上只剩一处冲突
+`Hyp.F`、`EEpath`、`E^{(G̃)}`、Step 6 的漂移张量**全部钉死**；`MomentHyp` 的数据字段**不可 fiat**
+（`bnd_poly` 强制 `bnd(2p) ≤ CN^{εp}` 对每个 ε）；`BootPP.target` 形式上自由但消费者只吃 `Θ = flowAs^{1/2}`，
+**单独「交付一个 `BootPP`」一文不值**。
+🔴 **唯一的 fiat 冲突是 `SumZeroDyn.Hierarchy`**（`F/EE/mart/martQ` 全自由），**而它是 `h514` 的唯一入口**。
+
+### 顺带纠正一条过时记载（探针 P6）
+STATUS 的 T173 节写「`hEL` 仍挂 `MatrixStein`(T70) 与 `hjoint`(T141)」——**T70/T141 都已落地**
+（`Gauss.matrixStein` 是定理、`differentiableAt_integral_gloop_flow` 已有），`hEL` 在高斯模型上**已经可以产出**。
+
+### 最短路径（2、4、5、6 可四路并行；1 可立刻单独做完）
+1. 🔴 `hregS` vs `Cond272` 的接口修复（无主，纯记账）—— **不做的话前面所有工作都接不到 `Thm221` 上**。
+2. 🔴 `h514` 换成矩路线版（无主）——唯一落在 T118 禁令上的一条，**今天最大的一块**。
+3. T132c（在飞，一单交 3 条）。 4. 基数预算（含 `FlucGainUpTo`）。 5. T107 + T160(2)。 6. Step 6 收尾 + `h5133` 的 Ξ-记账。
+
+### 声明的盲区
+`hcont`/`hintF`/`hintU` 与 `MomentHyp` 的 `cont/holder/env_le/meas` 只 grep 未构造；
+`‖Z_k‖_∞ ≥ 64/65` 是 T171/T172 的结论、**两条反例当时都只在探针里未入库**，本次未重跑，
+且 `L^n → L^∞` 那一步需要 `ω ↦ Z_k(ω)` 的连续性，**T171 没有写出这一步**；
+`hregS` 能否从强化后的网格真正推出，P3 只证了「网格步能带任意增益」，**最后一段是读证明得出的、未编译**。

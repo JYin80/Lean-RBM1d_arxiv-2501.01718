@@ -4146,3 +4146,48 @@ T164 的反例在这里表现为**前提不成立**，不构成矛盾。
   **都要改本文件之外的文件，未做**。
 * 给 T171 的线索：`goodSetFlow`（`Eq45FlowInputs.lean:278`）**逐字就是** `∀ u ∈ Icc, GoodEvent …`，
   所以桥是一行 `fun hω => minorGoodLe_of_goodEvent_flow … (hω u hu)`；只是要多引一个 import，依赖方向待定。
+
+## ⭐⭐ T172：全仓库「逐点 ∀ω 假设」可满足性扫描（只读审计 + 两条新编译反例，2026-09-21）
+
+**覆盖**：`RBM1D/**/*.lean` 共 145 个文件，六条检索（`∀…ω` 含不等号的 64 行逐行分类；43 个结构逐条读；
+`(ω : Ω` 限定到结构/`Prop`；`∀ᵐ`；端点型 `HasDerivAt`；多行 binder 与别名绑定）。
+**声明的盲区**：`Hierarchy/GUEPhase.lean` 只看签名未查实例化路径；`MomentHyp.holder`/`env_le` 给的是数学论证非编译证明。
+
+### 一句话结论
+**逐点 `∀ω` 这个坑，全仓库只塌了 `MinorGood`/`MinorGood'` 一处，而且是死胡同（无下游消费者）。**
+第二处 `FlucBound` **不是塌方而是天花板**：可满足，但 `B` 有绝对下界，所以 (4.12) 走不通那条接口。
+其余 40 余处要么是非负性/可测性，要么界是自由参数并配了已证的包络实例，要么本来就是正确写法。
+**`∀ᵐ ω` 形状在仓库里根本不存在**（9 处 `∀ᵐ` 全是证明内部的 `have`）。
+
+### 反例 1：`MinorGood`（不带撇）为假，**与 `Ψ` 无关**——比 T164 的结论强
+`not_minorGood_forall`（已编译）：取 `ω = Function.update 0 ⟨N,k,k,true⟩ 40`，则
+`Hflow = diagonal(20·1_{i=k})`、`G^{(∅)}_{kk} = (20 − i/2)⁻¹`，故 `‖(G^{(∅)}_{kk})⁻¹‖ ≥ 20 > 2`，**字段 `inv_le` 直接垮**。
+**`inv_le` 根本不提 `Ψ`，所以没有任何 `Ψ` 能救**，也不需要链条自带的 `2Ψ ≤ 1`；对每个 `u > 0` 取 `R` 够大即可
+（`u = 0` 是唯一例外）。又因 `MinorGood'` 是 `extends MinorGood`，**带撇的一支被它蕴含**。
+
+**爆炸半径 = 0（好消息）**：`∀ω, MinorGood(')` 出现在 `MinorDiffGain.lean` 的 8 条定理假设里，
+而查全树**这 8 条在该文件之外只被 docstring 提到，没有一处实际 `apply`**——下游实际跑的是包络版
+`norm_flucDiagSet_le_env`。所以这是**死胡同，不是污染链**。
+
+### ⚠ 反例 2（新发现）：`FlucBound` 的 `B ≥ 64/65`，**(4.12) 的 `B ≍ Ψ` 不是「还没证」而是不可能**
+`le_B_of_flucBound`（已编译）：**两点法**。取 `ω₀ = 0` 与 `ω₈ = Function.update 0 ⟨N,k,k,true⟩ 8`，
+两者**只在行 `k` 的坐标上不同**，故 `rowSplit d N k ω₈ ω' = rowSplit d N k ω₀ ω'`，
+**条件期望 `E_k` 在两点取同一个值**（编译引理 `rowSplit_omR`、`condRow_greenDiagCentered_omR`）。
+于是 `Z_k(ω₈) − Z_k(ω₀) = G_kk(ω₈) − G_kk(ω₀)`，虚部 `−128/65`，而 `flucDiag_le` 要求 `≤ 2B`。
+**结论 `B ≥ 64/65`，对一切 `d`、`N`、`k` 成立。**
+
+`FlucAvg.lean:427–434` 的 docstring 只说「确定性包络给不出 `Ψ` 大小的 `B`」；
+现在知道的是**没有任何东西能给出**——`hsmall` 在 `Φ = Ψ²`、`Wℓη ≥ N^c` 的区制下代入 `B ≥ 64/65` 即不成立。
+所以 `stochDom_flucAvg` 系列**本身不是空真**（`Φ` 自由且有真实例），但**它们在 `Φ = Ψ²` 处的实例化不可满足**。
+**正确形状**：`B`、`ε` 必须挂在事件上（`1_Ω` 进 `E_k`，用 `Gauss.norm_condRow_le_split` / `meas_measure_rowSlice_ge`），
+或整条改成 `≺`。这与 T164 给 `MinorDiffGain` 的 L3 是同一处方。
+
+### 两个正面样板（值得当模板抄）
+* `Loop/ContinuityAssembly.lean:1117`：消费者把 `Y` 取成 **`1_Ω · loopMax`**，(5.6) 的门槛在指示函数里，于是 `hY1 : ∀N u ω, Y 1 ≤ 2` 是**证出来的**。
+* `Green/EntryBound.of_det`：`(∀v, A ≤ ΦB) → …`，**事件当假设而不是当结论**。
+
+### 其余判定
+六步主链（`Thm221`/`Bounds`/`Steps`/`Transfer`/`BootPP`/`Lemma510`/`Step1.Hyp`/`Step2.Hyp`）**全是 `StochDom`/`HighProb`/`UnifDetDom`，没有逐点假设**。
+`TestFun`/`TestFunT`/`MatrixStein` 等量化的是**矩阵/函数**不是样本点。
+`SumZeroDyn.Hierarchy.duhamel/duhamelQ` **不是空真而是 fiat**（`mart` 自由字段取残差即满足）——T118 的禁令是对的。
+端点型只有 `Step6.hierarchy_of_hasDerivAt` / `Uker_duhamel` 在 `s N = 0` 不可满足，**但爆炸半径为 0**（T152 已给 `_Ioo` 版，且无外部消费者）。

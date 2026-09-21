@@ -2330,3 +2330,18 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 **整合时踩到的一个坑（已修）**：新加的 `condRow_zero` 与我 T94 `FlucIter.lean` 里的同名声明冲突，`RBM1D.lean` 同时 import 两者即报
 `environment already contains 'RBM.Gauss.condRow_zero'`。已把 `IBP.lean` 里的改名为 `condRow_zero_apply`（逐点形式）。
 **教训**：并行 agent 各写各的文件时，`lake env lean 单文件` 绿**不能**保证全局无重名——整合时必须跑一次全量 `lake build`。paper-deltas #64。
+
+### `RBM1D/Gauss/DistEq.lean` — (2.39)(2.66)(6.1) 三条转移（T111，Claude Code 并行 agent）
+
+**三条全部成为定理，且全部落入「情形 A」——比规格预期的还强。**
+不是「同一个 `ω` 的确定性重标度」，而是**随机变量的逐点相等**：矩路线用**一个固定的** `X`，`H_u = √u·X`，
+标度与谱参数的平移恰好相消。由 (2.37) 有 `z_t^{(E)} = t^{1/2} z`，故 `H_t − z_t = t^{1/2}(X − z)`，于是 `t^{1/2} G_t^{(E)}(ω) = G(X(ω), z)` 逐点成立。
+`Measure.map`、`gaussianReal_map_const_mul`、`infinitePi_map_pi` **一条都没用到**（规格里的「情形 B」路线完全不需要）。
+
+- `RBM.Transfer` → **`transfer_gauss`**（是 `def`，因 `Transfer` 是数据），`Hband := Xmat`；`green`/`loop2`/`loop2_expect` 三个字段都是 `le_of_eq` 或 `integral_const_mul`。
+- `RBM.TransferLoop1` → **`transferLoop1_gauss`**（长度 1 的同一恒等式：`t^{1/2} L_{t,+,a} = Tr G(z) E_a`，精确）。
+- `RBM.LoopScaling` → **`loopScaling_gauss`**：`H_{t₂} = (t₂/t₁)^{1/2} H_{t₁}` 且 `z̃_{t₁} = (t₂/t₁)^{1/2} z_{t₁}`，故 `L_{t₂} = (t₁/t₂)^{n/2}·L_{t₁}` 逐点成立，`(t₁/t₂)^{n/2} ≤ 1` 收口。
+
+`Flow/Consequences.lean`、`Flow/Hypotheses.lean`、`Loop/ContinuityAssembly.lean`、`Gauss/Model.lean` 的签名一律未改。
+唯一新增假设：`loopScaling_gauss` 需 `0 < t₁ N` 与 `t₁ N ≤ t₂ N`（`RBM.LoopScaling` 本身未改；消费者 `RBM.lemma_5_1` 已自带 `0 < c ≤ t₁ N` 与 `t₁ N ≤ t₂ N`，白送）。
+**注**：矩路线整体仍条件于 T69 的 `OpNormBound`（`‖X‖ ≺ 1`，T109 在做）与 `Dims` 的具体实例。paper-deltas #65。

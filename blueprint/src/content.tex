@@ -1888,6 +1888,19 @@
   commutes with updating a row-$i$ coordinate, so the same integration by parts applies inside it.
 \end{proof}
 
+\begin{lemma}[(2.39) and (6.1) for the Gaussian model: no distributional argument needed]\label{lem:disteq}
+  \lean{RBM.Gauss.green_smul_mul, RBM.Gauss.Gsig_smul_mul, RBM.Gauss.gloopProd_smul_mul, RBM.Gauss.gloop_smul_mul, RBM.Gauss.zt_eq_sqrt_lemT_mul, RBM.Gauss.sqrt_lemT_ne_zero, RBM.Gauss.green_Hflow_lemT_eq, RBM.Gauss.gloop_Hflow_lemT_eq, RBM.Gauss.gloop_one_Hflow_lemT_eq, RBM.Gauss.gloop_two_Hflow_lemT_eq, RBM.Gauss.gloop_Hflow_ztTilde_eq, RBM.Gauss.transfer_gauss, RBM.Gauss.transfer_gauss_Hband, RBM.Gauss.transferLoop1_gauss, RBM.Gauss.loopScaling_gauss}
+  \leanok\uses{def:gauss-model, thm:2.3-2.4, lem:5.1}
+  With one fixed $X$ and $H_u=\sqrt u\,X$, the scaling cancels against the shift of the spectral
+  parameter: $\sqrt t\,G_t^{(E)}=G(X,z)$ and $L_{t_2}=(t_1/t_2)^{n/2}L_{t_1}$ \emph{pointwise in
+  $\omega$}. So \texttt{Transfer}, \texttt{TransferLoop1} and \texttt{LoopScaling} are equalities of
+  random variables, not equalities in law.
+\end{lemma}
+\begin{proof}\leanok
+  $z^{(E)}_t=t^{1/2}z$ by (2.37), hence $H_t-z_t=t^{1/2}(X-z)$; loops scale by the factor to the
+  power of their length, and $(t_1/t_2)^{n/2}\le1$ finishes the transfer.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

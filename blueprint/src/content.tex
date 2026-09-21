@@ -1448,7 +1448,7 @@
 \end{proof}
 
 \begin{lemma}[Reverse bridge $\prec\Rightarrow$ moments, and the deterministic envelope]\label{lem:envelope}
-  \lean{RBM.Gauss.momentDom_of_stochDom, RBM.Gauss.momentDom_of_stochDom_of_nonneg, RBM.Gauss.momentDom_of_normStochDom, RBM.Gauss.abs_im_zt, RBM.Gauss.norm_green_zt_le, RBM.Gauss.norm_gloop_le_det, RBM.Gauss.loopMax_le_det, RBM.Gauss.loopXi_le_det, RBM.Gauss.norm_gloop_sub_le_det, RBM.Gauss.det_envelope_le_rpow, RBM.Gauss.norm_gloop_le_rpow}
+  \lean{RBM.Gauss.unifDetDom_integral_of_stochDom, RBM.Gauss.unifDetDom_integral_of_stochDom_of_nonneg, RBM.Gauss.momentDom_of_stochDom, RBM.Gauss.momentDom_of_stochDom_of_nonneg, RBM.Gauss.momentDom_of_normStochDom, RBM.Gauss.abs_im_zt, RBM.Gauss.norm_green_zt_le, RBM.Gauss.norm_gloop_le_det, RBM.Gauss.loopMax_le_det, RBM.Gauss.loopXi_le_det, RBM.Gauss.norm_gloop_sub_le_det, RBM.Gauss.det_envelope_le_rpow, RBM.Gauss.norm_gloop_le_rpow}
   \leanok\uses{lem:moment-dom, def:2.1-i}
   With a deterministic envelope of polynomial growth and $N^{-B}\le\Phi$, $Y\prec\Phi$ gives
   $\mathbb E|Y|^{2p}\le C_p N^{\varepsilon p}\Phi^{2p}$; together with the forward bridge the
@@ -2065,6 +2065,18 @@
 \begin{proof}\leanok
   \texttt{LKDecayEvent} isolates the pathwise content; what remains is two explicit inequalities on
   the radius and the error, plus the Lemma 4.1 event uniformly in $u$.
+\end{proof}
+
+\begin{lemma}[First-moment reverse bridge, and Step 6's quadratic inputs]\label{lem:firstmoment}
+  \lean{RBM.Gauss.oneLoopData, RBM.Gauss.lkErr_le_det, RBM.Gauss.lkErr_le_rpow, RBM.Gauss.lkErr_loopData_le_rpow, RBM.Gauss.stochDom_lkErr_mul, RBM.Gauss.unifDetDom_integral_lkErr_mul, RBM.Gauss.quad11_unifDetDom, RBM.Gauss.quad13_unifDetDom}
+  \leanok\uses{lem:envelope, thm:step6, lem:eq527}
+  $|Y|\prec\Phi$ with a deterministic envelope of polynomial growth gives
+  $\int|Y|\prec\Phi$ -- the even-moment bridge never yields the first moment. Hence Step 6's
+  \texttt{hq11} and \texttt{hq13} from \texttt{sharpLmK} at $n=1,3$, for an arbitrary sample.
+\end{lemma}
+\begin{proof}\leanok
+  The split runs on \texttt{toMeasurable} of the exceptional set, whose measure is exactly the outer
+  measure Definition 2.1(i) bounds, so no measurability of $Y$ is needed.
 \end{proof}
 
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}

@@ -2656,3 +2656,21 @@ T116 的另外两个障碍也不存在——**`Eq45Flow` 完全没有指示函�
 **T74 的具体 `E⊗E` 改变了多少**：从「没有对象」变成「对象有了，还差一条恒等式与两个适配器」——仍缺 (i) `glueLoop = gloop (J k b b')`（T74 自己的 open item），(ii) `Gauss.eeTens : LoopIdx → LoopIdx → ℂ` 与 `Hierarchy.EE : … → LoopArg L ((n+2)+(n+2)) → ℂ` 的类型适配，(iii) **全仓库没有 `Band → Dims` 的转换**——每次 `Gauss → Hierarchy` 交接都会需要这块小管道。`F` 那一半 T74 没碰。
 
 **给 Cowork/Jun 的建议**：(1) 不动 `Lemma510`/`LKDecay` 的形状，**唯一该做的改动是给 `LKDecay` 补上缺失的 `|L|` 一半**（见 paper-deltas #78，是补强，下游零成本）；(2) 不动 `Decay.lean`（叶子且按设计正确）；(3) 余下工作拆三张，**没有一张叫「调和两侧」**：(i) 把 `lkDecay_of_highProb` 的三个输入定量闭合 ⟹ 无条件的 `LKDecay`；(ii) `glueLoop = gloop` + `Band → Dims` 适配器 ⟹ 从 `Decay.norm_eTens_le` 解锁 `Lemma510.EE_le`；(iii) T58 的具体 `F` ⟹ `Lemma510` 其余部分（届时**逐路径**可证，但需要 `Ξ^{(L−K)}` 的先验多项式界——**此前无人记过**）。
+
+### T123：一阶矩反向桥 + Step 6 的两条二次输入（Claude Code 并行 agent，2026-09-21）
+
+**通用工具（加在 T77 的 `Gauss/Envelope.lean`，纯新增）**：`unifDetDom_integral_of_stochDom`——
+`|Y| ≺ Φ` + 多项式增长的确定性包络 + `N^{-B} ≤ Φ` ⟹ **`UnifDetDom (∫|Y|) Φ`**（外加 `_of_nonneg` 变体）。
+与 `momentDom_of_stochDom` 同一套好/坏事件分割，阈值取 `N^{τ/3}Φ`、例外指数 `D' = Kenv+B+1`；`UnifDetDom` 不容常数，故 `P(Ω)+1` 被 `N^{τ/3}` 吸收。
+**两处有意的改进**：(a) **不需要 `Y` 的可测性**——分割跑在例外集的 `toMeasurable` 上，而其测度正是 Def 2.1(i) 已经界住的那个外测度；
+(b) 包络取**「终于」形式** `∀ᶠ N, ∀ u ω, |Y| ≤ N^Kenv`，把 T77 的四个字段合并成一条，**严格更弱**，且是调用方真能证的（`∀ N` 在小 N 处不成立）。**未改动该文件任何既有签名。**
+
+**`hq11`/`hq13` 已卸**：`quad11_unifDetDom`/`quad13_unifDetDom` 直接产出 `Step6` 要的 `UnifDetDom … (scale⁻¹)^2` / `^4`，
+且对**任意 `Sample B`** 成立（不限高斯），输入是 `Steps`（即 `sharpLmK` 在 `n = 1, 3`）。
+**编译验证**：探针把 `Step6.sharpExpect_step6` 实例化后**恰好剩四个具名目标** `hH`/`hFD`/`h5133`/`hG`——`hq11`/`hq13` 两个洞消失，无类型不匹配、无 `convert`、无强制转换。**剩下的四条全部绑在 T58 上**（`DLK`/`DG` 必须由造层级者存在性给出）。
+
+**两条输入的实际情况与预期相反**：
+* 控制的多项式下界**是免费的，已证出而非假设**（`N^{-(m+n)} ≤ (Wℓ_uη_u)^{-(m+n)}`，由 `ℓ_u ≤ L`、`η_u ≤ 1`、`W·L ≤ N`）；
+* **不免费的是包络需要的 `η_u ≥ N^{-c}`**——作具名假设 `hη` 全程显式穿过（`lkErr_le_rpow` → `quad11/13_unifDetDom`），其出处（`Wℓ_uη_u ≥ 1` ← (2.72)）记在两处 docstring 里。
+**小尾巴（未做，很便宜）**：`hint` 仍是假设——现成的 `integrable_sample_lkErr_mul` 是对**ℂ 值乘积**陈述的，而桥要的是 **ℝ 值**的 `lkErr · lkErr`；为保持对一般 `Sample` 的普适性没有就地特化。
+paper-deltas：**无新增**（本单没有任何 Lean 陈述偏离论文）。

@@ -35,6 +35,18 @@ the ones that are reachable for the moment-route Gaussian model `RBM.Gauss.sampl
 * **`hint2`** — `RBM.Gauss.int2_gauss`, from the deterministic envelope (5.2)
   (`RBM.Gauss.norm_sample_Lval_le`, T76) and continuity of the loop in `ω` on a probability
   space.  No moment estimate is involved.
+* **`hq11`, `hq13`** (T123) — `RBM.Gauss.quad11_unifDetDom`,
+  `RBM.Gauss.quad13_unifDetDom`, for an arbitrary `RBM.Sample`: the deterministic first step
+  `RBM.Gauss.norm_quad11_le_integral` / `RBM.Gauss.norm_quad13_le_integral` followed by the
+  **first-moment reverse bridge** `RBM.Gauss.unifDetDom_integral_of_stochDom` of T77's
+  `RBM1D/Gauss/Envelope.lean`, applied to (2.78) (`RBM.Steps.sharpLmK`, Step 4's output, which
+  *is* available before Step 6) at `n = 1` and at `n = 3`.  The bridge's three inputs are
+  supplied by `RBM.Gauss.stochDom_lkErr_mul` (the product `≺`-bound),
+  `RBM.Gauss.lkErr_le_rpow` (the deterministic envelope, from `RBM.Gauss.norm_gloop_le_det` and
+  (2.59) `RBM.Band.norm_Kval_le`) and, for the polynomial lower bound on the control,
+  `ℓ_u ≤ L`, `η_u ≤ 1`, `W L ≤ N`.  **`η_u ≥ N^{-c}` is carried explicitly** as the hypothesis
+  `hη` of every statement in the section: it is not free, it is the form in which
+  `W ℓ_u η_u ≥ 1` — a consequence of (2.72) — enters the envelope.
 
 `hint1` is `RBM.Gauss.integrable_sample_Lval` (T76) and `h5132` is literally
 `(hb : RBM.Bounds _ E s).expect`; both were already available and are not restated here.
@@ -53,14 +65,10 @@ the ones that are reachable for the moment-route Gaussian model `RBM.Gauss.sampl
   `RBM.SumZeroDyn.Hierarchy`).
 * **`h5133`** and **`hG`** are bounds on `DLK` and `DG`; they cannot even be stated until those
   tensors exist.
-* **`hq11`, `hq13`** are `≺`-bounds on the *expectations* `E[(L-K)_1 (L-K)_1]`,
-  `E[(L-K)_1 (L-K)_3]`.  They follow from (2.78) (`RBM.Steps.sharpLmK`, Step 4's output, which
-  *is* available before Step 6 in the assembly) plus a **first-moment reverse bridge**
-  "`|Y| ≺ Φ` and `|Y| ≤ Env(N)` deterministically ⟹ `∫ |Y| ≺ Φ`".  T77's
-  `RBM.Gauss.momentDom_of_stochDom` produces even *moments* `∫ |Y|^{2p}`, not `∫ |Y|`, so that
-  bridge does not exist yet; it is a general tool and belongs with T77, not here.  The purely
-  deterministic first step is provided: `RBM.Gauss.norm_quad11_le_integral`,
-  `RBM.Gauss.norm_quad13_le_integral`.
+Consequently `RBM.Step6.sharpExpect_step6` still needs exactly four of its seven random-layer
+hypotheses, all four of them bound to the existence of the drift tensors `DLK`, `DG` (T58):
+`hH`, `hFD`, `h5133`, `hG`.  (Verified by a probe that instantiates `sharpExpect_step6` with
+everything this file provides; only those four goals remain.)
 
 ## Main results
 
@@ -74,6 +82,11 @@ the ones that are reachable for the moment-route Gaussian model `RBM.Gauss.sampl
 * `RBM.Gauss.eq527_at`, `RBM.Gauss.eq527_gauss` — **(5.127)**, `h527`.
 * `RBM.Gauss.norm_quad11_le_integral`, `RBM.Gauss.norm_quad13_le_integral` — the deterministic
   first step of `hq11`, `hq13`.
+* `RBM.Gauss.oneLoopData`, `RBM.Gauss.lkErr_le_det`, `RBM.Gauss.lkErr_le_rpow`,
+  `RBM.Gauss.lkErr_loopData_le_rpow`, `RBM.Gauss.stochDom_lkErr_mul`,
+  `RBM.Gauss.unifDetDom_integral_lkErr_mul` — the inputs of the first-moment reverse bridge for
+  a product `|L-K|_m · |L-K|_n`, for an arbitrary `RBM.Sample`.
+* `RBM.Gauss.quad11_unifDetDom`, `RBM.Gauss.quad13_unifDetDom` — **`hq11` and `hq13`**.
 
 ## Deviations from the paper
 
@@ -556,5 +569,300 @@ theorem norm_quad13_le_integral (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ)
 
 end Quad
 
+/-! ### `hq11`, `hq13`: the first-moment reverse bridge applied -/
+
+section FirstMoment
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- The `1`-loop `RBM.Step6.oneLoop a` as an element of `RBM.LoopData _ 1`, so that the
+`≺`-bounds of `RBM.Steps`, whose index set is `LoopData`, can be instantiated at it. -/
+def oneLoopData {L : ℕ} (a : ZMod L) : LoopData L 1 := (fun _ => true, fun _ => a)
+
+@[simp] theorem idx_oneLoopData {L : ℕ} (a : ZMod L) :
+    (oneLoopData a).idx = Step6.oneLoop a := rfl
+
+/-- **The deterministic envelope of `|L - K|` for an arbitrary sample.**  The loop half is (5.2)
+along the flow (`RBM.Gauss.norm_gloop_le_det`), which holds for *every* `ω` because `H_u` is
+Hermitian pointwise; the `K` half is any pointwise bound, in practice (2.59)
+(`RBM.Band.norm_Kval_le`). -/
+theorem lkErr_le_det (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {u : ℝ} (hu1 : u < 1)
+    (ω : Ω) {I : LoopIdx (ZMod (B.L N))} (hwf : I.WF) (hn : 1 ≤ I.length) :
+    X.lkErr E N u ω I
+      ≤ (etaT E u)⁻¹ ^ I.length * ((B.W N : ℝ))⁻¹ ^ (I.length - 1) + ‖B.Kval E N u I‖ := by
+  have h1 : ‖X.Lval E N u ω I‖
+      ≤ (etaT E u)⁻¹ ^ I.length * ((B.W N : ℝ))⁻¹ ^ (I.length - 1) :=
+    norm_gloop_le_det (X.hermitian N u ω) hE hu1 I hwf hn
+  exact (norm_sub_le _ _).trans (add_le_add h1 le_rfl)
+
+/-- **The envelope at a polynomial scale.**  If `η_u` is not super-polynomially small,
+`N^{-c} ≤ η_u`, and `K` obeys (2.59), then `|L_{u,σ,a} - K_{u,σ,a}| ≤ (1 + C) N^{cn}` for every
+`ω`.  This is the `henv` input of `RBM.Gauss.unifDetDom_integral_of_stochDom`.
+
+`N^{-c} ≤ η_u` is **not** free; it is the form in which `W ℓ_u η_u ≥ 1` (a consequence of
+(2.72)) enters, and it is threaded explicitly through every statement below. -/
+theorem lkErr_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} (hN : 1 ≤ N) {u : ℝ}
+    (hu0 : 0 < u) (hu1 : u < 1) {c : ℝ} (hc0 : 0 ≤ c) (hη : (N : ℝ) ^ (-c) ≤ etaT E u)
+    (ω : Ω) {I : LoopIdx (ZMod (B.L N))} (hwf : I.WF) (hn : 1 ≤ I.length)
+    {CK : ℝ} (hCK0 : 0 ≤ CK)
+    (hK : ‖B.Kval E N u I‖ ≤ CK * (B.scale E N u)⁻¹ ^ (I.length - 1)) :
+    X.lkErr E N u ω I ≤ (1 + CK) * (N : ℝ) ^ (c * I.length) := by
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hη0 : 0 < etaT E u := etaT_pos_of_lt_one hE hu1
+  have hW1 : 1 ≤ B.W N := B.W_pos N
+  have hWge1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast hW1
+  have hℓ1 : (1 : ℝ) ≤ B.ell N u := one_le_ellHat_of_nonneg (B.one_le_L N) hu0.le hu1
+  have hsc0 : 0 < B.scale E N u := B.scale_pos hE N hu0 hu1
+  -- the loop half
+  have hloop := det_envelope_le_rpow hη0 hN hη hW1 I.length
+  -- `(W ℓ_u η_u)⁻¹ ≤ η_u⁻¹ ≤ N^c`
+  have hNc1 : (1 : ℝ) ≤ (N : ℝ) ^ c := Real.one_le_rpow hNge1 hc0
+  have hηc : (etaT E u)⁻¹ ≤ (N : ℝ) ^ c := by
+    have hpos : (0 : ℝ) < (N : ℝ) ^ (-c) := Real.rpow_pos_of_pos (by linarith) _
+    have h := inv_anti₀ hpos hη
+    rwa [Real.rpow_neg (by linarith), inv_inv] at h
+  have hscη : (B.scale E N u)⁻¹ ≤ (etaT E u)⁻¹ := by
+    refine inv_anti₀ hη0 ?_
+    have hWℓ : (1 : ℝ) ≤ (B.W N : ℝ) * B.ell N u := by nlinarith
+    show etaT E u ≤ (B.W N : ℝ) * B.ell N u * etaT E u
+    calc etaT E u = 1 * etaT E u := (one_mul _).symm
+      _ ≤ (B.W N : ℝ) * B.ell N u * etaT E u := mul_le_mul_of_nonneg_right hWℓ hη0.le
+  have hscN : (B.scale E N u)⁻¹ ≤ (N : ℝ) ^ c := hscη.trans hηc
+  -- the `K` half
+  have hKpow : (B.scale E N u)⁻¹ ^ (I.length - 1) ≤ (N : ℝ) ^ (c * I.length) := by
+    calc (B.scale E N u)⁻¹ ^ (I.length - 1) ≤ ((N : ℝ) ^ c) ^ (I.length - 1) :=
+          pow_le_pow_left₀ (by positivity) hscN _
+      _ ≤ ((N : ℝ) ^ c) ^ I.length := pow_le_pow_right₀ hNc1 (Nat.sub_le _ _)
+      _ = (N : ℝ) ^ (c * I.length) := by
+          rw [← Real.rpow_natCast ((N : ℝ) ^ c) I.length, ← Real.rpow_mul (by linarith)]
+  have hmain := lkErr_le_det X hE hu1 ω hwf hn (I := I)
+  have hK' : ‖B.Kval E N u I‖ ≤ CK * (N : ℝ) ^ (c * I.length) :=
+    hK.trans (mul_le_mul_of_nonneg_left hKpow hCK0)
+  calc X.lkErr E N u ω I
+      ≤ (etaT E u)⁻¹ ^ I.length * ((B.W N : ℝ))⁻¹ ^ (I.length - 1) + ‖B.Kval E N u I‖ := hmain
+    _ ≤ (N : ℝ) ^ (c * I.length) + CK * (N : ℝ) ^ (c * I.length) := add_le_add hloop hK'
+    _ = (1 + CK) * (N : ℝ) ^ (c * I.length) := by ring
+
+/-- `RBM.Gauss.lkErr_le_rpow` for the `RBM.LoopData` index family of `RBM.Steps`. -/
+theorem lkErr_loopData_le_rpow (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} (hN : 1 ≤ N)
+    {u : ℝ} (hu0 : 0 < u) (hu1 : u < 1) {c : ℝ} (hc0 : 0 ≤ c) (hη : (N : ℝ) ^ (-c) ≤ etaT E u)
+    (ω : Ω) {k : ℕ} (hk : 1 ≤ k) (v : LoopData (B.L N) k) {CK : ℝ} (hCK0 : 0 ≤ CK)
+    (hK : ‖B.Kval E N u v.idx‖ ≤ CK * (B.scale E N u)⁻¹ ^ (k - 1)) :
+    X.lkErr E N u ω v.idx ≤ (1 + CK) * (N : ℝ) ^ (c * k) := by
+  have h := lkErr_le_rpow X hE hN hu0 hu1 hc0 hη ω (I := v.idx) v.idx_wf
+    (by rw [LoopData.idx_length]; exact hk) hCK0 (by rw [LoopData.idx_length]; exact hK)
+  rwa [LoopData.idx_length] at h
+
+/-- **The product of two `|L - K|`'s is `≺` the product of the two controls.**  (2.78)
+(`RBM.Steps.sharpLmK`) at loop lengths `m` and `n` gives
+`|L-K|_{u,m} · |L-K|_{u,n} ≺ (W ℓ_u η_u)^{-(m+n)}`, uniformly in `u ∈ [s,t]` and in *both* loop
+indices at once — the two factors live in different index families, so this is a reindexing of
+`RBM.StochDom.mul`, not an instance of it. -/
+theorem stochDom_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
+    (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {m n : ℕ}
+    (hdm : StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) m) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ m))
+    (hdn : StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × (LoopData (B.L N) m × LoopData (B.L N) n)) ω =>
+        X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ (m + n)) := by
+  refine StochDom.of_subset_union hdm hdn fun τ hτ =>
+    ⟨τ / 2, half_pos hτ, Filter.Eventually.of_forall fun N => ?_⟩
+  rintro ω ⟨p, hp⟩
+  by_contra hno
+  simp only [Set.mem_union, badSet, Set.mem_ofPred_eq, not_or, not_exists, not_lt] at hno
+  have h1 := hno.1 (p.1, p.2.1)
+  have h2 := hno.2 (p.1, p.2.2)
+  have hsc0 : 0 < B.scale E N (p.1 : ℝ) :=
+    B.scale_pos hE N ((hs0 N).trans_le p.1.2.1) (p.1.2.2.trans_lt (ht1 N))
+  have hinv0 : (0 : ℝ) ≤ (B.scale E N (p.1 : ℝ))⁻¹ := (inv_nonneg.2 hsc0.le)
+  have hpos : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have hY2 : 0 ≤ X.lkErr E N (p.1 : ℝ) ω p.2.2.idx := norm_nonneg _
+  have hζ1 : (0 : ℝ) ≤ (B.scale E N (p.1 : ℝ))⁻¹ ^ m := pow_nonneg hinv0 m
+  have hkey : X.lkErr E N (p.1 : ℝ) ω p.2.1.idx * X.lkErr E N (p.1 : ℝ) ω p.2.2.idx
+      ≤ (N : ℝ) ^ τ * (B.scale E N (p.1 : ℝ))⁻¹ ^ (m + n) := by
+    calc X.lkErr E N (p.1 : ℝ) ω p.2.1.idx * X.lkErr E N (p.1 : ℝ) ω p.2.2.idx
+        ≤ ((N : ℝ) ^ (τ / 2) * (B.scale E N (p.1 : ℝ))⁻¹ ^ m)
+            * X.lkErr E N (p.1 : ℝ) ω p.2.2.idx := mul_le_mul_of_nonneg_right h1 hY2
+      _ ≤ ((N : ℝ) ^ (τ / 2) * (B.scale E N (p.1 : ℝ))⁻¹ ^ m)
+            * ((N : ℝ) ^ (τ / 2) * (B.scale E N (p.1 : ℝ))⁻¹ ^ n) :=
+          mul_le_mul_of_nonneg_left h2 (mul_nonneg hpos hζ1)
+      _ = ((N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2))
+            * ((B.scale E N (p.1 : ℝ))⁻¹ ^ m * (B.scale E N (p.1 : ℝ))⁻¹ ^ n) := by ring
+      _ = (N : ℝ) ^ τ * (B.scale E N (p.1 : ℝ))⁻¹ ^ (m + n) := by
+          rw [UnifDetDom.rpow_half_mul_rpow_half N hτ, ← pow_add]
+  linarith
+
+/-- **The first-moment reverse bridge, applied to a product of two `|L - K|`'s.**
+
+`E[|L-K|_{u,m} |L-K|_{u,n}] ≺ (W ℓ_u η_u)^{-(m+n)}`, uniformly in `u ∈ [s,t]` and in both loop
+indices: the hypothesis is (2.78) (`RBM.Steps.sharpLmK`) at `m` and at `n`, the conclusion is a
+*deterministic* `≺` for the expectation.  This is `RBM.Gauss.unifDetDom_integral_of_stochDom`
+with its three inputs supplied:
+
+* the `≺`-bound for the product, `RBM.Gauss.stochDom_lkErr_mul`;
+* the deterministic envelope, `RBM.Gauss.lkErr_le_rpow` (from `RBM.Gauss.norm_gloop_le_det` and
+  a pointwise bound on `K`, i.e. (2.59) `RBM.Band.norm_Kval_le`);
+* the polynomial lower bound `N^{-(m+n)} ≤ (W ℓ_u η_u)^{-(m+n)}` on the control, from
+  `ℓ_u ≤ L`, `η_u ≤ 1` and `W L ≤ N` (the field `RBM.Band.dim`).
+
+**The hypothesis `hη` (`η_u ≥ N^{-c}` for every `u ∈ [s,t]`) is not free**: it is the form in
+which `W ℓ_u η_u ≥ 1`, a consequence of (2.72), enters the envelope, and it is carried
+explicitly here and in every statement below rather than being assumed silently. -/
+theorem unifDetDom_integral_lkErr_mul (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
+    (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1) {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    {CK : ℝ} (hCK0 : 0 ≤ CK)
+    (hKm : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) m),
+      ‖B.Kval E N u v.idx‖ ≤ CK * (B.scale E N u)⁻¹ ^ (m - 1))
+    (hKn : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) n),
+      ‖B.Kval E N u v.idx‖ ≤ CK * (B.scale E N u)⁻¹ ^ (n - 1))
+    (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) m × LoopData (B.L N) n)),
+      Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
+    (hdm : StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) m) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ m))
+    (hdn : StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) :
+    UnifDetDom
+      (fun N (p : TimeIcc s t N × (LoopData (B.L N) m × LoopData (B.L N) n)) =>
+        ∫ ω, X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx ∂B.P)
+      (fun N p => (B.scale E N p.1)⁻¹ ^ (m + n)) := by
+  have := B.isProbabilityMeasure
+  refine unifDetDom_integral_of_stochDom_of_nonneg (B := ((m + n : ℕ) : ℝ))
+    (Kenv := c * ((m : ℝ) + (n : ℝ)) + 1)
+    (fun N p ω => mul_nonneg (norm_nonneg _) (norm_nonneg _)) hint ?_ (by positivity) ?_
+    (by positivity) ?_ (stochDom_lkErr_mul X hE hs0 ht1 hdm hdn)
+  · -- `0 < (W ℓ_u η_u)^{-(m+n)}`
+    intro N p
+    have hsc0 : 0 < B.scale E N (p.1 : ℝ) :=
+      B.scale_pos hE N ((hs0 N).trans_le p.1.2.1) (p.1.2.2.trans_lt (ht1 N))
+    positivity
+  · -- the polynomial lower bound on the control
+    filter_upwards [B.dim, eventually_ge_atTop 1] with N hdim hN1 p
+    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+    have hu0 : 0 < (p.1 : ℝ) := (hs0 N).trans_le p.1.2.1
+    have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
+    have hsc0 : 0 < B.scale E N (p.1 : ℝ) := B.scale_pos hE N hu0 hu1
+    have hell : B.ell N (p.1 : ℝ) ≤ (B.L N : ℝ) := by
+      simp only [Band.ell, ellHat]; exact min_le_right _ _
+    have hell0 : (0 : ℝ) ≤ B.ell N (p.1 : ℝ) :=
+      le_trans zero_le_one (one_le_ellHat_of_nonneg (B.one_le_L N) hu0.le hu1)
+    have heta1 : etaT E (p.1 : ℝ) ≤ 1 := etaT_le_one hE hu0.le
+    have heta0 : (0 : ℝ) < etaT E (p.1 : ℝ) := etaT_pos_of_lt_one hE hu1
+    have hW0 : (0 : ℝ) ≤ (B.W N : ℝ) := Nat.cast_nonneg _
+    have hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ) := by exact_mod_cast hdim.1
+    have hscN : B.scale E N (p.1 : ℝ) ≤ (N : ℝ) := by
+      have h1 : B.scale E N (p.1 : ℝ) = (B.W N : ℝ) * B.ell N (p.1 : ℝ) * etaT E (p.1 : ℝ) := rfl
+      rw [h1]
+      have hstep : (B.W N : ℝ) * B.ell N (p.1 : ℝ) * etaT E (p.1 : ℝ)
+          ≤ ((B.W N : ℝ) * (B.L N : ℝ)) * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_left hell hW0) heta1 heta0.le (by positivity)
+      linarith
+    have hinv : (N : ℝ)⁻¹ ≤ (B.scale E N (p.1 : ℝ))⁻¹ := inv_anti₀ hsc0 hscN
+    have hpow : ((N : ℝ)⁻¹) ^ (m + n) ≤ (B.scale E N (p.1 : ℝ))⁻¹ ^ (m + n) :=
+      pow_le_pow_left₀ (inv_nonneg.2 hNpos.le) hinv _
+    refine le_trans (le_of_eq ?_) hpow
+    rw [Real.rpow_neg hNpos.le, Real.rpow_natCast, inv_pow]
+  · -- the deterministic envelope, at a polynomial scale
+    filter_upwards [hη, eventually_ge_atTop 1, eventually_le_rpow ((1 + CK) ^ 2) one_pos] with
+      N hηN hN1 hCN p ω
+    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+    have hu0 : 0 < (p.1 : ℝ) := (hs0 N).trans_le p.1.2.1
+    have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
+    have h1 := lkErr_loopData_le_rpow X hE hN1 hu0 hu1 hc0 (hηN p.1) ω hm p.2.1 hCK0
+      (hKm N p.1 p.2.1)
+    have h2 := lkErr_loopData_le_rpow X hE hN1 hu0 hu1 hc0 (hηN p.1) ω hn p.2.2 hCK0
+      (hKn N p.1 p.2.2)
+    have hr1 : (0 : ℝ) ≤ (1 + CK) * (N : ℝ) ^ (c * m) := by positivity
+    have hstep : X.lkErr E N (p.1 : ℝ) ω p.2.1.idx * X.lkErr E N (p.1 : ℝ) ω p.2.2.idx
+        ≤ ((1 + CK) * (N : ℝ) ^ (c * m)) * ((1 + CK) * (N : ℝ) ^ (c * n)) :=
+      mul_le_mul h1 h2 (norm_nonneg _) hr1
+    refine hstep.trans ?_
+    have hCN' : (1 + CK) ^ 2 ≤ (N : ℝ) := by rwa [Real.rpow_one] at hCN
+    have hprod0 : (0 : ℝ) ≤ (N : ℝ) ^ (c * (m : ℝ)) * (N : ℝ) ^ (c * (n : ℝ)) := by positivity
+    have hRHS : (N : ℝ) ^ (c * ((m : ℝ) + (n : ℝ)) + 1)
+        = ((N : ℝ) ^ (c * (m : ℝ)) * (N : ℝ) ^ (c * (n : ℝ))) * (N : ℝ) ^ (1 : ℝ) := by
+      rw [← Real.rpow_add hNpos, ← Real.rpow_add hNpos]
+      congr 1
+      ring
+    calc ((1 + CK) * (N : ℝ) ^ (c * (m : ℝ))) * ((1 + CK) * (N : ℝ) ^ (c * (n : ℝ)))
+        = (1 + CK) ^ 2 * ((N : ℝ) ^ (c * (m : ℝ)) * (N : ℝ) ^ (c * (n : ℝ))) := by ring
+      _ ≤ (N : ℝ) * ((N : ℝ) ^ (c * (m : ℝ)) * (N : ℝ) ^ (c * (n : ℝ))) :=
+          mul_le_mul_of_nonneg_right hCN' hprod0
+      _ = (N : ℝ) ^ (c * ((m : ℝ) + (n : ℝ)) + 1) := by
+          rw [hRHS, Real.rpow_one]; ring
+
+/-- **`hq11` of `RBM.Step6.sharpExpect_step6`**: `E[(L-K)_1 (L-K)_1] ≺ (W ℓ_u η_u)^{-2}`,
+uniformly in `u ∈ [s,t]` and in the two blocks.
+
+The proof is `RBM.Gauss.norm_quad11_le_integral` (the deterministic first step) followed by the
+first-moment reverse bridge `RBM.Gauss.unifDetDom_integral_lkErr_mul` applied to (2.78)
+(`RBM.Steps.sharpLmK`) at `n = 1`, twice — Step 4's output, available before Step 6. -/
+theorem quad11_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) 1 × LoopData (B.L N) 1)),
+      Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
+    (hsteps : Steps X E s t) :
+    UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
+      ‖Step6.quad11 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 2) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  obtain ⟨C1, hC10, hC1⟩ := B.norm_Kval_le hκ0 hκ1 hEκ (n := 1) le_rfl
+  have hK1 : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) 1),
+      ‖B.Kval E N u v.idx‖ ≤ C1 * (B.scale E N u)⁻¹ ^ (1 - 1) :=
+    fun N u v => hC1 N u ((hs0 N).le.trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf (by simp)
+  have hmain := unifDetDom_integral_lkErr_mul X hE hs0 ht1 (m := 1) (n := 1) le_rfl le_rfl
+    hc0 hη hC10 hK1 hK1 hint (hsteps.sharpLmK 1 le_rfl) (hsteps.sharpLmK 1 le_rfl)
+  have hre := hmain.precomp_param
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) =>
+      (p.1, (oneLoopData p.2.1, oneLoopData p.2.2)))
+  refine UnifDetDom.mono_left (Filter.Eventually.of_forall fun N p => ?_) hre
+  simpa using norm_quad11_le_integral X E N p.1 p.2.1 p.2.2
+
+/-- **`hq13` of `RBM.Step6.sharpExpect_step6`**: `E[(L-K)_1 (L-K)_3] ≺ (W ℓ_u η_u)^{-4}`,
+uniformly in `u ∈ [s,t]`, in the block and in the `3`-loop.  Same proof as
+`RBM.Gauss.quad11_unifDetDom`, with (2.78) at `n = 1` and at `n = 3`. -/
+theorem quad13_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hint : ∀ N (p : TimeIcc s t N × (LoopData (B.L N) 1 × LoopData (B.L N) 3)),
+      Integrable (fun ω => X.lkErr E N p.1 ω p.2.1.idx * X.lkErr E N p.1 ω p.2.2.idx) B.P)
+    (hsteps : Steps X E s t) :
+    UnifDetDom (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
+      ‖Step6.quad13 X E N p.1 p.2.1 p.2.2‖) (fun N p => (B.scale E N p.1)⁻¹ ^ 4) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  obtain ⟨C1, hC10, hC1⟩ := B.norm_Kval_le hκ0 hκ1 hEκ (n := 1) le_rfl
+  obtain ⟨C3, hC30, hC3⟩ := B.norm_Kval_le hκ0 hκ1 hEκ (n := 3) (by norm_num)
+  have hCK0 : (0 : ℝ) ≤ max C1 C3 := le_trans hC10 (le_max_left _ _)
+  have hK1 : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) 1),
+      ‖B.Kval E N u v.idx‖ ≤ max C1 C3 * (B.scale E N u)⁻¹ ^ (1 - 1) := by
+    intro N u v
+    refine (hC1 N u ((hs0 N).le.trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf
+      (by simp)).trans ?_
+    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by norm_num)
+  have hK3 : ∀ N (u : TimeIcc s t N) (v : LoopData (B.L N) 3),
+      ‖B.Kval E N u v.idx‖ ≤ max C1 C3 * (B.scale E N u)⁻¹ ^ (3 - 1) := by
+    intro N u v
+    refine (hC3 N u ((hs0 N).le.trans u.2.1) (u.2.2.trans_lt (ht1 N)) v.idx v.idx_wf
+      (by simp)).trans ?_
+    exact mul_le_mul_of_nonneg_right (le_max_right _ _) (sq_nonneg _)
+  have hmain := unifDetDom_integral_lkErr_mul X hE hs0 ht1 (m := 1) (n := 3) le_rfl (by norm_num)
+    hc0 hη hCK0 hK1 hK3 hint (hsteps.sharpLmK 1 le_rfl) (hsteps.sharpLmK 3 (by norm_num))
+  have hre := hmain.precomp_param
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × LoopData (B.L N) 3)) =>
+      (p.1, (oneLoopData p.2.1, p.2.2)))
+  refine UnifDetDom.mono_left (Filter.Eventually.of_forall fun N p => ?_) hre
+  simpa using norm_quad13_le_integral X E N p.1 p.2.1 p.2.2
+
+end FirstMoment
 
 end RBM.Gauss

@@ -52,6 +52,11 @@ dominated-convergence hypothesis and every envelope downstream is an instance of
   envelope of polynomial growth gives `RBM.Gauss.MomentDom`.
 * `RBM.Gauss.momentDom_of_stochDom_of_nonneg`, `RBM.Gauss.momentDom_of_normStochDom` — the two
   shapes in which the hypothesis actually occurs (`bdg` / `bdgQ` dominate a `‖·‖`).
+* `RBM.Gauss.unifDetDom_integral_of_stochDom`,
+  `RBM.Gauss.unifDetDom_integral_of_stochDom_of_nonneg` — **the first-moment reverse bridge**:
+  the same split gives `∫ |Y| ≺ Φ` *deterministically*.  `momentDom_of_stochDom` never produces
+  a first moment (it produces `∫ |Y|^{2p}`) and its conclusion carries a constant that
+  `RBM.UnifDetDom` does not allow, so this is a separate statement, not a specialization.
 * `RBM.Gauss.norm_green_zt_le` — `‖G_t‖_op ≤ η_t⁻¹` on the whole space.
 * `RBM.Gauss.norm_gloop_le_det` — **the deterministic envelope of a loop**, `(5.2)` along the
   flow: `|L_{t,σ,a}| ≤ η_t^{-n} W^{-n+1}` for every `ω`.
@@ -234,6 +239,135 @@ theorem momentDom_of_normStochDom {U : ℕ → Type*} {V : Type*} [NormedAddComm
     MomentDom P (fun N u ω => ‖A N u ω‖) Φ :=
   momentDom_of_stochDom_of_nonneg (fun _ _ _ => norm_nonneg _) hmeas hint hΦ hB hΦlow hEnv0 hKenv
     henv hEnvpoly hdom
+
+/-! ### The first-moment reverse bridge -/
+
+/-- **The first-moment reverse bridge**: `|Y| ≺ Φ` plus a deterministic envelope of polynomial
+growth and a polynomial lower bound on the control give `∫ |Y| ≺ Φ` *deterministically*
+(`RBM.UnifDetDom`, Definition 2.1 (ii)).
+
+`RBM.Gauss.momentDom_of_stochDom` produces only the *even* moments `∫ |Y|^{2p}` of
+`RBM.Gauss.MomentDom`, never the first moment `∫ |Y|`, and `MomentDom` carries a constant
+`C_{ε,p}` that `UnifDetDom` does not allow.  The accounting is the same good-event/envelope
+split as there, run at the threshold `N^{τ/3} Φ` and with the constant absorbed into `N^{τ/3}`:
+
+* on `{|Y| ≤ N^{τ/3} Φ}` the integrand is at most `N^{τ/3} Φ`, contributing
+  `P(Ω) · N^{τ/3} Φ`;
+* the complement has probability `≤ N^{-D'}` with `D' := Kenv + B + 1` by Definition 2.1 (i),
+  and there `|Y| ≤ N^{Kenv}`, so it contributes at most `N^{-B-1} ≤ N^{-B} ≤ Φ`;
+* `(P(Ω) + 1) N^{τ/3} ≤ N^{2τ/3} ≤ N^τ` eventually.
+
+The hypothesis `hΦlow` (`N^{-B} ≤ Φ`) is **not** free for the controls that occur downstream:
+for `Φ = (W ℓ_u η_u)^{-k}` it is a polynomial *upper* bound on the scale, and the envelope
+hypothesis `henv` needs `η_u ≥ N^{-c}` (see `RBM.Gauss.det_envelope_le_rpow`), which comes from
+`W ℓ_u η_u ≥ 1`, i.e. from (2.72).  Both are carried explicitly.
+
+No measurability of `Y` is required (unlike `RBM.Gauss.momentDom_of_stochDom`): the split is
+performed on `MeasureTheory.toMeasurable P` of the exceptional set, whose measure is the outer
+measure that Definition 2.1 (i) bounds anyway. -/
+theorem unifDetDom_integral_of_stochDom {U : ℕ → Type*} {Y : ∀ N, U N → Ω → ℝ}
+    {Φ : ∀ N, U N → ℝ} {Kenv B : ℝ}
+    (hint : ∀ (N : ℕ) (u : U N), Integrable (fun ω => |Y N u ω|) P)
+    (hΦ : ∀ N u, 0 < Φ N u) (hB : 0 ≤ B)
+    (hΦlow : ∀ᶠ N : ℕ in atTop, ∀ u, (N : ℝ) ^ (-B) ≤ Φ N u)
+    (hKenv : 0 ≤ Kenv)
+    (henv : ∀ᶠ N : ℕ in atTop, ∀ (u : U N) (ω : Ω), |Y N u ω| ≤ (N : ℝ) ^ Kenv)
+    (hdom : StochDom P (fun N u ω => |Y N u ω|) (fun N u _ => Φ N u)) :
+    UnifDetDom (fun N u => ∫ ω, |Y N u ω| ∂P) Φ := by
+  intro τ hτ
+  have hτ3 : (0 : ℝ) < τ / 3 := by linarith
+  set D' : ℝ := Kenv + B + 1 with hD'_def
+  have hD'0 : 0 < D' := by rw [hD'_def]; linarith
+  filter_upwards [hΦlow, henv, hdom (τ / 3) hτ3 D' hD'0, eventually_ge_atTop 1,
+    eventually_le_rpow (P.real Set.univ + 1) hτ3] with N hΦN hEN hbad hN1 hA
+  intro u
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hPuniv : (0 : ℝ) ≤ P.real Set.univ := measureReal_nonneg
+  set c : ℝ := (N : ℝ) ^ (τ / 3) * Φ N u with hc_def
+  have hc0 : 0 < c := mul_pos (Real.rpow_pos_of_pos hNpos _) (hΦ N u)
+  set S₀ : Set Ω := {ω | c < |Y N u ω|} with hS₀_def
+  set S : Set Ω := toMeasurable P S₀ with hS_def
+  have hSmeas : MeasurableSet S := measurableSet_toMeasurable P S₀
+  have hSsub : S₀ ⊆ badSet (fun N u ω => |Y N u ω|) (fun N u _ => Φ N u) (τ / 3) N :=
+    fun ω hω => ⟨u, hω⟩
+  have hPS : P.real S ≤ (N : ℝ) ^ (-D') := by
+    rw [measureReal_def, hS_def, measure_toMeasurable]
+    calc (P S₀).toReal ≤ (ENNReal.ofReal ((N : ℝ) ^ (-D'))).toReal :=
+          ENNReal.toReal_mono ENNReal.ofReal_ne_top ((measure_mono hSsub).trans hbad)
+      _ = (N : ℝ) ^ (-D') := ENNReal.toReal_ofReal (Real.rpow_nonneg hNpos.le _)
+  -- the pointwise split at the threshold `c`
+  have hpt : ∀ ω, |Y N u ω| ≤ c + Set.indicator S (fun _ => (N : ℝ) ^ Kenv) ω := by
+    intro ω
+    by_cases hω : ω ∈ S
+    · rw [Set.indicator_of_mem hω]
+      have h1 := hEN u ω
+      linarith
+    · rw [Set.indicator_of_notMem hω]
+      have hω₀ : ω ∉ S₀ := fun h => hω (subset_toMeasurable P S₀ h)
+      rw [hS₀_def] at hω₀
+      simpa using not_lt.1 hω₀
+  have hRHSint : Integrable (fun ω => c + Set.indicator S (fun _ => (N : ℝ) ^ Kenv) ω) P :=
+    (integrable_const _).add ((integrable_const _).indicator hSmeas)
+  have hle := integral_mono (hint N u) hRHSint hpt
+  rw [integral_add (integrable_const _) ((integrable_const _).indicator hSmeas), integral_const,
+    integral_indicator_const _ hSmeas, smul_eq_mul, smul_eq_mul] at hle
+  -- the exceptional part is at most `Φ`
+  have htail : P.real S * (N : ℝ) ^ Kenv ≤ Φ N u := by
+    have hKpow : (0 : ℝ) ≤ (N : ℝ) ^ Kenv := Real.rpow_nonneg hNpos.le _
+    have h1 : P.real S * (N : ℝ) ^ Kenv ≤ (N : ℝ) ^ (-D') * (N : ℝ) ^ Kenv :=
+      mul_le_mul_of_nonneg_right hPS hKpow
+    have h2 : (N : ℝ) ^ (-D') * (N : ℝ) ^ Kenv = (N : ℝ) ^ (-B + -1) := by
+      rw [← Real.rpow_add hNpos]
+      congr 1
+      rw [hD'_def]; ring
+    have h3 : (N : ℝ) ^ (-B + -1) ≤ (N : ℝ) ^ (-B) :=
+      Real.rpow_le_rpow_of_exponent_le hNge1 (by linarith)
+    calc P.real S * (N : ℝ) ^ Kenv ≤ (N : ℝ) ^ (-B + -1) := by rw [← h2]; exact h1
+      _ ≤ (N : ℝ) ^ (-B) := h3
+      _ ≤ Φ N u := hΦN u
+  -- the main part, with the constant `P(Ω) + 1` absorbed into `N^{τ/3}`
+  have hmain : P.real Set.univ * c + Φ N u ≤ (N : ℝ) ^ τ * Φ N u := by
+    have h1N : (1 : ℝ) ≤ (N : ℝ) ^ (τ / 3) := Real.one_le_rpow hNge1 hτ3.le
+    have h23 : (N : ℝ) ^ (τ / 3) * (N : ℝ) ^ (τ / 3) = (N : ℝ) ^ (2 * τ / 3) := by
+      rw [← Real.rpow_add hNpos]; congr 1; ring
+    have h2τ : (N : ℝ) ^ (2 * τ / 3) ≤ (N : ℝ) ^ τ :=
+      Real.rpow_le_rpow_of_exponent_le hNge1 (by linarith)
+    have key : P.real Set.univ * (N : ℝ) ^ (τ / 3) + 1 ≤ (N : ℝ) ^ τ := by
+      calc P.real Set.univ * (N : ℝ) ^ (τ / 3) + 1
+          ≤ P.real Set.univ * (N : ℝ) ^ (τ / 3) + 1 * (N : ℝ) ^ (τ / 3) := by nlinarith
+        _ = (P.real Set.univ + 1) * (N : ℝ) ^ (τ / 3) := by ring
+        _ ≤ (N : ℝ) ^ (τ / 3) * (N : ℝ) ^ (τ / 3) := by nlinarith
+        _ = (N : ℝ) ^ (2 * τ / 3) := h23
+        _ ≤ (N : ℝ) ^ τ := h2τ
+    have hceq : P.real Set.univ * c = P.real Set.univ * (N : ℝ) ^ (τ / 3) * Φ N u := by
+      rw [hc_def]; ring
+    rw [hceq]
+    have hΦ0 := (hΦ N u).le
+    nlinarith
+  show ∫ ω, |Y N u ω| ∂P ≤ (N : ℝ) ^ τ * Φ N u
+  linarith
+
+/-- **The first-moment reverse bridge for a non-negative family** — the shape in which it is
+used: what is dominated (a product `|L - K| · |L - K|` of two `≺`-controlled quantities) is
+already non-negative, so `|Y| = Y`. -/
+theorem unifDetDom_integral_of_stochDom_of_nonneg {U : ℕ → Type*} {Y : ∀ N, U N → Ω → ℝ}
+    {Φ : ∀ N, U N → ℝ} {Kenv B : ℝ}
+    (hY0 : ∀ N (u : U N) (ω : Ω), 0 ≤ Y N u ω)
+    (hint : ∀ (N : ℕ) (u : U N), Integrable (Y N u) P)
+    (hΦ : ∀ N u, 0 < Φ N u) (hB : 0 ≤ B)
+    (hΦlow : ∀ᶠ N : ℕ in atTop, ∀ u, (N : ℝ) ^ (-B) ≤ Φ N u)
+    (hKenv : 0 ≤ Kenv)
+    (henv : ∀ᶠ N : ℕ in atTop, ∀ (u : U N) (ω : Ω), Y N u ω ≤ (N : ℝ) ^ Kenv)
+    (hdom : StochDom P Y (fun N u _ => Φ N u)) :
+    UnifDetDom (fun N u => ∫ ω, Y N u ω ∂P) Φ := by
+  have habs : ∀ N (u : U N) (ω : Ω), |Y N u ω| = Y N u ω :=
+    fun N u ω => abs_of_nonneg (hY0 N u ω)
+  have h := unifDetDom_integral_of_stochDom (P := P) (Y := Y) (Φ := Φ) (Kenv := Kenv) (B := B)
+    (fun N u => by simpa only [habs] using hint N u) hΦ hB hΦlow hKenv
+    (by filter_upwards [henv] with N hN u ω; rw [habs]; exact hN u ω)
+    (by simpa only [habs] using hdom)
+  simpa only [habs] using h
 
 end Reverse
 

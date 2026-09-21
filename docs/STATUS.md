@@ -4259,3 +4259,32 @@ noncomputable def driftE (X : Sample B) (E : ℝ) : Step6.DriftTensor B :=
 
 **有点顶的地方（留给后来人）**：`shift` 也要花预算，所以 **`M` 与 `n` 不能合并成一个参数**；
 `diffBd_atom` 的 gInv 分支若照搬 `hD.shift κ`，`B` 会多掉一格导致归纳不闭合，须改走 `ih` 在基层级 `insert κ T` 上的实例。
+
+## ⭐ T165：(5.77) 第 1–3 行对**钉死的漂移**立成定理，`hFmom` 全链打通（`Hierarchy/DriftBound.lean`，881 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9074** 条。
+
+`norm_driftF_le`（逐点 (5.77)）→ `norm_Hyp_F_le`（同式对 `MomentDuhamel.Hyp.F`，经 T58 的 `Fpath_eq_driftF_of_lt_one`，
+**不是按定义造的 `F`**）→ `stochDom_norm_driftF`（`≺` 版，**控制是确定性的**）→ `stochDom_det_of_xiRhs`
+（`SumZeroDyn.F_stochDom` 的带撇版，**不要 `Hierarchy`、不要 `Lemma510`**）→ **`hdom_of_driftInputs`**
+（结论与 `F_stochDom` **逐字一致**）→ **`hFmom_of_driftInputs`**（由 `Gauss.hFmom_of_stochDom` 一次 bare application 合上）。
+
+**最后这条编译通过本身就是验收探针**：调用链里**不再出现 T157 留下的 `hdom` 缺口、任何 `Lemma510` 字段、或 `SumZeroDyn.Hierarchy` 实例**。
+
+### Ξ-记账
+关键恒等式只有一条：**`W(ℓ+1)/A ≤ (Krad+2)/η_u`**（`Decay.mul_add_one_div_le`）——**(5.77) 里所有 `η_u^{−1}` 都从这里来**。
+`m = n+2`：`∑_{l_K=3}^{m} couplingLen` 取 `Φ = ∑_{k∈Ico 1 m} Ξ^{(L−K)}_{u,k}`（常数 `4e m²·n·C_K`）；
+`primBil(L−K)(L−K)` 取 `Φ = ∑_{k∈Icc 2 m} Ξ_kΞ_{m−k+2}A⁻¹`（常数 `2e m²`）；`eG` 取 `Ξ^{(L−K)}_{u,1}·Ξ^{(L)}_{u,m+1}`（常数 `2e m C1`）。
+合并用 `m ≥ 2 ⟹ 2m ≤ 4m²`；误差侧 `xiSum` 同时支配两项。
+
+### 两个必须记录的发现
+1. **(5.77) 第 3 行短一个因子 `Ξ^{(L−K)}_{u,1}`** → paper-deltas #119。论文默认它 `≲ 1`（(2.68) 单圈）才丢掉，
+   但**它既不是常数也不在 `xiRhs` 里，无法从另外两行推出**，故 Lean 侧显式列为假设。
+2. **⚠ `Decay.norm_couplingLen_le` 的 `hD` 假设过强，长度 0 处会炸**：它要求 `‖(L−K)_J‖ ≤ Φ·A^{−|J|}` 对**所有** `|J| < m`，
+   含 `|J| = 0`；而 `L_∅ = ⟨1⟩ = L·W`、`K_∅ = 0`，于是逼出 `Φ ≥ LW`，**主项直接废掉**。
+   耦合本身根本看不到这种圈（cut-and-glue 两边长度都 ≥ 2）。本单用 `dTrunc`（长度 < 2 处置零）+ `couplingLen_dTrunc` 绕过，
+   **没有改 `Decay.lean`**；**要收紧只需把 `hD` 改成 `2 ≤ J.length → …`，`dTrunc` 那一段就能删掉。**
+
+### 还剩什么
+`DriftInputs` 仍是假设而非定理——它装的是 Lemma 5.9 的衰减与 Step 3 的计数，**都不涉及漂移**，由别处产出
+（`Decay.lemma59` / Step 3）。这是下一环，不在 T165 范围内。

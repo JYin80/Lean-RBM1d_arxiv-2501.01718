@@ -4659,3 +4659,26 @@ Lean 里留了 `RBM.figure_four`（`decide`）作为可编译的锚点。
 * **D4 / D5** = 论文改动预算第 11 / 10 条（`J* ≤ A_u` 补半句；(5.77) 补因子或补一句）——**措辞已转 Jun**。Lean 侧不需裁定。
 * **D6** **不需要裁定**：Cowork 已核原文，论文 Theorem 2.2 的 (2.10) **本来就带** `1(λ_k ∈ [−2+κ, 2−κ])`，只断言体内特征向量。Lean 的 Theorem 2.2 照此措辞。路线：**(i) 走新文件**（0 个现有签名改动，不与并行车道抢 `Cond272` 的 14 个文件）。
 * **D7 / D8** 都在 **T184**（地板内核下沉 + `LKDecayQuant` 八条重复改指 + `norm_couplingLen_le` 的 `hD` 收紧带撇版）。
+
+## ⭐ T183：`DiagBoundFlow'` 落地——**(4.2)/(4.3) 已从 `Step1.Hyp` 的假设表里彻底消失**（2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9372** 条。纯新增 207 行于 `Gauss/EntryBoundTime.lean`（501 → 709），
+`Green/*`、`Gauss/LDENetClose.lean`、`Gauss/Lemma41FlowGauss.lean`、`Gauss/Step1Hyp.lean` **一字未动**。
+
+`diagBoundFlow_floor : DiagBoundFlow' d E s t (fun N => N^{−B})`——`DiagBoundFlow` 的控制加 `+ fl N`，其余一字未改；
+三条 LDE 输入（T148 的 row/col + T166 的 quad）**零改写塞进槽位、`exact` 直接过**。
+
+**`step1Hyp_gauss_of_scale''` 与 `step1Hyp_gauss_of_scale` 的假设表逐字相同，只是同时删掉了 `hEntry` 和 `hDiag`，没有任何东西顶替。**
+
+### 三个余项的实情
+1. **`hLdiag` 带时间版确实白送，但不是自动的**——`StochDom.of_subset` 要求同一指标类型，得用 `of_subset_union h h` 换类型。
+   数学只有一行：`‖H_{u,ii}‖² = u(ω c)² ≤ (ω c)² = ‖H_{1,ii}‖²`，控制与 `u` 无关，故任意时刻的坏事件含在 `u = 1` 的坏事件里（~25 行）。
+   **没有遇到 T107 在 row/col 侧撞上的那种缺口**——那边缺的是 `entry_bound_stochDom_floor_idx` 本身，这边 T166 已经交了对角版。
+2. **地板吸收直接复用 T107 的 `stochDom_indicator_add_const`，没写第二条**；`B := 1` 够用。
+3. `hδ` 不是新负担。
+
+**一处形状差异（不是新假设）**：(4.3) 的确定性内核带 `Kstab κ`，故 `diagBoundFlow_floor` 收的是 `0 < κ ≤ 1` + `|E| ≤ 2−κ`
+而非 `entryBoundFlow_floor` 的 `|E| < 2`。**在 `Step1.Hyp` 层面代价为零**（`step1Hyp_gauss_of_scale` 本来就带这两条，内部用 `min κ 1` 封顶）。**不构成 paper-delta。**
+
+**四条 `rfl` 探针全过**（`have : h_unprimed = h_primed := rfl`，编译验证不是目测），
+覆盖 `stochDom_indicator_diag_flow`、`llMax_sq_flow`、`lemma41Flow`、`step1Hyp_gauss_of_scale`(′/″)。

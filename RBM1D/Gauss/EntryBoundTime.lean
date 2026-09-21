@@ -7,7 +7,7 @@ import RBM1D.Gauss.LDENetClose
 import RBM1D.Green.EntryBoundFloor
 
 /-!
-# (4.2) with the time inside the index set — T107
+# (4.2) and (4.3) with the time inside the index set — T107, T183
 
 `RBM1D/Gauss/Lemma41FlowGauss.lean` (T108) carries **(4.2) along the flow** as the hypothesis
 `RBM.Gauss.EntryBoundFlow`: `RBM.entry_bound_stochDom` with `RBM.TimeIcc s t N` added to the
@@ -58,6 +58,38 @@ declaration here is new.
 * `RBM.Gauss.step1Hyp_gauss_of_scale'` — `RBM.Step1.Hyp` with (4.2) discharged; its two extra
   regime inputs (`N^{-1} ≤ η_{t_N}` and `δ_N ≤ N^{-c/6}`) are both consequences of
   `RBM.Step1.step1`'s own `N^c ≤ W ℓ_t η_t`, so nothing is added to the hypothesis list.
+
+## (4.3) — T183
+
+The second half of the file does the same for `RBM.Gauss.DiagBoundFlow`, which is what T107 left
+behind.  T166 had already written the floored, time-indexed deterministic chain
+`RBM.diag_bound_stochDom_floor_idx` (`RBM1D/Green/EntryBoundFloor.lean`) and the third large
+deviation input `RBM.Gauss.stochDom_ldeQuad_flow_floor`, so only the wiring was missing:
+
+* the fourth input `hLdiag` existed only at a fixed time (`RBM.Gauss.stochDom_normSq_Hflow_diag`,
+  T92).  Widening its index set is free — `‖H_{u,ii}‖² = u ‖X_{ii}‖²` is monotone in `u` and the
+  control `S_{ii}` does not depend on `u` — and is done by
+  `RBM.Gauss.stochDom_normSq_Hflow_diag_idx`;
+* the floor is absorbed at `B = 1` by the same `RBM.Gauss.stochDom_indicator_add_const` that
+  T107 wrote for (4.2), against the **unconditional** `W⁻¹` in
+  `RBM.Gauss.stochDom_indicator_Lmax_flow`'s control;
+* `hδ` was already required by `RBM.entry_bound_stochDom`, so it is not a new burden.
+
+| unprimed (hypothesis `DiagBoundFlow`) | primed (hypothesis `DiagBoundFlow'`) |
+| --- | --- |
+| `RBM.Gauss.stochDom_indicator_diag_flow` | `RBM.Gauss.stochDom_indicator_diag_flow'` |
+| `RBM.Gauss.lemma41Flow` | `RBM.Gauss.lemma41Flow''` |
+| `RBM.Gauss.lemma41Flow_of_diagBoundFlow` | `RBM.Gauss.lemma41Flow_gauss` |
+| `RBM.Gauss.step1Hyp_gauss_of_scale'` | `RBM.Gauss.step1Hyp_gauss_of_scale''` |
+
+* `RBM.Gauss.DiagBoundFlow'` — (4.3) along the flow with an additive floor.
+* `RBM.Gauss.diagBoundFlow_floor` — **(4.3) along the flow**, the T183 deliverable.
+* `RBM.Gauss.lemma41Flow_gauss` — `RBM.Step1.Lemma41Flow` with (4.2) *and* (4.3) discharged.
+* `RBM.Gauss.step1Hyp_gauss_of_scale''` — `RBM.Step1.Hyp` under word for word the hypotheses of
+  `RBM.Gauss.step1Hyp_gauss_of_scale`, minus both `RBM.Gauss.EntryBoundFlow` and
+  `RBM.Gauss.DiagBoundFlow`.  (4.3)'s kernel wants the spectral gap as `|E| ≤ 2 - κ` with
+  `0 < κ ≤ 1`; `κ` is capped at `1` internally, which only weakens the hypothesis, so nothing is
+  added to the list.
 -/
 
 namespace RBM.Gauss
@@ -492,6 +524,214 @@ theorem step1Hyp_gauss_of_scale' (d : Dims) {κ : ℝ} (hκ : 0 < κ) (hE : |E| 
           (rpow_neg_one_le_etaT_of_scale_ge d hE2 ht1 hc0 hreg)
           (by linarith : (0 : ℝ) < c / 6) (flowDelta_le_rpow_neg d hreg) zero_le_one)
         hDiag
+      cont := cont_gauss d hE2 (fun N => (hs0 N)) ht1 }
+
+/-! ### (4.3) along the flow: `RBM.Gauss.DiagBoundFlow'` — T183 -/
+
+/-- **`RBM.Gauss.DiagBoundFlow` with an additive floor `fl N` in the control.**
+
+Exactly as for (4.2): the literal `RBM.Gauss.DiagBoundFlow` is not what the time-uniform large
+deviation estimates produce (T148 showed their unfloored forms are equivalent to a polynomial
+lower bound on their own controls), while the floored form is unconditional.  This is the (4.3)
+analogue of `RBM.Gauss.EntryBoundFlow'`. -/
+def DiagBoundFlow' (d : Dims) (E : ℝ) (s t : ℕ → ℝ) (fl : ℕ → ℝ) : Prop :=
+  StochDom (P d)
+    (fun N (p : RBM.TimeIcc s t N × BIdx d.L d.W N) ω =>
+      (goodSet (L := d.L) (W := d.W) (fun N ω => Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ))
+          (mE E) (flowDelta d E t) N).indicator
+        (fun ω => ‖green (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ)) p.2 p.2 - mE E‖ ^ 2) ω)
+    (fun N p ω => Lmax (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ)) + fl N)
+
+/-- `RBM.Gauss.DiagBoundFlow` is the floor-free case of `RBM.Gauss.DiagBoundFlow'`. -/
+theorem DiagBoundFlow'.of_diagBoundFlow (h : DiagBoundFlow d E s t) {fl : ℕ → ℝ}
+    (hfl0 : ∀ N, 0 ≤ fl N) : DiagBoundFlow' d E s t fl := by
+  refine StochDom.control_mono h fun N p ω => ?_
+  have := hfl0 N
+  linarith
+
+/-- **`hLdiag` with the time inside the index set.**
+
+`RBM.Gauss.stochDom_normSq_Hflow_diag` (T92) fixes the time `u`.  Widening the index set costs
+nothing: `‖H_{u,ii}‖² = u ‖X_{ii}‖²` is monotone in `u`, so for `u ≤ 1` the failure event at any
+time is contained in the failure event at `u = 1`, and the control `S_{ii}` does not depend on
+the time at all. -/
+theorem stochDom_normSq_Hflow_diag_idx {U : ℕ → Type*} (uf : ∀ N, U N → ℝ)
+    (hu0 : ∀ N q, 0 ≤ uf N q) (hu1 : ∀ N q, uf N q ≤ 1) :
+    StochDom (P d)
+      (fun N (q : U N × BIdx d.L d.W N) ω => ‖Hflow d N (uf N q.1) ω q.2 q.2‖ ^ 2)
+      (fun N (q : U N × BIdx d.L d.W N) _ => Sblk (d.L N) (d.W N) q.2 q.2) := by
+  have h := stochDom_normSq_Hflow_diag (d := d) (u := 1) zero_le_one
+  refine StochDom.of_subset_union h h fun τ hτ => ⟨τ, hτ, ?_⟩
+  filter_upwards with N
+  rintro ω ⟨q, hq⟩
+  refine Set.mem_union_left _ ⟨q.2, ?_⟩
+  have e1 : ‖Hflow d N (uf N q.1) ω q.2 q.2‖ ^ 2
+      = uf N q.1 * (ω ⟨N, q.2, q.2, true⟩) ^ 2 := normSq_Hflow_diag (hu0 N q.1) ω q.2
+  have e2 : ‖Hflow d N 1 ω q.2 q.2‖ ^ 2
+      = 1 * (ω ⟨N, q.2, q.2, true⟩) ^ 2 := normSq_Hflow_diag zero_le_one ω q.2
+  have hsq : (0 : ℝ) ≤ (ω ⟨N, q.2, q.2, true⟩) ^ 2 := sq_nonneg _
+  have hmono : uf N q.1 * (ω ⟨N, q.2, q.2, true⟩) ^ 2 ≤ 1 * (ω ⟨N, q.2, q.2, true⟩) ^ 2 :=
+    mul_le_mul_of_nonneg_right (hu1 N q.1) hsq
+  show (N : ℝ) ^ τ * Sblk (d.L N) (d.W N) q.2 q.2 < ‖Hflow d N 1 ω q.2 q.2‖ ^ 2
+  rw [e2]
+  have hq' : (N : ℝ) ^ τ * Sblk (d.L N) (d.W N) q.2 q.2
+      < ‖Hflow d N (uf N q.1) ω q.2 q.2‖ ^ 2 := hq
+  rw [e1] at hq'
+  linarith
+
+/-- **(4.3) along the flow, with a floor — T183.**
+
+`RBM.Gauss.DiagBoundFlow'` holds for the Gaussian flow with **no large deviation hypothesis**:
+the three floored, time-uniform large deviation inputs are
+`RBM.Gauss.stochDom_ldeRow_flow_floor`, `RBM.Gauss.stochDom_ldeCol_flow_floor` (T148) and
+`RBM.Gauss.stochDom_ldeQuad_flow_floor` (T166), `hLdiag` is
+`RBM.Gauss.stochDom_normSq_Hflow_diag_idx`, and the deterministic kernel is T166's
+`RBM.norm_sq_green_diag_sub_le_blk_floor` through `RBM.diag_bound_stochDom_floor_idx`.
+
+The remaining hypotheses are the regime, and they are the same batch as for (4.2) except that
+(4.3)'s kernel needs the spectral gap in the form `|E| ≤ 2 - κ` with `0 < κ ≤ 1`. -/
+theorem diagBoundFlow_floor (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hE : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {K : ℝ} (hK : 0 ≤ K)
+    (hη : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-K) ≤ etaT E (t N)) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hδ : ∀ᶠ N : ℕ in atTop, flowDelta d E t N ≤ (N : ℝ) ^ (-c₀)) {B : ℝ} (hB : 0 ≤ B) :
+    DiagBoundFlow' d E s t (fun N => (N : ℝ) ^ (-B)) := by
+  have hE2 : |E| < 2 := by linarith
+  have hδ0 : ∀ N, 0 ≤ flowDelta d E t N := by
+    intro N
+    have ht0 : (0 : ℝ) ≤ t N := le_trans (hs0 N) (hst N)
+    have hpos : 0 < (band d).scale E N (t N) := (band d).scale_pos' hE2 N ht0 (ht1 N)
+    exact Real.rpow_nonneg (by positivity) _
+  exact diag_bound_stochDom_floor_idx (P d) (L := d.L) (W := d.W)
+    (U := fun N => RBM.TimeIcc s t N) d.three_le_L
+    (fun N u ω => Hflow d N u ω) (fun N u => (u : ℝ))
+    (fun N u ω => Hflow_isHermitian d N u ω) hκ0 hκ1 hE
+    (fun N u => le_trans (hs0 N) u.2.1)
+    (fun N u => lt_of_le_of_lt u.2.2 (ht1 N))
+    hδ0 hc₀ hδ (fun N => Real.rpow_nonneg (Nat.cast_nonneg N) _)
+    (stochDom_ldeRow_flow_floor d hE2 hs0 hst ht1 hK hη hB)
+    (stochDom_ldeCol_flow_floor d hE2 hs0 hst ht1 hK hη hB)
+    (stochDom_ldeQuad_flow_floor d hE2 hs0 hst ht1 hK hη hB)
+    (stochDom_normSq_Hflow_diag_idx (d := d) (fun N (u : RBM.TimeIcc s t N) => (u : ℝ))
+      (fun N u => le_trans (hs0 N) u.2.1)
+      (fun N u => le_of_lt (lt_of_le_of_lt u.2.2 (ht1 N))))
+
+/-! ### Absorbing the (4.3) floor at the consumer -/
+
+/-- `N⁻¹ ≤ W⁻¹` eventually — the `B = 1` floor of `RBM.Gauss.diagBoundFlow_floor`, which carries
+no factor `2`, is a fortiori below `RBM.Gauss.eventually_two_rpow_neg_one_le_W_inv`'s bound. -/
+theorem eventually_rpow_neg_one_le_W_inv (d : Dims) :
+    ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-(1 : ℝ)) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by
+  filter_upwards [eventually_two_rpow_neg_one_le_W_inv d] with N hN
+  have h0 : (0 : ℝ) ≤ (N : ℝ) ^ (-(1 : ℝ)) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  linarith
+
+/-- **The diagonal half of Lemma 4.1 along the flow, from the *floored* (4.3).**
+
+The conclusion is word for word `RBM.Gauss.stochDom_indicator_diag_flow`'s; only the hypothesis
+is weakened, from `RBM.Gauss.DiagBoundFlow` to `RBM.Gauss.DiagBoundFlow'`.  The floor costs
+nothing because the control on the right already carries an **unconditional** `W⁻¹` summand,
+while the floor may be taken as small as one likes. -/
+theorem stochDom_indicator_diag_flow' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {fl : ℕ → ℝ} (hflW : ∀ᶠ N : ℕ in atTop, fl N ≤ ((d.W N : ℕ) : ℝ)⁻¹)
+    (hDiag : DiagBoundFlow' d E s t fl) (hΦ0 : ∀ N u, 0 ≤ Φ N u)
+    (hΦ : LoopHypFlow d E s t Φ) :
+    StochDom (P d)
+      (fun N (p : RBM.TimeIcc s t N × BIdx d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N (p.1 : ℝ)).indicator
+          (fun ω => ‖green (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ)) p.2 p.2 - mE E‖ ^ 2) ω)
+      (fun N p _ => Φ N p.1 + ((d.W N : ℕ) : ℝ)⁻¹) := by
+  have h1 : StochDom (P d)
+      (fun N (p : RBM.TimeIcc s t N × BIdx d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N (p.1 : ℝ)).indicator
+          (fun ω => ‖green (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ)) p.2 p.2 - mE E‖ ^ 2) ω)
+      (fun N p ω => Lmax (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ)) + fl N) :=
+    stochDom_mono_left hDiag fun N p ω =>
+      Set.indicator_le_indicator_of_subset (goodEv_subset_goodSet_flow hE hs0 ht1 N p.1)
+        (fun _ => by positivity) ω
+  have hLmax : StochDom (P d)
+      (fun N (p : RBM.TimeIcc s t N × BIdx d.L d.W N) ω =>
+        (Step1.goodEv (sample d) E N (p.1 : ℝ)).indicator
+          (fun ω => Lmax (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ))) ω)
+      (fun N p _ => Φ N p.1 + ((d.W N : ℕ) : ℝ)⁻¹) :=
+    StochDom.control_mono
+      (stochDom_indicator_Lmax_flow (V := fun N => BIdx d.L d.W N) hΦ0 hΦ)
+      (fun N p _ => by
+        have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+        linarith)
+  have h2 := stochDom_indicator_add_const
+    (A := fun N (p : RBM.TimeIcc s t N × BIdx d.L d.W N) =>
+      Step1.goodEv (sample d) E N (p.1 : ℝ))
+    (c := fl) hLmax
+    (fun N p _ => by
+      have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+      linarith [hΦ0 N p.1])
+    (by
+      filter_upwards [hflW] with N hN p _
+      linarith [hΦ0 N p.1])
+  refine stochDom_trans_indicator_idx h1 h2 (fun N p _ => ?_)
+  have hw : (0 : ℝ) ≤ ((d.W N : ℕ) : ℝ)⁻¹ := by positivity
+  linarith [hΦ0 N p.1]
+
+/-- **`RBM.Step1.Lemma41Flow` from the *floored* (4.2) and (4.3)** — the conclusion is word for
+word `RBM.Gauss.lemma41Flow`'s, with both hypotheses weakened to their floored forms. -/
+theorem lemma41Flow'' (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {flE flD : ℕ → ℝ}
+    (hflE : ∀ᶠ N : ℕ in atTop, flE N ≤ ((d.W N : ℕ) : ℝ)⁻¹)
+    (hflD : ∀ᶠ N : ℕ in atTop, flD N ≤ ((d.W N : ℕ) : ℝ)⁻¹)
+    (hEntry : EntryBoundFlow' d E s t flE) (hDiag : DiagBoundFlow' d E s t flD) :
+    Step1.Lemma41Flow (sample d) E s t := by
+  intro Ψ hΨ0 hloop
+  exact stochDom_indicator_llMax_sq_flow_of hΨ0
+    (stochDom_indicator_offdiag_flow' hE hs0 ht1 hflE hEntry hΨ0 (loopHypFlow_iff.2 hloop))
+    (stochDom_indicator_diag_flow' hE hs0 ht1 hflD hDiag hΨ0 (loopHypFlow_iff.2 hloop))
+
+/-- **`RBM.Step1.Lemma41Flow` with both (4.2) and (4.3) discharged — the deliverable of T183.**
+
+`RBM.Gauss.lemma41Flow` carried `RBM.Gauss.EntryBoundFlow` and `RBM.Gauss.DiagBoundFlow`;
+`RBM.Gauss.lemma41Flow_of_diagBoundFlow` (T107) removed the first.  Both are now theorems in
+their floored forms, which is all the consumer needs, so nothing is left but the regime. -/
+theorem lemma41Flow_gauss (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hE : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {K : ℝ} (hK : 0 ≤ K)
+    (hη : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-K) ≤ etaT E (t N)) {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hδ : ∀ᶠ N : ℕ in atTop, flowDelta d E t N ≤ (N : ℝ) ^ (-c₀)) :
+    Step1.Lemma41Flow (sample d) E s t := by
+  have hE2 : |E| < 2 := by linarith
+  exact lemma41Flow'' hE2 hs0 ht1 (eventually_two_rpow_neg_one_le_W_inv d)
+    (eventually_rpow_neg_one_le_W_inv d)
+    (entryBoundFlow_floor d hE2 hs0 hst ht1 hK hη hc₀ hδ zero_le_one)
+    (diagBoundFlow_floor d hκ0 hκ1 hE hs0 hst ht1 hK hη hc₀ hδ zero_le_one)
+
+/-- **`RBM.Step1.Hyp` for the Gaussian model with both (4.2) and (4.3) discharged.**
+
+Word for word the conclusion of `RBM.Gauss.step1Hyp_gauss_of_scale`, under word for word its
+hypotheses **minus `RBM.Gauss.EntryBoundFlow` and `RBM.Gauss.DiagBoundFlow`**: the floored forms
+`RBM.Gauss.entryBoundFlow_floor` and `RBM.Gauss.diagBoundFlow_floor` replace them, and their
+regime inputs — `N^{-1} ≤ η_{t_N}` and `δ_N ≤ N^{-c/6}` — are both consequences of
+`RBM.Step1.step1`'s own `N^c ≤ W ℓ_t η_t`.  (4.3)'s kernel wants `0 < κ ≤ 1`; `κ` is capped at
+`1`, which only weakens `|E| ≤ 2 - κ`.  So the floors cost no hypothesis at all here. -/
+theorem step1Hyp_gauss_of_scale'' (d : Dims) {κ : ℝ} (hκ : 0 < κ) (hE : |E| ≤ 2 - κ)
+    (hB : BoundsCore (sample d) E s) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hcond : Cond272 (band d) E s t) {c : ℝ} (hc0 : 0 < c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ (band d).scale E N (t N)) :
+    Step1.Hyp (sample d) E s t := by
+  have hE2 : |E| < 2 := by linarith
+  have hκ0 : 0 < min κ 1 := lt_min hκ one_pos
+  have hκ1 : min κ 1 ≤ 1 := min_le_right _ _
+  have hEκ : |E| ≤ 2 - min κ 1 := by
+    have hmin : min κ 1 ≤ κ := min_le_left _ _
+    linarith
+  have hS : ∀ t₁ t₂ : ℕ → ℝ, (∀ N, 1 / 2 ≤ t₁ N) → (∀ N, t₁ N ≤ t₂ N) → (∀ N, t₂ N < 1) →
+      LoopScaling (sample d) E t₁ t₂ := fun t₁ t₂ h1 h12 _ =>
+    loopScaling_gauss (d := d) (fun N => lt_of_lt_of_le (by norm_num : (0:ℝ) < 1/2) (h1 N)) h12
+  exact
+    { scaling := hS
+      lift := fun n hn => netLift_gauss d hE2 hs0 hst ht1 one_pos
+        (rpow_neg_one_le_one_sub_of_scale_ge (band d) hE2 ht1 hc0 hreg) hn
+        (fun u => eq58_seq_thr (sample d) hκ hE (C₀ := 3) (by norm_num) hB hs0 hst ht1 hcond
+          hS u hn)
+      lemma41 := lemma41Flow_gauss d hκ0 hκ1 hEκ hs0 hst ht1 zero_le_one
+        (rpow_neg_one_le_etaT_of_scale_ge d hE2 ht1 hc0 hreg)
+        (by linarith : (0 : ℝ) < c / 6) (flowDelta_le_rpow_neg d hreg)
       cont := cont_gauss d hE2 (fun N => (hs0 N)) ht1 }
 
 end Consumer

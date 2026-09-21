@@ -48,6 +48,7 @@ import RBM1D.Gauss.LDEHyp
 import RBM1D.Gauss.RowIndep
 import RBM1D.Hierarchy.Decay
 import RBM1D.Hierarchy.DecayBridge
+import RBM1D.Hierarchy.EEBridge
 import RBM1D.Hierarchy.Kernel
 import RBM1D.Hierarchy.KernelDecay
 import RBM1D.Hierarchy.SumZero

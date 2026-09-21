@@ -2746,3 +2746,29 @@ agent 没有复制粘贴，而是**从现有 `C₀ = 2` 的机器重标度推出
 **全文件没有出现 `L^max`**，`stochDom_Lmax_inv_W` 一次都没被提及；`η_{t_N}` 只出现在**确定性** Hölder 常数里（单边，`K` 自由）。
 另：**这里没有指示函数不连续的问题**（`GoodEvent` 是闭条件），故 T116 的 `netLift_of_relaxed` 不需要。
 **探针验证**：`eq45Flow_of_unifDom (hΩ := highProb_goodSetFlow_of_localLaw …)` 以及 `ibpFlow_of_unifDom`/`flucRowFlow_of_unifDom`/`flucBlkFlow_of_unifDom` 用同一具名参数全部 elaborate，无强制转换、无 `convert`。paper-deltas #83。
+
+### `RBM1D/Hierarchy/EEBridge.lean` — T127：三块管道全部打通（Claude Code 并行 agent，2026-09-21）
+
+**(a) `glueLoop = gloop` 已证，T74 的遗留项关闭。** 它需要的共轭事实**确实成立**，而 `ChargeReduce` 的 `Gsig_conjTranspose` 正是缺的那一步。新恒等式
+`Gsig_mul_conjTranspose_prodList_mul`：`G_σ · (prodList …)ᴴ · E_c = prodList … (rflip t l c)`——**共轭把链反转并翻转每个电荷**，
+所以 `E⊗E` 里共轭后的第二个因子**确实是**反着读的 σ̄-loop。**这把 T74「读作复共轭」的约定从「采用」升级成「证明」**（paper-deltas #84 已更新）。
+`Decay.norm_eTens_le` 对其抽象粘合**假设**的三条性质，对具体的 `glueIdx` **全部证出**（`glueIdx_wf`、长度 `2n+2`、含 `b`、含锚点）；
+agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T]`、标号 `[2,3,1,2,4,1,0,3]`、长度 8 = 2·3+2——切边在两半各出现一次、后半反转且翻转电荷，正是 (5.23)。
+**(b)** `leftArg`/`rightArg`（`SumZeroDyn.QQ` 与 `bdg` 字段已在用的那个 `Fin.castAdd`/`natAdd` 拆分）+ T74 的 `toIdx` ⟹ `eeField`，其类型**逐字**是 `Hierarchy.EE` 的（探针已验）。
+**(c) `RBM.Band.toDims`**——全仓库缺的那块管道，逐字段对应，四条投影都是 `rfl`。**通用基础设施，以后每次 `Gauss → Hierarchy` 交接都能用。**
+
+**`Lemma510.EE_le` 现在逐路径可得**（`norm_eeField_le` 与其被积函数/控制对逐字一致），但**作为 `≺` 陈述还差一步，agent 没有伪造**：
+`≺` 的过渡要吸收 `N^τ` 前因子（免费）**与**一个可加项 `m·W·L·N^{-D}`，后者需要**控制的多项式下界**——`StochDom.of_det` 没有可加余量、`Step1.stochDom_of_highProb` 要求无前因子的界。
+**这是真缺口而非记账**，形状同 T123/T125 的 `rpow_neg_le_aprioriRhs`，值得单独一张单；agent 刻意没在本文件里造通用吸收引理（按「造轮子之前先查」，它该在 `Defs/StochDom.lean`）。
+**无 fiat 风险**：不造 `Hierarchy` 实例、不定义任何字段、不弱化 `Lemma510`/`LKDecay`；装上 `eeField` 仍要拖着 `duhamel`/`bdg`，T118 指出的护栏完好。
+
+### T128：(4.5) 的固定时刻输入（同一批 agent）
+
+**两条涨落平均的输入已卸，走的是 T94 的迭代路线而非已被证伪的 `hsmall` 路线**：`unifDomIcc_flucRow_condExpDiag`/`unifDomIcc_flucBlk_condExpDiag`，
+归约到一条假设——`FlucGain` 在 `ρ ≤ 1` 处、对 `u` 一致。`flucRowFlow_of_gain`/`flucBlkFlow_of_gain` 以 `exact` 填进 T124 的槽（`y = condExpDiag`，与 IBP 槽一致）。
+底下三件新机器：`UnifDomIcc.trans`；**`unifDomIcc_of_moment`——Markov 这里不需要任何基数假设**（`UnifDomIcc` 是逐指标**且逐时刻**地界住失败概率，对 `u` 的并只由网来取；故需要对 `u` 一致的只有 `N` 上的阈值，而 T94 的矩界是逐 `(N,u)` 的确定性不等式，其唯一的 `∀ᶠ N` 部分根本不提时间）；
+**`unifDomIcc_const_Lmax`——T88/T119 留下的 `Ψ² → L^max` 桥**：在流的好事件上只用到**下半边** `W⁻¹/4 ≤ L^max_u`（对每个时刻都成立且不花 `η⁻¹`），故给定 `hΦW` 后该桥是免费的。
+**`hfixIBP` 未卸**，缺的环节精确为：`CondStableInst.condExpDiag_stochDom_of_highProb` 的 `UnifDomIcc` 版——它在固定 `t` 处是 `StochDom`，其 `∀ᶠ N` 阈值不知道对 `t` 一致（整条链 `stochDom_condRow_of_envelope`/`condStable_Lmax`/`stochDom_normSq_green_diag_sub_Lmax` 都是先定 `t` 再量化 `N`），且仍带该时刻的 `hΩ`（→ T130）。
+与涨落平均那侧不同，**这里没有单一的逐 `(N,u)` 确定性估计可供重新量化**，要一致化就得重跑那条链，而那些文件不在本单可改范围。
+**还有一处接口缺口**：`FlucGain` 在 `ρ ≍ Ψ` 处仍非定理——T113 只证了**有界字长**形式，而 `norm_integral_prod_epsHom_flucDiag_le`/`integral_norm_flucAvg_pow_le_iter` 却对**所有**字消费 `FlucGain`，尽管它们实际构造的字长 ≤ `2p`。
+**补上这个「按字长分级的 gain 接口」是 `Gauss/FlucIter.lean` 的一张单**（不是本单能改的文件）。paper-deltas #85。

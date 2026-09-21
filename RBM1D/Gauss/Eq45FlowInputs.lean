@@ -8,6 +8,7 @@ import RBM1D.Gauss.DominationHolder
 import RBM1D.Gauss.CondStableInst
 import RBM1D.Gauss.FlowHolder
 import RBM1D.Gauss.TraceMoment
+import RBM1D.Gauss.FlucIter
 
 /-!
 # The three time-indexed inputs of (4.5) — T124
@@ -686,5 +687,481 @@ theorem eq45Flow_of_unifDom (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤
 
 end Inputs
 
-end RBM.Gauss
+/-! ### The fixed-time inputs `hfix` — T128
 
+The three `RBM.Gauss.UnifDomIcc` hypotheses above are the *fixed-time* content of (4.5),
+uniformly in the time.  This section supplies two of the three and says exactly what the
+third is missing.
+
+**Which chain.**  T88's `RBM.Gauss.stochDom_flucAvg_Sblk` /
+`RBM.Gauss.stochDom_flucAvg_blockAvg` are *not* used: their hypothesis `hsmall` is an
+arithmetic statement about the sizes of the `RBM.Gauss.FlucBound` parameters which T87 showed
+the deterministic envelope cannot give, and T94 showed is false as stated.  The route taken
+here is T94's iterated one — `RBM.Gauss.integral_norm_flucAvg_pow_le_iter` — whose only input
+is `RBM.Gauss.FlucGain`, restated at every time of the flow interval with `N`-dependent but
+`u`-independent parameters.  That restatement is free: the iterated moment bound is a
+*per-`N`, per-`u` deterministic inequality* whose eventual-in-`N` part (`hcardA`, a statement
+about `#supp t_k`) does not see the time at all.
+
+**Why a moment argument suffices here although `RBM.Gauss.stochDom_timeIcc_of_unifDom` needs a
+net.**  `RBM.Gauss.UnifDomIcc` bounds the probability *per index and per time*; the union over
+the uncountably many `u` is taken only by `RBM.StochDom`, which is what the net engine above
+produces.  So Markov applies verbatim, with no cardinality hypothesis at all
+(`RBM.Gauss.unifDomIcc_of_moment`); what has to be uniform in `u` is the *threshold in `N`*,
+and that is exactly what the iterated bound delivers.
+
+**The control.**  The iteration controls the fluctuation average by the deterministic `ρ B`,
+while (4.5) asks for the random `L^max_u`.  The bridge is `RBM.Gauss.unifDomIcc_const_Lmax`:
+on the flow good event `W^{-1}/4 ≤ L^max_u` at every time (the *lower* half of T119's
+sandwich, the half that survives `t_N → 1`), so the comparison holds as soon as `W ρ B` is
+`N^{o(1)}` — which is the paper's size `ρ B ≍ Ψ² ≍ W^{-1}`.  This is the `Ψ² → L^max` step
+T88/T119 left open, and on the good event it is free.
+
+**What is still missing, precisely.**
+
+* `hfixRow`, `hfixBlk`: discharged from `RBM.Gauss.FlucGain` at `ρ ≤ 1`, uniformly in
+  `u ∈ [s_N, t_N]` (`RBM.Gauss.unifDomIcc_flucRow_condExpDiag`,
+  `RBM.Gauss.unifDomIcc_flucBlk_condExpDiag`).  `FlucGain` at the paper's `ρ ≍ Ψ` is *not* a
+  theorem: T110 reduces it to `RBM.Gauss.MinorDiffGain` and T113 proves the latter's estimate
+  only for words of **bounded length** (`RBM.Gauss.integral_prod_applyOps_minorDiff_le`, with
+  a constant `minorDiffC M` that grows in the length bound `M`), and shows the unbounded form
+  cannot hold.  The bounded-length estimate cannot currently be threaded into this file,
+  because `RBM.Gauss.norm_integral_prod_epsHom_flucDiag_le` and
+  `RBM.Gauss.integral_norm_flucAvg_pow_le_iter` consume `RBM.Gauss.FlucGain` for *all* words
+  even though the words they build have length at most `2p`.  Closing that gap is an edit to
+  `RBM1D/Gauss/FlucIter.lean` (a length-indexed gain interface), not to this file.
+* `hfixIBP`: **not** discharged.  Its fixed-time producer
+  `RBM.Gauss.condExpDiag_stochDom_of_highProb` is a `RBM.StochDom` at one time whose
+  eventual-in-`N` threshold is not known to be uniform in that time (it runs through
+  `RBM.Gauss.stochDom_condRow_of_envelope`, `RBM.Gauss.condStable_Lmax` and
+  `RBM.Gauss.stochDom_normSq_green_diag_sub_Lmax`, each of which quantifies `∀ᶠ N` after
+  fixing `t`), and it still carries `hΩ` at that time.  A `RBM.Gauss.UnifDomIcc` version of
+  it is what the IBP slot needs; the `hΩ` half is T130.
+-/
+
+section Fixed
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
+
+omit [IsFiniteMeasure P] in
+/-- **`RBM.Gauss.UnifDomIcc` is transitive**, with the same `τ/2` split as
+`RBM.StochDom.trans`.  This is what composes a domination by a deterministic control with the
+comparison of that control against the random `L^max_u`. -/
+theorem UnifDomIcc.trans {V : ℕ → Type*} {s t : ℕ → ℝ} {ξ ζ χ : ∀ N, ℝ → V N → Ω → ℝ}
+    (h₁ : UnifDomIcc P s t ξ ζ) (h₂ : UnifDomIcc P s t ζ χ) : UnifDomIcc P s t ξ χ := by
+  intro τ hτ D hD
+  have hτ2 : (0 : ℝ) < τ / 2 := half_pos hτ
+  have hD1 : (0 : ℝ) < D + 1 := by linarith
+  filter_upwards [h₁ (τ / 2) hτ2 (D + 1) hD1, h₂ (τ / 2) hτ2 (D + 1) hD1,
+    eventually_two_mul_rpow_le D] with N h1 h2 h3 u hu a
+  have hsub : {ω | (N : ℝ) ^ τ * χ N u a ω < ξ N u a ω}
+      ⊆ {ω | (N : ℝ) ^ (τ / 2) * ζ N u a ω < ξ N u a ω}
+        ∪ {ω | (N : ℝ) ^ (τ / 2) * χ N u a ω < ζ N u a ω} := by
+    intro ω hω
+    by_contra hno
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_lt] at hno
+    simp only [Set.mem_ofPred_eq] at hω
+    have hpos : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+    have hcalc : ξ N u a ω ≤ (N : ℝ) ^ τ * χ N u a ω :=
+      calc ξ N u a ω ≤ (N : ℝ) ^ (τ / 2) * ζ N u a ω := hno.1
+        _ ≤ (N : ℝ) ^ (τ / 2) * ((N : ℝ) ^ (τ / 2) * χ N u a ω) :=
+            mul_le_mul_of_nonneg_left hno.2 hpos
+        _ = (N : ℝ) ^ τ * χ N u a ω := by
+            rw [← mul_assoc, UnifDetDom.rpow_half_mul_rpow_half N hτ]
+    linarith
+  have hp : (0 : ℝ) ≤ (N : ℝ) ^ (-(D + 1)) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  calc P {ω | (N : ℝ) ^ τ * χ N u a ω < ξ N u a ω}
+      ≤ P ({ω | (N : ℝ) ^ (τ / 2) * ζ N u a ω < ξ N u a ω}
+          ∪ {ω | (N : ℝ) ^ (τ / 2) * χ N u a ω < ζ N u a ω}) := measure_mono hsub
+    _ ≤ P {ω | (N : ℝ) ^ (τ / 2) * ζ N u a ω < ξ N u a ω}
+          + P {ω | (N : ℝ) ^ (τ / 2) * χ N u a ω < ζ N u a ω} := measure_union_le _ _
+    _ ≤ ENNReal.ofReal ((N : ℝ) ^ (-(D + 1))) + ENNReal.ofReal ((N : ℝ) ^ (-(D + 1))) :=
+        add_le_add (h1 u hu a) (h2 u hu a)
+    _ = ENNReal.ofReal (2 * (N : ℝ) ^ (-(D + 1))) := by
+        rw [← ENNReal.ofReal_add hp hp]; ring_nf
+    _ ≤ ENNReal.ofReal ((N : ℝ) ^ (-D)) := ENNReal.ofReal_le_ofReal h3
+
+/-- **Markov's inequality, uniformly in the time.**  The moment version of
+`RBM.Gauss.UnifDomIcc`, and the reason the fixed-time inputs of (4.5) do *not* need a net:
+`RBM.Gauss.UnifDomIcc` asks for the failure probability at each index and each time
+separately, so no union bound — and hence no cardinality hypothesis, in contrast with
+`RBM.Gauss.stochDom_of_momentDom` — is taken.  What must be uniform in `u` is only the
+threshold in `N`. -/
+theorem unifDomIcc_of_moment {V : ℕ → Type*} {s t : ℕ → ℝ} {ξ : ∀ N, ℝ → V N → Ω → ℝ}
+    {Φ : ℕ → ℝ} (hΦ : ∀ N, 0 < Φ N)
+    (hint : ∀ (p N : ℕ), ∀ u ∈ Set.Icc (s N) (t N), ∀ a : V N,
+      Integrable (fun ω => |ξ N u a ω| ^ (2 * p)) P)
+    (hmom : ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ a : V N,
+        ∫ ω, |ξ N u a ω| ^ (2 * p) ∂P ≤ C * ((N : ℝ) ^ (ε * p) * Φ N ^ (2 * p))) :
+    UnifDomIcc P s t ξ (fun N _ _ _ => Φ N) := by
+  intro τ hτ D hD
+  obtain ⟨p, hp⟩ := exists_nat_ge ((D + 1) / τ)
+  have hDp : D + 1 ≤ τ * (p : ℝ) := by rw [div_le_iff₀ hτ] at hp; linarith
+  obtain ⟨C, hC0, hCN⟩ := hmom τ hτ p
+  have hexp : 0 < τ * (p : ℝ) - D := by linarith
+  filter_upwards [hCN, eventually_ge_atTop 1, eventually_le_rpow C hexp]
+    with N hN hN1 hCle u hu a
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hrp : (0 : ℝ) < (N : ℝ) ^ τ := Real.rpow_pos_of_pos hNpos τ
+  have hthr : 0 < (N : ℝ) ^ τ * Φ N := mul_pos hrp (hΦ N)
+  refine (meas_gt_le_of_moment P hthr (hint p N u hu a) (hN u hu a)).trans
+    (ENNReal.ofReal_le_ofReal ?_)
+  set A : ℝ := (N : ℝ) ^ (τ * (p : ℝ)) with hA_def
+  have hA : 0 < A := Real.rpow_pos_of_pos hNpos _
+  have hΦN0 : (0 : ℝ) < Φ N := hΦ N
+  have hb : (0 : ℝ) < Φ N ^ (2 * p) := by positivity
+  have h1 : ((N : ℝ) ^ τ * Φ N) ^ (2 * p) = A * A * Φ N ^ (2 * p) := by
+    rw [mul_pow, hA_def, ← Real.rpow_natCast ((N : ℝ) ^ τ) (2 * p), ← Real.rpow_mul hNpos.le,
+      ← Real.rpow_add hNpos]
+    push_cast
+    ring_nf
+  have h2 : C * (A * Φ N ^ (2 * p)) / (A * A * Φ N ^ (2 * p)) = C * A⁻¹ := by field_simp
+  have h3 : A⁻¹ = (N : ℝ) ^ (-(τ * (p : ℝ))) := by rw [hA_def, Real.rpow_neg hNpos.le]
+  rw [h1, h2]
+  calc C * A⁻¹ ≤ (N : ℝ) ^ (τ * (p : ℝ) - D) * A⁻¹ :=
+        mul_le_mul_of_nonneg_right hCle (inv_nonneg.2 hA.le)
+    _ = (N : ℝ) ^ (-D) := by
+        rw [h3, ← Real.rpow_add hNpos]
+        congr 1
+        ring
+
+end Fixed
+
+/-! #### The fluctuation averaging inputs, from the iterated route -/
+
+section FlucFix
+
+open Filter
+
+variable {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(4.12) at every time of the flow interval**, as a `RBM.Gauss.UnifDomIcc` with the
+deterministic control `ρ B`.
+
+This is `RBM.Gauss.stochDom_flucAvg_iter` (T94) made uniform in `u ∈ [s_N, t_N]`, with the
+spectral parameter moving with the time (`z = z_u`, as the flow requires).  Nothing but the
+`FlucGain` hypothesis has to be restated: the iterated moment estimate
+`RBM.Gauss.integral_norm_flucAvg_pow_le_iter` is a deterministic inequality at each `(N, u)`,
+and the only eventually-in-`N` hypothesis, `hcardA`, does not mention the time. -/
+theorem unifDomIcc_flucAvg_iter {V : ℕ → Type*} (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Tw : ∀ N, V N → d.Idx N → ℝ} {cw : ℕ → ℝ} {Aw : ∀ N, V N → Finset (d.Idx N)}
+    {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1) (hcρ : ∀ N, cw N ≤ ep N ^ 2)
+    (hw : ∀ N (a : V N), UniformWeight (Tw N a) (cw N) (Aw N a))
+    (hcardA : ∀ p : ℕ, ∀ᶠ N : ℕ in atTop, ∀ a : V N, 2 * p ≤ (Aw N a).card) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : V N) ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖)
+      (fun N _ _ _ => ep N * Bp N) := by
+  refine unifDomIcc_of_moment (fun N => hpos N) (fun p N u hu a => ?_) ?_
+  · exact integrable_norm_flucAvg_pow
+      (flucBound_env hE (lt_of_le_of_lt hu.2 (ht1 N)) d N u).flucDiag_le p
+  · intro ε hε p
+    refine ⟨((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p) * ((2 : ℝ) ^ (2 * p - 1)) ^ (2 * p) + 1,
+      by positivity, ?_⟩
+    filter_upwards [hcardA p, eventually_ge_atTop 1] with N h2 hN1 u hu a
+    have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+    have hrw : (fun ω => |‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖| ^ (2 * p))
+        = fun ω => ‖flucAvg d N u (zt E u) (mE E) (Tw N a) ω‖ ^ (2 * p) := by
+      funext ω; rw [abs_norm]
+    rw [hrw]
+    have hmain := integral_norm_flucAvg_pow_le_iter hE hu1 (hg N u hu) (hρ1 N) (hcρ N)
+      (hw N a) (h2 a)
+    have hNe : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) :=
+      Real.one_le_rpow (by exact_mod_cast hN1) (by positivity)
+    have hBρ : (0 : ℝ) ≤ ep N * Bp N :=
+      mul_nonneg (hg N u hu).rho_nonneg (hg N u hu).B_nonneg
+    have hcoef : (0 : ℝ) ≤ ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+        * ((2 : ℝ) ^ (2 * p - 1)) ^ (2 * p) := by positivity
+    have hsplit : ((2 : ℝ) ^ (2 * p - 1) * ep N * Bp N) ^ (2 * p)
+        = ((2 : ℝ) ^ (2 * p - 1)) ^ (2 * p) * (ep N * Bp N) ^ (2 * p) := by
+      rw [← mul_pow]; ring_nf
+    rw [hsplit] at hmain
+    have hstep : ((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p)
+          * (((2 : ℝ) ^ (2 * p - 1)) ^ (2 * p) * (ep N * Bp N) ^ (2 * p))
+        ≤ (((2 * p : ℝ) + 1) * (2 * p : ℝ) ^ (2 * p) * ((2 : ℝ) ^ (2 * p - 1)) ^ (2 * p) + 1)
+          * ((N : ℝ) ^ (ε * p) * (ep N * Bp N) ^ (2 * p)) := by
+      have hpow : (0 : ℝ) ≤ (ep N * Bp N) ^ (2 * p) := pow_nonneg hBρ _
+      nlinarith [mul_nonneg hcoef hpow, hpow, hNe, hcoef]
+    refine le_trans (le_trans hmain (le_of_eq ?_)) hstep
+    ring
+
+/-- **(4.12) for the block average `t_k = W⁻¹ 1(k ∈ I_a)`, at every time of the flow
+interval.** -/
+theorem unifDomIcc_flucAvg_blockAvg_iter (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (blkCoef (d.L N) (d.W N) a) ω‖)
+      (fun N _ _ _ => ep N * Bp N) :=
+  unifDomIcc_flucAvg_iter (V := fun N => ZMod (d.L N)) d hE ht1 hg hpos hρ1 hcρ
+    (fun N a => uniformWeight_blockAvg a)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN a
+      rw [card_blockAvg_support]; exact hN)
+
+/-- **(4.12) for the variance-profile row `t_k = S_{ik}`, at every time of the flow
+interval.** -/
+theorem unifDomIcc_flucAvg_Sblk_iter (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1)
+    {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (fun j => Sblk (d.L N) (d.W N) i j) ω‖)
+      (fun N _ _ _ => ep N * Bp N) :=
+  unifDomIcc_flucAvg_iter (V := fun N => d.Idx N) d hE ht1 hg hpos hρ1 hcρ
+    (fun N i => uniformWeight_Sblk i)
+    (fun p => by
+      filter_upwards [eventually_le_W d (2 * p)] with N hN i
+      rw [card_Sblk_support]
+      omega)
+
+/-- **The `Ψ² → L^max` bridge, uniformly in the time.**
+
+The iteration controls the fluctuation average by a *deterministic* `Φ = ρ B`, while (4.5) asks
+for the random `L^max_u`.  On the flow good event the lower half of T119's sandwich,
+`W^{-1}/4 ≤ L^max_u` (`RBM.Gauss.inv_W_le_Lmax_flow`), holds at **every** time, and it costs no
+power of `η^{-1}`; so the comparison is free as soon as `W Φ` is sub-polynomial, which is the
+hypothesis `hΦW`.  At the paper's size `Φ = ρ B ≍ Ψ² ≍ W^{-1}` the product `W Φ` is bounded.
+
+Note that the *upper* half `L^max_u ≤ η^{-2} W^{-1}` is not used, exactly as in the rest of
+this file: it is the half that fails when `t_N → 1`. -/
+theorem unifDomIcc_const_Lmax {V : ℕ → Type*} (d : Dims) {δ : ℕ → ℝ} {Φ : ℕ → ℝ}
+    (hE : |E| ≤ 2) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, 4 * ((d.W N : ℕ) : ℝ) * Φ N ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t (fun N _ (_ : V N) _ => Φ N)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) := by
+  intro τ hτ D hD
+  filter_upwards [hΩ D hD, hΦW τ hτ, hδ1, eventually_ge_atTop 1] with N hΩN hΦN hδN hN1 u hu a
+  have hNpos : (0 : ℝ) < N := by exact_mod_cast hN1
+  have hpow : (0 : ℝ) < (N : ℝ) ^ τ := Real.rpow_pos_of_pos hNpos τ
+  have hW0 : (0 : ℝ) < ((d.W N : ℕ) : ℝ) := by exact_mod_cast d.W_pos N
+  have hsub : {ω | (N : ℝ) ^ τ * Lmax (Hflow d N u ω) (zt E u) < Φ N}
+      ⊆ (goodSetFlow d E s t δ N)ᶜ := by
+    intro ω hω hgood
+    simp only [Set.mem_ofPred_eq] at hω
+    have hlow := inv_W_le_Lmax_flow (δ := δ) hE hδN hgood hu
+    have h1 : (1 : ℝ) ≤ 4 * Lmax (Hflow d N u ω) (zt E u) * ((d.W N : ℕ) : ℝ) := by
+      have h := mul_le_mul_of_nonneg_right hlow hW0.le
+      rwa [inv_mul_cancel₀ hW0.ne'] at h
+    have h2 : (N : ℝ) ^ τ
+        ≤ (N : ℝ) ^ τ * (4 * Lmax (Hflow d N u ω) (zt E u) * ((d.W N : ℕ) : ℝ)) := by
+      nlinarith
+    nlinarith [hΦN.trans h2, hW0]
+  exact (measure_mono hsub).trans hΩN
+
+/-- **`hfixRow`**: the fixed-time input of `RBM.Gauss.FlucRowFlow`, uniformly in the time, in
+exactly the shape `RBM.Gauss.flucRowFlow_of_unifDom` consumes, with the conditional expectation
+`RBM.Gauss.condExpDiag` in the `y` slot. -/
+theorem unifDomIcc_flucRow_condExpDiag (d : Dims) {δ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bp N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) :=
+  (unifDomIcc_flucAvg_Sblk_iter d hE ht1 hg hpos hρ1 hcρ).trans
+    (unifDomIcc_const_Lmax (V := fun N => d.Idx N) d hE.le hδ1 hΩ hΦW)
+
+/-- **`hfixBlk`**: the fixed-time input of `RBM.Gauss.FlucBlkFlow`, uniformly in the time. -/
+theorem unifDomIcc_flucBlk_condExpDiag (d : Dims) {δ : ℕ → ℝ} (hE : |E| < 2)
+    (ht1 : ∀ N, t N < 1) {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bp N) ≤ (N : ℝ) ^ τ) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+              - condExpDiag d N u (zt E u) (mE E) k ω)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u)) :=
+  (unifDomIcc_flucAvg_blockAvg_iter d hE ht1 hg hpos hρ1 hcρ).trans
+    (unifDomIcc_const_Lmax (V := fun N => ZMod (d.L N)) d hE.le hδ1 hΩ hΦW)
+
+/-- **`RBM.Gauss.FlucRowFlow` from the gain interface.**
+
+The probe that the fixed-time input produced above really fills the `hfix` slot of
+`RBM.Gauss.flucRowFlow_of_unifDom`: no `convert`, no coercion, and the `y` of (4.5) is the
+conditional expectation `RBM.Gauss.condExpDiag`, as in T88's fixed-time assembly.  What is left
+is `hHol` (the modulus in the time, T129) and `hΩ` (T130); the fixed-time content is now the
+single hypothesis `hg`. -/
+theorem flucRowFlow_of_gain (d : Dims) {δ : ℕ → ℝ} {K : ℝ} (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N) (hK : 0 ≤ K)
+    (hδ0 : ∀ N, 0 ≤ δ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((3 * d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bp N) ≤ (N : ℝ) ^ τ)
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                  - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                  - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    FlucRowFlow (sample d) E s t
+      (fun N u ω i => condExpDiag d N (u : ℝ) (zt E (u : ℝ)) (mE E) i ω) :=
+  flucRowFlow_of_unifDom (y := fun N u ω i => condExpDiag d N u (zt E u) (mE E) i ω)
+    d hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hHol
+    (unifDomIcc_flucRow_condExpDiag d hE ht1 hg hpos hρ1 hcρ hδ1 hΩ hΦW)
+
+/-- **`RBM.Gauss.FlucBlkFlow` from the gain interface.**  The block-average half of
+`RBM.Gauss.flucRowFlow_of_gain`; the size hypothesis on the gain is `W⁻¹ ≤ ρ²` instead of
+`(3W)⁻¹ ≤ ρ²`. -/
+theorem flucBlkFlow_of_gain (d : Dims) {δ : ℕ → ℝ} {K : ℝ} (hE : |E| < 2)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N) (hK : 0 ≤ K)
+    (hδ0 : ∀ N, 0 ≤ δ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hδnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ δ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * δ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {Bp ep : ℕ → ℝ}
+    (hg : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E) (Bp N) (ep N))
+    (hpos : ∀ N, 0 < ep N * Bp N) (hρ1 : ∀ N, ep N ≤ 1)
+    (hcρ : ∀ N, ((d.W N : ℝ))⁻¹ ≤ ep N ^ 2)
+    (hΦW : ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      4 * ((d.W N : ℕ) : ℝ) * (ep N * Bp N) ≤ (N : ℝ) ^ τ)
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E)
+                  - condExpDiag d N u (zt E u) (mE E) k ω)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E)
+                  - condExpDiag d N v (zt E v) (mE E) k ω)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2)) :
+    FlucBlkFlow (sample d) E s t
+      (fun N u ω i => condExpDiag d N (u : ℝ) (zt E (u : ℝ)) (mE E) i ω) :=
+  flucBlkFlow_of_unifDom (y := fun N u ω i => condExpDiag d N u (zt E u) (mE E) i ω)
+    d hE hs0 ht1 hst hK hδ0 hδ1 hδnet hfine hΩ hHol
+    (unifDomIcc_flucBlk_condExpDiag d hE ht1 hg hpos hρ1 hcρ hδ1 hΩ hΦW)
+
+end FlucFix
+
+section FlucEnv
+
+open Filter
+
+variable {E : ℝ} {s t : ℕ → ℝ}
+
+/-! #### The gain hypothesis at `ρ ≤ 1` is inhabited
+
+`RBM.Gauss.flucGain_env` gives `RBM.Gauss.FlucGain` unconditionally, but at `ρ = 2`, which
+`RBM.Gauss.unifDomIcc_flucAvg_iter` cannot use (`hρ1` asks for `ρ ≤ 1`).  The three statements
+below show that the `ρ ≤ 1` interface is nevertheless inhabited, by moving the whole loss into
+`B`: since the rows of a word are distinct, a word carries at most `#Idx(N)` conditional
+fluctuations, so the envelope bound `2^{#Q}` is at most `2^{#Idx(N)}` and `ρ = 1` is legitimate
+with `B = B_env 2^{#Idx(N)}`.
+
+The resulting control is exponentially large, so the `Ψ² → L^max` bridge
+`RBM.Gauss.unifDomIcc_const_Lmax` does **not** apply to it: this is a non-vacuity witness for
+the interface, in the sense of `RBM.Gauss.stochDom_flucAvg_blockAvg_env`, and nothing more.  The
+content of §4 is the same statement with `ρ ≍ Ψ`. -/
+
+/-- `RBM.Gauss.FlucGain` is monotone in `B`. -/
+theorem FlucGain.mono_B {d : Dims} {N : ℕ} {u : ℝ} {z m : ℂ} {B B' ρ : ℝ}
+    (h : FlucGain d N u z m B ρ) (hBB : B ≤ B') : FlucGain d N u z m B' ρ := by
+  refine ⟨h.B_nonneg.trans hBB, h.rho_nonneg, fun ι _ k L h1 h2 => ?_⟩
+  exact (h.gain ι k L h1 h2).trans
+    (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ h.B_nonneg hBB _)
+      (pow_nonneg h.rho_nonneg _))
+
+/-- **The `ρ ≤ 1` gain interface is inhabited**: the deterministic envelope gives it with
+`ρ = 1` and `B = 2(η_u⁻¹ + 1) 2^{#Idx(N)}`, because a word with distinct rows carries at most
+`#Idx(N)` letters. -/
+theorem flucGain_one_env (d : Dims) (N : ℕ) (hE : |E| < 2) {u : ℝ} (hu : u < 1) :
+    FlucGain d N u (zt E u) (mE E)
+      (2 * ((etaT E u)⁻¹ + 1) * 2 ^ Fintype.card (d.Idx N)) 1 := by
+  classical
+  have hη : 0 < etaT E u := etaT_pos_of_lt_one hE hu
+  set Benv : ℝ := 2 * ((etaT E u)⁻¹ + 1) with hBenv
+  have hBenv0 : 0 ≤ Benv := by rw [hBenv]; positivity
+  refine ⟨by positivity, zero_le_one, fun ι _ k L h1 h2 => ?_⟩
+  have hb : ∀ (i : ι) (ω : Ω d),
+      ‖applyOps d N (L i) (flucDiag d N u (zt E u) (mE E) (k i)) ω‖
+        ≤ Benv * 2 ^ Fintype.card (d.Idx N) := by
+    intro i ω
+    have h := norm_applyOps_le (L i)
+      (fun ω' => norm_flucDiag_le (norm_greenDiagCentered_le_env hE hu u (k i)) ω') ω
+    have hlen : numQ (L i) ≤ Fintype.card (d.Idx N) := by
+      refine le_trans List.countP_le_length ?_
+      have hn := (h1 i).length_le_card
+      rwa [List.length_map] at hn
+    have hpow : (2 : ℝ) ^ numQ (L i) ≤ 2 ^ Fintype.card (d.Idx N) :=
+      pow_le_pow_right₀ one_le_two hlen
+    calc ‖applyOps d N (L i) (flucDiag d N u (zt E u) (mE E) (k i)) ω‖
+        ≤ 2 ^ numQ (L i) * Benv := h
+      _ ≤ 2 ^ Fintype.card (d.Idx N) * Benv := mul_le_mul_of_nonneg_right hpow hBenv0
+      _ = Benv * 2 ^ Fintype.card (d.Idx N) := by ring
+  refine le_trans (integral_prod_norm_le_of_bounds
+    (b := fun _ : ι => Benv * 2 ^ Fintype.card (d.Idx N))
+    (fun i => (bddMeas_flucDiag hE hu u (k i)).applyOps (L i)) hb) (le_of_eq ?_)
+  rw [Finset.prod_const, Finset.card_univ, one_pow, mul_one]
+
+/-- `RBM.Gauss.flucGain_one_env` with a time-independent `B`, i.e. in the shape the `hg` of
+`RBM.Gauss.unifDomIcc_flucAvg_iter` asks for.  `η_u ≥ η_{t_N}` on the flow interval, so the
+envelope at the right endpoint dominates. -/
+theorem flucGain_one_env_flow (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1) (N : ℕ) :
+    ∀ u ∈ Set.Icc (s N) (t N), FlucGain d N u (zt E u) (mE E)
+      (2 * ((etaT E (t N))⁻¹ + 1) * 2 ^ Fintype.card (d.Idx N)) 1 := by
+  intro u hu
+  have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+  refine (flucGain_one_env d N hE hu1).mono_B ?_
+  have h1 : etaT E (t N) ≤ etaT E u := etaT_le_of_le hE hu.2
+  have h2 : 0 < etaT E (t N) := etaT_pos_of_lt_one hE (ht1 N)
+  have h3 : (etaT E u)⁻¹ ≤ (etaT E (t N))⁻¹ := by
+    rw [← one_div, ← one_div]; exact one_div_le_one_div_of_le h2 h1
+  have h4 : (0 : ℝ) < 2 ^ Fintype.card (d.Idx N) := by positivity
+  exact mul_le_mul_of_nonneg_right (by linarith) h4.le
+
+/-- **The `u`-uniform (4.12) is not vacuous**: unconditionally, the block average is dominated
+uniformly on the flow interval — by an exponentially large constant.  Its only role is the one
+`RBM.Gauss.stochDom_flucAvg_blockAvg_env` plays for T88: every step of
+`RBM.Gauss.unifDomIcc_flucAvg_blockAvg_iter` is a theorem, and what the paper's (4.12) needs on
+top of it is the *size* of the gain, `ρ ≍ Ψ`. -/
+theorem unifDomIcc_flucAvg_blockAvg_env (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, t N < 1) :
+    UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖flucAvg d N u (zt E u) (mE E) (blkCoef (d.L N) (d.W N) a) ω‖)
+      (fun N _ _ _ =>
+        1 * (2 * ((etaT E (t N))⁻¹ + 1) * 2 ^ Fintype.card (d.Idx N))) :=
+  unifDomIcc_flucAvg_blockAvg_iter d hE ht1 (flucGain_one_env_flow d hE ht1)
+    (fun N => by
+      have hη : 0 < etaT E (t N) := etaT_pos_of_lt_one hE (ht1 N)
+      positivity)
+    (fun _ => le_refl 1)
+    (fun N => by
+      have hW : (1 : ℝ) ≤ ((d.W N : ℕ) : ℝ) := by exact_mod_cast d.W_pos N
+      rw [one_pow, inv_le_one₀ (by linarith)]
+      exact hW)
+
+end FlucEnv
+
+end RBM.Gauss

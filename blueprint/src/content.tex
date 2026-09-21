@@ -2134,6 +2134,32 @@
   $\{\|X\|\le N\}$, then Markov and the margin.
 \end{proof}
 
+\begin{lemma}[Definition 5.4's $E\otimes E$ is a genuine loop, and its (5.77) bound]\label{lem:eebridge}
+  \lean{RBM.Band.toDims, RBM.Band.toDims_Idx, RBM.EEBridge.Gsig_mul_conjTranspose_prodList_mul, RBM.EEBridge.rflip, RBM.EEBridge.glueIdx, RBM.EEBridge.glueIdx_wf, RBM.EEBridge.glueIdx_length, RBM.EEBridge.mem_glueIdx, RBM.EEBridge.anchor_mem_glueIdx, RBM.EEBridge.glueLoop_loopCut, RBM.EEBridge.glueJ, RBM.EEBridge.glueJ_of_mem_Icc, RBM.EEBridge.eeTens_eq_eTens, RBM.EEBridge.norm_eeTens_le, RBM.EEBridge.leftArg, RBM.EEBridge.rightArg, RBM.EEBridge.eeArg, RBM.EEBridge.eeBand, RBM.EEBridge.eeField, RBM.EEBridge.norm_eeField_le}
+  \leanok\uses{lem:decaybridge, lem:5.10, lem:chargereduce, thm:discharge-bdg}
+  $G_\sigma M^\dagger$-conjugation reverses a chain and flips every charge, so the conjugated second
+  factor of $E\otimes E$ \emph{is} the $\bar\sigma$-loop read backwards -- which justifies rather
+  than merely adopts T74's convention. All three properties \texttt{Decay.norm\_eTens\_le} assumes
+  of its gluing are proved for the concrete one, giving (5.77)'s fourth line pathwise.
+\end{lemma}
+\begin{proof}\leanok
+  \texttt{glueIdx} is well-formed, of length $2n+2$, and contains both $b$ and the anchor; the
+  clamped $k$-index is inert on $1\le k\le n$.
+\end{proof}
+
+\begin{lemma}[The fixed-time fluctuation inputs of (4.5)]\label{lem:eq45fix}
+  \lean{RBM.Gauss.UnifDomIcc.trans, RBM.Gauss.unifDomIcc_of_moment, RBM.Gauss.unifDomIcc_const_Lmax, RBM.Gauss.flucGain_one_env, RBM.Gauss.FlucGain.mono_B, RBM.Gauss.flucGain_one_env_flow, RBM.Gauss.unifDomIcc_flucAvg_blockAvg_env, RBM.Gauss.unifDomIcc_flucRow_condExpDiag, RBM.Gauss.unifDomIcc_flucBlk_condExpDiag, RBM.Gauss.flucRowFlow_of_gain, RBM.Gauss.flucBlkFlow_of_gain}
+  \leanok\uses{lem:eq45inputs, thm:fluc-iter, lem:goodsetflow, lem:condstable}
+  Markov needs no cardinality bound here: \texttt{UnifDomIcc} bounds the failure probability per
+  index \emph{and} per time, the union over $u$ being taken only by the net. The
+  $\Psi^2\to L^{\max}$ bridge is free on the flow good event, since only the lower half
+  $W^{-1}/4\le L^{\max}_u$ is used and it costs no $\eta^{-1}$.
+\end{lemma}
+\begin{proof}\leanok
+  The iterated route's moment bound is a per-$(N,u)$ deterministic inequality whose only eventual
+  part never mentions the time.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

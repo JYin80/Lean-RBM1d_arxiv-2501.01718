@@ -105,6 +105,7 @@ import RBM1D.Propagator.LongDiff
 import RBM1D.Propagator.ZeroMode
 import RBM1D.Propagator.Poisson
 import RBM1D.Propagator.RateComplex
+import RBM1D.Propagator.Rate
 import RBM1D.Propagator.Root
 import RBM1D.Propagator.Support
 import RBM1D.Propagator.Symbol

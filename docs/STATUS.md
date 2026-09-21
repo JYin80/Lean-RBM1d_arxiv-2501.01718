@@ -2480,3 +2480,28 @@ T75 的替代关系是：`Hyp.cont`（高概率）→ `MomentHyp.cont`（逐 ω�
 八字段总装本身**不是问题**：八行字段赋值，今天就能编译。T114 实际要解决的是
 **(a)** `Thm221.step` 的 `0 ≤ s` vs `0 < s`；**(b)** Step 2 选哪条路线；
 **(c)** 从 Steps 1–2 的产出推导 `h0`/`h12`/`hs1`/`hs2`——**这块目前不属于任何工单，且与 T58 不同，它是纯确定性的记账，现在就能开工。**
+
+### `RBM1D/Propagator/Rate.lean` — T1 完成（Claude Code 并行 agent，2026-09-21）
+
+**先纠正一条本文件里过时的记载**：上面「T1 进展」一节说的**方向问题已经被 T1c 解决**（`RateComplex.lean`），
+而「下一步」里要的 `1 − ‖ρ‖ ≍ |1−ξ|^{1/2}` 现在也有了。
+
+**agent 查明：T1 的数学内容在开工前就已经齐了**，分散在两个文件里且都已被下游消费——
+实 `ξ`：`rho_real_bounds`（`Decay.lean:411`，文件内用 6 次，`LongDiff.lean` 用 3 次）；
+全体 `0 < ‖ξ‖ < 1`：T1c 的 `sq_one_sub_norm_rho_le`/`rho_complex_bounds`（`DiffComplex.lean` 已用 2 次）。
+**Cowork 所说的「剩下的初等不等式」其实已被 T1c discharge 掉了。** 真正缺的只有三处**打包**：
+(i) 全仓库没有任何 `≍` 形式的陈述（两条已有结果都是**平方**的，调用方想要的平方根形式不存在）；
+(ii) `ellHat`（`Decay.lean:480`）只按 `‖1−ξ‖` 定义，**没有任何地方说它就是真正的衰减长度 `1/(1−‖ρ‖)` 截到 `L`**，每个消费者各自临时重推；
+(iii) `ξ ≠ 0` 这条假设为什么必要，无人记载。
+
+**新文件而非加进 `Decay.lean` 的理由**：`RateComplex.lean` **import** 了 `Decay.lean`，所以放在 `Decay.lean` 里的东西**用不了 T1c**，只会逼出重复证明。
+`Rate.lean` import `RateComplex` 与 `DecayComplex`。七个名字均已全仓库 grep 查重。
+
+主要结论：`one_sub_norm_rho_asymp`（`∃ c>0 ∃ C>0`，`c = 1/3`、`C = 2`）；
+`ellHat_mul_one_sub_norm_rho_le` 与 `min_le_ellHat` 两条**双边**钉住 `ℓ̂ ≍ min(1/(1−‖ρ‖), L)`（绝对常数）；
+**`norm_rho_pow_le_exp`**：`‖ρ‖^n ≤ e·exp(−n/(3ℓ̂))`（`n ≤ L`）——配上已有的 `norm_theta_apply_le_rho_pow` 就是**复 ξ 的 (2.52)，走闭式路线，不需要围道平移、不需要 Poisson 求和**（正是 CLAUDE.md 规定的路线）。
+
+**可以据此简化的下游（本单未动，属别的文件）**：
+`DecayComplex.lean` 的 `norm_Theta_apply_le_complex`/`_le_exists` 目前经 `Poisson.lean`+`Contour.lean` 到达复 (2.52)，常数是 `12π²/(1−e^{−c₀})+…`；
+换成 `norm_rho_pow_le_exp` 可得同样结论、常数初等、依赖锥短得多（**Poisson 路线并不浪费——`Symbol.lean` 的 Fourier 形式 (3.48) 仍然要用——只是 (2.52) 不必依赖它**）。
+`Decay.lean:577` 的 `norm_Theta_apply_le_of_real` 里内联重证的 `step3` 现在就是 `norm_rho_pow_le_exp`；`DiffComplex.lean` 的 `ellHat_mul_sqrt_le` 开头那段手工放缩就是 `sqrt_norm_one_sub_le_three_mul`。paper-deltas #71。

@@ -6169,3 +6169,18 @@ T201 没有权限做这个决定。
 * `Gauss/Lemma514Holder.lean:919 one_add_norm_mul_le` 可改成 `one_add_norm_edge_eq` 的一行推论（已 deprecated，改不改无碍）。
 * `Gauss/MomentDuhamelRhs.lean:265 momNorm_Uker_apply_le` **不删**（(7.1) 档在别处仍合法），但 docstring 的「with the same constant `C^n` as Lemma 7.1」下面该加一句指向 `no_const_hkerC_on_gridS`：**在总装窗口上这个 `C` 不存在**。
 * `Hierarchy/SumZeroDyn.lean:1252 norm_Uker_sumZero_scale_le` 现在是 `Gauss.norm_Uker_sumZero_scale_le'` 的特例，但方向是新文件依赖旧文件，要改须把带撇版下沉——**建议先不动**。
+
+## Cowork 裁定（2026-09-21 17:25）：R1–R5 与 D14
+
+**R1–R5（Jun 17:15 同意 Cowork 的建议；全文见 `docs/REPORT.md` §9，commit 9f2a2f0）**
+* **R1**：Theorems 2.2–2.5 **并列为主定理**，各附完整假设表；六步合拢前状态写「以 Theorem 2.21 为前提」。Theorem 2.21 与 Lemmas 2.18–2.20 作为关键中间结果单列；Theorem 2.6 单列，标明是全文唯一用外部输入的地方。
+* **R2**：已由 Jun 的范围规则回答——Theorem 2.6 在范围内，等其余各块无高风险项后再开；外部输入 = [51] Theorem 2.2 的**复 Hermitian 形式**；`GreenComparison` 自证。
+* **R3**：钉死 `OUFlow` 的分布随 Theorem 2.6 一起做；此前 `theorem2_6_of_steps` **不**算 Theorem 2.6 的形式化。
+* **R4**：已由 D12/D13 回答（T204 第一遍已完成，(2.71) 与 Step 6 样本侧归 T205，不推迟到 2.6）。
+* **R5**：否定结论单列一节，分 (a) 论文层面的修正、(b) 形式化中被证伪的**自设接口**（不是论文错误）两小节。
+* 报告按此改写 → **T217**。
+
+**D14 → 改（Cowork 按路由类裁定，不涉及论文陈述）**：矩路线的接口从 `Hyp.momentDuhamel` 改为 **`Hyp.momentDuhamelQ`**。理由：(i) 这正是论文 Lemma 5.14 的证明路线——(5.92) 的「无 `(η_s/η_t)` 前因子」来自 `Q_u` 投影后用 (7.16)，Cowork 在 T195 之后已按此定过方向（T201 工单）；(ii) 不改则 Lemma 5.14 的矩路线在总装窗口上**永远空真**（`no_const_hkerC_on_gridS` 已编译）；(iii) 论文陈述一字不动。`Hyp.momentDuhamel`（未投影）字段**保留**，T206/T212/T213 那条线照做——它仍被 Step 2 等处消费。
+* 新单：**T218**（`P∘(L−K)` 半边接到矩路线）、**T219**（`stochDom_of_momentDuhamelQ` 总装 + Lemma 5.14 矩路线改吃 `Q` 接口）、**T220**（(7.13) 的前提 `FastDecay` 沿流的生产者，T201 另附的第三块）。
+* **T214**（`∂_u Q_u`，`MomentIneqQ` 的漂移恒等式）因此进入关键路径：`momentDuhamelQ` 的生产者要它。
+* T201 列的「给协调者的其余接线」三条（docstring 指针等）不开单，由协调者顺手做。

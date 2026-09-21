@@ -28,6 +28,9 @@ pinned down by a **pointwise identity in `(u, M)`**, so the fiat handle disappea
 * `RBM.MomentDuhamel.genLK` — `𝓛 = ½ ∑_{ij} S_ij ∂_ij ∂_ji` applied to `lkFun` in the matrix
   argument.  It uses only the variance profile `S`, so it makes sense over an arbitrary
   `RBM.Band` — no Gaussian structure and no `RBM.Gauss.MatrixStein`.
+* `RBM.MomentDuhamel.eeFun` — the `E ⊗ E` of Definition 5.4 as a *deterministic* function of
+  `(u, M)`; along a flow it is T127's `RBM.EEBridge.eeField`, by `rfl` (`eeFun_H`,
+  `EEpath_eq_eeField`).  It is a definition, not an interface field.
 * `RBM.MomentDuhamel.Hyp` — the primed interface: the two moment inequalities together with
   the pointwise drift identity that determines `F`.
 
@@ -38,9 +41,35 @@ pinned down by a **pointwise identity in `(u, M)`**, so the fiat handle disappea
   (`RBM.edgeKer`), which is *affine* in `u`; so `u ↦ U_{u,v}` is a product of affine factors
   and its derivative needs no propagator ODE, no `RBM1D/Propagator/Deriv.lean`, and no
   hypothesis at all (not even `‖v ξ‖ < 1`).
-* `RBM.MomentDuhamel.Hyp.Fpath`, `Hyp.EEpath` — the drift and `E ⊗ E` read along a flow, in
-  **exactly** the types of `RBM.SumZeroDyn.Hierarchy.F` and `.EE`, so that
+* `RBM.MomentDuhamel.Hyp.Fpath`, `RBM.MomentDuhamel.EEpath` — the drift and `E ⊗ E` read along
+  a flow, in **exactly** the types of `RBM.SumZeroDyn.Hierarchy.F` and `.EE`, so that
   `RBM.SumZeroDyn.Lemma510` applies to them **verbatim**, with no restatement.
+* `RBM.MomentDuhamel.Hyp.F_unique`, `Hyp.F_unique_flow` — `F` is pinned down by `drift` at
+  every Hermitian matrix, hence at every matrix of the flow, hence at every argument at which
+  the interface's own inequalities evaluate it.
+
+## The fiat audit of `Hyp` (T145)
+
+After the two repairs above, the data fields of `Hyp` are `F` and `cMD`, and nothing else.
+
+* `F` is pinned by `drift` at every Hermitian `M` and every `u ∈ [s_N, t_N]` (`F_unique`), and
+  those are *exactly* the arguments at which `momentDuhamel` and `momentDuhamelQ` evaluate it:
+  the matrix is always `X.H N u ω`, Hermitian by `RBM.Sample.hermitian` (`F_unique_flow`), and
+  the time always lies in `[s_N, v] ⊆ [s_N, t_N]`.  There is no argument at which `F` is both
+  free and used.
+* `cMD` is the one remaining degree of freedom, and it is harmless in a way worth spelling
+  out.  Enlarging it does weaken the two inequalities — but its type is `ℕ → ℝ`, so it may
+  depend on `p` only and **not on `N`**, and an `N`-independent constant is precisely what `≺`
+  absorbs for free.  Moreover the same `H.cMD p` reappears inside the hypothesis `hrhs` of the
+  only consumer here, `stochDom_of_momentDuhamel`, so a larger `cMD` makes the *consumer's*
+  obligation correspondingly harder: the pair is closed, not loosened.
+* every other field (`drift`, `cMD_nonneg`, `integrable`, `momentDuhamel`, `momentDuhamelQ`)
+  is a `Prop` about objects that are fixed before `Hyp` is written down — `lkFun`, `genLK`,
+  `Uker`, `Qop`, `eeFun`, `RBM.SumZeroDyn.lkT` — plus the two data fields just discussed.
+
+The one way to make `Hyp` vacuous is to hand it a degenerate window `t_N < s_N`; but then no
+`v` satisfying `s_N ≤ v ≤ t_N` exists, so `stochDom_of_momentDuhamel` cannot be applied
+either.  This is the same degeneracy every timed interface in the repository has.
 
 ## What this file does *not* do
 
@@ -124,12 +153,39 @@ theorem lkFun_H (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {m : ℕ}
     (a : LoopArg (B.L N) m) :
     lkFun B E N u (X.H N u ω) σ a = SumZeroDyn.lkT X E N u ω σ a := rfl
 
+/-- **`(E ⊗ E)_{u,σ,c}` of Definition 5.4 as a function of the time and the matrix**, with no
+`ω`, i.e. `RBM.EEBridge.eeArg` at the spectral parameter `z_u`.
+
+This is *not* a datum of the interface below: `E ⊗ E` is a completely explicit tensor built
+from the resolvent of `M` at `z_u` (T127), so the moment inequalities of `Hyp` quantify over
+nothing here.  Making it a data field — as `RBM.SumZeroDyn.Hierarchy.EE` is — would let an
+instance take it enormous and render `momentDuhamel` vacuous, which is exactly the fiat
+failure mode `Hyp` exists to close; see `docs/STATUS.md` under T145. -/
+noncomputable def eeFun (B : Band Ω) (E : ℝ) (N : ℕ) (u : ℝ)
+    (M : Matrix (B.Idx N) (B.Idx N) ℂ) {m : ℕ} (σ : Fin m → Bool)
+    (c : LoopArg (B.L N) (m + m)) : ℂ :=
+  EEBridge.eeArg B.toDims N (zt E u) M σ c
+
+/-- **`eeFun` along a flow is T127's `RBM.EEBridge.eeField`** — by `rfl`.  Together with
+`EEpath_eq_eeField` this is what makes T135's `RBM.EEBridge.stochDom_norm_eeField` a statement
+*about the `E ⊗ E` of this interface*, rather than about a candidate that an instance is free
+to ignore. -/
+theorem eeFun_H (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {n : ℕ}
+    (σ : Fin (n + 2) → Bool) (c : LoopArg (B.L N) ((n + 2) + (n + 2))) :
+    eeFun B E N u (X.H N u ω) σ c = EEBridge.eeField X E n N u ω σ c := rfl
+
 /-- **`𝓛 Φ = ½ ∑_{ij} S_ij ∂_ij ∂_ji Φ`** applied to the matrix argument of `lkFun`.
 
 Only the variance profile `S^{(B)}/W` enters, so this is defined over an arbitrary
 `RBM.Band`; the Gaussian model is needed to *prove* the drift identity, not to state it.
 The `RBM.Gauss.wirtSecond` on the right is transported along `RBM.Band.toDims`, whose index
-types agree with `B.Idx` definitionally (`RBM.Band.toDims_Idx`). -/
+types agree with `B.Idx` definitionally (`RBM.Band.toDims_Idx`).
+
+**The direction of the second derivative.**  `∂_ij ∂_ji` is the second derivative along the
+*Hermitian* direction that perturbs the entry `(i, j)` and, simultaneously, its conjugate at
+`(j, i)`: this is the generator of the matrix flow (2.34), whose paths are Hermitian
+(`RBM.Sample.hermitian`).  Accordingly the field `Hyp.drift` below is asserted only at
+Hermitian `M`, which is where `M - z_u` is invertible and where the flow lives. -/
 noncomputable def genLK (B : Band Ω) (E : ℝ) (N : ℕ) (u : ℝ)
     (M : Matrix (B.Idx N) (B.Idx N) ℂ) {m : ℕ} (σ : Fin m → Bool)
     (a : LoopArg (B.L N) m) : ℂ :=
@@ -153,14 +209,23 @@ Compare `RBM.SumZeroDyn.Hierarchy`.  The differences, in order of importance:
 * there are **no** data fields `mart`, `martQ`.  T74's obstruction 1 — "defining `mart` as
   the residual makes `duhamel` true by construction for *any* `F`" — has no analogue here,
   because there is no residual to define;
-* `F` and `EE` are functions of the **time and the matrix**, not of `ω`.  Their values along
-  a flow, `Fpath` and `EEpath`, have exactly the types of `Hierarchy.F` and `Hierarchy.EE`,
-  so `RBM.SumZeroDyn.Lemma510` applies to them verbatim;
+* **`EE` is not a field at all.**  `RBM.MomentDuhamel.eeFun` *is* the `E ⊗ E` of Definition
+  5.4, and it is what appears on the right of the two inequalities.  (T132a still had `EE` as
+  an unconstrained datum, which reopened the fiat hole one field over: an instance could take
+  it enormous and the inequality became vacuous.  T145.)  `EEpath` is `RBM.EEBridge.eeField`
+  by `rfl`, so T135's `RBM.EEBridge.stochDom_norm_eeField` is a statement about it;
+* `F` is a function of the **time and the matrix**, not of `ω`.  Its value along a flow,
+  `Fpath`, has exactly the type of `Hierarchy.F`, so `RBM.SumZeroDyn.Lemma510` applies to it
+  verbatim; likewise `EEpath` for `Hierarchy.EE`;
 * the field `drift` is the **pointwise** identity (5.15),
-  `(∂_u + 𝓛)(L - K) = Θ_{u,σ} ∘ (L - K) + F`, at *every* `(u, M)`.  Since the `u`-derivative
-  of a function is unique where it exists, this **determines `F` uniquely**; a "fiat" `F`
-  satisfying it is the genuine drift.  This is the field T74's three obstructions have no
-  purchase on, and it is the reason `Lemma510` stops being the only guard;
+  `(∂_u + 𝓛)(L - K) = Θ_{u,σ} ∘ (L - K) + F`, at every `(u, M)` with `M` **Hermitian**.
+  Since the `u`-derivative of a function is unique where it exists, this **determines `F`
+  uniquely there** (`F_unique`), and the flow is Hermitian (`RBM.Sample.hermitian`), so `F`
+  is pinned down at every value it is ever evaluated at (`F_unique_flow`).  Hermiticity is
+  not a weakening one could exploit: at non-Hermitian `M` the resolvent `(M - z_u)⁻¹` need
+  not exist (Lean's inverse is then `0`) and the identity may simply be false.  This is the
+  field T74's three obstructions have no purchase on, and it is the reason `Lemma510` stops
+  being the only guard;
 * the four Prop fields `duhamel`, `duhamelQ`, `bdg`, `bdgQ` are replaced by the two moment
   inequalities `momentDuhamel`, `momentDuhamelQ` — (5.20) + (5.24) and (5.91) + (5.103),
   each combined into one statement.
@@ -171,16 +236,16 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) where
   /-- The drift of (5.15) other than the `l_K = 2` term, as a function of `(u, M)`. -/
   F : ∀ N, ℝ → Matrix (B.Idx N) (B.Idx N) ℂ → (Fin (n + 2) → Bool) →
     LoopArg (B.L N) (n + 2) → ℂ
-  /-- `E ⊗ E` of Definition 5.4, as a function of `(u, M)`. -/
-  EE : ∀ N, ℝ → Matrix (B.Idx N) (B.Idx N) ℂ → (Fin (n + 2) → Bool) →
-    LoopArg (B.L N) ((n + 2) + (n + 2)) → ℂ
-  /-- **The pointwise drift identity (5.15)**, which pins `F` down. -/
+  /-- **The pointwise drift identity (5.15)**, which pins `F` down.  Asserted only at Hermitian
+  `M`: that is where the resolvent exists and where the flow (2.34) lives, and it is still
+  enough to determine `F` at every argument the interface evaluates it at (`F_unique_flow`). -/
   drift : ∀ N (u : ℝ), s N ≤ u → u ≤ t N →
-    ∀ (M : Matrix (B.Idx N) (B.Idx N) ℂ) (σ : Fin (n + 2) → Bool) a,
-      ∃ dv : ℂ, HasDerivAt (fun v : ℝ => lkFun B E N v M σ a) dv u ∧
-        dv + genLK B E N u M σ a
-          = SumZeroDyn.genS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) (lkFun B E N u M σ) a
-            + F N u M σ a
+    ∀ (M : Matrix (B.Idx N) (B.Idx N) ℂ), M.IsHermitian →
+      ∀ (σ : Fin (n + 2) → Bool) a,
+        ∃ dv : ℂ, HasDerivAt (fun v : ℝ => lkFun B E N v M σ a) dv u ∧
+          dv + genLK B E N u M σ a
+            = SumZeroDyn.genS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) (lkFun B E N u M σ) a
+              + F N u M σ a
   /-- The `p`-dependent constant of the closing step. -/
   cMD : ℕ → ℝ
   cMD_nonneg : ∀ p, 0 ≤ cMD p
@@ -200,7 +265,7 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) where
                 (F N u (X.H N u ω) σ) a‖)
           + (cMD p * ∫ u in (s N)..v, momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
-                (EE N u (X.H N u ω) σ) (Fin.append a a)‖)) ^ ((1 : ℝ) / 2)
+                (eeFun B E N u (X.H N u ω) σ) (Fin.append a a)‖)) ^ ((1 : ℝ) / 2)
   /-- **(5.91) + (5.103) combined, in moment form** (the `Q_t` route: five terms). -/
   momentDuhamelQ : ∀ (p : ℕ), 1 ≤ p → ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ),
     s N ≤ v → v ≤ t N → ∀ a : LoopArg (B.L N) (n + 2),
@@ -222,7 +287,7 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) where
                   * SumZeroDyn.varthetaDot (B.L N) u b) a‖)
           + (cMD p * ∫ u in (s N)..v, momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
-                (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (EE N u (X.H N u ω) σ))
+                (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) σ))
                 (Fin.append a a)‖)) ^ ((1 : ℝ) / 2)
 
 namespace Hyp
@@ -234,20 +299,14 @@ noncomputable def Fpath (H : Hyp X E s t n) :
     ∀ N, ℝ → Ω → (Fin (n + 2) → Bool) → LoopArg (B.L N) (n + 2) → ℂ :=
   fun N u ω σ a => H.F N u (X.H N u ω) σ a
 
-/-- **`E ⊗ E` read along the flow**, in exactly the type of
-`RBM.SumZeroDyn.Hierarchy.EE`. -/
-noncomputable def EEpath (H : Hyp X E s t n) :
-    ∀ N, ℝ → Ω → (Fin (n + 2) → Bool) → LoopArg (B.L N) ((n + 2) + (n + 2)) → ℂ :=
-  fun N u ω σ a => H.EE N u (X.H N u ω) σ a
-
 /-- **`F` is determined by `drift`**: two drifts satisfying the pointwise identity at the same
-`(u, M, σ, a)` agree there.  This is the precise sense in which the primed interface closes
-T74's obstruction 1 — there is no freedom left in `F` to absorb anything. -/
+Hermitian `(u, M, σ, a)` agree there.  This is the precise sense in which the primed interface
+closes T74's obstruction 1 — there is no freedom left in `F` to absorb anything. -/
 theorem F_unique (H H' : Hyp X E s t n) {N : ℕ} {u : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N)
-    (M : Matrix (B.Idx N) (B.Idx N) ℂ) (σ : Fin (n + 2) → Bool)
+    {M : Matrix (B.Idx N) (B.Idx N) ℂ} (hM : M.IsHermitian) (σ : Fin (n + 2) → Bool)
     (a : LoopArg (B.L N) (n + 2)) : H.F N u M σ a = H'.F N u M σ a := by
-  obtain ⟨dv, hdv, heq⟩ := H.drift N u hsu hut M σ a
-  obtain ⟨dv', hdv', heq'⟩ := H'.drift N u hsu hut M σ a
+  obtain ⟨dv, hdv, heq⟩ := H.drift N u hsu hut M hM σ a
+  obtain ⟨dv', hdv', heq'⟩ := H'.drift N u hsu hut M hM σ a
   have hdd : dv = dv' := hdv.unique hdv'
   have h2 : SumZeroDyn.genS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) (lkFun B E N u M σ) a
         + H.F N u M σ a
@@ -256,7 +315,29 @@ theorem F_unique (H H' : Hyp X E s t n) {N : ℕ} {u : ℝ} (hsu : s N ≤ u) (h
     rw [← heq, ← heq', hdd]
   exact add_left_cancel h2
 
+/-- **The Hermitian restriction of `drift` costs nothing**: the flow (2.34) is Hermitian
+(`RBM.Sample.hermitian`), so `F` is still determined at *every* argument at which the two
+moment inequalities evaluate it.  Restricting `drift` to Hermitian `M` therefore does not
+reopen T74's obstruction 1 — it only drops the assertion at matrices where the resolvent
+need not exist. -/
+theorem F_unique_flow (H H' : Hyp X E s t n) {N : ℕ} {u : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N)
+    (ω : Ω) (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2)) :
+    H.Fpath N u ω σ a = H'.Fpath N u ω σ a :=
+  F_unique H H' hsu hut (X.hermitian N u ω) σ a
+
 end Hyp
+
+/-- **`E ⊗ E` read along the flow**, in exactly the type of
+`RBM.SumZeroDyn.Hierarchy.EE`.  It is a *definition*, not a field of `Hyp`. -/
+noncomputable def EEpath (X : Sample B) (E : ℝ) (n : ℕ) :
+    ∀ N, ℝ → Ω → (Fin (n + 2) → Bool) → LoopArg (B.L N) ((n + 2) + (n + 2)) → ℂ :=
+  fun N u ω σ c => eeFun B E N u (X.H N u ω) σ c
+
+/-- **`EEpath` is T127's `RBM.EEBridge.eeField`**, by `rfl`.  Consequently T135's
+`RBM.EEBridge.stochDom_norm_eeField` is *literally* the `EE_le` control for the `E ⊗ E` that
+`momentDuhamel` uses: no field has to be chosen, and none can be chosen badly. -/
+theorem EEpath_eq_eeField (X : Sample B) (E : ℝ) (n : ℕ) :
+    EEpath X E n = EEBridge.eeField X E n := rfl
 
 /-! ### From `‖·‖_{2p}` bounds to `≺` -/
 
@@ -334,7 +415,7 @@ theorem stochDom_of_momentDuhamel [IsProbabilityMeasure (B.P)]
                 (H.F N u (X.H N u ω) q.1) q.2‖)
           + (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
-                (H.EE N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+                (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
           ≤ C * ((N : ℝ) ^ (ε / 2) * Φ N q)) :
     StochDom B.P
       (fun N (q : LoopData (B.L N) (n + 2)) ω => ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖)

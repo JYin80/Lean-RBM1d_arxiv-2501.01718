@@ -2970,3 +2970,19 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 **第二组改编**：T94→**95**、T101→**96**、T108→**97**、T83→**98**、T111→**99**，T137 的 `90`→**100**。
 **与工单的一处偏差**：工单写「改编 `91`–`95`」，但 `91`–`94` 已被后来的行占用（当时最大号是 94），故顺延到 95–100。
 STATUS 里指向第二组的 7 处引用（1988/2073/2295/2332/2347/2856/2890）已按上下文逐条改正；`RBM1D/**/*.lean` 的 docstring 里没有对这些号的引用（已 grep）。现全表无重号。
+
+### T145：修补 `MomentDuhamel.Hyp` 的两处缺陷（Claude Code 并行 agent，2026-09-21）
+
+**缺陷 1（`EE` 是无约束数据字段）——取了比工单更强的选项：字段直接删除，不是加约束。**
+`E ⊗ E` 现在是**定义** `eeFun`（T127 的张量读成 `(u, M)` 的函数），`eeFun_H` 与 `EEpath_eq_eeField` 都是 `rfl`。
+**T135 的 `stochDom_norm_eeField` 随即以裸应用闭合 `Lemma510.EE_le`**（探针验证，无 `convert`、无强制转换）。
+**缺陷 2（`drift` 对所有矩阵量化）**：改为只对 Hermitian `M`；`genLK` 的 docstring 注明 `∂_ij∂_ji` 是沿 Hermitian 方向的二阶导（即 (2.34) 的生成元）。
+`F_unique` 加 `hM` 后证明不变，并新增 **`F_unique_flow`**——这是「限制不花代价」的承重检查：沿流由 `Sample.hermitian` 卸掉边条件，**T132b 不损失任何东西**。
+
+## fiat 审计（本单真正的验收标准）：**没有字段还能被 fiat 满足**
+
+数据字段现在只剩 `F` 与 `cMD`，审计结论已写进模块 docstring：
+* **`F`** 被 `drift` 在**每个** Hermitian `M`、每个 `u ∈ [s_N,t_N]` 处钉死——而这恰好就是 `momentDuhamel(Q)` 求值 `F` 的全部参数（矩阵总是 `X.H N u ω`，由 `Sample.hermitian` 为 Hermitian；时间总在 `[s_N,v] ⊆ [s_N,t_N]`）。**不存在既自由又被用到的参数**；且 `∃ dv, HasDerivAt …` 本身是义务，无法靠挑 `F` 绕过。
+* **`cMD : ℕ → ℝ`** 是唯一残留的自由度，agent 判断它**确实**无害而非仅仅「相信无害」：(a) 类型上它只能依赖 `p`、**不能依赖 `N`**，而与 `N` 无关的常数是 `≺` 免费吸收的；(b) 同一个 `H.cMD p` 也出现在唯一消费者 `stochDom_of_momentDuhamel` 的 `hrhs` 里，故放大它同时把消费者的义务变难——**这一对是闭合的**。
+  **存档一句**：没有任何东西把 `cMD` 与其 docstring 所提的 `sqrt_le_of_integral_le` 的 `C_p/p` 绑定，约束它的只有 `cMD_nonneg`。
+* 其余字段都是关于 `Hyp` 之前就已固定的对象的 `Prop`。唯一剩下的空洞路径是退化窗口 `t_N < s_N`，与仓库里每个带时间的接口相同。paper-deltas #101、#102。

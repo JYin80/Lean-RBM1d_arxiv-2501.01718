@@ -5641,3 +5641,16 @@ T191 的余项是**四项**（`diffJoint`、`contT`、`bddT`、φ′ 的识别�
   所以矩形式必须走好事件 + `momNormDom_of_stochDom`（与 `hHol` 的 `Ξ` 同一模式）；
   另外 `momentDuhamelQ` 的左端是 `Q_v∘(L−K)_v`，要回到 `(L−K)_v` 还得补 (5.95)–(5.101) 的 `P∘(L−K)` 那一半。
 * `hkerlt`/`hker2lt` 无条件，保持不变。
+
+## Cowork 对滞留审计（B.1–B.4、C）与 T195 的处理（2026-09-21 16:00）
+
+* **T195 → T201**：Lemma 5.14 矩路线改走 `Q_u` + (7.16)（论文本身自洽，缺口在我们：paper-deltas #131）；`hkerC_flow`/`hker2C_flow` 加 `@[deprecated]` 并入 T201。
+* **B.2 → T202**（最高优先）：`Dims` 居民 + `OpNormBound` 核对 + `hminor` 护栏（C 的第一条）。
+* **B.3 → T203**：`hKb` 经 `norm_Kval_le`。
+* **B.4**：T196 规格已更正为四项（`diffJoint`、`contT`、`bddT`、`φ′`）——Cowork 转派时漏读，已记。
+* **B.1 Step 6 样本侧：暂不开单，转 Jun 裁（D12）**。Cowork 已核原文：p.25（仓库 PDF）Step 6 之后原话「(2.71) will not be needed for Steps 1–5, i.e., Theorem 2.21 holds if (2.71) were removed from both the assumption and statement」；(2.71)/(2.80) 在 Theorems 2.2–2.5 的证明里都没再出现，**但 §7.2 的 (7.29) 明写「can be proved by following the proof of (2.80)」**，即 Theorem 2.6 阶段要用 Step 6 的方法。
+
+## D12 ⭐ Lean 的六步目标是否按论文 p.25 的注记去掉 (2.71)/(2.80)？（Cowork 2026-09-21 16:00，等 Jun）
+* **(a) 去掉**：Lean 的 `Thm221` 取论文注记里的变体（假设与结论都不含 (2.71)），Step 6 的漂移侧（T182/T189 已完成）保留，**样本侧（四个好集生产者、包络/可测/可积一批、`hEL` 接线，约 2–4 张单）推迟到 Theorem 2.6 阶段**（那时 (7.29) 要用同一套方法）。六步主线更短。
+* **(b) 保留**：按论文正文的完整 Theorem 2.21 做，现在就开样本侧的单。
+Cowork 倾向 (a)：论文自己说了不需要，主定理 2.2–2.5 都不用 (2.71)，且工作不会白费（Theorem 2.6 阶段接着用）。

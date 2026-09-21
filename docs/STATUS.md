@@ -5756,3 +5756,11 @@ T174 / T132c 的「走 shape 2 后所有行 `β* < 30` 严格成立」是对的�
 2. `hfar` —— T198，且正好建在本文件的接口上。
 3. ⚠ **一条无主项**：`flowEq548_of_near_far` 的 `hnear` 要**锐化到 `(η_s/η_u)²`**，
    而仓库的 (5.47)（含 `jS_stochDom_cut`）只给 `(η_s/η_u)^4`。**T198 的规格只点名 `hfar`，`hnear` 的锐化目前没人负责。**
+
+## D12 裁定与 Cowork 更正（2026-09-21 16:10）
+
+* **Jun 选 (a)**：Lean 的六步目标按论文 p.25 注记，先做**不含 (2.71)** 的 Theorem 2.21 变体。
+* **⚠ Cowork 更正（给 Jun 的信息有误）**：Cowork 说「Theorems 2.2–2.5 都不用 (2.71)」**是错的**。已核原文：
+  (2.71) 经 (2.62)（`|E L − K| ≺ (Wℓη)^{−3}`）给出 **Theorem 2.4 的期望界 (2.8)(2.9)**（「Together with (2.66) and (2.57), it yields the expectation bounds (2.8) and (2.9) in Theorem 2.4」；「(2.8) and (2.9) follow from (2.62)」），而 **Theorem 2.5 (QUE) 的证明直接用 (2.8)(2.9)**；Lean 里 `Flow/Consequences.lean` 的 `expect_loop2_of_bounds`/`expect_quantumDiffusion_*` 也正是吃 `hB.expect`。
+  **所以 Step 6 不能推迟到 Theorem 2.6 阶段**，否则丢掉 Theorem 2.4 的 (2.8)(2.9) 与 Theorem 2.5。
+* **Cowork 的执行方案（两遍归纳，不丢任何定理）**：第一遍 = 不含 (2.71) 的 `Thm221` 变体（T204），给出 Theorems 2.2、2.3 与 2.4 的 (2.6)(2.7)；第二遍 = 在第一遍结论之上单独对 (2.71) 做一次归纳（Step 6 的样本侧，T205），给出 (2.8)(2.9) 与 Theorem 2.5。论文注记保证第一遍不需要 (2.71)，第二遍每步只用第一遍的结论 + 上一步的 (2.71)。**已请 Jun 确认。**

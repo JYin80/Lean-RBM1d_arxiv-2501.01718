@@ -60,6 +60,12 @@ At `m = 2` this is made concrete and unconditional:
 4. **`RBM.Gauss.FlucGain` for every `m`** from `RBM.Gauss.MinorDiffGain`
    (`RBM.Gauss.flucGain_of_minorDiffGain`), with `RBM.Gauss.minorDiffGain_env` an
    unconditional (gain-free, `ρ = 4`) instance showing the reduced interface is not vacuous.
+5. **The same, graded by word length** (T137's grading of `RBM.Gauss.FlucGain`, applied to the
+   reduced interface): `RBM.Gauss.MinorDiffGainUpTo`, `RBM.Gauss.MinorDiffGain.upTo` and
+   `RBM.Gauss.flucGainUpTo_of_minorDiffGainUpTo`.  The annihilation identity does not touch the
+   words, so the length restriction passes through it unchanged.  This is the form in which
+   §4's estimate of the minor differences (`RBM1D/Gauss/MinorDiffGain.lean`) is available, and
+   the form the `2p`-th moment expansion consumes.
 
 ## What is *not* done, and why the interface is not empty
 
@@ -874,6 +880,54 @@ theorem flucGain_of_minorDiffGain (hE : |E| < 2) (ht : t < 1) (u : ℝ) {B ρ : 
       (fun S κ hκ => finDepOffRow_flucDiagSet d N u (zt E t) (mE E) (k i) S hκ)
   simp only [hrw]
   exact h.2.2 ι k L h1 h2
+
+/-! #### The same interface, graded by word length
+
+T137 graded `RBM.Gauss.FlucGain` by the length of the word, because the constants of the
+`m`-fold minor difference grow with `m` and the ungraded statement is therefore unavailable at
+`ρ ≍ Ψ`, while the `2p`-th moment expansion only ever builds words of length `≤ 2p`
+(`RBM.Gauss.OpsOkOut.length_le`).  `RBM.Gauss.MinorDiffGainUpTo` is the same grading applied to
+the reduced interface, and `RBM.Gauss.flucGainUpTo_of_minorDiffGainUpTo` is the graded
+analogue of `RBM.Gauss.flucGain_of_minorDiffGain`: the annihilation identity is an identity,
+so the length restriction passes straight through it. -/
+
+/-- **`RBM.Gauss.MinorDiffGain` restricted to words of length at most `M`.**  This is the form
+in which §4 actually proves the size of the iterated minor differences
+(`RBM.Gauss.minorDiffGainUpTo_of_minorGood`), the `M`-dependence of `B` and `ρ` being exactly
+what makes the bounded-length statement available where the unbounded one is not. -/
+def MinorDiffGainUpTo (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (B ρ : ℝ) (M : ℕ) : Prop :=
+  0 ≤ B ∧ 0 ≤ ρ ∧
+    ∀ (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N)),
+      (∀ i, ((L i).map Prod.snd).Nodup) → (∀ i, ∀ x ∈ L i, x.2 ≠ k i) →
+      (∀ i, (L i).length ≤ M) →
+      ∫ ω, ∏ i, ‖applyOps d N (L i)
+          (minorDiff d N (qList (L i)) (flucDiagSet d N u z m (k i))) ω‖ ∂(P d)
+        ≤ B ^ Fintype.card ι * ρ ^ ∑ i, numQ (L i)
+
+/-- The ungraded reduced interface implies every graded one; in particular
+`RBM.Gauss.minorDiffGain_env` still witnesses non-vacuity at every grade. -/
+theorem MinorDiffGain.upTo {u : ℝ} {z m : ℂ} {B ρ : ℝ}
+    (h : MinorDiffGain d N u z m B ρ) (M : ℕ) : MinorDiffGainUpTo d N u z m B ρ M :=
+  ⟨h.1, h.2.1, fun ι _ k L h1 h2 _ => h.2.2 ι k L h1 h2⟩
+
+/-- **`RBM.Gauss.FlucGainUpTo` from `RBM.Gauss.MinorDiffGainUpTo`** — the graded analogue of
+`RBM.Gauss.flucGain_of_minorDiffGain`, with the same proof: the rewriting step is the exact
+identity `RBM.Gauss.applyOps_eq_applyOps_minorDiff`, which does not touch the words, so the
+length hypothesis is simply handed on. -/
+theorem flucGainUpTo_of_minorDiffGainUpTo (hE : |E| < 2) (ht : t < 1) (u : ℝ) {B ρ : ℝ} {M : ℕ}
+    (h : MinorDiffGainUpTo d N u (zt E t) (mE E) B ρ M) :
+    FlucGainUpTo d N u (zt E t) (mE E) B ρ M := by
+  refine ⟨h.1, h.2.1, fun ι _ k L h1 h2 h3 => ?_⟩
+  have hrw : ∀ i : ι, applyOps d N (L i) (flucDiag d N u (zt E t) (mE E) (k i))
+      = applyOps d N (L i)
+        (minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i))) := by
+    intro i
+    rw [← flucDiagSet_empty d N u (zt E t) (mE E) (k i)]
+    exact applyOps_eq_applyOps_minorDiff (L i) _
+      (fun S => bddMeas_flucDiagSet hE ht u (k i) S)
+      (fun S κ hκ => finDepOffRow_flucDiagSet d N u (zt E t) (mE E) (k i) S hκ)
+  simp only [hrw]
+  exact h.2.2 ι k L h1 h2 h3
 
 /-- **The reduced interface is not vacuous**: the deterministic envelope gives it
 unconditionally with `ρ = 4` (no gain), exactly as `RBM.Gauss.flucGain_env` does for

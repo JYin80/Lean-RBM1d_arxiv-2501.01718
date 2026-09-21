@@ -79,6 +79,28 @@ by `0`.  That is exactly the `Nodup` hypothesis of `RBM.Gauss.MinorDiffGain`.
    `RBM.Gauss.MinorDiffGain` with `B ≍ 1` and `ρ = 2Ψ`, for words of length at most `M`.
 5. **The last probabilistic step** `RBM.Gauss.minorDiffGain_of_pointwise`: pointwise bounds on
    the words give `RBM.Gauss.MinorDiffGain` itself.
+6. **The same gain at the paper's size** `RBM.Gauss.integral_prod_applyOps_minorDiff_le'`, with
+   `B ≍ Ψ` instead of the deterministic envelope, and the bridges
+   `RBM.Gauss.flucGainUpTo_of_minorDiff` / `RBM.Gauss.flucGainUpTo_of_minorDiff'` into the
+   graded consumers of `RBM1D/Gauss/FlucIter.lean`.  See below.
+
+## (4.2), and the size of (4.12)
+
+`RBM.Gauss.MinorGood` carries (4.1) and (4.3), which is everything the `Δ_κ` calculus needs:
+every atom it differences is an off-diagonal entry or an inverse diagonal entry.  It says
+nothing about the *undifferenced* `G^{(S)}_{kk} - m`, which is the `m = 0` grade of the
+expansion — the empty word — and that grade therefore had to be bounded by the deterministic
+envelope `2(η_u⁻¹ + 1)`.  The gain `ρ B` delivered to (4.12) was then `Ψ η_u⁻¹`, not the
+paper's `Ψ²`.
+
+`RBM.Gauss.MinorGood'` adds the missing field, which is (4.2):
+`|G^{(S)}_{aa} - m| ≤ Ψ` at every minor level.  It enters at exactly one place —
+`RBM.Gauss.norm_flucDiagSet_le`, the empty-word branch of
+`RBM.Gauss.integral_prod_applyOps_minorDiff_le'` — and turns `B` into `2Ψ + 2 C_M Ψ`.  The
+`2p`-th moment iteration of `RBM1D/Gauss/FlucIter.lean` then delivers (4.12) with control
+`ρ B ≍ Ψ²`, uniformly in `u`, with no `η_u⁻¹` anywhere.  (4.2) is not an extra burden on the
+producer: at `Ψ ≤ 1/2` it *implies* (4.1), since `|m_E| = 1`
+(`RBM.Gauss.minorGood'_of_local_law`).
 
 ## What is *not* proved, and why
 
@@ -111,6 +133,10 @@ inputs are carried by `RBM.Gauss.integral_prod_applyOps_minorDiff_le` and neithe
   needed but is what the local law gives for all minors simultaneously.
 * `RBM.Gauss.MinorGood.inv_le` fixes the constant `2` for `|G^{(S)}_{aa}|⁻¹`, matching T110's
   `RBM.Gauss.norm_minorDiff_pair_greenSetDiagCentered_le`.
+* (4.1)–(4.3) are split across two structures: `RBM.Gauss.MinorGood` (what the difference
+  calculus uses) and `RBM.Gauss.MinorGood'` (that plus (4.2), what the size of (4.12) uses).
+  The paper states them together.  Both bounds are written with the *same* `Ψ`; the paper's
+  (4.2) and (4.3) have the same order but are not literally the same quantity.
 -/
 
 namespace RBM.Gauss
@@ -472,6 +498,40 @@ theorem minorGood_of_half_le
     · rw [gEnt_eq_zero_left (not_not.1 ha), _root_.inv_zero, norm_zero]
       norm_num
   off_le := hoff
+
+/-- **`RBM.Gauss.MinorGood` together with the diagonal half of the local law, (4.2).**
+
+`RBM.Gauss.MinorGood` carries (4.1) and (4.3) only, which is all the Leibniz calculus of the
+`Δ_κ`'s needs: every atom it differences is either an off-diagonal entry or an inverse
+diagonal entry.  The *undifferenced* entry `G^{(S)}_{aa} - m` — the `m = 0` grade of the
+expansion, i.e. the empty word — is not an atom of that calculus, and `RBM.Gauss.MinorGood`
+says nothing about it beyond `|G^{(S)}_{aa}|⁻¹ ≤ 2`.  Adding (4.2) is what turns the constant
+`B` of the gain from the deterministic envelope `2(η_u⁻¹ + 1)` into `≍ Ψ`, and hence (4.12)
+from `Ψ η_u⁻¹` into the paper's `Ψ²`.
+
+The extra field is stated only at the levels `S` that do not remove `a`; at the others
+`RBM.Gauss.gEnt` is `0` by convention and `‖0 - m‖ = |m|` is of course not `≤ Ψ`. -/
+structure MinorGood' (d : Dims) (N : ℕ) (u : ℝ) (z m : ℂ) (ω : Ω d) (Ψ : ℝ)
+    : Prop extends MinorGood d N u z ω Ψ where
+  /-- `|G^{(S)}_{aa} - m| ≤ Ψ` at every minor level -- (4.2). -/
+  diag_sub_le : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S →
+    ‖gEnt d N u z ω a a S - m‖ ≤ Ψ
+
+/-- **The shape in which (4.1)–(4.3) actually arrive**, with the diagonal half added.  The
+bound `2` on `|G^{(S)}_{aa}|⁻¹` is not assumed separately: it follows from
+`|G^{(S)}_{aa} - m| ≤ Ψ` and `1/2 ≤ |G^{(S)}_{aa}|`, exactly as in
+`RBM.Gauss.minorGood_of_half_le`. -/
+theorem minorGood'_of_half_le {m : ℂ}
+    (hdet : ∀ S : Finset (d.Idx N), IsUnit ((Hflow d N u ω).submatrix
+      (Subtype.val : {x : d.Idx N // x ∉ S} → d.Idx N) Subtype.val
+      - z • (1 : Matrix {x : d.Idx N // x ∉ S} {x : d.Idx N // x ∉ S} ℂ)).det)
+    (hhalf : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S → 1 / 2 ≤ ‖gEnt d N u z ω a a S‖)
+    (hoff : ∀ (S : Finset (d.Idx N)) (a b : d.Idx N), a ≠ b → ‖gEnt d N u z ω a b S‖ ≤ Ψ)
+    (hdiag : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S →
+      ‖gEnt d N u z ω a a S - m‖ ≤ Ψ) :
+    MinorGood' d N u z m ω Ψ where
+  toMinorGood := minorGood_of_half_le hdet hhalf hoff
+  diag_sub_le := hdiag
 
 /-- **(4.9) for the extended entries.** -/
 theorem gEnt_insert (hg : MinorGood d N u z ω Ψ) (hκ : κ ∉ S)
@@ -844,6 +904,37 @@ theorem norm_minorDiff_triple_le (hg : MinorGood d N u z ω Ψ) (hΨ0 : 0 ≤ Ψ
     norm_num
   simpa [hC] using h
 
+/-! #### The undifferenced entry: the `m = 0` grade
+
+The empty word is the one grade of the expansion that the `Δ_κ` calculus never touches, and it
+is where the deterministic envelope `η_u⁻¹ + 1` used to enter.  (4.2), carried by
+`RBM.Gauss.MinorGood'`, replaces it by `Ψ`. -/
+
+/-- **(4.2) at every minor level**: `|G^{(S)}_{kk} - m| ≤ Ψ`, including the levels that remove
+`k`, where the family is `0` by convention. -/
+theorem norm_greenSetDiagCentered_le (hg : MinorGood' d N u z m ω Ψ) (hΨ0 : 0 ≤ Ψ)
+    (k : d.Idx N) (S : Finset (d.Idx N)) :
+    ‖greenSetDiagCentered d N u z m k S ω‖ ≤ Ψ := by
+  show ‖if h : k ∉ S then greenSetMat d N u z S ω ⟨k, h⟩ ⟨k, h⟩ - m else 0‖ ≤ Ψ
+  by_cases hk : k ∉ S
+  · rw [dite_eq_left hk, ← gEnt_apply hk hk]
+    exact hg.diag_sub_le S k hk
+  · rw [dite_eq_right hk, norm_zero]
+    exact hΨ0
+
+/-- **The `m = 0` grade of the gain is `Ψ`, not the deterministic envelope.**  `Z^{(S)}_k` is a
+fluctuation of `G^{(S)}_{kk} - m`, so (4.2) bounds it up to the factor `2` that `1 - E_k` costs.
+This is the one place where `RBM.Gauss.MinorGood'` is stronger than `RBM.Gauss.MinorGood`, and
+it is what upgrades (4.12) from `Ψ η_u⁻¹` to `Ψ²`. -/
+theorem norm_flucDiagSet_le (hg : ∀ ω' : Ω d, MinorGood' d N u z m ω' Ψ) (hΨ0 : 0 ≤ Ψ)
+    (k : d.Idx N) (S : Finset (d.Idx N)) :
+    ‖flucDiagSet d N u z m k S ω‖ ≤ 2 * Ψ := by
+  have hrw : flucDiagSet d N u z m k S ω
+      = greenSetDiagCentered d N u z m k S ω
+        - condRow d N k (greenSetDiagCentered d N u z m k S) ω := qRow_apply _ _ _
+  rw [hrw]
+  exact norm_sub_condRow_le (fun ω' => norm_greenSetDiagCentered_le (hg ω') hΨ0 k S) ω
+
 end TopLevel
 
 
@@ -1006,6 +1097,160 @@ theorem integral_prod_applyOps_minorDiff_le (hE : |E| < 2) (ht : t < 1) (u : ℝ
     fun i => bddMeas_applyOps_minorDiff_flucDiagSet hE ht u (k i) (L i)
   refine le_trans (integral_prod_norm_le_of_bounds hbm hb) (le_of_eq ?_)
   rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.prod_pow_eq_pow_sum, Finset.card_univ]
+
+/-- **(4.2) subsumes (4.1)**, so the extra field of `RBM.Gauss.MinorGood'` does not have to be
+produced alongside a separate lower bound on the diagonal: `|m_E| = 1`
+(`RBM.norm_mE`), so `|G^{(S)}_{aa} - m| ≤ Ψ ≤ 1/2` already gives `1/2 ≤ |G^{(S)}_{aa}|`, which
+is the shape `RBM.Gauss.minorGood_of_half_le` consumes.  Only (4.2) and (4.3) are assumed
+here. -/
+theorem minorGood'_of_local_law (hE : |E| < 2) {u : ℝ} {ω : Ω d} {Ψ : ℝ} (hΨ : Ψ ≤ 1 / 2)
+    (hdet : ∀ S : Finset (d.Idx N), IsUnit ((Hflow d N u ω).submatrix
+      (Subtype.val : {x : d.Idx N // x ∉ S} → d.Idx N) Subtype.val
+      - (zt E t) • (1 : Matrix {x : d.Idx N // x ∉ S} {x : d.Idx N // x ∉ S} ℂ)).det)
+    (hoff : ∀ (S : Finset (d.Idx N)) (a b : d.Idx N), a ≠ b →
+      ‖gEnt d N u (zt E t) ω a b S‖ ≤ Ψ)
+    (hdiag : ∀ (S : Finset (d.Idx N)) (a : d.Idx N), a ∉ S →
+      ‖gEnt d N u (zt E t) ω a a S - mE E‖ ≤ Ψ) :
+    MinorGood' d N u (zt E t) (mE E) ω Ψ := by
+  refine minorGood'_of_half_le hdet (fun S a ha => ?_) hoff hdiag
+  have h1 := hdiag S a ha
+  have h2 : ‖mE E‖ - ‖gEnt d N u (zt E t) ω a a S‖
+      ≤ ‖mE E - gEnt d N u (zt E t) ω a a S‖ := norm_sub_norm_le _ _
+  rw [norm_sub_rev] at h2
+  rw [norm_mE hE.le] at h2
+  linarith
+
+/-- **The gain `ρ ≍ Ψ` with `B ≍ Ψ`, for words of bounded length** — the paper's size of
+(4.12).
+
+Identical to `RBM.Gauss.integral_prod_applyOps_minorDiff_le` except in the *empty-word* branch,
+where `RBM.Gauss.norm_flucDiagSet_le` (i.e. (4.2), carried by `RBM.Gauss.MinorGood'`) replaces
+the deterministic envelope `RBM.Gauss.norm_flucDiagSet_le_env`.  The constant therefore drops
+from `2(η_u⁻¹ + 1) + 2 C_M Ψ` to `2Ψ + 2 C_M Ψ`, and the `2p`-th moment iteration converts
+`B ρ` into (4.12)'s control: `2Ψ · (2Ψ + 2 C_M Ψ) ≍ Ψ²` instead of `2Ψ · η_u⁻¹`.
+
+No other branch changes: for a non-empty word the estimate already came from the `Δ_κ`
+calculus, which never sees the undifferenced entry. -/
+theorem integral_prod_applyOps_minorDiff_le' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood' d N u (zt E t) (mE E) ω Ψ) (M : ℕ)
+    (ι : Type) [Fintype ι] (k : ι → d.Idx N) (L : ι → List (Bool × d.Idx N))
+    (h1 : ∀ i, ((L i).map Prod.snd).Nodup) (h2 : ∀ i, ∀ x ∈ L i, x.2 ≠ k i)
+    (hM : ∀ i, (L i).length ≤ M) :
+    ∫ ω, ∏ i, ‖applyOps d N (L i)
+        (minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i))) ω‖ ∂(P d)
+      ≤ (2 * Ψ + 2 * minorDiffC M * Ψ) ^ Fintype.card ι
+        * (2 * Ψ) ^ ∑ i, numQ (L i) := by
+  classical
+  set B : ℝ := 2 * Ψ + 2 * minorDiffC M * Ψ with hB
+  have hextra0 : 0 ≤ 2 * minorDiffC M * Ψ := by
+    have := minorDiffC_nonneg M
+    positivity
+  have hb : ∀ (i : ι) (ω : Ω d),
+      ‖applyOps d N (L i)
+        (minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i))) ω‖
+        ≤ B * (2 * Ψ) ^ numQ (L i) := by
+    intro i ω
+    have hlenq : (qList (L i)).length = numQ (L i) := length_qList (L i)
+    have hnodup : (qList (L i)).Nodup := qList_nodup (h1 i)
+    have hne : ∀ y ∈ qList (L i), y ≠ k i := fun y hy => mem_qList_ne (h2 i) hy
+    cases hqs : qList (L i) with
+    | nil =>
+        have hzero : numQ (L i) = 0 := by rw [← hlenq, hqs]; rfl
+        have hpt : ∀ ω' : Ω d,
+            ‖minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i)) ω'‖
+              ≤ 2 * Ψ := by
+          intro ω'
+          rw [hqs]
+          simpa using norm_flucDiagSet_le (ω := ω') hgood hΨ0 (k i) ∅
+        have happ := norm_applyOps_le (L i) hpt ω
+        rw [hqs] at happ
+        rw [hzero] at happ ⊢
+        rw [pow_zero, one_mul] at happ
+        rw [pow_zero, mul_one]
+        linarith
+    | cons κ l' =>
+        have hκmem : κ ∈ qList (L i) := by rw [hqs]; exact List.mem_cons_self
+        have hkκ : k i ≠ κ := Ne.symm (hne κ hκmem)
+        have hnd' : (κ :: l').Nodup := by rw [← hqs]; exact hnodup
+        have hkl : ∀ x ∈ l', x ≠ k i := by
+          intro x hx
+          exact hne x (by rw [hqs]; exact List.mem_cons_of_mem _ hx)
+        have hm : numQ (L i) = l'.length + 1 := by
+          rw [← hlenq, hqs]; simp [List.length_cons]
+        have hlM : l'.length ≤ M := by
+          have h3 : numQ (L i) ≤ (L i).length := List.countP_le_length
+          have := hM i
+          omega
+        have hpt : ∀ ω' : Ω d,
+            ‖minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i)) ω'‖
+              ≤ 2 * (minorDiffC M * Ψ ^ (l'.length + 2)) := by
+          intro ω'
+          rw [hqs]
+          refine le_trans (norm_minorDiff_flucDiagSet_le hE ht u hΨ0 hΨ1
+            (fun ω'' => (hgood ω'').toMinorGood) (k i) κ l' hkκ hnd' hkl ω') ?_
+          have hmono := minorDiffC_mono hlM
+          have hpow : (0 : ℝ) ≤ Ψ ^ (l'.length + 2) := pow_nonneg hΨ0 _
+          nlinarith
+        have happ := norm_applyOps_le (L i) hpt ω
+        rw [hqs] at happ
+        refine le_trans happ ?_
+        rw [hm, mul_pow]
+        have hΨpow : Ψ ^ (l'.length + 2) = Ψ ^ (l'.length + 1) * Ψ := by rw [← pow_succ]
+        rw [hΨpow]
+        have hkey : 2 * minorDiffC M * Ψ ≤ B := by rw [hB]; nlinarith
+        calc 2 ^ (l'.length + 1) * (2 * (minorDiffC M * (Ψ ^ (l'.length + 1) * Ψ)))
+            = (2 * minorDiffC M * Ψ) * (2 ^ (l'.length + 1) * Ψ ^ (l'.length + 1)) := by ring
+          _ ≤ B * (2 ^ (l'.length + 1) * Ψ ^ (l'.length + 1)) :=
+              mul_le_mul_of_nonneg_right hkey
+                (mul_nonneg (by positivity) (pow_nonneg hΨ0 _))
+  have hbm : ∀ i : ι, BddMeas d (applyOps d N (L i)
+      (minorDiff d N (qList (L i)) (flucDiagSet d N u (zt E t) (mE E) (k i)))) :=
+    fun i => bddMeas_applyOps_minorDiff_flucDiagSet hE ht u (k i) (L i)
+  refine le_trans (integral_prod_norm_le_of_bounds hbm hb) (le_of_eq ?_)
+  rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.prod_pow_eq_pow_sum, Finset.card_univ]
+
+/-! ### The graded interface, and the bridge to (4.12) -/
+
+/-- **T113 packaged as `RBM.Gauss.MinorDiffGainUpTo`**: the bounded-length estimate *is* the
+graded reduced interface, with `B` the deterministic envelope. -/
+theorem minorDiffGainUpTo_of_minorGood (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood d N u (zt E t) ω Ψ) (M : ℕ) :
+    MinorDiffGainUpTo d N u (zt E t) (mE E)
+      (2 * ((etaT E t)⁻¹ + 1) + 2 * minorDiffC M * Ψ) (2 * Ψ) M := by
+  have hη : 0 < etaT E t := etaT_pos_of_lt_one hE ht
+  have hC := minorDiffC_nonneg M
+  exact ⟨by positivity, by positivity,
+    fun ι _ k L h1 h2 h3 => integral_prod_applyOps_minorDiff_le hE ht u hΨ0 hΨ1 hgood M
+      ι k L h1 h2 h3⟩
+
+/-- **The same, with (4.2): `B ≍ Ψ`.** -/
+theorem minorDiffGainUpTo_of_minorGood' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood' d N u (zt E t) (mE E) ω Ψ) (M : ℕ) :
+    MinorDiffGainUpTo d N u (zt E t) (mE E)
+      (2 * Ψ + 2 * minorDiffC M * Ψ) (2 * Ψ) M := by
+  have hC := minorDiffC_nonneg M
+  exact ⟨by positivity, by positivity,
+    fun ι _ k L h1 h2 h3 => integral_prod_applyOps_minorDiff_le' hE ht u hΨ0 hΨ1 hgood M
+      ι k L h1 h2 h3⟩
+
+/-- **T113 feeds the graded consumers of (4.12) directly** (T137's bridge).  The gain interface
+of `RBM1D/Gauss/FlucIter.lean` at word length `≤ M` is a *theorem* on the good event; the
+constant is the deterministic envelope, because `RBM.Gauss.MinorGood` does not carry (4.2). -/
+theorem flucGainUpTo_of_minorDiff (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood d N u (zt E t) ω Ψ) (M : ℕ) :
+    FlucGainUpTo d N u (zt E t) (mE E)
+      (2 * ((etaT E t)⁻¹ + 1) + 2 * minorDiffC M * Ψ) (2 * Ψ) M :=
+  flucGainUpTo_of_minorDiffGainUpTo hE ht u
+    (minorDiffGainUpTo_of_minorGood hE ht u hΨ0 hΨ1 hgood M)
+
+/-- **The same bridge at the paper's size.**  With (4.2) the constant is `≍ Ψ`, so the
+`2p`-th moment iteration of `RBM1D/Gauss/FlucIter.lean` delivers (4.12) with control
+`ρ B ≍ Ψ²` — see `RBM.Gauss.stochDom_flucAvg_blockAvg_iter_graded`. -/
+theorem flucGainUpTo_of_minorDiff' (hE : |E| < 2) (ht : t < 1) (u : ℝ) {Ψ : ℝ}
+    (hΨ0 : 0 ≤ Ψ) (hΨ1 : Ψ ≤ 1) (hgood : ∀ ω, MinorGood' d N u (zt E t) (mE E) ω Ψ) (M : ℕ) :
+    FlucGainUpTo d N u (zt E t) (mE E) (2 * Ψ + 2 * minorDiffC M * Ψ) (2 * Ψ) M :=
+  flucGainUpTo_of_minorDiffGainUpTo hE ht u
+    (minorDiffGainUpTo_of_minorGood' hE ht u hΨ0 hΨ1 hgood M)
 
 /-- **Pointwise bounds on the words give `RBM.Gauss.MinorDiffGain`.**  This is the only step of
 the interface that is still probabilistic, and it is Jensen plus Fubini: the integrand is a

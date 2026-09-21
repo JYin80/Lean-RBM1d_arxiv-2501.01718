@@ -6379,3 +6379,36 @@ T201 没有权限做这个决定。
 * paper-deltas 临时号赋号：T209a → 142、T210a → 143、T213a → 144、T214a → 145。
 
 **T205 审计：空真第九例成立，修复开 T227。** `not_exists_env_eG` 是真的否定定理（`E = 0`、`ω = 0` 处闭式无界、无抵消）；判为量词写错而非数学缺口的三条证据充分（内部只在 `TimeIcc` 上用、仓库已有窗口版 `int1_gauss`、零消费者）。`bounds_witness_zero` 是**退化见证**，T205 自己标明了——不作为可满足性证据。T227 用带撇版改量词（旧版加 `@[deprecated]`），补三类槽，然后写 (2.71) 的步进定理；验收要求**非退化**见证。
+
+## ⭐⭐⭐ T216：**`M_m ≺ 1` 不是输入——它与 (5.48) 远场半边互为等价**（`Hierarchy/Step2FarMart.lean`，940 行、37 条，2026-09-21）
+
+**第 0 步的结论推翻了工单的前提。** `farMart_far_equiv` 已编译：在 (2.69)+(5.35) 的其余三条之下，两个方向用**同一个**加性常数 `Ξ(M_i+M_f·len)+1`——
+* `‖lk_v a‖ ≤ J_f·T` ⟹ `‖farMart‖ ≤ (J_f+c)·T`（`norm_farMart_le_tT`）；
+* `‖farMart‖ ≤ M_m·T` ⟹ `‖lk_v a‖ ≤ (M_m+c)·T`（`far_bound_of_farMart_tT`）。
+
+**所以矩路线的二次变差项给不出它**：三角不等式只能把 (5.47) 的 `J* ≺ (η_s/η_v)²` 搬过来，得到 `M_m ≺ (η_s/η_v)²`，**在 Lemmas 2.18–2.20 的网格上不是 `≺ 1`**（`cFarStep'_apriori_not_detDom` 已编译）。
+
+**真正卡住的不是估计，是接口**（精确到因子）：矩路线替代 BDG 要对 `Φ_u = Ψ_u − Ψ_s − ∫_s^u(U∘F)` 用生成元恒等式——一阶项由 `Gauss.hasDerivAt_ukerObsT_drift`（T206）**恰好相消**，只剩 `E⊗E`，正是 (5.42)→(5.44) 那一项，**远场积分确实 `≺ 1`**。卡的是：① `Ψ_s` 是 `H_s`-可测的随机常数，要在对 `H_s` 取条件的法下读恒等式，而 **`RBM.Sample` 没有滤子、没有 Markov 性**，`MomentDuhamel.Hyp` 是对 `(u,H_u)` 的**确定性**试验函数的接口；② `Φ_u` 带可加泛函 `∫_s^u(U∘F)`，要把状态扩成 `(H_u, A_u)`、生成元加 `(U∘F)_u ∂_A`。**两条都是接口决策，不是引理。**
+
+**因此 T216 交的是绕开 `M_m` 的那条路**：`flowEq548_of_jSfar` 直接产出 `Step45.FlowEq548`，**假设表只有 `hnear` + `jSfar ≺ 1`，无 `M_m`、无鞅、无漂移包**。
+
+**本单另一条已编译的否定结论（新发现）**：把 `jSfar` 塞进 `MomentDuhamelCut.CutHyp` 自举**不可行**。`ℓ*_u` 随 `u` **单增**（`ellStar_mono_time`），远场族只会**变小**（`far_mono_time`），所以 `6ℓ*_u` 越过某个实现距离时 `jSfar` **向下跳整整一个 `‖lk‖/T`**（`lkFar_crossing`）——而 `CutHyp.modulus` 是**双侧**模、`stochDom_of_net` 要 `ContinuousOn`，两者都不成立。**所以 T216 没有定义 `FarHypCut` 这个结构**——写出来就是一个不可满足的包，正是本项目的头号缺陷。
+
+**可满足性**：`cFarStep'_detDom_far_critical`（正向，网格 `s_N = 1−1/(N+1)`、**`M_f = (N+1) = (1−s)^{−1}` 即 (5.35) 真给的大小，不是退化的 0**）与 `cFarStep'_apriori_not_detDom`（反向，同一组数据只换 `M_m` 槽），打包为 **`Mm_slot_decides`**。退化检查：`farMart_self`（`v = s` 时亏量 = 0，该条**空**而非假）；`one_le_jSfar`（`jSfar ≥ 1` 恒成立，`≺ 1` 是**临界**请求，不能由 `jSfar ≡ 0` 平凡满足）；`ω = 0` 无风险——全文件没有对全体 `ω` 的量化。
+
+## ⭐ 待 Jun 定夺 D15（T216 逼出来的；前两条碰 CLAUDE.md 规则 6 的边界）
+
+**`M_m ≺ 1`（(5.45) 的远场鞅界）三选一：**
+
+1. **给 `RBM.Sample` 加滤子 + 流的 Markov 性接口**（矩路线做 BDG 的前提 ①）。碰随机层边界，需要 Jun 拍板。
+2. **把 `MomentDuhamel.Hyp` 的生成元扩展成带可加泛函 `A_u`**（前提 ②）。接口变更，不是引理。
+3. **两条都不做时的替代路（T216 认为最具体可行、且不碰随机层）**：把 (5.48) 远场半边的阈值从 `6ℓ*_u` **放宽到 `12ℓ*_u`**，并把指示函数在 `[6ℓ*_u, 12ℓ*_u]` 上**光滑化**。这样远场泛函在 `u` 上**连续**（`ℓ*_u` 连续），`CutHyp` 自举重新可用，**`M_m` 整条线可以删掉**。代价是要改 `Step45.lean:339`（硬编码的 `6`）与 `Step2MomentStep.flowEq548_of_near_far`；下游 `decay_of_split` 用的是 Step 4 的一致界，**初看能吞下 `6 → 12`**。
+
+⚠ 注意：若选 3，则 T216 已交的 `flowEq548_of_jSfar` 就是现成的落点；若选 1 或 2，则要新开单做接口。
+
+## ⚠ 无主的活（T216 交出）
+
+1. **`FarInputs'` 的第四条建议删除**，下游改用 `Step2FarMart.flowEq548_of_jSfar`——`farMart_far_equiv` 证明它与结论等价，留着只是把 (5.48) 远场半边换了个名字。若保留，它现在**由定理供给**（`farInputs'_of_far_apriori`）。
+2. **`step_bound_far'` 拆成两半**：初值项+漂移积分那段 = `Step2FarMart.norm_init_add_drift_le`；拆完 `step_bound_far'` 与 `lkErr_far_le'` 都可改写成 `far_bound_of_farMart(_tT)` 的一行推论。
+3. **`farInputs_of_farInputs'` 的 `hmartAll`（对**所有** `a` 要鞅界）按 T208b 不可满足**——建议加 `@[deprecated]`。`FarInputs'` 自身只在远场要求，是对的。（`Step2FarInputs.lean` 当时在 T215 手里，故未加。）
+4. **`FarInputs'`/`HighProb` 的形状 vs `StochDom`**：`flowEq548_of_farInputs'_detDom` 要一条**确定性**的 `M_m ≺ 1` 加高概率事件，而矩路线的自然输出是 `StochDom`，两者之间要一次对角抽取（`τ_N → 0`）。**本单没做**，也是建议直接走 `flowEq548_of_jSfar` 的理由之一。

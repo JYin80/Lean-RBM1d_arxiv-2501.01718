@@ -137,6 +137,7 @@ import RBM1D.Flow.Initial
 import RBM1D.Flow.Iteration
 import RBM1D.Flow.Scales
 import RBM1D.Flow.Thm221Gain
+import RBM1D.Flow.EnergyUniform
 import RBM1D.Flow.Universality
 import RBM1D.Gauss.Stein
 import RBM1D.Gauss.SteinMatrix

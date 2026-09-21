@@ -1,6 +1,6 @@
 # 任务队列
 
-> ## ⭐⭐⭐ 当前优先级：T132a > T140 ‖ T141 > T132b > T132c > T137 > T136 > T135 > T138 > T139 > T58（2026-09-21 04:10，Cowork；T133/T134 已完成）
+> ## ⭐⭐⭐ 当前优先级：T132a > T140 ‖ T141 > T132b > T132c > T142 > T136 > T143 > T144 > T139 > T58（2026-09-21 04:40，Cowork；T135/T137/T138 已完成）
 >
 > **T132 是随机层真正剩下的那堵墙**（T74/T76 判定逐路径 `duhamel`/`bdg` 在 `√u·X` 下不可卸，之后没人接手）。规格见下文「T132 规格」。T133、T134 是它的两块前置零件，可并行。
 >
@@ -303,6 +303,9 @@
 | T139 | **维护：paper-deltas 编号去重**。`61`–`65` 各有两行（T81/T91–T95 一组、T94/T101/T108/T83/T111 一组）。把**后一组**改编 `91`–`95`，再 grep 全仓库（`docs/`、`RBM1D/**/*.lean` 的 docstring）里的 `#61`–`#65` 引用，**按上下文**改到正确的号。以后新增条目前先 `grep -o '^| [0-9]* |' | sort -n | tail -1` 取号 | `docs/paper-deltas.md` 等 | 待认领 | 未开工 |
 | T140 | **`LoopIto.second`（冻结形式）+ (5.19) 的 `primBilLen 2 = ThetaOp`**（T134 余项，T132b 的前置）：`½ Σ S_ij ∂_ij∂_ji L_{σ,a}` = (2.45) 的 cut-and-glue dt 部分，**只需冻结 `z`、用 `G` 而非 `G̃`**（T134 已证 `G̃` 的 `−m` 减项是动 `z` 白送的）。纯确定性代数，用 T133 的 Fréchet 二阶乘积法则 | `Gauss/LoopIto.lean`（续） | 待认领 | 未开工 |
 | T141 | **`hjoint`：loop 导数界对 `z` 在球上一致**（T134 余项，T132b 的前置）：把 T133 的 `bdd₁`/`bdd₂` 加强成对 `z ∈ B(z_u, r)` 一致的版本（`‖G(z)‖ ≤ (Im z)⁻¹`，球取在 `Im z ≥ η_u/2` 内） | `Gauss/LoopC2.lean`（续） | 待认领 | 未开工 |
+| T142 | **(4.12) 做到论文尺寸 `Ψ²`**（T137 余项，paper-deltas #85/#90）：`MinorGood`（`MinorDiffGain.lean:436`）带 (4.1)(4.3) 但**不带 (4.2)**，所以空字分支只能用确定性包络，威力停在 `Ψ·η⁻¹`。给 `MinorGood` **加** `‖G^{(S)}_{aa} − m‖ ≤ Ψ` 字段（新增结构或带撇版，**旧结构不动**），在空字分支使用；顺手把 T137 探针里那 8 行桥（`flucGainUpTo_of_minorDiff`）落进 `Gauss/FlucIterHigh.lean` | `Gauss/MinorDiffGain.lean` + `Gauss/FlucIterHigh.lean` | 待认领 | 未开工 |
+| T143 | **`LDEFlowDom`：(4.2) 的 LDE 对 u 一致**（T138 余项）。卡点：网引擎要控制的多项式下界，而 `ldeRowRHS` 可为零。**第 0 步：试用 T135 的吸收引理绕开**——对放宽的控制 `ζ + N^{−B}` 跑 T124/T130 的网（下界白送），再用 `StochDom.of_add_le` 把 `N^{−B}` 吸收回 `ζ`（若消费者只要 `≺ ζ + N^{−B}` 就更省事）；固定时刻生产者 `Gauss.stochDom_ldeRow`/`ldeCol` 已有 | `Gauss/LDEFlow.lean`（新建） | 待认领 | 未开工 |
+| T144 | **`eeDecayEvent` 与 `xiLowEvent` 的生产者**（T135 余项）：前者是粘合后 `(2m+2)`-loop 版的 `Decay.lemma59`（放 `LKDecayQuant.lean`，复用 T126/T138 的定量闭合）；后者是 `Ξ^{(L)}` 的高概率多项式下界，高斯侧由 `Im G_xx ≥ η/(‖H−E‖²+η²)` + T109 的 `‖X‖ ≺ 1` 给出（放 `Gauss/`，`Hierarchy` 不 import `Gauss`） | `Hierarchy/LKDecayQuant.lean` + `Gauss/XiLow.lean` | 待认领 | 未开工 |
 | T133 | **loop 观测量的 `C²` 界**（T76 `TestFun` 缺口）：`L_{σ,a}` 与 `(U∘(L−K))_a` 对 `H` 为 `C²`，一二阶导有确定性 `η` 幂界。T132 的前置 | `Gauss/LoopC2.lean`（新建） | Claude Code | **完成**（`BddC2` 对乘积封闭——缺的只有 Leibniz 一步；loop 与 `U∘(L−K)` 的 `TestFun` 均已拿到，探针验证端到端） |
 | T134 | **逐点漂移恒等式 + 动 `z_u`**（T76 `LoopIto` 与未做项）：`(∂_u + 𝓛)(L−K) = Θ∘(L−K) + F` 逐点成立；联合可微走 `ContDiff.comp`，绕开「偏导连续 ⟹ 可微」。T132 的前置 | `Gauss/LoopIto.lean`（新建） | Claude Code | **完成**（动 `z_u` 闭合、`ContDiff.comp` 够用；**(2.47) 的 `−m` 减项证明为动 `z` 的产物**，`LoopIto.second` 今后只需冻结形式；余 `hjoint`，见 STATUS） |
 | T135 | **`≺` 的可加余量吸收引理**（T127 余项）：界形如 `N^τ·Φ + m·W·L·N^{−D}` ⟹ `≺ Φ`，前提是控制 `Φ` 有**多项式下界** `N^{−B} ≤ Φ`。放 `Defs/StochDom.lean`（通用，**先 grep**：T123 `rpow_neg_le_aprioriRhs`、T125 同形引理可能已近似）。然后用它把 `EEBridge.norm_eeField_le` 升成 `Lemma510.EE_le` 的 `≺` 版，并给出该控制的多项式下界 | `Defs/StochDom.lean` + `Hierarchy/EEBridge.lean` | Claude Code | **完成**（吸收引理进 `Defs/StochDom.lean`（高概率型，下界本身是事件）；`EE_le` 已由裸 `:=` 闭合，余 `eeDecayEvent`/`xiLowEvent` 两个生产者，见 STATUS） |

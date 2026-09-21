@@ -4462,3 +4462,9 @@ T74 的 `Gauss.eeEdge_eq_sum_SB` 经 T127 的 `EEBridge.eeEdge_eq_sum_gloop` 就
 **`Green/` 不能 import `Hierarchy/`**。所以在新文件里重证了 T160 六条中的六条（加新的 `LDEQuadFloor`）。
 命名空间 `RBM` 与 `RBM.LKDecayQuant` 的副本全名不同、不冲突。
 **`LKDecayQuant` 里的重复副本应删除并改指到这里，由该文件的所有者做。**
+
+## Jun 裁定：论文 (5.36) 第二项补因子 `(ℓ_u/ℓ_s)^{3/2}`（2026-09-21 11:05）
+
+T156 发现、Cowork 对照原文核实：(5.67) 之后那行（「Next, applying (2.73) on L term in (5.66), together with (5.67) we obtain that」）与 (5.71) 都带 `(ℓ_u/ℓ_s)^{3/2}`，乘 (5.22) 的 `W∑_b` 后情形 (1a) 贡献 `η_u^{−1}(ℓ_u/ℓ_s)^{3/2}(Wη_uℓ_u)^{−1/2}(J*)²`，而 (5.36) 第二项 `η_t^{−1}(Wη_uℓ_u)^{−1/2}(J*)³` 在 `u` 近 `t` 时盖不住它。
+Jun：「你理解的正确，这个地方补上这个 factor（可能当时忙乱了）」。**论文改动**：(5.36) 第二项乘 `(ℓ_u/ℓ_s)^{3/2}`（paper-deltas #113 ③、论文改动预算第 13 条）。**Lean 不改**（`ee_le_paper` 已带该因子）；T174 按补正后的 (5.36) 算指数表。
+另：页码约定写入 `CLAUDE.md`——以编号为准，仓库页码 ≠ Jun 手上版本的页码。

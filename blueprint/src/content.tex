@@ -2257,6 +2257,19 @@
   deterministic envelope that grows as $t_N\to1$.
 \end{proof}
 
+\begin{lemma}[The LDE bounds uniformly in time: a net engine with no lower bound on the control]\label{lem:ldeflow}
+  \lean{RBM.Gauss.stochDom_timeIcc_of_unifDom_relative, RBM.Gauss.close_of_holder_of_low, RBM.Gauss.unifDomIcc_rowSum_general, RBM.Gauss.unifDomIcc_sq_of_rowSum, RBM.Gauss.unifDomIcc_ldeRow, RBM.Gauss.unifDomIcc_ldeCol, RBM.Gauss.LDENetClose, RBM.Gauss.stochDom_ldeRow_flow, RBM.Gauss.stochDom_ldeCol_flow, RBM.Gauss.ldeFlowDom_of_close}
+  \leanok\uses{lem:eq45inputs, lem:goodsetflow, thm:lkdecayquant}
+  The lower bound $N^{-B}\le\zeta$ that the earlier net engine assumed exists only to absorb the net
+  error; replacing it and the modulus by the \emph{relative} comparison the absorption actually uses
+  removes it entirely, and the old engine is a special case. The fixed-time inputs are then
+  unconditional theorems, the vanishing fibres being handled per point.
+\end{lemma}
+\begin{proof}\leanok
+  At \texttt{UnifDomIcc} level no union over the index set is taken, so the Gaussian row-sum moment
+  bound feeds Markov with no cardinality hypothesis and no good event.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

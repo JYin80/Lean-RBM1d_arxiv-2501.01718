@@ -2841,3 +2841,16 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 ### 5. 依赖标注
 `momentDuhamel(Q)` 的**陈述**与 `term1M'`/`termQ'` 的推出**不依赖 T133/T134**，现在就能落地；**高斯卸载**依赖两者，且需 T134 额外补 `(z,M)` 联合 `C²`；`∂_u Uker` 不依赖任何人、已证。
 **若只做一半**：结构 + 两条带撇消费者 + `∂_u Uker` 可先行落地并编译通过，高斯卸载留作 T132b。
+
+### `RBM1D/Gauss/LoopC2.lean` — T133：T76 的 `TestFun` 缺口已补（Claude Code 并行 agent，2026-09-21）
+
+**缺的确实只有 Leibniz 那一步。** 新的二阶乘积法则 `fderiv2_clm_apply_apply` 是**真正 Fréchet 的**（用 `hasDerivAt_dir2'` + `HasDerivAt.clm_apply` 的线导数装置证出，不是逐线版），
+由它得 `bddC2C_clm_apply` ⟹ **`BddC2` 对乘积封闭**（常数 `C₀ = a₀b₀`、`C₁ = a₀b₁+a₁b₀`、`C₂ = a₀b₂+2a₁b₁+a₂b₀`），矩阵乘法是其实例；另对 CLM 复合、常数、求和封闭。
+载体是新的定量类 `BddC2C F C₀ C₁ C₂`（把 T72 `BddC2` 的三个存在量词具名化，且取值于任意实赋范空间，以覆盖矩阵值的部分积），两个方向的转换都有，故 T72 的 `TestFun.of_bddC2` 原样可用。
+**预解式的 Fréchet `C²` 其实早就在了**（T72 的 `contDiff_resH` 等本来就是 Fréchet 的、在全空间上、经 `hermCLM`），`bddC2C_resH` 只是打包：`‖G‖ ≤ η⁻¹`、`‖DG‖ ≤ η⁻²`、`‖D²G‖ ≤ 2η⁻³`。
+
+**loop 的导数界**：`n` 个因子的 `foldr` 积满足 `(Bⁿ, nBⁿ, n²Bⁿ)`——**归纳精确、无松弛、对因子个数无任何限制**（常数只是按 `n²Bⁿ` 增长）。
+`bddC2_loopObs` 取 `B = 2(1+η⁻¹)³` 落成 `η⁻¹` 的显式幂。**`TestFun` 已由探针验证**：`testFun_loopObs_of_im_le` 填上 T76 那个 hook 的三个空字段；
+端到端的 `hasDerivAt_momentIntegral … (testFun_momentFun_loopObs …)` 也编译通过——即 `d/du E|L_{σ,a}(H_u)|^{2p} = E[𝓛(|L|^{2p})]` **除 `MatrixStein`（T70）外假设全部卸掉**。
+`(U∘(L−K))_a` 同样拿到（`ukerObs`/`bddC2_ukerObs`/`testFun_ukerObs`）——因为 (5.17) 的系数**不依赖 `H`**，它就是 loop 的有限 ℂ-线性组合加常数。
+**一处继承来的多余假设**：`testFun_loopObs_of_im_le` 带 `1 ≤ I.a.length`，**不是本单的界需要的**，而是仓库里 `testFun_loopObs` 的 `bdd₀` 字段（即 (5.2)）自带的；`bddC2_loopObs` 与整条 Uker 链**没有**长度假设。paper-deltas #88。

@@ -1,6 +1,7 @@
 import RBM1D.Basic
 import RBM1D.Analysis.Bootstrap
 import RBM1D.Analysis.StretchedExp
+import RBM1D.Analysis.MomentClosing
 import RBM1D.Defs.Block
 import RBM1D.Delocalization
 import RBM1D.Green.EntryBound
@@ -17,6 +18,7 @@ import RBM1D.Gauss.GoodSetFlow
 import RBM1D.Gauss.CondExpMod
 import RBM1D.Gauss.LoopC2
 import RBM1D.Gauss.LoopIto
+import RBM1D.Gauss.MomentDuhamel
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.CondRow
 import RBM1D.Gauss.MinorReplace

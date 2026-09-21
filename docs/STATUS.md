@@ -2922,3 +2922,21 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 **无 fiat 风险**：不造 `Hierarchy`、不定义 `F`/`EE`/`mart`，`Lemma510`/`LKDecay` 逐字节未动；且 `hxi` 是**假设**，弱的 `C` 不会削弱结论（结论是固定的 `EE_le`）。
 **未做**：`H.EE := eeField` 的安装（T58）；`EE_decay`（另一字段）；`eeDecayEvent` 与 `xiLowEvent` 的生产者（前者是粘合 `(2m+2)`-loop 版的 `Decay.lemma59`，该放 `LKDecayQuant.lean`）。
 `StochDom.of_add_le` 已证但暂无消费者，是为确定性那条路留的。paper-deltas #92。
+
+### T132a：矩 Duhamel 的结构与收口（Claude Code 并行 agent，2026-09-21）
+
+**⚠ 先记一次我（协调者）的转述错误，供以后参考。** 我给 agent 的指令里写「收口用 `momentIntegral_le_exp` 的 `e^{p(2p−1)(v−s)}` 形状，per your recommendation #3」——
+**这是错的**：Cowork 在 `docs/TASKS.md:2530` 的审查里**明确退回了修改 3**，理由是它会**丢一个 `η` 的幂**（Young + 常系数 Grönwall 给出的非齐次项是 `∫‖U∘F‖_{2p}^{2p}`，而论文要 `(∫‖U∘F‖_{2p})^{2p}`；在 `‖U∘F‖ ≍ Φ/η_u` 时开 `2p` 次方后差 `η_t^{−1}`），并给了「积分 + 取上确界」的四步配方。
+**agent 按工单执行、没按我的转述执行，并复核确认 Cowork 是对的。这是正确的处置。** 我转述前没有重读工单的审查段。
+
+**交付**：`Analysis/MomentClosing.lean`（纯实分析，Cowork 四步配方拆成四条可复用引理，**不用任何 ODE 比较定理**；`le_two_mul_add_sqrt_of_sq_le` 证完发现 `0 ≤ A` 可以去掉；
+`integral_sqrt_mul_le` 是**唯一**让上确界进入积分、从而使右端与 `u` 无关的地方；**不假设 `ψ` 可微**，假设取积分形，好让 T132b 用 FTC 接上）；
+`Gauss/MomentDuhamel.lean`（`∂_u U` 已落地、零假设、不依赖传播子 ODE；确定性层 `lkFun`（无 ω）与 `genLK`（只用方差剖面，故在一般 `Band` 上有定义）；带撇结构 `Hyp`）。
+**修改 1 已兑现且可验证**：**`Hyp.F_unique` 已证**——`F` 在定义层被钉死。`Lemma510` 逐字复用（探针 `rw [← hFeq]; exact h510.F_le`，无 `convert`）。
+
+**⚠ agent 自己纠正的一处第 0 步误判**：它原打算让带撇消费者直接给出**对 `u` 一致**的 `≺`，写到一半被类型系统拦下——`stochDom_of_momentDom` 要求 `[∀ N, Fintype (U N)]`，而 `TimeIcc` 是 `ℝ` 的子类型。
+故 `stochDom_of_momentDuhamel` **只能在固定时刻给出 `≺`**，时间一致性必须走 T124 的网引擎。**这不是矩路线的缺陷**——`Hierarchy.bdg` 的时间一致性也是**靠假设**拿到的。已写进 docstring。
+
+**未做（工单第 4 项）**：`Step3.Lemma514` 的带撇再生产。`stochDom_of_momentDuhamel` 把它归约成具名假设 `hrhs`（`U` 核估计 + `Lemma510` ⟹ 右端三项的 `‖·‖_{2p}` 界）；
+填它要把 `SumZeroDyn` 的 `term1F`/`termI1`/`QV1_stochDom` 那套 `stochDom_of_logBound` 机器做出矩版本，体量与 `lemma514_flow` 相当，agent 本轮预算内做不完，**没有硬凑**。
+另两项有意留给 T132b：收口引理与 `Hyp` 的内部接线（需 Hölder 步，而那要生成元恒等式）、`momentDuhamelQ` 的消费者。paper-deltas #93。

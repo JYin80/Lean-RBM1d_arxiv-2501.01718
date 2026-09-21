@@ -2726,3 +2726,9 @@ agent 没有复制粘贴，而是**从现有 `C₀ = 2` 的机器重标度推出
 
 **一处可回收的重复（留给将来允许改那两个文件的工单）**：`eq58_seq_thr` 与 `Step1.eq58_seq` 重复约 50 行，`lemma_5_1_thr` 与 `lemma_5_1` 重复约 130 行；
 若允许改 `Hierarchy/Step1.lean` 与 `Loop/ContinuityAssembly.lean`，应把旧的定义成新的在 `C₀ = 2`/`C = 2` 处的特例并删掉重复。paper-deltas #74 已改写为已解决，另加 #81、#82。
+
+### T131：T123 的可积性尾巴已收（Claude Code 并行 agent，2026-09-21）
+
+`integrable_sample_lkErr_mul_real`（ℝ 值版，由 ℂ 值的 `integrable_sample_lkErr_mul` 经 `Integrable.norm` + `norm_mul` 一行得出——`Sample.lkErr` 按定义就展开成 `‖Lval − Kval‖`，陈述不用改写），
+据此给出 **`quad11_unifDetDom_gauss`/`quad13_unifDetDom_gauss`**：与一般版签名相同但**去掉了 `hint`**。一般 `Sample B` 版逐字未动，仍带 `hint`（T123 有意保留的普适性）。
+一个放置上的判断：`FirstMoment` 节绑了 section variable `Ω`，会遮蔽高斯的 `RBM.Gauss.Ω d`，故两条特化另起一节。paper-deltas 无新增。

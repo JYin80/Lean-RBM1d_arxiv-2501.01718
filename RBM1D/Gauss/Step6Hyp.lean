@@ -48,6 +48,13 @@ the ones that are reachable for the moment-route Gaussian model `RBM.Gauss.sampl
   `hη` of every statement in the section: it is not free, it is the form in which
   `W ℓ_u η_u ≥ 1` — a consequence of (2.72) — enters the envelope.
 
+  The bridge's integrability hypothesis `hint` is the `ℝ`-valued product `|L-K|_m · |L-K|_n`;
+  it is **discharged for the Gaussian sample** (T131) by
+  `RBM.Gauss.integrable_sample_lkErr_mul_real`, giving the hypothesis-free
+  `RBM.Gauss.quad11_unifDetDom_gauss` and `RBM.Gauss.quad13_unifDetDom_gauss`.  The
+  general-`RBM.Sample` statements keep `hint`: nothing outside the Gaussian model can supply it,
+  since it rests on (5.2) along the flow together with continuity of the loop in `ω`.
+
 `hint1` is `RBM.Gauss.integrable_sample_Lval` (T76) and `h5132` is literally
 `(hb : RBM.Bounds _ E s).expect`; both were already available and are not restated here.
 
@@ -72,7 +79,8 @@ everything this file provides; only those four goals remain.)
 
 ## Main results
 
-* `RBM.Gauss.integrable_sample_lkErr_mul`, `RBM.Gauss.int2_gauss` — `hint2`.
+* `RBM.Gauss.integrable_sample_lkErr_mul`, `RBM.Gauss.int2_gauss` — `hint2`;
+  `RBM.Gauss.integrable_sample_lkErr_mul_real` — its `ℝ`-valued form, the `hint` of the bridge.
 * `RBM.Gauss.trace_mul_Eblk_eq_sum`, `RBM.Gauss.gloop_oneLoop_eq_trace`,
   `RBM.Gauss.gloop_oneLoop_eq_sum` — the `1`-loop as a block average.
 * `RBM.Gauss.sum_Sblk_eq_sum_SB_blkCoef`, `RBM.Gauss.blkCoef_mul_SB`,
@@ -86,7 +94,10 @@ everything this file provides; only those four goals remain.)
   `RBM.Gauss.lkErr_loopData_le_rpow`, `RBM.Gauss.stochDom_lkErr_mul`,
   `RBM.Gauss.unifDetDom_integral_lkErr_mul` — the inputs of the first-moment reverse bridge for
   a product `|L-K|_m · |L-K|_n`, for an arbitrary `RBM.Sample`.
-* `RBM.Gauss.quad11_unifDetDom`, `RBM.Gauss.quad13_unifDetDom` — **`hq11` and `hq13`**.
+* `RBM.Gauss.quad11_unifDetDom`, `RBM.Gauss.quad13_unifDetDom` — **`hq11` and `hq13`**, for an
+  arbitrary `RBM.Sample`, carrying the integrability hypothesis `hint`.
+* `RBM.Gauss.quad11_unifDetDom_gauss`, `RBM.Gauss.quad13_unifDetDom_gauss` — the same two for
+  `RBM.Gauss.sample`, with `hint` discharged.
 
 ## Deviations from the paper
 
@@ -135,6 +146,19 @@ theorem integrable_sample_lkErr_mul (d : Dims) (N : ℕ) {E u : ℝ} (hE : |E| <
   · refine (norm_sub_le _ _).trans ?_
     gcongr
     exact norm_sample_Lval_le hη hz ω J hJ hJn
+
+/-- **The `ℝ`-valued form of `RBM.Gauss.integrable_sample_lkErr_mul`**: the product of the two
+*moduli* `|L-K|_I · |L-K|_J` is integrable.  This is the shape the first-moment reverse bridge
+of `RBM.Gauss.unifDetDom_integral_lkErr_mul` consumes (its `hint`), whereas the `ℂ`-valued
+statement above is the shape `hint2` of `RBM.Step6.sharpExpect_step6` consumes; the two differ
+by `norm_mul`, so one follows from the other by `MeasureTheory.Integrable.norm`. -/
+theorem integrable_sample_lkErr_mul_real (d : Dims) (N : ℕ) {E u : ℝ} (hE : |E| < 2) (hu : u < 1)
+    (I J : LoopIdx (ZMod (d.L N))) (hI : I.WF) (hIn : 1 ≤ I.a.length)
+    (hJ : J.WF) (hJn : 1 ≤ J.a.length) :
+    Integrable (fun ω : Ω d =>
+      (sample d).lkErr E N u ω I * (sample d).lkErr E N u ω J) (band d).P :=
+  ((integrable_sample_lkErr_mul d N hE hu I J hI hIn hJ hJn).norm).congr
+    (Filter.Eventually.of_forall fun _ω => norm_mul _ _)
 
 /-- **`hint2` of `RBM.Step6.sharpExpect_step6` for the Gaussian model**: the products of (5.134)
 are integrable. -/
@@ -864,5 +888,51 @@ theorem quad13_unifDetDom (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ
   simpa using norm_quad13_le_integral X E N p.1 p.2.1 p.2.2
 
 end FirstMoment
+
+/-! ### `hq11`, `hq13` for the Gaussian model: `hint` discharged -/
+
+section FirstMomentGauss
+
+/-- **`hq11` for the Gaussian model, with no integrability hypothesis.**  Identical to
+`RBM.Gauss.quad11_unifDetDom` at `X = RBM.Gauss.sample d`, except that its `hint` is supplied by
+`RBM.Gauss.integrable_sample_lkErr_mul_real`: both loops are `1`-loops, hence well-formed and of
+length `≥ 1`, and `u < 1` comes from `t_N < 1`.
+
+The general-`RBM.Sample` statement is kept: nothing outside the Gaussian model can prove `hint`,
+since it rests on the deterministic envelope (5.2) along the flow together with continuity of the
+loop in `ω`. -/
+theorem quad11_unifDetDom_gauss (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hsteps : Steps (sample d) E s t) :
+    UnifDetDom
+      (fun N (p : TimeIcc s t N × (ZMod ((band d).L N) × ZMod ((band d).L N))) =>
+        ‖Step6.quad11 (sample d) E N p.1 p.2.1 p.2.2‖)
+      (fun N p => ((band d).scale E N p.1)⁻¹ ^ 2) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  refine quad11_unifDetDom (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη ?_ hsteps
+  intro N p
+  exact integrable_sample_lkErr_mul_real d N hE (p.1.2.2.trans_lt (ht1 N)) _ _
+    p.2.1.idx_wf (by simp [LoopData.idx]) p.2.2.idx_wf (by simp [LoopData.idx])
+
+/-- **`hq13` for the Gaussian model, with no integrability hypothesis.**  Same as
+`RBM.Gauss.quad11_unifDetDom_gauss`, with the second loop of length `3`. -/
+theorem quad13_unifDetDom_gauss (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in Filter.atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hsteps : Steps (sample d) E s t) :
+    UnifDetDom
+      (fun N (p : TimeIcc s t N × (ZMod ((band d).L N) × LoopData ((band d).L N) 3)) =>
+        ‖Step6.quad13 (sample d) E N p.1 p.2.1 p.2.2‖)
+      (fun N p => ((band d).scale E N p.1)⁻¹ ^ 4) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  refine quad13_unifDetDom (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη ?_ hsteps
+  intro N p
+  exact integrable_sample_lkErr_mul_real d N hE (p.1.2.2.trans_lt (ht1 N)) _ _
+    p.2.1.idx_wf (by simp [LoopData.idx]) p.2.2.idx_wf (by simp [LoopData.idx])
+
+end FirstMomentGauss
 
 end RBM.Gauss

@@ -6344,3 +6344,28 @@ T201 没有权限做这个决定。
 * **T210 的结构性障碍 → T222**：钝版（第一遍）改成**沿网格逐步**自举，第 `k` 步的前缀由归纳假设供给；`hcond` 与前缀可测性、三条无消费者的记账层一并归 T222。T210 自己记的「这是化归不是否定定理」照录。
 * **T214 → T225（`Q` 版生成元恒等式，泛化一次两路共用）、T226（`Q` 版两条孪生缺口）**；T213 的 `hsplit`/`hdiff` → **T224**；去重两条并入 **T221**。
 * **T214 请 Cowork 用论文 PDF 逐字核 (5.88)/(5.91)/(5.99)/(5.100)/(5.103)**：Cowork 本次心跳做，结果另记于下。
+
+## ⭐⭐⭐ T205：**空真第九例**——Step 6 的包络假设按字面不可满足，而且是量词写错（`Gauss/Step6Sample.lean`，465 行、23 条，2026-09-21）
+
+**主结论：Step 6 的样本侧现在做不了，不是因为数学缺口，是因为 `sharpExpect_step6_driftEG` 的 `henvQ`/`henvG`/`henvLK`、`hmeasQ/G/LK`、`hintL1` 把时间 `v` 量化在整个 `ℝ` 上，而不是窗口 `[s_N, t_N]`。**
+
+**`Gauss.not_exists_env_eG`（已编译，公理干净）**：在 `E = 0`、样本点 `ω = 0`（此处 `H_v = √v·X(0) = 0`，对**每个** `v`）、`v = 1 − w` 处，(5.131) 的被积量有**闭式**
+`E^{(G)}(L−K, L)_{v,(+,+),(a₀,a₀)} = 2(w⁻¹ − 1)·w⁻³ / W`（`Gauss.eG_value`），`w ↓ 0` 时无界。**没有抵消**：`a,b` 双和经 `sum_SB_col`（列和 = 1）整体坍缩，`k = 1,2` 两项相等。于是**不存在任何 `Env : ℕ → ℝ`**（不论是否多项式）满足 `henvG`。因为 Theorems 2.4/2.5 量化在所有 `|E| ≤ 2 − κ` 上，**在 `E = 0` 处不可满足即整条 (2.71) 归纳被封死**。
+
+**这是量词写错，不是数学缺口，三条证据**：
+1. 两个文件内部**只在窗口时刻**用它——`unifDetDom_driftELK` 先 `rintro ⟨v, q⟩`（`v : TimeIcc s t N`）才用 `henv`；`fastDecayHyp_driftSplit` 在 `vv : TimeIcc s t N` 下用；
+2. T150 早就把同一件事写成了窗口版：`Gauss.int1_gauss : ∀ N (v : TimeIcc s t N), Integrable …`，与 `hintL1 : ∀ N (v : ℝ), …` **形状对不上**；
+3. `sharpExpect_step6_driftEG` / `_driftSplit` 全仓**零消费者**，所以没人撞上过。
+
+**T205 没有把 (2.71) 的步进定理写出来**——唯一的 (2.80) 生产者带不可满足假设，写出来就是空真（这正是工单禁止的）。交的是总装桥 `bounds_of_boundsCore_of_sharpExpect`（配 `rfl` 对照 `Bounds_of_Steps`，证明没改形状）与两个能交的槽 `hEL_gauss`（**零新假设**）、`hintL2_gauss`。见证 `bounds_witness_zero` 是**退化见证**（`s = t = 0`），文件里明写了退化——**非退化见证正是被上面那条封死的**。
+
+**第 0 步的字段清单（已核，非旧记载）**：有生产者的只有 `h5132`（= 归纳假设本身）、`h527`、`hq11`、`hEL`、`hintL2`；`hcont`/`hintQ`/`hintG`/`hintU1`/`hintU2` 量词正确但未做（纯分析）；`hlk` 要 Lemma 5.9 的**期望**版（依赖 `Env`）；`hKd` 只有半个（`exists_loopDecay_Kval` 给「存在某个 δ」，量化形 `(ℓ_v N^τ, N^{−D})` 没有）；**四个好集 `FDInputs`/`QuadInputs`/`EGInputs`/`DriftInputs` 全仓零生产者**，但 `mem_egInputs_of` 已把 `EGInputs` 逐点归约为 `FDInputs` + `hKd` + `xiLK ≤ Ψ`。好集的分解是明确的：`xiLK ≤ Ψ` 那几项由 Step 3/4 的 `StochDom` 经机械的 `StochDom → HighProb` 即得，**真正缺的是 `LoopDecay` 那几项**（Lemma 5.9 逐点版 + Lemma 4.1 事件的高概率）。
+
+**T202 的第 4 条仍未闭合**：`Bounds` 在 `s > 0` 处无居民。T205 **没有**把 (2.8)(2.9) 挂到空假设上，`Flow/Consequences.lean` 的 `expect_*` 一条未动。
+
+## ⚠⚠ 无主的活（T205 交出，第 1 条是零数学的一行修复）
+
+1. **⭐ 包络量词修复（零数学）**：`Gauss/Step6DriftSplit.lean` 与 `Gauss/Step6DriftEG.lean` 里把 `henvQ`/`henvG`/`henvLK`/`hmeasQ`/`hmeasG`/`hmeasLK`/`hintL1` 的 `∀ (v : ℝ)` 改成 `∀ (v : RBM.TimeIcc s t N)`，调用处 `N v σ a` 改成 `N ⟨v, _⟩ σ a`。修完后 **`hintL1` 立刻由 `int1_gauss` 补上**，`hmeas*` 由 `continuous_gloop_Hflow` 补上，`henv*` 由 `norm_gloop_le_rpow` + `norm_Kval_le` + `hη : N^{−c} ≤ η_v`（与 `quad11_unifDetDom_gauss` 同款侧条件）补上。**没有单负责。**
+2. **四个好集的 `HighProb` 生产者**（`FDInputs`/`QuadInputs`/`EGInputs`/`DriftInputs`）：数学缺口在 `LoopDecay` 那几项；`xiLK ≤ Ψ` 那几项机械。**可拆两张单。**
+3. **`hKd` 的量化形**：把 `Decay.cKdecay 3 (1−v)·exp(−cor35Rate(1−v)·ℓ)` 压到 `N^{−D}`，即「`ℓ̂_v` 确实是衰减长度」那步算术。
+4. **`hcont`/`hintQ`/`hintG`/`hintU1`/`hintU2`**（量词正确，纯分析）与 **`hlk`**（Lemma 5.9 的期望版，依赖第 1 条）。

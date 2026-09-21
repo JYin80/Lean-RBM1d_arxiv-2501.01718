@@ -5036,3 +5036,67 @@ T171/T172/T177 都没写出这一步。它只影响「旧接口不可满足」�
 它只影响「旧接口不可满足」这一结论的完整性，**不在活路径上**。
 ⚠ **蓝图缺节点**：T171/T177/T188 这一簇在 `content.tex` 里**没有对应节点**，新声明无处挂 `\lean{}`；
 补节点要给它一个与论文编号对应的名字，属范围决定，留给 Cowork。
+
+## ⭐ T187：`TestFun'`/`TestFunT'`（只对 Hermitian 量化）落地 —— D9 的 (i) 已实现；两条 `Hyp` 字段**没有**闭合（`Gauss/TestFunHerm.lean`，756 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9561** 条。新增文件 `RBM1D/Gauss/TestFunHerm.lean`（50 条声明），
+`Gauss/MomentDuhamelHyp.lean` 只改 import + 文件头（把 D9 的「两条路」段落换成结论与余项清单）。
+**`TestFun`/`TestFunT` 一字未改**，`Generator.lean`、`MomentDuhamelGauss.lean` 一字未动。
+
+### 产出
+* `TestFun'`/`TestFunT'`：`∀ M` → `∀ M, M.IsHermitian →`，`ContDiff` → 该点 `ContDiffAt`；
+  `TestFun.toTestFun'`/`TestFunT.toTestFunT'` 把旧类装进新类（**已有供给全部继续可用**）。
+* **桥**：`TestFun'.herm`/`TestFunT'.herm` —— 带撇类的 `hermFun`（`Φ ∘ hermCLM`）正则化是**货真价实的旧类**，常数相同。
+  于是四条生成元恒等式（`hasDerivAt_integral_Phi′/_pairs′`、`…_Psi′/_pairs′`）是旧恒等式的**推论**，
+  **控制收敛一个字都没有重证**（工单预期的「大头」不存在）。结论逐字不变，讲的是 `Φ`/`Ψ` 本身。
+* 支撑件：`fderiv_comp_clm_apply`/`fderiv2_comp_clm_apply`（任意 CLM 复合的一、二阶导）+ 算子范数版
+  `norm_fderiv{,2}_comp_clm_le`；`coordD1/coordD2/wirtSecond/genD/quadVar/genMomentPt` 在 Hermitian 点
+  对 `hermFun` 不变。**这正是 `Generator.lean` 里「The Hermitian projection」那段只写了散文、没有证的断言。**
+* **T180 记的第二条接缝已闭合**：`genMomentPt_le'`（T72 的逐点界，假设降成「每个 Hermitian 点 `ContDiffAt`」，
+  结论在 Hermitian 点）。第一条（`hasDerivAt_integral_Psi` 带 `0 < u`）照旧。
+
+### ⚠ 比 D9 想的更细的一条（本单最重要的发现）
+**带撇类对"原始"（未正则化）的 `Ψ` 仍然给不出来。** `TestFun'.bdd₁/₂` 要的是**全方向**算子范数
+`‖fderiv Φ M‖`（M Hermitian，方向任意），而正则化只给 `‖fderiv (Φ∘hermCLM) M‖ = ‖fderiv Φ M ∘ P‖`，
+**反方向不成立**（反 Hermitian 方向被投影杀掉）。原始 `Ψ` 的这些界**数学上是真的**（都是 `‖G‖ ≤ |Im z|⁻¹` 的幂），
+但库里没有：`LoopC2.lean` 的 `BddC2C` 链整条是**全局有界**版，要逐点版得重做一遍（且该文件不在本单可写清单里）。
+
+**所以真正能用的形状是 `_of_herm` 版**（同样已编译，且严格弱于带撇类）：
+`hasDerivAt_integral_{Phi,Psi}_pairs_of_herm`，只收两条——
+(a) `Ψ u` 在每个 Hermitian 点 `ContDiffAt ℝ 2`；(b) **正则化**满足旧的 `TestFunT`。
+**这两条对原始对象都是现成的**：(a) = `EGDef.contDiffAt_gloop_matrix`（T58），(b) = `testFun_momentFun_ukerObs`（T133），
+因为 `hermFun (原始) = ukerObs` **按定义相等**（`loopObs` 本来就是 `gloop ∘ hermCLM`）。
+
+### 可满足性检查（都编译过）
+1. **正向、原始对象**：`hasDerivAt_integral_momentFun_ukerRaw` —— 对 `Ψ(M) = |(U∘(L−K))_a|^{2p}`（用**原始 `gloop`**，
+   即 `MomentDuhamel.lkFun` 的传播子共轭）在任意 `Im z ≠ 0` 处成立的生成元恒等式（`∑_{ij} S_ij ∂_ij∂_ji` 形）。
+   配套：`ukerRaw`、`hermFun_ukerRaw`/`hermFun_momentFun_ukerRaw`（`funext + simp only`，**不能写 `rfl`**：
+   defeq 检查在 `LoopArg` 上 whnf 超时，踩过）、`contDiffAt_{,momentFun_}ukerRaw`。
+2. `testFun'_momentFun_ukerObs`：带撇类非空。**今天仓库里每一个 `TestFun'` 供给都经由旧类**，见上一节。
+3. **负向**（未入库、但已在上面说清）：`TestFun'.of_herm` 写出来是**假的**，第一次编译就被 Lean 拦下——
+   正则化的一阶/二阶界推不回原始的。这一条是本单唯一被证伪的猜测。
+
+### 两条 `Hyp` 字段**没有**闭合，还差什么（如实，别当成做完了）
+`momentIneq_of_diffIneq`（T180）把 `MomentIneq`/`MomentIneqQ` 归约成逐点 `hdu`，`cMD p = 2p−1` 已定死。
+本单给了 `hdu` 所需的**生成元恒等式**，但 `hdu` 还差两大块：
+1. **含时可容许性**：`TestFunT d N T (hermFunT Ψ)`，即 (a) `(u,M)` **联合** `C²`——圈沿 `u ↦ z_u`
+   （`contDiffAt_resH_zt` 只做了单个预解式；圈要把 `EGDef.contDiffAt_gloopProd_matrix` 的归纳改成 pair 版），
+   **外加** `edgeKer` 与 `Kval` 对 `u` 的 `C²`（只知道一阶，见 `hasDerivAt_edgeKer`/T58）；
+   (b) 字段 `bddT`：`∂_u Ψ` 在窗口上一致有界，需要圈对 **`z`** 的导数界——
+   T141 的球版给的是「`M`-导数界对 `z` 一致」，**不是 `z`-导数界**。这是真缺口。
+2. **drift + Hölder 链**：`∂_1 Ψ` 用 `Hyp.drift` + `hasDerivAt_Uker_path` 换掉、二阶项用 `genMomentPt_le'`、
+   其二次变差认成 `(U⊗U)∘(E⊗E)`（`quadVarPairs_Uker` + T127）、Hölder、再除以 `p ψ^{p−1}` 把
+   `∂_u E|Y|^{2p}` 变成 `ψ′`（`ψ = 0` 处要小心，这正是 T132a 取积分形式的原因）。
+
+### 重复劳动（按 CLAUDE.md「造轮子之前先查」记一条）
+`Hierarchy/EGDef.lean` 早有 `fderiv2_comp_clm`（`T M = M` 的对角特例）与
+`coordD2_gloop_eq`/`wirtSecond_gloop_eq`（圈的特例）。本单的是一般版（`P M` 任意、两个方向、带算子范数界——
+类的转移必须要算子范数，对角特例给不了），文件头已互相指认；`Hierarchy/` 一个字没动。
+**教训**：按名字 grep（`coordD2_herm`、`hermFun`）查不到，按**概念**（`hermCLM` + `coordD2`）才查得到。
+
+### 蓝图待挂（本单不可写 `content.tex`，节点已找好，整合时一次贴上）
+* `content.tex:1447`（T71 生成元恒等式节点）：`RBM.Gauss.TestFun'`、`hermFun`、`TestFun'.herm`、
+  `hasDerivAt_integral_Phi'`、`hasDerivAt_integral_Phi_pairs'`、`hasDerivAt_integral_Phi_pairs_of_herm`
+* `content.tex:1488`（T72 节点）：`RBM.Gauss.genMomentPt_le'`
+* `content.tex:2263`（T132b 含时恒等式节点）：`RBM.Gauss.TestFunT'`、`TestFunT'.herm`、
+  `hasDerivAt_integral_Psi'`、`hasDerivAt_integral_Psi_pairs'`、`hasDerivAt_integral_Psi_pairs_of_herm`

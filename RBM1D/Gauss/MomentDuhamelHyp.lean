@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.DriftDef
 import RBM1D.Gauss.MomentDuhamelGauss
+import RBM1D.Gauss.TestFunHerm
 
 /-!
 # A producer for `RBM.MomentDuhamel.Hyp` (T180)
@@ -66,21 +67,51 @@ the *closing* half of T132b's chain and stops at the *generator* half:
 
   On the Hermitian set both would hold, with the same constants that give `integrable`
   (`‖G_u‖ ≤ |Im z_u|⁻¹`), and the whole argument stays there — the flow is Hermitian and so is
-  every segment between flow values.  So there are two ways forward, and choosing between them
-  is a design decision, not something to work around here:
-  **(i)** relax `TestFun` / `TestFunT` from `∀ M` to `∀ M, M.IsHermitian →` — the same repair
-  T145 made to `Hyp.drift` — which means reproving `hasDerivAt_integral_Psi` with the
-  domination restricted to the flow; or **(ii)** cut `Ψ` off, i.e. the smooth-cutoff scheme of
-  `RBM1D/Gauss/CutoffBounds.lean` (T158) with the three gaps recorded in `docs/STATUS.md`
-  under "T132c 第 0 步 / 光滑截断方案：三个真实缺口".  Note that `Hyp.momentDuhamel` is a
-  *structural* inequality — `F` and `E ⊗ E` appear on its right — so it does not by itself
-  need the cutoff's size estimates; only the generator identity and Hölder.
+  every segment between flow values.  **This is settled: D9 was decided for route (i) and
+  T187 carried it out, in `RBM1D/Gauss/TestFunHerm.lean`** (the cutoff scheme of
+  `RBM1D/Gauss/CutoffBounds.lean` is *not* needed: `Hyp.momentDuhamel` is a structural
+  inequality — `F` and `E ⊗ E` appear on its right — so it needs no size estimate, only the
+  generator identity and Hölder).  What that file supplies:
 
-  Two further seams on that route, recorded so they are not rediscovered:
-  `hasDerivAt_integral_Psi` carries `0 < u` (the `√u` of the flow), so `hdu` can only be
-  obtained from a derivative on the **open** interval plus continuity, exactly as in T161 and
-  T173's `Uker_duhamel_Ioo`; and T72's `RBM.Gauss.genMomentPt_le`, the pointwise
-  `|Φ|^{2p}` bound, likewise asks for a global `ContDiff ℝ 2`.
+  - `RBM.Gauss.TestFun'`, `RBM.Gauss.TestFunT'`: the same classes with `∀ M` weakened to
+    `∀ M, M.IsHermitian →` and `ContDiff` to `ContDiffAt` there, with the old classes
+    contained in them and unchanged;
+  - `RBM.Gauss.hasDerivAt_integral_Psi_pairs'` and its three companions: the generator
+    identities for the primed classes, **conclusion unchanged**;
+  - `RBM.Gauss.hasDerivAt_integral_Psi_pairs_of_herm`: the same identity under the two
+    hypotheses that are actually used — `Ψ u` is `C²` at each Hermitian matrix, and the
+    *regularisation* `(u, M) ↦ Ψ u (hermCLM M)` is an unprimed `TestFunT`.  **This is the form
+    the moment route can discharge**: the raw loop is `C²` at Hermitian matrices
+    (`RBM.EGDef.contDiffAt_gloop_matrix`) and its regularisation is T133's
+    `RBM.Gauss.ukerObs`, whose bounds are `RBM.Gauss.testFun_momentFun_ukerObs`.  The bounds
+    on the *raw* `Ψ` at Hermitian matrices — the `bdd₁` / `bdd₂` fields of `TestFunT'` itself
+    — are true but are **not** in the repository: they need a pointwise version of the
+    `BddC2C` chain of `RBM1D/Gauss/LoopC2.lean`, which is stated for globally bounded
+    functions.  `RBM.Gauss.hasDerivAt_integral_momentFun_ukerRaw` is the compiled
+    satisfiability check at a fixed spectral parameter.
+
+  So `hdu` is still short, and exactly this is what remains (T187 did not close it):
+
+  1. **the time-dependent admissibility**: `TestFunT d N T (hermFunT d N Ψ)` for
+     `Ψ(u, M) = |(U_{u,v} ∘ (L - K)(u, M))_a|^{2p}`, i.e. (a) joint `C²` in `(u, M)` — the
+     loop along the path `u ↦ z_u` (`RBM.Gauss.contDiffAt_resH_zt` is the one-resolvent case;
+     the loop needs the same induction as `RBM.EGDef.contDiffAt_gloopProd_matrix` with the
+     pair), *plus* `C²` in `u` of `edgeKer` and of `Kval`; and (b) the field `bddT`, a bound on
+     `∂_u Ψ` uniform over the window, which needs a bound on the `z`-derivative of the loop
+     (T141's ball machinery bounds the `M`-derivatives *uniformly in* `z`, not the
+     `z`-derivative);
+  2. **the drift-and-Hölder chain**: `∂_1 Ψ` rewritten by `Hyp.drift` through
+     `RBM.hasDerivAt_Uker_path`, `RBM.Gauss.genMomentPt_le'` on the second-order term, the
+     identification of its quadratic variation with `(U ⊗ U) ∘ (E ⊗ E)`
+     (`RBM.Gauss.quadVarPairs_Uker`, T127), Hölder, and the division by `p ψ^{p-1}` that turns
+     `∂_u E|Y|^{2p}` into `ψ'`.
+
+  One seam of the route is now closed and one is not:
+  T72's `RBM.Gauss.genMomentPt_le` also asked for a global `ContDiff ℝ 2`; it is relaxed in
+  the same file (`RBM.Gauss.genMomentPt_le'`, hypotheses at Hermitian matrices only,
+  conclusion at a Hermitian matrix).  But `hasDerivAt_integral_Psi` still carries `0 < u` (the
+  `√u` of the flow), so `hdu` can only be obtained from a derivative on the **open** interval
+  plus continuity, exactly as in T161 and T173's `Uker_duhamel_Ioo`.
 
 The derivation also fixes the constant: the generator gives
 `ψ' ≤ 2 √ψ · ‖U ∘ F‖_{2p} + (2p-1) ‖(U ⊗ U) ∘ (E ⊗ E)‖_p`, so `cMD p = 2p - 1`.

@@ -718,18 +718,20 @@
 \end{definition}
 
 \begin{lemma}[Classification of canonical partitions, Lemma 3.2]\label{lem:3.2}
-  \lean{RBM.IsCanonicalTree, RBM.Sep, RBM.OnRegion, RBM.Paired, RBM.FGamma, RBM.exists_leaf_sep, RBM.leafSide_eq_Ico, RBM.interval_of_two_cycChange, RBM.edge_unique_of_paired, RBM.crossingFree_FGamma, RBM.FGamma_mem_TSP, RBM.figure_four}
-  \uses{def:loops}
+  \lean{RBM.IsCanonicalTree, RBM.Sep, RBM.OnRegion, RBM.Paired, RBM.FGamma, RBM.exists_leaf_sep, RBM.leafSide_eq_Ico, RBM.interval_of_two_cycChange, RBM.edge_unique_of_paired, RBM.crossingFree_FGamma, RBM.FGamma_mem_TSP, RBM.figure_four, RBM.canonGraph, RBM.FGamma_canonGraph, RBM.isCanonicalTree_canonGraph, RBM.mem_TSP_iff_exists_isCanonicalTree, RBM.canonIso, RBM.exists_iso_of_FGamma_eq}
+  \leanok\uses{def:loops}
   Canonical partitions of the oriented $n$-gon are in
   bijection with crossing-free subsets of $\mathbb{Z}_n^{\mathrm{off}}$.
 
-  \emph{Partially formalized.}  The one modelling step, stated here and in the file header: a
+  \emph{Formalized} (for $n\ge3$; at $n=2$ the model degenerates, the correct tree being a single
+  edge while the construction would give an internal vertex of degree 2).  The one modelling step, stated here and in the file header: a
   canonical partition of $P_a$ \emph{is} its tree $\Gamma$ of Part~III -- a finite leaf-labelled
   tree whose leaves are exactly $a_0,\dots,a_{n-1}$, whose internal vertices have degree $\ge3$,
-  and each of whose edges lies on exactly two of the $n$ region paths.  On that model, part~(0)
-  ($R_i\cap R_j$ is a single edge) and part~(1) ($F(\Gamma)$ is crossing-free) are theorems, so
-  $F$ lands in $\mathcal{T}_{SP}$; realization, uniqueness, and that the image is \emph{all} of
-  $\mathcal{T}_{SP}$ are not proved, so Definition~\ref{def:TSP} still stands as a definition.
+  and each of whose edges lies on exactly two of the $n$ region paths.  On that model all of
+  (0), (1), realization and uniqueness are theorems: $F(\Gamma)$ is crossing-free, every
+  crossing-free $F$ is $F(\Gamma)$ for an explicit $\Gamma$ built from the laminar encoding, and
+  $F(\Gamma)=F(\Gamma')$ forces a label-preserving isomorphism.  So the image is exactly
+  $\mathcal{T}_{SP}\,n$ and Definition~\ref{def:TSP} is now a theorem rather than a convention.
   The model was checked outside Lean by exhaustive enumeration for $n\le7$: the tree counts are
   $1,3,11,45,197$, matching $|\mathcal{T}_{SP}\,n|$, and Figure 4's tree gives the displayed pairs.
 \end{lemma}

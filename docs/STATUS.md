@@ -5226,3 +5226,27 @@ T182 的 (5.77) 第 3 行之所以短一个 `A`，正是因为它把 3-loop 取�
 `hHol_of_window_degenerate`（**docstring 明确写了这只是相容性、不是真实估计的证据**）；逐条核过的量词序；
 以及 **`Lemma514Premises` 必须留着**——若删掉改为对所有 `(Λ,Φ)` 量化，则在 `Λ = Φ = 0` 处控制塌成 `scale_v^{−(n+2)}`，
 **假设不可满足、定理变空**。这正是今天反复撞到的那类陷阱。
+
+## ⭐⭐ T185：Lemma 3.2 完整证出——**蓝图里「未形式化」的节点归零**（`Loop/CanonicalRealize.lean`，1667 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **9868** 条；蓝图 **170 节点、167 已形式化、0 statement-only、0 not-yet**。
+`Loop/Crossing.lean`、`CanonicalPartition.lean`、`TreeRepGeneral.lean` **一字未动**。
+
+| | 定理 |
+|---|---|
+| **(2) 实现** | `FGamma_canonGraph`、`isCanonicalTree_canonGraph` |
+| **(5) 像** | `mem_TSP_iff_exists_isCanonicalTree`：`F ∈ TSP n ↔ ∃ Γ a, IsCanonicalTree ∧ F(Γ) = F` |
+| **(3) 唯一性** | `canonIso`、`exists_iso_of_FGamma_eq`（保叶标的同构） |
+
+**⇒ `RBM.TSP` 从「把论文的分类定理当定义」升级成定理，paper-deltas #8 撤销**，只剩 #128 的 `3 ≤ n`。
+
+**两条路线都按 T168 的提示走，没另起炉灶**：
+* 实现复用 `TreeRepGeneral.lean` 已有的 laminar 编码；**无环性不用 `decide`**——每条边给一个 `Bool` 割证书喂进已有的 `sep_of_cut`，
+  配 `isAcyclic_iff_forall_adj_isBridge`，秒过（对比 T168 实测 9 点树 `decide` 要 85 秒）。
+* 唯一性把 `Γ` 生根在叶 `a_{n−1}`，**枢纽仍是 T168 那条 `leafSide_eq_inArc`**（边下方的叶恰是 pair 的弧）——
+  在抽象树里也是全部关键；两条核心引理的极小性论证都归结为单调性引理 `inArc_mono_up`。
+
+**防抄错的锚点**：文件末尾两条编译过的 `example` 把两半都实例化到 Figure 4 的 `F = {(0,3),(3,5)} ∈ TSP 6`（用 T168 的 `figure_four`）。
+**没有发现论文任何一条按字面为假**，与 T168 的外部穷举完全一致。
+
+**命名检查是手动做的**：97 个顶层名字逐个全仓 grep，零冲突——**单文件编译查不出跨文件重名**。

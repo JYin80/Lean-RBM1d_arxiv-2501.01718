@@ -2303,6 +2303,24 @@
   bound feeds Markov with no cardinality hypothesis and no good event.
 \end{proof}
 
+\begin{lemma}[Lemma 5.7, estimate (5.35), in two shapes]\label{lem:5.7a}
+  \lean{RBM.Lemma57.card_zdist_le, RBM.Lemma57.sqrt_tailT_le, RBM.Lemma57.le_sqrt_tailT, RBM.Lemma57.sqrt_rpow_neg_le_sqrt_tailT, RBM.Lemma57.exp_half_mul_exp_half_le, RBM.Lemma57.sum_sqrt_tailT_mul_le, RBM.Lemma57.card_zdist_le_real, RBM.Lemma57.sum_le_split_one, RBM.Lemma57.sum_le_split_two, RBM.Lemma57.loss32, RBM.Lemma57.one_le_loss32, RBM.Lemma57.case1_pointwise, RBM.Lemma57.case2_pointwise, RBM.Lemma57.sum_far_le, RBM.Lemma57.ellStarStar, RBM.Lemma57.inv_sq_le_tailT, RBM.Lemma57.eG_near_le, RBM.Lemma57.cNear, RBM.Lemma57.cFar, RBM.Lemma57.eG_far_le, RBM.Lemma57.eG_le, RBM.Lemma57.eG_le_paper, RBM.Lemma57.eG_le_reduced, RBM.Lemma57.gloop_three_expand, RBM.Lemma57.sum_blockIndicator, RBM.Lemma57.sum_blockWeight, RBM.Lemma57.norm_gloop_three_le}
+  \leanok\uses{lem:4.1, lem:stretched-exp, def:gloop}
+  The drift estimate (5.35), pp.\ 59--61, proved rather than assumed: the near-field split
+  (5.53)--(5.55), the far-field Case 1 (5.56)--(5.59) and Case 2 (5.60)--(5.63).  Two shapes are
+  delivered -- the paper's, with $A^{-1/3}(J^*)^3$, and the one reduced by (2.73), whose far-field
+  bracket is $r^{3/2}A^{-1/2}J^*+rA^{-1}(J^*)^{3/2}$: the first power of $J^*$ leading, $3/2$
+  subleading.
+\end{lemma}
+\begin{proof}\leanok
+  (5.62) needs the half-exponential kernel $\sum_b\sqrt{T(\|a_1-b\|)T(\|a_2-b\|)}\lesssim
+  \ell_uA_u^{-1}\sqrt{T(\|a_1-a_2\|)}$, the discrete form of the paper's integral; the repository
+  had only the fully exponential one.  Case 2's $(J^*)^{3/2}$ is irreducible, and the reason is
+  visible in the term: the branch is $J\sqrt J\sqrt{T_{12}}\sum_b\sqrt{T_{1b}T_{2b}}$, closed by
+  $\sqrt{T_{12}}\cdot\sqrt{T_{12}}=T_{12}$, so replacing any one of the three tail factors by
+  (2.73) leaves a $T^{1/2}$ missing.
+\end{proof}
+
 \begin{lemma}[The deterministic modulus of (4.2), and why the floor cannot be removed]\label{lem:ldenetclose}
   \lean{RBM.Gauss.norm_mul_mul_apply_le_of_entries, RBM.Gauss.norm_green_sub_apply_le_of_entries, RBM.Gauss.norm_greenMinorMat_flow_sub_apply_le, RBM.Gauss.minorCol_eq_greenMinorMat, RBM.Gauss.minorRowConj_eq_greenMinorMat, RBM.Gauss.norm_minorCol_le, RBM.Gauss.norm_minorRowConj_le, RBM.Gauss.norm_minorCol_flow_sub_le, RBM.Gauss.norm_minorRowConj_flow_sub_le, RBM.Gauss.sWeight, RBM.Gauss.rowLin, RBM.Gauss.rowSum_eq_rowLin, RBM.Gauss.abs_norm_sq_sub_le, RBM.Gauss.norm_Hflow_apply_le_opNorm, RBM.Gauss.abs_sWeight_sub_le, RBM.Gauss.norm_rowLin_le, RBM.Gauss.norm_rowLin_sub_le, RBM.Gauss.sWeight_minorCol_eq, RBM.Gauss.sWeight_minorRowConj_eq, RBM.Gauss.abs_ldeRow_flow_sub_le, RBM.Gauss.abs_ldeCol_flow_sub_le, RBM.Gauss.eventually_mod_le_floor, RBM.Gauss.stochDom_ldeRow_flow_floor, RBM.Gauss.stochDom_ldeCol_flow_floor, RBM.Gauss.ldeFlowDom_floor, RBM.Gauss.ldeNetClose_of_lower_bound}
   \leanok\uses{lem:ldeflow, lem:opnorm, lem:4.1}

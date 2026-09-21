@@ -2201,6 +2201,20 @@
   $B=2(1+\eta^{-1})^3$ dominates all of them at once so the induction closes exactly.
 \end{proof}
 
+\begin{theorem}[The motion of $z_u$ produces exactly the $-m$ subtraction]\label{thm:loopito}
+  \lean{RBM.Gauss.hasDerivAt_green_path, RBM.Gauss.Gsig_zt, RBM.Gauss.hasDerivAt_ztSig, RBM.Gauss.hasDerivAt_Gsig_zt, RBM.Gauss.cutGlue_cons_one, RBM.Gauss.cutGlue_cons_succ, RBM.Gauss.hasDerivAt_gloopProd_zt, RBM.Gauss.zMotion, RBM.Gauss.hasDerivAt_gloop_zt, RBM.Gauss.eGterm_sub_eGterm, RBM.Gauss.norm_zMotion_le, RBM.Gauss.hasDerivAt_gloop_zt_eGterm, RBM.Gauss.integrable_zMotion_Hflow, RBM.Gauss.hasDerivAt_integral_gloop_zt, RBM.Gauss.hasDerivAt_comp_diag, RBM.Gauss.hasDerivAt_integral_gloop_hierarchy_movingZ, RBM.Gauss.hasDerivAt_sample_ELval_hierarchy, RBM.Gauss.contDiffAt_green_comp, RBM.Gauss.contDiffAt_Gsig_flow, RBM.Gauss.contDiffAt_gloopProd_flow, RBM.Gauss.contDiffAt_gloop_flow, RBM.Gauss.generator_add_zMotion, RBM.Gauss.hasDerivAt_sub_prim, RBM.Gauss.hasDerivAt_sub_prim_of_isPrimitive}
+  \leanok\uses{thm:moment-hierarchy, lem:loopc2, thm:generator, lem:ibp}
+  $\partial_uL_{\sigma,a}(M,z_u)=\tilde E[G-m]-\tilde E[G]$: the extra term from the moving spectral
+  parameter is \emph{precisely} (2.47)'s $-m(\sigma_k)$, so $\tilde G$ is a theorem rather than a
+  convention, and the cut-and-glue obligation is only ever needed in its frozen form. The joint
+  derivative goes through \texttt{ContDiff.comp}, avoiding the ``continuous partials'' lemma
+  Mathlib lacks.
+\end{theorem}
+\begin{proof}\leanok
+  $\partial_z(H-z)^{-1}=G^2$ and $\dot z_u=-m$ double the $k$-th slot; $\langle E_a\rangle=1$,
+  $\sum_aS^{(B)}_{ab}=1$ and $W\sum_bE_b=1$ turn that into Definition 2.10(1)'s sum.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

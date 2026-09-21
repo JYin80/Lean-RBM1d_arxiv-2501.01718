@@ -2854,3 +2854,23 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 端到端的 `hasDerivAt_momentIntegral … (testFun_momentFun_loopObs …)` 也编译通过——即 `d/du E|L_{σ,a}(H_u)|^{2p} = E[𝓛(|L|^{2p})]` **除 `MatrixStein`（T70）外假设全部卸掉**。
 `(U∘(L−K))_a` 同样拿到（`ukerObs`/`bddC2_ukerObs`/`testFun_ukerObs`）——因为 (5.17) 的系数**不依赖 `H`**，它就是 loop 的有限 ℂ-线性组合加常数。
 **一处继承来的多余假设**：`testFun_loopObs_of_im_le` 带 `1 ≤ I.a.length`，**不是本单的界需要的**，而是仓库里 `testFun_loopObs` 的 `bdd₀` 字段（即 (5.2)）自带的；`bddC2_loopObs` 与整条 Uker 链**没有**长度假设。paper-deltas #88。
+
+### `RBM1D/Gauss/LoopIto.lean` — T134：动 `z_u` 已解决，且 (2.47) 的 `G̃` 升级为定理（Claude Code 并行 agent，2026-09-21）
+
+**先纠正工单的一处混同**：`LoopIto.second` 是**cut-and-glue 代数**（`½ Σ S_ij ∂_ij∂_ji L` 的 Leibniz 计算），而 `(∂_u+𝓛)(L−K) = Θ∘(L−K)+F` 是 (5.12)–(5.15)，**由前者推出**。本单证的是后者与缺的分析胶水，**不是** `second` 本身。
+
+**额外项确实出现，而且被精确命名——T76 的猜测是对的**：
+**`eGterm_sub_eGterm`：`∂_u L_{σ,a}(M, z_u) = eGterm[G − m] − eGterm[G]`**，即**动 `z_u` 贡献的恰好是 (2.47) 的 `−m(σ_k)` 减项**。
+机制：`∂_z(H−z)⁻¹ = G²`、`ż_u = −m`，故第 `k` 个 slot 变成 `−m(σ_k)G(σ_k)²`；再由 `⟨E_a⟩ = 1`、`Σ_a S^(B)_{ab} = 1`、`W Σ_b E_b = 1`，那个加倍的 `G(σ_k)` 恰是 Def 2.10(1) 的 `W Σ_b L_{G^{(b)}_k}`。
+**对 T76 的后果：`LoopIto.second` 今后只需在冻结形式下证明（`EG := eGterm … 0 …`，用 `G` 而非 `G̃`），`G̃` 是白送的。剩余义务因此变小。**
+`(L−K)` 那一侧没有重造轮子——`primBil`/`primRhs_sub`（(5.12)–(5.15)）**在 `Hierarchy/Dynamics.lean` 里已有**，本单只是装配。
+
+**动 `z` 已闭合，`ContDiff.comp` 确实够用**：`hasDerivAt_comp_diag`（由联合 `HasFDerivAt` 得 `d/du f(u,u)`，**全程不碰「偏导连续 ⟹ 可微」**）；
+`contDiffAt_green_comp → … → contDiffAt_gloop_flow` 走 `contDiffAt_ringInverse ∘ Real.contDiffAt_sqrt ∘ 仿射 z_w` 加列表归纳；
+`hasDerivAt_integral_gloop_zt` **不带额外假设**（`zMotion` 的包络是确定性的，控制函数就是常数）。
+终点 `hasDerivAt_sample_ELval_hierarchy`：被求导的函数**字面就是** `(sample d).ELval E N v I`、**两个参数同时动**，漂移为 `∫(Ẽ[G−m] + primRhs L_u)`——**T76 的「未做项」就此关闭**，只欠一条具名输入。
+**一处值得记的坑**：T71 的 `hasDerivAt_lineInverse` 在此**不可用**（要求沿整条直线可逆，而 `u ↦ z_u` 在 `u = 1` 撞实轴），`hasDerivAt_green_path` 局部重做。
+
+**剩余假设**：`LoopIto`（cut-and-glue，仍欠，但只需冻结形式）；`MatrixStein`（T70）；`TestFun`（**T133 已交**）；
+以及**唯一的新假设** `hjoint`——逐 ω 就是本单已证的 `contDiffAt_gloop_flow`，缺的是**对 `z` 在球上一致**的联合导数控制，**即 T133 的 `bdd₁`/`bdd₂` 加强成对 `z` 一致的版本**（这就是 T133 该补交的精确形状）。
+**未做**：`LoopIto.second` 本身；(5.19) 的 `primBilLen 2 = ThetaOp`；`hjoint` 的卸载。paper-deltas #52 已改写，另加 #89。

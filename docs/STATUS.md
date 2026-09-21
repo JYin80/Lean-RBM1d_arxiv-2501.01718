@@ -3207,3 +3207,32 @@ QUE 那一半已形式化，但压在 `RBM.Eq747`（T65 的占位符）上，**�
 3. **`RBM.ThetaOp` 已被改成带 `S^(B)` 的更正核**（d31e1d4，类型未变、全量绿、ℓ^∞ 与 sum-zero 引理原样成立）——这推翻了我 07:33「不改」的裁定，**我接受**：Lean 定义与更正后的论文一致更好。
 **需 Jun 定范围**：Theorem 2.6 的 `StepTwoClaim`（(2.23)，需 (2.25)–(2.33)）与 QUE 的 `Eq747` 是否在本轮范围内（此前计划 §7.2 不碰）。
 
+
+## T146：`hrhs` 三项全部卸掉（`Gauss/MomentDuhamelRhs.lean`，589 行，2026-09-21）
+
+**第 0 步的判断是对的：`stochDom_of_logBound`/`term1F`/`termI1`/`QV1_stochDom` 那套机器不需要重做。**
+理由是矩形式让三个因子**分开**：① 核是确定性的，用 Minkowski 从范数里提出来；
+② 剩下的是**只对张量**的 `‖·‖_{2p}` 界，正是 T77 的反向桥；③ 时间积分是逐 `u` 的界，**完全不需要可积性**。
+（`≺` 那套之所以逼出 `stochDom_of_logBound` 的写法，是因为它把核 + 张量 + 时间积分**捆在同一个高概率事件上**估。）
+
+关键声明：`momNorm_le_of_le_weighted_sum`（带确定性权的 Minkowski；因为 `momNorm` 是裸的 `(∫|Y|^q)^{1/q}`
+而非 `eLpNorm`，只能从 Jensen `ConvexOn.map_sum_le` 走）；**`momNorm_Uker_apply_le`**（Lemma 7.1 的矩形式，
+常数与 `norm_Uker_apply_le` 同为 `C^n`）；`intervalIntegral_le_of_le_const`（无可积性假设：不可积时
+Bochner 积分为 `0`，界平凡成立——这就避开了证 `u ↦ ‖·‖_{2p}` 可测）；`MomNormDom` + 两条桥；**`hrhs_of_moment_inputs`**。
+
+**两个设计上的要点值得记住**：
+* `momNorm_Uker_apply_le` 里对标号的 sup **必须留在矩的外面**。放进去要付 `(#LoopArg)^{1/(2p)} ≈ N^{Ccard/(2p)}`，
+  **对固定的 `p` 没有任何 `N^{ε/2}` 吸得掉**。
+* 该定理是用 `edgeKer` 的行和陈述的，**与 `ThetaOp` 无关**——所以并行进行的 `S^(B)` 更正碰不到它。
+* `MomentDom` **不要求 `Fintype`**（只有回程的 `stochDom_of_momentDom` 要），所以**指标里可以带时间**：
+  `hrhs` 本身**不需要 T124 的网引擎**。
+
+**留作假设的三项**（边界划得很干净）：`hinit`/`hFmom` 归约到带**确定性**控制的 `≺`，而 `Lemma510.F_le` 的控制是
+**随机的**（`xiRhs`），差的那一步正是 `SumZeroDyn.F_stochDom` 逐路径做的 `Ξ ≺ 1` 替换。
+**`hEEmom` 是 `p` 阶矩范数，不是 `2p`**：T77 的桥只出偶数阶，要从 T135 的 `stochDom_norm_eeField` 喂进来
+就得有 **Lyapunov `‖·‖_p ≤ ‖·‖_{2p}`——仓库里没有**。agent 没有在一个项估计内部临时造它（对的判断），
+**这是唯一真正缺的引理**，它应该放在 `momNorm` 旁边。
+
+**⚠ 顺带查出 `Gauss/MomentDuhamel.lean` 的一处括号错误**（T132a/T145 的文件，未动）：见 paper-deltas #108。
+`Hyp.momentDuhamel`/`momentDuhamelQ`/`hrhs` 里 `∫` 的被积式向右延伸，**(5.24) 的第三项实际落在了时间积分内部**。
+T146 按它实际 elaborate 的样子证明，因此能复合；**修法是一对括号，但要等 T132b 落地再动**——那两个字段正在被卸。

@@ -2243,6 +2243,22 @@
   enters, which is what makes the right-hand side independent of $u$.
 \end{proof}
 
+\begin{lemma}[The right-hand side of the moment Duhamel inequality]\label{lem:momentduhamelrhs}
+  \lean{RBM.Gauss.momNorm_mono, RBM.Gauss.momNorm_le_of_le_weighted_sum, RBM.Gauss.sum_prod_norm_edgeKer_le, RBM.Gauss.momNorm_Uker_apply_le, RBM.Gauss.intervalIntegral_le_of_le_const, RBM.Gauss.MomNormDom, RBM.Gauss.momNormDom_of_momentDom, RBM.Gauss.momNormDom_of_stochDom, RBM.Gauss.hFmom_of_momNormDom, RBM.Gauss.hinit_of_momNormDom, RBM.Gauss.hrhs_of_moment_inputs}
+  \leanok\uses{thm:momentduhamel, lem:envelope, def:5.2}
+  The three terms of the moment Duhamel right-hand side, bounded without rebuilding the
+  $\prec$-machinery of \S5.3: in moment form the kernel, the tensor and the time integral
+  separate.  The kernel is deterministic and leaves the norm by Minkowski (Jensen on $x^q$,
+  since the norm here is a raw $(\int|Y|^q)^{1/q}$); what is left is a $\|\cdot\|_{2p}$ bound on
+  the tensor alone, which is the reverse bridge of the envelope lemma; and the time integral is
+  pointwise in $u$, so no integrability is needed at all.
+\end{lemma}
+\begin{proof}\leanok
+  In Lemma 7.1's moment form the supremum over the label stays \emph{outside} the moment;
+  inside it would cost $(\#\mathbb Z_L^n)^{1/2p}$, which at fixed $p$ no $N^{\varepsilon/2}$
+  absorbs.  Stated through the row sums of \texttt{edgeKer}, so independent of (5.16).
+\end{proof}
+
 \begin{lemma}[The IBP input of (4.5), uniformly in time]\label{lem:condstableflow}
   \lean{RBM.Gauss.unifDomIcc_condRow_of_envelope, RBM.Gauss.unifDomIcc_condRow_sub_self, RBM.Gauss.condRowReal_const, RBM.Gauss.inv_etaT_le_inv_etaT, RBM.Gauss.unifDomIcc_greenDiagCentered_sub_minor, RBM.Gauss.unifDomIcc_ibpRem_diag, RBM.Gauss.unifDomIcc_ibpRem, RBM.Gauss.unifDomIcc_condExpDiag_flow, RBM.Gauss.eq45Flow_of_unifDom_ibp, RBM.Gauss.eq45Flow_of_localLaw_gain}
   \leanok\uses{lem:condstable, lem:goodsetflow, lem:eq45inputs, lem:condrow}

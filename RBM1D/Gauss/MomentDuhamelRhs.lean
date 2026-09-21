@@ -61,29 +61,25 @@ Nothing here touches `RBM.ThetaOp`: the kernel hypotheses are stated at the leve
 `RBM.edgeKer` row sums (`RBM.sum_norm_edgeKer_row_le`), so the pending correction to
 `ThetaOp`'s kernel (T140, the missing `S^{(B)}`) cannot affect any statement in this file.
 
-## ⚠ A parenthesisation defect in `RBM1D/Gauss/MomentDuhamel.lean`
+## The parenthesisation of (5.24) (T146's defect, repaired by T147)
 
-`RBM.MomentDuhamel.Hyp.momentDuhamel`, `Hyp.momentDuhamelQ` and the `hrhs` slot of
-`stochDom_of_momentDuhamel` are written as
+As first written, `RBM.MomentDuhamel.Hyp.momentDuhamel`, `Hyp.momentDuhamelQ` and the `hrhs`
+slot of `stochDom_of_momentDuhamel` read
 
 ```
   ... ≤ A + 2 * ∫ u in s..v, T₂ u + (cMD p * ∫ u in s..v, T₃ u) ^ (1/2)
 ```
 
-and the body of an `∫ … , …` extends to the right, so this **elaborates** as
-`A + 2 * ∫ u in s..v, (T₂ u + (cMD p * ∫ T₃)^{1/2})`: the third term of (5.24) sits *inside*
-the time integral.  (Checked with `pp.parens`; in `momentDuhamelQ` the four integrals nest,
-four deep.)  It is not the statement of (5.20) + (5.24).
+and the body of an `∫ … , …` extends to the right, so they *elaborated* as
+`A + 2 * ∫ u in s..v, (T₂ u + (cMD p * ∫ T₃)^{1/2})` — the third term of (5.24) sitting
+*inside* the time integral (in `momentDuhamelQ`, four integrals nesting four deep).  T146
+proved `hrhs` against that reading, and the cost showed up as an extra factor `2 (v_N - s_N)`
+on the third summand of `hnum`, exactly the effect of integrating a constant over the window.
 
-This file **proves the statement as it currently elaborates**, so that it composes with
-`stochDom_of_momentDuhamel` without any adapter.  The price is visible in the hypothesis
-`hnum` of `hrhs_of_moment_inputs`, whose third summand carries an extra factor
-`2 (v_N - s_N)` — exactly the effect of integrating a constant over the window.  The fix is
-one pair of parentheses in `RBM1D/Gauss/MomentDuhamel.lean`
-(`+ 2 * (∫ u in (s N)..v, …)` instead of `+ 2 * ∫ u in (s N)..v, …`); after it, drop the
-`2 * ((v N - s N) * …)` wrapper around the third summand of `hnum` and replace the last three
-lines of the proof's assembly by the obvious `add_le_add`.  That file belongs to T132a/T145 and
-is not touched here.
+Each `2 * ∫ …` is now parenthesised, the sum is a genuine sum of three (resp. five) terms, and
+that extra factor is gone: `hnum`'s third summand is the bare
+`((v_N - s_N) (Ck2^{2n+4} ΦE))^{1/2}`.  Only the middle summand is a time integral, and only it
+carries the window length.
 
 ## What is *not* done
 
@@ -409,7 +405,7 @@ precisely because `RBM.Gauss.MomentDom` — unlike `RBM.Gauss.stochDom_of_moment
 ask for a `Fintype`. -/
 theorem hrhs_of_moment_inputs [IsProbabilityMeasure (B.P)]
     {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ} (H : Hyp X E s t n)
-    (v : ℕ → ℝ) (hsv : ∀ N, s N ≤ v N)
+    (v : ℕ → ℝ) (hsv : ∀ N, s N ≤ v N) (hvt : ∀ N, v N ≤ t N)
     {Ck Ck2 : ℝ} (hCk0 : 0 ≤ Ck) (hCk20 : 0 ≤ Ck2)
     (hkerlt : ∀ᶠ N : ℕ in atTop, ∀ (σ : Fin (n + 2) → Bool) (i : Fin (n + 2)),
       ‖((v N : ℝ) : ℂ) * xiOf (mSigma E) σ i‖ < 1)
@@ -446,17 +442,16 @@ theorem hrhs_of_moment_inputs [IsProbabilityMeasure (B.P)]
     (hnum : ∀ᶠ N : ℕ in atTop, ∀ q : LoopData (B.L N) (n + 2),
       Ck ^ (n + 2) * Φ1 N q
         + 2 * ((v N - s N) * (Ck ^ (n + 2) * ΦF N q))
-        + 2 * ((v N - s N)
-            * ((v N - s N) * (Ck2 ^ ((n + 2) + (n + 2)) * ΦE N q)) ^ ((1 : ℝ) / 2))
+        + ((v N - s N) * (Ck2 ^ ((n + 2) + (n + 2)) * ΦE N q)) ^ ((1 : ℝ) / 2)
       ≤ Φ N q) :
     ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
       ∀ q : LoopData (B.L N) (n + 2),
         momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
                 (SumZeroDyn.lkT X E N (s N) ω q.1) q.2‖)
-          + 2 * ∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+          + 2 * (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
-                (H.F N u (X.H N u ω) q.1) q.2‖)
+                (H.F N u (X.H N u ω) q.1) q.2‖))
           + (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
                 (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
@@ -493,7 +488,8 @@ theorem hrhs_of_moment_inputs [IsProbabilityMeasure (B.P)]
     have hbound := momNorm_Uker_apply_le (P := B.P) (B.L N) hL3 h2p (hlt q.1)
       (hCN q.1 (s N) le_rfl (hsv N))
       (A := fun ω => SumZeroDyn.lkT X E N (s N) ω q.1)
-      (fun b => by simpa using H.integrable (2 * p) N (s N) q.1 b)
+      (fun b => by
+        simpa using H.integrable (2 * p) N (s N) le_rfl ((hsv N).trans (hvt N)) q.1 b)
       (M := C1 * (Np * Φ1 N q)) (by have := hΦ10 N q; positivity) (fun b => h1 q b) q.2
     refine hbound.trans (le_of_eq ?_)
     rw [hK1def]; ring
@@ -552,31 +548,24 @@ theorem hrhs_of_moment_inputs [IsProbabilityMeasure (B.P)]
         _ = Np := Real.rpow_one Np
     have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
     exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hhalf hK3s) hCsq0
-  -- assemble.  Note that in the statement of `hrhs` the third term sits *inside* the time
-  -- integral (see the module docstring), so it is integrated along with the drift term.
+  -- assemble: three genuinely separate summands, as in (5.24).  Only the *middle* one is a
+  -- time integral, so only it picks up the window length `v_N - s_N`.
   have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
-  have hMnn : (0 : ℝ) ≤ Ck ^ (n + 2) * (C2 * (Np * ΦF N q)) + Csq * (Np * K3 ^ ((1 : ℝ) / 2)) := by
-    have := hΦF0 N q
-    have h1 : (0 : ℝ) ≤ Ck ^ (n + 2) * (C2 * (Np * ΦF N q)) := by positivity
-    have h2 : (0 : ℝ) ≤ Csq * (Np * K3 ^ ((1 : ℝ) / 2)) :=
-      mul_nonneg hCsq0 (mul_nonneg hNp0.le hK3s)
-    linarith
-  refine (add_le_add hT1 (mul_le_mul_of_nonneg_left
-    (intervalIntegral_le_of_le_const (hsv N) hMnn
-      (fun u hu => add_le_add (hT2 u hu) hT3)) (by norm_num : (0 : ℝ) ≤ 2))).trans ?_
-  have hexpand : (v N - s N)
-        * (Ck ^ (n + 2) * (C2 * (Np * ΦF N q)) + Csq * (Np * K3 ^ ((1 : ℝ) / 2)))
-      = C2 * (Np * K2) + Csq * ((v N - s N) * (Np * K3 ^ ((1 : ℝ) / 2))) := by
+  have hMnn : (0 : ℝ) ≤ Ck ^ (n + 2) * (C2 * (Np * ΦF N q)) := by
+    have := hΦF0 N q; positivity
+  have hI2 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (H.F N u (X.H N u ω) q.1) q.2‖))
+      ≤ C2 * (Np * K2) := by
+    refine (intervalIntegral_le_of_le_const (hsv N) hMnn hT2).trans (le_of_eq ?_)
     rw [hK2def]; ring
-  rw [hexpand]
+  refine (add_le_add (add_le_add hT1
+    (mul_le_mul_of_nonneg_left hI2 (by norm_num : (0 : ℝ) ≤ 2))) hT3).trans ?_
   have hb1 : (0 : ℝ) ≤ Np * K1 := mul_nonneg hNp0.le hK10
   have hb2 : (0 : ℝ) ≤ Np * K2 := mul_nonneg hNp0.le hK20
-  have hb3 : (0 : ℝ) ≤ (v N - s N) * (Np * K3 ^ ((1 : ℝ) / 2)) :=
-    mul_nonneg hvs (mul_nonneg hNp0.le hK3s)
-  have hmain : C1 * (Np * K1)
-        + 2 * (C2 * (Np * K2) + Csq * ((v N - s N) * (Np * K3 ^ ((1 : ℝ) / 2))))
-      ≤ (C1 + C2 + Csq + 1)
-        * (Np * (K1 + 2 * K2 + 2 * ((v N - s N) * K3 ^ ((1 : ℝ) / 2)))) := by
+  have hb3 : (0 : ℝ) ≤ Np * K3 ^ ((1 : ℝ) / 2) := mul_nonneg hNp0.le hK3s
+  have hmain : C1 * (Np * K1) + 2 * (C2 * (Np * K2)) + Csq * (Np * K3 ^ ((1 : ℝ) / 2))
+      ≤ (C1 + C2 + Csq + 1) * (Np * (K1 + 2 * K2 + K3 ^ ((1 : ℝ) / 2))) := by
     nlinarith [mul_nonneg (show (0 : ℝ) ≤ C2 + Csq + 1 by linarith) hb1,
       mul_nonneg (show (0 : ℝ) ≤ C1 + Csq + 1 by linarith) hb2,
       mul_nonneg (show (0 : ℝ) ≤ C1 + C2 + 1 by linarith) hb3]

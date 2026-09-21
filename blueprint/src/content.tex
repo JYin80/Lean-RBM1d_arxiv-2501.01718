@@ -2244,7 +2244,7 @@
 \end{proof}
 
 \begin{lemma}[The generator identity with explicit time dependence]\label{lem:momentduhamelgauss}
-  \lean{RBM.Gauss.timeD1, RBM.Gauss.fderiv_uncurry_apply, RBM.Gauss.timeD1_eq_fderiv_uncurry, RBM.Gauss.hasDerivAt_Psi_Hflow, RBM.Gauss.TestFunT, RBM.Gauss.TestFunT.slice, RBM.Gauss.continuous_timeD1, RBM.Gauss.hasDerivAt_integral_Psi, RBM.Gauss.hasDerivAt_integral_Psi_pairs, RBM.Gauss.contDiffAt_resH_path, RBM.Gauss.contDiff_resH_path, RBM.Gauss.contDiffAt_resH_zt, RBM.Gauss.W_mul_genLK_eq, RBM.Gauss.integrable_lkT_pow}
+  \lean{RBM.Gauss.timeD1, RBM.Gauss.fderiv_uncurry_apply, RBM.Gauss.timeD1_eq_fderiv_uncurry, RBM.Gauss.hasDerivAt_Psi_Hflow, RBM.Gauss.TestFunT, RBM.Gauss.TestFunT.slice, RBM.Gauss.continuous_timeD1, RBM.Gauss.hasDerivAt_integral_Psi, RBM.Gauss.hasDerivAt_integral_Psi_pairs, RBM.Gauss.contDiffAt_resH_path, RBM.Gauss.contDiff_resH_path, RBM.Gauss.contDiffAt_resH_zt, RBM.Gauss.genLK_eq, RBM.Gauss.integrable_lkT_pow}
   \leanok\uses{thm:generator, thm:momentduhamel, lem:loopc2}
   $\frac{d}{du}\mathbb E[\Psi(u,H_u)]=\mathbb E[\partial_1\Psi]
   +\tfrac12\sum_{ij}S_{ij}\mathbb E[\partial_{ij}\partial_{ji}\Psi]$ for a test function that
@@ -2301,6 +2301,24 @@
 \begin{proof}\leanok
   At \texttt{UnifDomIcc} level no union over the index set is taken, so the Gaussian row-sum moment
   bound feeds Markov with no cardinality hypothesis and no good event.
+\end{proof}
+
+\begin{lemma}[The deterministic modulus of (4.2), and why the floor cannot be removed]\label{lem:ldenetclose}
+  \lean{RBM.Gauss.norm_mul_mul_apply_le_of_entries, RBM.Gauss.norm_green_sub_apply_le_of_entries, RBM.Gauss.norm_greenMinorMat_flow_sub_apply_le, RBM.Gauss.minorCol_eq_greenMinorMat, RBM.Gauss.minorRowConj_eq_greenMinorMat, RBM.Gauss.norm_minorCol_le, RBM.Gauss.norm_minorRowConj_le, RBM.Gauss.norm_minorCol_flow_sub_le, RBM.Gauss.norm_minorRowConj_flow_sub_le, RBM.Gauss.sWeight, RBM.Gauss.rowLin, RBM.Gauss.rowSum_eq_rowLin, RBM.Gauss.abs_norm_sq_sub_le, RBM.Gauss.norm_Hflow_apply_le_opNorm, RBM.Gauss.abs_sWeight_sub_le, RBM.Gauss.norm_rowLin_le, RBM.Gauss.norm_rowLin_sub_le, RBM.Gauss.sWeight_minorCol_eq, RBM.Gauss.sWeight_minorRowConj_eq, RBM.Gauss.abs_ldeRow_flow_sub_le, RBM.Gauss.abs_ldeCol_flow_sub_le, RBM.Gauss.eventually_mod_le_floor, RBM.Gauss.stochDom_ldeRow_flow_floor, RBM.Gauss.stochDom_ldeCol_flow_floor, RBM.Gauss.ldeFlowDom_floor, RBM.Gauss.ldeNetClose_of_lower_bound}
+  \leanok\uses{lem:ldeflow, lem:opnorm, lem:4.1}
+  Both sides of (4.2) have a deterministic H\"older-$\tfrac12$ modulus along the flow, so (4.2)
+  holds uniformly in $u\in[s_N,t_N]$ and in the pair \emph{with an additive floor}
+  $N^{-B}$, for every $B$ -- with no good event beyond $\|X\|\le N$, no off-diagonal decay and no
+  local law.  The floor is not an artefact: given the modulus, \texttt{LDENetClose} is
+  \emph{equivalent} to a polynomial lower bound $N^{-B}\le\zeta(u)$, and $\zeta$ is exponentially
+  small in the band distance -- which is what (2.76)/(4.3) say.
+\end{lemma}
+\begin{proof}\leanok
+  The modulus is proved entrywise, the repo having no operator-norm bound for a principal
+  submatrix; that costs two factors of $|\mathrm{Idx}|$, absorbed into the exponent $10$.  What is
+  missing for a floorless statement is not a Gaussian-process tool -- a polynomial net already
+  beats the tail $e^{-N^{2\tau}}$ -- but an anti-concentration lower bound on the minor Green
+  column, which is in neither the repository nor the paper.
 \end{proof}
 
 \begin{lemma}[The joint derivative in flow time and spectral time]\label{lem:loopjoint}

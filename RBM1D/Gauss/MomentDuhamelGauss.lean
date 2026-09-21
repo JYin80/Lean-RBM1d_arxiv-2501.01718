@@ -39,39 +39,20 @@ discharge stops.
   because `(u, M) ↦ (M + Mᴴ)/2 - z_u` is already jointly `C²` and `Ring.inverse` is `C^∞` at
   units.
 * `RBM.Gauss.integrable_lkT_pow` — the field `RBM.MomentDuhamel.Hyp.integrable`, for the
-  Gaussian sample, **at every time with `Im z_u ≠ 0`**.
-* `RBM.Gauss.W_mul_genLK_eq` — see the warning below.
-
-## ⚠ `RBM.MomentDuhamel.genLK` carries one factor of `W` too many
-
-`RBM.MomentDuhamel.genLK` weights `∂_ij ∂_ji` by `Sblk (B.L N) (B.W N) i j / B.W N`.  But
-`RBM.Sblk L W i j = S^{(B)}_{ab} / W` *already is* the variance `E|X_ij|²` — it is exactly the
-`S` of `RBM.Gauss.gvar`, as `RBM.Gauss.gvar_diag` and `RBM.Gauss.gvar_offDiag` show, and it is
-the weight in the generator identity `RBM.Gauss.hasDerivAt_integral_Phi_pairs`, in
-`RBM.Gauss.genD` and in T140's `RBM.Gauss.sumSblk_half_wirtPair`.  So the generator of the
-Gaussian flow (2.34) is `½ ∑_{ij} Sblk_ij ∂_ij ∂_ji`, and
-
-  `genLK = W⁻¹ · 𝓛`  (`RBM.Gauss.W_mul_genLK_eq`),
-
-which is *not* the `𝓛` of (5.15).
-
-What this costs is worth stating exactly, because it is **not** that `drift` becomes
-unprovable.  `drift` reads `∃ dv, HasDerivAt (fun v => lkFun … v …) dv u ∧ dv + genLK = genS + F`
-with `F` a *data* field, so it is discharged by taking `F` to be the residual
-`dv + genLK - genS`, the only real obligation being that the `u`-derivative exists.  The damage
-is that the `F` so pinned down is the paper's `F` shifted by `(W⁻¹ - 1) · 𝓛(L - K)` — a term of
-the size of `𝓛(L - K)` itself, not a small one.  So `RBM.MomentDuhamel.Hyp.Fpath` would be fed
-to `RBM.SumZeroDyn.Lemma510` as a bound on the wrong object, and T145's fiat audit ("`F` is
-pinned by `drift`") holds while pinning `F` to something (5.15) does not name.  `genLK` lives
-in a file this ticket must not touch; repairing it is a one-token change there.
+  Gaussian sample, **at every time with `Im z_u ≠ 0`**, which is exactly what that field now
+  asks for after T147's repair restricted it to the window `[s_N, t_N]`.
+* `RBM.Gauss.genLK_eq` — `RBM.MomentDuhamel.genLK` *is* `½ ∑_{ij} Sblk_ij ∂_ij ∂_ji`, the
+  generator whose weight the identity above carries.  (An earlier version of `genLK` divided
+  `Sblk` by `W` a second time and was therefore `W⁻¹ 𝓛`; that is repaired, and this theorem is
+  what pins the two together.)
 
 ## What this file does *not* do
 
 The two moment inequalities `RBM.MomentDuhamel.Hyp.momentDuhamel` and `.momentDuhamelQ` are
 not proved here; the chain from the identity above to them (pointwise expansion of `|Φ|^{2p}`
 through T72's `RBM.Gauss.genMomentPt_le`, substitution of the drift, Hölder, and T132a's
-`RBM.sqrt_le_of_integral_le`) needs `RBM.MomentDuhamel.Hyp.drift`, which the previous paragraph
-blocks.  Nothing here is an `axiom` and nothing here is `sorry`.
+`RBM.sqrt_le_of_integral_le`) is the remaining work of T132b, as is the Gaussian instance of
+`RBM.MomentDuhamel.Hyp` itself.  Nothing here is an `axiom` and nothing here is `sorry`.
 -/
 
 namespace RBM.Gauss
@@ -349,7 +330,7 @@ theorem hasDerivAt_integral_Psi (hst : MatrixStein d) (h : TestFunT d N T Ψ)
 
 This is the identity T132b's ticket asks for; `RBM.Gauss.hasDerivAt_integral_Phi_pairs` is the
 case `Ψ v = Φ`.  Note the weight: it is `RBM.Sblk`, which already carries the `1/W` of
-`S = S^{(B)} ⊗ S_W` — see `RBM.Gauss.W_mul_genLK_eq` below. -/
+`S = S^{(B)} ⊗ S_W` — see `RBM.Gauss.genLK_eq` below. -/
 theorem hasDerivAt_integral_Psi_pairs (hst : MatrixStein d) (h : TestFunT d N T Ψ)
     {u : ℝ} (hu : 0 < u) (hT : T ∈ nhds u) :
     HasDerivAt (fun s : ℝ => ∫ ω, Ψ s (Hflow d N s ω) ∂(P d))
@@ -414,43 +395,26 @@ theorem contDiffAt_resH_zt (Ev : ℝ) {u : ℝ} (hzim : (zt Ev u).im ≠ 0) (M :
 
 end ResolventJoint
 
-/-! ### The `W` in `RBM.MomentDuhamel.genLK` -/
+/-! ### `RBM.MomentDuhamel.genLK` is the generator of the Gaussian flow -/
 
-/-- **`RBM.MomentDuhamel.genLK` is `W⁻¹` times the generator of the Gaussian flow.**
+/-- **`RBM.MomentDuhamel.genLK` *is* `𝓛 = ½ ∑_{ij} S_ij ∂_ij ∂_ji`**, with the weight
+`RBM.Sblk` the Gaussian model actually has.
 
 `RBM.Sblk L W i j = S^{(B)}_{ab} / W` is already the variance `E|X_ij|²` of the model
 (`RBM.Gauss.gvar_diag`, `RBM.Gauss.gvar_offDiag`), and the generator of (2.34) weights
-`∂_ij ∂_ji` by exactly that (`RBM.Gauss.hasDerivAt_integral_Phi_pairs`,
-`RBM.Gauss.genD`).  `genLK` weights it by `Sblk / W` instead.  Hence the identity below, whose
-right-hand side — not `genLK` — is the `𝓛` of (5.15).
-
-This is why `RBM.MomentDuhamel.Hyp.drift` is not dischargeable on the Gaussian model as it
-stands; see the module docstring. -/
-theorem W_mul_genLK_eq (d : Dims) (Ev : ℝ) (N : ℕ) (u : ℝ)
+`∂_ij ∂_ji` by exactly that (`RBM.Gauss.hasDerivAt_integral_Phi_pairs`, `RBM.Gauss.genD`,
+`RBM.Gauss.sumSblk_half_wirtPair`).  So the right-hand side below is the `𝓛` of (5.15), and
+the identity says `genLK` is it — after the repair that removed a second division by `W` from
+`RBM.MomentDuhamel.genLK`.  It is stated (rather than left implicit in the `rfl`) because it is
+the bridge between the `Band`-level definition and the `Dims`-level generator identity
+`hasDerivAt_integral_Psi_pairs` above, whose `½ ∑_i ∑_j Sblk_ij • ∫ wirtSecond` is literally
+this expression. -/
+theorem genLK_eq (d : Dims) (Ev : ℝ) (N : ℕ) (u : ℝ)
     (M : Matrix (d.Idx N) (d.Idx N) ℂ) {m : ℕ} (σ : Fin m → Bool)
     (a : LoopArg (d.L N) m) :
-    ((d.W N : ℝ) : ℂ) * MomentDuhamel.genLK (band d) Ev N u M σ a
+    MomentDuhamel.genLK (band d) Ev N u M σ a
       = (2 : ℂ)⁻¹ * ∑ i : d.Idx N, ∑ j : d.Idx N, (Sblk (d.L N) (d.W N) i j : ℂ)
-          * wirtSecond d N (fun M' => MomentDuhamel.lkFun (band d) Ev N u M' σ a) M i j := by
-  have hW : ((d.W N : ℝ) : ℂ) ≠ 0 := by
-    have h0 : d.W N ≠ 0 := (d.W_pos N).ne'
-    exact_mod_cast Nat.cast_ne_zero.2 h0
-  have hS : ((d.W N : ℝ) : ℂ) * (∑ i : d.Idx N, ∑ j : d.Idx N,
-        ((Sblk (d.L N) (d.W N) i j : ℝ) / (d.W N : ℝ) : ℂ)
-          * wirtSecond d N (fun M' => MomentDuhamel.lkFun (band d) Ev N u M' σ a) M i j)
-      = ∑ i : d.Idx N, ∑ j : d.Idx N, (Sblk (d.L N) (d.W N) i j : ℂ)
-          * wirtSecond d N (fun M' => MomentDuhamel.lkFun (band d) Ev N u M' σ a) M i j := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [← mul_assoc]
-    congr 1
-    field_simp
-  show ((d.W N : ℝ) : ℂ) * ((2 : ℂ)⁻¹ * ∑ i : d.Idx N, ∑ j : d.Idx N,
-      ((Sblk (d.L N) (d.W N) i j : ℝ) / (d.W N : ℝ) : ℂ)
-        * wirtSecond d N (fun M' => MomentDuhamel.lkFun (band d) Ev N u M' σ a) M i j) = _
-  rw [← mul_assoc, mul_comm ((d.W N : ℝ) : ℂ) ((2 : ℂ)⁻¹), mul_assoc, hS]
+          * wirtSecond d N (fun M' => MomentDuhamel.lkFun (band d) Ev N u M' σ a) M i j := rfl
 
 /-! ### `RBM.MomentDuhamel.Hyp.integrable` for the Gaussian sample -/
 
@@ -461,9 +425,10 @@ function of `ω`, so every power of its modulus is integrable.  The hypothesis
 `(zt E u).im ≠ 0` is needed and cannot be dropped: at `u = 1` the spectral parameter is real,
 `H_1 - E` is singular on a null set only, and no deterministic envelope exists.
 
-`RBM.MomentDuhamel.Hyp.integrable` quantifies `u` over **all** of `ℝ`, not over the window
-`[s N, t N]`; that is an over-quantification of the same kind T145 removed from `drift`, and it
-is the only reason the field cannot be closed by this theorem. -/
+`RBM.MomentDuhamel.Hyp.integrable` is now quantified over the window `[s N, t N]` only (T147
+removed the over-quantification of `u` over all of `ℝ`, the same kind T145 had removed from
+`drift`), so this theorem discharges that field verbatim once `(zt E u).im ≠ 0` is known on the
+window — which is the paper's standing assumption `t_N < 1`, `|E| ≤ 2 - κ`. -/
 theorem integrable_lkT_pow (d : Dims) (Ev : ℝ) (N : ℕ) {u : ℝ} (hzim : (zt Ev u).im ≠ 0)
     (q : ℕ) {m : ℕ} (hm : 1 ≤ m) (σ : Fin m → Bool) (a : LoopArg (d.L N) m) :
     Integrable (fun ω : Ω d =>

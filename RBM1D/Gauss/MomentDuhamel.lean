@@ -176,8 +176,16 @@ theorem eeFun_H (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {n : ℕ}
 
 /-- **`𝓛 Φ = ½ ∑_{ij} S_ij ∂_ij ∂_ji Φ`** applied to the matrix argument of `lkFun`.
 
-Only the variance profile `S^{(B)}/W` enters, so this is defined over an arbitrary
-`RBM.Band`; the Gaussian model is needed to *prove* the drift identity, not to state it.
+**The weight is `RBM.Sblk`, and nothing else.**  `Sblk L W i j = sbKre L (i.1 - j.1) / W`
+*already is* the variance profile `S = S^{(B)} ⊗ S_W` of Section 2.1, i.e. the `E|X_ij|²` of
+the model (`RBM.Gauss.gvar_diag`, `RBM.Gauss.gvar_offDiag`), and it is exactly the weight
+carried by the Gaussian generator identity `RBM.Gauss.hasDerivAt_integral_Phi_pairs`, by
+`RBM.Gauss.genD` and by `RBM.Gauss.sumSblk_half_wirtPair`.  Dividing it by `W` once more — as
+an earlier version of this definition did, reading `Sblk` as the *un-normalized* `S^{(B)}` —
+produces `W⁻¹ 𝓛`, not `𝓛`; see `RBM.Gauss.genLK_eq`.
+
+Only the variance profile enters, so this is defined over an arbitrary `RBM.Band`; the
+Gaussian model is needed to *prove* the drift identity, not to state it.
 The `RBM.Gauss.wirtSecond` on the right is transported along `RBM.Band.toDims`, whose index
 types agree with `B.Idx` definitionally (`RBM.Band.toDims_Idx`).
 
@@ -190,7 +198,7 @@ noncomputable def genLK (B : Band Ω) (E : ℝ) (N : ℕ) (u : ℝ)
     (M : Matrix (B.Idx N) (B.Idx N) ℂ) {m : ℕ} (σ : Fin m → Bool)
     (a : LoopArg (B.L N) m) : ℂ :=
   (2 : ℂ)⁻¹ * ∑ i : B.Idx N, ∑ j : B.Idx N,
-    ((Sblk (B.L N) (B.W N) i j : ℝ) / (B.W N : ℝ) : ℂ)
+    ((Sblk (B.L N) (B.W N) i j : ℝ) : ℂ)
       * Gauss.wirtSecond B.toDims N (fun M' => lkFun B E N u M' σ a) M i j
 
 /-! ### The primed interface -/
@@ -250,8 +258,15 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) where
   cMD : ℕ → ℝ
   cMD_nonneg : ∀ p, 0 ≤ cMD p
   /-- Every quantity whose `2p`-th moment is taken below is integrable.  On the Gaussian
-  model this is free from the deterministic envelope `‖G‖ ≤ η⁻¹` of T77. -/
-  integrable : ∀ (q N : ℕ) (u : ℝ) (σ : Fin (n + 2) → Bool) a,
+  model this is free from the deterministic envelope `‖G‖ ≤ η⁻¹` of T77
+  (`RBM.Gauss.integrable_lkT_pow`).
+
+  **Restricted to the window `[s_N, t_N]`**, exactly as `drift` is, and for the same reason:
+  the envelope is a power of `(Im z_u)⁻¹ = ((1 - u) Im m_E)⁻¹`, so at `u = 1` the spectral
+  parameter is real and no deterministic envelope exists at all.  Quantifying `u` over the
+  whole of `ℝ` — as T132a did — made the field unsatisfiable on the Gaussian model.  Nothing
+  is lost: every use below is at a time in `[s_N, v] ⊆ [s_N, t_N]`. -/
+  integrable : ∀ (q N : ℕ) (u : ℝ), s N ≤ u → u ≤ t N → ∀ (σ : Fin (n + 2) → Bool) a,
     Integrable (fun ω => |‖SumZeroDyn.lkT X E N u ω σ a‖| ^ q) B.P
   /-- **(5.20) + (5.24) combined, in moment form.** -/
   momentDuhamel : ∀ (p : ℕ), 1 ≤ p → ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ),
@@ -260,9 +275,9 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) where
         ≤ momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) σ) ((s N : ℝ) : ℂ) ((v : ℝ) : ℂ)
                 (SumZeroDyn.lkT X E N (s N) ω σ) a‖)
-          + 2 * ∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
+          + 2 * (∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
-                (F N u (X.H N u ω) σ) a‖)
+                (F N u (X.H N u ω) σ) a‖))
           + (cMD p * ∫ u in (s N)..v, momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
                 (eeFun B E N u (X.H N u ω) σ) (Fin.append a a)‖)) ^ ((1 : ℝ) / 2)
@@ -274,17 +289,17 @@ structure Hyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) where
         ≤ momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) σ) ((s N : ℝ) : ℂ) ((v : ℝ) : ℂ)
                 (Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω σ)) a‖)
-          + 2 * ∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
+          + 2 * (∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
-                (Qop (B.L N) ((u : ℝ) : ℂ) (F N u (X.H N u ω) σ)) a‖)
-          + 2 * ∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
+                (Qop (B.L N) ((u : ℝ) : ℂ) (F N u (X.H N u ω) σ)) a‖))
+          + 2 * (∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
                 (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
-                  (SumZeroDyn.lkT X E N u ω σ)) a‖)
-          + 2 * ∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
+                  (SumZeroDyn.lkT X E N u ω σ)) a‖))
+          + 2 * (∫ u in (s N)..v, momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
                 (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N u ω σ) (b 0)
-                  * SumZeroDyn.varthetaDot (B.L N) u b) a‖)
+                  * SumZeroDyn.varthetaDot (B.L N) u b) a‖))
           + (cMD p * ∫ u in (s N)..v, momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
                 (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) σ))
@@ -410,9 +425,9 @@ theorem stochDom_of_momentDuhamel [IsProbabilityMeasure (B.P)]
         momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
                 (SumZeroDyn.lkT X E N (s N) ω q.1) q.2‖)
-          + 2 * ∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+          + 2 * (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
               ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
-                (H.F N u (X.H N u ω) q.1) q.2‖)
+                (H.F N u (X.H N u ω) q.1) q.2‖))
           + (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
               ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
                 (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
@@ -421,7 +436,7 @@ theorem stochDom_of_momentDuhamel [IsProbabilityMeasure (B.P)]
       (fun N (q : LoopData (B.L N) (n + 2)) ω => ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖)
       (fun N q _ => Φ N q) := by
   refine Gauss.stochDom_of_momentDom hcard hΦ (fun p N q => ?_) ?_
-  · exact H.integrable (2 * p) N (v N) q.1 q.2
+  · exact H.integrable (2 * p) N (v N) (hv1 N) (hv2 N) q.1 q.2
   refine momentDom_of_momNorm_le (fun N q => (hΦ N q).le) fun ε hε p hp => ?_
   obtain ⟨C, hC0, hN⟩ := hrhs ε hε p hp
   refine ⟨C, hC0, ?_⟩

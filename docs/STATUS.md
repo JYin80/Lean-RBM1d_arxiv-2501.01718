@@ -3364,3 +3364,52 @@ T145 的 fiat 审计结论「`F` 被 `drift` 钉死」仍然成立，**但钉死
 内禀超线性不止 (5.50) 一处（(5.36) Case 2 有 `(J*)²`/`(J*)³`，(5.35) Case 2 有 `(J*)^{3/2}`），全都带 `A^{−1}`，安全。
 **T132b/T146 查出的 `MomentDuhamel.Hyp` 三处缺陷**（`genLK` 多 `/W`、`integrable` 过度量化、`∫` 括号）+ 缺 Lyapunov → **T154**。`genLK` 那一处我在 T132a 抽查时漏看了。
 
+
+## T148：`LDENetClose` **按字面不可证**——证明了它等价于一个为假的下界（`Gauss/LDENetClose.lean`，992 行，2026-09-21）
+
+工单的第 0 步（条件化 + 不单位化 + 加地板）**走通了**，但终点不是把 `LDENetClose` 卸掉，而是把缺口**收缩成一条具名的、可判定为假的输入**。
+
+**`ldeNetClose_of_lower_bound`**：在（现已是定理的）确定性模之下，`LDENetClose` **等价于**
+控制的多项式下界 `N^{−B} ≤ ζ(u)`，对 `u` 与非对角对一致。
+**而这个下界是假的**：`ζ(u) = ∑_{k∈band(i)} S_{ik}|G^{(i)}_{kj}(u)|²` 对带距 `d(i,j)` 是**指数小**的——
+这正是 (2.76)/(4.3) 的内容。**所以 `LDENetClose` 隐含地要求比「T143 把引擎重写以摆脱的那个下界」严格更强的东西。**
+
+**无条件证出来的（地板版）**：
+* `abs_ldeRow_flow_sub_le`/`abs_ldeCol_flow_sub_le`——**(4.2) 两侧沿流的确定性 Hölder-1/2 模**，
+  `≤ 6R^10(|√u−√v| + |u−v|)`（`R` 同时界住 `η_u⁻¹`、`|Idx|`、`‖X‖`；指数 10 故意不最优）。
+* `stochDom_ldeRow_flow_floor`/`stochDom_ldeCol_flow_floor`/`ldeFlowDom_floor`——
+  **(4.2) 对 `u ∈ [s_N,t_N]` 与对非对角对一致，带一个加性地板**：对每个 `B ≥ 0`，`ldeRowLHS(u) ≺ ldeRowRHS(u) + N^{−B}`。
+  假设只有 `|E| < 2`、`0 ≤ s_N ≤ t_N < 1` 与确定性区制界 `N^{−K} ≤ η_{t_N}`。
+  **不要 `LDENetClose`、不要 `‖X‖ ≤ N`（T109，本就无条件）以外的好事件、不要非对角衰减、不要局部律。**
+  网距 `δ_N = (N^{−(10K+12+B)})²`；定时输入是 T143 无条件的 `unifDomIcc_ldeRow/_ldeCol`，经新增的 `UnifDomIcc.mono_control` 放松。
+
+**地板吸不掉。** T135 的 `of_highProb_add_rpow_neg` 要的是**同一个**多项式下界。
+**所以消费者要改形状**：`Hierarchy/LKDecayQuant.LDEFlowDom` 需带 `+ N^{−B}` 重述（`Hierarchy/` 的改动，按协议未做）。
+探针 B（临时、import `LKDecayQuant`）端到端验证过：`LKDecay` 仍然只携带三条实质假设
+（`hΩ`、`hdecay`，以及**代替 `LDENetClose` 的** `hlow` + `hΞ`/`hΞX`）——**数量没变，但第三条现在是一条显式可判的不等式**，
+而不是一个两分句的网比较。
+
+**缺的工具不是高斯过程工具**（与工单的备案相反）：多项式规模的网上做并界已经打赢 `e^{−N^{2τ}}` 的尾，T143 的引擎做的就是这件事。
+**缺的是相对模 `‖∂_u ĉ(u)‖ ≤ N^K‖ĉ(u)‖`**——分子要小方阵 Green 列的非对角衰减（仓库**没有**：`Green/Minor.lean` 与
+`Gauss/MinorReplace.lean` 只有逐元界 `≤ η⁻¹` 与 `GoodEvent`-条件下的 `Ψ` 界），分母还要 `‖ĉ(u)‖` 对 `u` 一致的**下界**，
+即 `u ↦ G^{(i)}_{·j}(u)` 的反集中——**仓库和论文里都没有**（论文这一步的连续性论证是隐式的）。记 paper-deltas #111。
+
+**小偏差**：模是**逐元素**证的（`norm_green_sub_apply_le_of_entries`），多付两个 `|Idx|` 因子，
+因为仓库没有主子矩阵的 `ℓ²→ℓ²` 算子范数界。
+
+## `MomentDuhamel.lean` 的三处缺陷全部修复（2026-09-21）
+
+接 T132b（`genLK` 的 `W`、`integrable` 的过度量化）与 T146（paper-deltas #108 的括号）。
+`lake build RBM1D` exit=0，公理审计通过；只动了 `MomentDuhamel.lean`、`MomentDuhamelRhs.lean`、`MomentDuhamelGauss.lean`。
+
+1. **`genLK` 的 `/ W` 删掉了**，docstring 重写（原文「只有方差剖面 `S^{(B)}/W` 进来」正是误读的根源，现在明写
+   `Sblk L W i j` **本身就是** `E|X_ij|²`）。下游 `Gauss.W_mul_genLK_eq` 随之作废，改为 **`Gauss.genLK_eq`**（证明是 `rfl`，已编译）。
+2. **`Hyp.integrable` 按窗口量化**（`s N ≤ u → u ≤ t N →`），与 T145 对 `drift` 的处理逐字一致。
+   调用点两处；其中 `hrhs_of_moment_inputs` 原来拿不到 `s N ≤ t N`（`v` 与 `t` 无关系），
+   故**新增假设 `hvt : ∀ N, v N ≤ t N`**——不增加负担，唯一的消费者 `stochDom_of_momentDuhamel` 本就有 `hv2`；
+   探针验证 `hrhs_of_moment_inputs` 仍可**裸应用**填进 `hrhs` 槽。
+3. **括号修好了**，`pp.parens` 复核为三项/五项真和、无嵌套。**T146 预测的多余因子确实掉了出来**：
+   `hnum` 第三个被加项由 `2 * ((v−s) * (…)^{1/2})` 变成 `(…)^{1/2}`。
+
+**因此 STATUS 上一节（T132b）里关于这两处缺陷的描述已过时**：T132b 现在只剩两条矩不等式与高斯实例本身，
+外加它自己报告的两个缺生产者（`u ↦ Kval` 的时间可微性、固定 Hermitian `M` 时 `u ↦ gloop` 的可微性）。

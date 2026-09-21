@@ -1,6 +1,6 @@
 # 任务队列
 
-> ## ⭐⭐⭐ 当前优先级：T149 > T154（T132b 落地即做）> T155 ‖ T156 ‖ T148 > T157 ‖ T150 ‖ T151 > T158 > T132c 实现 > T152 > T153 > T58（2026-09-21 08:10，Cowork）
+> ## ⭐⭐⭐ 当前优先级：T149 > T154 > T155 ‖ T156 ‖ T160 > T157 ‖ T150 ‖ T151 > T158 > T132c 实现 > T152 > T159 > T153 > T58（2026-09-21 08:20，Cowork）
 >
 > **范围（Jun 2026-09-21）**：**Theorem 2.6（普适性、QUE、`StepTwoClaim`）暂缓，不开单**；T153（Theorem 2.2 的概率一半）排在六步之后。**当前目标 = 六步循环（Theorem 2.21 + Lemmas 2.18–2.20）正确无误**，终点核对是 T159。
 >
@@ -325,6 +325,7 @@
 | T157 | **`hinit`/`hFmom` 的随机控制替换**（T146 余项）：`Lemma510.F_le` 的控制是随机的 `xiRhs`；要 `‖U∘F_u‖_{2p} ≤ N^ε Φ_u`（确定性 `Φ`），走「`|U∘F| ≤ C·xiRhs` 逐路径 + `xiRhs ≺ Φ`（已有，`SumZeroDyn.F_stochDom` 的那一步）⟹ `|U∘F| ≺ Φ` ⟹（T77 + 包络）矩」；`hEEmom` 用 T154 的 Lyapunov | Claude Code | 待认领 | 已认领，未开工 |
 | T158 | **截断方案的定量导数界**（T132c 缺口 2/3）：光滑 max 的链式法则与权重和界；`∂J`、`∂²J` 以 `T_{u,D}` 归一化（经 (5.36)，即 T156）；`∂_u T_{u,D}`（`−(ℓ/ℓ_u)^{1/2}` 项符号有利可丢，`W^{−D}` 地板区单独处理）；门槛的时间依赖项 `−χ'·Θ̇_u/Θ_u`（`= 4m/η_u`，工单原先漏了）。**收尾在概率层面做穿越论证 + 时间网**（`MomentHyp.holder` + `stochDom_timeIcc_of_holder`），不在矩层面用指示函数截断（那样阶数仍会升） | Claude Code | 待认领 | 已认领，未开工 |
 | T159 | **六步循环的端到端核对**（Jun 2026-09-21：「先确保 6 步循环部分正确无误」）。在 T149 解开打包、Steps 1–6 各自有生产者之后做：(1) 一个探针按依赖序 1→2→3→4/5→6 串出 `Thm221.step`，再经 Lemmas 2.18–2.20 的迭代到 `Bounds`，`#print axioms` 只剩三条标准公理；(2) **逐条对照论文 (2.68)–(2.80) 与 Lean 陈述**（T114 做过字段对账，这次连同所有生产者的剩余假设一起列）；(3) **fiat 审计**：全链上每个数据字段（`F`、`EE`、漂移、鞅/残差）要么被恒等式钉死、要么是定义；(4) 列出全部 paper-delta 中影响六步的条目。**只交报告**；随后 Cowork 再派一个独立 agent 复核 | `docs/STATUS.md` | 待认领（等 T149 与各步生产者） | 未开工 |
+| T160 | **让消费者吃带地板的 (4.2)**（T148 余项；T148 已证 `LDENetClose` 按字面为假，交付了无条件的 `ldeFlowDom_floor`：`ldeRowLHS(u) ≺ ldeRowRHS(u) + N^{−B}`，对 `u` 与非对角对一致）。**判断：地板无害**——下游要的衰减本身就带 `W^{−D}` 地板（`T_{u,D}` 与 (5.75) 都是），取 `B ≥ 2D·log W/log N + 1` 即被吸收。所以：(1) 在 `Hierarchy/LKDecayQuant` 给 `LDEFlowDom` 加带地板的带撇版并把 `lkDecay_of_inputs` 改接到它，**删掉 `hlow`/`hΞ`/`hΞX` 这条替代假设**——`LKDecay` 应只剩 `hΩ`（T130）与 `hdecay`（Step 2）；(2) **T107 的 `EntryBoundFlow`/`DiagBoundFlow` 用的是同一个输入**（T147），同法改接；**先看 T107 是否早已停滞**（「进行中」已挂很久），若是，把它并入本单并在 T107 行注明。**只加带撇版，旧签名不动** | `Hierarchy/LKDecayQuant.lean` + T107 的文件 | 待认领 | 未开工 |
 | T133 | **loop 观测量的 `C²` 界**（T76 `TestFun` 缺口）：`L_{σ,a}` 与 `(U∘(L−K))_a` 对 `H` 为 `C²`，一二阶导有确定性 `η` 幂界。T132 的前置 | `Gauss/LoopC2.lean`（新建） | Claude Code | **完成**（`BddC2` 对乘积封闭——缺的只有 Leibniz 一步；loop 与 `U∘(L−K)` 的 `TestFun` 均已拿到，探针验证端到端） |
 | T134 | **逐点漂移恒等式 + 动 `z_u`**（T76 `LoopIto` 与未做项）：`(∂_u + 𝓛)(L−K) = Θ∘(L−K) + F` 逐点成立；联合可微走 `ContDiff.comp`，绕开「偏导连续 ⟹ 可微」。T132 的前置 | `Gauss/LoopIto.lean`（新建） | Claude Code | **完成**（动 `z_u` 闭合、`ContDiff.comp` 够用；**(2.47) 的 `−m` 减项证明为动 `z` 的产物**，`LoopIto.second` 今后只需冻结形式；余 `hjoint`，见 STATUS） |
 | T135 | **`≺` 的可加余量吸收引理**（T127 余项）：界形如 `N^τ·Φ + m·W·L·N^{−D}` ⟹ `≺ Φ`，前提是控制 `Φ` 有**多项式下界** `N^{−B} ≤ Φ`。放 `Defs/StochDom.lean`（通用，**先 grep**：T123 `rpow_neg_le_aprioriRhs`、T125 同形引理可能已近似）。然后用它把 `EEBridge.norm_eeField_le` 升成 `Lemma510.EE_le` 的 `≺` 版，并给出该控制的多项式下界 | `Defs/StochDom.lean` + `Hierarchy/EEBridge.lean` | Claude Code | **完成**（吸收引理进 `Defs/StochDom.lean`（高概率型，下界本身是事件）；`EE_le` 已由裸 `:=` 闭合，余 `eeDecayEvent`/`xiLowEvent` 两个生产者，见 STATUS） |

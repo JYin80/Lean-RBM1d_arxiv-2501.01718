@@ -4571,7 +4571,7 @@ STATUS 的 T173 节写「`hEL` 仍挂 `MatrixStein`(T70) 与 `hjoint`(T141)」�
 下游补了带撇版（`Flow/Thm221Gain.lean`），**结论逐字不变（`rfl` 探针验证）**；`Thm221` 在整条装配里**只从 `SpecSeq.bounds` 一处进入**。
 **⚠ 一条要记住的约束**：网格给的 `c` 有上界 ≈ `τ/16`，**不能要多大给多大**，所以 `Thm221'` 必须对任意小的 `c > 0` 成立（现有生产者满足，已验）。
 **仍待裁定（只剩这一条）**：论文侧 (2.72) 是否相应写成带增益形——**Lean 侧不需要**，paper-delta #125 已足。
-（备选：走 (2.73) 降幂的 shape 2 后 T174 表里所有行 `β* < 30` 严格成立，裸 (2.72) 其实也够。）
+（~~备选：走 (2.73) 降幂的 shape 2 后 T174 表里所有行 `β* < 30` 严格成立，裸 (2.72) 其实也够~~ —— **T186 已推翻后半句**：`β* < 30` 只解决 `R` 的幂，解决不了 `≺` 的 `N^δ`，那需要 `A_t` 的多项式下界，而裸 (2.72) 在 `s = t` 处只给 `A_t ≥ 1` 且 `A_t = 1` 可取（已编译反例 `RBM.exists_cond272_not_rpow_le_scale`）。可达的最强形是 `Cond272Reg` = (2.72) 逐字 + Step 1 本来就带的 `N^c ≤ A_t`。见本文档 T186 节。）
 
 <details><summary>原始条目（存档）</summary>
 
@@ -5654,3 +5654,91 @@ T191 的余项是**四项**（`diffJoint`、`contT`、`bddT`、φ′ 的识别�
 * **(a) 去掉**：Lean 的 `Thm221` 取论文注记里的变体（假设与结论都不含 (2.71)），Step 6 的漂移侧（T182/T189 已完成）保留，**样本侧（四个好集生产者、包络/可测/可积一批、`hEL` 接线，约 2–4 张单）推迟到 Theorem 2.6 阶段**（那时 (7.29) 要用同一套方法）。六步主线更短。
 * **(b) 保留**：按论文正文的完整 Theorem 2.21 做，现在就开样本侧的单。
 Cowork 倾向 (a)：论文自己说了不需要，主定理 2.2–2.5 都不用 (2.71)，且工作不会白费（Theorem 2.6 阶段接着用）。
+
+## ⭐ T186：`Thm221` 收裸 `Cond272` —— **裁定反转：裸 (2.72) 不够，缺的不是指数而是 `A_t` 的多项式下界**（2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **10199** 条。新文件 `RBM1D/Flow/Thm221Bare.lean`（468 行，纯新增；
+`Flow/Hypotheses.lean` / `Iteration.lean` / `Scales.lean` / `Thm221Gain.lean` **一字未动**，只在 `RBM1D.lean` 加一行 import）。
+
+### 结论（与 D1 括注相反，**请更新裁定**）
+
+T174 / T132c 的「走 shape 2 后所有行 `β* < 30` 严格成立」是对的，但**「所以裸 (2.72) 就够」不成立**。
+`hregS` 里的 `N^c` 有**两个**用处，之前只核了第一个：
+
+1. 压住 `R = η_s/η_t` 的幂 —— 这个确实由 `β* < 30` 白送；
+2. **给 `A_t = Wℓ_tη_t` 一个多项式下界**，好把 `≺` 的 `N^δ` 吃掉（`phi_arith` 的 `x^{17}R^{10} ≤ A` 里那个 `x^{17} = N^{17δ/8}`）。
+
+裸 (2.72) 对第 2 点**一点都不给**：取 `s = t`，(2.72) 逐字就是 `1 ≤ A_t`，而 `A_t = 1` **确实取得到**——
+`flowScale = W·Im m·min(√(1−t), L(1−t))`，`L ≤ W·Im m` 时取 `1−t = (WLIm m)^{-1}`，否则取 `1−t = (W Im m)^{-2}`，
+两支都给 `A_t = 1`（`RBM.exists_flowScale_eq_one`，已编译）。于是
+`RBM.exists_cond272_not_rpow_le_scale`：**存在逐字满足 (2.72) 的时间列，其上 `N^c ≤ A_t` 对任何 `c > 0` 都失败**。
+（这不是「Lean 陈述太宽」：论文 Theorem 2.21 的假设表里也只有 (2.72)，多项式下界是**应用时**由 p.24 的
+`t ≤ 1−N^{-1+τ}` 网格给的，定理本身没写。）
+
+### 能做到的最强形式：`Cond272Reg` / `Thm221Reg`
+
+`Cond272Reg B E s t c := Cond272 B E s t ∧ ∀ᶠ N, N^c ≤ B.scale E N (t N)`
+—— **(2.72) 逐字 + Step 1 本来就带的具名假设 `hreg`**（`eventually_scale_facts`、`weakLaw_highProb` 的那一条）。
+这个下界在网格上是白送的：网格步 `η_s/η_t = W^{τ'}` 本身是 `W` 的正幂，(2.72) 于是逼出 `A_t ≥ W^{30τ'}`。
+
+强弱链（全部已编译）：`Thm221 → Thm221Reg → Thm221'`，`Cond272' → Cond272Reg → Cond272`，
+`Bounds_of_Thm221Reg`（与 `Bounds_of_Thm221` 结论 `rfl` 相等，T107 手法探针已编译）。
+
+### 指数记账（按**已编译的**陈述核的，不是抄旧审计）
+
+判据从 `β* ≤ 30` 换成了 `e/c + b/30 ≤ a`（`RBM.rpow_mul_rpow_le_of_pow_thirty`：`R^b ≤ A^{b/30}`、`N^e ≤ A^{e/c}`、`A^{e/c+b/30} ≤ A^a`）。
+
+| 消费者（已编译） | 要的形 | 裸路线的条件 |
+|---|---|---|
+| `Step2.phi_arith` / `Step2MomentStep.phi_arith'` 的 `hA` | `x^{17}R^{10} ≤ A`（**(5.40)，`β* = 10`，瓶颈**） | `17δ/(8c) + 1/3 ≤ 1` ⟺ `δ ≤ 16c/51` |
+| `Step2MomentStep.beta_star_margin` | `x^{32}R^{11} ≤ A²`（(5.41) 远场主项，`β* = 5.5`） | `4δ/c + 11/30 ≤ 2` ⟺ `δ ≤ 49c/120` |
+| `Step2MomentStep.hgamma_of_reg` | `x^{24}R^{9} ≤ A²`（远场次项，`β* = 4.5`） | 弱于上一行 |
+| `phi_arith'` 的 `hq`、`hJΛ` | `r³ ≤ R²`、`J ≤ x⁸R⁴`（近场，`α = 0`） | 与 `A` 无关，免费 |
+
+**`δ ≤ c/4` 同时满足前两行**；带增益路线（`beta_star_margin`）只要 `δ ≤ c/2`，所以**裸路线的代价就是 `δ` 预算少一半**，没有别的。
+`Cond272Reg.hA_phi` / `Cond272Reg.hA_betaStar` 直接产出这两条，且**对 `u ∈ [s,t]` 一致**（`A_u ≥ A_t`、`R_u ≤ R_t`）。
+
+**探针（scratchpad，已编译）**：`Step2MomentStep.side_conditions_of_reg` 的**整个**三条结论
+（`hq_of_ratio` + `hbeta_of_reg` + `hgamma_of_reg`）从 `Cond272Reg` 重建出来，全程不碰 `Cond272'`。
+——所以 Step 2 那一侧确实只差把 `side_conditions_of_reg` 的假设从 `N^c R^{30} ≤ A_u` 换成 `x^{32}R^{11} ≤ A_u^2`（带撇版），
+该文件当前被别的 agent 占着，没动。
+
+### 论文字面 shape 1 仍然不行（顺带核实）
+
+`phi_arith`（shape 1）的 `hα : α·x^{24}R^{10} ≤ 1`，`α = A^{-1/3}`，即 `x^{72}R^{30} ≤ A`。
+在判据里是 `b = 30, a = 1`，于是 `e/c + 1 ≤ 1` 逼出 `e ≤ 0`：**`N^δ` 一点余量都没有**。
+这正是 Jun 12:10 裁定 (a) 的必要性——(5.41) **必须**走 (2.73) 降幂，否则连 `Cond272Reg` 都不够、只能回到 `Cond272'`。
+
+### 还欠的（如实）
+
+* `Thm221Reg` 只是接口 + 转换 + 算术桥，**没有**从六步把它证出来（六步链本身还没在仓库里合拢，见 T176 探针 P1）。
+* `Hierarchy/` 那一侧的带撇版（`side_conditions_of_reg'`、`harith_flowAs'` 等）没做：要改 `Step2MomentStep.lean` / `Step2PP.lean` / `StepGlue.lean`，与并行车道冲突。
+* `blueprint/src/content.tex` 被别的 agent 占着，`\lean{}`/`\leanok` 未补。
+
+## ⭐⭐ T197：截断版矩 Duhamel——**Step 2 现在整体绕开了已证不可证的 `MomentHyp.step`**（`Gauss/MomentDuhamelCut.lean`，1021 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **10312** 条。只碰了这一个新文件。
+
+**验收**：`aprioriDecay_cut` / `step2_cut` 的**结论与 `Step2Moment.aprioriDecay`/`step2` 逐字相同**，
+假设里 `MomentHyp` 换成 `MomentHypCut`。**整个 Step 2 现在只剩一条具名假设 `CutHyp.moment`。**
+
+**两条设计上的要点**：
+* `cutTrunc Θ x = χ(x/Θ)·x` 自带**确定性包络 `2Θ`**，于是 `integrable_cutTrunc_pow` 免假设，
+  **`MomentHyp` 的 `env`/`env_le` 两个字段直接消失**；`continuousOn_of_modulus` 让 `cont` 也消失。
+* `cut_contraction`：`4Θ ≤ A` 时 `χ(J/Θ)J²/A ≤ ½·χ(J/Θ)J`——**正是 T132c `no_finite_pass`（`θ ↦ c+θ²/A` 在 `θ ≥ A` 不收缩）的对照面**。
+  截断把映射拉回收缩半径内，这就是它能替代停时的机制。
+* **去截断在概率层、余项为零**：前缀假设取 `u = ws` 即给出 `J_{ws} ≤ N^{2δ}Θ`，正是截断水平，故 `cutTrunc = J`；
+  代价只有网点上的并集界 `N^{Ccard}`，取 `p ≥ 2(D+Ccard+1)/δ` 吸收。
+
+**可满足性检查的质量值得记**（全部编译）：`satCutHyp` 给出**完整的 `CutHyp` 实例**，
+且取在**临界标度 `J ≡ Θ`**（不是退化的 `J ≡ 0`）、窗口非退化、用的是**流自己的参数**；
+关键是 `mesh_fine`（要网细）与 `card_le`（要网粗）这对**方向相反、最容易联合不可满足**的条件，
+**由同一个见证同时满足**，且 `sat_mesh_card` 证明 `mesh_fine` 在该见证处**取等**、网不能再粗。
+另有 `sat_moment_at_zero`（T191 那个 `p = 0` 陷阱的同形检查）与 `sat_cut_sq_nonvacuous`（线性化不是退化的 `0 ≤ 0`）。
+**踩到过一个真的退化点**：见证里 `mesh N = N²` 在 `N = 0` 给 0、`mesh_pos` 当场失败，改成 `(N+1)²`。
+
+### 尚缺与归属
+1. **`CutHyp.moment`（截断 Duhamel 的高斯层计算）**——T132b/T198 一线；**Step 2 只剩这一条**。
+2. `hfar` —— T198，且正好建在本文件的接口上。
+3. ⚠ **一条无主项**：`flowEq548_of_near_far` 的 `hnear` 要**锐化到 `(η_s/η_u)²`**，
+   而仓库的 (5.47)（含 `jS_stochDom_cut`）只给 `(η_s/η_u)^4`。**T198 的规格只点名 `hfar`，`hnear` 的锐化目前没人负责。**

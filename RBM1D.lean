@@ -33,6 +33,7 @@ import RBM1D.Gauss.MomentDuhamelRhs
 import RBM1D.Gauss.MomentDuhamelGauss
 import RBM1D.Gauss.MomentDuhamelHyp
 import RBM1D.Gauss.MomentDuhamelTime
+import RBM1D.Gauss.MomentDuhamelCut
 import RBM1D.Gauss.Lemma514Moment
 import RBM1D.Gauss.Lemma514Holder
 import RBM1D.Gauss.DischargeBDG
@@ -136,6 +137,7 @@ import RBM1D.Flow.Hypotheses
 import RBM1D.Flow.Initial
 import RBM1D.Flow.Iteration
 import RBM1D.Flow.Scales
+import RBM1D.Flow.Thm221Bare
 import RBM1D.Flow.Thm221Gain
 import RBM1D.Flow.EnergyUniform
 import RBM1D.Flow.Universality

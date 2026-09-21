@@ -34,6 +34,7 @@ import RBM1D.Gauss.FlucCount
 import RBM1D.Gauss.FlucIter
 import RBM1D.Gauss.FlucIterHigh
 import RBM1D.Gauss.MinorDiffGain
+import RBM1D.Gauss.MinorGoodLe
 import RBM1D.Gauss.CondDom
 import RBM1D.Gauss.CondStableInst
 import RBM1D.Gauss.CondStableFlow

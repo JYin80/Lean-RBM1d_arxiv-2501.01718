@@ -4119,3 +4119,30 @@ F_{u,σ,a} = Ẽ_{u,σ,a} + ∑_{l_K ≥ 3} [K ∼ (L−K)]^{l_K}_{u,σ,a} + E^{
 * 已按提醒**避开** T133 的 `BddC2C` 常数（无 `T_{u,D}` 归一化、差 `A^{O(1)}`），文件头写明它不能当缺口界用。
 * **指数预算未重算**：本文件只给「每一步的损失是什么」（`e`、`e²`、`r−1`、`W^{2D}`、`8C_χm/η`）。
   T156 的更正（Case 2(1a) 是 `A^{−1/2}`）与 T155 的近场 `r³` **仍需在 T132c 实现前合并重算 `β*` 表**。
+
+## T169：`MinorGoodLe` 落地——层级 0 的好事件迭代到 `|S| ≤ M`（`Gauss/MinorGoodLe.lean`，335 行，2026-09-21）
+
+`lake build RBM1D` exit=0，审计 **8986** 条。
+
+**可满足性先行检查（按 T164 的教训，工单要求的第一件事）**：语句形状合法且非空洞。
+`ω` 只作为「假设与结论共同读取的那一个点」出现（`GoodEvent … ω ⟹ MinorGoodLe … ω`），**没有任何 `∀ ω` 量化**；
+T164 的反例在这里表现为**前提不成立**，不构成矛盾。
+**并且把「非空洞」变成了定理**：逆向的 `MinorGoodLe.goodEvent` 证明它在层级 0 逐字蕴含 `GoodEvent`（对任意预算，含 `M = 0`）。
+所以结论既不弱到平凡、也不强到不可满足——它恰好是把 (4.1) 从 1 层推到 `M+1` 层，代价是常数 2。
+
+**归纳真正需要的常数**：不变量是「对 `S.card ≤ M`，`‖G^{(S)}_{ab}‖ ≤ Ψ + 8|S|Ψ²`（`a ≠ b`）且对角 centered 同」。
+一步 (4.9) 的代价 `2Ψ_j² ≤ 8Ψ²` **正好等于不变量每步的增量，递推自封闭、不需要任何余量**。
+`8MΨ ≤ 1` **是紧的**，只用于这一条；`Ψ ≤ 1/4` 只用于 `inv_le`/`diag_ne`。**工单给的三条常数原样够用，没加码也没放宽。**
+
+**两处必要的新增**：`gEnt_insert_of_ne`——现有的 `gEnt_insert` 吃**整个** `MinorGood`（所有层级），
+而归纳步只在层级 `S` 上有信息，**用不了**，所以重证了只吃 `hdet` 与 `gEnt κ κ S ≠ 0` 的版本；
+以及第五个字段 `diag_ne`（对齐 `MinorGood` 的字段表，T170 用 `gEnt_insert` 时直接需要，白送）。
+`det` 确如 T164 所说是白送的定理（`isUnit_det_Hflow_submatrix_sub`），**无好事件、无层级限制**。
+
+### ⚠ 留给 T170 的两件事
+* **依赖会成环**：本文件 `import Gauss.MinorDiffGain`（为复用 `gEnt`），而 T170 要让 `MinorDiffGain` 的消费点改吃 `MinorGoodLe`。
+  届时要么把 `gEnt` 及其基本引理**下沉**到 `FlucIterHigh.lean` 或 `Defs/`，要么 T170 走 `MinorDiffGain` 之后的新文件。**待定。**
+* T169 的第 (2)(3) 项（删 `MinorDiffGain.lean` 四处签名的 `hdet` 参数、(4.2)/(4.3) 标签更正及 `paper-deltas` #103 / `content.tex:1935` 同步）
+  **都要改本文件之外的文件，未做**。
+* 给 T171 的线索：`goodSetFlow`（`Eq45FlowInputs.lean:278`）**逐字就是** `∀ u ∈ Icc, GoodEvent …`，
+  所以桥是一行 `fun hω => minorGoodLe_of_goodEvent_flow … (hω u hu)`；只是要多引一个 import，依赖方向待定。

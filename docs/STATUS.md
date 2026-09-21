@@ -1985,7 +1985,7 @@ Step1 那边是 `Cond272` + `hreg`）。**时间一致性（T99 的 (C)）仍不
 
 **当前状态**：(4.12) 除一条具名接口 `FlucGain` 外无假设；**(4.5) 还差 `hIBP`（T83，堵在 T70）与确定性控制 `ρB` 与论文随机控制 `Lmax` 的比较**（那是局部律，不属涨落平均）。
 `FlucGain`（高阶小行展开：再作用 `m` 个 `Q_{κ_i}` 得 `ρ^m`）已证 `m = 0` 与 **`m = 1`**（`norm_qRow_flucDiag_le`：`Q_κ` 湮灭 `Z^{(κ)}_k`，后者与 `Z_k` 相差 T85 的 `ε`，故 `‖Q_κ Z_k‖ ≤ 2ε ≍ Ψ²`）；
-**`m ≥ 2` 需要迭代小行 `G^{(κ₁κ₂)}` 及其 `≺ Ψ^{m+1}` 估计，仓库里还没有**。`flucGain_env` 是无条件的（无增益，`ρ = 2`）实例，故接口不空洞。paper-deltas #61。
+**`m ≥ 2` 需要迭代小行 `G^{(κ₁κ₂)}` 及其 `≺ Ψ^{m+1}` 估计，仓库里还没有**。`flucGain_env` 是无条件的（无增益，`ρ = 2`）实例，故接口不空洞。paper-deltas #95。
 
 **T102 ✔**（`Gauss/Lemma41Glue.lean`，零 sorry，不碰 `Hierarchy/Step1.lean`、`Green/EntryBound.lean`）：
 **固定时刻的 `Lemma41Flow` 成立。**
@@ -2070,7 +2070,7 @@ agent 在 scratch 里验证过：以 `Ξ ≡ univ` 可逐字复原 T73 的 `stoc
 
 **可以据此卸掉逐点假设的下游**：`Step2Moment.MomentHyp.holder`（进而 `jS_stochDom`/(5.47)）；**T99 审计的阻塞项 (C)**（`Lemma41Flow` 的时间一致性那半）——预解式的模 `‖G_u − G_{u'}‖ ≤ η^{-2}|√u−√u'|·‖X‖` 正是形式 (b)（`γ = 1/2`，经 `abs_sqrt_sub_sqrt_le`），**余下的输入只剩 T100 的 `‖X‖ ≺ 1`**。
 **注意重复**：因 `Gauss/` 不能 import `Hierarchy/`（Step2Moment 反向依赖 `Gauss.Envelope`），`netTime`/`netTime_mem`/`exists_netTime_close` 在此重证了一份（命名空间 `RBM.Gauss`，与 T75 的 `RBM.Step2Moment` 不冲突）。
-**下次编辑 `Hierarchy/Step2Moment.lean` 时应删掉它那三条，改用这里的**；本单按协议未改动该文件。`…_one_of_holder_hp`/`…_one_of_holder_dom` 除模假设外与 T75 签名一致，是直接的替换件。paper-deltas #62。
+**下次编辑 `Hierarchy/Step2Moment.lean` 时应删掉它那三条，改用这里的**；本单按协议未改动该文件。`…_one_of_holder_hp`/`…_one_of_holder_dom` 除模假设外与 T75 签名一致，是直接的替换件。paper-deltas #96。
 
 **T104 ✔**（`Gauss/IBPPoly.lean`，新建，零 sorry）：**`GaussIBP` 卸掉了。**
 
@@ -2292,7 +2292,7 @@ T102 那条链的每一步都是「在单个 `N`、`ω` 上关于失败事件的
 **T107 接口**：`EntryBoundFlow`/`DiagBoundFlow` 两个 `def`（(4.2)/(4.3) 前面加 `RBM.TimeIcc s t N` 到指标集，指示函数用时间冻结的 `flowDelta`），
 字面上就是 `entry_bound_gauss`/`diag_bound_gauss` 放大指标集，T107 的 `of_det` 输出应当无胶水对上。
 **T107 落地时要核对**：若它直接产出 `Step1.goodEv` 指示函数的形式，则 `goodEv_subset_goodSet_flow` 不再需要，假设可简化。
-新增的 `..._slow_*` 桥目前**没有消费者**（因为总装不需要网），保留为通用工具与后备。paper-deltas #63。
+新增的 `..._slow_*` 桥目前**没有消费者**（因为总装不需要网），保留为通用工具与后备。paper-deltas #97。
 
 ## ⚠ HEAD 编译失败：`Gauss/IBP.lean` 与 `Gauss/FlucIter.lean` 的重名（2026-09-20，Cowork 值守发现）
 
@@ -2329,7 +2329,7 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 
 **整合时踩到的一个坑（已修）**：新加的 `condRow_zero` 与我 T94 `FlucIter.lean` 里的同名声明冲突，`RBM1D.lean` 同时 import 两者即报
 `environment already contains 'RBM.Gauss.condRow_zero'`。已把 `IBP.lean` 里的改名为 `condRow_zero_apply`（逐点形式）。
-**教训**：并行 agent 各写各的文件时，`lake env lean 单文件` 绿**不能**保证全局无重名——整合时必须跑一次全量 `lake build`。paper-deltas #64。
+**教训**：并行 agent 各写各的文件时，`lake env lean 单文件` 绿**不能**保证全局无重名——整合时必须跑一次全量 `lake build`。paper-deltas #98。
 
 ### `RBM1D/Gauss/DistEq.lean` — (2.39)(2.66)(6.1) 三条转移（T111，Claude Code 并行 agent）
 
@@ -2344,7 +2344,7 @@ error: RBM1D.lean:1:0: import RBM1D.Gauss.IBP failed,
 
 `Flow/Consequences.lean`、`Flow/Hypotheses.lean`、`Loop/ContinuityAssembly.lean`、`Gauss/Model.lean` 的签名一律未改。
 唯一新增假设：`loopScaling_gauss` 需 `0 < t₁ N` 与 `t₁ N ≤ t₂ N`（`RBM.LoopScaling` 本身未改；消费者 `RBM.lemma_5_1` 已自带 `0 < c ≤ t₁ N` 与 `t₁ N ≤ t₂ N`，白送）。
-**注**：矩路线整体仍条件于 T69 的 `OpNormBound`（`‖X‖ ≺ 1`，T109 在做）与 `Dims` 的具体实例。paper-deltas #65。
+**注**：矩路线整体仍条件于 T69 的 `OpNormBound`（`‖X‖ ≺ 1`，T109 在做）与 `Dims` 的具体实例。paper-deltas #99。
 
 ### `RBM1D/Gauss/FlucIterHigh.lean` — 第 0 步结论：**增益是乘性的**（T110，Claude Code 并行 agent）
 
@@ -2853,7 +2853,7 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 `bddC2_loopObs` 取 `B = 2(1+η⁻¹)³` 落成 `η⁻¹` 的显式幂。**`TestFun` 已由探针验证**：`testFun_loopObs_of_im_le` 填上 T76 那个 hook 的三个空字段；
 端到端的 `hasDerivAt_momentIntegral … (testFun_momentFun_loopObs …)` 也编译通过——即 `d/du E|L_{σ,a}(H_u)|^{2p} = E[𝓛(|L|^{2p})]` **除 `MatrixStein`（T70）外假设全部卸掉**。
 `(U∘(L−K))_a` 同样拿到（`ukerObs`/`bddC2_ukerObs`/`testFun_ukerObs`）——因为 (5.17) 的系数**不依赖 `H`**，它就是 loop 的有限 ℂ-线性组合加常数。
-**一处继承来的多余假设**：`testFun_loopObs_of_im_le` 带 `1 ≤ I.a.length`，**不是本单的界需要的**，而是仓库里 `testFun_loopObs` 的 `bdd₀` 字段（即 (5.2)）自带的；`bddC2_loopObs` 与整条 Uker 链**没有**长度假设。paper-deltas #90（原误编 #88，与 Jun 的模型裁决撞号，Cowork 改）。
+**一处继承来的多余假设**：`testFun_loopObs_of_im_le` 带 `1 ≤ I.a.length`，**不是本单的界需要的**，而是仓库里 `testFun_loopObs` 的 `bdd₀` 字段（即 (5.2)）自带的；`bddC2_loopObs` 与整条 Uker 链**没有**长度假设。paper-deltas #100（原误编 #88，与 Jun 的模型裁决撞号，Cowork 改）。
 
 ### `RBM1D/Gauss/LoopIto.lean` — T134：动 `z_u` 已解决，且 (2.47) 的 `G̃` 升级为定理（Claude Code 并行 agent，2026-09-21）
 
@@ -2887,7 +2887,7 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 
 **⚠ 一个值得记的发现：当前威力是 `Ψ·η_t⁻¹` 而非 `Ψ²`。** 原因是 T113 的 `B` 取的是确定性包络 `2(η_t⁻¹+1)`，因为其空字分支用 `norm_flucDiagSet_le_env`；
 而根因在 **`MinorGood`（`MinorDiffGain.lean:436`）带 (4.1) 与 (4.3)，但不带 (4.2)**——没有 `‖G^{(S)}_{aa} − m‖ ≤ Ψ` 这个字段，`m = 0` 那一档就改进不到 `B ≍ Ψ`。
-**补上该字段并在空字分支使用它，就是把这条现已打通的路线做到 (4.12) 论文尺寸的下一步**（是对 `MinorDiffGain.lean` 的编辑，自然的下一张单）。paper-deltas #85 已更新，另加 #90。
+**补上该字段并在空字分支使用它，就是把这条现已打通的路线做到 (4.12) 论文尺寸的下一步**（是对 `MinorDiffGain.lean` 的编辑，自然的下一张单）。paper-deltas #85 已更新，另加 #100。
 
 ### T138：`FlowInputs` 被拆解，`LKDecay` 只剩三条实质假设（Claude Code 并行 agent，2026-09-21）
 
@@ -2964,3 +2964,9 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 68e7f61 提交的 `Gauss/MomentDuhamel.lean` **两处都没有**（`git grep eeField\|IsHermitian` 为空）。收口引理与 `F_unique` 是对的。
 不是返工：`Hyp` 刚建、无外部消费者，改结构即可。开 **T145**（最高优先级）。另开 **T146**：`hrhs` 先试「逐时刻 `≺` + 确定性包络 ⟹ 矩」（T77）的桥，而不是把 `stochDom_of_logBound` 整套做矩版。
 
+### T139：paper-deltas 编号去重（Claude Code，2026-09-21）
+
+`61`–`65` 与 `90` 各有两行。**第一组保持原号**（T81/T91–T93/T95，STATUS 1592/1648/1666/1741/1767 的引用不动）；
+**第二组改编**：T94→**95**、T101→**96**、T108→**97**、T83→**98**、T111→**99**，T137 的 `90`→**100**。
+**与工单的一处偏差**：工单写「改编 `91`–`95`」，但 `91`–`94` 已被后来的行占用（当时最大号是 94），故顺延到 95–100。
+STATUS 里指向第二组的 7 处引用（1988/2073/2295/2332/2347/2856/2890）已按上下文逐条改正；`RBM1D/**/*.lean` 的 docstring 里没有对这些号的引用（已 grep）。现全表无重号。

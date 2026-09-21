@@ -2803,3 +2803,41 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 其 docstring 本来就预见了这种用法。交付的 `norm_condExpDiag_flow_sub_le_rpow` 就是 `hHol` 的形状（指数 `1/2`、常数 `N^K`、在 `flowNetEvent` 上），代价是一条区制假设（paper-deltas #87）。
 **未做（有意）**：没有组装 `ibpFlow_of_unifDom` 的完整 `hHolIBP`——那要混入 Green 函数那半与 `u·m²·∑_k S_{ik}(G_{kk}−m)` 的前因子，而 T128 正在改那个文件、拥有其形状；
 组装方法（三角不等式 + 两个额外项，总常数 `η⁻²(2N²+2N+9/2) + η⁻¹ + 1`）写在 `norm_condExpDiag_flow_sub_le_rpow` 的 docstring 里。
+
+## T132 第 0 步：矩 Duhamel 的消费者清单、接口草案与评估（Claude Code，2026-09-21；**未写任何 repo 文件，等 Cowork 审**）
+
+**建议：Proceed with modifications（开工，但按下面五条改规格）。** 三个 scratchpad 探针把最可疑的分析前置都验成了正面结果。
+
+### 1. 消费者清单（穷尽，非抽样）
+全仓库 `duhamel|bdg` 的非注释命中只有 8 处，其中 4 处是 `Hierarchy` 的字段声明本身，**真正的使用点只有 5 个**：
+`SumZeroDyn.bound_nonAlt`(duhamel，逐路径)、`bound_qGood`(duhamelQ，逐路径)、`term1M`(bdg)、`termM`(bdgQ)、`Step2.step_bound`(duhamel@n=0)；
+外加 `mart_of_QV` 一个已经把 `bdg` 形状抽象成参数的泛化点。传递下游：`lemma514_flow(')` → `LKDecayQuant.lemma514_flow_of_flowInputs`；`Step2.jS_highProb` → `jS_stochDom`/`aprioriDecay`/`step2`。
+
+**重要的否定结果：血缘半径很小。** `Step3.Lemma514` 的全部下游（`hyp_flow`/`flow_sharpLoop`/`flow_steps45`/`StepGlue`/`Step2PP`/`Thm221`）都把 `Lemma514` 当**谓词假设**、对 `Hierarchy` 完全参数化；`Steps` 的两个字段同理。
+**只要带撇路线重新生产出 `Lemma514` 与那两个字段，下游一行都不用改。** 另有 7 条只碰 `H.F`/`H.EE` 的定理在带撇结构里**逐字存活**。
+**现成先例**：`Step2Moment.MomentHyp` 已经是本单想做的事在 `n = 2` 上的成品（无停时、无鞅），其文件头明写唯一补不上的就是 `step` 字段，理由逐字是本单要解决的那条——**T132 的产出应当直接落成 `MomentHyp.step`，而不是另造带撇的 `step_bound`。**
+
+### 2. 接口草案（已编译验证）
+`MomentDuhamel` 对**一般 `Sample B`** 陈述：保留 `F`/`EE`（类型不变 ⟹ **`Lemma510` 一字不改可复用**），**删去 `mart`/`martQ` 两个数据字段**，四条 Prop 合并成两条不等式。
+**Gauss → Band 的交接全是 `rfl`**（`band.P`/`sample.H`/`band.Idx`/`sample.Lval` 四条已逐条编译验证），故高斯生产者可无摩擦实例化。
+**一个意外的好消息**：原以为最硬的前置 `∂_u U_{u,v}` 是**免费的**——`edgeKer` 里跑动时间只出现在 `1 − (sξ)S^{(B)}` 中、是**仿射**的，于是 `Uker` 对 `u` 是仿射因子之积。agent 已把 `hasDerivAt_edgeKer` **零 sorry 证出**（无假设、不需要 ODE、不需要 `Propagator/Deriv.lean`）。
+
+### 3. 评估
+**(a) fiat 护栏：原地不动，但可以加固到严格优于现状。** 带撇接口在草案形态下同样可被 fiat 满足（取 `F` 巨大即可），`Lemma510.F_le` 仍是唯一护栏——与 T74/T118 一致。
+但有一处真实改善：T74 那个具体手柄是「取 `mart :=` 残差 ⟹ `duhamel` 对任意 `F` 成立」，而**带撇结构没有 `mart` 字段，这个手柄消失**；剩下的钝 fiat 被 `Lemma510.F_le` 正面挡住。
+**净效果：护栏覆盖率从「两个数据字段只管住一个」变成「一个数据字段全管住」**（旧接口里 `mart` 的 fiat 是 `Lemma510` 管不到的）。
+**(b) T74 障碍 2（残差路径依赖）——真正被克服**：带撇路线**从不构造** `∫U∘F(H_u)du` 再去求导，而是对 `u ↦ E|Φ(u,H_u)|^{2p}` 求导，其中 `Φ(u,·)` 是**单时刻矩阵的函数**；路径积分只在**结论**里作为微分不等式的积分出现。代价转移到「`Ψ` 对 `(u,M)` 联合 `C²`」。
+**(c) T74 障碍 3（无漂移）——被溶解而非转移**：不再需要 `𝓛F = 0`，漂移项保留成结论里的积分项；而 `MomentGronwall.genMomentPt_le` **本来就带着那一项**，`DischargeBDG` 只是把它扔了。**这是全案最便宜的一块。**
+**(d) 模型无关性：部分为真，工单措辞偏强。** 生成元恒等式只用一时刻边缘律（**paper-delta #49 从负债变成资产**），但其证明用 Stein 恒等式，非高斯 entry 分布要加累积量修正——所以是「对同一一时刻边缘律的不同流无关」，**不是「对模型无关」**。
+接口后果：带撇件**不能替换**一般消费者，只能**实例化**它们（生成元只活在 `Dims`/`MatrixStein` 上）。
+
+### 4. 五条修改建议
+1. **把 T134 的逐点漂移恒等式作为 `MomentDuhamel` 的必需字段**——它在**定义层钉死 `F`**，使 `Lemma510` 从「防伪造约定」升级为「关于确定对象的命题」，正是 T118 裁定里那条安全方向的接口化版本，**而且旧接口做不到**（其 `duhamel` 是积分形式、残差路径依赖，钉不死 `F`）。**不加这条，本单收益只剩记账整洁。**
+2. 结构陈述在一般 `Sample B` 上，高斯卸载单独一节（必要时按 CLAUDE.md 下沉到 `Defs/`）。
+3. 结论取 `e^{p(2p−1)(v−s)}` 形状而非工单字面的 `2∫ + (C∫)^{1/2}`——后者对应 `y' ≤ a + b/y`，**不是** Mathlib `gronwallBound` 的形状，要自写比较引理；改用现成的 `momentIntegral_le_exp` 零损失，记一条 paper-delta 即可。
+4. 不做带撇的 `bound_nonAlt`/`bound_qGood`/`step_bound`，带撇件直接输出 `≺` 结论，把「逐路径 → `≺`」两段合成一段。
+5. **三块无主缺口写进工单**：`(z,M)` 联合 `C²` 的预解式（补进 T134 规格，其工单文字里没有）、参数积分的 `u`-一致控制（T133 给的是固定 `u` 的界）、`Lp` 的可积性字段。
+
+### 5. 依赖标注
+`momentDuhamel(Q)` 的**陈述**与 `term1M'`/`termQ'` 的推出**不依赖 T133/T134**，现在就能落地；**高斯卸载**依赖两者，且需 T134 额外补 `(z,M)` 联合 `C²`；`∂_u Uker` 不依赖任何人、已证。
+**若只做一半**：结构 + 两条带撇消费者 + `∂_u Uker` 可先行落地并编译通过，高斯卸载留作 T132b。

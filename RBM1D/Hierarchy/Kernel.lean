@@ -15,7 +15,8 @@ For an `n`-loop the paper introduces two linear operators on tensors
 `A : (Z_L)^n -> C`:
 
 * (5.16) the generator
-  `(Theta_{t,sigma} . A)_a = sum_i sum_c (xi_i * Theta_{t xi_i})_{a_i c} A_{a^(i)}`
+  `(Theta_{t,sigma} . A)_a = sum_i sum_c (xi_i * Theta^(B)_{t xi_i} S^(B))_{a_i c} A_{a^(i)}`
+  (**corrected**: the displayed (5.16) drops the trailing `S^(B)`; see below)
 * (5.17) the propagator  `(U_{s,t,sigma} . A)_a = sum_b prod_i K_i(a_i, b_i) A_b`,
   where `K_i = (1 - s xi_i S^(B)) (1 - t xi_i S^(B))^{-1}`
   and `xi_i = m(sigma_i) m(sigma_{i+1})`.
@@ -25,6 +26,26 @@ The whole section rests on the single-edge identity (5.18)
   `(1 - s xi S^(B)) (1 - t xi S^(B))^{-1} = 1 - (s - t) xi  S^(B) Theta^(B)_{t xi}`,
 
 after which Lemma 7.1 is just `norm_Theta_le` plus a product-sum interchange.
+
+## The missing `S^(B)` in (5.16)
+
+The displayed (5.16) writes the `i`-th kernel as `xi_i Theta^(B)_{t xi_i}`.  That is a typo in
+the paper: the correct kernel is `xi_i Theta^(B)_{t xi_i} S^(B)`.  Three independent
+corroborations, all recorded in `docs/paper-deltas.md` (#106):
+
+* the paper's own Example 2.16 (p. 21) displays the kernel *with* the `S^(B)`;
+* `RBM.Gauss.couplingLen_two_eq_thetaGenLoop` -- the identity (5.19) between the `l_K = 2`
+  coupling of (5.14) and the generator -- *forces* the `S^(B)`, because (5.14) carries the
+  factor `S^(B)_{ab}` that glues the two cut loops;
+* `d/dt U_{s,t,sigma} = Theta_{t,sigma} . U_{s,t,sigma}` forces it through (5.18), whose right
+  side is `1 - (s-t) xi S^(B) Theta^(B)_{t xi}`.
+
+The correction is *invisible to every row-sum argument*: `S^(B)` is row-stochastic
+(`RBM.sum_SB_row`), so `Theta^(B)_xi S^(B)` and `Theta^(B)_xi` have the same row sums
+(`RBM.sum_Theta_mul_SB_row`) and the same row `l^1` bound
+(`RBM.sum_norm_Theta_mul_SB_row_le`).  Hence `RBM.sum_ThetaOp_row`,
+`RBM.SumZero_ThetaOp` and the `l^infty` bounds of `RBM1D/Hierarchy/SumZero.lean` hold
+verbatim for the corrected generator.
 
 ## Deviation from the paper's notation
 
@@ -37,7 +58,9 @@ analytic lemmas.  Recorded in `docs/paper-deltas.md` as a modelling choice, not 
 
 * `RBM.edgeKer_eq`             : (5.18)
 * `RBM.norm_edgeKer_le`, `RBM.sum_norm_edgeKer_row_le` : the edge factor is bounded
-* `RBM.Uker`, `RBM.ThetaOp`    : (5.17), (5.16)
+* `RBM.Uker`, `RBM.ThetaOp`    : (5.17), (5.16) (the latter corrected, see below)
+* `RBM.sum_Theta_mul_SB_row`, `RBM.sum_norm_Theta_mul_SB_row_le` : the correction of (5.16)
+  is invisible to row sums
 * `RBM.norm_Uker_apply_le`     : Lemma 7.1 / (7.1), with an explicit constant
 -/
 
@@ -168,12 +191,46 @@ noncomputable def Uker {n : ℕ} (ξ : Fin n → ℂ) (s t : ℂ)
     (A : LoopArg L n → ℂ) : LoopArg L n → ℂ :=
   fun a => ∑ b : LoopArg L n, (∏ i, edgeKer L (ξ i) s t (a i) (b i)) * A b
 
-/-- **(5.16)**: the generator `Theta_{t,sigma}`.  The `i`-th summand replaces the `i`-th
-external index by a new one, which is `Function.update` here and `a^(i)` in the paper. -/
+/-! ### The kernel of the generator, `Theta^(B)_xi S^(B)`
+
+`S^(B)` is symmetric, row-stochastic and commutes with `Theta^(B)_xi`, so appending it to
+`Theta^(B)_xi` changes neither the symmetry, nor the row sums, nor the row `l^1` bound.  This
+is why the typo in (5.16) is invisible to every argument in `RBM1D/Hierarchy/SumZero.lean`. -/
+
+/-- The kernel of the generator is symmetric: both factors are, and they commute
+(`RBM.Theta_commute_SB`). -/
+theorem Theta_mul_SB_transpose (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) :
+    (Theta L ξ * SB L)ᵀ = Theta L ξ * SB L := by
+  rw [Matrix.transpose_mul, SB_transpose, Theta_transpose L hL hξ]
+  exact (Theta_commute_SB L hL hξ).eq.symm
+
+/-- **The row sums are unchanged by the `S^(B)`**: `S^(B)` is row-stochastic. -/
+theorem sum_Theta_mul_SB_row (hL : 3 ≤ L) {ξ : ℂ} (x : ZMod L) :
+    ∑ c : ZMod L, (Theta L ξ * SB L) x c = ∑ y : ZMod L, Theta L ξ x y := by
+  simp only [Matrix.mul_apply]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  rw [← Finset.mul_sum, sum_SB_row L hL y, mul_one]
+
+/-- The row `l^1` bound is unchanged by the `S^(B)`: `‖S^(B)‖ = 1`. -/
+theorem sum_norm_Theta_mul_SB_row_le (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (x : ZMod L) :
+    ∑ c : ZMod L, ‖(Theta L ξ * SB L) x c‖ ≤ (1 - ‖ξ‖)⁻¹ := by
+  refine (sum_norm_row_le L _ x).trans ?_
+  calc ‖Theta L ξ * SB L‖ ≤ ‖Theta L ξ‖ * ‖SB L‖ := norm_mul_le _ _
+    _ = ‖Theta L ξ‖ := by rw [norm_SB L hL, mul_one]
+    _ ≤ (1 - ‖ξ‖)⁻¹ := norm_Theta_le L hL hξ
+
+/-- **(5.16), corrected**: the generator `Theta_{t,sigma}`.  The `i`-th summand replaces the
+`i`-th external index by a new one, which is `Function.update` here and `a^(i)` in the paper.
+
+The displayed (5.16) has `xi_i Theta^(B)_{t xi_i}` where this has
+`xi_i Theta^(B)_{t xi_i} S^(B)`; see the module docstring and `docs/paper-deltas.md` #106 for
+why the paper's display is a typo, and why the correction leaves every row-sum consequence
+of (5.16) intact. -/
 noncomputable def ThetaOp {n : ℕ} (ξ : Fin n → ℂ) (t : ℂ)
     (A : LoopArg L n → ℂ) : LoopArg L n → ℂ :=
   fun a => ∑ i : Fin n, ∑ c : ZMod L,
-    (ξ i * Theta L (t * ξ i) (a i) c) * A (Function.update a i c)
+    (ξ i * (Theta L (t * ξ i) * SB L) (a i) c) * A (Function.update a i c)
 
 theorem Uker_apply {n : ℕ} (ξ : Fin n → ℂ) (s t : ℂ) (A : LoopArg L n → ℂ)
     (a : LoopArg L n) :

@@ -61,13 +61,17 @@ shows that the kernel it produces is
 
   `ξ_i · Θ^{(B)}_{t ξ_i} · S^(B)`,   `ξ_i = m(σ_i) m(σ_{i+1})`,
 
-whereas (5.16) — and `RBM.ThetaOp`, which transcribes it literally — has `ξ_i Θ^{(B)}_{t ξ_i}`
-with **no** `S^(B)`.  The missing factor is not an artefact of this formalization: the paper's
-own Example 2.16 (p. 21) writes the `n = 3` primitive equation with the kernel
+whereas the printed (5.16) has `ξ_i Θ^{(B)}_{t ξ_i}` with **no** `S^(B)`.  The missing factor
+is not an artefact of this formalization: the paper's own Example 2.16 (p. 21) writes the
+`n = 3` primitive equation with the kernel
 `(m_i m_{i+1} Θ^{(B)}_{t m_i m_{i+1}} · S^(B))_{a_i c_i}`, and the same factor is forced by
 `∂_t U_{s,t,σ} = Θ_{t,σ} ∘ U_{s,t,σ}` through (5.18).  So (5.16) has a typo.  The corrected
 operator is `RBM.Gauss.thetaGenLoop`, and `RBM.Gauss.thetaGenLoop_kernel_eq` records the exact
 relation to the printed one: `ξ Θ_{tξ} S^(B) = t⁻¹ (Θ_{tξ} - 1)`.  See `docs/paper-deltas.md`.
+
+**`RBM.Hierarchy.Kernel`'s `RBM.ThetaOp` now carries the `S^(B)` too**, so
+`RBM.Gauss.thetaGenOp` below is definitionally `RBM.ThetaOp` (and likewise
+`RBM.SumZeroDyn.genS`); it is kept as the name this section's `LoopIdx` bridge is stated in.
 
 ## Main definitions
 
@@ -135,7 +139,8 @@ relation to the printed one: `ξ Θ_{tξ} S^(B) = t⁻¹ (Θ_{tξ} - 1)`.  See `
   `[K ∼ (L-K)]^{l_K = 2} = Θ_{t,σ} ∘ (L-K)`, with `K` the rank-2 primitive `RBM.kTwo` of
   (2.57) and `Θ_{t,σ}` the corrected generator `RBM.Gauss.thetaGenLoop` (see above).
 * `RBM.Gauss.thetaGenOp`, `RBM.Gauss.thetaGenLoop_ofFn` : the same operator in the `LoopArg`
-  (tensor) representation of `RBM.Uker`/`RBM.ThetaOp`, and the bridge between the two
+  (tensor) representation of `RBM.Uker`/`RBM.ThetaOp` — it *is* `RBM.ThetaOp`, by `rfl`, now
+  that the latter carries the `S^(B)` — and the bridge between the two
   representations — the one `docs/STATUS.md` leaves for whoever proves (5.19).  The bridge is
   `fun v => D ⟨σ, List.ofFn v⟩`, and the combinatorial content is
   `RBM.Gauss.set_ofFn_eq_ofFn_update` (`List.set` on `List.ofFn` is `Function.update`).
@@ -1610,11 +1615,19 @@ theorem set_ofFn_eq_ofFn_update {α : Type*} {n : ℕ} (a : Fin n → α) (i : F
       ite_eq_right (by simp only [Fin.ext_iff]; omega)]
 
 /-- **(5.16), corrected**, in the `LoopArg` (tensor) representation used by `RBM.Uker` and
-`RBM.ThetaOp`. -/
+`RBM.ThetaOp`.  Since the correction of (5.16) has been carried into `RBM.ThetaOp` itself,
+this is now the *same* operator; see `RBM.Gauss.thetaGenOp_eq_ThetaOp`. -/
 noncomputable def thetaGenOp (L : ℕ) [NeZero L] {n : ℕ} (ξ : Fin n → ℂ) (t : ℂ)
     (A : LoopArg L n → ℂ) : LoopArg L n → ℂ :=
   fun a => ∑ i : Fin n, ∑ c : ZMod L,
     ξ i * (Theta L (t * ξ i) * SB L) (a i) c * A (Function.update a i c)
+
+/-- **`thetaGenOp` is `RBM.ThetaOp`**, by `rfl`: `RBM1D/Hierarchy/Kernel.lean` now defines the
+generator with the `S^(B)` that (5.19) forces, so the corrected operator introduced here is no
+longer a separate definition.  (The same holds for `RBM.SumZeroDyn.genS`.)  The name is kept
+because this section's `LoopIdx` bridge, `RBM.Gauss.thetaGenLoop_ofFn`, is stated in it. -/
+theorem thetaGenOp_eq_ThetaOp (L : ℕ) [NeZero L] {n : ℕ} (ξ : Fin n → ℂ) (t : ℂ) :
+    thetaGenOp L ξ t = ThetaOp L ξ t := rfl
 
 /-- **The representation bridge.**  On a loop whose labels come from a tensor index, the
 `LoopIdx`-side generator `RBM.Gauss.thetaGenLoop` is the `LoopArg`-side one. -/
@@ -1685,16 +1698,16 @@ theorem thetaGenLoop_three (m : Bool → ℂ) (t : ℝ) (D : LoopIdx (ZMod L) �
 
 
 /-- **The missing `S^(B)` is invisible to every row-sum argument.**  `S^(B)` is row-stochastic
-(`RBM.sum_SB_row`), so `Θ^{(B)}_ξ S^(B)` and `Θ^{(B)}_ξ` have the same row sums.  Hence
+(`RBM.sum_SB_row`), so `Θ^{(B)}_ξ S^(B)` and `Θ^{(B)}_ξ` have the same row sums.  That is why
 `RBM.sum_ThetaOp_row` and everything built on it (`RBM.SumZero_ThetaOp`, the `ℓ^∞` bounds)
-survive the correction of (5.16) unchanged; what does *not* survive is the identity (5.19)
-itself. -/
+kept their statements verbatim when the `S^(B)` was put into `RBM.ThetaOp`; the only thing the
+typo actually falsified is the identity (5.19) itself.
+
+This restates `RBM.sum_Theta_mul_SB_row`, which now lives with the definition in
+`RBM1D/Hierarchy/Kernel.lean`. -/
 theorem sum_Theta_mul_SB_row (hL : 3 ≤ L) {ξ : ℂ} (x : ZMod L) :
-    ∑ c : ZMod L, (Theta L ξ * SB L) x c = ∑ y : ZMod L, Theta L ξ x y := by
-  simp only [Matrix.mul_apply]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun y _ => ?_
-  rw [← Finset.mul_sum, sum_SB_row L hL y, mul_one]
+    ∑ c : ZMod L, (Theta L ξ * SB L) x c = ∑ y : ZMod L, Theta L ξ x y :=
+  RBM.sum_Theta_mul_SB_row L hL x
 
 end Eq519
 

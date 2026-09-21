@@ -66,8 +66,11 @@ concrete in the library), and `RBM.Decay.lemma59` holds on the event of Lemma 4.
 
 ## Deviations from the paper
 
-* The generator is `ξ Θ_{tξ} S^{(B)}` (`genS`), with the `S^{(B)}` that (5.19) carries;
-  `RBM.ThetaOp` alone lacks it.
+* The generator is `ξ Θ_{tξ} S^{(B)}` (`genS`), with the `S^{(B)}` that (5.19) carries and
+  that the printed (5.16) drops.  `RBM.ThetaOp` now carries it too, so `genS L ξ t` and
+  `RBM.ThetaOp L ξ t` are definitionally equal; `genS` remains as the instance
+  `Mᵢ = ξᵢ Θ^(B)_{tξᵢ} S^(B)` of the general slot-wise generator `genOp`, which is what the
+  `Q_t` estimates below are actually stated for.
 * Charges `σ` with no `(-,+)` pair away from slot `0` are handled as the paper handles them:
   non-alternating ones via Case 1 of (7.16) ((5.84)); the only remaining one, `σ = (-,+)`,
   by rotating the `2`-loop (`lkT_swap2`).
@@ -653,7 +656,10 @@ evolution kernel `U_{s,t,σ}` of (5.17) (and the operator that (5.19) identifies
 consistent with (5.18).  We work with a general slot-wise generator
 `(𝒢_M ∘ A)_a = ∑ᵢ ∑_c (Mᵢ)_{aᵢ c} A_{a^{(i)}}` (`genOp`), and `genS` is the case
 `Mᵢ = ξᵢ Θ^(B)_{tξᵢ} S^(B)`.  Everything about `Q_t` only uses the row and column sums of the
-`Mᵢ`. -/
+`Mᵢ`.
+
+`RBM.ThetaOp` has since been corrected to carry the `S^(B)`, so `genS L ξ t` is now
+definitionally `RBM.ThetaOp L ξ t`; `genS` is kept as the `genOp` instance. -/
 
 section GenOp
 

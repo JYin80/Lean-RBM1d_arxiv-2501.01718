@@ -2215,6 +2215,19 @@
   $\sum_aS^{(B)}_{ab}=1$ and $W\sum_bE_b=1$ turn that into Definition 2.10(1)'s sum.
 \end{proof}
 
+\begin{lemma}[Absorbing an additive remainder into $\prec$, and \texttt{EE\_le}]\label{lem:absorb}
+  \lean{RBM.le_rpow_mul_of_le_add_rpow_neg, RBM.StochDom.of_add_le, RBM.StochDom.of_highProb_add_rpow_neg, RBM.HighProb.of_eventually_univ, RBM.EEBridge.eeFacts, RBM.EEBridge.rpow_neg_le_eeControl, RBM.EEBridge.eeDecayEvent, RBM.EEBridge.xiLowEvent, RBM.EEBridge.norm_eeField_le_param, RBM.EEBridge.stochDom_norm_eeField}
+  \leanok\uses{lem:eebridge, def:2.1-i, lem:5.10}
+  A pathwise bound $N^{\tau}\Phi+\varepsilon_N$ with $\varepsilon_N$ super-polynomially small and
+  $\Phi$ bounded below by a power gives $\prec\Phi$ -- the lower bound being an \emph{event}, as a
+  random control requires. Hence \texttt{Lemma510.EE\_le} for the concrete $E\otimes E$, modulo a
+  high-probability lower bound on $\Xi^{(L)}$.
+\end{lemma}
+\begin{proof}\leanok
+  Split the threshold as $\tau/2$ and absorb the remainder against the lower bound; the
+  deterministic half of that bound follows from $\ell_u\le L$, $\eta_u\le1$, $WL\le N$.
+\end{proof}
+
 \begin{lemma}[Stretched-exponential calculus, (5.27)--(5.32), (5.49)--(5.50), (5.62), (5.72), (7.12)]\label{lem:stretched-exp}
   \lean{RBM.sqrt_add_le_add_sqrt, RBM.sqrt_sub_sqrt_le_sqrt, RBM.sqrt_add_le_of_le, RBM.sqrtExpPrim, RBM.hasDerivAt_sqrtExpPrim, RBM.continuous_sqrtExpPrim, RBM.integral_exp_neg_mul_sqrt, RBM.integral_exp_neg_mul_sqrt_le, RBM.integral_Ioi_exp_neg_mul_sqrt, RBM.integral_Ioi_exp_neg_sqrt, RBM.exp_mul_sqrt_triangle_le, RBM.integral_exp_mul_sqrt_triangle_le, RBM.integral_exp_sqrt_triangle_le, RBM.integral_exp_half_sqrt_triangle_le, RBM.sum_range_exp_neg_mul_sqrt_le, RBM.sum_exp_neg_mul_sqrt_zdist_le, RBM.sum_exp_neg_mul_sqrt_zdist_div_le, RBM.tailT, RBM.ratioJ, RBM.ellStar, RBM.rpow_neg_le_tailT, RBM.tailT_nonneg, RBM.tailT_pos, RBM.tailT_antitone, RBM.le_ratioJ_mul_tailT, RBM.one_le_ratioJ, RBM.sqrt_log_rpow_three_halves, RBM.tailT_sub_le, RBM.eventually_exp_mul_log_rpow_le, RBM.unifDetDom_tailT_sub, RBM.exp_neg_sqrt_mul_exp_neg_sqrt_le, RBM.zdist_sub_le_add, RBM.sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le, RBM.mul_sum_tailT_mul_tailT_le', RBM.sqrt_zdist_sub_sqrt_zdist_le}
   \leanok

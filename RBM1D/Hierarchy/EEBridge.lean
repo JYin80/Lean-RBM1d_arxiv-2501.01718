@@ -90,6 +90,15 @@ Two things are therefore still owed before `EE_le` is a theorem, and neither bel
    same shape as the polynomial lower bounds T123/T125 had to produce
    (`RBM.Gauss.rpow_neg_le_aprioriRhs`), and it is a genuine missing input, not bookkeeping.
 
+**Update (T135).**  Item 2 is now settled, in the last section of this file: the general
+absorption lemma is `RBM.StochDom.of_highProb_add_rpow_neg` (`RBM1D/Defs/StochDom.lean`), the
+deterministic half of the polynomial lower bound is `RBM.EEBridge.rpow_neg_le_eeControl`, and
+`RBM.EEBridge.stochDom_norm_eeField` is the resulting `≺` statement, *literally* the field
+`EE_le` with `H.EE := RBM.EEBridge.eeField`.  What survives of item 2 is only the **random**
+half of the lower bound — a lower bound on `Ξ^{(L)}_{u,2m+2}` itself — which is carried as the
+named hypothesis `RBM.EEBridge.xiLowEvent`; see that section's header for why it is not
+provable here.  Item 1 is untouched: `H.EE` is still not defined anywhere.
+
 ## Deviations
 
 * `RBM.Decay.eTens` takes its gluing as a *total* function `J : ℕ → ZMod L → ZMod L → LoopIdx`
@@ -570,6 +579,211 @@ theorem norm_eeField_le (X : Sample B) {E : ℝ} {n N : ℕ} {u : ℝ} {ω : Ω}
   have := norm_eeBand_le_of_decay X (m := n + 2) (by omega) σ c hN hA hη hell hYd
   rw [eeField]
   simpa using this
+
+/-! ### T135: the passage from the pathwise bound to `≺`
+
+The two things the file header lists as owed before `EE_le` is a theorem are settled here for
+the **second** of them (the passage to `≺`); the first (T58's decision to *define*
+`H.EE := eeField`) is still deliberately not taken, and nothing below constructs a
+`RBM.SumZeroDyn.Hierarchy` or weakens `RBM.SumZeroDyn.Lemma510`.
+
+The general tool is `RBM.StochDom.of_highProb_add_rpow_neg` (T135, `RBM1D/Defs/StochDom.lean`):
+a pathwise bound `ξ ≤ N^τ ζ + N^{-D}`, holding with high probability for every `τ, D > 0`,
+gives `ξ ≺ ζ` **provided** the control has a polynomial lower bound `N^{-b} ≤ ζ`, itself only
+needed with high probability.
+
+For the control `ζ = Ξ^{(L)}_{u,2m+2} η_u^{-1} (Wℓ_uη_u)^{-2m}` of `EE_le`, that lower bound
+splits into a deterministic and a genuinely random half:
+
+* the deterministic half **is** provable from the standing regime, exactly as in T123/T125's
+  `RBM.Gauss.rpow_neg_le_aprioriRhs`: `ℓ_u ≤ L`, `η_u ≤ 1` and `W L ≤ N` give
+  `Wℓ_uη_u ≤ N`, hence `(Wℓ_uη_u)^{-2m} ≥ N^{-2m}`, while `η_u ≤ 1` gives `η_u^{-1} ≥ 1`.
+  This is `RBM.EEBridge.rpow_neg_le_eeControl`.
+* the random half, a lower bound on `Ξ^{(L)}_{u,2m+2}` itself, **is not** available: `Ξ^{(L)}`
+  is a maximum of `|L_{σ,a}|` over loops, and its positivity is a spectral fact
+  (`Im G_{xx} ≥ η/(‖H-E‖² + η²)`) which needs a bound on `‖H‖`, and `‖H‖` has no deterministic
+  bound for unbounded entry distributions.  It is therefore **carried as a named hypothesis**,
+  `RBM.EEBridge.xiLowEvent`, in the weakest usable form: a *high-probability* lower bound
+  `N^{-C} ≤ Ξ^{(L)}_{u,2(n+2)+2}` uniform in `u ∈ [s_N, t_N]`, for some `C`.  See
+  `docs/paper-deltas.md`. -/
+
+/-- **The pathwise input at the parameters `(τ, D)`**: at every `u ∈ [s_N, t_N]` the `G`-loops
+of the flow of length `2(n+2)+2` have the `(ℓ_u N^τ, N^{-D})` decay of Definition 5.8.  This is
+the shape produced by `RBM.Decay.lemma59`-style deterministic results, exactly as
+`RBM.DecayBridge.LKDecayEvent` is for Lemma 5.9. -/
+def eeDecayEvent (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) (τ D : ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N, Decay.LoopDecay (B.L N) (2 * (n + 2) + 2)
+    (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+    (gloop (B.L N) (B.W N) (X.H N (u : ℝ) ω) (zt E (u : ℝ)))}
+
+/-- **The polynomial lower bound on `Ξ^{(L)}_{u,2(n+2)+2}`**, as an event.  This is the one
+input of `RBM.EEBridge.stochDom_norm_eeField` that is *not* proved: see the section header. -/
+def xiLowEvent (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) (C : ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ u : TimeIcc s t N, (N : ℝ) ^ (-C) ≤ X.xiL E N (u : ℝ) ω (2 * (n + 2) + 2)}
+
+/-- The elementary facts about the scales at a time `u ∈ [s_N, t_N]` with `0 < s_N` and
+`t_N < 1`: the scale is positive, `0 < η_u ≤ 1` and `1 ≤ ℓ_u ≤ L`. -/
+theorem eeFacts (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 < s N)
+    (ht1 : ∀ N, t N < 1) (N : ℕ) (u : TimeIcc s t N) :
+    0 < B.scale E N (u : ℝ) ∧ 0 < etaT E (u : ℝ) ∧ etaT E (u : ℝ) ≤ 1 ∧
+      1 ≤ B.ell N (u : ℝ) ∧ B.ell N (u : ℝ) ≤ (B.L N : ℝ) := by
+  have hu0 : 0 < (u : ℝ) := lt_of_lt_of_le (hs0 N) u.2.1
+  have hu1 : (u : ℝ) < 1 := lt_of_le_of_lt u.2.2 (ht1 N)
+  exact ⟨B.scale_pos hE N hu0 hu1, etaT_pos hE hu1, etaT_le_one hE hu0.le,
+    one_le_ellHat_of_nonneg (B.one_le_L N) hu0.le hu1, min_le_right _ _⟩
+
+/-- **The deterministic half of the polynomial lower bound on the control of `EE_le`.**  With
+`ℓ_u ≤ L`, `η_u ≤ 1` and `W L ≤ N` the scale satisfies `Wℓ_uη_u ≤ N`, so
+`(Wℓ_uη_u)^{-2(n+2)} ≥ N^{-2(n+2)}`, and `η_u^{-1} ≥ 1`; a lower bound `N^{-C}` on
+`Ξ^{(L)}_{u,2(n+2)+2}` therefore gives `N^{-(C + 2(n+2))}` on the whole control.
+
+This is the same argument as `RBM.Gauss.rpow_neg_le_aprioriRhs` (T125), and the only part of
+the lower bound that the standing regime supplies. -/
+theorem rpow_neg_le_eeControl (X : Sample B) {E : ℝ} {N : ℕ} {u : ℝ} {ω : Ω} {n : ℕ} {C : ℝ}
+    (hN1 : 1 ≤ N) (hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ)) (hA0 : 0 < B.scale E N u)
+    (hη0 : 0 < etaT E u) (hη1 : etaT E u ≤ 1) (hellL : B.ell N u ≤ (B.L N : ℝ))
+    (hxi : (N : ℝ) ^ (-C) ≤ X.xiL E N u ω (2 * (n + 2) + 2)) :
+    (N : ℝ) ^ (-(C + ((2 * (n + 2) : ℕ) : ℝ)))
+      ≤ (B.scale E N u)⁻¹ ^ (2 * (n + 2)) * (etaT E u)⁻¹
+          * X.xiL E N u ω (2 * (n + 2) + 2) := by
+  have hN0 : (0 : ℝ) ≤ (N : ℝ) := Nat.cast_nonneg N
+  have hN0' : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hscN : B.scale E N u ≤ (N : ℝ) := by
+    have hdef : B.scale E N u = (B.W N : ℝ) * B.ell N u * etaT E u := rfl
+    rw [hdef]
+    calc (B.W N : ℝ) * B.ell N u * etaT E u ≤ (B.W N : ℝ) * (B.L N : ℝ) * 1 :=
+          mul_le_mul (mul_le_mul_of_nonneg_left hellL hW0.le) hη1 hη0.le (by positivity)
+      _ = (B.W N : ℝ) * (B.L N : ℝ) := mul_one _
+      _ ≤ (N : ℝ) := hWL
+  have hinv : (N : ℝ)⁻¹ ≤ (B.scale E N u)⁻¹ := inv_anti₀ hA0 hscN
+  have hpow : ((N : ℝ)⁻¹) ^ (2 * (n + 2)) ≤ ((B.scale E N u)⁻¹) ^ (2 * (n + 2)) :=
+    pow_le_pow_left₀ (by positivity) hinv _
+  have hrpow : (N : ℝ) ^ (-((2 * (n + 2) : ℕ) : ℝ)) = ((N : ℝ)⁻¹) ^ (2 * (n + 2)) := by
+    rw [Real.rpow_neg hN0, Real.rpow_natCast, inv_pow]
+  have hηinv : (1 : ℝ) ≤ (etaT E u)⁻¹ := by
+    have hmul : etaT E u * (etaT E u)⁻¹ = 1 := mul_inv_cancel₀ hη0.ne'
+    nlinarith [inv_pos.2 hη0]
+  have hxi0 : (0 : ℝ) ≤ X.xiL E N u ω (2 * (n + 2) + 2) :=
+    le_trans (Real.rpow_nonneg hN0 _) hxi
+  have hright : (N : ℝ) ^ (-C) ≤ (etaT E u)⁻¹ * X.xiL E N u ω (2 * (n + 2) + 2) := by
+    nlinarith
+  have hsplit : (N : ℝ) ^ (-(C + ((2 * (n + 2) : ℕ) : ℝ)))
+      = (N : ℝ) ^ (-((2 * (n + 2) : ℕ) : ℝ)) * (N : ℝ) ^ (-C) := by
+    rw [← Real.rpow_add hN0']
+    ring_nf
+  rw [hsplit, mul_assoc]
+  refine mul_le_mul ?_ hright (Real.rpow_nonneg hN0 _) (by positivity)
+  rw [hrpow]
+  exact hpow
+
+/-- **The pathwise bound of `RBM.EEBridge.norm_eeField_le` with the parameters already matched
+to `≺`**: the prefactor `2e(n+2)(N^{τ/2}+2)` is folded into `N^τ` (this costs `6e(n+2) ≤
+N^{τ/2}`, which is eventually true), and the decay error `(n+2) W L N^{-(D+2)}` into `N^{-D}`
+(this costs `n + 2 ≤ N` and `W L ≤ N`). -/
+theorem norm_eeField_le_param (X : Sample B) {E : ℝ} {n N : ℕ} {u : ℝ} {ω : Ω}
+    (σ : Fin (n + 2) → Bool) (c : LoopArg (B.L N) ((n + 2) + (n + 2))) {τ D : ℝ}
+    (hτ : 0 < τ) (hN1 : 1 ≤ N)
+    (hbig : 6 * Real.exp 1 * ((n : ℝ) + 2) ≤ (N : ℝ) ^ (τ / 2))
+    (hNn : (n : ℝ) + 2 ≤ (N : ℝ)) (hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ))
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u) (hell : 1 / 2 ≤ B.ell N u)
+    (hYd : Decay.LoopDecay (B.L N) (2 * (n + 2) + 2) (B.ell N u * (N : ℝ) ^ (τ / 2))
+      ((N : ℝ) ^ (-(D + 2))) (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u))) :
+    ‖eeField X E n N u ω σ c‖
+      ≤ (N : ℝ) ^ τ * ((B.scale E N u)⁻¹ ^ (2 * (n + 2)) * (etaT E u)⁻¹
+            * X.xiL E N u ω (2 * (n + 2) + 2))
+        + (N : ℝ) ^ (-D) := by
+  have hN0 : (0 : ℝ) ≤ (N : ℝ) := Nat.cast_nonneg N
+  have hN0' : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hhalf : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ :=
+    UnifDetDom.rpow_half_mul_rpow_half N hτ
+  have hr1 : (1 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.one_le_rpow hN1' (half_pos hτ).le
+  have hA0 : (0 : ℝ) < B.scale E N u := lt_of_lt_of_le zero_lt_one hA
+  have hbase := norm_eeField_le X σ c hr1 hA hη hell hYd
+  have hZ0 : (0 : ℝ) ≤ (B.scale E N u)⁻¹ ^ (2 * (n + 2)) * (etaT E u)⁻¹
+      * X.xiL E N u ω (2 * (n + 2) + 2) := by
+    have hxi0 := X.xiL_nonneg (E := E) (N := N) (t := u) (ω := ω)
+      (m := 2 * (n + 2) + 2) hA0.le
+    exact mul_nonneg (mul_nonneg (pow_nonneg (inv_nonneg.2 hA0.le) _)
+      (inv_nonneg.2 hη.le)) hxi0
+  have hmul : 2 * Real.exp 1 * ((n : ℝ) + 2) * ((N : ℝ) ^ (τ / 2) + 2) ≤ (N : ℝ) ^ τ := by
+    have he1 : (1 : ℝ) ≤ Real.exp 1 := Real.one_le_exp (by norm_num)
+    have hn0 : (0 : ℝ) ≤ (n : ℝ) + 2 := by positivity
+    have h3 : (N : ℝ) ^ (τ / 2) + 2 ≤ 3 * (N : ℝ) ^ (τ / 2) := by linarith
+    have hK0 : (0 : ℝ) ≤ 2 * Real.exp 1 * ((n : ℝ) + 2) := by positivity
+    calc 2 * Real.exp 1 * ((n : ℝ) + 2) * ((N : ℝ) ^ (τ / 2) + 2)
+        ≤ 6 * Real.exp 1 * ((n : ℝ) + 2) * (N : ℝ) ^ (τ / 2) := by
+          nlinarith [mul_nonneg hK0 (sub_nonneg.2 hr1)]
+      _ ≤ (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) :=
+          mul_le_mul_of_nonneg_right hbig (le_trans zero_le_one hr1)
+      _ = (N : ℝ) ^ τ := hhalf
+  have hadd : ((n : ℝ) + 2) * (B.W N : ℝ) * (B.L N : ℝ) * (N : ℝ) ^ (-(D + 2))
+      ≤ (N : ℝ) ^ (-D) := by
+    have hWL0 : (0 : ℝ) ≤ (B.W N : ℝ) * (B.L N : ℝ) := by positivity
+    have hprod : ((n : ℝ) + 2) * ((B.W N : ℝ) * (B.L N : ℝ)) ≤ (N : ℝ) * (N : ℝ) :=
+      mul_le_mul hNn hWL hWL0 hN0
+    have hid : (N : ℝ) * (N : ℝ) * (N : ℝ) ^ (-(D + 2)) = (N : ℝ) ^ (-D) := by
+      rw [show (N : ℝ) * (N : ℝ) = (N : ℝ) ^ (((2 : ℕ) : ℝ)) by
+        rw [Real.rpow_natCast]; ring, ← Real.rpow_add hN0']
+      norm_num
+    have hrp0 : (0 : ℝ) ≤ (N : ℝ) ^ (-(D + 2)) := Real.rpow_nonneg hN0 _
+    calc ((n : ℝ) + 2) * (B.W N : ℝ) * (B.L N : ℝ) * (N : ℝ) ^ (-(D + 2))
+        = (((n : ℝ) + 2) * ((B.W N : ℝ) * (B.L N : ℝ))) * (N : ℝ) ^ (-(D + 2)) := by ring
+      _ ≤ ((N : ℝ) * (N : ℝ)) * (N : ℝ) ^ (-(D + 2)) :=
+          mul_le_mul_of_nonneg_right hprod hrp0
+      _ = (N : ℝ) ^ (-D) := hid
+  refine hbase.trans (add_le_add ?_ hadd)
+  exact mul_le_mul_of_nonneg_right hmul hZ0
+
+/-- **(5.77), fourth line, as the `≺` statement of `RBM.SumZeroDyn.Lemma510.EE_le`.**
+
+`‖(E⊗E)_{u,σ,a,a'}‖ ≺ Ξ^{(L)}_{u,2(n+2)+2} η_u^{-1} (Wℓ_uη_u)^{-2(n+2)}`, uniformly in
+`u ∈ [s_N, t_N]` and in the loop data, for the concrete `E ⊗ E` of Definition 5.4 along the
+flow (`RBM.EEBridge.eeField`).  The conclusion is *literally* the `EE_le` field with
+`H.EE := eeField X E n`.
+
+The inputs are:
+
+* `hdec`, the `(u, τ, D)` decay of Definition 5.8 for the `G`-loops of length `2(n+2)+2`,
+  with high probability at every `(τ, D)` — the analogue for `E ⊗ E` of what
+  `RBM.DecayBridge.lkDecay_of_highProb` consumes for Lemma 5.9;
+* the standing regime `|E| < 2`, `0 < s_N ≤ t_N < 1` and **(2.72)** (`RBM.Cond272`), which
+  supply `1 ≤ W ℓ_u η_u` on `[s_N, t_N]` through `RBM.SumZeroDyn.flow_crude`;
+* `hxi`, the polynomial lower bound on `Ξ^{(L)}_{u,2(n+2)+2}`, **carried, not proved**: see the
+  section header and `docs/paper-deltas.md`.
+
+Nothing here defines `H.EE`, so `RBM.SumZeroDyn.Lemma510` is not made easier to discharge:
+installing `eeField` as the field still drags `duhamel` and `bdg` along with it. -/
+theorem stochDom_norm_eeField (X : Sample B) {E : ℝ} (hE : |E| < 2) {s t : ℕ → ℝ}
+    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hc : Cond272 B E s t) {n : ℕ} {C : ℝ}
+    (hxi : HighProb B.P (xiLowEvent X E s t n C))
+    (hdec : ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), HighProb B.P (eeDecayEvent X E s t n τ D)) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × ((Fin (n + 2) → Bool) × LoopArg (B.L N) ((n + 2) + (n + 2))))
+          ω => ‖eeField X E n N (p.1 : ℝ) ω p.2.1 p.2.2‖)
+      (fun N p ω => (B.scale E N (p.1 : ℝ))⁻¹ ^ (2 * (n + 2)) * (etaT E (p.1 : ℝ))⁻¹
+        * X.xiL E N (p.1 : ℝ) ω (2 * (n + 2) + 2)) := by
+  have hcrude := SumZeroDyn.flow_crude (B := B) (E := E) hE hs0 hst ht1 hc
+  refine StochDom.of_highProb_add_rpow_neg (b := C + ((2 * (n + 2) : ℕ) : ℝ)) ?_ ?_
+  · refine HighProb.mono hxi ?_
+    filter_upwards [B.dim, Filter.eventually_ge_atTop 1] with N hdim hN1
+    intro ω hω p
+    obtain ⟨hA0, hη0, hη1, -, hellL⟩ := eeFacts B hE hs0 ht1 N p.1
+    have hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ) := by exact_mod_cast hdim.1
+    exact rpow_neg_le_eeControl X hN1 hWL hA0 hη0 hη1 hellL (hω p.1)
+  · intro τ hτ D hD
+    refine HighProb.mono (hdec (τ / 2) (half_pos hτ) (D + 2) (by linarith)) ?_
+    filter_upwards [B.dim, hcrude, Filter.eventually_ge_atTop 1,
+      eventually_le_rpow (6 * Real.exp 1 * ((n : ℝ) + 2)) (half_pos hτ),
+      Filter.eventually_ge_atTop (n + 2)] with N hdim hcr hN1 hbig hNn
+    intro ω hω p
+    obtain ⟨-, hη0, -, hell1, -⟩ := eeFacts B hE hs0 ht1 N p.1
+    have hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ) := by exact_mod_cast hdim.1
+    have hNn' : ((n : ℝ) + 2) ≤ (N : ℝ) := by exact_mod_cast hNn
+    exact norm_eeField_le_param X p.2.1 p.2.2 hτ hN1 hbig hNn' hWL (hcr.2.2.2 p.1).1 hη0
+      (by linarith) (hω p.1)
 
 end Flow
 

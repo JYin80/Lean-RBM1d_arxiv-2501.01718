@@ -33,6 +33,9 @@ fixed, and the dependence on `N` is carried by the random variables: a family is
   gives the uniform statement if `#U(N) ≤ N^C`.
 * `HighProb.inter`, `HighProb.biInter`: finitely many, resp. polynomially many, w.h.p. events
   hold simultaneously w.h.p.; `StochDom.highProb`: `ξ ≤ N^τ ζ` holds w.h.p.
+* `StochDom.of_add_le`, `StochDom.of_highProb_add_rpow_neg`: **absorption of a
+  super-polynomially small additive error** `ξ ≤ N^τ ζ + ε_N` into `ξ ≺ ζ`, given a polynomial
+  lower bound `N^{-b} ≤ ζ` on the control.
 -/
 
 namespace RBM
@@ -325,5 +328,127 @@ theorem highProbIn {Ω' : ℕ → Set Ω} (h : HighProb P Ω') (Ξ : ℕ → Set
   exact (measure_mono fun ω hω => hω.2).trans hN
 
 end HighProb
+
+/-! ### Absorbing a super-polynomially small additive error
+
+A bound of the shape `ξ ≤ N^τ ζ + ε_N` with `ε_N` super-polynomially small is *not* by itself
+a `≺` statement: `RBM.StochDom.of_unifDetDom` has no additive slack, and the high-probability
+route needs the bound with no prefactor at all.  What is missing is a **polynomial lower
+bound** `N^{-b} ≤ ζ` on the control — without one, `ε_N` cannot be compared with `ζ` and the
+statement is genuinely false (take `ζ = 0` and `ξ = ε_N > 0`).
+
+With such a lower bound the absorption is elementary: `ε_N ≤ N^{-b} ≤ ζ`, so
+`N^{τ/2} ζ + ε_N ≤ 2 N^{τ/2} ζ ≤ N^τ ζ` as soon as `2 ≤ N^{τ/2}`, and the `τ/2` that is spent
+is free because `τ > 0` is arbitrary.  `RBM.le_rpow_mul_of_le_add_rpow_neg` is that arithmetic
+step; the two `RBM.StochDom` lemmas package it for the two routes into `≺`:
+
+* `RBM.StochDom.of_add_le` — the *control-perturbation* form: `ξ ≺ ζ + ε` gives `ξ ≺ ζ`.  Use
+  it when the perturbed statement is what is available, e.g. from `RBM.StochDom.add` or from
+  `RBM.StochDom.of_unifDetDom` applied to a deterministic bound `f ≤ g + ε`.
+* `RBM.StochDom.of_highProb_add_rpow_neg` — the *high-probability* form: a pathwise bound
+  `ξ ≤ N^τ ζ + N^{-D}` holding with high probability, for every `τ, D > 0`, gives `ξ ≺ ζ`.
+  Here the polynomial lower bound is itself only required with high probability, which is what
+  a **random** control (a `Ξ^{(L)}`, say) needs; a deterministic lower bound feeds in through
+  `RBM.HighProb.of_eventually_univ`.
+
+Both `b` and the family `ε` are arbitrary: no relation between `b` and the decay exponent `D`
+is imposed, because `D` ranges over all positive reals in the hypothesis.
+-/
+
+section Absorb
+
+variable {P} {U : ℕ → Type*} {ξ ζ : ∀ N, U N → Ω → ℝ}
+
+/-- An event that eventually contains every sample point holds with high probability.  This is
+how a *deterministic* polynomial lower bound on the control enters
+`RBM.StochDom.of_highProb_add_rpow_neg`. -/
+theorem HighProb.of_eventually_univ {Ξ : ℕ → Set Ω}
+    (h : ∀ᶠ N : ℕ in atTop, ∀ ω, ω ∈ Ξ N) : HighProb P Ξ := by
+  intro D _
+  filter_upwards [h] with N hN
+  have hc : (Ξ N)ᶜ = (∅ : Set Ω) := by
+    ext ω; simp only [Set.mem_compl_iff, Set.mem_empty_iff_false, iff_false, not_not]
+    exact hN ω
+  rw [hc, measure_empty]
+  exact zero_le
+
+/-- `2 a y ≤ a² y` for `a ≥ 2` and `y ≥ 0`. -/
+theorem two_mul_le_mul_self {a y : ℝ} (ha : (2 : ℝ) ≤ a) (hy : 0 ≤ y) :
+    2 * (a * y) ≤ a * a * y := by
+  have ha0 : (0 : ℝ) ≤ a := by linarith
+  nlinarith [mul_nonneg (mul_nonneg ha0 hy) (sub_nonneg.2 ha)]
+
+/-- **The pointwise absorption step.**  If the control `y` is bounded below by `N^{-b}`, the
+error `ε` is bounded above by the same `N^{-b}`, and `2 ≤ N^{τ/2}`, then a bound
+`x ≤ N^{τ/2} y + ε` upgrades to `x ≤ N^τ y`. -/
+theorem le_rpow_mul_of_le_add_rpow_neg {N : ℕ} {τ b x y ε : ℝ} (hτ : 0 < τ)
+    (hN : (2 : ℝ) ≤ (N : ℝ) ^ (τ / 2)) (hy : (N : ℝ) ^ (-b) ≤ y) (hε : ε ≤ (N : ℝ) ^ (-b))
+    (hx : x ≤ (N : ℝ) ^ (τ / 2) * y + ε) : x ≤ (N : ℝ) ^ τ * y := by
+  have hy0 : 0 ≤ y := le_trans (Real.rpow_nonneg (Nat.cast_nonneg N) _) hy
+  have hhalf : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ :=
+    UnifDetDom.rpow_half_mul_rpow_half N hτ
+  have hkey := two_mul_le_mul_self hN hy0
+  have hεy : ε ≤ y := hε.trans hy
+  have hya : y ≤ (N : ℝ) ^ (τ / 2) * y := by nlinarith
+  rw [← hhalf]
+  linarith
+
+/-- **Absorbing a super-polynomially small additive error in the control**: if `ξ ≺ ζ + ε`,
+the control `ζ` is eventually bounded below by `N^{-b}` (uniformly in `u` and `ω`) and the
+error `ε` is eventually bounded above by the same `N^{-b}`, then `ξ ≺ ζ`.
+
+This is the form to use with `RBM.StochDom.of_unifDetDom` (a deterministic bound
+`f ≤ g + ε`) or with `RBM.StochDom.add`. -/
+theorem StochDom.of_add_le {b : ℝ} {ε : ℕ → ℝ}
+    (hlow : ∀ᶠ N : ℕ in atTop, ∀ u ω, (N : ℝ) ^ (-b) ≤ ζ N u ω)
+    (hε : ∀ᶠ N : ℕ in atTop, ε N ≤ (N : ℝ) ^ (-b))
+    (h : StochDom P ξ (fun N u ω => ζ N u ω + ε N)) :
+    StochDom P ξ ζ := by
+  refine StochDom.of_subset h fun τ hτ => ⟨τ / 2, half_pos hτ, ?_⟩
+  filter_upwards [hlow, hε, eventually_le_rpow 2 (half_pos hτ)] with N hl he h2
+  rintro ω ⟨u, hu⟩
+  refine ⟨u, lt_of_le_of_lt ?_ hu⟩
+  have hy0 : (0 : ℝ) ≤ ζ N u ω := le_trans (Real.rpow_nonneg (Nat.cast_nonneg N) _) (hl u ω)
+  have hhalf : (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (τ / 2) = (N : ℝ) ^ τ :=
+    UnifDetDom.rpow_half_mul_rpow_half N hτ
+  have he' : ε N ≤ ζ N u ω := he.trans (hl u ω)
+  have ha0 : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have hkey := two_mul_le_mul_self h2 hy0
+  have hya : ζ N u ω ≤ (N : ℝ) ^ (τ / 2) * ζ N u ω := by nlinarith
+  rw [← hhalf]
+  nlinarith
+
+/-- **Absorbing a super-polynomially small additive error, the high-probability route.**  If
+
+* the control `ζ` is bounded below by `N^{-b}` for all `u`, with high probability, and
+* for every `τ > 0` and `D > 0` the pathwise bound `ξ ≤ N^τ ζ + N^{-D}` holds for all `u`
+  with high probability,
+
+then `ξ ≺ ζ`.
+
+Both the multiplicative prefactor `N^τ` and the additive error `N^{-D}` are absorbed.  The
+lower bound is a high-probability statement, so the control may itself be random; for a
+deterministic lower bound use `RBM.HighProb.of_eventually_univ`.  A purely pathwise bound is
+the special case where both events are everything. -/
+theorem StochDom.of_highProb_add_rpow_neg {b : ℝ}
+    (hlow : HighProb P (fun N => {ω | ∀ u, (N : ℝ) ^ (-b) ≤ ζ N u ω}))
+    (h : ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ),
+      HighProb P (fun N => {ω | ∀ u, ξ N u ω ≤ (N : ℝ) ^ τ * ζ N u ω + (N : ℝ) ^ (-D)})) :
+    StochDom P ξ ζ := by
+  intro τ hτ D hD
+  have hD0 : (0 : ℝ) < |b| + 1 := by positivity
+  have hev := HighProb.inter hlow (h (τ / 2) (half_pos hτ) (|b| + 1) hD0) D hD
+  filter_upwards [hev, eventually_le_rpow 2 (half_pos hτ), eventually_ge_atTop 1]
+    with N hN h2 hN1
+  refine (measure_mono ?_).trans hN
+  rintro ω ⟨u, hu⟩ hmem
+  obtain ⟨hl, hb⟩ := hmem
+  simp only [Set.mem_ofPred_eq] at hl hb
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hrp : (N : ℝ) ^ (-(|b| + 1)) ≤ (N : ℝ) ^ (-b) :=
+    Real.rpow_le_rpow_of_exponent_le hN1' (by cases abs_cases b <;> linarith)
+  exact absurd (le_rpow_mul_of_le_add_rpow_neg hτ h2 (hl u) hrp (hb u)) (not_le.2 hu)
+
+end Absorb
 
 end RBM

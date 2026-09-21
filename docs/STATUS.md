@@ -2906,3 +2906,19 @@ agent 还用 `#eval` 在一个具体 3-loop 上核对：电荷 `[F,T,T,F,T,F,F,T
 **T130 的产出无需适配即可对接**：`Gauss.goodSetFlow ⊆ FlowGoodEv` 是 `fun ω hω u => hω u u.2`，`(Gauss.band d).P = Gauss.P d` 是 `rfl`；探针验证了 T130 → `hΩ` 端到端。
 **为什么 LDE 那半没做出来**：T130 用的网引擎需要控制的多项式下界 `N^{-B} ≤ ζ`，而 (4.2) 的控制 `ldeRowRHS` 是小行 Green 元素平方和，**没有这种下界（它可以为零）**——已记进 `LDEFlowDom` 的 docstring。固定时刻的生产者 `Gauss.stochDom_ldeRow`/`stochDom_ldeCol` 恰是删掉 `TimeIcc` 因子的同一陈述。
 **分层选择**：没有给 `LKDecayQuant.lean` 加 `Gauss` 的 import——高斯侧的对接只在探针里验证，以免 `Hierarchy` 依赖 `Gauss`。paper-deltas #91（#86 的附录）。
+
+### T135：`≺` 的可加余量吸收 + `EE_le`（Claude Code 并行 agent，2026-09-21）
+
+**通用引理进了 `Defs/StochDom.lean`**（纯新增，未重排未重述任何既有内容）：核心算术 `le_rpow_mul_of_le_add_rpow_neg`，加两个形式——
+`StochDom.of_add_le`（控制扰动型，供 `of_det` 那条路）与 **`StochDom.of_highProb_add_rpow_neg`**（高概率型，`EE_le` 用的就是它），外加 `HighProb.of_eventually_univ` 让**确定性**下界也能喂进同一条引理。
+**两处设计值得记**：高概率型里的**下界本身只是一个事件**而非确定性的 `∀ᶠ N`——这正是**随机**控制（`Ξ^{(L)}`）所要求的，T123/T125 的确定性情形是其退化特例；且 `b` 与 `D` 之间**不设关系**，证明自己在 `(τ/2, |b|+1)` 处实例化。
+
+**`EEBridge.stochDom_norm_eeField` 字面就是 `Lemma510.EE_le`**（取 `H.EE := eeField`），探针以**裸 `:=`** 闭合该字段类型（无 `convert`、无强制转换），两种写法都验了（直接写 `eeField`，以及经抽象 `H` 加 `hH : H.EE = eeField`）。
+假设只有：常设区制 + **(2.72)**、`eeDecayEvent`（(5.77) 的衰减输入）、`xiLowEvent`（`Ξ^{(L)}` 的高概率多项式下界）。
+**没有自造区制假设**：`1 ≤ Wℓ_uη_u` 用的是**已有的** `SumZeroDyn.flow_crude`（agent 说它先写了一版推导，grep 后发现已有便丢弃了——「造轮子之前先查」）。
+
+**多项式下界一半已证一半携带**：确定性那半由 `ℓ_u ≤ L`、`η_u ≤ 1`、`W·L ≤ N` 证出（同 `Gauss.rpow_neg_le_aprioriRhs`）；
+随机那半（`Ξ^{(L)}` 的下界）需要 `Im G_{xx} ≥ η/(‖H−E‖²+η²)` 即 `‖H‖` 的界，而对**一般 `Sample B`**（entry 无界）只能高概率地有（`‖X‖ ≺ 1` 是 T109，且只在 `Gauss/`），故归约成**最弱可用形式**携带。
+**无 fiat 风险**：不造 `Hierarchy`、不定义 `F`/`EE`/`mart`，`Lemma510`/`LKDecay` 逐字节未动；且 `hxi` 是**假设**，弱的 `C` 不会削弱结论（结论是固定的 `EE_le`）。
+**未做**：`H.EE := eeField` 的安装（T58）；`EE_decay`（另一字段）；`eeDecayEvent` 与 `xiLowEvent` 的生产者（前者是粘合 `(2m+2)`-loop 版的 `Decay.lemma59`，该放 `LKDecayQuant.lean`）。
+`StochDom.of_add_le` 已证但暂无消费者，是为确定性那条路留的。paper-deltas #92。

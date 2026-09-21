@@ -4553,3 +4553,68 @@ STATUS 的 T173 节写「`hEL` 仍挂 `MatrixStein`(T70) 与 `hjoint`(T141)」�
 **于是 (4.2) 已从 `Step1.Hyp` 的假设表里彻底消失，那里只剩 `DiagBoundFlow`。**
 
 `LKDecayQuant.lean` 的八条重复副本仍在；本单只用 `Green/` 那一套，**既没让它们更好删、也没挡着删**。
+
+---
+
+# 待 Jun 定夺（Claude Code 汇总，2026-09-21）
+
+> **约定（Jun 2026-09-21）**：Jun 不在 Claude Code 界面回复。凡需他裁定的，Claude Code 写在这一节里，由 Cowork 与他讨论。
+> 本节只列**需要裁定**的，不列进度；裁定后由 Cowork 开单，Claude Code 不写工单。
+
+## D1 ⭐ `Thm221.step` 收的是裸 `Cond272`，而全链要带 `N^c` 增益的 `hregS`（T176，探针 P2/P3）
+`Cond272`（`Flow/Hypotheses.lean:290`）等价于去掉 `N^c`，**严格更弱**；六步全链（`hregS`，`Step2PP.lean:575`）要的是带增益版。
+paper-deltas #47/#54/#73 记过这条偏差，**但没人记它把 `Thm221` 的陈述变成了不可证**；`eventually_flow_grid`
+（`Flow/Iteration.lean:238`）也只产出裸 (2.72)，所以 `Bounds_of_Thm221` 一侧同样对不上。
+**这挡在总装的最后一米上，且目前无人负责。**
+* 已验证（探针 P3，编译通过）：`gridT_step_2_72_gain` 证明 p.24 的网格**能带任意增益 `g`**，
+  而 `flow_grid_2_72`（`Scales.lean:326`）的证明内部本来就有 `g = Im m·W^{τ/2−30τ'}`（由 `60τ' < τ` 是 `W` 的正幂）。
+* **未验证**：把 `g ≥ N^c` 那一段（要 `W ≥ √(N/2)`）接起来——P3 没编译这一步，是读证明得出的。
+* **代价评估**：一条新的 `eventually_flow_grid'` + 一个 `Thm221'` 字段，零新数学。
+* **要定的**：(a) 就地改 `Thm221`/`Cond272`，还是加带撇版；(b) 论文侧 (2.72) 是否相应写成带增益形（还是只在 Lean 记 delta）。
+
+## D2 ⭐ 基数预算的工单必须把 `FlucGainUpTo` 一并写进规格（T171 + T176，探针 P5）
+T171 已编译证明 `MinorDiffGainUpTo` 在 `B ≍ Ψ` 处不可满足（其 `B` 支配 `Z_k` 的所有 `L^n` 范数，配 `‖Z_k‖_∞ ≥ 64/65`）。
+**T176 的探针 P5 表明同一堵墙高一层、且在活路径上**：`FlucGainUpTo` 自己的 `B` 也支配所有 `L^n` 范数，
+而 `FlucGainUpTo` 正是 `eq45Flow_of_localLaw_gain'`（`CondStableFlow.lean:1246`）在 `hg` 槽吃的接口。
+**只点名 `MinorDiffGainUpTo` 会修了下层、上层接口仍然塌。**
+* 修法已写清（T171 §「还短的那一步」）：加第二个预算 `#ι ≤ n`；`2p` 阶矩展开里 `#ι ≤ 2p` 本来就成立。
+* **未验证**：`‖Z_k‖_∞ ≥ 64/65` 的 `L^n → L^∞` 一步需要 `ω ↦ Z_k(ω)` 的连续性，**T171 没有写出来**；
+  两条反例当时只在探针里、未入库。**若要把这堵墙当定论，应先补这一步。**
+
+## D3 ⭐ `Lemma514`（`h514`）现在无主，且唯一入口落在 T118 禁用的 fiat 路线上（T176）
+工单表顶部此前写「T58 的 ②③ → T146（完成）」——**是错的**，T146 交付的是 `hrhs`。
+全树 `Lemma514` 只有 `SumZeroDyn.lemma514_flow/'`，**三者都收 `H : ∀ n, SumZeroDyn.Hierarchy`**，
+而 `Hierarchy` 的 `F/EE/mart/martQ` 全是自由数据（T118/T172 判定，禁止实例化）。
+**这是活路径上仅剩的一处 fiat 冲突，也是目前最大的一块。**
+* 矩路线替代要走 `MomentDuhamel.Hyp` → `stochDom_of_momentDuhamel` → T124 网 → `Lemma514` 形状，
+  但 `Hyp` 的 `momentDuhamel`/`momentDuhamelQ`/`drift` 三条**自己还没有生产者**（T132b 余项：
+  `u ↦ Kval` 的时间可微性、固定 Hermitian `M` 时 `u ↦ gloop` 的可微性）。
+* ⚠ 附带：`lemma514_flow'` 仍要 `0 < s N`。**若 `h514` 回到 SumZeroDyn 路线，T161 刚闭合的 `0 ≤ s` 缝会重新裂开。**
+* **要定的**：是补 T132b 的余项走矩路线，还是另想办法。
+
+## D4 (5.35) 的第一项需要论文没写的 `J* ≤ A_u`（T155，paper-deltas #112 ③）
+(5.55) 明写 `(1+(J*)²A⁻¹)` 而 (5.35) 第一项不带 `J*`，中间那步要 `r² ≤ J*·A^{2/3}`，**不自动成立**。
+在论文上下文里 `J* ≤ A_u` 总成立，只是从没写出来。**要定的**：论文是否补这半句。
+（**Lean 侧不需要裁定**：走论文字面 shape 1 时，该条件由 `phi_arith` 自己的 `hA` 免费推出——T174 已核。）
+
+## D5 (5.77) 第 3 行短一个因子 `Ξ^{(L−K)}_{u,1}`（T165，paper-deltas #119）
+`Decay.norm_eG_le` 出来的是 `Ξ^{(L−K)}_{u,1}·Ξ^{(L)}_{u,m+1}`，而 (5.77) 第 3 行写的是**裸的** `Ξ^{(L)}_{u,m+1}`。
+论文默认它 `≲ 1`（(2.68) 单圈）才丢掉，**但它既不是常数也不在 `xiRhs` 里，从另外两行推不出来**。
+**要定的**：论文补一个因子，还是补一句「由 (2.68) 该量 `≲ 1`」。
+
+## D6 Theorem 2.2 的谱边缘措辞（T153）
+局部律只在 `|E| ≤ 2−κ` 上有；(2.10) 对体内特征值成立，**边缘的 `λ_k` 要么排除、要么记一条 paper-delta**。
+**要定的**：论文 Theorem 2.2 怎么措辞（审计时为省预算没翻 PDF，落地前需确认）。
+附带路线判定（**已定，不需裁定**）：`Flow/` 层固定 `E` 纯参数化，(ii) 的输入恰是 (i) 的输出，故顺序只能是 (i) → (ii)。
+**要定的只有**：(i) 走新文件（0 个现有签名改动）还是就地泛化（更干净，但要动 `Cond272` 的 14 个文件，与并行车道冲突）。
+
+## D7 两处「仓库里的重复副本该由谁删」
+* `Hierarchy/LKDecayQuant.lean` 有八条带地板内核与 `Green/EntryBoundFloor.lean`（T166）重复；
+  `Green/` 不能 import `Hierarchy/` 是重复的成因，反方向可以，改指即可。
+* `Gauss.entry_bound_stochDom_floor_idx`（T107）应与 `diag_bound_stochDom_floor_idx` 并排下沉到 `Green/EntryBoundFloor.lean`。
+**要定的**：并进哪张单（都要独占那两个文件）。
+
+## D8 `Decay.norm_couplingLen_le` 的 `hD` 假设写宽了（T165）
+它要求 `‖(L−K)_J‖ ≤ Φ·A^{−|J|}` 对**所有** `|J| < m`，含 `|J| = 0`；而 `L_∅ = LW`、`K_∅ = 0`，**逼出 `Φ ≥ LW`、主项直接废掉**。
+耦合本身看不到这种圈（cut-and-glue 两边长度都 ≥ 2）。T165 用 `dTrunc` 绕过、**未改 `Decay.lean`**。
+**要定的**：是否开一张单把 `hD` 收紧成 `2 ≤ J.length → …`（那样 `dTrunc` 那一段就能删掉）。

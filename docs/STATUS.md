@@ -95,8 +95,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 **T255 交出的三条阻塞（(A′) 现在卡在这里）**：
 
-1. ⭐⭐ **Ω-桥（结构性，纯接线但跨文件）**：`WeightedMoment P J s t …` 量化在**抽象** `(Ω, MeasurableSpace, P)` 上、`J` 来自 `RBM.Sample B`（`Flow/Hypotheses.lean:225`）；而 `hasDerivAt_integral_Phi` 活在**具体**高斯系综上 `∫ ω, Φ (Hflow d N s ω) ∂(P d)`（`Gauss/Generator.lean:803`）。**全仓没有任何引理把 `X.H N u ω` 与 `Hflow d N u ω` 认同**，也没有把生成元恒等式搬到 `Sample` 上的东西。→ **已开 T259**。
-2. **`J*` 是 `Finset.max` 不是软最大值**（`Hierarchy/Step2.lean:642`）：软最大值只经权重 `W` 进来，而**模型指标集上 `jStar ≤ softMax r S ρ` 的比较全仓没做过**（`le_softMax`/`softMax_le` 只有抽象版）。→ **一并 T259**。
+1. ~~**Ω-桥**~~ —— **T259 已解除：它在定义上就成立**（`Gauss.sample_H` 是 `rfl` 且早已具名），T255 的诊断有误。原文：⭐⭐ **Ω-桥（结构性，纯接线但跨文件）**：`WeightedMoment P J s t …` 量化在**抽象** `(Ω, MeasurableSpace, P)` 上、`J` 来自 `RBM.Sample B`（`Flow/Hypotheses.lean:225`）；而 `hasDerivAt_integral_Phi` 活在**具体**高斯系综上 `∫ ω, Φ (Hflow d N s ω) ∂(P d)`（`Gauss/Generator.lean:803`）。**全仓没有任何引理把 `X.H N u ω` 与 `Hflow d N u ω` 认同**，也没有把生成元恒等式搬到 `Sample` 上的东西。→ **已开 T259**。
+2. ~~**`J*` 是 `Finset.max` 不是软最大值**~~ —— **T259 已解除**（双边比较 + `card → e`）。原文：**`J*` 是 `Finset.max` 不是软最大值**（`Hierarchy/Step2.lean:642`）：软最大值只经权重 `W` 进来，而**模型指标集上 `jStar ≤ softMax r S ρ` 的比较全仓没做过**（`le_softMax`/`softMax_le` 只有抽象版）。→ **一并 T259**。
 3. ⚠⚠ **近场 `≲ R^{7/2}/R^8` 与远场 `≲ R·A^{−1/3}R^4` 两个指数：T230 与 T255 两次独立拒绝背书**，都说无法从论文 §5.3 重建出那两个显示式。仓库里唯一产出第 7 步形状的是 `CutHypTheta.sat_oneStep`，那是 `J ≡ Θ ≡ 1` 的**平凡见证**。**这条必须由 Cowork 给出可核实的推导**，否则 (A′) 的最后一步没有落点。
 
 ## 4. 待 Jun 定夺
@@ -108,6 +108,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 见 `docs/TASKS.md`（只剩活跃单）。**截至 04:21，六条车道全满**：**T230 (A′)**（最高优先）、**T245**（总装合并 + `modulus` 换 `EntryModulusEv`）、**T246**（`hDec*` 换线）、**T247**（`hcont`/`hintU1`/`hintU2` + 下沉）、**T248**（三处逐字重复上移）、**T249**（`CutHypEv.modulus` 在 `s ≡ 0` 的反例 + 带撇接口）。T217 归 Codex；T159 已认领（等总装）。本轮完成并入库：T232/T235/T236/T237/T240/T241/T242/T243/T244。**T245–T249 的可写文件集两两不相交**，各行「状态」栏已写明认领的文件与隔开方式。
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
+
+* **T259**（本次，新建 `Gauss/SampleFlowBridge.lean` 511 行/20 条）：⭐⭐ **Ω-桥在定义上就成立——T255 的诊断是错的**。`RBM.Gauss.sample_H : (sample d).H N u ω = Hflow d N u ω := rfl` **早就存在**（`Gauss/Model.lean:413`），`band_P`/`sample_G`/`sample_Lval`/`sample_ELval` 同；没有约定差、没有包装差、不需要新假设。真正缺的是**复合**（`lk_eq_loopObs_sub`，两行证明）。⭐ **`jStar ↔ softMax` 双边比较做出来了**，`card` 经 `card_loopArg_two` + `rpow_card_le_exp_one` **降为常数 `e`**。⭐ **甲乙合流**：`testFun_softW_jS` + `hasDerivAt_integral_softW_jS` 让生成元恒等式直接站在模型自己的 (5.29) 族上、写在 `Sample`/`band` 词汇里；`abs_cutTrunc_jS_pow_le` 把 `WeightedMoment` 那个不可微的 `sup'` 用光滑对象**逐点压住**。**七步里 1–4 与两条结构性阻塞全部解除**；余步 5（`∇χ` 接进 `u`-Duhamel）、步 6（模型侧 `quadVar` 率）、步 7（两个指数 → Cowork，第三次）。报告 `docs/reports/T259.md`；paper-delta T259a。
 
 * **T256**（本次，新建 `Flow/FirstCell.lean` 300 行 + `Step345Producer.lean` §13，审计 13092）：⭐ **结论恢复 `Thm221NoEL`**（`thm221NoEL_of_inputs_mergedOnAll_gauss`，`WindowLeft` 从槽 3、6 删掉，p.24 网格从 `u_0 = 0` 跑完），并证明新表蕴含 T251 的旧表。⭐ **包含 `s = 0` 的 Hölder-1/2 预解式模仓库本来就有**（T106 的 `Gauss.norm_green_flow_sub_le`，对 `u,u'` 无正性假设），已包装成事件版。⭐ **D17 为什么对，它给出了真正的理由**：`t249_witness_norm_gt` —— **T249 已发表那条反驳的见证落在 `{‖X‖ ≤ N}` 之外**。⚠⚠ **但它同时发现 D17 在现有编码下还不能用**：`EntryModulusEv(On)` 把 `(Kmod,γ) = (1,1/2)` 写死在 `def` 里，而 **T249 的 `gap_lower` 丢了一个因子 `W`**（`gap_lower_W` 捡回后跳跃 `≍ W` 发散），故在 `v = N^{−2}` 处 `Kmod = 1` 仍被打掉，要 `Kmod ≳ D`。**D17 数学上成立，但必须先把指数参数化**（→ T258，已转达，含下游代价 `mesh ≥ N^{2Kmod}`、`Ccard = 2Kmod+1`）。报告 `docs/reports/T256.md`；paper-delta T256a。
 

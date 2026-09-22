@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Flow.Thm221NoEL
 import RBM1D.Hierarchy.Step2FarMart
+import RBM1D.Flow.Eq548Producer
 
 /-!
 # Theorem 2.21, first pass: the assembly file (T239)
@@ -72,6 +73,19 @@ object satisfies — see §4 and §7.  The initial bound `hinit` is **no longer 
 ## Deviations from the paper
 
 None: this file only composes statements already in the tree.
+
+Bookkeeping for §8 (T245), so that the direction of each change is on the record:
+
+* deleting `RBM.Eq548EntryData.init` and `.meas`, and reading `.modulus` at `∀ᶠ N in atTop`
+  instead of `∀ N`, each make the (5.48) package **weaker** — `RBM.Eq548EntryData.toEv`
+  compiles, so nothing that satisfied T239's table stops satisfying
+  `RBM.thm221NoEL_of_inputs_entriesEv`'s;
+* the `∀ᶠ N` reading of the modulus is T244's repair of a field that is **false** as written
+  (`RBM.not_entryModulus_of_jSfarSm_ne`); the paper states no such field, so this is an
+  internal shape fix and carries no paper-delta of its own — any delta for it belongs to T244;
+* `RBM.thm221NoEL_of_inputs_entriesEv` and `RBM.thm221NoEL_of_inputs_cutHyp'` use the
+  `RBM.BoundsCore X E s` that `RBM.Thm221NoEL.step` already receives; no slot gains a premise,
+  and the conclusion `RBM.Thm221NoEL X κ` is byte-identical.
 -/
 
 namespace RBM
@@ -701,5 +715,316 @@ theorem thm221Assembly_init_witness {τ : ℝ} (hτ0 : 0 < τ) :
 
 end SatisfiableInit
 
+
+/-! ### 8. The (5.48) package at the repaired shapes (T245)
+
+T244 proved that `RBM.Eq548EntryData.modulus` — and therefore the same field of
+`RBM.Eq548EntryData'` — is **false as written**: its right-hand side is
+`N ^ 1 * |v - w| ^ (1/2)`, which vanishes identically at `N = 0`
+(`RBM.modulus_rhs_eq_zero_at_zero`), so at `N = 0` the field is not a modulus of continuity but
+the *equality constraint* that `v ↦ ‖(L-K)_v‖ / T_{v,D}` be constant on the whole of
+`[s_0, t_0]`, for **every** `ω` and every label pair.  `RBM.not_entryModulus_of_jSfarSm_ne` and
+`RBM.not_entryModulus_of_ratio_ne` are the compiled refutations.  T244's repair is
+`RBM.EntryModulusEv`, the same body read at `∀ᶠ N in atTop`, which the `N = 0` argument cannot
+touch (`RBM.entryModulusEv_of_forall_pos` below), and `RBM.MomentDuhamelCut.satCutHypEv`
+together with `RBM.MomentDuhamelCut.sat_modulus_not_forall` is T232's compiled proof that the
+`∀ᶠ N` reading is *strictly* weaker at the flow's own exponents `Kmod = 1`, `γ = 1/2`.
+
+`RBM.Eq548EntryDataEv` is therefore `RBM.Eq548EntryData` with
+
+* `init` **deleted** (T241: `RBM.stochDom_jSfarSm_init_of_boundsCore` produces it from
+  `RBM.BoundsCore X E s`, which `RBM.Thm221NoEL.step` receives anyway);
+* `meas` **deleted** (T244: `RBM.aestronglyMeasurable_jSfarSm` proves it with **no**
+  hypotheses, for every `X` and every sample point);
+* `modulus` **weakened** from the refuted `∀ N` shape to `RBM.EntryModulusEv`.
+
+All three changes make the package *weaker*, so `RBM.Eq548EntryData.toEv` compiles and the
+merged table cannot be harder to satisfy than T239's.  Only `near` (→ `Step2Near47`/T207, and
+`RBM.Eq548EntryDataEv.of_sharp` records that route) and `moment` (→ T230/T210) are left. -/
+
+section EntriesEv
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {s t : ℕ → ℝ}
+
+/-- **T244's `N = 0` refutation cannot reach the `∀ᶠ N` field.**  It suffices to have the
+entrywise modulus for `N ≥ 1`; the instance at `N = 0`, which
+`RBM.not_entryModulus_of_jSfarSm_ne` refutes, is never asked for. -/
+theorem entryModulusEv_of_forall_pos (X : Sample B)
+    (h : ∀ N : ℕ, 1 ≤ N → ∀ ω : Ω, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+      ∀ x : LoopArg (B.L N) 2,
+        15 / 8 * |(zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N v))
+              - (zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N w))|
+            * |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+                (zdist (B.L N) (x 0 - x 1))|
+          + |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+                (zdist (B.L N) (x 0 - x 1))
+              - ‖Step2.lk X E N w ω x‖ / tailT (B.W N : ℝ) (B.ell N w) (etaT E w) D
+                (zdist (B.L N) (x 0 - x 1))|
+            ≤ (N : ℝ) ^ (1 : ℝ) * |v - w| ^ ((1 : ℝ) / 2)) :
+    EntryModulusEv X E s t D :=
+  Filter.eventually_atTop.2 ⟨1, h⟩
+
+/-- **The entrywise data of (5.48), at the shapes that survive the audit** (T245).
+
+Two fields, both genuinely open:
+
+* `near` — the sharp near half (5.47), verbatim the field of `RBM.Eq548EntryData`
+  (→ `Step2Near47`/T207; `RBM.Eq548EntryDataEv.of_sharp` builds it from
+  `RBM.Step2Near47.MomentHypCutSharp`);
+* `moment` — the truncated moment bound on the net, verbatim the field of
+  `RBM.Eq548EntryData` (→ T230/T210).
+
+and one field at T244's repaired shape:
+
+* `modulus` — `RBM.EntryModulusEv`, i.e. the `∀ N` modulus of `RBM.Eq548EntryData.modulus`
+  read at `∀ᶠ N in atTop`.
+
+`meas` and `init` are gone: they are theorems (`RBM.aestronglyMeasurable_jSfarSm`,
+`RBM.stochDom_jSfarSm_init_of_boundsCore`). -/
+structure Eq548EntryDataEv (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop where
+  near : ∀ D : ℝ, 0 < D → StochDom B.P
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+      X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+    (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+      tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D (zdist (B.L N) (p.2.1 - p.2.2)))
+  modulus : ∀ D : ℝ, 0 < D → EntryModulusEv X E s t D
+  moment : ∀ D : ℝ, 0 < D → ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+    ∀ᶠ N : ℕ in atTop,
+    ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+      ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+            (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+        ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))
+
+/-- **The old package is stronger than the new one** — the field-by-field certificate that
+deleting `init` and `meas` and weakening `modulus` to its `∀ᶠ N` reading costs nothing. -/
+theorem Eq548EntryData.toEv {X : Sample B} (H : Eq548EntryData X E s t) :
+    Eq548EntryDataEv X E s t :=
+  ⟨H.near, fun D hD => entryModulusEv_of_entryModulus X (H.modulus D hD), H.moment⟩
+
+/-- Same, from T241's four-field package. -/
+theorem Eq548EntryData'.toEv {X : Sample B} (H : Eq548EntryData' X E s t) :
+    Eq548EntryDataEv X E s t :=
+  ⟨H.near, fun D hD => entryModulusEv_of_entryModulus X (H.modulus D hD), H.moment⟩
+
+/-- **`RBM.Eq548EntryDataEv` from T207's sharp (5.47)** (T244's `RBM.near_of_sharp`).  Kept as
+a *constructor* rather than as the shape of the `near` field: `RBM.near_of_sharp` shows
+`RBM.Step2Near47.MomentHypCutSharp` is at least as strong as the field, so putting it into the
+structure would **strengthen** the request and `Eq548EntryData.toEv` would no longer compile. -/
+theorem Eq548EntryDataEv.of_sharp {X : Sample B} (hE : |E| < 2) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1)
+    (hnear : ∀ D : ℝ, 0 < D → Step2Near47.MomentHypCutSharp X E s t D)
+    (hmod : ∀ D : ℝ, 0 < D → EntryModulusEv X E s t D)
+    (hmoment : ∀ D : ℝ, 0 < D → ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ,
+      ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    Eq548EntryDataEv X E s t :=
+  ⟨near_of_sharp X hnear hE hst ht1, hmod, hmoment⟩
+
+/-- **The (5.48) slot from `RBM.Eq548EntryDataEv`** — `meas` discharged by T244's
+`RBM.aestronglyMeasurable_jSfarSm`, `init` by T241's
+`RBM.stochDom_jSfarSm_init_of_boundsCore`, and the bootstrap routed through T232's asymptotic
+interface `RBM.MomentDuhamelCut.CutHypEv` (T244's `RBM.stochDom_jSfarSm_of_entriesEv`) so that
+the refuted `∀ N` modulus never appears. -/
+theorem flowEq548Sm_of_entryDataEv (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hB : BoundsCore X E s) (H : Eq548EntryDataEv X E s t) :
+    FlowEq548Sm X E s t :=
+  flowEq548Sm_of_nearChi X ht1
+    (Step2FarMart.flowEq548W_of_jSfarSm X H.near fun D hD =>
+      stochDom_jSfarSm_of_entriesEv X hst hs0 ht1 (H.modulus D hD) (H.moment D hD)
+        (stochDom_jSfarSm_init_of_boundsCore X (t := t) hE hst ht1 hc hB D hD))
+
+end EntriesEv
+
+section AssemblyEv
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **Theorem 2.21 without (2.71), with the whole of `meas`, `init` and the refuted `∀ N`
+modulus out of the (5.48) slot** (T245).
+
+Verbatim `RBM.thm221NoEL_of_inputs_entries` except that the last slot asks for
+`RBM.Eq548EntryDataEv` — three fields instead of five, one of them at T244's repaired
+`∀ᶠ N` shape.  No extra premise is needed on the slot: `RBM.BoundsCore X E s`, which the `init`
+producer consumes, is an argument of `RBM.Thm221NoEL.step` itself.
+
+`RBM.thm221NoEL_of_inputs_entriesEv_of_unprimed` is the compiled certificate that this is a free
+strengthening. -/
+theorem thm221NoEL_of_inputs_entriesEv (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq548EntryDataEv X E s t) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hΘ E hE s t hs0 hst ht1 c hc0 hreg) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45 E hE s t hs0 hst ht1 c hc0 hreg)
+      (flowEq548Sm_of_entryDataEv X (by linarith : |E| < 2) hs0 hst ht1 hreg.toCond272 hB
+        (h548e E hE s t hs0 hst ht1 c hc0 hreg))
+
+/-- **The new (5.48) slot is weaker than T239's** — everything that satisfied
+`RBM.thm221NoEL_of_inputs_entries`'s table satisfies this one, by
+`RBM.Eq548EntryData.toEv`. -/
+theorem thm221NoEL_of_inputs_entriesEv_of_unprimed (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ)
+    (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq548EntryData X E s t) :
+    Thm221NoEL X κ :=
+  thm221NoEL_of_inputs_entriesEv X hκ0 hκ1 h1 Hy hΘ h514 h45
+    fun E hE s t hs0 hst ht1 c hc0 hreg => (h548e E hE s t hs0 hst ht1 c hc0 hreg).toEv
+
+/-- **T241's `hinit` slot removed from the `CutHyp` route too** (the mechanical half of T245).
+Verbatim `RBM.thm221NoEL_of_inputs_cutHyp` **minus** its last hypothesis: the same
+`RBM.stochDom_jSfarSm_init_of_boundsCore` supplies it from the `RBM.BoundsCore X E s` that
+`RBM.Thm221NoEL.step` already carries.  Strictly fewer hypotheses, identical conclusion. -/
+theorem thm221NoEL_of_inputs_cutHyp' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (hnear : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 0 < D → StochDom B.P
+        (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+          X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+        (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+          tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+            (zdist (B.L N) (p.2.1 - p.2.2))))
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ D : ℝ, 0 < D →
+      MomentDuhamelCut.CutHyp B.P (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) s t
+        (fun _ => 1)) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hΘ E hE s t hs0 hst ht1 c hc0 hreg) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45 E hE s t hs0 hst ht1 c hc0 hreg)
+      (flowEq548Sm_of_cutHyp X ht1 (hnear E hE s t hs0 hst ht1 c hc0 hreg)
+        (hcut E hE s t hs0 hst ht1 c hc0 hreg)
+        (stochDom_jSfarSm_init_of_boundsCore X (t := t) (by linarith : |E| < 2) hst ht1
+          hreg.toCond272 hB))
+
+/-- **The `CutHyp` route's new table is weaker than T239's** — the old `hinit` input is simply
+ignored. -/
+theorem thm221NoEL_of_inputs_cutHyp'_of_unprimed (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ)
+    (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (hnear : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 0 < D → StochDom B.P
+        (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+          X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+        (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+          tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+            (zdist (B.L N) (p.2.1 - p.2.2))))
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ D : ℝ, 0 < D →
+      MomentDuhamelCut.CutHyp B.P (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) s t
+        (fun _ => 1))
+    (_hinit : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ D : ℝ, 0 < D →
+      StochDom B.P (fun N (_ : Unit) ω => Step2FarMart.jSfarSm X E D N (s N) ω)
+        (fun _ _ _ => (1 : ℝ))) :
+    Thm221NoEL X κ :=
+  thm221NoEL_of_inputs_cutHyp' X hκ0 hκ1 h1 Hy hΘ h514 h45 hnear hcut
+
+/-- **The step, with the (5.48) item built from `RBM.Eq548EntryDataEv`.**  Verbatim
+`RBM.boundsCore_step_of_inputs_reg_W` except in the last slot. -/
+theorem boundsCore_step_of_inputs_entriesEv (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    {E : ℝ} {s t : ℕ → ℝ} (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c)
+    (hB : BoundsCore X E s) (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (H : Eq548EntryDataEv X E s t) :
+    BoundsCore X E t :=
+  boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy hΘ h514 h45
+    (flowEq548Sm_of_entryDataEv X (lt_of_le_of_lt hEκ (by linarith)) hs0 hst ht1
+      hreg.toCond272 hB H)
+
+/-- **The conclusion is byte-identical.**  The step built here and
+`RBM.boundsCore_step_of_inputs_reg_W`'s land at the *same* `RBM.BoundsCore X E t`: the
+substitution happened strictly in hypothesis positions, and what went in is a theorem
+*producing* the old hypothesis. -/
+theorem boundsCore_step_of_inputs_entriesEv_unchanged (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ)
+    (hκ1 : κ ≤ 1) {E : ℝ} {s t : ℕ → ℝ} (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s) (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (H : Eq548EntryDataEv X E s t) :
+    boundsCore_step_of_inputs_entriesEv X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy hΘ h514
+        h45 H =
+      boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy hΘ h514 h45
+        (flowEq548Sm_of_entryDataEv X (lt_of_le_of_lt hEκ (by linarith)) hs0 hst ht1
+          hreg.toCond272 hB H) :=
+  rfl
+
+end AssemblyEv
 
 end RBM

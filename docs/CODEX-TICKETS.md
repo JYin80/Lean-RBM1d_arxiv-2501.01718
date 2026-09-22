@@ -150,3 +150,13 @@ T278 精确定位了：漂移行与 `E⊗E` 行的 `≺` 控制都带一个 **`�
 * 于是漂移行用 `SumZeroDyn.xiRhs_stochDom`（控制 `(2n+3)Φ_N`）+ `DriftBound.hdom_of_stochDom_driftF`，`E⊗E` 行用 `Gauss.stochDom_norm_eeFun_det`（控制 `Λ_N`），`ψ := A_u^m·max‖·‖·η_u`（把 `η_u^{−1}` 移到 `ρ` 里）再走 `momentDom_of_stochDom_of_nonneg`。
 * **初值行** `lkT` 在 `s`：如你所说由外层的 `BoundsCore.LmK m`（`Gauss.hinit_of_stochDom`）供给，不从 `Lemma514Premises` 来——在 `'''` 生产者里把它作为独立输入，由总装交割。
 * **验收**不变；见证在 p.24 相邻格（`1−v = W^{−(k+1)τ′}`）上，确认 `∫ρ` 是 `O(log W)` 而不是 `W^{τ′}`。
+
+## §11 更正 §9 的第 7、2 条（Cowork 09:14，读 T280d、T280b 后）
+
+两单编译出的否定结论都对，§9 的两条裁定错了。更正如下（这次都核对了签名与算术）：
+
+**§9(7) 更正（T280d）**：`Cond272Reg` 给的是两条**分开**的下界 `R³⁰ ≤ A_t` 与 `N^c ≤ A_t`，不是乘积，`N^{6δ}R^{12}/A_t ≤ N^{6δ−c}R^{−18}` 这一步不成立（`not_eventually_product_scale_of_separate`）。正确做法是**插值**：`A = A^{2/5}·A^{3/5} ≥ (R³⁰)^{2/5}(N^c)^{3/5} = R^{12}·N^{3c/5}`。仓库已有这条引理：**`RBM.Cond272Reg.margin`**（`Flow/Thm221Bare.lean`，「在每个指数 `b < 30` 给出增益 `N^{c(1−b/30)}`」），取 `b = 12`。于是远场项 `N^{6δ}R^{12}/A_t ≤ N^{6δ − 3c/5}`，需 **`δ < c/10`**。其余各项同法：每项 `N^{aδ}R^{b}/A` 用 `margin` 在指数 `b` 处取增益 `N^{c(1−b/30)}`，要求 `aδ < c(1−b/30)`；取 `δ₀` 为各项约束的最小值。
+
+**§9(2) 更正（T280b）**：`oneStep_of_slots` 的每坐标界是 `((cStep′+1)x²)^{2p} = C·N^{δp/2}`，已经用掉 `WeightedMoment` 的全部指数，`L²` 无处可放（`no_family_absorption_slot`）。问题出在 T276 的**槽取值**：`slotXi = slotKappa = x/2`（`APrimeSlotArith.lean:78,97`）是约束 `Ξ ≤ x`、`κ ≤ x`（`StepSide''`）的上限，不是真实大小。真实大小：`Ξ ≺ 1`，`κ ≲ N^{−2δ}(log N)^{1/2}`（审稿 §2c.6）。**改取 `Ξ = κ = x^{1/4}`**（仍满足 `StepSide''`，只是更小）。代入 `stepRhs''`（`StepSideAPrime.lean:215`）除以 `R⁴`：`xR²Ξ/R⁴ ≤ x^{5/4}`，`xR²κ/R⁴ ≤ x^{5/4}`，漂移 `Ξ·(…)/R⁴ ≲ Ξ·x/m = x^{5/4}/m`（`A_ge`、`ε_le`、`q ≤ R²` 使括号 `≲ x`），`x(R²+1)/R⁴ ≤ 2x`。故每坐标 `≤ C·x^{5/4}`，`2p` 次方 `= C·N^{5δp/16}`；目标 `N^{δp/2} = N^{8δp/16}`，余量 `N^{3δp/16} ≥ N²` 当 `p ≥ 32/(3δ)`，小 `p` 用 Lyapunov（`W ≤ 1`，`E[W·X^p] ≤ (E[W·X^{p′}])^{p/p′}`）。T276 的两条吸收余量随之变成 `slotDrift ≥ x^{5/4}/(4m)`、`slotTail² ≳ x^{5/2}/R⁴`，`η` 取 `< 5δ/32` 仍够。输入侧要多证 `Ξ_true ≤ x^{1/4} = N^{δ/32}`、`κ_true ≤ N^{δ/32}`（都由 `≺` 在 `τ = δ/32` 取）。
+
+**续做**：T280d 按上面第一段做（用 `Cond272Reg.margin`），逐项列出 `(a, b)` 与所需 `δ₀`；T280b 按第二段先出 `slotXi′ = slotKappa′ = x^{1/4}` 的槽与 `stepRhs''` 的 `x^{5/4}` 上界（可在 `APrimeInit.lean` 里新写，不改 T276 的文件），再做族求和与 Lyapunov、`hinit`。**若 `stepRhs''` 里有某项在 `Ξ, κ ≤ x^{1/4}` 下仍 ≥ `x²`，编译出来并停下**。

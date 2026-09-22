@@ -41,7 +41,7 @@ if _nparsed != _nenv:
 # Cowork overrides: nodes whose Lean proof is conditional on a hypothesis still being discharged
 STATUS_OVERRIDE = {
     'thm:fluc-high': ('repl', '旧接口在 B≍Ψ 处不可满足（T171/T172）；已由带基数预算的条件化版取代，(4.12)→Eq45Flow 闭合（T177/T188）'),
-    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init、meas 已关（T241、T244），时间模字段已填（{‖X‖ ≤ N} 上 Hölder-½、指数随 D 参数化；T257、T258、T261）；停时的替代 (A′)：独立审稿判定正确但需修补（V548）；cut 已由定理产出；单步算术 phi_arith′′（T263）、早时刻 QV 率 (S3) 确定性形式（T262）已证；余 WeightedMoment 收口：固定权重 Stein 恒等式与带权 Minkowski → T264，向量版梯度界与交叉项 → T265，(S3) 概率包装 → T267'),
+    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init、meas 已关（T241、T244），时间模字段已填（{‖X‖ ≤ N} 上 Hölder-½、指数随 D 参数化；T257、T258、T261、T266）；停时的替代 (A′)：独立审稿判定正确但需修补（V548），五处修补已全部落地——固定权重 Stein 恒等式与带权 Minkowski（T264）、向量版梯度界与交叉项（T265）、早时刻 QV 率确定性与概率版（T262、T267）、单步算术（T263）；余：时间积分 → T268、先验界传播 → T269、单步矩界装配 → T270，之后第二遍（锐版）'),
 }
 for _l, (_st, _tk) in STATUS_OVERRIDE.items():
     if _l in NODE:
@@ -89,7 +89,7 @@ EXTRA = [
  ('lem5.3b','Lem 5.3  随机积分（逐路径形状）','lem','hyp',''),
  ('eq2.39', '(2.39) 分布相等\n逐点恒等式，已证',   'lem','done',''),
  ('eq6.1',  '(6.1) 分布标度\n逐点恒等式，已证',    'lem','done',''),
- ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','一份总装同时关掉四槽（T245），第 6 槽的时间模已填（T261），第一格从 0 起步、结论为 Thm221NoEL（D17、T256）；余：第 2、3 槽同一个 WeightedMoment → T230 (A′)（T264、T265、T267）；Eq45FlowInputs 的网格数据 → T124 续；(5.48) 的 near → Step2Near47、moment → T230；(2.71) 第二遍三条分析性假设已关（T247）'),
+ ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','一份总装同时关掉四槽（T245），第 6 槽时间模已填（T261），第一格从 0 起步、结论为 Thm221NoEL（D17、T256）；余：第 2、3 槽同一个 WeightedMoment → (A′) 装配（T268、T269、T270，然后第二遍）；Eq45FlowInputs 的网格数据 → T124 续；(5.48) 的 moment 用同一套自举；(2.71) 第二遍三条分析性假设已关（T247）'),
 ]
 for i, (x, lab, k, st, tk) in enumerate(EXTRA):
     NODE[x] = dict(kind=k, title=lab, chap=9, st=st, tk=tk, uses=[])

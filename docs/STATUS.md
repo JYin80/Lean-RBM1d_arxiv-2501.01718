@@ -84,6 +84,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **T238 / T239 / T240**（45e293a）：`driftF` 逐点包络两处同源（`exists_driftF_envelope`，粗包络，够侧条件不够定量）；**(5.48) 从 `Thm221NoEL` 假设表整条消失**（`Flow/Thm221Assembly.lean`，完整假设表见 `docs/reports/T239.md`）；plain 路线 `MomentIneq` 闭合、只剩窗口条件（T240 查出旧 `hQV` 对 `u` 无窗口限制、很可能空真，已绕开）。
 * **T234**：`hKd` **不是数学缺口**——`cor35Rate` 带根号，衰减长度就是 `ℓ_v`（(2.52)），`e^{−c₀N^τ/4}`；四个好集 3½ 个；`Bounds` 在 `s > 0` 残余 10 → 7。报告 `docs/reports/T234.md`。
 
+* **T232 / T236 / T237**（321b3b4）：`NonAlt514` 从全仓删除，换成有生产者的 `hrhsNA`（网格见证、常数不含 `N/W/τ′/k`，`C = 3 → 5`）——**Lemma 5.14 的 `Q` 路线结构性缺口关掉**；`lkGood` 可测性用「可测核」绕过，`hΞm` 消除、`hDec*` 有事件限制替代品；`CutHyp` 的 `∀ᶠ N` 版 `CutHypEv(′)` 落地，**并编译证明 `∀ N` 版对 `J_u = 2u⁺` 不可满足**（空真第十例：原结构在小 `N` 上本就没有居民）——`Step2FarMart` 里消费旧 `CutHyp` 的那条须换到 `CutHypEv`（已写进 T244）。
+
 ## 7. 无主的活
 
 （全部已开单。T239 的主链假设表逐槽分派：第 1 槽 `Step1.Hyp` → T242；第 2 槽 `MomentHypCut` → T230 (A′)/T232；第 3、5 槽 `hΘ`/`Eq45Flow` → T243；第 4 槽 `Lemma514` → T236；第 6 槽 `Eq548EntryData`：`init` → T241，`near`/`meas`/`modulus` → T244，`moment` → T230。新的无主项写在这里，调度下一轮开单。）

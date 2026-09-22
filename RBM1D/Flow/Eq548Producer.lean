@@ -86,6 +86,27 @@ Matrices*, §5.3, (5.47)–(5.48).
   `Kmod = 1`, `γ = 1/2`, `Θ ≡ 1`, is T232's `RBM.MomentDuhamelCut.satCutHypEv` together with
   `RBM.MomentDuhamelCut.sat_modulus_not_forall`.
 
+### §11–§14 T258: the exponents `(Kmod, γ)` become parameters, and the verdict on a real model
+
+* `RBM.EntryModulusEvK`, `RBM.EntryModulusEvKOn` — `RBM.EntryModulusEv` with
+  `(N : ℝ)^1 |v - w|^{1/2}` replaced by `(N : ℝ)^{Kmod} |v - w|^γ`, unrestricted and on an
+  event.  `RBM.entryModulusEvK_one_half` is the `Iff.rfl` certificate that at `(1, 1/2)` the
+  parametric field *is* the old one; `RBM.meshK`, `RBM.meshK_one_half`,
+  `RBM.mesh_fine_at_meshK`, `RBM.card_le_at_meshK` move the net with the exponents, and at
+  `(1, 1/2)` reproduce the old `(N+1)²` and `Ccard = 3`.  Old names, bodies and consumers are
+  untouched.
+* `RBM.cutHypEv_jSfarSm_of_entriesK`, `RBM.stochDom_jSfarSm_of_entriesEvK`,
+  `RBM.flowEq548W_of_sharp_entriesEvK` — the (5.48) chain at an arbitrary admissible pair.
+* `RBM.not_entryModulusEvK_swapSample_of_far` — **the verdict holds for every `Kmod : ℝ` and
+  every `γ > 0`** on a window starting at `0`: parametrizing does not rescue the field.
+* `RBM.exists_jSfarSm_ge_swapSample'`, `RBM.gap_lower_mul_W` — the two sharpenings the event
+  argument needs (the witness's size; the factor `W` that `RBM.gap_lower` discards).
+* `RBM.not_entryModulusEvKOn_swapSample_of_far` — **on the event `{|ω| ≤ N}` the verdict holds
+  exactly for `Kmod ≤ 2γ`**, which contains the hard-coded `(1, 1/2)`.
+* `RBM.bandR`, `RBM.bandGrow`, `RBM.hsep_bandGrow`, `RBM.not_entryModulusEv_bandGrow`,
+  `RBM.not_cutHypEv_bandGrow`, `RBM.not_entryModulusEvKOn_one_half_bandGrow` — T252's `hsep`
+  wired in, so all of the above hold **unconditionally on one concrete model**.
+
 ## What this file does **not** close
 
 `hmoment` (T230/T210) and `hinit` (T241) stay as they were.  `hmod` is **not** closed: §3
@@ -980,7 +1001,7 @@ At the time `v > 0` the two sample points `ω = v^{-1/2}` and `ω = 0` give `H_v
 `W⁻¹(1-z_v²)⁻¹(1-z̄_v²)⁻¹` — a quantity that does **not** shrink as `v → 0`.  The primitive
 `K_{v}` is the same for both, so it cancels: one of the two sample points has
 `‖(L-K)_v‖ ≥ ‖W⁻¹(1-z_v²)⁻¹(1-z̄_v²)⁻¹‖/2`, and hence `J*^{sm}_{v,D} ≥ 1 + that / (2 T₀)`. -/
-theorem exists_jSfarSm_ge_swapSample
+theorem exists_jSfarSm_ge_swapSample'
     (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (N : ℕ) {v : ℝ} (hv : 0 < v)
     (hne : (b N).1 ≠ (b N).2) (hz0 : zt E v ≠ 0)
     (hz : 1 - (zt E v) ^ 2 ≠ 0) (hz' : 1 - ((starRingEnd ℂ) (zt E v)) ^ 2 ≠ 0)
@@ -988,7 +1009,7 @@ theorem exists_jSfarSm_ge_swapSample
     {T₀ : ℝ} (_hT₀ : 0 < T₀)
     (hT : tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
         (zdist (B.L N) ((b N).1 - (b N).2)) ≤ T₀) :
-    ∃ ω : ℝ, 1 + ‖((B.W N : ℂ))⁻¹ *
+    ∃ ω : ℝ, |ω| ≤ 1 / Real.sqrt v ∧ 1 + ‖((B.W N : ℂ))⁻¹ *
         ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖ / (2 * T₀)
       ≤ Step2FarMart.jSfarSm (swapSample B b) E D N v ω := by
   classical
@@ -1024,13 +1045,15 @@ theorem exists_jSfarSm_ge_swapSample
     rw [this]
     exact norm_sub_le _ _
   -- one of the two sample points carries half of it
-  have hpick : ∃ ω : ℝ, ‖Lv‖ / 2 ≤ ‖Step2.lk (swapSample B b) E N v ω aa‖ := by
+  have hsq0 : (0 : ℝ) ≤ 1 / Real.sqrt v := by positivity
+  have hpick : ∃ ω : ℝ, |ω| ≤ 1 / Real.sqrt v ∧
+      ‖Lv‖ / 2 ≤ ‖Step2.lk (swapSample B b) E N v ω aa‖ := by
     rcases le_total ‖Step2.lk (swapSample B b) E N v (1 / Real.sqrt v) aa‖
       ‖Step2.lk (swapSample B b) E N v 0 aa‖ with h | h
-    · exact ⟨0, by linarith⟩
-    · exact ⟨1 / Real.sqrt v, by linarith⟩
-  obtain ⟨ω, hω⟩ := hpick
-  refine ⟨ω, ?_⟩
+    · exact ⟨0, by simpa using hsq0, by linarith⟩
+    · exact ⟨1 / Real.sqrt v, by rw [abs_of_nonneg hsq0], by linarith⟩
+  obtain ⟨ω, hωb, hω⟩ := hpick
+  refine ⟨ω, hωb, ?_⟩
   have hTpos : 0 < tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
       (zdist (B.L N) (aa 0 - aa 1)) := tailT_pos hW0 _
   have hlow := Step2.div_le_jStar_sub_one (L := B.L N)
@@ -1052,6 +1075,23 @@ theorem exists_jSfarSm_ge_swapSample
   have := hlow
   unfold Step2FarMart.jSfarSm
   linarith [hdiv, hlow]
+
+/-- **T249's witness, without the bound on it.**  Signature unchanged; the proof is now the
+projection of `RBM.exists_jSfarSm_ge_swapSample'`, which also records that the witness lies in
+`{|ω| ≤ v^{-1/2}}` — the datum T256's event argument (`RBM.t249_witness_norm_gt`) needs and
+could not extract from the bare existential. -/
+theorem exists_jSfarSm_ge_swapSample
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (N : ℕ) {v : ℝ} (hv : 0 < v)
+    (hne : (b N).1 ≠ (b N).2) (hz0 : zt E v ≠ 0)
+    (hz : 1 - (zt E v) ^ 2 ≠ 0) (hz' : 1 - ((starRingEnd ℂ) (zt E v)) ^ 2 ≠ 0)
+    (hfar : Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1)
+    {T₀ : ℝ} (hT₀ : 0 < T₀)
+    (hT : tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+        (zdist (B.L N) ((b N).1 - (b N).2)) ≤ T₀) :
+    ∃ ω : ℝ, 1 + ‖((B.W N : ℂ))⁻¹ *
+        ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖ / (2 * T₀)
+      ≤ Step2FarMart.jSfarSm (swapSample B b) E D N v ω :=
+  (exists_jSfarSm_ge_swapSample' b N hv hne hz0 hz hz' hfar hT₀ hT).imp fun _ h => h.2
 
 /-- The spectral parameter of the flow is off the real axis, so neither `z_v` nor `z_v² - 1`
 nor `z̄_v² - 1` vanishes. -/
@@ -1118,9 +1158,9 @@ theorem norm_one_sub_sq_le {E v : ℝ} (hE : |E| < 2) (hv0 : 0 ≤ v) (hv1 : v �
 
 /-- The lower bound on the far-field spread that `hgap` of
 `RBM.not_entryModulusEv_swapSample` asks for. -/
-theorem gap_lower {E v D : ℝ} (hE : |E| < 2) {W L : ℕ} (hW : 1 ≤ W) (hL : 3 ≤ L)
+theorem gap_lower_mul_W {E v D : ℝ} (hE : |E| < 2) {W L : ℕ} (hW : 1 ≤ W) (hL : 3 ≤ L)
     (hv0 : 0 < v) {t₀ : ℝ} (hvt : v ≤ t₀) (ht₀ : t₀ < 1) (hD : 2 ≤ D) (d : ℝ) :
-    1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+    (W : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
       ≤ ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
         / (2 * tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d) := by
   have : NeZero L := ⟨by omega⟩
@@ -1197,17 +1237,28 @@ theorem gap_lower {E v D : ℝ} (hE : |E| < 2) {W L : ℕ} (hW : 1 ≤ W) (hL : 
     exact add_le_add hfirst hWD
   have hTpos : 0 < tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d := tailT_pos hW0 _
   have hc1 : (0 : ℝ) < (etaT E t₀)⁻¹ ^ 2 + 1 := by positivity
-  calc 1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
-      ≤ (1 / (100 * (W : ℝ))) / (2 * (((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1))) := by
-        have hkey : (1 / (100 * (W : ℝ))) / (2 * (((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1)))
-            = (W : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1)) := by
-          field_simp
-          ring
-        rw [hkey]
-        gcongr
+  have hkey : (1 / (100 * (W : ℝ))) / (2 * (((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1)))
+      = (W : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1)) := by
+    field_simp
+    ring
+  calc (W : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+      = (1 / (100 * (W : ℝ))) / (2 * (((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1))) := hkey.symm
     _ ≤ ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
           / (2 * tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d) := by
         gcongr
+
+/-- **T249's constant `c`**, i.e. `RBM.gap_lower_mul_W` with the factor `W ≥ 1` discarded.
+Signature unchanged; keeping the `W` (which is what `RBM.gap_lower_mul_W` does) is what §13
+needs, because a *diverging* jump is what refutes the modulus on the event. -/
+theorem gap_lower {E v D : ℝ} (hE : |E| < 2) {W L : ℕ} (hW : 1 ≤ W) (hL : 3 ≤ L)
+    (hv0 : 0 < v) {t₀ : ℝ} (hvt : v ≤ t₀) (ht₀ : t₀ < 1) (hD : 2 ≤ D) (d : ℝ) :
+    1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+      ≤ ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
+        / (2 * tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d) := by
+  refine le_trans ?_ (gap_lower_mul_W hE hW hL hv0 hvt ht₀ hD d)
+  have hWR : (1 : ℝ) ≤ (W : ℝ) := by exact_mod_cast hW
+  have hc1 : (0 : ℝ) < 200 * ((etaT E t₀)⁻¹ ^ 2 + 1) := by positivity
+  gcongr
 
 /-- **The verdict of T249(甲): `RBM.EntryModulusEv` is false on a non-degenerate window
 `[0, t_N]` with `t_N ≤ t₀ < 1`**, for the flow `H_u = √u ω A_N` and any `D ≥ 2`, as soon as the
@@ -1247,4 +1298,674 @@ theorem not_cutHypEv_swapSample_of_far {t Θ : ℕ → ℝ} {t₀ : ℝ}
 end Gap
 
 
+/-! ### 11. T258(甲): the modulus with its exponents `(Kmod, γ)` as parameters
+
+`RBM.EntryModulusEv` hard-codes `(N : ℝ)^1 * |v - w|^{1/2}` inside the `def`, i.e. the pair
+`(Kmod, γ) = (1, 1/2)`.  T252 showed that **nobody can produce it**: the honest loop-level
+Lipschitz constant is `N^{1+C+D} |v - w|^1` (`RBM.norm_lk_sub_le_lip`), which on a window of
+width `≥ N^{-C}` is *not* `≤ N^1 |v - w|^{1/2}`; and T256's `RBM.kmod_ge_of_jump` shows that even
+the event-restricted field forces `Kmod` to grow linearly in `D`.  So the pair has to travel
+with the statement.
+
+`RBM.EntryModulusEvK` is `RBM.EntryModulusEv` with the two exponents abstracted; at `(1, 1/2)`
+the two are the *same proposition*, by `rfl` (`RBM.entryModulusEvK_one_half`).  The old name,
+its body, and every downstream consumer are left untouched.
+
+`γ` is always carried with `0 < γ`: at `γ = 0` the right-hand side is `N^{Kmod} * 1`, an
+absolute bound rather than a modulus, and the field would say nothing about continuity.  `Kmod`
+is a real *parameter of the statement*, never a function of the quantity being estimated.
+
+The mesh cannot stay at `(N+1)²` once `Kmod` moves: `RBM.MomentDuhamelCut.CutHypEv.mesh_fine`
+asks `N^{Kmod} (1/m_N)^γ ≤ Θ_N`.  `RBM.meshK` is the mesh that works for every admissible pair,
+`m_N = (N+1)^{Kmod/γ}`, and `RBM.meshK_one_half` is the check that at `(1, 1/2)` it is exactly
+the old `(N+1)²`, with `Ccard = Kmod/γ + 1 = 3`. -/
+
+section Parametric
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {s t : ℕ → ℝ}
+variable (X : Sample B)
+
+/-- **`RBM.EntryModulusEv` with its two exponents as parameters.**  Body for body
+`RBM.EntryModulusEv`; the single change is `(N : ℝ) ^ (1 : ℝ) * |v - w| ^ ((1 : ℝ)/2)` ⤳
+`(N : ℝ) ^ Kmod * |v - w| ^ γ`. -/
+def EntryModulusEvK (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D Kmod γ : ℝ) : Prop :=
+  ∀ᶠ N : ℕ in atTop, ∀ ω : Ω, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+    ∀ x : LoopArg (B.L N) 2,
+      15 / 8 * |(zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N v))
+            - (zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N w))|
+          * |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))|
+        + |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))
+            - ‖Step2.lk X E N w ω x‖ / tailT (B.W N : ℝ) (B.ell N w) (etaT E w) D
+              (zdist (B.L N) (x 0 - x 1))|
+          ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+
+/-- **The certificate that the parametrization is conservative**: at `(Kmod, γ) = (1, 1/2)` the
+parametric field is *the same proposition* as `RBM.EntryModulusEv` — `Iff.rfl`, not a proof. -/
+theorem entryModulusEvK_one_half :
+    EntryModulusEvK X E s t D 1 (1 / 2) ↔ EntryModulusEv X E s t D := Iff.rfl
+
+theorem entryModulusEvK_of_entryModulusEv (h : EntryModulusEv X E s t D) :
+    EntryModulusEvK X E s t D 1 (1 / 2) := h
+
+theorem entryModulusEv_of_entryModulusEvK (h : EntryModulusEvK X E s t D 1 (1 / 2)) :
+    EntryModulusEv X E s t D := h
+
+/-- **The mesh that matches the pair `(Kmod, γ)`**: `m_N = (N+1)^{Kmod/γ}`.  At `(1, 1/2)` this
+is the `(N+1)²` of `RBM.Step2FarMart.mesh_fine_one_at_sq`. -/
+noncomputable def meshK (Kmod γ : ℝ) : ℕ → ℝ := fun N => ((N : ℝ) + 1) ^ (Kmod / γ)
+
+theorem meshK_pos (Kmod γ : ℝ) (N : ℕ) : 0 < meshK Kmod γ N :=
+  Real.rpow_pos_of_pos (by positivity) _
+
+/-- At the flow's own pair the mesh is the old one, byte for byte. -/
+theorem meshK_one_half : meshK 1 (1 / 2) = fun N : ℕ => ((N : ℝ) + 1) ^ (2 : ℝ) := by
+  funext N
+  norm_num [meshK]
+
+/-- `Ccard` at the flow's own pair is the old `3`. -/
+theorem ccardK_one_half : (1 : ℝ) / (1 / 2) + 1 = 3 := by norm_num
+
+/-- **`mesh_fine` at `RBM.meshK`**, for every admissible pair: `N^{Kmod} (1/m_N)^γ ≤ 1`. -/
+theorem mesh_fine_at_meshK {Kmod γ : ℝ} (hK : 0 ≤ Kmod) (hγ : 0 < γ) (N : ℕ) :
+    (N : ℝ) ^ Kmod * (1 / meshK Kmod γ N) ^ γ ≤ 1 := by
+  have ha : (0 : ℝ) < (N : ℝ) + 1 := by positivity
+  have h1 : (1 / meshK Kmod γ N) = ((N : ℝ) + 1) ^ (-(Kmod / γ)) := by
+    rw [meshK, Real.rpow_neg ha.le, one_div]
+  rw [h1, ← Real.rpow_mul ha.le]
+  have h2 : (-(Kmod / γ)) * γ = -Kmod := by field_simp
+  rw [h2]
+  have h3 : (N : ℝ) ^ Kmod ≤ ((N : ℝ) + 1) ^ Kmod :=
+    Real.rpow_le_rpow (Nat.cast_nonneg N) (by linarith) hK
+  have h4 : (0 : ℝ) < ((N : ℝ) + 1) ^ (-Kmod) := Real.rpow_pos_of_pos ha _
+  calc (N : ℝ) ^ Kmod * ((N : ℝ) + 1) ^ (-Kmod)
+      ≤ ((N : ℝ) + 1) ^ Kmod * ((N : ℝ) + 1) ^ (-Kmod) :=
+        mul_le_mul_of_nonneg_right h3 h4.le
+    _ = 1 := by rw [← Real.rpow_add ha]; simp
+
+/-- **`card_le` at the same mesh**, with `Ccard = Kmod/γ + 1`: the window has length `< 1`, so
+the net has at most `(N+1)^{Kmod/γ} + 2 ≤ N^{Kmod/γ + 1}` points once `N ≥ max(4, 2^{Kmod/γ+1})`.
+Together with `RBM.mesh_fine_at_meshK` this settles, at *one* mesh and by theorems, the pair of
+fields that pull in opposite directions. -/
+theorem card_le_at_meshK {Kmod γ : ℝ} (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) :
+    ∀ᶠ N : ℕ in atTop,
+      (t N - s N) * meshK Kmod γ N + 2 ≤ (N : ℝ) ^ (Kmod / γ + 1) := by
+  set a : ℝ := Kmod / γ with hadef
+  have ha0 : 0 ≤ a := div_nonneg hK hγ.le
+  filter_upwards [eventually_ge_atTop (max 4 ⌈(2 : ℝ) ^ (a + 1)⌉₊)] with N hN
+  have hN4 : 4 ≤ N := le_trans (le_max_left _ _) hN
+  have hNc : ⌈(2 : ℝ) ^ (a + 1)⌉₊ ≤ N := le_trans (le_max_right _ _) hN
+  have hx4 : (4 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN4
+  have hx0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have h2a : (2 : ℝ) ^ (a + 1) ≤ (N : ℝ) :=
+    le_trans (Nat.le_ceil _) (by exact_mod_cast hNc)
+  have hsplit : (2 : ℝ) ^ (a + 1) = 2 * (2 : ℝ) ^ a := by
+    rw [Real.rpow_add (by norm_num), Real.rpow_one]; ring
+  have h2a' : (2 : ℝ) ^ a ≤ (N : ℝ) / 2 := by rw [hsplit] at h2a; linarith
+  have hb : ((N : ℝ) + 1) ^ a ≤ (2 * (N : ℝ)) ^ a :=
+    Real.rpow_le_rpow (by positivity) (by linarith) ha0
+  have hmul : (2 * (N : ℝ)) ^ a = (2 : ℝ) ^ a * (N : ℝ) ^ a :=
+    Real.mul_rpow (by norm_num) hx0.le
+  have hxa1 : (1 : ℝ) ≤ (N : ℝ) ^ a := Real.one_le_rpow (by linarith) ha0
+  have hxa0 : (0 : ℝ) < (N : ℝ) ^ a := by linarith
+  have hts : t N - s N ≤ 1 := by linarith [hs0 N, ht1 N]
+  have hmeshnn : (0 : ℝ) ≤ meshK Kmod γ N := (meshK_pos Kmod γ N).le
+  have hstep1 : (t N - s N) * meshK Kmod γ N ≤ ((N : ℝ) + 1) ^ a := by
+    have := mul_le_mul_of_nonneg_right hts hmeshnn
+    simpa [meshK, hadef, one_mul] using this
+  have hstep2 : ((N : ℝ) + 1) ^ a ≤ ((N : ℝ) / 2) * (N : ℝ) ^ a := by
+    refine le_trans hb ?_
+    rw [hmul]
+    exact mul_le_mul_of_nonneg_right h2a' hxa0.le
+  have hstep3 : (2 : ℝ) ≤ ((N : ℝ) / 2) * (N : ℝ) ^ a := by nlinarith
+  have hfin : (N : ℝ) ^ (a + 1) = (N : ℝ) ^ a * (N : ℝ) := by
+    rw [Real.rpow_add hx0, Real.rpow_one]
+  rw [hfin]
+  nlinarith [hstep1, hstep2, hstep3]
+
+/-- **The `CutHypEv` for `J*^{sm}_{u,D}` at an arbitrary admissible pair `(Kmod, γ)`.**  Field
+for field `RBM.cutHypEv_jSfarSm_of_entries`, with the two exponents, the mesh and `Ccard` all
+moving together.  At `(1, 1/2)` the mesh is `(N+1)²` (`RBM.meshK_one_half`) and `Ccard` is `3`
+(`RBM.ccardK_one_half`), i.e. exactly the old bundle. -/
+noncomputable def cutHypEv_jSfarSm_of_entriesK {Kmod γ : ℝ} (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hmod : EntryModulusEvK X E s t D Kmod γ)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    MomentDuhamelCut.CutHypEv B.P (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) s t
+      (fun _ => 1) where
+  window := hst
+  δ₀ := 1
+  δ₀_pos := one_pos
+  Θ_pos := fun _ => one_pos
+  J_nonneg := fun _ _ _ => Step2FarMart.jSfarSm_nonneg X
+  meas := fun N u => (measurable_jSfarSm X E D N u).aestronglyMeasurable
+  mesh := meshK Kmod γ
+  mesh_pos := meshK_pos Kmod γ
+  Kmod := Kmod
+  γ := γ
+  γ_pos := hγ
+  modulus := by
+    filter_upwards [hmod] with N hN ω v hv w hw
+    exact Step2FarMart.abs_jSfarSm_sub_le X fun x =>
+      (Step2FarMart.abs_lkFarSm_ratio_sub_le X x).trans (hN ω v hv w hw x)
+  mesh_fine := Filter.Eventually.of_forall (mesh_fine_at_meshK hK hγ)
+  Ccard := Kmod / γ + 1
+  card_le := card_le_at_meshK hK hγ hs0 ht1
+  moment := hmoment
+
+/-- **`J*^{sm}_{u,D} ≺ 1` at an arbitrary admissible pair `(Kmod, γ)`** —
+`RBM.stochDom_jSfarSm_of_entriesEv` with the exponents carried. -/
+theorem stochDom_jSfarSm_of_entriesEvK {Kmod γ : ℝ} (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hmod : EntryModulusEvK X E s t D Kmod γ)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p)))
+    (hinit : StochDom B.P (fun N (_ : Unit) ω => Step2FarMart.jSfarSm X E D N (s N) ω)
+      (fun _ _ _ => (1 : ℝ))) :
+    StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2FarMart.jSfarSm X E D N (u : ℝ) ω)
+      (fun _ _ _ => (1 : ℝ)) :=
+  letI := B.isProbabilityMeasure
+  MomentDuhamelCut.stochDom_of_cutHypEv
+    (cutHypEv_jSfarSm_of_entriesK X hK hγ hst hs0 ht1 hmod hmoment)
+    (Filter.Eventually.of_forall fun _ => le_rfl) hinit
+
+/-- **(5.48) at the smooth weight, with the modulus at an arbitrary admissible pair.**
+`RBM.flowEq548W_of_sharp_entriesEv` with `(Kmod, γ)` carried through. -/
+theorem flowEq548W_of_sharp_entriesEvK {Kmod γ : ℝ} (hK : 0 ≤ Kmod) (hγ : 0 < γ) (hE : |E| < 2)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (Hy : ∀ D : ℝ, 0 < D → Step2Near47.MomentHypCutSharp X E s t D)
+    (hmod : ∀ D : ℝ, 0 < D → EntryModulusEvK X E s t D Kmod γ)
+    (hmoment : ∀ D : ℝ, 0 < D → ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ,
+      ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p)))
+    (hinit : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (_ : Unit) ω => Step2FarMart.jSfarSm X E D N (s N) ω) (fun _ _ _ => (1 : ℝ))) :
+    Step45.FlowEq548W X E s t
+      (fun N p => Step2FarMart.nearChi (B.W N : ℝ) (B.ell N p.1)
+        (zdist (B.L N) (p.2.1 - p.2.2))) :=
+  Step2FarMart.flowEq548W_of_jSfarSm X (near_of_sharp X Hy hE hst ht1)
+    fun D hD => stochDom_jSfarSm_of_entriesEvK X hK hγ hst hs0 ht1 (hmod D hD) (hmoment D hD)
+      (hinit D hD)
+
+/-- **The parametric bundle really is the old one at `(1, 1/2)`.**  Compiled certificate: the
+`Kmod = 1`, `γ = 1/2` instance of `RBM.cutHypEv_jSfarSm_of_entriesK` takes the hypotheses of
+`RBM.cutHypEv_jSfarSm_of_entries` verbatim (same `EntryModulusEv` by
+`RBM.entryModulusEvK_one_half`, same mesh by `RBM.meshK_one_half`) and returns the same
+bundle. -/
+theorem cutHypEv_jSfarSm_of_entriesK_one_half
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hmod : EntryModulusEv X E s t D)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    Nonempty (MomentDuhamelCut.CutHypEv B.P
+      (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) s t (fun _ => 1)) :=
+  ⟨cutHypEv_jSfarSm_of_entriesK X (Kmod := 1) (γ := 1 / 2) zero_le_one (by norm_num)
+    hst hs0 ht1 ((entryModulusEvK_one_half X).2 hmod) (by rw [meshK_one_half]; exact hmoment)⟩
+
+end Parametric
+
+/-! ### 12. T258(甲/⑥): the refutation, with the exponents free
+
+`RBM.ModulusEvAt` and `RBM.not_modulusEv_zero_start` were **already** parametric in
+`(Kmod, γ)`; only the entrywise wrapper was not.  Closing that gap gives the precise answer to
+"for which `(Kmod, γ)` does T249's verdict hold": **for every real `Kmod` and every `γ > 0`.**
+
+The reason is visible in the proof of `RBM.not_modulusEv_zero_start`: it fixes `N` *first* and
+only then chooses the time `v = min(t_N, (c/(N^{Kmod}+1))^{1/γ})`.  Since the jump `c` supplied
+by `RBM.gap_lower` does not shrink with `v`, no value of `Kmod` can absorb it — a larger `Kmod`
+only makes the refuting time smaller.  At `γ ≤ 0` the statement is not a modulus at all
+(`|v-w|^0 = 1`), which is why `0 < γ` is carried everywhere. -/
+
+section ParametricZeroStart
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {t : ℕ → ℝ}
+variable (X : Sample B)
+
+theorem modulusEvAt_of_entryModulusEvK {Kmod γ : ℝ}
+    (h : EntryModulusEvK X E (fun _ => 0) t D Kmod γ) :
+    ModulusEvAt X E D (fun _ => 0) t Kmod γ := by
+  filter_upwards [h] with N hN ω v hv w hw
+  exact Step2FarMart.abs_jSfarSm_sub_le X fun x =>
+    (Step2FarMart.abs_lkFarSm_ratio_sub_le X x).trans (hN ω v hv w hw x)
+
+/-- **T249's verdict, for every `(Kmod, γ)` with `0 < γ`.**  `RBM.not_entryModulusEv_zero_start`
+is the case `(1, 1/2)`. -/
+theorem not_entryModulusEvK_zero_start (hE : |E| ≤ 2) {Kmod γ : ℝ} (hγ : 0 < γ) {c : ℝ}
+    (hc : 0 < c)
+    (hbig : ∀ᶠ N : ℕ in atTop, ∀ v ∈ Set.Ioc (0 : ℝ) (t N), ∃ ω : Ω,
+      1 + c ≤ Step2FarMart.jSfarSm X E D N v ω)
+    (ht : ∀ᶠ N : ℕ in atTop, 0 < t N) :
+    ¬ EntryModulusEvK X E (fun _ => 0) t D Kmod γ := fun h =>
+  not_modulusEv_zero_start X hE hγ hc hbig ht (modulusEvAt_of_entryModulusEvK X h)
+
+end ParametricZeroStart
+
+section ParametricGap
+variable {B : Band ℝ} {E D : ℝ}
+
+/-- **The verdict of T249(甲) at an arbitrary pair `(Kmod, γ)` with `0 < γ`.**  Word for word
+`RBM.not_entryModulusEv_swapSample_of_far`, which is the case `(1, 1/2)`; the constant `c` is
+the same `1/(200((η_{t₀})⁻² + 1))` and does not depend on the exponents.
+
+**This is the precise answer to "which `(Kmod, γ)`":** on a window starting at `0`, *all* of
+them.  Parametrizing `RBM.EntryModulusEv` therefore does **not** rescue the field — only the
+event restriction can, and §13 says how far that goes. -/
+theorem not_entryModulusEvK_swapSample_of_far {t : ℕ → ℝ} {t₀ Kmod γ : ℝ} (hγ : 0 < γ)
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (hE : |E| < 2) (hD : 2 ≤ D) (ht₀ : t₀ < 1)
+    (ht0 : ∀ᶠ N : ℕ in atTop, 0 < t N) (htt : ∀ᶠ N : ℕ in atTop, t N ≤ t₀)
+    (hsep : ∀ᶠ N : ℕ in atTop, (b N).1 ≠ (b N).2 ∧ ∀ v ∈ Set.Ioc (0 : ℝ) (t N),
+        Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1) :
+    ¬ EntryModulusEvK (swapSample B b) E (fun _ => 0) t D Kmod γ := by
+  refine not_entryModulusEvK_zero_start (swapSample B b) hE.le hγ
+    (c := 1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))) (by positivity)
+    (hbig_swapSample b hE ?_ ?_) ht0
+  · filter_upwards [htt] with N h using lt_of_le_of_lt h ht₀
+  · filter_upwards [hsep, htt] with N hsepN hle v hv
+    exact ⟨hsepN.1, hsepN.2 v hv,
+      gap_lower hE (B.W_pos N) (B.three_le_L N) hv.1 (hv.2.trans hle) ht₀ hD _⟩
+
+end ParametricGap
+
+/-! ### 13. T258: the event-restricted modulus, and exactly how far the event rescues it
+
+§12 says the *unrestricted* field is false for **every** pair `(Kmod, γ)` with `0 < γ`, so the
+only remaining repair is the event restriction of T249(丙).  T256 (`RBM.t249_witness_norm_gt`)
+showed that §12's witness, taken at the refuting time `v`, has `‖X‖ = v^{-1/2} > N`, hence lies
+*outside* `{‖X‖ ≤ N}` — the published refutation is silent about the event.  This section
+closes that gap, and the answer is **not** that the event saves the field:
+
+* push the time up to `v = N^{-2}`, the smallest time at which the witness `ω = v^{-1/2} = N`
+  is still inside the event (`RBM.exists_jSfarSm_ge_swapSample'` now hands the bound on the
+  witness out, which the bare existential could not);
+* there the jump is still `≍ W_N` (`RBM.gap_lower_mul_W`: T249's estimate keeps a factor `W`
+  that `RBM.gap_lower` discards), which **diverges**;
+* a modulus with exponents `(Kmod, γ)` allows only `N^{Kmod - 2γ}` there.
+
+So the event-restricted field is refuted exactly when `Kmod ≤ 2γ`, which contains the pair
+`(1, 1/2)` that `RBM.EntryModulusEv` — and, downstream, `RBM.EntryModulusEvOn` — hard-codes.
+D17's repair `Kmod ≥ D - 1`, `γ = 1/2` is outside that range, as it must be. -/
+
+section EventRestricted
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {s t : ℕ → ℝ}
+variable (X : Sample B)
+
+/-- `RBM.ModulusEvAt` with the deterministic inequality asked only on an event — exactly the
+`modulus` field of `RBM.MomentDuhamelCut.CutHypEvOn` for `J = J*^{sm}`. -/
+def ModulusEvAtOn (X : Sample B) (E D : ℝ) (s t : ℕ → ℝ) (Kmod γ : ℝ)
+    (Good : ℕ → Set Ω) : Prop :=
+  ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Good N, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+    |Step2FarMart.jSfarSm X E D N v ω - Step2FarMart.jSfarSm X E D N w ω|
+      ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+
+/-- `RBM.EntryModulusEvK` with the inequality asked only on an event.  This is the shape
+`RBM.EntryModulusEvOn` (`Flow/Thm221Assembly.lean`, downstream of this file) has, with its two
+hard-coded exponents made parameters. -/
+def EntryModulusEvKOn (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D Kmod γ : ℝ)
+    (Good : ℕ → Set Ω) : Prop :=
+  ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Good N, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+    ∀ x : LoopArg (B.L N) 2,
+      15 / 8 * |(zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N v))
+            - (zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N w))|
+          * |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))|
+        + |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))
+            - ‖Step2.lk X E N w ω x‖ / tailT (B.W N : ℝ) (B.ell N w) (etaT E w) D
+              (zdist (B.L N) (x 0 - x 1))|
+          ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+
+/-- At `Good ≡ univ` the event-restricted field is the plain one. -/
+theorem entryModulusEvKOn_univ_iff {Kmod γ : ℝ} :
+    EntryModulusEvKOn X E s t D Kmod γ (fun _ => Set.univ)
+      ↔ EntryModulusEvK X E s t D Kmod γ := by
+  constructor
+  · intro h; filter_upwards [h] with N hN ω; exact hN ω (Set.mem_univ ω)
+  · intro h; filter_upwards [h] with N hN ω _; exact hN ω
+
+theorem entryModulusEvKOn_of_entryModulusEvK {Kmod γ : ℝ} (Good : ℕ → Set Ω)
+    (h : EntryModulusEvK X E s t D Kmod γ) : EntryModulusEvKOn X E s t D Kmod γ Good := by
+  filter_upwards [h] with N hN ω _; exact hN ω
+
+theorem modulusEvAtOn_of_entryModulusEvKOn {Kmod γ : ℝ} {Good : ℕ → Set Ω}
+    (h : EntryModulusEvKOn X E s t D Kmod γ Good) :
+    ModulusEvAtOn X E D s t Kmod γ Good := by
+  filter_upwards [h] with N hN ω hω v hv w hw
+  exact Step2FarMart.abs_jSfarSm_sub_le X fun x =>
+    (Step2FarMart.abs_lkFarSm_ratio_sub_le X x).trans (hN ω hω v hv w hw x)
+
+/-- **The event does not save a modulus with `Kmod ≤ 2γ`.**  At the time `v = N^{-2}` the
+modulus allows a jump of at most `N^{Kmod - 2γ} ≤ 1`, while `hbig` exhibits, *inside the event*,
+a jump of `g N > 1`.  The comparison point is `w = 0`, at the same `ω`, where `J*^{sm} = 1`
+identically (`RBM.jSfarSm_zero`), so no second point of the event is needed. -/
+theorem not_modulusEvAtOn_zero_start (hE : |E| ≤ 2) {Kmod γ : ℝ} (hKγ : Kmod ≤ 2 * γ)
+    {Good : ℕ → Set Ω} {g : ℕ → ℝ}
+    (hbig : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-(2 : ℝ)) ≤ t N ∧
+      ∃ ω ∈ Good N, 1 + g N ≤ Step2FarMart.jSfarSm X E D N ((N : ℝ) ^ (-(2 : ℝ))) ω)
+    (hg : ∀ᶠ N : ℕ in atTop, 1 < g N) :
+    ¬ ModulusEvAtOn X E D (fun _ => 0) t Kmod γ Good := by
+  intro hmod
+  obtain ⟨N, hmodN, hbigN, hgN, hN1⟩ :=
+    (hmod.and (hbig.and (hg.and (eventually_ge_atTop 1)))).exists
+  have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  set v : ℝ := (N : ℝ) ^ (-(2 : ℝ)) with hvdef
+  have hv0 : 0 < v := Real.rpow_pos_of_pos hN0 _
+  obtain ⟨htv, ω, hωG, hωj⟩ := hbigN
+  have hvmem : v ∈ Set.Icc ((fun _ : ℕ => (0 : ℝ)) N) (t N) := ⟨hv0.le, htv⟩
+  have h0mem : (0 : ℝ) ∈ Set.Icc ((fun _ : ℕ => (0 : ℝ)) N) (t N) := ⟨le_rfl, hv0.le.trans htv⟩
+  have hm := hmodN ω hωG v hvmem 0 h0mem
+  rw [jSfarSm_zero X hE N ω] at hm
+  have habs : |v - 0| = v := by rw [sub_zero, abs_of_nonneg hv0.le]
+  rw [habs] at hm
+  have hvg : v ^ γ = (N : ℝ) ^ (-(2 : ℝ) * γ) := by
+    rw [hvdef, ← Real.rpow_mul hN0.le]
+  have hrhs : (N : ℝ) ^ Kmod * v ^ γ ≤ 1 := by
+    rw [hvg, ← Real.rpow_add hN0]
+    calc (N : ℝ) ^ (Kmod + -(2 : ℝ) * γ) ≤ (N : ℝ) ^ (0 : ℝ) :=
+          Real.rpow_le_rpow_of_exponent_le hNR (by linarith)
+      _ = 1 := Real.rpow_zero _
+  have hlow : g N ≤ |Step2FarMart.jSfarSm X E D N v ω - 1| := by
+    rw [abs_of_nonneg (by linarith)]
+    linarith
+  linarith
+
+/-- **The same verdict in the structural form**: no `RBM.MomentDuhamelCut.CutHypEvOn` whose
+exponents satisfy `Kmod ≤ 2γ` survives the jump, event or no event. -/
+theorem not_cutHypEvOn_of_jump (hE : |E| ≤ 2) {Good : ℕ → Set Ω} {g Θ : ℕ → ℝ}
+    (hbig : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-(2 : ℝ)) ≤ t N ∧
+      ∃ ω ∈ Good N, 1 + g N ≤ Step2FarMart.jSfarSm X E D N ((N : ℝ) ^ (-(2 : ℝ))) ω)
+    (hg : ∀ᶠ N : ℕ in atTop, 1 < g N)
+    (H : MomentDuhamelCut.CutHypEvOn B.P
+      (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) (fun _ => 0) t Θ Good)
+    (hKγ : H.Kmod ≤ 2 * H.γ) : False :=
+  not_modulusEvAtOn_zero_start X hE hKγ hbig hg H.modulus
+
+end EventRestricted
+
+section EventGap
+variable {B : Band ℝ} {E D : ℝ}
+
+/-- **The jump at the time `v = N^{-2}`, with a witness inside `{|ω| ≤ N}`.**  This is the
+statement T256 could not extract from `RBM.exists_jSfarSm_ge_swapSample`: the witness bound
+comes from `RBM.exists_jSfarSm_ge_swapSample'`, and the size of the jump from
+`RBM.gap_lower_mul_W` (which keeps the factor `W` that `RBM.gap_lower` throws away). -/
+theorem hbigOn_swapSample {t : ℕ → ℝ} {t₀ : ℝ}
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (hE : |E| < 2) (hD : 2 ≤ D) (ht₀ : t₀ < 1)
+    (htt : ∀ᶠ N : ℕ in atTop, t N ≤ t₀)
+    (hsmall : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-(2 : ℝ)) ≤ t N)
+    (hsep : ∀ᶠ N : ℕ in atTop, (b N).1 ≠ (b N).2 ∧ ∀ v ∈ Set.Ioc (0 : ℝ) (t N),
+        Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1) :
+    ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-(2 : ℝ)) ≤ t N ∧
+      ∃ ω ∈ {ω : ℝ | |ω| ≤ (N : ℝ)},
+        1 + (B.W N : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+          ≤ Step2FarMart.jSfarSm (swapSample B b) E D N ((N : ℝ) ^ (-(2 : ℝ))) ω := by
+  filter_upwards [htt, hsmall, hsep, eventually_ge_atTop 1] with N hle hsm hsepN hN1
+  refine ⟨hsm, ?_⟩
+  have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  set v : ℝ := (N : ℝ) ^ (-(2 : ℝ)) with hvdef
+  have hv0 : 0 < v := Real.rpow_pos_of_pos hN0 _
+  have hvt : v ≤ t₀ := le_trans hsm hle
+  have hv1 : v < 1 := lt_of_le_of_lt hvt ht₀
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  obtain ⟨hz0, hz, hz'⟩ := zt_ne_zero_and_sq (E := E) (v := v) hE hv1
+  have hfar := hsepN.2 v ⟨hv0, hsm⟩
+  obtain ⟨ω, hωb, hω⟩ := exists_jSfarSm_ge_swapSample' (E := E) (D := D) b N hv0 hsepN.1
+    hz0 hz hz' hfar
+    (T₀ := tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+      (zdist (B.L N) ((b N).1 - (b N).2))) (tailT_pos hW0 _) le_rfl
+  have hsqrt : 1 / Real.sqrt v = (N : ℝ) := by
+    rw [hvdef, Real.sqrt_eq_rpow, ← Real.rpow_mul hN0.le,
+      show (-(2 : ℝ)) * ((1 : ℝ) / 2) = -(1 : ℝ) by norm_num,
+      Real.rpow_neg hN0.le, Real.rpow_one, one_div, inv_inv]
+  have hcle : (B.W N : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+      ≤ ‖((B.W N : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
+        / (2 * tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+            (zdist (B.L N) ((b N).1 - (b N).2))) :=
+    gap_lower_mul_W hE (B.W_pos N) (B.three_le_L N) hv0 hvt ht₀ hD _
+  exact ⟨ω, by simpa [hsqrt] using hωb, le_trans (by linarith) hω⟩
+
+/-- **The verdict on the event.**  On a window `[0, t_N]` with `t_N ≤ t₀ < 1`, the
+event-restricted entrywise modulus with exponents `(Kmod, γ)` is **false on `{|ω| ≤ N}`**
+whenever `Kmod ≤ 2γ`, provided the bandwidth diverges (`hW`, which is (2.2) and more).
+
+The pair `(1, 1/2)` that `RBM.EntryModulusEv` and `RBM.EntryModulusEvOn` hard-code satisfies
+`Kmod ≤ 2γ` with equality, so the event restriction of T249(丙) does **not** by itself make the
+field producible: the exponent has to grow too. -/
+theorem not_entryModulusEvKOn_swapSample_of_far {t : ℕ → ℝ} {t₀ Kmod γ : ℝ}
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (hE : |E| < 2) (hD : 2 ≤ D) (ht₀ : t₀ < 1)
+    (hKγ : Kmod ≤ 2 * γ)
+    (htt : ∀ᶠ N : ℕ in atTop, t N ≤ t₀)
+    (hsmall : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-(2 : ℝ)) ≤ t N)
+    (hsep : ∀ᶠ N : ℕ in atTop, (b N).1 ≠ (b N).2 ∧ ∀ v ∈ Set.Ioc (0 : ℝ) (t N),
+        Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1)
+    (hW : ∀ᶠ N : ℕ in atTop, 200 * ((etaT E t₀)⁻¹ ^ 2 + 1) < (B.W N : ℝ)) :
+    ¬ EntryModulusEvKOn (swapSample B b) E (fun _ => 0) t D Kmod γ
+        (fun N => {ω : ℝ | |ω| ≤ (N : ℝ)}) := fun h =>
+  not_modulusEvAtOn_zero_start (swapSample B b) hE.le hKγ
+    (g := fun N => (B.W N : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1)))
+    (hbigOn_swapSample b hE hD ht₀ htt hsmall hsep)
+    (by
+      filter_upwards [hW] with N hN
+      rw [lt_div_iff₀ (by positivity)]
+      linarith)
+    (modulusEvAtOn_of_entryModulusEvKOn (swapSample B b) h)
+
+end EventGap
+
+/-! ### 14. T258(乙): T249's verdict on a real model
+
+T252 proved the geometric premise `hsep` for `RBM.Gauss.Dims.exampleGrow`
+(`RBM.hsep_exampleGrow`, `RBM.hsep_exampleGrow_quarter`) but could not wire it in, because the
+refutations of §10 live on a `RBM.Band ℝ` (the coordinate `ω` of `RBM.swapSample` is a single
+real, as one Gaussian entry is) while `RBM.Gauss.band d` is carried by `RBM.Gauss.Ω d`.
+`RBM.bandR` is the same `(W, L, c)` data on `ℝ`, with the standard Gaussian as its law — so
+`hsep` transfers by `rfl`, every field of `RBM.Band` other than `P` coming from the same
+`RBM.Gauss.Dims`.
+
+The conclusions below are **unconditional**: no `hgap`, no `hsep`, no free constant. -/
+
+section RealModel
+
+open ProbabilityTheory
+
+/-- The `RBM.Band ℝ` carried by a `RBM.Gauss.Dims`: same `W`, `L`, `c`, and (2.2), with the
+standard Gaussian as the law of the single coordinate `ω`. -/
+noncomputable def bandR (d : Gauss.Dims) : Band ℝ where
+  P := gaussianReal 0 1
+  isProbabilityMeasure := inferInstance
+  W := d.W
+  L := d.L
+  W_pos := d.W_pos
+  three_le_L := d.three_le_L
+  dim := d.dim
+  c := d.c
+  c_pos := d.c_pos
+  bandwidth := d.bandwidth
+
+@[simp] theorem bandR_W (d : Gauss.Dims) : (bandR d).W = d.W := rfl
+@[simp] theorem bandR_L (d : Gauss.Dims) : (bandR d).L = d.L := rfl
+
+/-- The growing model of `RBM1D/Gauss/DimsExample.lean`, on `ℝ`. -/
+noncomputable abbrev bandGrow : Band ℝ := bandR Gauss.Dims.exampleGrow
+
+/-- `hsep` for `RBM.bandGrow` at the window `t_N ≡ 1/4`, `t₀ = 1/2` — T252's
+`RBM.hsep_exampleGrow_quarter`, transferred by `rfl`. -/
+theorem hsep_bandGrow :
+    ∀ᶠ N : ℕ in atTop,
+      (bHalf bandGrow N).1 ≠ (bHalf bandGrow N).2 ∧
+      ∀ v ∈ Set.Ioc (0 : ℝ) ((fun _ : ℕ => (1 : ℝ) / 4) N),
+        Step2FarMart.farChi ((bandGrow.W N : ℕ) : ℝ) (bandGrow.ell N v)
+          (zdist (bandGrow.L N) ((bHalf bandGrow N).1 - (bHalf bandGrow N).2)) = 1 :=
+  hsep_exampleGrow_quarter
+
+/-- **T249's verdict on a real model, with the exponents free.**  For the flow
+`H_u = √u · ω · A_N` on `RBM.bandGrow`, at `E = 0`, on the window `[0, 1/4]`: for **every**
+`Kmod : ℝ` and **every** `γ > 0`, the entrywise modulus of (5.48) is false.  No hypothesis is
+left except `2 ≤ D`. -/
+theorem not_entryModulusEvK_bandGrow {D Kmod γ : ℝ} (hγ : 0 < γ) (hD : 2 ≤ D) :
+    ¬ EntryModulusEvK (swapSample bandGrow (bHalf bandGrow)) 0 (fun _ => 0)
+        (fun _ => 1 / 4) D Kmod γ :=
+  not_entryModulusEvK_swapSample_of_far (t₀ := 1 / 2) hγ _ (by norm_num) hD (by norm_num)
+    (Filter.Eventually.of_forall fun _ => by norm_num)
+    (Filter.Eventually.of_forall fun _ => by norm_num) hsep_bandGrow
+
+/-- **The hard-coded field, refuted on a real model.**  The `(Kmod, γ) = (1, 1/2)` case of
+`RBM.not_entryModulusEvK_bandGrow`: `RBM.EntryModulusEv` itself has no producer here. -/
+theorem not_entryModulusEv_bandGrow {D : ℝ} (hD : 2 ≤ D) :
+    ¬ EntryModulusEv (swapSample bandGrow (bHalf bandGrow)) 0 (fun _ => 0)
+        (fun _ => 1 / 4) D :=
+  not_entryModulusEv_swapSample_of_far (t₀ := 1 / 2) _ (by norm_num) hD (by norm_num)
+    (Filter.Eventually.of_forall fun _ => by norm_num)
+    (Filter.Eventually.of_forall fun _ => by norm_num) hsep_bandGrow
+
+/-- **No `RBM.MomentDuhamelCut.CutHypEv` for `J*^{sm}` on a real model**, at any threshold. -/
+theorem not_cutHypEv_bandGrow {D : ℝ} (hD : 2 ≤ D) (Θ : ℕ → ℝ) :
+    ¬ Nonempty (MomentDuhamelCut.CutHypEv bandGrow.P
+      (fun N u ω => Step2FarMart.jSfarSm (swapSample bandGrow (bHalf bandGrow)) 0 D N u ω)
+      (fun _ => 0) (fun _ => 1 / 4) Θ) :=
+  not_cutHypEv_swapSample_of_far (t₀ := 1 / 2) _ (by norm_num) hD (by norm_num)
+    (Filter.Eventually.of_forall fun _ => by norm_num)
+    (Filter.Eventually.of_forall fun _ => by norm_num) hsep_bandGrow
+
+/-- The bandwidth of `RBM.bandGrow` diverges, which is what §13 needs. -/
+theorem eventually_lt_bandGrow_W (C : ℝ) : ∀ᶠ N : ℕ in atTop, C < (bandGrow.W N : ℝ) := by
+  filter_upwards [Gauss.Dims.tendsto_growW.eventually_ge_atTop (⌈C⌉₊ + 1)] with N hN
+  have h1 : ((⌈C⌉₊ : ℝ) + 1) ≤ (bandGrow.W N : ℝ) := by exact_mod_cast hN
+  have h2 : C ≤ (⌈C⌉₊ : ℝ) := Nat.le_ceil C
+  linarith
+
+/-- **The event does not save it either, on the same real model.**  With `Good N = {|ω| ≤ N}`
+— the event T256 identified as the one T249's published witness escapes — the entrywise
+modulus is still false for every pair with `Kmod ≤ 2γ`, in particular for the hard-coded
+`(1, 1/2)`.  This is the end-to-end statement T256 was one step short of. -/
+theorem not_entryModulusEvKOn_bandGrow {D Kmod γ : ℝ} (hKγ : Kmod ≤ 2 * γ) (hD : 2 ≤ D) :
+    ¬ EntryModulusEvKOn (swapSample bandGrow (bHalf bandGrow)) 0 (fun _ => 0)
+        (fun _ => 1 / 4) D Kmod γ (fun N => {ω : ℝ | |ω| ≤ (N : ℝ)}) :=
+  not_entryModulusEvKOn_swapSample_of_far (t₀ := 1 / 2) _ (by norm_num) hD (by norm_num) hKγ
+    (Filter.Eventually.of_forall fun _ => by norm_num)
+    (by
+      filter_upwards [eventually_ge_atTop 2] with N hN
+      have hNR : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+      have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+      have hrw : (N : ℝ) ^ (-(2 : ℝ)) = ((N : ℝ) ^ (2 : ℕ))⁻¹ := by
+        rw [Real.rpow_neg hN0.le, ← Real.rpow_natCast (N : ℝ) 2]
+        norm_num
+      have h4 : (4 : ℝ) ≤ (N : ℝ) ^ (2 : ℕ) := by nlinarith
+      show (N : ℝ) ^ (-(2 : ℝ)) ≤ 1 / 4
+      rw [hrw, show (1 : ℝ) / 4 = (4 : ℝ)⁻¹ by norm_num]
+      gcongr)
+    hsep_bandGrow (eventually_lt_bandGrow_W _)
+
+/-- **The hard-coded pair, on the event, on a real model** — the `(1, 1/2)` case. -/
+theorem not_entryModulusEvKOn_one_half_bandGrow {D : ℝ} (hD : 2 ≤ D) :
+    ¬ EntryModulusEvKOn (swapSample bandGrow (bHalf bandGrow)) 0 (fun _ => 0)
+        (fun _ => 1 / 4) D 1 (1 / 2) (fun N => {ω : ℝ | |ω| ≤ (N : ℝ)}) :=
+  not_entryModulusEvKOn_bandGrow (by norm_num) hD
+
+end RealModel
+
+/-! ### 15. T258: satisfiability of the parametrization
+
+Three things have to be checked, all compiled.
+
+1. The parametric field is **not weaker than nothing**: `γ` is carried with `0 < γ` everywhere,
+   and at `γ = 0` the right-hand side would be `N^{Kmod}`, an absolute bound.
+   `RBM.sat_entryModulusEvK_of_window_point` is the degenerate witness (it needs `0 < γ` to
+   make the right-hand side vanish), i.e. the field is still satisfiable exactly where it says
+   nothing — the same sharpness §3 recorded for the unparametrized one.
+2. The **pair of net fields** that pull in opposite directions is still discharged at one and
+   the same mesh, for every admissible pair (`RBM.sat_meshK_pair`), so the parametrization
+   cannot make the bundle unsatisfiable through `mesh_fine`/`card_le`.
+3. The exponent range left open by §13 is **non-empty**: D17's pair `Kmod = D - 1 = 59`,
+   `γ = 1/2` is outside `Kmod ≤ 2γ`, so nothing here refutes it, and its mesh is the explicit
+   `(N+1)^{118}` (`RBM.sat_meshK_D17`, `RBM.d17_pair_outside_event_refutation`). -/
+
+section SatParametric
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {s t : ℕ → ℝ}
+variable (X : Sample B)
+
+/-- The degenerate witness, at an arbitrary admissible pair.  `0 < γ` is exactly what makes the
+right-hand side `N^{Kmod} · 0^γ` vanish; at `γ = 0` the statement below would be an absolute
+bound instead. -/
+theorem sat_entryModulusEvK_of_window_point {Kmod γ : ℝ} (hγ : 0 < γ) (ht : ∀ N, t N = s N) :
+    EntryModulusEvK X E s t D Kmod γ := by
+  refine Filter.Eventually.of_forall fun N ω v hv w hw x => ?_
+  have hv' : v = s N := le_antisymm (by rw [← ht N]; exact hv.2) hv.1
+  have hw' : w = s N := le_antisymm (by rw [← ht N]; exact hw.2) hw.1
+  subst hv'
+  subst hw'
+  simp [Real.zero_rpow hγ.ne']
+
+/-- **The net pair is jointly satisfiable at every admissible pair**, by theorems rather than by
+a witness: one mesh discharges both `mesh_fine` and `card_le`. -/
+theorem sat_meshK_pair {Kmod γ : ℝ} (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) :
+    (∀ N : ℕ, 0 < meshK Kmod γ N) ∧
+    (∀ N : ℕ, (N : ℝ) ^ Kmod * (1 / meshK Kmod γ N) ^ γ ≤ 1) ∧
+    (∀ᶠ N : ℕ in atTop, (t N - s N) * meshK Kmod γ N + 2 ≤ (N : ℝ) ^ (Kmod / γ + 1)) :=
+  ⟨meshK_pos Kmod γ, mesh_fine_at_meshK hK hγ, card_le_at_meshK hK hγ hs0 ht1⟩
+
+/-- The mesh at D17's pair `Kmod = D - 1 = 59`, `γ = 1/2`, explicitly. -/
+theorem sat_meshK_D17 : meshK 59 (1 / 2) = fun N : ℕ => ((N : ℝ) + 1) ^ (118 : ℝ) := by
+  funext N
+  norm_num [meshK]
+
+/-- **The range left open is non-empty.**  §13 refutes the event-restricted field exactly for
+`Kmod ≤ 2γ`; D17's pair `(59, 1/2)` is outside it, so this file does not refute the repair it
+proposes.  (Whether that pair is *producible* is T230's question, not this one.) -/
+theorem d17_pair_outside_event_refutation : ¬ ((59 : ℝ) ≤ 2 * (1 / 2 : ℝ)) := by norm_num
+
+end SatParametric
+
+
 end RBM
+
+
+/-!
+## Deviations (T258a)
+
+**Paper location**: §5.3, (5.46) and (5.48); (5.27) for `T_{u,D}`.
+
+1. **The modulus of (5.46) carries its exponents.**  `RBM.EntryModulusEvK` and
+   `RBM.EntryModulusEvKOn` replace the right-hand side `(N : ℝ)^1 * |v - w|^{1/2}`, which
+   `RBM.EntryModulusEv` writes into the `def`, by `(N : ℝ)^{Kmod} * |v - w|^γ` with the pair
+   carried alongside `D`.  The paper never fixes these exponents: the continuity it uses in
+   (5.46) is "polynomially bounded in `N`", and the `D`-dependence of `T_{u,D}` makes the
+   honest exponent grow with `D` (§13; and T252's `RBM.norm_lk_sub_le_lip` gives `γ = 1`, not
+   `1/2`).  So the *formalization* deviated from the paper, and this file removes the
+   deviation rather than adding one.
+   *Change the paper?* **No.**  *Lines*: 0 in the paper.  *Renumbering*: no.
+2. **`γ` is always carried with `0 < γ`, and `Kmod` with `0 ≤ Kmod` wherever the bundle is
+   produced** (`RBM.cutHypEv_jSfarSm_of_entriesK`).  At `γ = 0` the field is an absolute bound,
+   not a modulus, and would be satisfied by anything bounded; at `Kmod < 0` the mesh
+   `RBM.meshK` would not be `≥ 1`.  Neither restriction has a counterpart in the paper because
+   the paper does not name the exponents at all.
+   *Change the paper?* No.  *Lines*: 0.  *Renumbering*: no.
+3. **The window of §5.3 cannot start at `0`** — already recorded by T252 (`T252a`, item 1) and
+   by T249.  §12 sharpens it: the refutation holds for *every* `(Kmod, γ)` with `0 < γ`, and
+   §13 shows that restricting to `{|ω| ≤ N}` only moves the boundary to `Kmod > 2γ`.  So the
+   sentence §5.3 needs is `s_N ≥ N^{-C}` (T252a), not a larger `Kmod`.
+   *Change the paper?* Yes, as already proposed in `T252a` item 1; nothing new here.
+   *Lines*: 0 beyond `T252a`.  *Renumbering*: no.
+-/

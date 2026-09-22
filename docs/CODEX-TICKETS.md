@@ -160,3 +160,16 @@ T278 精确定位了：漂移行与 `E⊗E` 行的 `≺` 控制都带一个 **`�
 **§9(2) 更正（T280b）**：`oneStep_of_slots` 的每坐标界是 `((cStep′+1)x²)^{2p} = C·N^{δp/2}`，已经用掉 `WeightedMoment` 的全部指数，`L²` 无处可放（`no_family_absorption_slot`）。问题出在 T276 的**槽取值**：`slotXi = slotKappa = x/2`（`APrimeSlotArith.lean:78,97`）是约束 `Ξ ≤ x`、`κ ≤ x`（`StepSide''`）的上限，不是真实大小。真实大小：`Ξ ≺ 1`，`κ ≲ N^{−2δ}(log N)^{1/2}`（审稿 §2c.6）。**改取 `Ξ = κ = x^{1/4}`**（仍满足 `StepSide''`，只是更小）。代入 `stepRhs''`（`StepSideAPrime.lean:215`）除以 `R⁴`：`xR²Ξ/R⁴ ≤ x^{5/4}`，`xR²κ/R⁴ ≤ x^{5/4}`，漂移 `Ξ·(…)/R⁴ ≲ Ξ·x/m = x^{5/4}/m`（`A_ge`、`ε_le`、`q ≤ R²` 使括号 `≲ x`），`x(R²+1)/R⁴ ≤ 2x`。故每坐标 `≤ C·x^{5/4}`，`2p` 次方 `= C·N^{5δp/16}`；目标 `N^{δp/2} = N^{8δp/16}`，余量 `N^{3δp/16} ≥ N²` 当 `p ≥ 32/(3δ)`，小 `p` 用 Lyapunov（`W ≤ 1`，`E[W·X^p] ≤ (E[W·X^{p′}])^{p/p′}`）。T276 的两条吸收余量随之变成 `slotDrift ≥ x^{5/4}/(4m)`、`slotTail² ≳ x^{5/2}/R⁴`，`η` 取 `< 5δ/32` 仍够。输入侧要多证 `Ξ_true ≤ x^{1/4} = N^{δ/32}`、`κ_true ≤ N^{δ/32}`（都由 `≺` 在 `τ = δ/32` 取）。
 
 **续做**：T280d 按上面第一段做（用 `Cond272Reg.margin`），逐项列出 `(a, b)` 与所需 `δ₀`；T280b 按第二段先出 `slotXi′ = slotKappa′ = x^{1/4}` 的槽与 `stepRhs''` 的 `x^{5/4}` 上界（可在 `APrimeInit.lean` 里新写，不改 T276 的文件），再做族求和与 Lyapunov、`hinit`。**若 `stepRhs''` 里有某项在 `Ξ, κ ≤ x^{1/4}` 下仍 ≥ `x²`，编译出来并停下**。
+
+## §12 T280e 重跑的前提与清单（Cowork 09:24）
+
+T280e 停下的两条（`first_pass_D20_obstructions`）正是 §9(2)、§9(7)，已在 §11 更正；它与 §11 并行开跑，没看到更正。**等下面三件落地后再重跑 T280e**：
+1. **T280b 按 §11 第二段**：槽 `Ξ = κ = x^{1/4}`、每坐标 `≤ C·x^{5/4}`、族求和（`p ≥ 32/(3δ)`）+ Lyapunov、`hinit` 反向桥。
+2. **T280d 按 §11 第一段**：`Cond272Reg.margin` 插值，逐项 `(a,b)` 与 `δ₀`。
+3. **T277**：演化版 (5.42) 的 `EvolvedQVBound`（§5 的 Minkowski 路线）。
+
+重跑时的组装清单（取自 T280a/T280c 报告）：
+* 权重：T280a 的 `piecewiseW`（`jSnorm_piecewiseW_fields` 给四个字段）+ `weightedMoment_of_stepBound_mono`；`k = 0` 那一格走初值估计（无前缀）。
+* 坏事件：T280c 的 `drift_norm_le_of_event`、`evolved_qv_norm_le_of_event`、`crossPart_le_of_S5_event` → `crossPart_budget_of_event_bound`；每个 `(δ,p,N)` 自选事件 `E`，`HighProb` 指数取 `> 2p(a+1)`（`a` = 包络的多项式次数）。
+* 仍要新证的小件（T280c 点名）：前缀权重梯度率 `hK` 的具体界与归一化（接 T265 (S5)）；漂移、演化 QV、交叉绝对和的全局多项式包络；`hYm/hQm/hYi/hQi/hProdInt` 可积性。可在 `APrimeAssembly.lean` 里补。
+* 链：`aprimeHypOn_jSnorm_event`（T274）+ 权重 → `aprimeHypOn_of_stepBound''` → `APrimeSlot'` → `jsNormDom_of_aprimeSlot'` → `thm221NoEL_of_inputs_mergedOnAll_aprime'`。

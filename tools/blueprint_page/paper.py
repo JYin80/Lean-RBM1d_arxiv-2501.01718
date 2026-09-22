@@ -41,7 +41,7 @@ if _nparsed != _nenv:
 # Cowork overrides: nodes whose Lean proof is conditional on a hypothesis still being discharged
 STATUS_OVERRIDE = {
     'thm:fluc-high': ('repl', '旧接口在 B≍Ψ 处不可满足（T171/T172）；已由带基数预算的条件化版取代，(4.12)→Eq45Flow 闭合（T177/T188）'),
-    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死、cFarStep′ ≺ 1（T208）；(5.48) 已从 Theorem 2.21 假设表消失（T239）；漂移侧全是定理；钝版自举：路线 (B) 被编译否定，改走光滑权重 (A′) → T230；(5.48) 数据余项 → T241/T244'),
+    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init（T241）、meas（T244，无条件）已关，modulus 按字面为假、需事件限制（T244 证出空真第 11 例，事件限制版 → T249）；钝版自举：路线 (B) 编译否定，(A′) ℓ^q 软最大值权重实现中 → T230'),
 }
 for _l, (_st, _tk) in STATUS_OVERRIDE.items():
     if _l in NODE:
@@ -89,7 +89,7 @@ EXTRA = [
  ('lem5.3b','Lem 5.3  随机积分（逐路径形状）','lem','hyp',''),
  ('eq2.39', '(2.39) 分布相等\n逐点恒等式，已证',   'lem','done',''),
  ('eq6.1',  '(6.1) 分布标度\n逐点恒等式，已证',    'lem','done',''),
- ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','第一遍已总装（Flow/Thm221Assembly，T239）；主链余 Step1.Hyp→T242、MomentHypCut→T230、hΘ/Eq45Flow→T243、Lemma514→T236；(2.71) 第二遍余 7 项（T234 后）'),
+ ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','第一遍总装（Flow/Thm221Assembly，T239）；六槽已关四项：Step1.Hyp（T242）、hΘ 与 Eq45Flow（T243）、(5.48) 的 init（T241）；Lemma514 的 NonAlt514 已删（T236）；余 MomentHypCut → T230 (A′)、(5.48) 的 modulus → T249、moment → T230；四处闭合合并 → T245；(2.71) 第二遍余项 → T234/T247'),
 ]
 for i, (x, lab, k, st, tk) in enumerate(EXTRA):
     NODE[x] = dict(kind=k, title=lab, chap=9, st=st, tk=tk, uses=[])
@@ -166,7 +166,7 @@ L = ['digraph P {',
 for lab in ORDER:
     n = NODE[lab]
     text = wrap(detex(n['title']) or lab)
-    if n['tk']: text += '\\n[' + n['tk'] + ']'
+    if n['tk']: text += '\\n[' + '；\\n'.join(n['tk'].split('；')) + ']'
     L.append(f'  "{lab}" [label="{text}", {sty(n["kind"], n["st"])}];')
 for a, b in sorted(set(E)):
     L.append(f'  "{a}" -> "{b}"' + (' [style=dashed]' if NODE[a]['st'] == 'hyp' else '') + ';')

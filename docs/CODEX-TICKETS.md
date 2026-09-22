@@ -84,3 +84,17 @@ T277 的两个发现都对：(i) 在求和里逐点用对角的 `ee_le_EEpath_sy
 * 于是得到端点 (5.42)：`QV(Ψ_u)(a) ≲ (η_u/η_t)⁴·[η_u^{−1}r_u^5·1(近) + 远场]`，比原来的有限和少掉那个 `L⁴`。
 * **消费端**：请在报告里写明 `APrimeModel.qvRate` 应改为（或另立）演化版 `qvRateEvolved := quadVar(Ψ_u)`；**T275（Claude Code）在认同 (G) 的二次变差项时用的就该是演化版**，T269 的 `div_le_QBd_of_le_qvShape` 的前提由你这条供给。`APrimeModel.lean` 不在你的可写范围，只写明、不改。
 * 验收不变：(5.42) 形状的逐点界由定理供给、无 `∀ω` size 假设、非退化见证。
+
+## §6 T279 续做（Cowork 08:42，读 T279 报告后；Cowork 已亲自核对接口）
+
+T279 的 `no_joint_grid_scales` 是真发现（**空真第 13 例**）：`Gauss/Eq45FlowInputs.lean` 里同一个 `δ` 身兼两职——
+* **好事件阈值**：`goodSetFlow d E s t δ`（:278）= 每个 `u` 上 `GoodEvent (green …) (mE E) (δ N)`，由局部律供给，要求 `δ ≥ N^τ·Ψ ≥ N^τ·W^{−1/2}`；
+* **时间网距**：`flucRowFlow_of_gain'`/`flucBlkFlow_of_gain'`（:1336/:1368）的 `hfine : 4η_t^{−3}N³·δ^{1/2} ≤ 1` 与 `hδnet`，要求 `δ ≤ N^{−6}`。
+两者不可能同时成立。
+
+**修法（本单可写范围扩到 `Gauss/Eq45FlowInputs.lean`，只追加带撇版，旧签名一字不动）**：
+1. 第 0 步：在 `ibpFlow_of_unifDom`（:553）、`flucRowFlow_of_gain'`、`flucBlkFlow_of_gain'` 及其上游（`flowNetEvent`（:407）、网格引理 `stochDom_timeIcc_of_unifDom*`、`hHol*` 的生产者 `holIBP/holRow/holBlk_of_inputs`）里，把 `δ` 的每一次出现归类为「阈值」或「网距」。
+2. 出 `''` 版，参数拆成 `δ`（阈值，进 `goodSetFlow`/`GoodEvent`）与 `μ`（网距，进 `hfine`/`hδnet`/网点间距）；`hfine''` 只约束 `μ`。
+3. 联合可满足性见证：`δ_N = N^{τ}Ψ_N`（局部律能给的量级）、`μ_N = N^{−C}`（`C` 大），在 p.24 首格与 `R > 1` 窗口上**同时**满足全部前提，并编译 `¬`（旧的同参数版）与 `✓`（新版）两条对照。
+4. 用新版接第 5 槽：`Eq45FlowInputs` 在合并总装里只剩已有生产者的输入。
+若第 0 步发现某处 `δ` 两种角色真的不可拆（证明本质上要求阈值 ≤ 网距的某个幂），**停下报 Cowork**，写明那一步。

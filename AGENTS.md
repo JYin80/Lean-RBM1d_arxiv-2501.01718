@@ -2,6 +2,7 @@
 
 本仓库的规则写在 **`CLAUDE.md`**——名字带 Claude，但**对所有 agent 适用**（Codex、ChatGPT 等）。
 
+* **Codex / ChatGPT 做 Lean 工单**：先读 **`docs/CODEX-TICKETS.md`**（背景、依赖、文件归属、Codex 专用 git 纪律），再读 `docs/TASKS.md` 里你那一行。
 * **做 Lean 工单（工人）**：读 `CLAUDE.md`、`docs/TASKS.md` 里你认领的那一行、`docs/STATUS.md` 里相关的节。
 * **接手调度（Cowork 离线时）**：读 **`docs/HANDOVER.md`**，按它的 §4 做心跳、§5 做审计、§6 分流决策。
 

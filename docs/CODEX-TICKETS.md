@@ -73,3 +73,14 @@ T278 编译出的否定结论是对的，但它否定的是**过强的 `hnum` �
 * **修法（带撇新生产者，旧签名不动）**：`rhs514QAt_of_kernel_inputs''`，把**整个核输入包**（`Kd, ζ, δ', Msz, Pb, esz` 及 `hEnv*`、`hδ'` 等）放到 `ε` **之后**量化：`∀ ε > 0, ∃ 核输入包 (Kd_ε = W^{τ(ε)}，τ(ε) 取得足够小), ∃ C₀ > 0, ∀ᶠ N, 旧 hnum 的左端 ≤ C₀·N^{ε/2}·c N·scale^{−(n+2)}`。证明里把 `C₀` 乘进 `Rhs514QAt` 的 `C`。`cKer716 m (4Kd)` 关于 `Kd` 是多项式，`Kd = W^{τ}`、`W ≤ N` 时 `≤ N^{Cτ} ≤ N^{ε/4}`；`(1 + 6(v−s)) ≤ 7` 进 `C₀`。快衰减输入（(5.74)、Lemma 5.9）本来就对**每个**固定的小 `τ` 成立，所以按 `ε` 取 `τ` 是合法的。Case 1 的 `rhsNonAltAt_of_kernel_inputs'` 同法出 `''` 版。
 * 然后在 `lemma514_of_momentDuhamelQ` 的 `hrhs`/`hrhsNA` 上接新生产者，交割第 4 槽。
 * **验收**：`not_hnum_*` 保留（记录旧形状为何不行）；新 `hnum''` 在 p.24 网格首格与 `R > 1` 的窗口上各有非退化见证（`Φ > 0`、窗口长度 > 0、`Kd ≥ 1`）；`#check` 显示合并总装第 4 槽的假设只剩已有生产者的输入。若按新形状仍证不出，**精确写明卡在哪个因子**（例如 `hMψ` 的包络 `Phi` 与控制 `c = Λ^{1/2}+Φ` 之间是否真差一个 `N` 的正幂），停下报 Cowork。
+
+## §5 T277 续做（Cowork 08:33，读 T277 部分报告后）
+
+T277 的两个发现都对：(i) 在求和里逐点用对角的 `ee_le_EEpath_sym` 不行（`b′ ≠ b` 的非对角项）；(ii) `APrimeModel.qvRate` 是**未演化**的 `quadVar(lkFun)`，而 (G) 的二次变差项要的是 `Ψ_u = U_{u,t}∘(L−K)_u / T_t` 的二次变差。**绕开非对角项的办法：先 Minkowski，再用对角界**——
+
+* `√QV(Ψ_u)(a) = √(Σ_α σ_α² ∣Σ_b U_{u,t}(a,b)·∂_α lk_{u,b}∣²) / T_t(a) ≤ Σ_b ∣U_{u,t}(a,b)∣·√QV(lk_{u,b}) / T_t(a)`。这一步就是 T265 已证的 `RBM.Gauss.sqrt_wsum_sum_le`（`Gauss/APrimeDuhamel.lean:725`，加权 ℓ² 的 Minkowski）。**只用到对角的 `QV(lk_{u,b})`**。
+* 对角项用 T262 的 `EarlyQVRate.quadVar_lkFun_le_ee_sym`（(5.36)@`u`，`t = u`）：`√QV(lk_{u,b}) ≤ T_{u,D}(b)·√rate_u(b)`，近场 `η_u^{−1}r_u^5·1(∣b₁−b₂∣ ≤ 4ℓ*_u)`，远场 `Lemma57.ee_far_le` 的锐 `(J*)²` 形状。
+* 剩下的是核与尾函数的卷积 `Σ_b ∣U_{u,t}(a,b)∣·T_{u,D}(b) ≲ (η_u/η_t)²·T_{t,D}(a)`（外加近场指示从 `4ℓ*_u` 放到 `6ℓ*_t`）——这正是论文由 (5.35)/(5.36) 推 (5.41)/(5.42) 用的那一步，仓库里 (5.40)/(5.41) 的 `U`-传播已有同型引理（在 `Hierarchy/Step2.lean`、`Hierarchy/Step2MomentStep.lean`、`Gauss/MomentDuhamelRhs.lean` 里 grep `(5.41)`、`Uker`、`tailT`）。
+* 于是得到端点 (5.42)：`QV(Ψ_u)(a) ≲ (η_u/η_t)⁴·[η_u^{−1}r_u^5·1(近) + 远场]`，比原来的有限和少掉那个 `L⁴`。
+* **消费端**：请在报告里写明 `APrimeModel.qvRate` 应改为（或另立）演化版 `qvRateEvolved := quadVar(Ψ_u)`；**T275（Claude Code）在认同 (G) 的二次变差项时用的就该是演化版**，T269 的 `div_le_QBd_of_le_qvShape` 的前提由你这条供给。`APrimeModel.lean` 不在你的可写范围，只写明、不改。
+* 验收不变：(5.42) 形状的逐点界由定理供给、无 `∀ω` size 假设、非退化见证。

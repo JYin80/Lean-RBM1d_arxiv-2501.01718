@@ -1,0 +1,157 @@
+import RBM1D.Gauss.APrimeTestFun
+
+namespace RBM
+open Cutoff MomentDuhamelCut
+namespace Gauss
+
+variable {r : ℕ} {Θ : ℝ}
+
+/-- `α = 1/(2r)`. -/
+noncomputable def softExp (r : ℕ) : ℝ := (1 : ℝ) / (2 * (r : ℝ))
+
+theorem softExp_pos (hr : 1 ≤ r) : 0 < softExp r := by
+  have : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  unfold softExp; positivity
+
+theorem softExp_le_half (hr : 1 ≤ r) : softExp r ≤ 1 / 2 := by
+  have h : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  unfold softExp
+  exact one_div_le_one_div_of_le (by norm_num) (by linarith)
+
+noncomputable def softRootArg (r : ℕ) (Θ y : ℝ) : ℝ := (max y 0) ^ (softExp r) / Θ
+
+theorem softRootProfile_eq_arg (r : ℕ) (Θ y : ℝ) :
+    softRootProfile r Θ y = cutChi (softRootArg r Θ y) := rfl
+
+theorem softRootArg_of_pos {y : ℝ} (hy : 0 < y) :
+    softRootArg r Θ y = y ^ (softExp r) / Θ := by
+  rw [softRootArg, max_eq_left hy.le]
+
+theorem softRootArg_le_one_of_lt (hΘ : 0 < Θ) (hr : 1 ≤ r) {y : ℝ} (hy : y < Θ ^ (2 * r)) :
+    softRootArg r Θ y ≤ 1 := by
+  have hα := softExp_pos (r := r) hr
+  rcases le_or_gt y 0 with hy0 | hy0
+  · rw [softRootArg, max_eq_right hy0, Real.zero_rpow (ne_of_gt hα)]
+    simp
+  · rw [softRootArg, max_eq_left hy0.le, div_le_one hΘ]
+    have h1 : y ^ (softExp r) < (Θ ^ (2 * r) : ℝ) ^ (softExp r) :=
+      Real.rpow_lt_rpow hy0.le hy hα
+    have h2 : (Θ ^ (2 * r) : ℝ) ^ (softExp r) = Θ := by
+      simpa [softExp] using rpow_pow_self (r := r) hΘ hr 1 zero_le_one
+    linarith [h2 ▸ h1]
+
+theorem one_le_softRootArg_of_le (hΘ : 0 < Θ) (hr : 1 ≤ r) {y : ℝ} (hy : Θ ^ (2 * r) ≤ y) :
+    1 ≤ softRootArg r Θ y := by
+  have hα := softExp_pos (r := r) hr
+  have hy0 : (0 : ℝ) < y := lt_of_lt_of_le (by positivity) hy
+  rw [softRootArg, max_eq_left hy0.le, le_div_iff₀ hΘ]
+  have h1 : (Θ ^ (2 * r) : ℝ) ^ (softExp r) ≤ y ^ (softExp r) :=
+    Real.rpow_le_rpow (by positivity) hy hα.le
+  have h2 : (Θ ^ (2 * r) : ℝ) ^ (softExp r) = Θ := by
+    simpa [softExp] using rpow_pow_self (r := r) hΘ hr 1 zero_le_one
+  linarith [h2 ▸ h1]
+
+end Gauss
+end RBM
+
+namespace RBM
+open Cutoff MomentDuhamelCut
+namespace Gauss
+
+variable {r : ℕ} {Θ : ℝ}
+
+noncomputable def softRootArgD (r : ℕ) (Θ y : ℝ) : ℝ :=
+  softExp r * (max y 0) ^ (softExp r - 1) / Θ
+
+noncomputable def softRootArgDD (r : ℕ) (Θ y : ℝ) : ℝ :=
+  softExp r * (softExp r - 1) * (max y 0) ^ (softExp r - 2) / Θ
+
+noncomputable def softRootD (r : ℕ) (Θ y : ℝ) : ℝ :=
+  cutChiD (softRootArg r Θ y) * softRootArgD r Θ y
+
+noncomputable def softRootDD (r : ℕ) (Θ y : ℝ) : ℝ :=
+  cutChiDD (softRootArg r Θ y) * (softRootArgD r Θ y * softRootArgD r Θ y)
+    + cutChiD (softRootArg r Θ y) * softRootArgDD r Θ y
+
+theorem hasDerivAt_softRootArg {y : ℝ} (hy : 0 < y) :
+    HasDerivAt (softRootArg r Θ) (softRootArgD r Θ y) y := by
+  have h0 : HasDerivAt (fun z : ℝ => z ^ (softExp r)) (softExp r * y ^ (softExp r - 1)) y :=
+    Real.hasDerivAt_rpow_const (Or.inl (ne_of_gt hy))
+  have h1 := h0.div_const Θ
+  have hev : softRootArg r Θ =ᶠ[nhds y] fun z : ℝ => z ^ (softExp r) / Θ := by
+    filter_upwards [Ioi_mem_nhds hy] with z hz
+    exact softRootArg_of_pos hz
+  have := h1.congr_of_eventuallyEq hev
+  simpa [softRootArgD, max_eq_left hy.le] using this
+
+theorem hasDerivAt_softRootArgD {y : ℝ} (hy : 0 < y) :
+    HasDerivAt (softRootArgD r Θ) (softRootArgDD r Θ y) y := by
+  have h0 : HasDerivAt (fun z : ℝ => z ^ (softExp r - 1))
+      ((softExp r - 1) * y ^ (softExp r - 1 - 1)) y :=
+    Real.hasDerivAt_rpow_const (Or.inl (ne_of_gt hy))
+  have h1 := (h0.const_mul (softExp r)).div_const Θ
+  have hev : softRootArgD r Θ =ᶠ[nhds y]
+      fun z : ℝ => softExp r * z ^ (softExp r - 1) / Θ := by
+    filter_upwards [Ioi_mem_nhds hy] with z hz
+    rw [softRootArgD, max_eq_left hz.le]
+  have h2 := h1.congr_of_eventuallyEq hev
+  have hexp : softExp r - 1 - 1 = softExp r - 2 := by ring
+  rw [hexp] at h2
+  simpa [softRootArgDD, max_eq_left hy.le, mul_assoc] using h2
+
+end Gauss
+end RBM
+
+namespace RBM
+open Cutoff MomentDuhamelCut
+namespace Gauss
+
+variable {r : ℕ} {Θ : ℝ}
+
+theorem softRootD_eq_zero_of_lt (hΘ : 0 < Θ) (hr : 1 ≤ r) {y : ℝ} (hy : y < Θ ^ (2 * r)) :
+    softRootD r Θ y = 0 := by
+  rw [softRootD, cutChiD_eq_zero_left (softRootArg_le_one_of_lt hΘ hr hy), zero_mul]
+
+theorem softRootDD_eq_zero_of_lt (hΘ : 0 < Θ) (hr : 1 ≤ r) {y : ℝ} (hy : y < Θ ^ (2 * r)) :
+    softRootDD r Θ y = 0 := by
+  rw [softRootDD, cutChiD_eq_zero_left (softRootArg_le_one_of_lt hΘ hr hy),
+    cutChiDD_eq_zero_left (softRootArg_le_one_of_lt hΘ hr hy), zero_mul, zero_mul, add_zero]
+
+theorem hasDerivAt_softRootProfile (hΘ : 0 < Θ) (hr : 1 ≤ r) (y : ℝ) :
+    HasDerivAt (softRootProfile r Θ) (softRootD r Θ y) y := by
+  rcases lt_or_ge y (Θ ^ (2 * r)) with hy | hy
+  · have hev : softRootProfile r Θ =ᶠ[nhds y] fun _ : ℝ => (1 : ℝ) := by
+      filter_upwards [Iio_mem_nhds hy] with z hz
+      exact softRootProfile_eq_one_of_lt hΘ hr hz
+    rw [softRootD_eq_zero_of_lt hΘ hr hy]
+    exact (hasDerivAt_const y (1 : ℝ)).congr_of_eventuallyEq hev
+  · have hy0 : (0 : ℝ) < y := lt_of_lt_of_le (by positivity) hy
+    have h := (hasDerivAt_cutChi (softRootArg r Θ y)).comp y (hasDerivAt_softRootArg hy0)
+    simpa [Function.comp_def, softRootProfile_eq_arg, softRootD] using h
+
+theorem hasDerivAt_softRootD (hΘ : 0 < Θ) (hr : 1 ≤ r) (y : ℝ) :
+    HasDerivAt (softRootD r Θ) (softRootDD r Θ y) y := by
+  rcases lt_or_ge y (Θ ^ (2 * r)) with hy | hy
+  · have hev : softRootD r Θ =ᶠ[nhds y] fun _ : ℝ => (0 : ℝ) := by
+      filter_upwards [Iio_mem_nhds hy] with z hz
+      exact softRootD_eq_zero_of_lt hΘ hr hz
+    rw [softRootDD_eq_zero_of_lt hΘ hr hy]
+    exact (hasDerivAt_const y (0 : ℝ)).congr_of_eventuallyEq hev
+  · have hy0 : (0 : ℝ) < y := lt_of_lt_of_le (by positivity) hy
+    have hc := (hasDerivAt_cutChiD (softRootArg r Θ y)).comp y (hasDerivAt_softRootArg hy0)
+    have h := hc.mul (hasDerivAt_softRootArgD (r := r) (Θ := Θ) hy0)
+    simp only [Function.comp_def] at h
+    refine h.congr_deriv ?_
+    rw [softRootDD]; ring
+
+theorem deriv_softRootProfile (hΘ : 0 < Θ) (hr : 1 ≤ r) :
+    deriv (softRootProfile r Θ) = softRootD r Θ := by
+  funext y; exact (hasDerivAt_softRootProfile hΘ hr y).deriv
+
+theorem deriv_deriv_softRootProfile (hΘ : 0 < Θ) (hr : 1 ≤ r) :
+    deriv (deriv (softRootProfile r Θ)) = softRootDD r Θ := by
+  rw [deriv_softRootProfile hΘ hr]
+  funext y; exact (hasDerivAt_softRootD hΘ hr y).deriv
+
+end Gauss
+end RBM

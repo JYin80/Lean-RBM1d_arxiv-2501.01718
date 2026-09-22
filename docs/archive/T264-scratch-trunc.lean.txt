@@ -1,0 +1,133 @@
+import RBM1D.Gauss.APrimeTestFun
+
+namespace RBM
+open Cutoff MomentDuhamelCut
+namespace Gauss
+
+noncomputable def cutTruncD (Θ x : ℝ) : ℝ := cutChiD (x / Θ) * (x / Θ) + cutChi (x / Θ)
+
+noncomputable def cutTruncDD (Θ x : ℝ) : ℝ :=
+  (cutChiDD (x / Θ) * (x / Θ) + 2 * cutChiD (x / Θ)) / Θ
+
+theorem hasDerivAt_div_const' (Θ x : ℝ) : HasDerivAt (fun y : ℝ => y / Θ) (1 / Θ) x := by
+  simpa [div_eq_mul_inv, one_div] using (hasDerivAt_id x).mul_const Θ⁻¹
+
+theorem hasDerivAt_cutChi_div (Θ x : ℝ) :
+    HasDerivAt (fun y : ℝ => cutChi (y / Θ)) (cutChiD (x / Θ) * (1 / Θ)) x := by
+  have h := (hasDerivAt_cutChi (x / Θ)).comp x (hasDerivAt_div_const' Θ x)
+  simpa [Function.comp_def] using h
+
+theorem hasDerivAt_cutChiD_div (Θ x : ℝ) :
+    HasDerivAt (fun y : ℝ => cutChiD (y / Θ)) (cutChiDD (x / Θ) * (1 / Θ)) x := by
+  have h := (hasDerivAt_cutChiD (x / Θ)).comp x (hasDerivAt_div_const' Θ x)
+  simpa [Function.comp_def] using h
+
+theorem hasDerivAt_cutTrunc {Θ : ℝ} (hΘ : Θ ≠ 0) (x : ℝ) :
+    HasDerivAt (cutTrunc Θ) (cutTruncD Θ x) x := by
+  have h := (hasDerivAt_cutChi_div Θ x).mul (hasDerivAt_id x)
+  have heq : cutTruncD Θ x = cutChiD (x / Θ) * (1 / Θ) * id x + cutChi (x / Θ) * 1 := by
+    simp only [cutTruncD, id_eq]; field_simp
+  show HasDerivAt (fun y : ℝ => cutChi (y / Θ) * y) (cutTruncD Θ x) x
+  rw [heq]; exact h
+
+theorem hasDerivAt_cutTruncD {Θ : ℝ} (hΘ : Θ ≠ 0) (x : ℝ) :
+    HasDerivAt (cutTruncD Θ) (cutTruncDD Θ x) x := by
+  have h := ((hasDerivAt_cutChiD_div Θ x).mul (hasDerivAt_div_const' Θ x)).add
+    (hasDerivAt_cutChi_div Θ x)
+  have heq : cutTruncDD Θ x
+      = (cutChiDD (x / Θ) * (1 / Θ) * (x / Θ) + cutChiD (x / Θ) * (1 / Θ))
+        + cutChiD (x / Θ) * (1 / Θ) := by
+    simp only [cutTruncDD]; field_simp; ring
+  show HasDerivAt (fun y : ℝ => cutChiD (y / Θ) * (y / Θ) + cutChi (y / Θ)) (cutTruncDD Θ x) x
+  rw [heq]; exact h
+
+theorem contDiff_cutTrunc (Θ : ℝ) : ContDiff ℝ 2 (cutTrunc Θ) := by
+  show ContDiff ℝ 2 (fun y : ℝ => cutChi (y / Θ) * y)
+  exact (contDiff_cutChi.comp (contDiff_id.div_const Θ)).mul contDiff_id
+
+theorem deriv_cutTrunc {Θ : ℝ} (hΘ : Θ ≠ 0) : deriv (cutTrunc Θ) = cutTruncD Θ := by
+  funext x; exact (hasDerivAt_cutTrunc hΘ x).deriv
+
+theorem deriv_deriv_cutTrunc {Θ : ℝ} (hΘ : Θ ≠ 0) :
+    deriv (deriv (cutTrunc Θ)) = cutTruncDD Θ := by
+  rw [deriv_cutTrunc hΘ]; funext x; exact (hasDerivAt_cutTruncD hΘ x).deriv
+
+end Gauss
+end RBM
+
+namespace RBM
+open Cutoff MomentDuhamelCut
+namespace Gauss
+
+theorem abs_cutChiD_mul_le {u : ℝ} (hu : 0 ≤ u) : |cutChiD u * u| ≤ 15 / 4 := by
+  rcases le_or_gt u 2 with h | h
+  · rw [abs_mul, abs_of_nonneg hu]
+    calc |cutChiD u| * u ≤ (15 / 8) * 2 :=
+          mul_le_mul (abs_cutChiD_le u) h hu (by norm_num)
+      _ = 15 / 4 := by norm_num
+  · rw [cutChiD_eq_zero_right h.le]; norm_num
+
+theorem abs_cutChiDD_mul_le {u : ℝ} (hu : 0 ≤ u) : |cutChiDD u * u| ≤ 30 := by
+  rcases le_or_gt u 2 with h | h
+  · rw [abs_mul, abs_of_nonneg hu]
+    calc |cutChiDD u| * u ≤ 15 * 2 := mul_le_mul (abs_cutChiDD_le u) h hu (by norm_num)
+      _ = 30 := by norm_num
+  · rw [cutChiDD_eq_zero_right h.le]; norm_num
+
+theorem abs_cutTruncD_le {Θ x : ℝ} (hΘ : 0 < Θ) (hx : 0 ≤ x) :
+    |cutTruncD Θ x| ≤ 19 / 4 := by
+  have hu : 0 ≤ x / Θ := div_nonneg hx hΘ.le
+  have h1 := abs_cutChiD_mul_le hu
+  have h2 : |cutChi (x / Θ)| ≤ 1 := abs_le.2
+    ⟨by linarith [cutChi_nonneg (x / Θ)], cutChi_le_one _⟩
+  calc |cutTruncD Θ x| ≤ |cutChiD (x / Θ) * (x / Θ)| + |cutChi (x / Θ)| := abs_add_le _ _
+    _ ≤ 15 / 4 + 1 := add_le_add h1 h2
+    _ = 19 / 4 := by norm_num
+
+theorem abs_cutTruncDD_le {Θ x : ℝ} (hΘ : 0 < Θ) (hx : 0 ≤ x) :
+    |cutTruncDD Θ x| ≤ (135 / 4) / Θ := by
+  have hu : 0 ≤ x / Θ := div_nonneg hx hΘ.le
+  have h1 := abs_cutChiDD_mul_le hu
+  have h2 : |2 * cutChiD (x / Θ)| ≤ 15 / 4 := by
+    rw [abs_mul]
+    have := abs_cutChiD_le (x / Θ)
+    rw [show |(2:ℝ)| = 2 by norm_num]
+    linarith
+  have hnum : |cutChiDD (x / Θ) * (x / Θ) + 2 * cutChiD (x / Θ)| ≤ 135 / 4 :=
+    le_trans (abs_add_le _ _) (by linarith)
+  rw [cutTruncDD, abs_div, abs_of_pos hΘ]
+  gcongr
+
+end Gauss
+end RBM
+
+namespace RBM
+open Cutoff MomentDuhamelCut
+namespace Gauss
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+theorem bddC2C_cutTrunc {F : E → ℝ} {a₀ a₁ a₂ lvl : ℝ} (hlvl : 0 < lvl)
+    (hF : BddC2C F a₀ a₁ a₂) (hFnn : ∀ M, 0 ≤ F M) :
+    BddC2C (fun M => cutTrunc lvl (F M)) (2 * lvl) (19 / 4 * a₁)
+      ((135 / 4 / lvl) * (a₁ * a₁) + 19 / 4 * a₂) := by
+  have hne : lvl ≠ 0 := ne_of_gt hlvl
+  refine bddC2C_comp_real hF (contDiff_cutTrunc lvl) (fun M => ?_) (fun M => ?_) (fun M => ?_)
+  · exact abs_cutTrunc_le hlvl (hFnn M)
+  · rw [deriv_cutTrunc hne]; exact abs_cutTruncD_le hlvl (hFnn M)
+  · rw [deriv_deriv_cutTrunc hne]; exact abs_cutTruncDD_le hlvl (hFnn M)
+
+theorem bddC2C_cutTrunc_pow {F : E → ℝ} {a₀ a₁ a₂ lvl : ℝ} (hlvl : 0 < lvl)
+    (hF : BddC2C F a₀ a₁ a₂) (hFnn : ∀ M, 0 ≤ F M) (p : ℕ) :
+    BddC2C (fun M => cutTrunc lvl (F M) ^ (2 * p))
+      ((2 * lvl) ^ (2 * p))
+      ((2 * p : ℝ) * (2 * lvl) ^ (2 * p - 1) * (19 / 4 * a₁))
+      ((2 * p : ℝ) * ((2 * p : ℝ) - 1) * (2 * lvl) ^ (2 * p - 2)
+          * (19 / 4 * a₁ * (19 / 4 * a₁))
+        + (2 * p : ℝ) * (2 * lvl) ^ (2 * p - 1)
+          * ((135 / 4 / lvl) * (a₁ * a₁) + 19 / 4 * a₂)) := by
+  have h := bddC2C_pow_real (bddC2C_cutTrunc hlvl hF hFnn) (2 * p)
+  simpa using h
+
+end Gauss
+end RBM

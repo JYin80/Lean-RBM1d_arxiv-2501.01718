@@ -10,8 +10,8 @@
 
 * **项目**：用 Lean 4 + Mathlib 形式化 Yau–Yin《Delocalization of One-Dimensional Random Band Matrices》（arXiv:2501.01718）。论文基准版本 `paper/250520-YinJun-v2.pdf`。
 * **两层结构**：**调度**（原来是 Cowork）只读论文、审计、开单、记账、做路由类决定；**工人**（Claude Code 终端或 Codex）写 Lean、编译、提交。**调度不写 Lean**（Jun：「你不要再当工人啦，只当调度。」）。
-* **进度的唯一真相**：`docs/TASKS.md`（工单队列，第 3 行是优先级横幅）、`docs/STATUS.md`（审计与裁定，**最新的在文件末尾**）、`docs/paper-deltas.md`（Lean 与论文的偏差）、`CLAUDE.md`（仓库规则，对所有 agent 适用）。
-* **接手后的第一件事**：读本文件 §2（Jun 的规则）、§7（已定的裁定，不要重开）、§8（当前状态），然后 `tail -300 docs/STATUS.md` 与 TASKS 第 3 行，再做一次 §4 的心跳。
+* **进度的唯一真相**：`docs/TASKS.md`（工单队列，第 3 行是优先级横幅）、`docs/STATUS.md`（短的当前状态与有效裁定；旧记录已存档）、`docs/paper-deltas.md`（Lean 与论文的偏差）、`CLAUDE.md`（仓库规则，对所有 agent 适用）。
+* **接手后的第一件事**：读本文件 §2（Jun 的规则）、§7（已定的裁定，不要重开），再读当前 `docs/STATUS.md` 与 TASKS 第 3 行，做一次 §4 的心跳；本文件旧 §8 是历史快照，不代替 STATUS。
 
 ---
 
@@ -47,7 +47,7 @@
 | `CLAUDE.md` | 仓库规则（构建、硬规则、可满足性纪律、外部输入边界、构建陷阱） | 调度 + 工人 |
 | `AGENTS.md` | 给 Codex 等非 Claude agent 的入口，指向本文件与 `CLAUDE.md` | 调度 |
 | `docs/TASKS.md` | **只放活跃单**。每行 `\| Txxx \| 描述 \| 文件 \| 负责人 \| 状态 \|`；**第 3 行**是优先级横幅；完成的行用 `scripts/archive_done_tasks.py --apply` 移进 `docs/archive/TASKS-done.md` | 调度开单；工人改状态栏 |
-| `docs/STATUS.md` | **≤ 400 行的当前摘要**（§1 状态、§2 裁定、§3 当前最高风险、§4 待 Jun 定夺、§5 在飞、§6 最近完成 ≤ 8 行/单、§7 无主的活）。超长时把 §6 较早条目移进 `docs/archive/` | 两边 |
+| `docs/STATUS.md` | **目标 ≤ 120 行**，只保留当前依赖、有效裁定、阻塞与最多八条最近验收；过时叙述立即存入带日期的 `docs/archive/STATUS-*.md`，不等到超过上限 | 两边 |
 | `docs/reports/Txxx.md` | 每张单的完成报告全文 | 工人 |
 | `docs/archive/` | 历史全文（`STATUS-2026-09-19_22.md` 6900 行、`TASKS-2026-09-19_22.md`、`TASKS-done.md`）。**只 grep，不整份读** | 调度 |
 | `docs/paper-deltas.md` | Lean 与论文的偏差表；`#` 栏由调度赋数字号 | 工人写临时号，调度赋号 |
@@ -94,9 +94,9 @@ grep -nE '^\| *T[0-9]+[a-z] *\|' docs/paper-deltas.md   # 待赋号的临时号
    ```
    若同一条偏差既有数字号初稿、又有临时号终版，用终版内容覆盖该数字号并删掉临时号那行（先例：#151/#152）。
 4. **队列深度**：未认领 ≥ 3。不够就从审计出的余项开单。
-   **瘦身**：每轮跑 `python3 scripts/archive_done_tasks.py --apply` 把完成的行移出 TASKS；STATUS 超过 400 行就把 §6 较早条目移进 `docs/archive/STATUS-<日期>.md`。审计时读 `docs/reports/Txxx.md` 与提交信息，**不要整份读 archive**。
+   **瘦身**：每轮先跑 `python3 scripts/archive_done_tasks.py` 预览，再用 `--apply` 把已审计完成/关闭的行移出 TASKS；STATUS 只保留当前有效信息与最多八条最近验收，一旦叙述过时便先存到 `docs/archive/STATUS-<日期>.md` 再删，不等行数达到上限。无变化心跳不追加段落。审计时读 `docs/reports/Txxx.md` 与提交信息，**不要整份读 archive**。
 5. **开单**：用 python 按唯一锚点插行（`split('\n')` → 插入 → `'\n'.join`，**断言行数只增不减**；终端侧曾把 TASKS 从 2695 行截成 4 行）。新单号 = 现有最大号 + 1。每张单写清：来源、论文位置（公式编号）、要交付的声明名、**验收标准**（通常是「某探针的假设表里不再有 X」+ 公理干净 + **非退化**可满足性见证）、禁止事项、「第 0 步只读先交判断」（高风险单）。
-6. **提交**：只提交具体文档文件：`git add docs/TASKS.md docs/STATUS.md && git commit -m "心跳 HH:MM：…" -- docs/TASKS.md docs/STATUS.md`。**不 push**（由终端协调者推）。
+6. **提交**：只暂存已审计的具体文件，勿混入在飞工人的改动；在 Jun 已授权的本项目中，将验收提交推送 `origin/main`。无实际改动时不制造心跳提交。
 7. **汇报 Jun**：一小段话；只有需要他定的事才问，一次一件，给出倾向。
 
 常用命令：
@@ -155,7 +155,7 @@ git grep -hE "$R" HEAD -- 'RBM1D/*.lean' | wc -l
 
 ---
 
-## 8. 当前状态（2026-09-22 03:45 UTC；最新以 `docs/STATUS.md` §1 为准）
+## 8. 历史快照（2026-09-22 03:45 UTC；实时状态以当前 `docs/STATUS.md` 为准）
 
 * **规模**：约 5760 条定理、0 sorry、0 项目公理，HEAD 构建绿；paper-deltas 编到 #163。
 * **Theorem 2.21 第一遍**已总装在 `Flow/Thm221Assembly.lean`（T239），(5.48) 已从假设表消失。**完整假设表与每槽归属见 `docs/reports/T239.md`**：`Step1.Hyp` → T242；`MomentHypCut` → T230 (A′)/T232；`hΘ`/`Eq45Flow` → T243；`Lemma514` → T236；`Eq548EntryData` 的 `init` → T241、`near`/`meas`/`modulus` → T244、`moment` → T230。
@@ -193,8 +193,8 @@ Codex 可以直接当工人（T217 已经这么做了）：
 
 ### Codex 当调度（推荐；它能直接在仓库里跑命令）
 
-> 你现在接手这个仓库的「调度」角色（原来由 Claude Cowork 担任，它暂时离线）。先完整读 `docs/HANDOVER.md`、`CLAUDE.md`、`docs/cowork-lessons.md`，再读 `docs/STATUS.md` 最后 300 行和 `docs/TASKS.md` 第 3 行与所有「进行中/未认领」的行。
-> 你**不写 Lean**，只做 HANDOVER §4 的心跳：审计新完成的单（按 §5）、把「无主/待定夺」开单或按 §6 裁定、给 paper-deltas 赋号、保持未认领 ≥ 3、只提交具体文档文件、不 push。§7 的裁定不要重开。每轮结束在 `docs/STATUS.md` 追加一段「## 接手者记录（Codex，时间）」写你做了什么、定了什么、为什么。需要 Jun 定的事，列出来并给倾向。做完一轮告诉我结果，然后等我说「心跳」再做下一轮。
+> 你现在接手这个仓库的「调度」角色。先读 `docs/HANDOVER.md` 的规则与固定裁定、`CLAUDE.md`、当前短版 `docs/STATUS.md`，再定向读 `docs/TASKS.md` 的优先级横幅和在飞/可领行。整个项目目标是全文 Lean 化，不以眼前几张单为终点。
+> 你**不写 Lean 证明**，按 HANDOVER §4 心跳：审计新完成单、给每个真实余项开边界清楚且文件互斥的单、维护未认领队列、按规则处理 paper-deltas；每轮把完成单移进 `docs/archive/TASKS-done.md`，把过时 STATUS 叙述存档，保持短版状态准确，不为无变化心跳追加段落。只提交已审计的具体文件；Jun 已授权将验收提交推送 GitHub。§7 已定裁定不要重开；需要 Jun 定的事一次只提一件。
 
 ### ChatGPT（网页版，没有仓库权限时）
 

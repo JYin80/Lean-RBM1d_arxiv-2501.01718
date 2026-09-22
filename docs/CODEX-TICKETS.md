@@ -29,7 +29,7 @@
 * 流实现为 `H_u = √u·X`（`X` 固定高斯带矩阵，只用一时刻律）；Itô/BDG 由「生成元恒等式 + Stein + 对矩的不等式」代替。
 * 停时 (5.43) 换成**光滑前缀权重** `w = χ(J̃/Θ)^{2p}`，`J̃` = 早时刻网点上的 ℓ^q 软最大值（`q` 偶、`≍ log N`，`max ≤ J̃ ≤ e·max`）。权重是 `X` 的函数，Stein 在全测度上成立；代价是一个论文里没有的**交叉项**。
 * 数学已由独立审稿确认：`docs/reports/V548-referee.md`（§0 结论、§2c 推导、§5 完整方案、§6 陈述 (S1)–(S8)）。注意其中「锐远场带 `W⁻¹`」是笔误（报告开头有更正）：锐远场就是 `Lemma57.ee_far_le` 的 `(J*)²` 形状。
-* 裁定：`docs/STATUS.md` §2 的 D17（第一格从 `u = 0` 起、在 `{‖X‖ ≤ N}` 上取 Hölder-½ 时间模）、D18（审稿五处修补）、D19（**不要**走「全局 C² 中值不等式 / 确定性 `b₁`」路线，那条量级是 `p²θ^{2p}W^{2D}N`，闭合不了）。
+* 裁定：实时概要见当前 `docs/STATUS.md` §4；D17（第一格从 `u = 0` 起、在 `{‖X‖ ≤ N}` 上取 Hölder-½ 时间模）、D18（审稿五处修补）、D19（**不要**走「全局 C² 中值不等式 / 确定性 `b₁`」路线，那条量级是 `p²θ^{2p}W^{2D}N`，闭合不了）的原记录在 `docs/archive/STATUS-2026-09-22_11.md`（只定向搜索）。
 * 已落地的砖（都在 `RBM1D/Gauss/`）：
   `APrimeGronwall.lean`（T264：(★) `hasDerivAt_integral_weighted`、(G) `weightedMinkowski_of_deriv_le`）·
   `APrimeDuhamel.lean` §8（T265：(S2) `sqrt_quadVar_softMax_le`、(S5) `sum_gvar_crossTerm_le`）·

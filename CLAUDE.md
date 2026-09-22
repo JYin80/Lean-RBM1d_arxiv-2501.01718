@@ -6,10 +6,10 @@
 
 - **论文**：`paper/250520-YinJun-v2.pdf`（95 页）。**只依据这篇论文，不引用任何其他文献。**
 - **路线图**：`docs/PLAN.md` — 阶段划分与每阶段的 Lean 声明清单
-- **当前进度**：`docs/STATUS.md` — **每次会话开始先读它，结束前更新它**
+- **当前进度**：`docs/STATUS.md` — **每次会话开始先读；有实质状态变化才更新**。单张工单的完整过程写在 `docs/reports/Txxx.md`
 - **与论文的偏差**：`docs/paper-deltas.md` — 凡 Lean 陈述 ≠ 论文字面陈述，必须在这里记一条
 - **调度交接**：`docs/HANDOVER.md` — Cowork 离线时由 Codex / ChatGPT 接手调度的手册；`AGENTS.md` 是非 Claude agent 的入口；`docs/cowork-*.md` 是 Cowork 侧文档（论文改动清单、Theorem 2.6 分析、调度经验）的仓库内副本
-- **⚠ 读文档的纪律（2026-09-22，Jun：「STATUS + TASKS 文件太大了」）**：`docs/STATUS.md` 是 ≤ 400 行的当前摘要，`docs/TASKS.md` 只放活跃单——**用 `grep -n '^| T230 |' docs/TASKS.md` 取你那一行，不要整份读**。历史全文在 `docs/archive/`（**永远只 grep，不整份读**）。完成报告全文写 `docs/reports/Txxx.md`，STATUS §6 只追加 ≤ 8 行摘要；无主/待定夺写 STATUS §4/§7。派单 prompt 里贴相关节正文，明禁子 agent 读整份文档。
+- **⚠ 读文档的纪律（2026-09-22，Jun：「STATUS + TASKS 文件太大了」）**：`docs/STATUS.md` 只保留当前状态、有效裁定、阻塞和最近验收，目标 ≤ 120 行；`docs/TASKS.md` 只放活跃单——**按工单号定向搜索**。完成单每轮用 `scripts/archive_done_tasks.py --apply` 移到 `docs/archive/TASKS-done.md`；STATUS 的过时记录及时存入带日期的 archive 快照，不等它长到上限，也不为无变化心跳重复追加。历史全文在 `docs/archive/`（**永远只 grep，不整份读**）。完成报告全文写 `docs/reports/Txxx.md`；无主/待定夺写当前 STATUS 并开单。派单 prompt 里贴相关节正文，明禁子 agent 读整份文档。
 
 ## 环境
 
@@ -72,8 +72,8 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 `docs/STATUS.md` 是两边**唯一**的共享状态。任何一边：
 
 - 开工前先读它
-- 收工前更新它（新增了哪些声明、卡在哪、下一步是什么）
-- 卡住时在里面写清楚「卡在 X，试过 Y 和 Z，失败原因是 W」，另一边才接得上
+- 收工时把完整声明、验证和尝试过程写进 `docs/reports/Txxx.md`；只在 STATUS 更新对主链有影响的结论、真实阻塞及下一工单
+- 卡住时在报告中写清「卡在 X，试过 Y 和 Z，失败原因是 W」，STATUS 只留一句精确缺口和报告指针
 
 `docs/paper-deltas.md` 同理：偏离论文字面陈述的地方，谁发现谁记，不要只在对话里说。
 **引用论文位置的纪律（Jun 2026-09-21）**：**以公式/定理编号为准，页码只作辅助**。仓库里所有页码指 `paper/250520-YinJun-v2.pdf`（Acta 投稿版）的印刷页码——**这是基准版本**（Jun 2026-09-21 确认：之前页码对不上是他手上开错了版本）。引用未编号的显示式时，写「(5.67) 之后那行」并引一句原文，不要只写页码。
@@ -91,29 +91,13 @@ lake env lean RBM1D/Propagator/Xxx.lean   # 单文件，秒级 —— 默认用�
 
 ## 当前位置与下一步
 
-Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry。详见 `docs/STATUS.md`。
-
-**下一个目标：(2.52) 的锐化指数衰减。** 现有的 `norm_Theta_apply_le_pow` 衰减长度由 `1-|ξ|` 控制，
-论文要的是由 `|1-ξ|` 控制，即 `ℓ̂(ξ) = min(|1-ξ|^{-1/2}, L)`。两者在 `ξ = t·m²` 区制差别巨大。
-
-路线（**不要走附录 B 的围道平移 + Poisson 求和**，d=1 最近邻有闭式解，代价低得多）：
-
-1. 构造 `ρ(ξ)`：`ρ² − (3/ξ − 1)ρ + 1 = 0` 中模 < 1 的那个根。
-   重根只在 `ξ = 1` 或 `ξ = -3` 出现，都不在 `|ξ| < 1` 内，可排除；`ξ = 0` 单独处理（`Θ = I`）。
-2. 证闭式 `(Θ_ξ)_{xy} = c(ξ)·(ρ^d + ρ^{L−d})`，`d = (x−y).val`。
-   做法是把闭式代回验证 `(1 − ξ S) Θ = 1`，再用已有的 `RBM.eq_Theta_of_mul` 收口 —— 有限的 `ZMod` 分情况代数。
-3. **写证明之前**先在 `RBM1D/Test/Sanity.lean` 加 `L = 5, 7`、`ξ = 1/2` 的 `norm_num` 数值自洽检查，
-   防止闭式抄错却「证明通过」。
-4. (2.52)(2.53)(2.54) 和 (3.35)(3.36) 的锐化版全部建立在闭式之上。
-
-`Propagator/Symbol.lean`（附录 B 的 Fourier 表示 (B.1)）仍然要做，但作为独立的结构性结果
-（下游 (3.48) 会用 Fourier 形式），**不作为衰减估计的依赖**。
+当前优先级以 `docs/TASKS.md` 第 3 行和 `docs/STATUS.md` 为准。早期 Phase 1 的下一步计划已存入 `docs/archive/CLAUDE-phase1-plan.md`，不要将它作为当前调度命令。
 
 ## 会话结束前的检查单
 
 1. `./check.sh` → `build.log` 里 `errors: 0`、`exit=0`
 2. `grep -rn "sorry" RBM1D/` → 只有 `Test/Sanity.lean` 里那句注释
-3. 更新 `docs/STATUS.md`（新增的声明、下一步）
+3. 有实质变化时更新 `docs/STATUS.md`（当前依赖与下一步）；无变化时不追加记录
 4. `git commit`
 
 ## 队列空了怎么办
@@ -153,7 +137,7 @@ grep -rn "sum_pow\|zdist\|geom_sum\|exp_neg" RBM1D/ --include=*.lean
 
 典型的通用工具：`ZMod L` 上的求和与重标、几何级数的界、`exp` 的初等不等式、
 `Finset` 的重排。这些两边都会用到，而**按文件分工只能避免改同一个文件，
-避免不了各证一遍**。已经发生过一次（见 `docs/STATUS.md`「重复劳动」一节）。
+避免不了各证一遍**。已经发生过一次（旧记录见 `docs/archive/STATUS-2026-09-19_22.md`；只定向搜索）。
 
 需要别的文件里已有的工具时：能 import 就 import；
 若会造成不该有的依赖方向（比如 `Propagator/` 依赖 `Loop/`），
@@ -237,4 +221,4 @@ T164 查出 `MinorGood`/`MinorGood'` 对**所有**样本点 `ω` 量化，在 `�
 我们的矩阵是复 Hermitian，所以**唯一的外部假设 = [51] Theorem 2.2 逐字、只把 (2.1) 的 GOE 与 (2.9) 的 `p_GOE` 换成 GUE**（前提 `(g,G)`-正则、时间窗、能量窗、结论形状一字不改）。
 最终 Lean 报告必须写明这一点：「[51] 正文陈述 β = 1；此处使用其摘要所声称的 β = 2 版本」。
 **Jun 2026-09-21 09:50 明确指示：「以 complex 形式的 Theorem 2.2 作为外部输入口」。****待更新**：Jun 正请 [51] 的作者在 arXiv 版里补上「complex 同理」（2026-09-21）；补上后外部假设改为逐字引用新版，报告措辞随之简化。
-已核过的替代方案 (B)（[35] = Erdős–Péché–Ramírez–Schlein–Yau, CPAM 2010, `paper/0905.4176v2.pdf`, Prop. 3.3）**不可用**：见 `docs/STATUS.md`「Theorem 2.6 外部输入：方案 (A)」。
+已核过的替代方案 (B)（[35] = Erdős–Péché–Ramírez–Schlein–Yau, CPAM 2010, `paper/0905.4176v2.pdf`, Prop. 3.3）**不可用**：旧论证见 `docs/archive/STATUS-2026-09-19_22.md`（定向搜索 Theorem 2.6 外部输入）。

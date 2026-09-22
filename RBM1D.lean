@@ -45,6 +45,7 @@ import RBM1D.Hierarchy.Step2FarMart
 import RBM1D.Gauss.MomentDuhamelBddT
 import RBM1D.Gauss.MomentDuhamelHypGauss
 import RBM1D.Gauss.MomentDuhamelQ
+import RBM1D.Gauss.TestFunQGeneral
 import RBM1D.Gauss.Lemma514Moment
 import RBM1D.Gauss.Lemma514Q716
 import RBM1D.Gauss.Lemma514Holder

@@ -6655,3 +6655,68 @@ paper-deltas **T228a**（阈值 + 光滑化）与 **T228b**（自举取代 BDG�
 2. **四个好集的 `HighProb` 生产者**（`FDInputs`/`QuadInputs`/`EGInputs`/`DriftInputs`）与 **Lemma 5.9 的定量那半**（`hlk`/`hKd`，需 `c(1−v)ℓ_v N^τ ≳ D log N`）——T227 交出，是 `Bounds` 在 `s > 0` 处无居民的真缺口。
 3. **T216 §5 的 `FarInputs'` 第四条与 `farInputs_of_farInputs'` 的 `hmartAll` 加 `@[deprecated]`** + **`step_bound_far'` 拆两半**——要写 `Step2FarInputs.lean`，**T229 持有**。
 4. **待定夺（T228 新发现）**：`MomentDuhamelCut.CutHyp` 的 `modulus` 与 `mesh_fine` 是 **`∀ N`**，含 `N = 0`；`(0:ℝ)^Kmod = 0`，于是 `modulus` 在 `N = 0` 上逼着 `J` 对时间**为常值**——任何非退化 `J` 的生产者都得在小 `N` 上单独交代。**是否把 `modulus`/`mesh_fine` 改成 `∀ᶠ N`？** 问题**已存在、不是本单引入**。
+
+## ⚠⚠ 新查明的构建陷阱（T222，CLAUDE.md 还没记，**建议补进「读 build.log 的陷阱」那一节**）
+
+**`lake env lean <文件>` 不施加 library 的 `leanOptions`（`autoImplicit` 等），所以它能放过 `lake build` 拒收的文件。** 实例：T222 接手时 `lake env lean RBM1D/Gauss/CutHypTheta.lean` **exit=0 零输出**，而 `lake build RBM1D.Gauss.CutHypTheta` **exit=1**，报 `Unknown identifier mesh`——`netGoodLt_antitone` 用了 `mesh` 却没有 section variable，靠 **auto-bound** 才在单文件模式下成立。
+
+**纪律：单文件绿不等于能入库。新文件收工前必须额外跑 `lake build RBM1D.<模块名>`。** 已在 T219 的派单 prompt 里写明。
+
+## ⭐⭐⭐ T222：`MomentHypCut.cut` **不再是具名假设**，但「卸掉」不是——障碍搬了家，且替代路已编译证否（`Gauss/CutHypTheta.lean` 1971 → 2478 行、101 条，全量绿、审计 11571）
+
+**编译起来的链条**：`phi_arith'` / `phi_arith_second_pass` + **前缀事件上的条件截断 Duhamel 矩界（★ 缺这一块）** → `condMoment_of_oneStep(Sharp)` → `CutHypCond.condMoment` → `netGood_highProb`（沿网格逐步自举）→ `stochDom_of_condMoment` → `moment_of_stochDom` → `CutHyp'.moment` → `cutHyp_of_condMoment` → **`MomentHypCut.cut` / `MomentHypCut2.cut`** → `jS_stochDom(_sharp)_of_condMoment`。
+
+**⚠ 更正工单验收条**：「`MomentHypCut.cut` 只经 `MomentDuhamel.Hyp` 出现」**未达到**——它经 `CutHypCond.condMoment` 出现。**这是搬家不是消灭**：量词从「一次性对所有网点、无条件、`∀ε`」降到「**一个**网点、**一个** `ε`、**条件**」，是很大的化归，但仓库里没有那条条件矩界。
+
+**断在哪一步，精确地**：断在把 `momentIneq_of_derivBound_gauss`（T212 那条线）用到**限制在前缀事件上的积分** `∫_{A(ws)} |cutTrunc θ (J_{ws})|^{2p} dP`。Duhamel/Grönwall 要对 `u` 求导并用高斯分部（Stein），**而 Stein 恒等式只对整个高斯测度成立**，限制到 `A(ws)` 就没有分部公式。
+
+**⚠⚠ 而「改成无条件积分 + 前缀只作高概率前提」这条替代路，已编译证明不可行**（§13，工单说的「把障碍编译成定理」）：一步**交付**的是 Chebyshev `P(J > c) ≤ C·M/c^{2p} =: g`；一步**需要**的是把去截断尾巴装进目标 `P(前缀失败) ≤ M/(2θ)^{2p} =: r`；而截断不能把坏事件打成 0，**强制 `c < 2θ`**（`lt_two_mul_of_lt_cutTrunc`，因 `cutTrunc θ ≤ 2θ`）。三者不相容：`c < 2θ ⟹ r < M/c^{2p} ≤ g`，即**需要的前提严格强于交付的结论**。`no_unconditional_stepwise` 对**每个** `n` 成立，**在 `n = 0`（单个网点）就已经失败**——**瓶颈是截断支撑的宽度 `2θ`，不是网的基数**。短的因子是 `(2θ/c)^{2p}·C ≥ 1`，再乘网点数 `N^{Ccard}`。条件版**根本不付尾巴**，这就是 `netGood_highProb` 能闭合的原因。
+
+**关闭了 T210 的无主项 2**（前缀事件可测性）：T210 建议用 `integral_add_compl₀` 加「连续路径的一致上界事件是零可测集」；实际做法更好——`MeasureTheory.toMeasurable` 取同测度的可测超集，于是 `integral_add_compl` 直接可用，**`hA` 这条假设整条消失，不需要任何路径连续性**。
+
+**记账层接上了（T207 交出的三条全仓无消费者的引理，现在都有证明项级消费者）**：`phi_arith'` → `stepRhs_le:2078`；`phi_arith_second_pass` → `stepRhsSharp_le:2085`；`integral_nearInt_le` → `nearInt_fills_q_slot:2274`。**接线的实质是指数对得上而且是等式**：`x = N^{δ/8}` ⟹ `(x²)^{2p} = N^{δ/2·p}`，归一化后（钝版除 `R⁴`、锐版除 `R²`）一步输出正好是 `cStep' m·x²` / `cSharp m·x²`，于是 `condMoment` 的损失与常数 `C = (cStep' m)^{2p}` **逐字吻合**——**写小了按真实算术不可满足，写大了自举顶不住 `Λ = x⁸R⁴`**。锐版与钝版**同指数、不同常数**，这正是 `MomentHypCut2` 不需要第二次自举的接口层理由。如实说：`nearInt_fills_q_slot` 比前两条薄，还没接进某个 `condMoment` 生产者的主干。
+
+**见证**：`satCutHypCond_ofOneStep` 取临界标度（`J ≡ Θ ≡ 1`、水平 `(1−u)⁻¹` **真带 `u`** 且 `u ↑ 1` 无界、网距 `(N+1)²`），**`mesh_fine` 与 `card_le` 由同一组参数满足**；关键是它的 `condMoment` **不是假设的，是从 `sat_oneStep` 算出来的**（由 `phi_arith'` 供给）。前缀事件非空且高概率：`sat_prefixEvent_measure_one`（`P = 1`，所以约束的是**整个**积分不是空真）+ 反向半边 `prefixEvent_ne_univ`（两点样本空间上 `= {false}`，说明这个概念在一般情形确实有限制、接口不是 no-op）。⚠ **如实的局限**：见证在 `R = 1` 上（临界标度必然如此），**没有检验 `R > 1`**；`R` 一般由 `stepRhs_div_le`/`stepRhsSharp_div_le` 在算术层覆盖，但**没有配套的概率层见证**。
+
+## ⭐⭐ T225：`Q` 版 `TestFunT₁` 落地，`hbound` 卸掉——并查出 `hbound` 少一个 `(n+2)` 因子（`Gauss/TestFunQGeneral.lean` 1024 → 1619 行、79 条，全量绿、审计 11666）
+
+**⚠ 更正工单**：工单说上一个 agent「中断在刚要写核心定义那一刻，文件基本等于空」——**事实相反**，当时已有 **1024 行、55 条声明**且单文件 exit=0，T225 的核心（五条泛化 + `Q` 实例化 + plain 版一行导出 + `phiCoefDeriv` + Hölder）已落地。T225 逐条验过后**全部保留**，在其上补完缺口。
+
+**泛化版的正则性是 `C¹`，而且实际只用了一次**：系数族只经 `hc`（一个 `HasDerivAt`）、`hcb`、`hc'b` 进入；唯一消费 `hc` 的地方是 `hasDerivAt_coefObsT` 里的 `(hc b).mul (…)`——**一次**。系数族的二阶导数在全文件不出现。`Q` 路线同理，`varthetaDot` **从不被求导**，只用 `ContinuousOn`。
+**严格性反证证明 `C¹` 是紧的**：`testFunT₁_coefMomentObsT_kink` 证明类**包含**系数族 `c_u = (u−½)|u−½|`，而 `not_differentiableAt_kinkCoefFam'` 证明它的导数 `2|u−½|` 在 `u = ½` **不可微**——**把系数族的假设抬到 `C²`，定理就会漏掉一个它现在覆盖的 `Ψ`**，正是 T145/T180/T187/T191 那个事故的同形。
+
+**plain 版五条由泛化版一行导出，且是同一个类型**：五个 `example : @testFunT₁_momentObsT = @testFunT₁_momentObsT_of_coef := rfl` 全部通过——**两边类型逐字相同、作为项定义相等**，任何调用点可互换，结论没被改形状。
+
+**导数槽无条件卸掉**（`hasDerivAt_integral_psiQ_gauss`，`φ'` 是钉死的 `phiCoefDeriv`，不是调用方可选的数据——**plain 路线把它的孪生留给了调用方，这条是新的**）；**`hbound` 卸掉了，代价恰好是 T226 的两项**（漂移三项与 `E⊗E` 对 `ω` 的连续性 + 窗口包络；二次变差桥 (5.103)）。`integral_le_holder_sum_of_bdd` 把 `integral_le_holder_sum` 的**十五个可积性假设全部卸掉**（连续 + 包络 ⇒ 全部）。
+
+**⚠⚠ 关键发现（paper-delta T225a）**：`hbound` 的二次项**按字面少一个 `(n+2)` 因子**，而 `cMDval p` 只依赖 `p`、吸不掉 `n`；**plain 路线有完全相同的缺口**，只因它把 `hbound` 整条留作假设一直没人撞上。**待定夺见 paper-deltas T225a。**
+
+## ⚠ 协调者的一次操作失误（如实记录）
+
+集成 T223/T227/T228 时我用了 `git add -A RBM1D/Gauss RBM1D/Hierarchy`，把**在飞 agent 的半成品文件**一并提交了：`FastDecayFlow.lean`(T220)、`Lemma514QAssembly.lean`(T219)、`Lemma514QRoute.lean`(T218)、`MomentDuhamelQInt.lean`(T226，**当时编译红**)、`TestFunQGeneral.lean`(T225)、`Step2FarInputs.lean`(T229)。
+
+**后果有限**：这些文件当时**都没有 import 进 `RBM1D.lean`**，所以 HEAD 的全量构建不受影响（提交后实测 11574 绿）。但记录上出现了「TASKS 写进行中、文件已入库」的错位。**教训：集成时应逐文件 `git add`，不用 `-A <目录>`。**
+
+## ⭐⭐ T229：`J` 的远场桥与 `M_qf(1−s) ≺ 1` **两条都做成了**——漂移侧现在全是定理（`Hierarchy/Step2FarInputs.lean` 1982 → 2954 行、34 条，全量绿）
+
+**⚠⚠ 更正工单与 T215 交出的那条无主项的技术路线**：工单说「要用 `norm_Kgen_le_exp` 的指数衰减」。**`norm_Kgen_le_exp` 用不上——它要求 `3 ≤ n`**（`Hierarchy/Decay.lean:1153`），而这里是 `n = 2`。工单对 `Band.norm_Kval_le` 不够用的判断是对的，但**推荐的替代工具是错的**。正确的工具是**闭式**：`σ = (+,−)` 时 `m(+)m(−) = m·m̄ = |m|² = 1`（`mSigma_true_mul_false`），Example 2.15 的 (2.57) 退化成 `K_{u,(+,−),(x,y)} = W^{−1}(Θ_u)_{xy}`（`Kval_pm_eq`）——**`n = 2` 的 `K` 衰减就是 `Θ` 的衰减**，即 (2.52)/(5.30)，仓库早有 `Step2.eq530`（δ = 1/2）直接给 `≤ W^{−D} ≤ T_{u,D}`。**只用 `Cond272`，不含任何 loop hierarchy 输入。**
+
+**桥本身是锐的，一点常数都没丢**：(5.29) 定义 `J* = max_a |A_a|/T + 1`，所以 `‖L−K‖ ≤ (J*−1)T`，**那多出来的一个单位恰好付掉 `K`**：`‖L_{u,(+,−)}‖ ≤ (J*−1)T + T = J*·T`。取实部即 `h531`；`h42` 取 `Gm = √(J*·T)`，在远场**取等号**——`h531` 的 `J` 与 `h42` 的 `J` **字面是同一个数**。**`Jf := Step2.jS` 成立**（`egData_of_jS`）。
+
+**`M_qf(1−s) ≺ 1` 的账，而且结果是常数**。(5.49) 的恒等式先落地（`quadGlue_pm_eq_eLL`），于是 (5.34) 就是仓库已有的 `Step2.norm_eLL_le`。逐项：
+
+| 行 | 需要的预算 | 化成 | **β\*** | 余量 |
+|---|---|---|---|---|
+| `36e(J*)²η_u^{−1}A^{−1}` | `x^{16}R⁵ ≤ A` | `x^{32}R^{10} ≤ A²` | **2.5** | `R`：10 vs 60，**余 R^{50}**；`W`：**0 次** |
+| `e(J*)²·W·L·W^{−D′}` | `W³W^{−D′} ≤ 1` | `W^{3−D′} ≤ 1` | — | `R`/`N` 各 **0 次**（`R⁴ ≤ A ≤ W` 全吸收） |
+
+**β\* = 2.5 是三行里最便宜的一行**（T215 的两行是 7.5 与 4.5），因为它既不带 `r = ℓ_u/ℓ_s` 也不带 `√A`。**(2.72) 的指数 30 一点不动。** 第二行用的 `A ≤ W`、`W L ≤ N`、`N ≤ W²` **都是 `Band` 的定理不是新假设**，唯一要的是 `3 ≤ D′`。
+
+合账：`mqfEG = (36 e m^{−1} + e)(1−s_N)^{−1}`，于是 **`mqfEG·(1−s) = 36 e m^{−1} + e` 是常数**，不需要 `N` 的任何增长。**`hMqf'` 消失**（`flowEq548_of_egData_qf` 的 `#check` 逐字确认），**`M_f = mfEG + mqfEG` 两半现在都是定理**。
+
+**`3 ≤ D′` 阈值放在哪里（不要误读成缺口）**：它只在**生产者**里，**不在常数 `mqfEG` 里**，所以 `hMqf'` 对所有 `D′` 成立。总装因此用 `flowEq548_of_egData_qf_thr`（`hHP : ∀ D′ ≥ D₀`），**没有弱化任何结论**（paper-delta T229a）。
+
+**见证与反查**：`cFarStep'_detDom_mf_full` 取临界标度 `1−s_N = 1/(N+1)`（正是 T208 证 `cFarStep` 不 `≺1` 的那个点），`M_f` 取 (5.35) **和** (5.34) 实际产出的 `mfEG + mqfEG`；`mqfEG_pos`/`mqfEG_ne_zero` 证 (5.34) 那半**严格正**（`M_f` 不是 `mfEG` 换个名字）。**空真反查方向相反**：`quadConst_mono`——(5.34) 的常数对 `J*` **单调递增**而 (5.47) 从**上**压 `J*`。**账的载荷性也编译了**：`jS_sq_mul_ratio_le_sat`（`J*` 取在 (5.47) 的**天花板**上而非 0，(2.72) 预算**取等号**）与 `jS_sq_mul_ratio_not_le`（把 `A` 降到 1 同一组数据下结论**为假**——`hA` 是载荷假设不是装饰）。**判别性** `mSigma_true_mul_true`：`σ = (+,+)` 时同一算式给 `m²`，**抄错电荷会让 `Kval_pm_eq` 为假而不只是变弱**。
+**顺带**：T229 先 grep 到了仓库已有的 `Step2Moment.one_le_jS`，**删掉了自己重复写的那条**——「造轮子之前先查」生效的一例。
+
+**未做（归谁）**：`hHP` 的 `HighProb` 提升——短的不是本单的东西，是**别人单子的高概率输入**（(2.69) 的 `Mi`、T207 的 (5.47) 在 `HighProb` 层、(5.54) 的 `hrem`/`ρ`、(5.57)/(5.60)/(2.74)），`egData_of_jS` 的假设表就是这张清单。`Mm` 仍在不带撇的 `FlowEq548` 那条线上——**T228 已用光滑阈值把它从 Steps 4–5 删掉**，归 T228 的后续接线单。`import` 顺带项**归 T221**（Cowork 18:10 已裁定并入），T229 核实**不成环**，但删 `margin_pow_le` 要改本文件已有行、与「只许追加」冲突，故未做。

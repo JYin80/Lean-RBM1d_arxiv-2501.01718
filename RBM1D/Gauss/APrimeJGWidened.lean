@@ -311,6 +311,20 @@ theorem widened_far_rows_slack {c δ τ : ℝ} (_hc : 0 < c)
       (25 / 64 : ℝ) * c ≤ c * (1 - (9 : ℝ) / 30) - (6 * δ + 3 * τ) := by
   constructor <;> norm_num <;> linarith
 
+/-- A four-loop source bound `Smax ≤ N^ζ r³ A⁻³` contributes `ζ` to the
+quadratic row after its square.  Choosing the source loss `ζ ≤ τ` leaves a
+strict margin even at the closed parameter endpoints. -/
+theorem widened_far_rows_with_source_slack {c δ τ ζ : ℝ} (hc : 0 < c)
+    (hδ : 0 ≤ δ) (hδ0 : δ ≤ c / 20)
+    (hτ : 0 ≤ τ) (hτδ : τ ≤ δ / 16)
+    (_hζ : 0 ≤ ζ) (hζτ : ζ ≤ τ) :
+    (193 / 960 : ℝ) * c ≤
+      c * (1 - ((23 / 2 : ℝ) / 30)) - (8 * δ + 4 * τ + ζ) ∧
+    (25 / 64 : ℝ) * c ≤
+      c * (1 - (9 : ℝ) / 30) - (6 * δ + 3 * τ) := by
+  obtain ⟨hq, hcub⟩ := widened_far_rows_slack hc hδ hδ0 hτ hτδ
+  constructor <;> linarith
+
 /-- The exponent parameters themselves have a strictly positive simultaneous
 witness. This does not assert nonemptiness of the model's common event. -/
 theorem widened_far_rows_numeric_witness :
@@ -318,6 +332,15 @@ theorem widened_far_rows_numeric_witness :
       8 * δ + 4 * τ < c * (1 - ((23 / 2 : ℝ) / 30)) ∧
       6 * δ + 3 * τ < c * (1 - (9 : ℝ) / 30) := by
   refine ⟨1, 1 / 20, 1 / 320, ?_⟩
+  norm_num
+
+/-- Positive exponent choices also leave room for the four-loop source loss. -/
+theorem widened_far_rows_with_source_numeric_witness :
+    ∃ c δ τ ζ : ℝ, 0 < c ∧ 0 < δ ∧ 0 < τ ∧ 0 < ζ ∧
+      δ ≤ c / 20 ∧ τ ≤ δ / 16 ∧ ζ ≤ τ ∧
+      0 < c * (1 - ((23 / 2 : ℝ) / 30)) - (8 * δ + 4 * τ + ζ) ∧
+      0 < c * (1 - (9 : ℝ) / 30) - (6 * δ + 3 * τ) := by
+  refine ⟨1, 1 / 20, 1 / 320, 1 / 320, ?_⟩
   norm_num
 
 /-- The two actual inverse-scale rows, including the widened block-level loss,
@@ -343,6 +366,37 @@ theorem eventually_widened_far_margin_rows {Ω : Type*} [MeasurableSpace Ω]
   filter_upwards [hquad, hcubic] with N hq hc u
   exact ⟨by simpa using hq u, by simpa using hc u⟩
 
+/-- The source-inclusive quadratic row and the cubic row follow from the
+actual two-part `Cond272Reg`, uniformly over the running time. -/
+theorem eventually_widened_far_margin_rows_with_source
+    {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+    {E : ℝ} {s t : ℕ → ℝ} (hE : |E| < 2)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c δ τ ζ : ℝ} (hc : 0 < c) (hδ : 0 ≤ δ) (hδ0 : δ ≤ c / 20)
+    (hτ : 0 ≤ τ) (hτδ : τ ≤ δ / 16)
+    (hζ : 0 ≤ ζ) (hζτ : ζ ≤ τ)
+    (hreg : Cond272Reg B E s t c) :
+    ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N,
+      (N : ℝ) ^ (8 * δ + 4 * τ + ζ) *
+          (etaT E (s N) / etaT E (u : ℝ)) ^ ((23 / 2 : ℝ))
+        ≤ B.scale E N (u : ℝ) ∧
+      (N : ℝ) ^ (6 * δ + 3 * τ) *
+          (etaT E (s N) / etaT E (u : ℝ)) ^ (9 : ℝ)
+        ≤ B.scale E N (u : ℝ) := by
+  have hs := widened_far_rows_with_source_slack hc hδ hδ0 hτ hτδ hζ hζτ
+  have hq : 8 * δ + 4 * τ + ζ ≤ c * (1 - ((23 / 2 : ℝ) / 30)) := by
+    linarith [hs.1]
+  have hcub : 6 * δ + 3 * τ ≤ c * (1 - (9 : ℝ) / 30) := by
+    linarith [hs.2]
+  have hquad := APrimeExponents.eventually_monomial_margin hE hst ht1 hc hreg
+    (a := 8 * δ + 4 * τ + ζ) (b := 23 / 2) (δ := 1)
+    (by norm_num) (by norm_num) (by simpa using hq)
+  have hcubic := APrimeExponents.eventually_monomial_margin hE hst ht1 hc hreg
+    (a := 6 * δ + 3 * τ) (b := 9) (δ := 1)
+    (by norm_num) (by norm_num) (by simpa using hcub)
+  filter_upwards [hquad, hcubic] with N hqN hcN u
+  exact ⟨by simpa using hqN u, by simpa using hcN u⟩
+
 #print axioms level_le_monomial
 #print axioms eventually_level_le_pow
 #print axioms QBdWide_le_of_shape
@@ -350,11 +404,14 @@ theorem eventually_widened_far_margin_rows {Ω : Type*} [MeasurableSpace Ω]
 #print axioms QBdWidePoly_eq
 #print axioms widened_far_rows_budget
 #print axioms widened_far_rows_slack
+#print axioms widened_far_rows_with_source_slack
 #print axioms widened_far_rows_numeric_witness
+#print axioms widened_far_rows_with_source_numeric_witness
 #print axioms eventually_jG_le_poly_on_common_event
 #print axioms nearEpsilon_le_inv_of_widened_level
 #print axioms diagFarRate_le_widened_poly
 #print axioms diagFarRate_widened_poly_eq
 #print axioms eventually_widened_far_margin_rows
+#print axioms eventually_widened_far_margin_rows_with_source
 
 end RBM.APrimeJGWidened

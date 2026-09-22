@@ -1471,6 +1471,214 @@ theorem step2_cut_of_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ �
       h1.lemma41, h276⟩
 end Reg
 
+
+/-! ### 8. T249 丙: the deterministic modulus restricted to a high-probability event
+
+`CutHyp.modulus` / `CutHypEv.modulus` is a **deterministic** inequality quantified over every
+sample point.  For the flow `H_u = √u X` the Hölder constant of `u ↦ G_u` is `O(‖X‖)`, and `‖X‖`
+is unbounded, so the `∀ ω` shape is the forbidden pattern of the satisfiability discipline — and
+on a window starting at `0` it is outright false (`RBM.not_entryModulusEv_swapSample_of_far`).
+
+`CutHypEvOn` is `CutHypEv` with `modulus` asked only on an event `Good N` (in the application
+`{ω | ‖X(ω)‖ ≤ N}`).  The whole downstream chain survives: the functional is replaced by its
+restriction `onEvent J Good`, which satisfies the *unrestricted* interface
+(`CutHypEvOn.toCutHypEv`) because off `Good N` it is constantly `0`, and the two agree on
+`Good N`, so a `HighProb` `Good` costs one extra `N^{-1}` in the final union bound
+(`stochDom_of_cutHypEvOn`).
+
+**How the four slots attach.**
+* slot 2, `MomentHypCut.cut` (T230) and slot 3, `CutHypEv` (T230): replace the bundle by
+  `CutHypEvOn` with `Good N = {‖X‖ ≤ N}` and route the conclusion through
+  `stochDom_of_cutHypEvOn`; the `moment` field is unchanged, because the restriction only
+  lowers the integrand.
+* slot 6c, `RBM.EntryModulusEv`, and the merged `Eq548EntryDataEv.modulus`: the entrywise
+  field has to carry the same `ω ∈ Good N`; it then feeds `CutHypEvOn.modulus` through
+  `RBM.Step2FarMart.abs_jSfarSm_sub_le` exactly as it now feeds `CutHypEv.modulus`.
+
+`satCutHypEvOn` is the compiled non-degenerate witness (window `[0,1]`, `J_u = 2u⁺`). -/
+
+section EventRestricted
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {J : ℕ → ℝ → Ω → ℝ} {s t Θ : ℕ → ℝ}
+variable {Good : ℕ → Set Ω}
+
+/-- `J` cut down to the event `Good N`. -/
+noncomputable def onEvent (J : ℕ → ℝ → Ω → ℝ) (Good : ℕ → Set Ω) : ℕ → ℝ → Ω → ℝ :=
+  fun N u => Set.indicator (Good N) (fun ω => J N u ω)
+
+theorem onEvent_of_mem {N : ℕ} {u : ℝ} {ω : Ω} (h : ω ∈ Good N) :
+    onEvent J Good N u ω = J N u ω := Set.indicator_of_mem h _
+
+theorem onEvent_of_notMem {N : ℕ} {u : ℝ} {ω : Ω} (h : ω ∉ Good N) :
+    onEvent J Good N u ω = 0 := Set.indicator_of_notMem h _
+
+@[simp] theorem cutTrunc_zero (θ : ℝ) : cutTrunc θ 0 = 0 := by simp [cutTrunc]
+
+/-- **`CutHypEv` with the deterministic `modulus` restricted to an event** (T249丙).
+
+The one change from `RBM.MomentDuhamelCut.CutHypEv`: `modulus` is asked only for
+`ω ∈ Good N`, not for every `ω`.  This is the shape the satisfiability discipline demands of a
+deterministic inequality on a random model: the Hölder constant of `u ↦ G_u` along the flow
+`H_u = √u X` is `O(‖X‖/√s)`, and `‖X‖` is unbounded, so an `∀ ω` modulus is either false
+(`RBM.not_entryModulusEv_swapSample_of_far`) or has to pay for the tail.
+
+`Good` is typically `{ω | ‖X(ω)‖ ≤ N}`, which is `HighProb`. -/
+structure CutHypEvOn (P : Measure Ω) (J : ℕ → ℝ → Ω → ℝ) (s t Θ : ℕ → ℝ)
+    (Good : ℕ → Set Ω) where
+  window : ∀ N, s N ≤ t N
+  δ₀ : ℝ
+  δ₀_pos : 0 < δ₀
+  Θ_pos : ∀ N, 0 < Θ N
+  J_nonneg : ∀ N u ω, 0 ≤ J N u ω
+  meas : ∀ (N : ℕ) (u : ℝ), AEStronglyMeasurable (fun ω => J N u ω) P
+  /-- The event the modulus is asserted on. -/
+  good_meas : ∀ N, MeasurableSet (Good N)
+  mesh : ℕ → ℝ
+  mesh_pos : ∀ N, 0 < mesh N
+  Kmod : ℝ
+  γ : ℝ
+  γ_pos : 0 < γ
+  /-- **The modulus, only on `Good N`.** -/
+  modulus : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Good N, ∀ v ∈ Set.Icc (s N) (t N),
+    ∀ w ∈ Set.Icc (s N) (t N),
+    |J N v ω - J N w ω| ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+  mesh_fine : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ Kmod * (1 / mesh N) ^ γ ≤ Θ N
+  Ccard : ℝ
+  card_le : ∀ᶠ N : ℕ in atTop, (t N - s N) * mesh N + 2 ≤ (N : ℝ) ^ Ccard
+  moment : ∀ δ, 0 < δ → δ ≤ δ₀ → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+    ∀ ws ∈ netFinset s t mesh N,
+      ∫ ω, |cutTrunc ((N : ℝ) ^ (2 * δ) * Θ N) (J N ws ω)| ^ (2 * p) ∂P
+        ≤ C * ((N : ℝ) ^ (ε * p) * Θ N ^ (2 * p))
+
+namespace CutHypEvOn
+
+/-- **The restricted functional satisfies the unrestricted interface.**  Off `Good N` the
+functional is `0`, hence constant in time, so the modulus holds there for free; and the moment
+only drops, because `cutTrunc θ 0 = 0`. -/
+noncomputable def toCutHypEv [IsProbabilityMeasure P] (H : CutHypEvOn P J s t Θ Good) :
+    CutHypEv P (onEvent J Good) s t Θ where
+  window := H.window
+  δ₀ := H.δ₀
+  δ₀_pos := H.δ₀_pos
+  Θ_pos := H.Θ_pos
+  J_nonneg := fun N u ω => by
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h]; exact H.J_nonneg N u ω
+    · rw [onEvent_of_notMem h]
+  meas := fun N u => (H.meas N u).indicator (H.good_meas N)
+  mesh := H.mesh
+  mesh_pos := H.mesh_pos
+  Kmod := H.Kmod
+  γ := H.γ
+  γ_pos := H.γ_pos
+  modulus := by
+    filter_upwards [H.modulus] with N hN ω v hv w hw
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h, onEvent_of_mem h]
+      exact hN ω h v hv w hw
+    · rw [onEvent_of_notMem h, onEvent_of_notMem h, sub_self, abs_zero]
+      positivity
+  mesh_fine := H.mesh_fine
+  Ccard := H.Ccard
+  card_le := H.card_le
+  moment := by
+    intro δ hδ0 hδ ε hε p
+    obtain ⟨C, hC0, hCN⟩ := H.moment δ hδ0 hδ ε hε p
+    refine ⟨C, hC0, ?_⟩
+    filter_upwards [hCN, eventually_gt_atTop 0] with N hN hN0 ws hws
+    have hNR : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN0
+    have hΘ := H.Θ_pos N
+    have hrp : (0 : ℝ) < (N : ℝ) ^ (2 * δ) := Real.rpow_pos_of_pos hNR _
+    have hθ : (0 : ℝ) < (N : ℝ) ^ (2 * δ) * Θ N := by positivity
+    refine le_trans ?_ (hN ws hws)
+    refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun ω => by positivity)
+      (integrable_cutTrunc_pow hθ (fun ω => H.J_nonneg N ws ω) (H.meas N ws) (2 * p))
+      (Filter.Eventually.of_forall fun ω => ?_)
+    simp only
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h]
+    · rw [onEvent_of_notMem h, cutTrunc_zero, abs_zero]
+      exact pow_le_pow_left₀ le_rfl (abs_nonneg _) _
+
+end CutHypEvOn
+
+/-- **`J ≺ Θ` from the event-restricted interface.**  The functional is replaced by
+`RBM.MomentDuhamelCut.onEvent J Good`, which satisfies the unrestricted `CutHypEv`
+(`CutHypEvOn.toCutHypEv`); the two agree on `Good N`, and `Good` is `HighProb`, so the
+exceptional set costs one extra `N^{-1}` in the union bound. -/
+theorem stochDom_of_cutHypEvOn [IsProbabilityMeasure P] (H : CutHypEvOn P J s t Θ Good)
+    (hgood : HighProb P Good) (hΘ1 : ∀ᶠ N : ℕ in atTop, 1 ≤ Θ N)
+    (hinit : StochDom P (fun N (_ : Unit) ω => J N (s N) ω) (fun _ _ _ => (1 : ℝ))) :
+    StochDom P (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) := by
+  have hle : ∀ N u ω, onEvent J Good N u ω ≤ J N u ω := by
+    intro N u ω
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h]
+    · rw [onEvent_of_notMem h]; exact H.J_nonneg N u ω
+  have hinit' : StochDom P (fun N (_ : Unit) ω => onEvent J Good N (s N) ω)
+      (fun _ _ _ => (1 : ℝ)) := by
+    intro τ hτ D hD
+    filter_upwards [hinit τ hτ D hD] with N hN
+    refine le_trans (measure_mono ?_) hN
+    rintro ω ⟨u, hu⟩
+    exact ⟨u, lt_of_lt_of_le hu (hle N (s N) ω)⟩
+  have hmain := stochDom_of_cutHypEv H.toCutHypEv hΘ1 hinit'
+  intro τ hτ D hD
+  filter_upwards [hmain τ hτ (D + 1) (by linarith), hgood (D + 1) (by linarith),
+    eventually_ge_atTop 2] with N hbad hgd hN2
+  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hsub : badSet (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) τ N
+      ⊆ badSet (fun N (u : TimeIcc s t N) ω => onEvent J Good N (u : ℝ) ω)
+          (fun N _ _ => Θ N) τ N ∪ (Good N)ᶜ := by
+    rintro ω ⟨u, hu⟩
+    by_cases h : ω ∈ Good N
+    · refine Or.inl ⟨u, ?_⟩
+      simp only
+      rwa [onEvent_of_mem h]
+    · exact Or.inr h
+  refine le_trans (measure_mono hsub) (le_trans (measure_union_le _ _) ?_)
+  have hp : (0 : ℝ) ≤ (N : ℝ) ^ (-(D + 1)) := Real.rpow_nonneg hN0.le _
+  refine le_trans (add_le_add hbad hgd) ?_
+  rw [← ENNReal.ofReal_add hp hp]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have h2 : (2 : ℝ) ≤ (N : ℝ) ^ (1 : ℝ) := by rw [Real.rpow_one]; exact hN2'
+  calc (N : ℝ) ^ (-(D + 1)) + (N : ℝ) ^ (-(D + 1)) = 2 * (N : ℝ) ^ (-(D + 1)) := by ring
+    _ ≤ (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ (-(D + 1)) := mul_le_mul_of_nonneg_right h2 hp
+    _ = (N : ℝ) ^ (-D) := by rw [← Real.rpow_add hN0]; congr 1; ring
+
+/-- The unrestricted interface is the `Good = univ` case, so the new structure is **not**
+vacuous: `RBM.MomentDuhamelCut.satCutHypEv` transports to it. -/
+noncomputable def CutHypEvOn.of_cutHypEv (H : CutHypEv P J s t Θ) :
+    CutHypEvOn P J s t Θ (fun _ => Set.univ) where
+  window := H.window
+  δ₀ := H.δ₀
+  δ₀_pos := H.δ₀_pos
+  Θ_pos := H.Θ_pos
+  J_nonneg := H.J_nonneg
+  meas := H.meas
+  good_meas := fun _ => MeasurableSet.univ
+  mesh := H.mesh
+  mesh_pos := H.mesh_pos
+  Kmod := H.Kmod
+  γ := H.γ
+  γ_pos := H.γ_pos
+  modulus := by filter_upwards [H.modulus] with N hN ω _ v hv w hw using hN ω v hv w hw
+  mesh_fine := H.mesh_fine
+  Ccard := H.Ccard
+  card_le := H.card_le
+  moment := H.moment
+
+/-- A compiled satisfiability witness for the event-restricted interface, on a
+**non-degenerate** window `[0, 1]` and with a genuinely time-dependent functional: T232's
+`RBM.MomentDuhamelCut.satCutHypEv`, read at `Good = univ`. -/
+noncomputable def satCutHypEvOn (P : Measure Ω) [IsProbabilityMeasure P] :
+    CutHypEvOn P (fun _ u _ => 2 * max u 0) (fun _ => 0) (fun _ => 1) (fun _ => 1)
+      (fun _ => Set.univ) :=
+  CutHypEvOn.of_cutHypEv (satCutHypEv P)
+
+end EventRestricted
+
 end MomentDuhamelCut
 
 end RBM

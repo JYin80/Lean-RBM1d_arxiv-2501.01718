@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Hierarchy.Step2FarMart
 import RBM1D.Hierarchy.Step2Near47
 import RBM1D.Defs.MatrixMeasurable
+import RBM1D.Gauss.FlowHolder
 
 /-!
 # Producers for the entrywise data of (5.48): `near`, `meas`, `modulus` (T244)
@@ -532,5 +533,824 @@ theorem sat_entryModulusEv_of_window_point (ht : ∀ N, t N = s N) :
   entryModulusEv_of_entryModulus X (sat_entryModulus_of_window_point X ht)
 
 end Sat
+
+
+/-! ### 7. T249: the window that starts at `s ≡ 0`
+
+At `u = 0` the flow is deterministic (`RBM.Sample.H_zero`) and the loop *equals* its primitive
+value, which is (2.67) = `RBM.gloop_zero_zt_zero_eq_Kgen`.  So `(L-K)_{0,(+,-),a} = 0` for every
+`a` and every `ω`, and `J*^{sm}_{0,D} = 1` identically (`RBM.jSfarSm_zero`).
+
+Consequently, on a window with `s ≡ 0` the field `modulus` of
+`RBM.MomentDuhamelCut.CutHypEv` (and the entrywise `RBM.EntryModulusEv`, which implies it)
+is **not a modulus of continuity at all**: taking `w = 0` it becomes the *absolute* bound
+
+`J*^{sm}_{v,D}(ω) ≤ 1 + N^{Kmod} v^γ`   for **every** `ω` and every `v ∈ [0, t_N]`,
+
+whose right-hand side tends to `1` as `v → 0`.  `RBM.not_modulusEv_zero_start` turns that into
+a refutation as soon as the functional is bounded away from `1` at arbitrarily small positive
+times — which is exactly what the unboundedness of the sample does: `ω` is free, so at time `v`
+the matrix `H_v = √v X(ω)` ranges over *all* Hermitian matrices, independently of how small `v`
+is.  §8 computes the loop for one such matrix. -/
+
+section ZeroStart
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {t : ℕ → ℝ}
+variable (X : Sample B)
+
+theorem lk_zero (hE : |E| ≤ 2) (N : ℕ) (ω : Ω) (a : LoopArg (B.L N) 2) :
+    Step2.lk X E N 0 ω a = 0 := by
+  unfold Step2.lk SumZeroDyn.lkT
+  have hwf : (LoopData.idx (Step2.sigPM, a)).WF := LoopData.idx_wf _
+  have hlen : (LoopData.idx (Step2.sigPM, a)).length = 2 := LoopData.idx_length _
+  have h1 : X.Lval E N 0 ω (LoopData.idx (Step2.sigPM, a))
+      = B.Kval E N 0 (LoopData.idx (Step2.sigPM, a)) := by
+    unfold Sample.Lval Band.Kval
+    rw [X.H_zero]
+    exact gloop_zero_zt_zero_eq_Kgen hE _ hwf (by omega)
+  rw [h1, sub_self]
+
+theorem lkFarSm_zero (hE : |E| ≤ 2) (N : ℕ) (ω : Ω) :
+    Step2FarMart.lkFarSm X E N 0 ω = 0 := by
+  funext a
+  simp [Step2FarMart.lkFarSm, lk_zero X hE N ω a]
+
+theorem jSfarSm_zero (hE : |E| ≤ 2) (N : ℕ) (ω : Ω) :
+    Step2FarMart.jSfarSm X E D N 0 ω = 1 := by
+  unfold Step2FarMart.jSfarSm Step2.jStar
+  rw [lkFarSm_zero X hE N ω]
+  simp
+
+
+/-- The raw `modulus` field of `CutHypEv`, at `s ≡ 0`, for `J*^{sm}`. -/
+def ModulusEvAt (X : Sample B) (E D : ℝ) (s t : ℕ → ℝ) (Kmod γ : ℝ) : Prop :=
+  ∀ᶠ N : ℕ in atTop, ∀ ω : Ω, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+    |Step2FarMart.jSfarSm X E D N v ω - Step2FarMart.jSfarSm X E D N w ω|
+      ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+
+theorem jSfarSm_le_of_modulusEv_zero_start (hE : |E| ≤ 2) {Kmod γ : ℝ}
+    (hmod : ModulusEvAt X E D (fun _ => 0) t Kmod γ) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω : Ω, ∀ v ∈ Set.Icc (0 : ℝ) (t N),
+      Step2FarMart.jSfarSm X E D N v ω ≤ 1 + (N : ℝ) ^ Kmod * v ^ γ := by
+  filter_upwards [hmod] with N hN ω v hv
+  have h := hN ω v hv 0 ⟨le_rfl, hv.1.trans hv.2⟩
+  rw [jSfarSm_zero X hE N ω] at h
+  have hv0 : |v - 0| = v := by rw [sub_zero, abs_of_nonneg hv.1]
+  rw [hv0] at h
+  have := (abs_le.1 h).2
+  linarith
+
+theorem not_modulusEv_zero_start (hE : |E| ≤ 2) {Kmod γ : ℝ} (hγ : 0 < γ) {c : ℝ} (hc : 0 < c)
+    (hbig : ∀ᶠ N : ℕ in atTop, ∀ v ∈ Set.Ioc (0 : ℝ) (t N), ∃ ω : Ω,
+      1 + c ≤ Step2FarMart.jSfarSm X E D N v ω)
+    (ht : ∀ᶠ N : ℕ in atTop, 0 < t N) :
+    ¬ ModulusEvAt X E D (fun _ => 0) t Kmod γ := by
+  intro hmod
+  obtain ⟨N, hbound, hbigN, htN⟩ :=
+    ((jSfarSm_le_of_modulusEv_zero_start X hE hmod).and (hbig.and ht)).exists
+  set K : ℝ := (N : ℝ) ^ Kmod with hK
+  have hK0 : 0 ≤ K := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  set r : ℝ := (c / (K + 1)) ^ (1 / γ) with hr
+  have hcq : 0 < c / (K + 1) := by positivity
+  have hr0 : 0 < r := Real.rpow_pos_of_pos hcq _
+  have hrγ : r ^ γ = c / (K + 1) := by
+    rw [hr, ← Real.rpow_mul hcq.le, one_div, inv_mul_cancel₀ hγ.ne', Real.rpow_one]
+  set v : ℝ := min (t N) r with hv
+  have hv0 : 0 < v := lt_min htN hr0
+  have hvt : v ≤ t N := min_le_left _ _
+  obtain ⟨ω, hω⟩ := hbigN v ⟨hv0, hvt⟩
+  have hb := hbound ω v ⟨hv0.le, hvt⟩
+  have hvγ : v ^ γ ≤ c / (K + 1) := by
+    rw [← hrγ]; exact Real.rpow_le_rpow hv0.le (min_le_right _ _) hγ.le
+  have hfin : K * v ^ γ ≤ K * (c / (K + 1)) := by
+    exact mul_le_mul_of_nonneg_left hvγ hK0
+  have hlt : K * (c / (K + 1)) < c := by
+    rw [mul_div_assoc']
+    rw [div_lt_iff₀ (by positivity)]
+    nlinarith
+  linarith
+
+
+theorem modulusEvAt_of_entryModulusEv (h : EntryModulusEv X E (fun _ => 0) t D) :
+    ModulusEvAt X E D (fun _ => 0) t 1 (1 / 2) := by
+  filter_upwards [h] with N hN ω v hv w hw
+  exact Step2FarMart.abs_jSfarSm_sub_le X fun x =>
+    (Step2FarMart.abs_lkFarSm_ratio_sub_le X x).trans (hN ω v hv w hw x)
+
+theorem not_entryModulusEv_zero_start (hE : |E| ≤ 2) {c : ℝ} (hc : 0 < c)
+    (hbig : ∀ᶠ N : ℕ in atTop, ∀ v ∈ Set.Ioc (0 : ℝ) (t N), ∃ ω : Ω,
+      1 + c ≤ Step2FarMart.jSfarSm X E D N v ω)
+    (ht : ∀ᶠ N : ℕ in atTop, 0 < t N) :
+    ¬ EntryModulusEv X E (fun _ => 0) t D := fun h =>
+  not_modulusEv_zero_start X hE (by norm_num) hc hbig ht (modulusEvAt_of_entryModulusEv X h)
+
+theorem not_cutHypEv_jSfarSm_zero_start (hE : |E| ≤ 2) {c : ℝ} (hc : 0 < c)
+    (hbig : ∀ᶠ N : ℕ in atTop, ∀ v ∈ Set.Ioc (0 : ℝ) (t N), ∃ ω : Ω,
+      1 + c ≤ Step2FarMart.jSfarSm X E D N v ω)
+    (ht : ∀ᶠ N : ℕ in atTop, 0 < t N) :
+    ¬ Nonempty (MomentDuhamelCut.CutHypEv B.P
+      (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) (fun _ => 0) t Θ) := by
+  rintro ⟨H⟩
+  exact not_modulusEv_zero_start X hE H.γ_pos hc hbig ht H.modulus
+
+
+end ZeroStart
+
+/-! ### 8. T249: the loop really moves, at a fixed spectral parameter
+
+The quantitative half of §7.  `A` is the permutation matrix of an involution `τ`; it is
+Hermitian and `A² = 1`, so `(A - z)⁻¹ = (1 - z²)⁻¹(A + z)` in closed form
+(`RBM.green_involMat`).  Taking `τ` to be the fibrewise swap of two blocks `a₁ ≠ a₂`
+(`RBM.blockSwap`) gives
+
+`L_{(+,-),(a₁,a₂)}(A) = W⁻¹ (1 - z²)⁻¹ (1 - z̄²)⁻¹`,  `L_{(+,-),(a₁,a₂)}(0) = 0`
+
+(`RBM.gloop_pm_involMat`, `RBM.gloop_pm_zero`), at **one and the same** `z`.  So at any fixed
+time `v > 0` the far-field loop of the flow `H_v = √v X` takes the two values `0` (at `X = 0`)
+and `W⁻¹|1 - z_v²|⁻²` (at `X = v^{-1/2} A`), and the spread `W⁻¹|1 - z_v²|⁻²` does **not**
+shrink with `v`.  Divided by `T_{v,D} ≍ W^{-D}` this is the `W^{D-2}` far-field jump. -/
+
+section Involution
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The permutation matrix of an involution `τ`. -/
+noncomputable def involMat (τ : n → n) : Matrix n n ℂ :=
+  Matrix.of fun i j => if i = τ j then 1 else 0
+
+variable {τ : n → n} (hτ : ∀ i, τ (τ i) = i)
+
+theorem involMat_apply (i j : n) : involMat τ i j = if i = τ j then 1 else 0 := rfl
+
+include hτ in
+theorem involMat_symm (i j : n) : (i = τ j) ↔ (j = τ i) := by
+  constructor
+  · rintro rfl; rw [hτ]
+  · rintro rfl; rw [hτ]
+
+include hτ in
+theorem involMat_isHermitian : (involMat τ).IsHermitian := by
+  ext i j
+  show (starRingEnd ℂ) (involMat τ j i) = involMat τ i j
+  simp only [involMat_apply]
+  by_cases h : i = τ j
+  · rw [if_pos h, if_pos ((involMat_symm hτ i j).1 h)]
+    simp
+  · rw [if_neg h, if_neg (fun hc => h ((involMat_symm hτ i j).2 hc))]
+    simp
+
+include hτ in
+theorem involMat_mul_self : involMat τ * involMat τ = 1 := by
+  ext i k
+  rw [Matrix.mul_apply]
+  rw [Finset.sum_eq_single (τ k)]
+  · simp only [involMat_apply, hτ, Matrix.one_apply]
+    simp
+  · intro j _ hj
+    simp only [involMat_apply]
+    rw [if_neg (fun hc => hj hc)]
+    ring
+  · intro h; exact absurd (Finset.mem_univ _) h
+
+include hτ in
+/-- `(A - z)⁻¹ = (1 - z²)⁻¹ (A + z)` for an involution `A`. -/
+theorem green_involMat {z : ℂ} (hz : 1 - z ^ 2 ≠ 0) :
+    green (involMat τ) z = (1 - z ^ 2)⁻¹ • (involMat τ + z • (1 : Matrix n n ℂ)) := by
+  refine Matrix.inv_eq_right_inv ?_
+  rw [Matrix.mul_smul, Matrix.sub_mul, Matrix.mul_add, Matrix.mul_add,
+    involMat_mul_self hτ]
+  rw [show (1 : Matrix n n ℂ) + involMat τ * z • (1 : Matrix n n ℂ)
+        - (z • (1 : Matrix n n ℂ) * involMat τ + z • (1 : Matrix n n ℂ) * z • (1 : Matrix n n ℂ))
+      = (1 - z ^ 2) • (1 : Matrix n n ℂ) by
+    rw [Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_one, Matrix.one_mul, Matrix.smul_mul,
+      Matrix.one_mul, smul_smul, sub_smul, one_smul, sq]
+    abel]
+  rw [smul_smul, inv_mul_cancel₀ hz, one_smul]
+
+
+
+end Involution
+
+section LoopValue
+
+variable {L W : ℕ} [NeZero L] [NeZero W]
+
+/-- The `(+,-)` two-loop written out: `L_{(+,-),(a₁,a₂)} = W⁻² ∑_{p,q} 1(q ∈ a₁) 1(p ∈ a₂)
+G(+)_{pq} G(-)_{qp}`. -/
+theorem gloop_pmLoop_eq_sum (H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) (z : ℂ) (a₁ a₂ : ZMod L) :
+    gloop L W H z (pmLoop a₁ a₂)
+      = ∑ p : ZMod L × Fin W, ∑ q : ZMod L × Fin W,
+          (if q.1 = a₁ then (W : ℂ)⁻¹ else 0) * (if p.1 = a₂ then (W : ℂ)⁻¹ else 0) *
+            (Gsig H z true p q * Gsig H z false q p) := by
+  have hprod : gloopProd L W H z (pmLoop a₁ a₂)
+      = Gsig H z true * Eblk L W a₁ * (Gsig H z false * Eblk L W a₂) := by
+    show Gsig H z true * Eblk L W a₁ * (Gsig H z false * Eblk L W a₂ * 1) = _
+    rw [Matrix.mul_one]
+  have e1 : ∀ p q, (Gsig H z true * Eblk L W a₁) p q
+      = Gsig H z true p q * (if q.1 = a₁ then (W : ℂ)⁻¹ else 0) := by
+    intro p q; rw [Eblk, Matrix.mul_diagonal]
+  have e2 : ∀ q p, (Gsig H z false * Eblk L W a₂) q p
+      = Gsig H z false q p * (if p.1 = a₂ then (W : ℂ)⁻¹ else 0) := by
+    intro q p; rw [Eblk, Matrix.mul_diagonal]
+  rw [gloop, hprod, Matrix.trace]
+  refine Finset.sum_congr rfl fun p _ => ?_
+  rw [Matrix.diag_apply, Matrix.mul_apply]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  rw [e1, e2]; ring
+
+
+/-- The fibrewise involution of `ZMod L × Fin W` that swaps the blocks `a₁` and `a₂`. -/
+def blockSwap (a₁ a₂ : ZMod L) : ZMod L × Fin W → ZMod L × Fin W :=
+  fun j => (a₁ + a₂ - j.1, j.2)
+
+theorem blockSwap_invol (a₁ a₂ : ZMod L) (i : ZMod L × Fin W) :
+    blockSwap a₁ a₂ (blockSwap a₁ a₂ i) = i := by
+  simp [blockSwap]
+
+@[simp] theorem blockSwap_fst (a₁ a₂ : ZMod L) (j : ZMod L × Fin W) :
+    (blockSwap a₁ a₂ j).1 = a₁ + a₂ - j.1 := rfl
+
+theorem gloop_pm_involMat (a₁ a₂ : ZMod L) (ha : a₁ ≠ a₂) {z : ℂ}
+    (hz : 1 - z ^ 2 ≠ 0) (hz' : 1 - ((starRingEnd ℂ) z) ^ 2 ≠ 0) :
+    gloop L W (involMat (blockSwap a₁ a₂ : ZMod L × Fin W → ZMod L × Fin W)) z
+        (pmLoop a₁ a₂)
+      = (W : ℂ)⁻¹ * ((1 - z ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) z) ^ 2)⁻¹) := by
+  classical
+  set τ : ZMod L × Fin W → ZMod L × Fin W := blockSwap a₁ a₂ with hτdef
+  have hτ : ∀ i, τ (τ i) = i := blockSwap_invol a₁ a₂
+  set c : ℂ := (1 - z ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) z) ^ 2)⁻¹ with hc
+  have hGp : ∀ p q, Gsig (involMat τ) z true p q = (1 - z ^ 2)⁻¹ *
+      (involMat τ p q + z * (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) p q) := by
+    intro p q
+    rw [Gsig_true, green_involMat hτ hz]
+    rw [Matrix.smul_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul]
+  have hGm : ∀ p q, Gsig (involMat τ) z false p q
+      = (1 - ((starRingEnd ℂ) z) ^ 2)⁻¹ * (involMat τ p q + ((starRingEnd ℂ) z) *
+          (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) p q) := by
+    intro p q
+    rw [Gsig_false, green_involMat hτ hz']
+    rw [Matrix.smul_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul]
+  have key : ∀ p q : ZMod L × Fin W,
+      (if q.1 = a₁ then (W : ℂ)⁻¹ else 0) * (if p.1 = a₂ then (W : ℂ)⁻¹ else 0) *
+        (Gsig (involMat τ) z true p q * Gsig (involMat τ) z false q p)
+      = (if q.1 = a₁ then (W : ℂ)⁻¹ else 0) * (if p = τ q then (W : ℂ)⁻¹ * c else 0) := by
+    intro p q
+    by_cases hq : q.1 = a₁
+    · by_cases hp : p.1 = a₂
+      · have hpq : p ≠ q := by
+          intro h; rw [h] at hp; exact ha (hq ▸ hp ▸ rfl)
+        have h1 : (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) p q = 0 := by
+          simp [Matrix.one_apply, hpq]
+        have h2 : (1 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) q p = 0 := by
+          simp [Matrix.one_apply, Ne.symm hpq]
+        have h3 : involMat τ q p = involMat τ p q := by
+          simp only [involMat_apply]
+          by_cases h : p = τ q
+          · rw [ite_eq_left ((involMat_symm hτ p q).1 h), ite_eq_left h]
+          · rw [ite_eq_right (fun hcc => h ((involMat_symm hτ p q).2 hcc)), ite_eq_right h]
+        rw [if_pos hq, if_pos hp, hGp, hGm, h1, h2, h3]
+        simp only [involMat_apply]
+        by_cases h : p = τ q
+        · rw [hc]; simp [h]; ring
+        · simp [h]
+      · rw [if_neg hp, if_neg (show ¬ p = τ q by
+          intro h; apply hp; rw [h, blockSwap_fst, hq]; ring)]
+        ring
+    · rw [if_neg hq]; ring
+  rw [gloop_pmLoop_eq_sum]
+  simp only [key]
+  rw [Finset.sum_comm]
+  have hinner : ∀ q : ZMod L × Fin W,
+      (∑ p : ZMod L × Fin W, (if q.1 = a₁ then (W : ℂ)⁻¹ else 0) *
+          (if p = τ q then (W : ℂ)⁻¹ * c else 0))
+        = (if q.1 = a₁ then (W : ℂ)⁻¹ else 0) * ((W : ℂ)⁻¹ * c) := by
+    intro q
+    rw [← Finset.mul_sum]
+    congr 1
+    rw [Finset.sum_ite_eq' Finset.univ (τ q) (fun _ => (W : ℂ)⁻¹ * c)]
+    simp
+  simp only [hinner]
+  rw [← Finset.sum_mul]
+  have hW0 : ((W : ℂ)) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne W)
+  have hcount : (∑ q : ZMod L × Fin W, (if q.1 = a₁ then (W : ℂ)⁻¹ else 0)) = 1 := by
+    rw [Fintype.sum_prod_type]
+    have hrow : ∀ a : ZMod L, (∑ _α : Fin W, (if a = a₁ then (W : ℂ)⁻¹ else 0))
+        = (if a = a₁ then (1 : ℂ) else 0) := by
+      intro a
+      rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+      split_ifs
+      · field_simp
+      · ring
+    simp only [hrow]
+    simp
+  rw [hcount, one_mul, hc]
+
+
+end LoopValue
+
+/-! ### 9. T249 (part B): the `‖X‖`-free Lipschitz bound on `s_N ≥ N^{-C}`
+
+The identity `X G_v = v^{-1/2}(1 + z_v G_v)` (`RBM.mul_green_smul`) removes `X` from the
+resolvent identity altogether: no bound on `‖X‖` is used, and the estimate holds for **every**
+`ω`.  On a window whose left endpoint is `s > 0` the resulting constant is `O(1/s)`
+(`RBM.norm_green_sqrt_sub_le_lip`), so on `s_N ≥ N^{-C}` it is `N^{C}` times the `η`-factors —
+a Lipschitz (`γ = 1`) modulus, not a Hölder one. -/
+
+section SqrtFlowLip
+
+open scoped Matrix.Norms.L2Operator
+
+variable {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+
+theorem isHermitian_real_smul {Y : Matrix n n ℂ} (hY : Y.IsHermitian) (r : ℝ) :
+    ((r : ℂ) • Y).IsHermitian := by
+  ext i j
+  show (starRingEnd ℂ) ((r : ℂ) * Y j i) = (r : ℂ) * Y i j
+  rw [map_mul, Complex.conj_ofReal]
+  congr 1
+  simpa using hY.apply i j
+
+theorem mul_green_smul {Y : Matrix n n ℂ} (hY : Y.IsHermitian) {z : ℂ} (hz : z.im ≠ 0)
+    {r : ℝ} (hr : r ≠ 0) :
+    Y * green ((r : ℂ) • Y) z
+      = ((r : ℂ))⁻¹ • ((1 : Matrix n n ℂ) + z • green ((r : ℂ) • Y) z) := by
+  have hYr : ((r : ℂ) • Y).IsHermitian := isHermitian_real_smul hY r
+  have hdet : IsUnit (((r : ℂ) • Y) - z • (1 : Matrix n n ℂ)).det :=
+    isUnit_det_sub_smul_one hYr hz
+  have hinv : (((r : ℂ) • Y) - z • (1 : Matrix n n ℂ)) * green ((r : ℂ) • Y) z = 1 :=
+    Matrix.mul_nonsing_inv _ hdet
+  have hrC : ((r : ℂ)) ≠ 0 := by exact_mod_cast hr
+  rw [Matrix.sub_mul, Matrix.smul_mul, Matrix.smul_mul, Matrix.one_mul] at hinv
+  have : (r : ℂ) • (Y * green ((r : ℂ) • Y) z)
+      = (1 : Matrix n n ℂ) + z • green ((r : ℂ) • Y) z := by
+    rw [← hinv]; abel
+  rw [← this, smul_smul, inv_mul_cancel₀ hrC, one_smul]
+
+/-- **The `‖X‖`-free resolvent increment of the `√u` flow.** -/
+theorem norm_green_sqrt_sub_le {Y : Matrix n n ℂ} (hY : Y.IsHermitian) {E : ℝ} (hE : |E| < 2)
+    {u v : ℝ} (hv0 : 0 < v) (_hu0 : 0 ≤ u) (hu1 : u < 1) (hv1 : v < 1) :
+    ‖green ((Real.sqrt u : ℂ) • Y) (zt E u) - green ((Real.sqrt v : ℂ) • Y) (zt E v)‖
+      ≤ |Real.sqrt v - Real.sqrt u| / Real.sqrt v *
+          ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹))
+        + |u - v| * ((etaT E u)⁻¹ * (etaT E v)⁻¹) := by
+  have hηu : 0 < etaT E u := by
+    show 0 < (1 - u) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  have hηv : 0 < etaT E v := by
+    show 0 < (1 - v) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  have hzu : (zt E u).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact hηu.ne'
+  have hzv : (zt E v).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact hηv.ne'
+  have hYu : ((Real.sqrt u : ℂ) • Y).IsHermitian := isHermitian_real_smul hY _
+  have hYv : ((Real.sqrt v : ℂ) • Y).IsHermitian := isHermitian_real_smul hY _
+  set Gu := green ((Real.sqrt u : ℂ) • Y) (zt E u) with hGu
+  set Gv := green ((Real.sqrt v : ℂ) • Y) (zt E v) with hGv
+  have hnu : ‖Gu‖ ≤ (etaT E u)⁻¹ :=
+    Gauss.norm_green_le hYu hηu (by rw [← etaT_eq_zt_im, abs_of_pos hηu])
+  have hnv : ‖Gv‖ ≤ (etaT E v)⁻¹ :=
+    Gauss.norm_green_le hYv hηv (by rw [← etaT_eq_zt_im, abs_of_pos hηv])
+  have hsv : Real.sqrt v ≠ 0 := (Real.sqrt_pos.2 hv0).ne'
+  have hid := green_sub_eq (isUnit_det_sub_smul_one hYu hzu) (isUnit_det_sub_smul_one hYv hzv)
+  have hYG : Y * Gv = ((Real.sqrt v : ℂ))⁻¹ • ((1 : Matrix n n ℂ) + (zt E v) • Gv) :=
+    mul_green_smul hY hzv hsv
+  have hsplit : Gu - Gv
+      = ((((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) / (Real.sqrt v : ℂ)) •
+            (Gu + (zt E v) • (Gu * Gv)))
+        - ((zt E v) - (zt E u)) • (Gu * Gv) := by
+    rw [hid]
+    rw [show ((Real.sqrt v : ℂ) • Y - (zt E v) • (1 : Matrix n n ℂ))
+          - ((Real.sqrt u : ℂ) • Y - (zt E u) • (1 : Matrix n n ℂ))
+        = (((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) • Y)
+          - ((zt E v) - (zt E u)) • (1 : Matrix n n ℂ) by
+      rw [sub_smul, sub_smul]; abel]
+    rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_smul,
+      Matrix.smul_mul, Matrix.mul_one]
+    rw [Matrix.mul_assoc, hYG, Matrix.mul_smul, smul_smul, Matrix.mul_add, Matrix.mul_one,
+      Matrix.mul_smul]
+    rw [div_eq_mul_inv]
+  have hGuv : ‖Gu * Gv‖ ≤ (etaT E u)⁻¹ * (etaT E v)⁻¹ :=
+    (norm_mul_le _ _).trans (mul_le_mul hnu hnv (norm_nonneg _) (by positivity))
+  have hscal : ‖(((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) / (Real.sqrt v : ℂ))‖
+      = |Real.sqrt v - Real.sqrt u| / Real.sqrt v := by
+    rw [← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.norm_real, Real.norm_eq_abs,
+      abs_div, abs_of_nonneg (Real.sqrt_nonneg v)]
+  have h1 : ‖((((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) / (Real.sqrt v : ℂ)) •
+        (Gu + (zt E v) • (Gu * Gv)))‖
+      ≤ |Real.sqrt v - Real.sqrt u| / Real.sqrt v *
+          ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹)) := by
+    rw [norm_smul, hscal]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_smul]
+    have : ‖zt E v‖ * ‖Gu * Gv‖ ≤ ‖zt E v‖ * ((etaT E u)⁻¹ * (etaT E v)⁻¹) :=
+      mul_le_mul_of_nonneg_left hGuv (norm_nonneg _)
+    nlinarith [hnu, norm_nonneg (zt E v)]
+  have h2 : ‖((zt E v) - (zt E u)) • (Gu * Gv)‖
+      ≤ |u - v| * ((etaT E u)⁻¹ * (etaT E v)⁻¹) := by
+    rw [norm_smul, norm_zt_sub hE.le, abs_sub_comm]
+    exact mul_le_mul_of_nonneg_left hGuv (abs_nonneg _)
+  rw [hsplit]
+  exact (norm_sub_le _ _).trans (add_le_add h1 h2)
+
+
+/-- **The Lipschitz form on a window with a positive left endpoint.**  `|√v - √u|/√v ≤
+|u - v|/(2s)` for `u, v ≥ s > 0`, so the increment is `O(|u-v|/s)` — Lipschitz (`γ = 1`), and
+**no bound on `‖Y‖` is used**.  On `s_N ≥ N^{-C}` and `t_N ≤ t₀ < 1` the bracket is at most
+`(η_{t₀})⁻¹(1 + 3(η_{t₀})⁻¹) N^C / 2 + (η_{t₀})⁻²`, i.e. `N^C` times a constant of `E` and
+`t₀` (use `‖z_v‖ ≤ |E| + 1 ≤ 3` and `η_v ≥ η_{t₀}`). -/
+theorem norm_green_sqrt_sub_le_lip {Y : Matrix n n ℂ} (hY : Y.IsHermitian) {E : ℝ}
+    (hE : |E| < 2) {s u v : ℝ} (hs : 0 < s) (hsu : s ≤ u) (hsv : s ≤ v) (hu1 : u < 1)
+    (hv1 : v < 1) :
+    ‖green ((Real.sqrt u : ℂ) • Y) (zt E u) - green ((Real.sqrt v : ℂ) • Y) (zt E v)‖
+      ≤ |u - v| * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹) / (2 * s)
+          + (etaT E u)⁻¹ * (etaT E v)⁻¹) := by
+  have hv0 : 0 < v := lt_of_lt_of_le hs hsv
+  have hu0 : (0 : ℝ) ≤ u := le_trans hs.le hsu
+  have hsqu : Real.sqrt u * Real.sqrt u = u := Real.mul_self_sqrt hu0
+  have hsqv : Real.sqrt v * Real.sqrt v = v := Real.mul_self_sqrt hv0.le
+  have hs2u : Real.sqrt s ≤ Real.sqrt u := Real.sqrt_le_sqrt hsu
+  have hs2v : Real.sqrt s ≤ Real.sqrt v := Real.sqrt_le_sqrt hsv
+  have hss : Real.sqrt s * Real.sqrt s = s := Real.mul_self_sqrt hs.le
+  have hs0 : 0 < Real.sqrt s := Real.sqrt_pos.2 hs
+  have hv0' : 0 < Real.sqrt v := Real.sqrt_pos.2 hv0
+  have hu0' : (0 : ℝ) ≤ Real.sqrt u := Real.sqrt_nonneg u
+  have habs : |Real.sqrt v - Real.sqrt u| * (Real.sqrt u + Real.sqrt v) = |u - v| := by
+    rw [← abs_of_nonneg (by positivity : (0 : ℝ) ≤ Real.sqrt u + Real.sqrt v), ← abs_mul]
+    rw [show (Real.sqrt v - Real.sqrt u) * (Real.sqrt u + Real.sqrt v) = v - u by nlinarith]
+    exact abs_sub_comm v u
+  have hnn : (0 : ℝ) ≤ |Real.sqrt v - Real.sqrt u| := abs_nonneg _
+  have hden : 2 * s ≤ (Real.sqrt u + Real.sqrt v) * Real.sqrt v := by nlinarith
+  have hkey : |Real.sqrt v - Real.sqrt u| / Real.sqrt v ≤ |u - v| / (2 * s) := by
+    rw [div_le_div_iff₀ hv0' (by positivity)]
+    have hmul := mul_le_mul_of_nonneg_left hden hnn
+    nlinarith [habs, hmul]
+  have hηu : 0 < etaT E u := by
+    show 0 < (1 - u) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  have hηv : 0 < etaT E v := by
+    show 0 < (1 - v) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  refine (norm_green_sqrt_sub_le hY hE hv0 hu0 hu1 hv1).trans ?_
+  have hfac : (0 : ℝ) ≤ (etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹) := by positivity
+  have h1 : |Real.sqrt v - Real.sqrt u| / Real.sqrt v *
+        ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹))
+      ≤ |u - v| / (2 * s) * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹)) :=
+    mul_le_mul_of_nonneg_right hkey hfac
+  have hd : |u - v| / (2 * s) * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹))
+      = |u - v| * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹) / (2 * s)) := by
+    field_simp
+  rw [hd] at h1
+  linarith
+
+end SqrtFlowLip
+
+
+
+/-! ### 10. T249: the compiled counterexample on a window that starts at `0`
+
+`RBM.swapSample` is the paper's own flow `H_u = √u X` at the sample point `X = ω A_N`, with
+`A_N` the block-swap involution of §8 and `ω : ℝ` free — an unbounded coordinate, as a Gaussian
+entry is.  At the time `v > 0` the two sample points `ω = v^{-1/2}` and `ω = 0` give
+`H_v = A_N` and `H_v = 0`; the primitive `K_v` is the same for both and cancels, so one of them
+has `‖(L-K)_{v,(+,-),(a₁,a₂)}‖ ≥ W⁻¹‖1 - z_v²‖⁻²/2`, **uniformly in `v`**.  Divided by
+`T_{v,D} ≤ W⁻²((η_{t₀})⁻² + 1)` this is `≥ 1/(200((η_{t₀})⁻² + 1))`, a constant, while §7 says
+the modulus at `s ≡ 0` forces it to be `≤ N^{Kmod} v^γ → 0`.
+
+Hence, **on a non-degenerate window `[0, t_N]` with `t_N ≤ t₀ < 1`**:
+
+* `RBM.not_entryModulusEv_swapSample_of_far` — `RBM.EntryModulusEv` is **false**;
+* `RBM.not_cutHypEv_swapSample_of_far` — no `RBM.MomentDuhamelCut.CutHypEv` for `J*^{sm}` exists.
+
+The only geometric input is `hsep`: the two blocks are far enough apart that the smooth far
+weight `RBM.Step2FarMart.farChi` is `1` there, i.e. `12 ℓ*_v ≤ ‖a₁ - a₂‖`. -/
+
+section ZeroMat
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+theorem green_zero_eq {z : ℂ} (hz : z ≠ 0) :
+    green (0 : Matrix n n ℂ) z = (-z)⁻¹ • (1 : Matrix n n ℂ) := by
+  refine Matrix.inv_eq_right_inv ?_
+  rw [zero_sub, ← neg_smul, Matrix.smul_mul, Matrix.one_mul, smul_smul,
+    mul_inv_cancel₀ (neg_ne_zero.2 hz), one_smul]
+
+end ZeroMat
+
+section ZeroLoop
+variable {L W : ℕ} [NeZero L] [NeZero W]
+
+/-- **The `(+,-)` loop of the free resolvent vanishes off the diagonal block.** -/
+theorem gloop_pm_zero (a₁ a₂ : ZMod L) (ha : a₁ ≠ a₂) {z : ℂ} (hz : z ≠ 0) :
+    gloop L W (0 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) z (pmLoop a₁ a₂) = 0 := by
+  rw [gloop_pmLoop_eq_sum]
+  refine Finset.sum_eq_zero fun p _ => Finset.sum_eq_zero fun q _ => ?_
+  by_cases hq : q.1 = a₁
+  · by_cases hp : p.1 = a₂
+    · have hpq : p ≠ q := by
+        intro h; rw [h] at hp; exact ha (hq ▸ hp ▸ rfl)
+      have hG : Gsig (0 : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) z true p q = 0 := by
+        rw [Gsig_true, green_zero_eq hz, Matrix.smul_apply, smul_eq_mul]
+        simp [Matrix.one_apply, hpq]
+      rw [hG]; ring
+    · rw [if_neg hp]; ring
+  · rw [if_neg hq]; ring
+
+end ZeroLoop
+
+section BadSample
+
+variable {B : Band ℝ} {E D : ℝ}
+
+/-- **The `√u` flow driven by a block-swap involution.**  `H_u(ω) = √u·ω·A_N` with `A_N` the
+permutation matrix of `RBM.blockSwap`; this is the paper's flow `H_u = √u X` at the sample
+point `X = ω A_N`, and `ω` is unbounded, exactly as a Gaussian entry is. -/
+noncomputable def swapSample (B : Band ℝ) (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) : Sample B where
+  H := fun N u ω => ((Real.sqrt u * ω : ℝ) : ℂ) • involMat (blockSwap (b N).1 (b N).2)
+  hermitian := fun N u ω =>
+    isHermitian_real_smul (involMat_isHermitian (blockSwap_invol (b N).1 (b N).2)) _
+  H_zero := by intro N ω; simp
+  measurable := by
+    intro N u i j
+    simp only [Matrix.smul_apply, smul_eq_mul]
+    fun_prop
+
+@[simp] theorem swapSample_H (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (N : ℕ) (u ω : ℝ) :
+    (swapSample B b).H N u ω
+      = ((Real.sqrt u * ω : ℝ) : ℂ) • involMat (blockSwap (b N).1 (b N).2) := rfl
+
+theorem lk_swapSample_eq (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (N : ℕ) (v ω : ℝ)
+    (a₁ a₂ : ZMod (B.L N)) :
+    Step2.lk (swapSample B b) E N v ω ![a₁, a₂]
+      = gloop (B.L N) (B.W N) (((Real.sqrt v * ω : ℝ) : ℂ) • involMat (blockSwap (b N).1 (b N).2))
+          (zt E v) (pmLoop a₁ a₂) - B.Kval E N v (pmLoop a₁ a₂) := rfl
+
+/-- **The far-field loop of the flow really moves, at every positive time.**
+
+At the time `v > 0` the two sample points `ω = v^{-1/2}` and `ω = 0` give `H_v = A` and
+`H_v = 0`, whose `(+,-)` loops at the far pair `((b N).1, (b N).2)` differ by
+`W⁻¹(1-z_v²)⁻¹(1-z̄_v²)⁻¹` — a quantity that does **not** shrink as `v → 0`.  The primitive
+`K_{v}` is the same for both, so it cancels: one of the two sample points has
+`‖(L-K)_v‖ ≥ ‖W⁻¹(1-z_v²)⁻¹(1-z̄_v²)⁻¹‖/2`, and hence `J*^{sm}_{v,D} ≥ 1 + that / (2 T₀)`. -/
+theorem exists_jSfarSm_ge_swapSample
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (N : ℕ) {v : ℝ} (hv : 0 < v)
+    (hne : (b N).1 ≠ (b N).2) (hz0 : zt E v ≠ 0)
+    (hz : 1 - (zt E v) ^ 2 ≠ 0) (hz' : 1 - ((starRingEnd ℂ) (zt E v)) ^ 2 ≠ 0)
+    (hfar : Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1)
+    {T₀ : ℝ} (_hT₀ : 0 < T₀)
+    (hT : tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+        (zdist (B.L N) ((b N).1 - (b N).2)) ≤ T₀) :
+    ∃ ω : ℝ, 1 + ‖((B.W N : ℂ))⁻¹ *
+        ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖ / (2 * T₀)
+      ≤ Step2FarMart.jSfarSm (swapSample B b) E D N v ω := by
+  classical
+  set a₁ := (b N).1 with ha1
+  set a₂ := (b N).2 with ha2
+  set aa : LoopArg (B.L N) 2 := ![a₁, a₂] with haa
+  set Lv : ℂ := ((B.W N : ℂ))⁻¹ *
+    ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹) with hLv
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hsv : Real.sqrt v ≠ 0 := (Real.sqrt_pos.2 hv).ne'
+  have haa0 : aa 0 = a₁ := rfl
+  have haa1 : aa 1 = a₂ := rfl
+  -- the loop at `ω = v^{-1/2}`
+  have h1 : Step2.lk (swapSample B b) E N v (1 / Real.sqrt v) aa
+      = Lv - B.Kval E N v (pmLoop a₁ a₂) := by
+    rw [haa, lk_swapSample_eq]
+    congr 1
+    rw [show (Real.sqrt v * (1 / Real.sqrt v) : ℝ) = 1 by field_simp]
+    rw [Complex.ofReal_one, one_smul]
+    exact gloop_pm_involMat a₁ a₂ hne hz hz'
+  -- the loop at `ω = 0`
+  have h0 : Step2.lk (swapSample B b) E N v 0 aa
+      = 0 - B.Kval E N v (pmLoop a₁ a₂) := by
+    rw [haa, lk_swapSample_eq]
+    congr 1
+    rw [show (Real.sqrt v * 0 : ℝ) = 0 by ring]
+    rw [Complex.ofReal_zero, zero_smul]
+    exact gloop_pm_zero a₁ a₂ hne hz0
+  have hsplit : ‖Lv‖ ≤ ‖Step2.lk (swapSample B b) E N v (1 / Real.sqrt v) aa‖
+      + ‖Step2.lk (swapSample B b) E N v 0 aa‖ := by
+    have : Lv = Step2.lk (swapSample B b) E N v (1 / Real.sqrt v) aa
+        - Step2.lk (swapSample B b) E N v 0 aa := by rw [h1, h0]; ring
+    rw [this]
+    exact norm_sub_le _ _
+  -- one of the two sample points carries half of it
+  have hpick : ∃ ω : ℝ, ‖Lv‖ / 2 ≤ ‖Step2.lk (swapSample B b) E N v ω aa‖ := by
+    rcases le_total ‖Step2.lk (swapSample B b) E N v (1 / Real.sqrt v) aa‖
+      ‖Step2.lk (swapSample B b) E N v 0 aa‖ with h | h
+    · exact ⟨0, by linarith⟩
+    · exact ⟨1 / Real.sqrt v, by linarith⟩
+  obtain ⟨ω, hω⟩ := hpick
+  refine ⟨ω, ?_⟩
+  have hTpos : 0 < tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+      (zdist (B.L N) (aa 0 - aa 1)) := tailT_pos hW0 _
+  have hlow := Step2.div_le_jStar_sub_one (L := B.L N)
+    (f := Step2FarMart.lkFarSm (swapSample B b) E N v ω) (W := (B.W N : ℝ))
+    (ℓu := B.ell N v) (ηu := etaT E v) (D := D) aa
+  have hval : Step2FarMart.lkFarSm (swapSample B b) E N v ω aa
+      = ‖Step2.lk (swapSample B b) E N v ω aa‖ := by
+    rw [Step2FarMart.lkFarSm, haa0, haa1, hfar, one_mul]
+  have hnum : ‖Lv‖ / 2 ≤ Step2FarMart.lkFarSm (swapSample B b) E N v ω aa := by
+    rw [hval]; exact hω
+  have hdiv : ‖Lv‖ / (2 * T₀)
+      ≤ Step2FarMart.lkFarSm (swapSample B b) E N v ω aa
+        / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D (zdist (B.L N) (aa 0 - aa 1)) := by
+    rw [show ‖Lv‖ / (2 * T₀) = (‖Lv‖ / 2) / T₀ by ring]
+    have hT' : tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+        (zdist (B.L N) (aa 0 - aa 1)) ≤ T₀ := by rw [haa0, haa1]; exact hT
+    gcongr
+    exact Step2FarMart.lkFarSm_nonneg (swapSample B b) aa
+  have := hlow
+  unfold Step2FarMart.jSfarSm
+  linarith [hdiv, hlow]
+
+/-- The spectral parameter of the flow is off the real axis, so neither `z_v` nor `z_v² - 1`
+nor `z̄_v² - 1` vanishes. -/
+theorem zt_ne_zero_and_sq {E v : ℝ} (hE : |E| < 2) (hv : v < 1) :
+    zt E v ≠ 0 ∧ 1 - (zt E v) ^ 2 ≠ 0 ∧ 1 - ((starRingEnd ℂ) (zt E v)) ^ 2 ≠ 0 := by
+  have hη : 0 < etaT E v := by
+    show 0 < (1 - v) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  have him : (zt E v).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact hη.ne'
+  have hsq : ∀ w : ℂ, w.im ≠ 0 → 1 - w ^ 2 ≠ 0 := by
+    intro w hw h
+    have : (w - 1) * (w + 1) = 0 := by linear_combination -h
+    rcases mul_eq_zero.1 this with h1 | h1
+    · exact hw (by rw [sub_eq_zero] at h1; rw [h1]; simp)
+    · exact hw (by rw [add_eq_zero_iff_eq_neg] at h1; rw [h1]; simp)
+  refine ⟨fun h => him (by rw [h]; simp), hsq _ him, hsq _ ?_⟩
+  simpa using him
+
+/-- **`EntryModulusEv` fails on a non-degenerate window `[0, t_N]`** for the flow
+`H_u = √u ω A_N`: the entrywise modulus of (5.48) has no producer there.  The hypothesis
+`hgap` is pure scalar arithmetic — `W ≥ 1`, `ℓ_v ≥ 1`, `η_v ≥ η_{t₀}`, `‖z_v‖ ≤ 3` give
+`‖L_v‖/(2T_{v,D}) ≥ W/(400(η_{t₀}⁻² + 1))` for `D ≥ 2`. -/
+theorem hbig_swapSample {t : ℕ → ℝ}
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (hE : |E| < 2) {c : ℝ}
+    (ht1 : ∀ᶠ N : ℕ in atTop, t N < 1)
+    (hgap : ∀ᶠ N : ℕ in atTop, ∀ v ∈ Set.Ioc (0 : ℝ) (t N),
+        (b N).1 ≠ (b N).2 ∧
+        Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1 ∧
+        c ≤ ‖((B.W N : ℂ))⁻¹ *
+              ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
+            / (2 * tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+                (zdist (B.L N) ((b N).1 - (b N).2)))) :
+    ∀ᶠ N : ℕ in atTop, ∀ v ∈ Set.Ioc (0 : ℝ) (t N), ∃ ω : ℝ,
+      1 + c ≤ Step2FarMart.jSfarSm (swapSample B b) E D N v ω := by
+  filter_upwards [hgap, ht1] with N hN hN1 v hv
+  obtain ⟨hne, hfar, hcle⟩ := hN v hv
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  obtain ⟨hz0, hz, hz'⟩ := zt_ne_zero_and_sq (E := E) (v := v) hE (lt_of_le_of_lt hv.2 hN1)
+  obtain ⟨ω, hω⟩ := exists_jSfarSm_ge_swapSample (E := E) (D := D) b N hv.1 hne hz0 hz hz' hfar
+    (T₀ := tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+      (zdist (B.L N) ((b N).1 - (b N).2))) (tailT_pos hW0 _) le_rfl
+  exact ⟨ω, le_trans (by linarith) hω⟩
+
+end BadSample
+
+section Gap
+variable {B : Band ℝ} {E D : ℝ}
+
+theorem norm_zt_le_three_of_mem {E v : ℝ} (hE : |E| ≤ 2) (hv0 : 0 ≤ v) (hv1 : v ≤ 1) :
+    ‖zt E v‖ ≤ 3 := by
+  have hz : zt E v = (E : ℂ) + ((1 - v : ℝ) : ℂ) * mE E := by
+    rw [zt]; push_cast; ring
+  rw [hz]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs,
+    norm_mE hE, mul_one, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 1 - v)]
+  linarith
+
+theorem norm_one_sub_sq_le {E v : ℝ} (hE : |E| < 2) (hv0 : 0 ≤ v) (hv1 : v ≤ 1) :
+    ‖1 - (zt E v) ^ 2‖ ≤ 10 := by
+  have h := norm_zt_le_three_of_mem (E := E) (v := v) hE.le hv0 hv1
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_one, norm_pow]
+  nlinarith [norm_nonneg (zt E v)]
+
+/-- The lower bound on the far-field spread that `hgap` of
+`RBM.not_entryModulusEv_swapSample` asks for. -/
+theorem gap_lower {E v D : ℝ} (hE : |E| < 2) {W L : ℕ} (hW : 1 ≤ W) (hL : 3 ≤ L)
+    (hv0 : 0 < v) {t₀ : ℝ} (hvt : v ≤ t₀) (ht₀ : t₀ < 1) (hD : 2 ≤ D) (d : ℝ) :
+    1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+      ≤ ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
+        / (2 * tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d) := by
+  have : NeZero L := ⟨by omega⟩
+  have hv1 : v < 1 := lt_of_le_of_lt hvt ht₀
+  have hWR : (1 : ℝ) ≤ (W : ℝ) := by exact_mod_cast hW
+  have hW0 : (0 : ℝ) < (W : ℝ) := by linarith
+  have hηv : 0 < etaT E v := by
+    show 0 < (1 - v) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  have hηt : 0 < etaT E t₀ := by
+    show 0 < (1 - t₀) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
+  have hηle : etaT E t₀ ≤ etaT E v := Gauss.etaT_le_of_le hE hvt
+  have hℓ : (1 : ℝ) ≤ ellHat L (v : ℂ) := one_le_ellHat L hL hv0.le hv1
+  obtain ⟨hz0, hz, hz'⟩ := zt_ne_zero_and_sq (E := E) (v := v) hE hv1
+  -- the numerator
+  have hcj : ‖1 - ((starRingEnd ℂ) (zt E v)) ^ 2‖ = ‖1 - (zt E v) ^ 2‖ := by
+    rw [show (1 : ℂ) - ((starRingEnd ℂ) (zt E v)) ^ 2
+        = (starRingEnd ℂ) (1 - (zt E v) ^ 2) by simp]
+    exact RCLike.norm_conj _
+  have hnsq := norm_one_sub_sq_le (E := E) (v := v) hE hv0.le hv1.le
+  have hnsq0 : 0 < ‖1 - (zt E v) ^ 2‖ := norm_pos_iff.2 hz
+  have hnumeq : ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
+      = ((W : ℝ) * (‖1 - (zt E v) ^ 2‖ * ‖1 - (zt E v) ^ 2‖))⁻¹ := by
+    rw [norm_mul, norm_mul, norm_inv, norm_inv, norm_inv, hcj, Complex.norm_natCast]
+    field_simp
+  have hnum : 1 / (100 * (W : ℝ))
+      ≤ ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖ := by
+    rw [hnumeq, ← one_div]
+    refine one_div_le_one_div_of_le (by positivity) ?_
+    have hsq : ‖1 - (zt E v) ^ 2‖ * ‖1 - (zt E v) ^ 2‖ ≤ 100 := by nlinarith
+    nlinarith [hsq, hWR, hnsq0]
+  -- the denominator
+  have hexp : Real.exp (-Real.sqrt (d / ellHat L (v : ℂ))) ≤ 1 := by
+    rw [Real.exp_le_one_iff]
+    simpa using Real.sqrt_nonneg (d / ellHat L (v : ℂ))
+  have hWD : (W : ℝ) ^ (-D) ≤ ((W : ℝ) ^ 2)⁻¹ := by
+    have h2 : ((W : ℝ) ^ 2)⁻¹ = (W : ℝ) ^ (-(2 : ℝ)) := by
+      rw [Real.rpow_neg hW0.le, ← Real.rpow_natCast (W : ℝ) 2]
+      norm_num
+    rw [h2]
+    exact Real.rpow_le_rpow_of_exponent_le hWR (by linarith)
+  have hfirst : (((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2)⁻¹ *
+        Real.exp (-Real.sqrt (d / ellHat L (v : ℂ)))
+      ≤ ((W : ℝ) ^ 2)⁻¹ * (etaT E t₀)⁻¹ ^ 2 := by
+    have hpos : (0 : ℝ) < ((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2 := by positivity
+    have hℓη : etaT E t₀ ≤ ellHat L (v : ℂ) * etaT E v := by
+      nlinarith [mul_le_mul_of_nonneg_right hℓ hηv.le]
+    have hx : (W : ℝ) * etaT E t₀ ≤ (W : ℝ) * ellHat L (v : ℂ) * etaT E v := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left hℓη hW0.le
+    have hb : ((W : ℝ) ^ 2) * (etaT E t₀) ^ 2
+        ≤ ((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2 := by
+      have h0 : (0 : ℝ) ≤ (W : ℝ) * etaT E t₀ := by positivity
+      have hp := pow_le_pow_left₀ h0 hx 2
+      nlinarith [hp]
+    have h1 : (((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2)⁻¹
+        ≤ (((W : ℝ) ^ 2) * (etaT E t₀) ^ 2)⁻¹ := by
+      rw [← one_div, ← one_div]
+      exact one_div_le_one_div_of_le (by positivity) hb
+    have h2 : (((W : ℝ) ^ 2) * (etaT E t₀) ^ 2)⁻¹ = ((W : ℝ) ^ 2)⁻¹ * (etaT E t₀)⁻¹ ^ 2 := by
+      field_simp
+    calc (((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2)⁻¹ *
+          Real.exp (-Real.sqrt (d / ellHat L (v : ℂ)))
+        ≤ (((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2)⁻¹ * 1 := by
+          exact mul_le_mul_of_nonneg_left hexp (by positivity)
+      _ = (((W : ℝ) * ellHat L (v : ℂ) * etaT E v) ^ 2)⁻¹ := mul_one _
+      _ ≤ (((W : ℝ) ^ 2) * (etaT E t₀) ^ 2)⁻¹ := h1
+      _ = ((W : ℝ) ^ 2)⁻¹ * (etaT E t₀)⁻¹ ^ 2 := h2
+  have hden : tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d
+      ≤ ((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1) := by
+    rw [tailT]
+    have : ((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1)
+        = ((W : ℝ) ^ 2)⁻¹ * (etaT E t₀)⁻¹ ^ 2 + ((W : ℝ) ^ 2)⁻¹ := by ring
+    rw [this]
+    exact add_le_add hfirst hWD
+  have hTpos : 0 < tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d := tailT_pos hW0 _
+  have hc1 : (0 : ℝ) < (etaT E t₀)⁻¹ ^ 2 + 1 := by positivity
+  calc 1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))
+      ≤ (1 / (100 * (W : ℝ))) / (2 * (((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1))) := by
+        have hkey : (1 / (100 * (W : ℝ))) / (2 * (((W : ℝ) ^ 2)⁻¹ * ((etaT E t₀)⁻¹ ^ 2 + 1)))
+            = (W : ℝ) / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1)) := by
+          field_simp
+          ring
+        rw [hkey]
+        gcongr
+    _ ≤ ‖((W : ℂ))⁻¹ * ((1 - (zt E v) ^ 2)⁻¹ * (1 - ((starRingEnd ℂ) (zt E v)) ^ 2)⁻¹)‖
+          / (2 * tailT (W : ℝ) (ellHat L (v : ℂ)) (etaT E v) D d) := by
+        gcongr
+
+/-- **The verdict of T249(甲): `RBM.EntryModulusEv` is false on a non-degenerate window
+`[0, t_N]` with `t_N ≤ t₀ < 1`**, for the flow `H_u = √u ω A_N` and any `D ≥ 2`, as soon as the
+two blocks `b N` are far enough apart for the smooth far weight to be `1`.  No `hgap`, no free
+constant: `c = 1/(200((η_{t₀})⁻² + 1))`. -/
+theorem not_entryModulusEv_swapSample_of_far {t : ℕ → ℝ} {t₀ : ℝ}
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (hE : |E| < 2) (hD : 2 ≤ D) (ht₀ : t₀ < 1)
+    (ht0 : ∀ᶠ N : ℕ in atTop, 0 < t N) (htt : ∀ᶠ N : ℕ in atTop, t N ≤ t₀)
+    (hsep : ∀ᶠ N : ℕ in atTop, (b N).1 ≠ (b N).2 ∧ ∀ v ∈ Set.Ioc (0 : ℝ) (t N),
+        Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1) :
+    ¬ EntryModulusEv (swapSample B b) E (fun _ => 0) t D := by
+  refine not_entryModulusEv_zero_start (swapSample B b) hE.le
+    (c := 1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))) (by positivity)
+    (hbig_swapSample b hE ?_ ?_) ht0
+  · filter_upwards [htt] with N h using lt_of_le_of_lt h ht₀
+  · filter_upwards [hsep, htt] with N hsepN hle v hv
+    exact ⟨hsepN.1, hsepN.2 v hv,
+      gap_lower hE (B.W_pos N) (B.three_le_L N) hv.1 (hv.2.trans hle) ht₀ hD _⟩
+
+/-- The same verdict in the structural form of T232's `RBM.MomentDuhamelCut.sat_no_cutHyp`:
+**no `CutHypEv` for `J*^{sm}_{·,D}` exists on a window that starts at `0`.** -/
+theorem not_cutHypEv_swapSample_of_far {t Θ : ℕ → ℝ} {t₀ : ℝ}
+    (b : ∀ N, ZMod (B.L N) × ZMod (B.L N)) (hE : |E| < 2) (hD : 2 ≤ D) (ht₀ : t₀ < 1)
+    (ht0 : ∀ᶠ N : ℕ in atTop, 0 < t N) (htt : ∀ᶠ N : ℕ in atTop, t N ≤ t₀)
+    (hsep : ∀ᶠ N : ℕ in atTop, (b N).1 ≠ (b N).2 ∧ ∀ v ∈ Set.Ioc (0 : ℝ) (t N),
+        Step2FarMart.farChi (B.W N : ℝ) (B.ell N v) (zdist (B.L N) ((b N).1 - (b N).2)) = 1) :
+    ¬ Nonempty (MomentDuhamelCut.CutHypEv B.P
+      (fun N u ω => Step2FarMart.jSfarSm (swapSample B b) E D N u ω) (fun _ => 0) t Θ) := by
+  refine not_cutHypEv_jSfarSm_zero_start (swapSample B b) hE.le
+    (c := 1 / (200 * ((etaT E t₀)⁻¹ ^ 2 + 1))) (by positivity)
+    (hbig_swapSample b hE ?_ ?_) ht0
+  · filter_upwards [htt] with N h using lt_of_le_of_lt h ht₀
+  · filter_upwards [hsep, htt] with N hsepN hle v hv
+    exact ⟨hsepN.1, hsepN.2 v hv,
+      gap_lower hE (B.W_pos N) (B.three_le_L N) hv.1 (hv.2.trans hle) ht₀ hD _⟩
+
+end Gap
+
 
 end RBM

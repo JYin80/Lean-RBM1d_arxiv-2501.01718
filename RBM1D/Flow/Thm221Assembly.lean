@@ -1227,4 +1227,256 @@ theorem flowEq548Sm_of_entryDataEvOn (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N,
 
 end EntriesEvOn
 
+
+/-! ### 10. T261: the entrywise modulus of (5.48) with its exponents as parameters
+
+T258 proved two things about the `modulus` field of §9:
+
+* `RBM.not_entryModulusEvKOn_one_half_bandGrow` — **`RBM.EntryModulusEvOn` as written in §9 is
+  false** on the concrete model `RBM.bandGrow`, with `2 ≤ D` its only premise.  The hard-coded
+  right-hand side `(N : ℝ)^1 * |v - w|^{1/2}` is the culprit: its pair `(K_mod, γ) = (1, 1/2)`
+  sits exactly on the boundary `K_mod = 2γ` of T258's refuted range.
+* `RBM.not_cutHypEvOn_of_jump` — structurally, **every** `RBM.MomentDuhamelCut.CutHypEvOn`
+  whose own fields satisfy `Kmod ≤ 2 * γ` is unsatisfiable, event or no event.
+
+So the event restriction of §9 is necessary but **not** sufficient: the exponent has to grow
+with `D` as well.  This section carries `(K_mod, γ)` through the §9 chain, from the entrywise
+field to the (5.48) slot, using the blocks T258 left in `Flow/Eq548Producer.lean`
+(`RBM.EntryModulusEvKOn`, `RBM.meshK`, `RBM.mesh_fine_at_meshK`, `RBM.card_le_at_meshK`).
+
+Nothing of §9 is changed: `RBM.EntryModulusEvOn`, `RBM.Eq548EntryDataEvOn`,
+`RBM.Eq548EntryDataEvOn'` and `RBM.flowEq548Sm_of_entryDataEvOn` keep their signatures byte for
+byte, and `RBM.entryModulusEvKOn_one_half_iff` is the `Iff.rfl` certificate that the new field
+at `(1, 1/2)` **is** the old proposition.
+
+The pair the flow is to be produced at is D17's, `K_mod = D - 1`, `γ = 1/2`; at `D ≥ 60` this
+is `K_mod ≥ 59 > 1 = 2γ`, outside T258's refuted range
+(`RBM.not_cutHypEvOnK_kmod_le_two_gamma_d17`). -/
+
+section EntriesEvOnK
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {s t : ℕ → ℝ}
+variable {Good : ℕ → Set Ω} {Kmod γ : ℝ}
+
+/-- **The parametric field at `(1, 1/2)` is the field of §9** — the same proposition, by
+`rfl`, not an implication.  This is the certificate that nothing was strengthened: every
+statement below, read at `Kmod = 1`, `γ = 1/2`, is the §9 statement. -/
+theorem entryModulusEvKOn_one_half_iff (X : Sample B) (Good : ℕ → Set Ω) :
+    EntryModulusEvKOn X E s t D 1 (1 / 2) Good ↔ EntryModulusEvOn X E s t D Good := Iff.rfl
+
+theorem entryModulusEvKOn_of_entryModulusEvOn (X : Sample B)
+    (h : EntryModulusEvOn X E s t D Good) : EntryModulusEvKOn X E s t D 1 (1 / 2) Good := h
+
+theorem entryModulusEvOn_of_entryModulusEvKOn (X : Sample B)
+    (h : EntryModulusEvKOn X E s t D 1 (1 / 2) Good) : EntryModulusEvOn X E s t D Good := h
+
+/-- **`RBM.MomentDuhamelCut.CutHypEvOn` for `J*^{sm}_{u,D}` at an arbitrary admissible pair.**
+Field for field `RBM.cutHypEvOn_jSfarSm_of_entries`, with `Kmod`, `γ`, the mesh `RBM.meshK` and
+`Ccard = Kmod/γ + 1` all moving together.  `mesh_fine` and `card_le` — the two fields that pull
+in opposite directions — are T258's *theorems* at that one mesh, so the parametrization cannot
+make the bundle unsatisfiable through them. -/
+noncomputable def cutHypEvOn_jSfarSm_of_entriesK (X : Sample B) (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hgm : ∀ N, MeasurableSet (Good N))
+    (hmod : EntryModulusEvKOn X E s t D Kmod γ Good)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    MomentDuhamelCut.CutHypEvOn B.P (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) s t
+      (fun _ => 1) Good where
+  window := hst
+  δ₀ := 1
+  δ₀_pos := one_pos
+  Θ_pos := fun _ => one_pos
+  J_nonneg := fun _ _ _ => Step2FarMart.jSfarSm_nonneg X
+  meas := fun N u => (measurable_jSfarSm X E D N u).aestronglyMeasurable
+  good_meas := hgm
+  mesh := meshK Kmod γ
+  mesh_pos := meshK_pos Kmod γ
+  Kmod := Kmod
+  γ := γ
+  γ_pos := hγ
+  modulus := modulusEvAtOn_of_entryModulusEvKOn X hmod
+  mesh_fine := Filter.Eventually.of_forall (mesh_fine_at_meshK hK hγ)
+  Ccard := Kmod / γ + 1
+  card_le := card_le_at_meshK hK hγ hs0 ht1
+  moment := hmoment
+
+/-- The bundle's own exponents are the pair it was built at — `rfl`, so T258's structural
+verdict `RBM.not_cutHypEvOn_of_jump` applies to it exactly through `Kmod ≤ 2 * γ`. -/
+theorem cutHypEvOn_jSfarSm_of_entriesK_Kmod (X : Sample B) (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hgm : ∀ N, MeasurableSet (Good N))
+    (hmod : EntryModulusEvKOn X E s t D Kmod γ Good)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    (cutHypEvOn_jSfarSm_of_entriesK X hK hγ hst hs0 ht1 hgm hmod hmoment).Kmod = Kmod ∧
+      (cutHypEvOn_jSfarSm_of_entriesK X hK hγ hst hs0 ht1 hgm hmod hmoment).γ = γ :=
+  ⟨rfl, rfl⟩
+
+/-- **`J*^{sm}_{u,D} ≺ 1` from the event-restricted entrywise data at an arbitrary admissible
+pair** — verbatim `RBM.stochDom_jSfarSm_of_entriesEvOn` with the exponents carried.  The
+conclusion is **unchanged**: a `RBM.StochDom` for the honest, unrestricted functional. -/
+theorem stochDom_jSfarSm_of_entriesEvOnK (X : Sample B) (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hgm : ∀ N, MeasurableSet (Good N)) (hgood : HighProb B.P Good)
+    (hmod : EntryModulusEvKOn X E s t D Kmod γ Good)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p)))
+    (hinit : StochDom B.P (fun N (_ : Unit) ω => Step2FarMart.jSfarSm X E D N (s N) ω)
+      (fun _ _ _ => (1 : ℝ))) :
+    StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2FarMart.jSfarSm X E D N (u : ℝ) ω)
+      (fun _ _ _ => (1 : ℝ)) :=
+  letI := B.isProbabilityMeasure
+  MomentDuhamelCut.stochDom_of_cutHypEvOn
+    (cutHypEvOn_jSfarSm_of_entriesK X hK hγ hst hs0 ht1 hgm hmod hmoment) hgood
+    (Filter.Eventually.of_forall fun _ => le_rfl) hinit
+
+/-- **The entrywise data of (5.48) with the modulus restricted to `Good` and its exponents as
+parameters** — `near` is byte for byte the field of `RBM.Eq548EntryDataEvOn`; `modulus` and
+`moment` carry `(Kmod, γ)` (the latter through the matching net `RBM.meshK`). -/
+structure Eq548EntryDataEvOnK (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (Kmod γ : ℝ)
+    (Good : ℕ → Set Ω) : Prop where
+  near : ∀ D : ℝ, 0 < D → StochDom B.P
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+      X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+    (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+      tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D (zdist (B.L N) (p.2.1 - p.2.2)))
+  modulus : ∀ D : ℝ, 0 < D → EntryModulusEvKOn X E s t D Kmod γ Good
+  moment : ∀ D : ℝ, 0 < D → ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+    ∀ᶠ N : ℕ in atTop,
+    ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK Kmod γ) N,
+      ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+            (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+        ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))
+
+/-- **The (5.48) slot at the shape the satisfiability discipline allows, with exponents.**
+Exactly `RBM.Eq548EntryDataEvOn'` with `(Kmod, γ)` free: the event is existentially quantified
+together with its measurability and its high probability, and `RBM.HighProb` is what rules out
+the vacuous `Good = ∅`. -/
+def Eq548EntryDataEvOnK' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (Kmod γ : ℝ) : Prop :=
+  ∃ Good : ℕ → Set Ω, (∀ N, MeasurableSet (Good N)) ∧ HighProb B.P Good ∧
+    Eq548EntryDataEvOnK X E s t Kmod γ Good
+
+/-- **At `(1, 1/2)` the parametric package is §9's, field for field.**  `near` and `modulus`
+are the same propositions (`RBM.entryModulusEvKOn_one_half_iff`); `moment` differs only in that
+the net is written `RBM.meshK 1 (1/2)` instead of `(N+1)²`, and `RBM.meshK_one_half` says those
+are the same function. -/
+theorem Eq548EntryDataEvOn.toK_one_half {X : Sample B}
+    (H : Eq548EntryDataEvOn X E s t Good) :
+    Eq548EntryDataEvOnK X E s t 1 (1 / 2) Good where
+  near := H.near
+  modulus := fun D hD => H.modulus D hD
+  moment := by rw [meshK_one_half]; exact H.moment
+
+/-- The same at the slot level, so §13's table below is no harder to satisfy at `(1, 1/2)`
+than §9's. -/
+theorem Eq548EntryDataEvOn'.toK_one_half {X : Sample B} (H : Eq548EntryDataEvOn' X E s t) :
+    Eq548EntryDataEvOnK' X E s t 1 (1 / 2) := by
+  obtain ⟨Good, hgm, hgood, H⟩ := H
+  exact ⟨Good, hgm, hgood, H.toK_one_half⟩
+
+/-- **The (5.48) slot from the event-restricted entrywise data at an arbitrary admissible
+pair** — verbatim `RBM.flowEq548Sm_of_entryDataEvOn` with `(Kmod, γ)` carried through. -/
+theorem flowEq548Sm_of_entryDataEvOnK (X : Sample B) (hK : 0 ≤ Kmod) (hγ : 0 < γ)
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hB : BoundsCore X E s) (H : Eq548EntryDataEvOnK' X E s t Kmod γ) :
+    FlowEq548Sm X E s t := by
+  obtain ⟨Good, hgm, hgood, H⟩ := H
+  exact flowEq548Sm_of_nearChi X ht1
+    (Step2FarMart.flowEq548W_of_jSfarSm X H.near fun D hD =>
+      stochDom_jSfarSm_of_entriesEvOnK X hK hγ hst hs0 ht1 hgm hgood (H.modulus D hD)
+        (H.moment D hD)
+        (stochDom_jSfarSm_init_of_boundsCore X (t := t) hE hst ht1 hc hB D hD))
+
+/-! #### Satisfiability: the pair the slot is to be produced at
+
+T258's refutation is sharp: `RBM.not_cutHypEvOn_of_jump` kills a bundle **iff** its own fields
+satisfy `Kmod ≤ 2 * γ`.  D17's pair `(D - 1, 1/2)` at `D ≥ 60` is `(≥ 59, 1/2)`, and
+`59 > 1 = 2 * (1/2)`, so it is outside that range — the gate below is compiled, not asserted. -/
+
+/-- **The gate.**  At `γ = 1/2` and `Kmod = D - 1` with `D ≥ 60`, the hypothesis
+`Kmod ≤ 2 * γ` of `RBM.not_cutHypEvOn_of_jump` and of
+`RBM.not_entryModulusEvKOn_swapSample_of_far` is **false**.  Compare
+`RBM.d17_pair_outside_event_refutation`, which is this at `D = 60`. -/
+theorem d17K_outside_jump_refutation {D : ℝ} (hD : 60 ≤ D) :
+    ¬ ((D - 1 : ℝ) ≤ 2 * (1 / 2 : ℝ)) := by intro h; linarith
+
+/-- `0 ≤ Kmod` and `0 < γ` at D17's pair, the two side conditions of
+`RBM.cutHypEvOn_jSfarSm_of_entriesK`.  `0 < γ` is not cosmetic: at `γ = 0` the field would be
+an absolute bound `N^{Kmod}` and carry no modulus at all. -/
+theorem d17K_admissible {D : ℝ} (hD : 60 ≤ D) : (0 : ℝ) ≤ D - 1 ∧ (0 : ℝ) < 1 / 2 :=
+  ⟨by linarith, by norm_num⟩
+
+/-- **The bundle this section builds at D17's pair is not the one T258 refuted.**  The
+statement is about the very bundle `RBM.cutHypEvOn_jSfarSm_of_entriesK` produces: its own
+`Kmod` and `γ` fields fail the hypothesis of `RBM.not_cutHypEvOn_of_jump`, so that theorem
+cannot be applied to it.  This is the anti-vacuity gate of T261. -/
+theorem not_cutHypEvOnK_kmod_le_two_gamma_d17 (X : Sample B) {D : ℝ} (hD : 60 ≤ D)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hgm : ∀ N, MeasurableSet (Good N))
+    (hmod : EntryModulusEvKOn X E s t D (D - 1) (1 / 2) Good)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (meshK (D - 1) (1 / 2)) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    ¬ ((cutHypEvOn_jSfarSm_of_entriesK X (D := D) (Kmod := D - 1) (γ := 1 / 2)
+          (by linarith) (by norm_num) hst hs0 ht1 hgm hmod hmoment).Kmod
+        ≤ 2 * (cutHypEvOn_jSfarSm_of_entriesK X (D := D) (Kmod := D - 1) (γ := 1 / 2)
+          (by linarith) (by norm_num) hst hs0 ht1 hgm hmod hmoment).γ) :=
+  d17K_outside_jump_refutation hD
+
+/-- **A compiled witness that the parametric field is satisfiable at D17's pair**, on the
+degenerate window `t = s` and on any event: T258's `RBM.sat_entryModulusEvK_of_window_point`
+transported to the event shape.  `0 < γ` is what makes the right-hand side `N^{Kmod} · 0^γ`
+vanish, so this witness is the reason `γ > 0` is kept. -/
+theorem sat_entryModulusEvKOn_d17 (X : Sample B) (Good : ℕ → Set Ω) (ht : ∀ N, t N = s N) :
+    EntryModulusEvKOn X E s t D (D - 1) (1 / 2) Good :=
+  entryModulusEvKOn_of_entryModulusEvK X Good
+    (sat_entryModulusEvK_of_window_point X (by norm_num) ht)
+
+end EntriesEvOnK
+
+/-! ### 11. Deviations from the paper introduced here (T261)
+
+**`T261a` — the entrywise modulus of (5.46) carries its exponents, and the flow is produced at
+`K_mod = D - 1`, `γ = 1/2` rather than at `K_mod = 1`.**
+
+① **Paper location.**  §5.3, the display (5.46) and the chaining argument that consumes it;
+the exponent in question is the `N` power on the right-hand side of the entrywise two-sided
+modulus of `L - K` used to pass from the net to the full window.
+
+② **Is the paper wrong / must it change?**  Yes, one constant has to change.  The printed
+argument reads as if a modulus with an `O(N)` constant sufficed.  It does not: T258's
+`RBM.not_entryModulusEvKOn_one_half_bandGrow` is a compiled refutation of that reading on a
+concrete band model, with `2 ≤ D` its only premise, and `RBM.not_cutHypEvOn_of_jump` shows the
+obstruction is structural — any modulus with `K_mod ≤ 2γ` is refuted by the jump of
+`J*^{sm}` at `v = N^{-2}`, whose size is `≍ W_N → ∞`.  Since the tail exponent `D` is free and
+the jump is governed by it, the exponent of the modulus must be allowed to grow with `D`; the
+value carried here is D17's `K_mod = D - 1` at `γ = 1/2`, which is outside the refuted range
+(`RBM.d17K_outside_jump_refutation`).  The event restriction of `T251a` is still needed — the
+two repairs are independent and neither alone suffices.
+
+③ **Size of the change.**  One symbol in (5.46) (`N` ⤳ `N^{D-1}`), plus one sentence saying
+that the net `RBM.meshK` is refined to match (`m_N = (N+1)^{K_mod/γ}`), which is what keeps the
+chaining error at `O(1)`.  Nothing downstream of (5.48) changes: the conclusion of the chaining
+argument is unchanged.
+
+④ **Renumbering.**  None: nothing is inserted before an existing numbered display.
+-/
+
 end RBM

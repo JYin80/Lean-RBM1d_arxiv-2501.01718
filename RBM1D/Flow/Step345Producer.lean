@@ -1216,4 +1216,197 @@ state the modulus there), plus one sentence on p. 24 for the first grid cell.
 ④ **Renumbering.**  None: nothing is inserted before an existing numbered display.
 -/
 
+
+/-! ### 13. T261: the merged assembly with the modulus exponents as parameters
+
+§13's two starred slots are asked on **every** window, the first cell `u_0 = 0` included, and
+T258 proved that at the hard-coded pair `(K_mod, γ) = (1, 1/2)` the (5.48) slot is then **false
+on a concrete band model** (`RBM.not_entryModulusEvKOn_one_half_bandGrow`), with `2 ≤ D` its
+only premise.  The obstruction is structural: `RBM.not_cutHypEvOn_of_jump` refutes every
+bundle with `K_mod ≤ 2γ`, event or no event.
+
+So this section repeats §13's tables with `(K_mod, γ)` carried, the (5.48) slot being
+`RBM.Eq548EntryDataEvOnK'` (`Flow/Thm221Assembly.lean` §10).  **The conclusion is unchanged**:
+`RBM.Thm221NoEL X κ`, not `RBM.Thm221NoELFrom`.  Nothing of §13 is removed —
+`RBM.thm221NoEL_of_inputs_mergedOnAll` and its Gaussian twin keep their signatures byte for
+byte, and `RBM.thm221NoEL_of_inputs_mergedOnAllK_one_half` is the compiled certificate that at
+`(1, 1/2)` this table is that one.
+
+The pair to produce the slot at is D17's, `K_mod = D - 1`, `γ = 1/2`, which at `D ≥ 60` is
+outside T258's refuted range (`RBM.d17K_outside_jump_refutation`,
+`RBM.not_cutHypEvOnK_kmod_le_two_gamma_d17`). -/
+
+section MergedOnAllK
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The step of the merged assembly with the modulus exponents carried.**  Verbatim
+`RBM.boundsCore_step_of_inputs_mergedOn` except that slot 6 is `RBM.Eq548EntryDataEvOnK'`; the
+conclusion is `RBM.BoundsCore X E t`, byte for byte. -/
+theorem boundsCore_step_of_inputs_mergedOnK (X : Sample B) {κ Kmod γ : ℝ}
+    (hK : 0 ≤ Kmod) (hγ : 0 < γ) (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s)
+    (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hcut : CutHypEvOnSlot X E s t)
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45i : Eq45FlowInputs X E s t) (H : Eq548EntryDataEvOnK' X E s t Kmod γ) :
+    BoundsCore X E t :=
+  boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy
+    (flow_hTheta_of_cutHypEvOn X (lt_of_le_of_lt hEκ (by linarith)) hs0 hst ht1 hreg.1 hB hcut)
+    h514 (eq45Flow_of_eq45FlowInputs X hκ0 hκ1 hEκ hs0 ht1 h45i)
+    (flowEq548Sm_of_entryDataEvOnK X hK hγ (lt_of_le_of_lt hEκ (by linarith)) hs0 hst ht1
+      hreg.toCond272 hB H)
+
+/-- **The merged assembly of §13 with the modulus exponents carried, general band.**  The table
+is
+
+`RBM.Step1.Hyp` · `RBM.MomentDuhamelCut.MomentHypCut` · **`RBM.CutHypEvOnSlot`** ·
+`RBM.Step3.Lemma514` · `RBM.Eq45FlowInputs` · **`RBM.Eq548EntryDataEvOnK' … Kmod γ`**,
+
+the two starred slots asked on **every** window `0 ≤ s ≤ t < 1`, and the conclusion is
+`RBM.Thm221NoEL X κ` — the first cell of p. 24's grid included. -/
+theorem thm221NoEL_of_inputs_mergedOnAllK (X : Sample B) {κ Kmod γ : ℝ}
+    (hK : 0 ≤ Kmod) (hγ : 0 < γ) (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      BoundsCore X E s → CutHypEvOnSlot X E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq45FlowInputs X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      Eq548EntryDataEvOnK' X E s t Kmod γ) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_mergedOnK X hK hγ hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hcut E hE s t hs0 hst ht1 c hc0 hreg hB) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45i E hE s t hs0 hst ht1 c hc0 hreg) (h548e E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **At `(1, 1/2)` this table is §13's**: every slot of `RBM.thm221NoEL_of_inputs_mergedOnAll`
+feeds `RBM.thm221NoEL_of_inputs_mergedOnAllK` unchanged, through
+`RBM.Eq548EntryDataEvOn'.toK_one_half`.  Compiled certificate that the parametrization is
+conservative. -/
+theorem thm221NoEL_of_inputs_mergedOnAllK_one_half (X : Sample B) {κ : ℝ}
+    (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      BoundsCore X E s → CutHypEvOnSlot X E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq45FlowInputs X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      Eq548EntryDataEvOn' X E s t) :
+    Thm221NoEL X κ :=
+  thm221NoEL_of_inputs_mergedOnAllK X (Kmod := 1) (γ := 1 / 2) zero_le_one (by norm_num)
+    hκ0 hκ1 h1 Hy hcut h514 h45i
+    fun E hE s t hs0 hst ht1 c hc0 hreg =>
+      (h548e E hE s t hs0 hst ht1 c hc0 hreg).toK_one_half
+
+end MergedOnAllK
+
+namespace Gauss
+
+section MergedOnAllKGauss
+
+variable {d : Dims}
+
+/-- **The merged assembly of §13 with the modulus exponents carried, Gaussian model.**
+`RBM.Step1.Hyp` is discharged by `RBM.Gauss.step1Hyp_slot` exactly as in
+`RBM.Gauss.thm221NoEL_of_inputs_mergedOnAll_gauss`; the conclusion is `RBM.Thm221NoEL`, so the
+grid of p. 24 runs from its first cell `u_0 = 0` (`RBM.BoundsCore_of_Thm221NoEL`). -/
+theorem thm221NoEL_of_inputs_mergedOnAllK_gauss (d : Dims) {κ Kmod γ : ℝ}
+    (hK : 0 ≤ Kmod) (hγ : 0 < γ) (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut (sample d) E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      BoundsCore (sample d) E s → CutHypEvOnSlot (sample d) E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
+        (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq45FlowInputs (sample d) E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq548EntryDataEvOnK' (sample d) E s t Kmod γ) :
+    Thm221NoEL (sample d) κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_mergedOnK (sample d) hK hγ hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (step1Hyp_slot d hκ0 E hE s t hs0 hst ht1 c hc0 hreg hB)
+      (Hy E hE s t hs0 hst ht1 c hc0 hreg) (hcut E hE s t hs0 hst ht1 c hc0 hreg hB)
+      (h514 E hE s t hs0 hst ht1 c hc0 hreg) (h45i E hE s t hs0 hst ht1 c hc0 hreg)
+      (h548e E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **Lemmas 2.18–2.20 at the right end of the window, from §14's table** — the grid of p. 24
+run in full, first cell included, at an arbitrary admissible pair of modulus exponents. -/
+theorem boundsCore_of_inputs_mergedOnAllK_gauss (d : Dims) {κ Kmod γ : ℝ}
+    (hK : 0 ≤ Kmod) (hγ : 0 < γ) (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut (sample d) E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      BoundsCore (sample d) E s → CutHypEvOnSlot (sample d) E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
+        (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq45FlowInputs (sample d) E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq548EntryDataEvOnK' (sample d) E s t Kmod γ)
+    {E : ℝ} (hE : |E| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in Filter.atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) :
+    BoundsCore (sample d) E t :=
+  BoundsCore_of_Thm221NoEL (sample d) hκ0
+    (thm221NoEL_of_inputs_mergedOnAllK_gauss d hK hγ hκ0 hκ1 Hy hcut h514 h45i h548e)
+    hE hτ ht0 ht
+
+/-- **The pair the Gaussian table is to be instantiated at.**  `K_mod = D - 1`, `γ = 1/2` at
+`D ≥ 60`: admissible for `RBM.thm221NoEL_of_inputs_mergedOnAllK_gauss` (`0 ≤ K_mod`, `0 < γ`)
+and outside T258's refuted range `K_mod ≤ 2γ`, so
+`RBM.not_cutHypEvOn_of_jump` — the theorem that kills the hard-coded `(1, 1/2)` — does not
+apply to it.  This is T261's anti-vacuity gate, at the assembly. -/
+theorem mergedOnAllK_d17_admissible_and_unrefuted {D : ℝ} (hD : 60 ≤ D) :
+    (0 : ℝ) ≤ D - 1 ∧ (0 : ℝ) < 1 / 2 ∧ ¬ ((D - 1 : ℝ) ≤ 2 * (1 / 2 : ℝ)) :=
+  ⟨(d17K_admissible hD).1, (d17K_admissible hD).2, d17K_outside_jump_refutation hD⟩
+
+end MergedOnAllKGauss
+
+end Gauss
+
+/-! ### 14. Deviations from the paper introduced here (T261)
+
+The statement change is recorded at `T261a` in `RBM1D/Flow/Thm221Assembly.lean` §11 (the
+exponent of the entrywise modulus of (5.46) becomes `K_mod = D - 1` at `γ = 1/2` instead of the
+printed `1` at `1/2`).  Nothing further is deviated from here: §14's tables are §13's with that
+one slot replaced, and the conclusion `RBM.Thm221NoEL X κ` is unchanged.
+-/
+
 end RBM

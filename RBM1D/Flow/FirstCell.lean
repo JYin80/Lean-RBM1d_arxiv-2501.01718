@@ -288,6 +288,26 @@ theorem jump_le_one_of_kmod_one {g : ℝ} {N : ℕ} (hN : 1 ≤ N)
   have h := kmod_ge_of_jump hN hmod
   rwa [show (1 : ℝ) - 1 = 0 by ring, Real.rpow_zero] at h
 
+/-- **The other side of the same arithmetic: what D17's pair allows** (T261).  At the same
+time `v = N^{-2}`, a modulus with `Kmod = D - 1`, `γ = 1/2` has budget `N^{D-2}`, so for
+`D ≥ 3` every jump of size at most `N` fits inside it.  `RBM.gap_lower_W`'s jump is
+`W/(200((η_{t₀})^{-2}+1)) ≤ W/200`, and a band width never exceeds the matrix size, so the
+jump that refutes `Kmod = 1` (`RBM.jump_le_one_of_kmod_one`) is comfortably inside D17's
+budget.  Together the two lemmas say: the exponent must grow with `D`, and `D - 1` is
+enough. -/
+theorem jump_fits_kmod_d17 {D g : ℝ} {N : ℕ} (hN : 1 ≤ N) (hD : 3 ≤ D) (hg : g ≤ (N : ℝ)) :
+    g ≤ (N : ℝ) ^ (D - 1) * (((N : ℝ) ^ (-(2 : ℝ))) ^ ((1 : ℝ) / 2)) := by
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hrw : ((N : ℝ) ^ (-(2 : ℝ))) ^ ((1 : ℝ) / 2) = (N : ℝ) ^ (-(1 : ℝ)) := by
+    rw [← Real.rpow_mul hN0.le]
+    norm_num
+  rw [hrw, ← Real.rpow_add hN0, show D - 1 + -(1 : ℝ) = D - 2 by ring]
+  have h1 : (N : ℝ) ^ (1 : ℝ) ≤ (N : ℝ) ^ (D - 2) :=
+    Real.rpow_le_rpow_of_exponent_le hN1 (by linarith)
+  rw [Real.rpow_one] at h1
+  linarith
+
 end Caveat
 
 /-!
@@ -302,6 +322,16 @@ whereas the paper's argument only asks for *some* polynomial modulus, with the e
 to depend on `D`.  §3 shows the fixed choice `Kmod = 1` is too small.  Lines: 0 in the paper;
 in Lean, the two definitions need `(N : ℝ) ^ (1 : ℝ)` replaced by `(N : ℝ) ^ Kmod` with `Kmod`
 carried alongside `D`.  No renumbering.
+
+**T261 (2026-09-21) carried it out**, without touching either old definition: the parametric
+fields are `RBM.EntryModulusEvK` / `RBM.EntryModulusEvKOn` (T258, `Flow/Eq548Producer.lean`)
+and the parametric (5.48) slot is `RBM.Eq548EntryDataEvOnK'`
+(`Flow/Thm221Assembly.lean` §10), feeding `RBM.thm221NoEL_of_inputs_mergedOnAllK` and its
+Gaussian twin with the conclusion `RBM.Thm221NoEL` unchanged.  The pair carried is exactly
+§3's: `Kmod = D - 1`, `γ = 1/2`, whose budget at `v = N^{-2}` is `RBM.jump_fits_kmod_d17`
+above.  The paper-side change is recorded there as `T261a`; this file's "no change to the
+paper" reading of `T256a` is superseded by it, since T258 refuted the exponent `1` on a
+concrete model (`RBM.not_entryModulusEvKOn_one_half_bandGrow`).
 -/
 
 end RBM

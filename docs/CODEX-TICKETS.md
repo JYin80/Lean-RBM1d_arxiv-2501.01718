@@ -194,3 +194,13 @@ T277 交出 `APrimeQVEndpoint.sqrt_evolvedQV_le_endpoint`（演化版 (5.42)，�
 * 走确定性算子界：`norm_Qop_apply_le`（`Hierarchy/SumZero.lean:112`）给 `‖Qop F‖ ≤ ‖F‖ + ‖Psum F‖·‖ϑ_u‖`；`norm_vartheta_le`（`:99`）在实 `u ∈ [0,1)` 给 `‖ϑ_u‖ ≤ ∣1−u∣ⁿ(1−u)^{−n} = 1`。所以只剩 `‖Psum(H.F)_x‖`。
 * **第 0 步（只读）**：`Psum` 是对一个指标求和（`L` 项）。先看它有没有**不付 `L` 的**界：(a) Ward 恒等式（Lemma 3.6 / `Hierarchy/Ward*`）把 `Σ_a` 环化成 `η⁻¹·低阶环`；(b) 漂移的快衰减 `FastDecayFlow.fastDecay_driftF_window`（`:453`）、`DriftDef.fastDecay_driftF`（`:430`）把求和截在 `ℓ_u N^τ` 内——这会付 `ℓ_u N^τ`，要核它能否被 `η_u`/`scale` 的幂抵消（论文 (5.99)–(5.103) 就是做这件事）。报告里写清哪条路不付正幂；若两条都付，精确写出多出的因子并停下。
 * 那条 `ψ` 行的额外加性误差用 `ζ`（`'''` 生产者有 `ζ` 槽）或 T280c 的 `weighted_norm_le_of_event` 付。
+
+## §15 T280d：δ₀ 是我们选的，逐行取最小即可（Cowork 09:37）
+
+T280d 的否定结论对（`not_quadratic_far_margin_budget_at_delta0`、`not_quadratic_far_sup_margin_budget_at_delta0`），但它否定的只是 **`δ₀ = c/11` 这个具体取值**。`δ₀` 只要求 `> 0`：`APrimeHypOn`/`WeightedMoment` 对 `0 < δ ≤ δ₀` 量化，下游 `≺` 只用到「某个正的 `δ₀`」。所以二次远场行 `(8, 23/2)`（要 `δ < 37c/480`）只是让 `δ₀` 变小。
+
+**改用的停止规则**：每一行化成 `N^{aδ}R^b/A`，
+* 若 `b < 30`：记下 `δ < c(1 − b/30)/a`，**不停**，`δ₀` 取所有行的最小值（留严格余量，例如取最小值的一半）；
+* **只有**当某行 `b ≥ 30`、或该行不能写成这种形状（例如多出不随 `δ` 缩小的 `N` 正幂、或需要 `R` 的下界），才编译否定结论并停下。
+
+**续做**：先取 `δ₀ = c/20`（`< 37c/480`），把 §14 列的其余各行（近场、`ρfar`、`W^{−D}` 尾、`η_u^{−1}` 与时间积分、`cWt³`）逐行列 `(a,b)` 并更新 `δ₀`；然后做 `fitLhs ≺ 1`——它的 `tc`、`Qb`、`Qm`、`εs` 输入由 T268 的时间积分引理（`integral_early_le_budget`、`integral_inv_sqrt_mul_sqrt_kappa_le`、`integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le`）给出，逐个核签名后接上。`sMax_le` 所需的四环界是 Step 1 的 (2.73)@`n = 4`（`Step1.apriori`），在事件上给，不是 `∀ω`。

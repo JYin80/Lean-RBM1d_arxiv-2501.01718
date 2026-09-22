@@ -219,6 +219,33 @@ theorem eventually_jG_le_N_of_norm :
 
 #print axioms eventually_jG_le_N_of_norm
 
+/-- The actual block Green parameter has an order-one cap at the first positive
+subcell time on every Gaussian norm-event sample. The polynomial correction is
+the one already proved by `jG_firstTime_le`, including the literal tail floor. -/
+theorem eventually_jG_le_two_of_norm :
+    ∀ᶠ N : ℕ in atTop, ∀ ω : Gauss.Ω d,
+      ‖Xmat d N ω‖ ≤ (N : ℝ) →
+      APrimeJG.jG (Gauss.sample d) 0 N (firstTime N) ω
+        (B.ell N (firstTime N)) (etaT 0 (firstTime N)) 60 ≤
+          1 + 64 * (((N : ℝ) ^ (186 : ℕ))⁻¹) ∧
+      APrimeJG.jG (Gauss.sample d) 0 N (firstTime N) ω
+        (B.ell N (firstTime N)) (etaT 0 (firstTime N)) 60 ≤ 2 := by
+  filter_upwards [eventually_hstar, eventually_ge_atTop 81] with N hstar hN ω hX
+  have hJ := jG_firstTime_le N hN hstar ω hX
+  have hNr : (81 : ℝ) ≤ N := by exact_mod_cast hN
+  have hN1 : (1 : ℝ) ≤ N := by linarith
+  have hNp : (N : ℝ) ≤ (N : ℝ) ^ (186 : ℕ) := by
+    simpa only [pow_one] using
+      (pow_le_pow_right₀ hN1 (by norm_num : 1 ≤ (186 : ℕ)))
+  have h64 : (64 : ℝ) ≤ (N : ℝ) ^ (186 : ℕ) := by linarith
+  have hpowpos : (0 : ℝ) < (N : ℝ) ^ (186 : ℕ) := pow_pos (by linarith) _
+  have hsmall : 64 * (((N : ℝ) ^ (186 : ℕ))⁻¹) ≤ (1 : ℝ) := by
+    rw [← div_eq_mul_inv]
+    exact (div_le_iff₀ hpowpos).2 (by simpa using h64)
+  exact ⟨hJ, hJ.trans (by linarith)⟩
+
+#print axioms eventually_jG_le_two_of_norm
+
 /-- The independent numerical hypotheses of T334, at the same one-time first subcell. -/
 theorem eventually_firstTime_T334_scales :
     ∀ᶠ N : ℕ in atTop,
@@ -347,5 +374,34 @@ theorem exists_positive_time_firstCell_jG_witness :
     exact hsource
 
 #print axioms exists_positive_time_firstCell_jG_witness
+
+/-- The sharper cap belongs to the same nondegenerate T348 first-cell sample
+as the length-four/six source and the active `k=2` smooth weight. -/
+theorem exists_positive_time_firstCell_jG_two_witness :
+    ∃ τ' : ℝ, 0 < τ' ∧ ∀ ζ : ℝ, 0 < ζ → ∀ δ : ℝ, 0 < δ →
+      ∀ᶠ N : ℕ in atTop, ∃ ω : Gauss.Ω d,
+        ‖Xmat d N ω‖ ≤ (N : ℝ) ∧
+        0 < firstTime N ∧
+        firstTime N ∈ Set.Icc (firstCellS τ' N) (firstCellT τ' N) ∧
+        sourceEll ζ N < 1 ∧
+        (∀ p : ℕ, APrimeSmoothWeightActual.weight d 0 60 δ
+          (firstCellS τ') (firstCellT τ')
+          (fun M => (max 1 M : ℝ) ^ (248 : ℕ)) 2 p N 2 N ω = 1) ∧
+        APrimeFullQV.SourceEvent (Gauss.sample d) 0 N (firstTime N) ω
+          (sourceEll ζ N) (sourceC4 ζ N) ∧
+        APrimeJG.jG (Gauss.sample d) 0 N (firstTime N) ω
+          (B.ell N (firstTime N)) (etaT 0 (firstTime N)) 60 ≤
+            1 + 64 * (((N : ℝ) ^ (186 : ℕ))⁻¹) ∧
+        APrimeJG.jG (Gauss.sample d) 0 N (firstTime N) ω
+          (B.ell N (firstTime N)) (etaT 0 (firstTime N)) 60 ≤ 2 := by
+  obtain ⟨τ', hτ', hw⟩ := exists_positive_time_firstCell_jG_witness
+  refine ⟨τ', hτ', ?_⟩
+  intro ζ hζ δ hδ
+  filter_upwards [hw ζ hζ δ hδ, eventually_jG_le_two_of_norm] with N hwN hsharp
+  obtain ⟨ω, hnorm, hpos, hmem, hell, hweight, hsource, _hJ⟩ := hwN
+  obtain ⟨hJsharp, hJtwo⟩ := hsharp ω hnorm
+  exact ⟨ω, hnorm, hpos, hmem, hell, hweight, hsource, hJsharp, hJtwo⟩
+
+#print axioms exists_positive_time_firstCell_jG_two_witness
 
 end RBM.APrimeFirstCellJGCap

@@ -293,18 +293,22 @@ private theorem eventual_absorb {δ ξ : ℝ} (hslack : 2*δ+ξ<1) (C : ℝ) :
   rw [← Real.rpow_add hn0, sub_add_cancel, Real.rpow_one] at hmul
   exact hmul
 
-/-- Sharpness is only on positive active support inside the same source event. -/
-theorem eventually_jG_le_on_support {τ' δ ξ : ℝ} (hτ' : 0 < τ')
-    (hδ : 0 < δ) (hξ : 0 < ξ) (hslack : 2*δ+ξ<1) :
+/-- The numerical coefficient before absorbing a positive exponent gap. -/
+noncomputable def supportConstant : ℝ :=
+  144 * Real.exp (Real.sqrt 3) * (16 * (Real.exp 1)^2 + 1) + 3
+
+/-- The explicit pre-absorption estimate, uniform over all active prefixes. -/
+theorem eventually_jG_le_constant_on_support {τ' δ ξ : ℝ} (hτ' : 0 < τ')
+    (hδ : 0 < δ) (hξ : 0 < ξ) :
     ∀ᶠ N : ℕ in atTop, ∀ N0 p k m : ℕ, N0 ≤ N → 1 ≤ p → 1 ≤ m →
       1 ≤ k → k ≤ cutNetTop (fun _ => 0) (firstCellT τ') transitionMesh N →
       ∀ ω ∈ good τ' ξ N, 0 < weight δ (firstCellT τ') N0 p N k m ω →
       ∀ r ∈ Set.Icc (0 : ℝ) (cutNetPt (fun _ => 0) transitionMesh N k),
-        jG N r ω ≤ (N : ℝ) := by
+        jG N r ω ≤ supportConstant * (N : ℝ)^(2*δ+ξ) := by
   let A : ℝ := 144 * Real.exp (Real.sqrt 3) * (16 * (Real.exp 1)^2+1)
   filter_upwards [eventually_running_support
       (fun N => (firstT_bounds hτ' N).1) (fun N => (firstT_bounds hτ' N).2),
-    eventual_absorb hslack (A+3), eventually_ge_atTop 1] with N hrun habs hN
+    eventually_ge_atTop 1] with N hrun hN
   intro N0 p k m hN0 hp hm hk hkT ω hgood hw r hr
   have hg := good_subset τ' ξ N hgood
   have hX := hg.1.1.1
@@ -338,7 +342,20 @@ theorem eventually_jG_le_on_support {τ' δ ξ : ℝ} (hτ' : 0 < τ')
     have h1 := mul_le_mul_of_nonneg_right hδ1 (by positivity : 0 ≤ (N : ℝ)^ξ)
     dsimp [A] at *
     nlinarith
-  exact hcontrol.trans habs
+  exact hcontrol
+
+/-- Sharpness is only on positive active support inside the same source event. -/
+theorem eventually_jG_le_on_support {τ' δ ξ : ℝ} (hτ' : 0 < τ')
+    (hδ : 0 < δ) (hξ : 0 < ξ) (hslack : 2*δ+ξ<1) :
+    ∀ᶠ N : ℕ in atTop, ∀ N0 p k m : ℕ, N0 ≤ N → 1 ≤ p → 1 ≤ m →
+      1 ≤ k → k ≤ cutNetTop (fun _ => 0) (firstCellT τ') transitionMesh N →
+      ∀ ω ∈ good τ' ξ N, 0 < weight δ (firstCellT τ') N0 p N k m ω →
+      ∀ r ∈ Set.Icc (0 : ℝ) (cutNetPt (fun _ => 0) transitionMesh N k),
+        jG N r ω ≤ (N : ℝ) := by
+  filter_upwards [eventually_jG_le_constant_on_support hτ' hδ hξ,
+    eventual_absorb hslack supportConstant] with N hcap habs
+  intro N0 p k m hN0 hp hm hk hkT ω hgood hw r hr
+  exact (hcap N0 p k m hN0 hp hm hk hkT ω hgood hw r hr).trans habs
 
 private theorem firstT_eventually_half {τ' : ℝ} (hτ' : 0 < τ') :
     ∀ᶠ N : ℕ in atTop, firstCellT τ' N = 1/2 := by
@@ -415,6 +432,55 @@ theorem exampleGrow_support_witness :
   exact hcap 2 1 2 N hN (by norm_num) (by omega) (by norm_num) hk ω hω
     (by rw [hw 1]; norm_num)
 
+/-- At δ=ξ=1/100, absorb C N^(3/100) into N^(1/8).
+The same measurable event is used, and positive support is retained. -/
+theorem eventually_jG_le_eighth_on_support {τ' : ℝ} (hτ' : 0 < τ') :
+    ∀ᶠ N : ℕ in atTop, ∀ N0 p k m : ℕ, N0 ≤ N → 1 ≤ p → 1 ≤ m →
+      1 ≤ k → k ≤ cutNetTop (fun _ => 0) (firstCellT τ') transitionMesh N →
+      ∀ ω ∈ good τ' (1/100) N,
+      0 < weight (1/100) (firstCellT τ') N0 p N k m ω →
+      ∀ r ∈ Set.Icc (0 : ℝ) (cutNetPt (fun _ => 0) transitionMesh N k),
+        jG N r ω ≤ (N : ℝ)^((1 : ℝ)/8) := by
+  have hbig : ∀ᶠ N : ℕ in atTop, supportConstant ≤ (N : ℝ)^((19 : ℝ)/200) :=
+    ((tendsto_rpow_atTop (by norm_num : (0 : ℝ) < 19/200)).comp
+      tendsto_natCast_atTop_atTop).eventually_ge_atTop supportConstant
+  filter_upwards [eventually_jG_le_constant_on_support hτ'
+      (δ := 1/100) (ξ := 1/100) (by norm_num) (by norm_num),
+    hbig, eventually_ge_atTop 1] with N hcap hC hN
+  intro N0 p k m hN0 hp hm hk hkT ω hgood hw r hr
+  have hn : (0 : ℝ) < N := by exact_mod_cast (show 0 < N by omega)
+  have habs := mul_le_mul_of_nonneg_right hC
+    (Real.rpow_nonneg (Nat.cast_nonneg N) ((3 : ℝ)/100))
+  rw [← Real.rpow_add hn, show (19 : ℝ)/200 + 3/100 = 1/8 by norm_num] at habs
+  have hc := hcap N0 p k m hN0 hp hm hk hkT ω hgood hw r hr
+  norm_num only [show (2 : ℝ)*(1/100)+1/100 = 3/100 by norm_num] at hc
+  exact hc.trans habs
+
+/-- A nondegenerate actual same-event plateau witness for the stronger exponent. -/
+theorem exampleGrow_eighth_support_witness :
+    ∃ τ' : ℝ, 0 < τ' ∧
+      (∀ N, MeasurableSet (good τ' (1/100) N)) ∧
+      HighProb (P Dims.exampleGrow) (good τ' (1/100)) ∧
+      ∀ᶠ N : ℕ in atTop, ∃ ω ∈ good τ' (1/100) N,
+        0 < (transitionMesh N)⁻¹ ∧
+        (transitionMesh N)⁻¹ ∈ Set.Icc (0 : ℝ) (firstCellT τ' N) ∧
+        2 ≤ cutNetTop (fun _ => 0) (firstCellT τ') transitionMesh N ∧
+        (∀ p : ℕ, weight (1/100) (firstCellT τ') 2 p N 2 N ω = 1) ∧
+        ∀ r ∈ Set.Icc (0 : ℝ) (cutNetPt (fun _ => 0) transitionMesh N 2),
+          jG N r ω ≤ (N : ℝ)^((1 : ℝ)/8) := by
+  obtain ⟨τ', hτ', _, hll⟩ := firstCell_step1_and_localLaw_same_parameter
+  have hg := highProb_good hτ' (ξ := 1/100) (by norm_num) hll
+  refine ⟨τ', hτ', fun N => measurableSet_good _ _ N, hg, ?_⟩
+  filter_upwards [positive_plateau_on_good hτ' (δ := 1/100) (by norm_num) hg,
+    eventually_jG_le_eighth_on_support hτ', eventually_ge_atTop 2] with N hw hcap hN
+  obtain ⟨ω, hω, hp, ht, hk, hw⟩ := hw
+  refine ⟨ω, hω, hp, ht, hk, hw, ?_⟩
+  exact hcap 2 1 2 N hN (by norm_num) (by omega) (by norm_num) hk ω hω
+    (by rw [hw 1]; norm_num)
+
+#print axioms eventually_jG_le_constant_on_support
+#print axioms eventually_jG_le_eighth_on_support
+#print axioms exampleGrow_eighth_support_witness
 #print axioms positive_plateau_on_good
 #print axioms exampleGrow_support_witness
 #print axioms highProb_good

@@ -6780,3 +6780,5 @@ paper-deltas **T228a**（阈值 + 光滑化）与 **T228b**（自举取代 BDG�
 6. **T228 无主项 1 → T233**（先上移共享脚本再换 `FlowEq548W`）。T228 无主项 3 已由 T229 持有。
 7. **构建陷阱（T222）已补进 CLAUDE.md**「读 build.log 的陷阱」：新文件收工前必须 `lake build RBM1D.<模块>`。
 8. paper-deltas：T228a/T228b 的终版覆盖同号初稿 #151/#152（Cowork 02:06 先赋过号，agent 又以临时号重新提交了终版），T222a → 154、T225a → 155、T229a → 156。
+
+**02:35 补：T218 + T220 审计通过**（c10539b）。T218：`P` 半边输入全是已证定理、零新字段；`pow_card_le_of_norm_Psum_le` 把「无护栏 `PHalf514` 不可做」编译成定理（短的因子恰是 `L^n`）；见证里 `P` 半边非零、好事件代价真付掉（`eventLoss_geom_witness` + `no_const_event_loss`）。T220：`hGd` 5/5；查出半成品里 `Ξ` 是自由 `Set Ω`、取 `∅` 即平凡（T164/T169 同形），已补 `highProb_lkGood` 与 `nonempty_lkGood`；见证 `Ξ = univ`、`Q_u` 固定而非杀掉张量。更正了 Cowork 工单里两处来源猜测（第 3、4 项不带张量的 (7.13) 假设；第 5 项走 Def 5.8 的 G 环衰减）。无主项分派：`lkGood` 可测性 → **T219**；环长 `n+2` 上 `K` 的 `LoopDecay` → **T234** 第 (3) 项。paper-deltas T218a/T220a/T220b → 157/158/159。

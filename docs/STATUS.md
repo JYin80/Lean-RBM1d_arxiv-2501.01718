@@ -6791,3 +6791,33 @@ Jun：「真正需要你定的两条，就按你们认为正确的改。都是�
 论文改动预算（项目文档 `claude/paper-edit-budget.md`）第 6–17 条至此**全部确认，无待定项**。Cowork 代定的路由类裁定（D14、D15、`xi2`、#155 的 `C_{n,p}`、`CutHyp` 的 `∀ᶠ N`、上移去重）Jun 未推翻，照旧执行。
 
 **Jun 2026-09-22（关于 T230）**：「(5.43)–(5.47) 当时好像不是用的停时方案。你说的好像是对的。」——即作者确认 Step 2 第一遍自举的原意是**连续性论证**，Cowork 提的路线 (B)（不截断、不条件化：高概率前缀 + 确定性多项式包络 + `L^{2p}` 好坏事件拆分，门槛固定不累积）与原意一致。印刷版 p.58 (5.43) 字面仍写着停时 `T`（论文按 (a) 不改）。已转进 T230 行；第 0 步照常逐条核。
+
+## ⭐⭐⭐ T219：`hkerC`/`hker2C` **从 Lemma 5.14 的假设表里彻底消失**——D14 的核心目标达成（`Gauss/Lemma514QAssembly.lean` 1167 行、25 条，全量绿、审计 11813）
+
+**半成品的处置**：单文件与**模块级**都 exit=0，并逐条核过（不是只看编译）——`Rhs514QAt` 与 `stochDom_of_momentDuhamelQ` 的 `hrhs` 槽**逐字符同形**（裸 `exact` 应用，没有偷偷放宽；五项、`(1/2)` 次幂、`H.cMD p`、T223 改后的 `xi2 E q.1` 全对）；`lemma514_of_momentDuhamelQ` 的结论与 plain 版**逐字相同**，假设表逐行 diff 只多 `hQint`/`hPhalf`（+新加的 `hNonAlt`）。**据此续做，并修掉两处缺陷**：(a) 模块 doc 宣称有「论文网格上的可满足性见证」而**文件里根本没有**（已补 §6）；(b) **重复造轮子**——`cKerSumZero_nonneg`/`cKerSumZeroErr_nonneg` 与 `SumZeroDyn.lean:1194/1197` 重复，**已删除改用已有的**。
+
+**⭐ `hkerC`/`hker2C` 在全文件 12 处出现全在注释里解释「它们不在」，没有一处出现在任何签名的类型中。** 这就是 D14 的全部内容：`gridS_cNum716_le` 给出的常数 `≤ 7·C_m K^{2m}Φ + (C_{2m}K^{4m}Φ_E)^{1/2}`，**不含 `L`、`N`、`W`、`τ′`、`k`**——正是 `no_const_hkerC_on_gridS` 证明 (7.1) 档**不可能**有的那种常数（那里是 `(W^{τ′})^{m+2}`）。
+
+**接受 T218 的裁定后的接口修改**：`PHalf514` **加了 `if QGood` 护栏**，`pHalf514_of_wardP` 使 **`PHalf514` 现在是定理**（= T218 的 `stochDom_Psum_vartheta_qGood` 在 `Lemma514Premises` 第二合取 `m = n+1 < n+2` 槽上的应用）。⚠ **T219 在收到我的通知前已独立查出同一件事**——两边独立得到同一结论。
+
+**已卸掉的**：`hHol`（T105 的 `hHol_flow`）、`hKb`（T203 的 `hKb_flow`）、`hQint`（高斯模型上是定理 `qIntegrable_gauss`）、`hPhalf`（T218）、`hnum`（`rhs514QAt_of_kernel_inputs_zero_err`，`ζ = δ = 0` 时 (5.24) 的算术**取等**）。
+
+**见证**：`gridS_Q716_nondegenerate` 在**论文 p.24 自己的网格** `1 − s_k = W^{−kτ′}` 上给 `∃ G ≠ 0 ∧ Q_u G = G ∧ (7.16) 界`，`hτ′` 只要 `0 ≤ τ′`、`W` 任意、**不带短窗口假设**、`v ↑ 1` 允许。
+
+## ⭐ 待 Jun / Cowork 定夺（T219 交出，D16）：`NonAlt514` 怎么办
+
+这是 **`Q` 路线到 `Step3.Lemma514` 唯一剩下的结构性缺口**。
+
+T218 的 `pow_card_le_of_norm_Psum_le` 已编译证明：无护栏的槽和界必须付 `L^n` 且在常数张量处取等，而两半共用的 `A_v^{−(n+2)}` 不含 `L` 的正幂 ⟹ **原 `PHalf514` 按字面不可满足**。加了 `QGood` 护栏之后，非 `QGood` 电荷是**非交替的**（`eq_zero_of_not_nonAlt_not_qGood`），论文走 **(5.20) + (7.16) Case 1**；仓库里这一支**只在 `SumZeroDyn.lemma514_flow` 内部有**（`bound_nonAlt`），而**它的输入是 `Hierarchy` + `Lemma510`，矩路线被明令禁止实例化**。
+
+⚠ 缺口是**精确定位**的：`Q` 半边本身对**所有**电荷都成立（`momentDuhamelQ` 对 `∀ q` 量化），所以短的**只有 `P` 那半在非 `QGood` 电荷上的替代品**。
+
+两条路：
+* **(i)** 把 `bound_nonAlt` 的 (7.16) Case 1 论证**从 `Hierarchy` 里拆出来重证**——**零新数学**，但要复制 `SumZeroDyn.lean` 里 `term1I`/`term1F`/`term1M` 那一套；
+* **(ii)** 允许矩路线**仅在非交替电荷上**引用 `Hierarchy`——**破「禁止实例化 `SumZeroDyn.Hierarchy`」的纪律**。
+
+## ⚠ 无主的活（T219 交出）
+
+1. **`hDec*` 仍按「对所有 `ω`」量化**——这是可满足性纪律第 1 条禁止的形状（大常数倍单位阵处无小 `δ`）。形状从 T201 的 `hGd` 继承。T220 的 `momNorm_Uker_*_event_le` 是事件限制版替代品，但接进来需要 **`MeasurableSet (Gauss.lkGood …)`，T220 明说未证**（对**不可数** `TimeIcc` 取交）。**这条与 T220 交出的第 1 条是同一件事**，归 T218/T219 那条待办，**目前无主**。
+2. **`hEnv*` 的 `Qop` 半边接线**（现成件 `SumZeroDyn.norm_Qop_le_of_fastDecay`）未做，要连带改生产者形状，与第 1 条同一批。
+3. **drift 项的 `hKd`（环长 `n+2` 上 `K` 的 `LoopDecay`）全仓无生产者**（`exists_loopDecay_Kval` 只到环长 **3**）——**标红，仍无主**（与 T220 交出的第 2 条同一件事；T234 的第 0 步正在查那个衰减率是否过粗）。

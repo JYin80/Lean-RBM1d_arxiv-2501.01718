@@ -6854,3 +6854,12 @@ T226 **没有** import T225 的 `TestFunQGeneral.lean`（对方文件、仍在�
 ## Cowork 02:50：调度交接手册入库（Jun 要求：「以防你突然断线或额度用满」）
 
 新增 `docs/HANDOVER.md`（接管手册：角色、Jun 的永久规则逐字、文件地图、心跳步骤与脚本、审计清单、决策分流、已定裁定表、当前状态、工人也停时怎么办、蓝图、给 Codex/ChatGPT 的开场 prompt、Claude 回来后的恢复、已知的坑）、`AGENTS.md`（Codex 默认读取的入口）、`docs/cowork-{paper-edit-budget,theorem-2.6-analysis,lessons}.md`（原件只在 Claude 项目里，别的模型读不到）、`tools/blueprint_page/`（蓝图总览网页生成器，python3 + graphviz，已在本机 VM 实跑通过）。`CLAUDE.md`「唯一真相来源」加了一行指针。**约定**：接手者每轮在本文件追加「## 接手者记录（模型，时间）」，Claude 回来据此复核。
+
+## Cowork 02:50：审计 T219、T226；D16 → (i)
+
+**T219 审计通过**：`hkerC`/`hker2C` 在 `Lemma514` 所有签名的类型里出现 0 次（12 处全在注释里）；`gridS_cNum716_le` 的常数不含 `L, N, W, τ′, k`——正是 `no_const_hkerC_on_gridS` 证明 (7.1) 档不可能有的那种常数。**D14 的核心目标达成。** 半成品逐条核、补上了文件头宣称却不存在的网格见证（§6），删了重复造的轮子。`hHol`/`hKb`/`hQint`/`hPhalf`/`hnum` 已卸。
+**T226 审计通过**：`Q` 版二次变差桥无自由假设，右端逐字是 `momentDuhamelQ` 第五项、系数 `(n+2)`（与 #155 的 `C_{n,p}` 裁定一致）；直接用 T223 修正后的 `xi2`；数值自洽 + 两条判别性检查（`conj ϑ_u` 是载重的）。更正了工单的机制描述（漂移不能照 T212 走 `uker_driftF_eq`）。
+
+**D16 → (i)（Cowork 按路由类裁定）→ T236**。理由：(ii)「仅在非交替电荷上引用 `Hierarchy`」等于实例化 `SumZeroDyn.Hierarchy`——它的 `mart :=` 残差是 fiat，T118 起禁止；在一部分电荷上开口子，结论就被 fiat 污染，审计时无法与干净部分分开。(i) 是零新数学：非交替电荷不需要 sum-zero，(7.16) Case 1 直接适用；矩路线的**未投影**接口 `Hyp.momentDuhamel` 已经有二次变差桥（T213/T223）。T236 照 T201 做 Case 1 的矩形式，逐字相同的脚本段按 T221/T235 上移共享。
+
+**无主项分派**：`lkGood` 可测性 + `hDec*` 事件限制 + `hEnv*` 的 `Qop` 半边 → **T237**（建议先用 T222 的 `toMeasurable` 手法）；`driftF` 逐点确定性包络 `hFb`（全仓第二次当假设收）→ **T238**；环长 `n+2` 上 `K` 的 `LoopDecay` 已在 **T234** 第 (3) 项。paper-deltas T219a → 160、T226a → 161。

@@ -79,9 +79,12 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **T221 / T224**：去重合一；`hsplit`/`hdiff` 卸掉（Leibniz 自 T140 就有）。
 * 更早的（T1–T216）：见 `docs/archive/STATUS-2026-09-19_22.md`。
 
+* **T238 / T239 / T240**（45e293a）：`driftF` 逐点包络两处同源（`exists_driftF_envelope`，粗包络，够侧条件不够定量）；**(5.48) 从 `Thm221NoEL` 假设表整条消失**（`Flow/Thm221Assembly.lean`，完整假设表见 `docs/reports/T239.md`）；plain 路线 `MomentIneq` 闭合、只剩窗口条件（T240 查出旧 `hQV` 对 `u` 无窗口限制、很可能空真，已绕开）。
+* **T234**：`hKd` **不是数学缺口**——`cor35Rate` 带根号，衰减长度就是 `ℓ_v`（(2.52)），`e^{−c₀N^τ/4}`；四个好集 3½ 个；`Bounds` 在 `s > 0` 残余 10 → 7。报告 `docs/reports/T234.md`。
+
 ## 7. 无主的活
 
-（全部已开单：T236–T239。新的无主项写在这里，调度下一轮开单。）
+（全部已开单。T239 的主链假设表逐槽分派：第 1 槽 `Step1.Hyp` → T242；第 2 槽 `MomentHypCut` → T230 (A′)/T232；第 3、5 槽 `hΘ`/`Eq45Flow` → T243；第 4 槽 `Lemma514` → T236；第 6 槽 `Eq548EntryData`：`init` → T241，`near`/`meas`/`modulus` → T244，`moment` → T230。新的无主项写在这里，调度下一轮开单。）
 
 * **⭐ `hinit` 可免费消除**（T239 交出）：给 `thm221NoEL_of_inputs_W` 的各槽加 `BoundsCore X E s →` 前件（`hB` 已在作用域内），`Eq548EntryData.init` 即可由 (2.68)/(2.69) 在 `u = s_N` 推出。**全仓没有任何 `hinit` 的生产者。** 这是假设表里唯一结构性多余的一条。
 * **`Step2FarMart` 的 `meas`/`modulus`/`moment` 三条生产者**（T239 交出）；⚠ 其中 **`.modulus` 对尖锐 `jSfar` 为假**，只对平滑版有希望。

@@ -8,6 +8,9 @@ import RBM1D.Gauss.MomentDuhamelQ
 import RBM1D.Gauss.Lemma514QRoute
 import RBM1D.Gauss.Lemma514NonAlt
 import RBM1D.Gauss.LkGoodMeasurable
+import RBM1D.Gauss.Step6EnvWindow
+import RBM1D.Gauss.Lemma514XiPoly
+import RBM1D.Hierarchy.DriftBound
 
 /-!
 # Lemma 5.14 on the `Q_u` route: the assembly (T219)
@@ -151,6 +154,28 @@ def Rhs514QAt (H : MomentDuhamel.Hyp X E s t n) (c v : ℕ → ℝ) : Prop :=
               (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
               (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
         ≤ C * ((N : ℝ) ^ (ε / 2) * (c N * (B.scale E N (v N) ^ (n + 2))⁻¹))
+
+/-- Spend half of the stochastic-domination exponent on an epsilon-dependent kernel
+control. The remaining half is supplied by the existing moment producer. -/
+theorem rhs514QAt_of_scaled_family (H : MomentDuhamel.Hyp X E s t n)
+    (c v : ℕ → ℝ)
+    (h : ∀ η > (0 : ℝ), ∃ C₀ > (0 : ℝ),
+      Rhs514QAt H (fun N => C₀ * (N : ℝ) ^ (η / 2) * c N) v) :
+    Rhs514QAt H c v := by
+  intro ε hε p hp
+  obtain ⟨C₀, hC₀, hR⟩ := h (ε / 2) (by linarith)
+  obtain ⟨C, hC, hN⟩ := hR (ε / 2) (by linarith) p hp
+  refine ⟨C * C₀, mul_pos hC hC₀, ?_⟩
+  filter_upwards [hN, eventually_gt_atTop 0] with N hN hN0 q
+  have hNr : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN0
+  have hpow : (N : ℝ) ^ ((ε / 2) / 2) * (N : ℝ) ^ ((ε / 2) / 2)
+      = (N : ℝ) ^ (ε / 2) := by
+    rw [← Real.rpow_add hNr]
+    congr 1
+    ring
+  convert hN q using 1
+  rw [← hpow]
+  ring
 
 /-- **The `Q_v`-half of (5.101) at the level of `≺`**: `Rhs514QAt` feeds
 `RBM.MomentDuhamel.stochDom_of_momentDuhamelQ` by a bare application. -/
@@ -448,6 +473,45 @@ theorem lemma514_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst 
       max_eq_left (by linarith)
     rw [this]
 
+/-- Assemble Lemma 5.14 from epsilon-dependent kernel producers on both charge classes.
+The remaining hypotheses are the scaled producer outputs, with the kernel parameters
+chosen after the exponent. -/
+theorem lemma514_of_momentDuhamelQ_of_scaled_families (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1)
+    (H : MomentDuhamel.Hyp X E s t n) (hQint : MomentDuhamel.QIntegrable X E s t n)
+    {Cv : ℝ} (hcard : ∀ᶠ N : ℕ in atTop,
+      (Fintype.card (LoopData (B.L N) (n + 2)) : ℝ) ≤ (N : ℝ) ^ Cv)
+    {K γ : ℝ} (hK : 0 ≤ K) (hγ : 0 < γ)
+    {Ξ : ℕ → Set Ω} (hΞ : HighProb B.P Ξ)
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Ξ N, ∀ q : LoopData (B.L N) (n + 2),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |B.scale E N u ^ (n + 2) * ‖SumZeroDyn.lkT X E N u ω q.1 q.2‖
+            - B.scale E N v ^ (n + 2) * ‖SumZeroDyn.lkT X E N v ω q.1 q.2‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ γ)
+    (hrhsScaled : ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
+      (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises X E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+      ∀ η > (0 : ℝ), ∃ C₀ > (0 : ℝ),
+        Rhs514QAt H (fun N => C₀ * (N : ℝ) ^ (η / 2) *
+          (Λ N ^ ((1 : ℝ) / 2) + Φ N)) v)
+    (hPhalf : PHalf514 X E s t n)
+    (hrhsNAScaled : ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
+      (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises X E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+      ∀ η > (0 : ℝ), ∃ C₀ > (0 : ℝ),
+        RhsNonAltAt H (fun N => C₀ * (N : ℝ) ^ (η / 2) *
+          max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1) v) :
+    Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) (n + 2) := by
+  apply lemma514_of_momentDuhamelQ hE hs0 hst ht1 H hQint hcard hK hγ hΞ hHol
+  · intro Λ Φ hΛ0 hΦ0 hΛ1 hprem v hv
+    exact rhs514QAt_of_scaled_family H _ _
+      (hrhsScaled Λ Φ hΛ0 hΦ0 hΛ1 hprem v hv)
+  · exact hPhalf
+  · intro Λ Φ hΛ0 hΦ0 hΛ1 hprem v hv
+    exact rhsNonAltAt_of_scaled_family H _ _
+      (hrhsNAScaled Λ Φ hΛ0 hΦ0 hΛ1 hprem v hv)
+
 /-- **The `∀ m, 2 ≤ m` form of Steps 3–5's `h514`, on the `Q` route.** -/
 theorem lemma514_forall_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
@@ -604,6 +668,29 @@ noncomputable def errKer716 (L m : ℕ) (Kd ζ δ s v : ℝ) : ℝ :=
 
 theorem cKer716_nonneg (m : ℕ) {Kd : ℝ} (hKd : 0 ≤ Kd) : 0 ≤ cKer716 m Kd :=
   mul_nonneg (SumZeroDyn.cKerSumZero_nonneg m) (pow_nonneg hKd _)
+
+/-- The Case-2 kernel coefficient consumes only `2m * τ` of the stochastic-domination
+exponent when the undilated radius is at most `N^τ`. -/
+theorem cKer716_four_le_rpow (m N : ℕ) {Kd τ η : ℝ}
+    (hN : (1 : ℝ) ≤ N) (hKd : 0 ≤ Kd) (hKdN : Kd ≤ (N : ℝ) ^ τ)
+    (hτη : τ * ((2 * m : ℕ) : ℝ) ≤ η) :
+    cKer716 m (4 * Kd) ≤ cKerSumZero m * 4 ^ (2 * m) * (N : ℝ) ^ η := by
+  have hfour : 4 * Kd ≤ 4 * (N : ℝ) ^ τ := by gcongr
+  have hpow : (4 * Kd) ^ (2 * m) ≤ (4 * (N : ℝ) ^ τ) ^ (2 * m) := by gcongr
+  have hc : 0 ≤ cKerSumZero m := SumZeroDyn.cKerSumZero_nonneg m
+  have hN0 : (0 : ℝ) ≤ (N : ℝ) := by linarith
+  calc
+    cKer716 m (4 * Kd) = cKerSumZero m * (4 * Kd) ^ (2 * m) := rfl
+    _ ≤ cKerSumZero m * (4 * (N : ℝ) ^ τ) ^ (2 * m) :=
+      mul_le_mul_of_nonneg_left hpow hc
+    _ = cKerSumZero m * 4 ^ (2 * m) * (N : ℝ) ^ (τ * ((2 * m : ℕ) : ℝ)) := by
+      have hr : ((N : ℝ) ^ τ) ^ (2 * m) = (N : ℝ) ^ (τ * ((2 * m : ℕ) : ℝ)) := by
+        rw [← Real.rpow_natCast ((N : ℝ) ^ τ) (2 * m), ← Real.rpow_mul hN0]
+      rw [mul_pow, hr]
+      ring
+    _ ≤ cKerSumZero m * 4 ^ (2 * m) * (N : ℝ) ^ η := by
+      exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hN hτη)
+        (mul_nonneg hc (by positivity))
 
 theorem errKer716_nonneg (L m : ℕ) {Kd ζ δ s v : ℝ} (hKd : 0 ≤ Kd) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
     (hsv : s ≤ v) (hv1 : v < 1) : 0 ≤ errKer716 L m Kd ζ δ s v := by
@@ -1502,6 +1589,653 @@ theorem rhs514QAt_of_kernel_inputs' (hE : |E| < 2) (H : MomentDuhamel.Hyp X E s 
   have hC : (0 : ℝ) ≤ C1 + Csq + 1 := by linarith
   exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hfin hNp0.le) hC
 
+/-- The event-restricted kernel producer with an epsilon-dependent kernel package.
+The kernel parameters are bound after `η`. Its numeric row has the factor
+`C₀ * N^(η/2)`, which is spent by `rhs514QAt_of_scaled_family` when `η` is
+chosen after the target stochastic-domination exponent. -/
+theorem rhs514QAt_of_kernel_inputs'' (η : ℝ) (hη : 0 < η) (hE : |E| < 2) (H : MomentDuhamel.Hyp X E s t n)
+    {v : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hsv : ∀ N, s N ≤ v N) (hvt : ∀ N, v N ≤ t N)
+    (ht1 : ∀ N, t N < 1)
+    {Kd ζ δ δ' Msz Pb esz : ℕ → ℝ} (hKd : ∀ N, 1 ≤ Kd N) (hζ : ∀ N, 0 ≤ ζ N)
+    (hδ : ∀ N, 0 ≤ δ N) (hMsz : ∀ N, 0 ≤ Msz N) (hPb : ∀ N, 0 ≤ Pb N)
+    (hesz : ∀ N, 0 ≤ esz N)
+    {ψ ψE : ∀ N, ℝ → LoopData (B.L N) (n + 2) → Ω → ℝ}
+    (hψ0 : ∀ N u q ω, 0 ≤ ψ N u q ω) (hψE0 : ∀ N u q ω, 0 ≤ ψE N u q ω)
+    (hψint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψ N u q ω ^ r) B.P)
+    (hψEint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψE N u q ω ^ r) B.P)
+    (hEnvI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1) b‖
+        ≤ (B.scale E N (s N))⁻¹ ^ (n + 2) * ψ N (s N) q ω + ζ N)
+    (hEnvF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+          * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+        (b : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      ‖SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ ((n + 2) + (n + 2)) * ψE N u q ω + ζ N)
+    {Ξ : ℕ → Set Ω}
+    (hAMI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) (n + 2), ‖SumZeroDyn.lkT X E N (s N) ω q.1 b‖ ≤ Msz N)
+    (hDecI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((s N : ℝ) : ℂ) * Kd N) (δ N)
+        (SumZeroDyn.lkT X E N (s N) ω q.1))
+    (hAMF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) (n + 2), ‖H.F N u (X.H N u ω) q.1 b‖ ≤ Msz N)
+    (hDecF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N) (H.F N u (X.H N u ω) q.1))
+    (hPsC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N, ∀ x,
+      ‖Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) x‖ ≤ Pb N)
+    (hAME : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) ((n + 2) + (n + 2)), ‖eeFun B E N u (X.H N u ω) q.1 b‖ ≤ esz N)
+    (hDecE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N)
+        (eeFun B E N u (X.H N u ω) q.1))
+    (hErrQ : ∀ N : ℕ, FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N) ≤ δ' N)
+    (hErrC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.commErr (B.L N) n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N)
+        ≤ δ' N)
+    (hErrD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.dotErr n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N) ≤ δ' N)
+    (hErrE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.qqErr (B.L N) (n + 1) (ellHat (B.L N) ((u : ℝ) : ℂ)) (Kd N) (esz N) (δ N)
+        ≤ δ' N)
+    {Env pr cE : ℕ → ℝ} (hEnv0 : ∀ N, 0 ≤ Env N) (hpr0 : ∀ N, 0 ≤ pr N)
+    (hcE0 : ∀ N, 0 ≤ cE N) (hPr : ∀ N, (B.P (Ξ N)ᶜ).toReal ≤ pr N)
+    (hZI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖ ≤ Env N)
+    (hZIint : ∀ (r N : ℕ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (Qop (B.L N) ((s N : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖ ^ r) B.P)
+    (hZF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖ ≤ Env N)
+    (hZFint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖ ^ r) B.P)
+    (hZC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1)) q.2‖ ≤ Env N)
+    (hZCint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1)) q.2‖ ^ r) B.P)
+    (hZD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (fun b : LoopArg (B.L N) (n + 2) =>
+          Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b) q.2‖ ≤ Env N)
+    (hZDint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (fun b : LoopArg (B.L N) (n + 2) =>
+          Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b) q.2‖ ^ r) B.P)
+    (hZE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+        (Fin.append q.2 q.2)‖ ≤ Env N)
+    (hZEint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ)
+          (eeFun B E N u (X.H N u ω) q.1)) (Fin.append q.2 q.2)‖ ^ r) B.P)
+    (hEnvPr : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((2 * p : ℕ) : ℝ)) ≤ cE N)
+    (hEnvPrE : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((p : ℕ) : ℝ)) ≤ cE N)
+    {Phi PhiE : ∀ N, LoopData (B.L N) (n + 2) → ℝ}
+    (hPhi0 : ∀ N q, 0 ≤ Phi N q) (hPhiE0 : ∀ N q, 0 ≤ PhiE N q)
+    (hMψ : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * Phi N q))
+    (hMψE : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P p (ψE N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * PhiE N q))
+    {c : ℕ → ℝ} (C₀ : ℝ) (hC₀ : 0 < C₀)
+    (hnum : ∀ᶠ N : ℕ in atTop, ∀ q : LoopData (B.L N) (n + 2),
+      (cKer716 (n + 2) (4 * Kd N) * (B.scale E N (v N))⁻¹ ^ (n + 2) * Phi N q
+          + (errKer716 (B.L N) (n + 2) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N))
+            * (1 + 6 * (v N - s N))
+        + ((v N - s N) * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N)
+              * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * PhiE N q
+            + (errKer716 (B.L N) ((n + 2) + (n + 2)) (4 * Kd N) (ζ N) (δ' N) (s N) (v N)
+              + cE N)))
+              ^ ((1 : ℝ) / 2)
+        ≤ (C₀ * (N : ℝ) ^ (η / 2) * c N) * (B.scale E N (v N) ^ (n + 2))⁻¹) :
+    Rhs514QAt H (fun N => C₀ * (N : ℝ) ^ (η / 2) * c N) v := by
+  exact rhs514QAt_of_kernel_inputs' (c := fun N => C₀ * (N : ℝ) ^ (η / 2) * c N) hE H hs0 hsv hvt ht1 hKd hζ hδ hMsz hPb hesz hψ0 hψE0 hψint hψEint hEnvI hEnvF hEnvC hEnvD hEnvE hAMI hDecI hAMF hDecF hPsC hAME hDecE hErrQ hErrC hErrD hErrE hEnv0 hpr0 hcE0 hPr hZI hZIint hZF hZFint hZC hZCint hZD hZDint hZE hZEint hEnvPr hEnvPrE hPhi0 hPhiE0 hMψ hMψE hnum
+
+set_option maxHeartbeats 1600000 in
+/-- Weighted-time Q-event producer; the uniform kernel coefficient is separated from ρ(u). -/
+theorem rhs514QAt_of_kernel_inputs''' (η : ℝ) (hη : 0 < η) (hE : |E| < 2) (H : MomentDuhamel.Hyp X E s t n)
+    {v : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hsv : ∀ N, s N ≤ v N) (hvt : ∀ N, v N ≤ t N)
+    (ht1 : ∀ N, t N < 1)
+    {ρ : ℕ → ℝ → ℝ} (hρ : ∀ N u, s N ≤ u → u ≤ v N → 1 ≤ ρ N u)
+    (hρint : ∀ N, IntervalIntegrable (ρ N) volume (s N) (v N))
+    {Kd ζ δ δ' Msz Pb esz : ℕ → ℝ} (hKd : ∀ N, 1 ≤ Kd N) (hζ : ∀ N, 0 ≤ ζ N)
+    (hδ : ∀ N, 0 ≤ δ N) (hMsz : ∀ N, 0 ≤ Msz N) (hPb : ∀ N, 0 ≤ Pb N)
+    (hesz : ∀ N, 0 ≤ esz N)
+    {ψ ψE : ∀ N, ℝ → LoopData (B.L N) (n + 2) → Ω → ℝ}
+    (hψ0 : ∀ N u q ω, 0 ≤ ψ N u q ω) (hψE0 : ∀ N u q ω, 0 ≤ ψE N u q ω)
+    (hψint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψ N u q ω ^ r) B.P)
+    (hψEint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψE N u q ω ^ r) B.P)
+    (hEnvI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1) b‖
+        ≤ (B.scale E N (s N))⁻¹ ^ (n + 2) * ψ N (s N) q ω + ζ N)
+    (hEnvF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+          * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+        (b : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      ‖SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ ((n + 2) + (n + 2)) * ψE N u q ω + ζ N)
+    {Ξ : ℕ → Set Ω}
+    (hAMI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) (n + 2), ‖SumZeroDyn.lkT X E N (s N) ω q.1 b‖ ≤ Msz N)
+    (hDecI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((s N : ℝ) : ℂ) * Kd N) (δ N)
+        (SumZeroDyn.lkT X E N (s N) ω q.1))
+    (hAMF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) (n + 2), ‖H.F N u (X.H N u ω) q.1 b‖ ≤ Msz N)
+    (hDecF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N) (H.F N u (X.H N u ω) q.1))
+    (hPsC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N, ∀ x,
+      ‖Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) x‖ ≤ Pb N)
+    (hAME : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) ((n + 2) + (n + 2)), ‖eeFun B E N u (X.H N u ω) q.1 b‖ ≤ esz N)
+    (hDecE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N)
+        (eeFun B E N u (X.H N u ω) q.1))
+    (hErrQ : ∀ N : ℕ, FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N) ≤ δ' N)
+    (hErrC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.commErr (B.L N) n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N)
+        ≤ δ' N)
+    (hErrD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.dotErr n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N) ≤ δ' N)
+    (hErrE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.qqErr (B.L N) (n + 1) (ellHat (B.L N) ((u : ℝ) : ℂ)) (Kd N) (esz N) (δ N)
+        ≤ δ' N)
+    {Env pr cE : ℕ → ℝ} (hEnv0 : ∀ N, 0 ≤ Env N) (hpr0 : ∀ N, 0 ≤ pr N)
+    (hcE0 : ∀ N, 0 ≤ cE N) (hPr : ∀ N, (B.P (Ξ N)ᶜ).toReal ≤ pr N)
+    (hZI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖ ≤ Env N)
+    (hZIint : ∀ (r N : ℕ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (Qop (B.L N) ((s N : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖ ^ r) B.P)
+    (hZF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖ ≤ Env N)
+    (hZFint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖ ^ r) B.P)
+    (hZC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1)) q.2‖ ≤ Env N)
+    (hZCint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1)) q.2‖ ^ r) B.P)
+    (hZD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (fun b : LoopArg (B.L N) (n + 2) =>
+          Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b) q.2‖ ≤ Env N)
+    (hZDint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (fun b : LoopArg (B.L N) (n + 2) =>
+          Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b) q.2‖ ^ r) B.P)
+    (hZE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+        (Fin.append q.2 q.2)‖ ≤ Env N)
+    (hZEint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ)
+          (eeFun B E N u (X.H N u ω) q.1)) (Fin.append q.2 q.2)‖ ^ r) B.P)
+    (hEnvPr : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((2 * p : ℕ) : ℝ)) ≤ cE N)
+    (hEnvPrE : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((p : ℕ) : ℝ)) ≤ cE N)
+    {Phi PhiE : ∀ N, LoopData (B.L N) (n + 2) → ℝ}
+    (hPhi0 : ∀ N q, 0 ≤ Phi N q) (hPhiE0 : ∀ N q, 0 ≤ PhiE N q)
+    (hMψI : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N (s N) q) ≤ C * ((N : ℝ) ^ (ε / 2) * Phi N q))
+    (hMψ : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * Phi N q) * ρ N u)
+    (hMψE : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P p (ψE N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * PhiE N q) * ρ N u)
+    {c : ℕ → ℝ} (C₀ : ℝ) (hC₀ : 0 < C₀)
+    (hnum : ∀ᶠ N : ℕ in atTop, ∀ q : LoopData (B.L N) (n + 2),
+      (cKer716 (n + 2) (4 * Kd N) * (B.scale E N (v N))⁻¹ ^ (n + 2) * Phi N q
+          + (errKer716 (B.L N) (n + 2) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N))
+            * (1 + 6 * (∫ u in (s N)..(v N), ρ N u))
+        + ((∫ u in (s N)..(v N), ρ N u) * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N)
+              * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * PhiE N q
+            + (errKer716 (B.L N) ((n + 2) + (n + 2)) (4 * Kd N) (ζ N) (δ' N) (s N) (v N)
+              + cE N)))
+              ^ ((1 : ℝ) / 2)
+        ≤ (C₀ * (N : ℝ) ^ (η / 2) * c N) * (B.scale E N (v N) ^ (n + 2))⁻¹) :
+    Rhs514QAt H (fun N => C₀ * (N : ℝ) ^ (η / 2) * c N) v := by
+  intro ε hε p hp
+  obtain ⟨C1I, hC1I, hA1I⟩ := hMψI ε hε p hp
+  obtain ⟨C1W, hC1W, hA1W⟩ := hMψ ε hε p hp
+  set C1 : ℝ := max C1I C1W with hC1def
+  have hC10 : 0 < C1 := lt_of_lt_of_le hC1I (le_max_left _ _)
+  have hA1 : ∀ᶠ N : ℕ in atTop,
+      (∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N (s N) q) ≤ C1 * ((N : ℝ) ^ (ε / 2) * Phi N q)) ∧
+      (∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N u q) ≤ C1 * ((N : ℝ) ^ (ε / 2) * Phi N q) * ρ N u) := by
+    filter_upwards [hA1I, hA1W] with N hi hw
+    constructor
+    · intro q
+      have hb : 0 ≤ (N : ℝ) ^ (ε / 2) * Phi N q :=
+        mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) _) (hPhi0 N q)
+      exact (hi q).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hb)
+    · intro u hus huv q
+      have hb : 0 ≤ (N : ℝ) ^ (ε / 2) * Phi N q :=
+        mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) _) (hPhi0 N q)
+      exact (hw u hus huv q).trans
+        (mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_right (le_max_right _ _) hb)
+          (zero_le_one.trans (hρ N u hus huv)))
+  obtain ⟨C3, hC30, hA3⟩ := hMψE ε hε p hp
+  have hcMD := H.cMD_nonneg p
+  set Csq : ℝ := (H.cMD p * (C3 + 1)) ^ ((1 : ℝ) / 2) with hCsqdef
+  have hCsq0 : 0 ≤ Csq := Real.rpow_nonneg (by positivity) _
+  refine ⟨C1 + Csq + 1, by positivity, ?_⟩
+  filter_upwards [hA1, hA3, hnum, hEnvPr p hp, hEnvPrE p hp, eventually_ge_atTop 1] with
+    N h1 h3 hnumN hEP hEPE hNge q
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hNge
+  have hKd0 : (0 : ℝ) ≤ Kd N := by linarith [hKd N]
+  have hKd40 : (0 : ℝ) ≤ 4 * Kd N := by linarith
+  have hδ'0 : (0 : ℝ) ≤ δ' N :=
+    le_trans (FastDecayFlow.qopErr1_nonneg (B.L N) n hKd0 (hMsz N) (hδ N)) (hErrQ N)
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have h2p : 2 * p ≠ 0 := by omega
+  have hp0 : p ≠ 0 := by omega
+  set Np : ℝ := (N : ℝ) ^ (ε / 2) with hNpdef
+  have hNp1 : (1 : ℝ) ≤ Np := Real.one_le_rpow hNge1 (by positivity)
+  have hNp0 : (0 : ℝ) < Np := lt_of_lt_of_le one_pos hNp1
+  have hs0N := hs0 N
+  have hsvN := hsv N
+  have hv1 : v N < 1 := lt_of_le_of_lt (hvt N) (ht1 N)
+  have hv0 : (0 : ℝ) ≤ v N := hs0N.trans hsvN
+  have hκA : (0 : ℝ) < (B.W N : ℝ) * (mE E).im := by
+    have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+    have := mE_im_pos hE
+    positivity
+  have hbr : ∀ w : ℝ, ((B.W N : ℝ) * (mE E).im) * ((1 - w) * ellHat (B.L N) ((w : ℝ) : ℂ))
+      = B.scale E N w := fun w => scale_eq_kappaA B E N w
+  have hell : ∀ u : ℝ, s N ≤ u → u ≤ v N → (0 : ℝ) < ellHat (B.L N) ((u : ℝ) : ℂ) := by
+    intro u hua hub
+    have := half_le_ellHat_real (B.L N) hL3 (hs0N.trans hua) (lt_of_le_of_lt hub hv1)
+    linarith
+  have h1s : (0 : ℝ) < 1 - s N := by linarith
+  have h1v : (0 : ℝ) < 1 - v N := by linarith
+  have hrat : (0 : ℝ) ≤ (1 - s N) / (1 - v N) := (div_pos h1s h1v).le
+  have hrm : (0 : ℝ) ≤ ((1 - s N) / (1 - v N)) ^ (n + 2) := pow_nonneg hrat _
+  have hrm2 : (0 : ℝ) ≤ ((1 - s N) / (1 - v N)) ^ ((n + 2) + (n + 2)) := pow_nonneg hrat _
+  have hscale : (0 : ℝ) < B.scale E N (v N) := B.scale_pos' hE N hv0 hv1
+  -- the two normalizations and the two errors, now carrying the Markov price `cE N`
+  set Av : ℝ := (B.scale E N (v N))⁻¹ ^ (n + 2) with hAvdef
+  set Av2 : ℝ := (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) with hAv2def
+  set Eb : ℝ := errKer716 (B.L N) (n + 2) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N with hEbdef
+  set Eb2 : ℝ := errKer716 (B.L N) ((n + 2) + (n + 2)) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N
+    with hEb2def
+  have hEb0 : (0 : ℝ) ≤ Eb := by
+    rw [hEbdef]
+    have := errKer716_nonneg (B.L N) (n + 2) hKd40 (hζ N) hδ'0 hsvN hv1
+    have := hcE0 N
+    linarith
+  have hEb20 : (0 : ℝ) ≤ Eb2 := by
+    rw [hEb2def]
+    have := errKer716_nonneg (B.L N) ((n + 2) + (n + 2)) hKd40 (hζ N) hδ'0 hsvN hv1
+    have := hcE0 N
+    linarith
+  have hAv0 : (0 : ℝ) ≤ Av := by rw [hAvdef]; positivity
+  have hAv20 : (0 : ℝ) ≤ Av2 := by rw [hAv2def]; positivity
+  have hcK0 : (0 : ℝ) ≤ cKer716 (n + 2) (4 * Kd N) := cKer716_nonneg _ hKd40
+  have hcK20 : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) := cKer716_nonneg _ hKd40
+  set Iρ : ℝ := ∫ u in (s N)..(v N), ρ N u with hIρdef
+  have hIρ0 : 0 ≤ Iρ := intervalIntegral.integral_nonneg hsvN
+    (fun u hu => zero_le_one.trans (hρ N u hu.1 hu.2))
+  set Kmain : ℝ := cKer716 (n + 2) (4 * Kd N) * Av * Phi N q + Eb with hKmaindef
+  set K3 : ℝ := Iρ * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2)
+    with hK3def
+  have hKmain0 : (0 : ℝ) ≤ Kmain := by
+    rw [hKmaindef]
+    have := hPhi0 N q
+    have : (0 : ℝ) ≤ cKer716 (n + 2) (4 * Kd N) * Av * Phi N q := by positivity
+    linarith
+  have hvs : (0 : ℝ) ≤ Iρ := hIρ0
+  have hK30 : (0 : ℝ) ≤ K3 := by
+    rw [hK3def]
+    have hPE := hPhiE0 N q
+    have : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q := by positivity
+    exact mul_nonneg hvs (by linarith)
+  set Mb : ℝ := cKer716 (n + 2) (4 * Kd N) * Av * (C1 * (Np * Phi N q)) + Eb with hMbdef
+  have hMb0 : (0 : ℝ) ≤ Mb := by
+    rw [hMbdef]
+    have := hPhi0 N q
+    have : (0 : ℝ) ≤ cKer716 (n + 2) (4 * Kd N) * Av * (C1 * (Np * Phi N q)) := by positivity
+    linarith
+  have hMbK : Mb ≤ (C1 + 1) * (Np * Kmain) := by
+    rw [hMbdef, hKmaindef]
+    have e1 : cKer716 (n + 2) (4 * Kd N) * Av * (C1 * (Np * Phi N q))
+        = C1 * (Np * (cKer716 (n + 2) (4 * Kd N) * Av * Phi N q)) := by ring
+    rw [e1]
+    exact affine_absorb (mul_nonneg (mul_nonneg hcK0 hAv0) (hPhi0 N q)) hEb0 hC10.le hNp1
+  -- the shared comparison behind the four `‖·‖_{2p}` terms, in raw form
+  have hcmp : ∀ a Mψ eT w : ℝ, 0 ≤ a → a ≤ (4 * Kd N) ^ (2 * (n + 2)) →
+      0 ≤ Mψ → Mψ ≤ C1 * (Np * Phi N q) * w → 0 ≤ eT → eT ≤ δ' N →
+      cKerSumZero (n + 2) * a * (B.scale E N (v N))⁻¹ ^ (n + 2) * Mψ
+        + (cKerSumZero (n + 2) * a * ((1 - s N) / (1 - v N)) ^ (n + 2) * ζ N
+          + cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+              * ((1 - s N) / (1 - v N)) ^ (n + 2) * eT)
+        ≤ cKerSumZero (n + 2) * (4 * Kd N) ^ (2 * (n + 2))
+              * (B.scale E N (v N))⁻¹ ^ (n + 2) * (C1 * (Np * Phi N q) * w)
+          + (cKerSumZero (n + 2) * (4 * Kd N) ^ (2 * (n + 2))
+                * ((1 - s N) / (1 - v N)) ^ (n + 2) * ζ N
+            + cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+                * ((1 - s N) / (1 - v N)) ^ (n + 2) * δ' N) := by
+    intro a Mψ eT w ha haa hM0 hMle he0 hele
+    have hinv : (0 : ℝ) ≤ (B.scale E N (v N))⁻¹ ^ (n + 2) := by positivity
+    have p1 := mul_four_le_mul_four (SumZeroDyn.cKerSumZero_nonneg (n + 2)) ha haa hinv hM0 hMle
+    have p2 := mul_four_le_mul_four (SumZeroDyn.cKerSumZero_nonneg (n + 2)) ha haa hrm (hζ N)
+      (le_refl (ζ N))
+    have p3 : cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+          * ((1 - s N) / (1 - v N)) ^ (n + 2) * eT
+        ≤ cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+          * ((1 - s N) / (1 - v N)) ^ (n + 2) * δ' N :=
+      mul_four_le_mul_four (SumZeroDyn.cKerSumZeroErr_nonneg (n + 2)) (by positivity) le_rfl
+        hrm he0 hele
+    linarith
+  -- Term 1: the initial datum of (5.91)
+  have hT1 : momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖) ≤ Mb := by
+    have key := momNorm_Uker_Qop_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := s N) (v := v N) hs0N le_rfl hsvN hv0 hv1 hκA (hKd N) (hMsz N) (hζ N) (hδ N)
+      (Ξ := Ξ N) (A := fun ω => SumZeroDyn.lkT X E N (s N) ω q.1) (ψ := ψ N (s N) q)
+      (fun ω => hψ0 N (s N) q ω) (hψint (2 * p) N (s N) q)
+      (fun ω b => by rw [hbr]; exact hEnvI N q ω b)
+      (fun ω hω => hAMI N q ω hω) (fun ω hω => hDecI N q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZI N q ω) (hZIint (2 * p) N q) (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp (Kd N ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N (s N) q))
+      (FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N)) 1 (by positivity)
+      (pow_le_pow_left₀ hKd0 (by linarith) _) (momNorm_nonneg _ _ _) (by simpa using h1.1 q)
+      (FastDecayFlow.qopErr1_nonneg (B.L N) n hKd0 (hMsz N) (hδ N)) (hErrQ N)
+    rw [hMbdef, hAvdef, hEbdef, cKer716, errKer716]
+    nlinarith only [hle, hEP]
+  -- Terms 2–4: the three time integrals of (5.91)
+  have hI2 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖))
+      ≤ Iρ * Mb := by
+    refine intervalIntegral_le_of_le_weight hsvN hMb0 (hρint N)
+      (fun u hu => zero_le_one.trans (hρ N u hu.1 hu.2)) fun u hu => ?_
+    have key := momNorm_Uker_Qop_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hMsz N) (hζ N) (hδ N)
+      (Ξ := Ξ N) (A := fun ω => H.F N u (X.H N u ω) q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω b => by rw [hbr]; exact hEnvF N u hu.1 hu.2 q ω b)
+      (fun ω hω => hAMF N u hu.1 hu.2 q ω hω) (fun ω hω => hDecF N u hu.1 hu.2 q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZF N u hu.1 hu.2 q ω) (hZFint (2 * p) N u hu.1 hu.2 q)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp (Kd N ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N u q))
+      (FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N)) (ρ N u) (by positivity)
+      (pow_le_pow_left₀ hKd0 (by linarith) _) (momNorm_nonneg _ _ _) (h1.2 u hu.1 hu.2 q)
+      (FastDecayFlow.qopErr1_nonneg (B.L N) n hKd0 (hMsz N) (hδ N)) (hErrQ N)
+    rw [hMbdef, hAvdef, cKer716, hEbdef, errKer716]
+    have hEbρ : Eb ≤ Eb * ρ N u := by
+      simpa only [mul_one] using mul_le_mul_of_nonneg_left (hρ N u hu.1 hu.2) hEb0
+    rw [hEbdef, errKer716] at hEbρ
+    nlinarith only [hle, hEP, hEbρ]
+  have hI3 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+            (SumZeroDyn.lkT X E N u ω q.1)) q.2‖))
+      ≤ Iρ * Mb := by
+    refine intervalIntegral_le_of_le_weight hsvN hMb0 (hρint N)
+      (fun u hu => zero_le_one.trans (hρ N u hu.1 hu.2)) fun u hu => ?_
+    have key := momNorm_Uker_commS_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hζ N) (hPb N)
+      (Ξ := Ξ N) (A := fun ω => SumZeroDyn.lkT X E N u ω q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω b => by rw [hbr]; exact hEnvC N u hu.1 hu.2 q ω b)
+      (fun ω hω => hPsC N u hu.1 hu.2 q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZC N u hu.1 hu.2 q ω) (hZCint (2 * p) N u hu.1 hu.2 q)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp ((4 * Kd N) ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N u q))
+      (FastDecayFlow.commErr (B.L N) n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N))
+      (ρ N u) (by positivity) le_rfl (momNorm_nonneg _ _ _) (h1.2 u hu.1 hu.2 q)
+      (FastDecayFlow.commErr_nonneg (B.L N) n (hell u hu.1 hu.2)
+        (lt_of_le_of_lt hu.2 hv1) hKd0 (hPb N))
+      (hErrC N u hu.1 hu.2)
+    rw [hMbdef, hAvdef, cKer716, hEbdef, errKer716]
+    have hEbρ : Eb ≤ Eb * ρ N u := by
+      simpa only [mul_one] using mul_le_mul_of_nonneg_left (hρ N u hu.1 hu.2) hEb0
+    rw [hEbdef, errKer716] at hEbρ
+    nlinarith only [hle, hEP, hEbρ]
+  have hI4 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) u b) q.2‖))
+      ≤ Iρ * Mb := by
+    refine intervalIntegral_le_of_le_weight hsvN hMb0 (hρint N)
+      (fun u hu => zero_le_one.trans (hρ N u hu.1 hu.2)) fun u hu => ?_
+    have key := momNorm_Uker_dot_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hζ N) (hPb N)
+      (Ξ := Ξ N) (A := fun ω => SumZeroDyn.lkT X E N u ω q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω b => by rw [hbr]; exact hEnvD N u hu.1 hu.2 q ω b)
+      (fun ω hω => hPsC N u hu.1 hu.2 q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZD N u hu.1 hu.2 q ω) (hZDint (2 * p) N u hu.1 hu.2 q)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp ((4 * Kd N) ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N u q))
+      (FastDecayFlow.dotErr n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N))
+      (ρ N u) (by positivity) le_rfl (momNorm_nonneg _ _ _) (h1.2 u hu.1 hu.2 q)
+      (FastDecayFlow.dotErr_nonneg n (hell u hu.1 hu.2)
+        (lt_of_le_of_lt hu.2 hv1) (hPb N))
+      (hErrD N u hu.1 hu.2)
+    rw [hMbdef, hAvdef, cKer716, hEbdef, errKer716]
+    have hEbρ : Eb ≤ Eb * ρ N u := by
+      simpa only [mul_one] using mul_le_mul_of_nonneg_left (hρ N u hu.1 hu.2) hEb0
+    rw [hEbdef, errKer716] at hEbρ
+    nlinarith only [hle, hEP, hEbρ]
+  -- Term 5: the `(Q ⊗ Q)(E ⊗ E)` term of (5.103), under the square root
+  have hI5nn : (0 : ℝ) ≤ ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+        (Fin.append q.2 q.2)‖) :=
+    intervalIntegral.integral_nonneg hsvN fun u _ => momNorm_nonneg _ _ _
+  have hI5 : (∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+          (Fin.append q.2 q.2)‖))
+      ≤ (C3 + 1) * (Np * K3) := by
+    have hconst : ∀ u ∈ Set.Icc (s N) (v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+          (Fin.append q.2 q.2)‖)
+        ≤ (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2) * ρ N u := by
+      intro u hu
+      have key := momNorm_Uker_QQ_event_untrunc_le (P := B.P) (B.L N) hL3 hp0 hE q.1
+        (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hζ N) (hesz N) (hδ N)
+        (Ξ := Ξ N) (A := fun ω => eeFun B E N u (X.H N u ω) q.1) (ψ := ψE N u q)
+        (fun ω => hψE0 N u q ω) (hψEint p N u q)
+        (fun ω b => by rw [hbr]; exact hEnvE N u hu.1 hu.2 q ω b)
+        (fun ω hω => hAME N u hu.1 hu.2 q ω hω) (fun ω hω => hDecE N u hu.1 hu.2 q ω hω)
+        (Fin.append q.2 q.2)
+        (hEnv0 N) (hpr0 N) (fun ω => hZE N u hu.1 hu.2 q ω) (hZEint p N u hu.1 hu.2 q)
+        (hPr N)
+      rw [hbr (v N)] at key
+      refine key.trans ?_
+      have hinv2 : (0 : ℝ) ≤ (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) := by positivity
+      have p1 : cKerSumZero ((n + 2) + (n + 2)) * (4 * Kd N) ^ (2 * ((n + 2) + (n + 2)))
+            * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * momNorm B.P p (ψE N u q)
+          ≤ cKerSumZero ((n + 2) + (n + 2)) * (4 * Kd N) ^ (2 * ((n + 2) + (n + 2)))
+            * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * (C3 * (Np * PhiE N q) * ρ N u) :=
+        mul_four_le_mul_four (SumZeroDyn.cKerSumZero_nonneg ((n + 2) + (n + 2)))
+          (by positivity) le_rfl hinv2 (momNorm_nonneg _ _ _) (h3 u hu.1 hu.2 q)
+      have p3 : cKerSumZeroErr ((n + 2) + (n + 2)) * (B.L N : ℝ) ^ ((n + 2) + (n + 2))
+            * ((1 - s N) / (1 - v N)) ^ ((n + 2) + (n + 2))
+            * FastDecayFlow.qqErr (B.L N) (n + 1) (ellHat (B.L N) ((u : ℝ) : ℂ)) (Kd N)
+                (esz N) (δ N)
+          ≤ cKerSumZeroErr ((n + 2) + (n + 2)) * (B.L N : ℝ) ^ ((n + 2) + (n + 2))
+            * ((1 - s N) / (1 - v N)) ^ ((n + 2) + (n + 2)) * δ' N :=
+        mul_four_le_mul_four (SumZeroDyn.cKerSumZeroErr_nonneg ((n + 2) + (n + 2)))
+          (by positivity) le_rfl hrm2
+          (FastDecayFlow.qqErr_nonneg (B.L N) (n + 1) (hell u hu.1 hu.2) hKd0 (hesz N) (hδ N))
+          (hErrE N u hu.1 hu.2)
+      rw [hAv2def, hEb2def, cKer716, errKer716]
+      have hEb2ρ : Eb2 ≤ Eb2 * ρ N u := by
+        simpa only [mul_one] using mul_le_mul_of_nonneg_left (hρ N u hu.1 hu.2) hEb20
+      rw [hEb2def, errKer716] at hEb2ρ
+      nlinarith only [p1, p3, hEPE, hEb2ρ]
+    have hbase : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q :=
+      mul_nonneg (mul_nonneg hcK20 hAv20) (hPhiE0 N q)
+    have hfac : cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2
+        ≤ (C3 + 1) * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2)) := by
+      have e1 : cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q))
+          = C3 * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q)) := by ring
+      rw [e1]
+      exact affine_absorb hbase hEb20 hC30.le hNp1
+    have hMnn : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q))
+        + Eb2 := by
+      have h0 : (0 : ℝ) ≤ C3 * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q)) :=
+        mul_nonneg hC30.le (mul_nonneg hNp0.le hbase)
+      have e1 : cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q))
+          = C3 * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q)) := by ring
+      rw [e1]
+      linarith
+    refine (intervalIntegral_le_of_le_weight hsvN hMnn (hρint N)
+      (fun u hu => zero_le_one.trans (hρ N u hu.1 hu.2)) hconst).trans ?_
+    rw [hK3def]
+    calc Iρ
+          * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2)
+        ≤ Iρ * ((C3 + 1)
+            * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2))) :=
+          mul_le_mul_of_nonneg_left hfac hvs
+      _ = (C3 + 1) * (Np * (Iρ
+            * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2))) := by ring
+  have hT5 : (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+          (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+      ≤ Csq * (Np * K3 ^ ((1 : ℝ) / 2)) := by
+    have hstep : (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+          ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+            (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+            (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+        ≤ ((H.cMD p * (C3 + 1)) * (Np * K3)) ^ ((1 : ℝ) / 2) := by
+      refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
+      calc H.cMD p * _ ≤ H.cMD p * ((C3 + 1) * (Np * K3)) :=
+            mul_le_mul_of_nonneg_left hI5 hcMD
+        _ = (H.cMD p * (C3 + 1)) * (Np * K3) := by ring
+    refine hstep.trans ?_
+    rw [Real.mul_rpow (by positivity) (by positivity), Real.mul_rpow hNp0.le hK30, ← hCsqdef]
+    have hhalf : Np ^ ((1 : ℝ) / 2) ≤ Np := by
+      calc Np ^ ((1 : ℝ) / 2) ≤ Np ^ (1 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le hNp1 (by norm_num)
+        _ = Np := Real.rpow_one Np
+    have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
+    exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hhalf hK3s) hCsq0
+  -- assemble
+  have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
+  have hfour : Mb + 2 * (Iρ * Mb) + 2 * (Iρ * Mb) + 2 * (Iρ * Mb)
+      ≤ (C1 + 1) * (Np * (Kmain * (1 + 6 * Iρ))) := by
+    have h6 : Mb * (1 + 6 * Iρ)
+        ≤ ((C1 + 1) * (Np * Kmain)) * (1 + 6 * Iρ) :=
+      mul_le_mul_of_nonneg_right hMbK (by linarith)
+    linarith [h6]
+  have hmain : Mb + 2 * (Iρ * Mb) + 2 * (Iρ * Mb) + 2 * (Iρ * Mb)
+        + Csq * (Np * K3 ^ ((1 : ℝ) / 2))
+      ≤ (C1 + Csq + 1) * (Np * (Kmain * (1 + 6 * Iρ) + K3 ^ ((1 : ℝ) / 2))) := by
+    have hpos : (0 : ℝ) ≤ Np * (Kmain * (1 + 6 * Iρ)) :=
+      mul_nonneg hNp0.le (mul_nonneg hKmain0 (by linarith))
+    have t1 : (0 : ℝ) ≤ Csq * (Np * (Kmain * (1 + 6 * Iρ))) := mul_nonneg hCsq0 hpos
+    have t2 : (0 : ℝ) ≤ (C1 + 1) * (Np * K3 ^ ((1 : ℝ) / 2)) :=
+      mul_nonneg (by linarith) (mul_nonneg hNp0.le hK3s)
+    linarith [hfour, t1, t2]
+  refine le_trans (by linarith [hT1, hI2, hI3, hI4, hT5]) (hmain.trans ?_)
+  have hfin := hnumN q
+  rw [← hKmaindef, ← hK3def] at hfin
+  have hC : (0 : ℝ) ≤ C1 + Csq + 1 := by linarith
+  exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hfin hNp0.le) hC
+
+
 end ProducerEvent
 
 /-! ### §6  Satisfiability on the paper's own grid
@@ -1542,6 +2276,54 @@ theorem cNum716_nonneg (m : ℕ) {Kd Phi PhiE s v : ℝ} (hKd : 0 ≤ Kd) (hPhi 
   have h2 : (0 : ℝ) ≤ ((v - s) * (cKer716 (m + m) Kd * PhiE)) ^ ((1 : ℝ) / 2) :=
     Real.rpow_nonneg (mul_nonneg hvs (mul_nonneg (cKer716_nonneg (m + m) hKd) hPhiE)) _
   rw [cNum716]; linarith
+
+/-- The leading Case-2 kernel coefficient already exceeds the unit control at loop length
+two.  The error budget of T253 can be arbitrarily small without changing this coefficient. -/
+theorem one_lt_cKer716_two : (1 : ℝ) < cKer716 2 1 := by
+  have hw : (0 : ℝ) ≤ cWin := cWin_nonneg
+  have hl : (0 : ℝ) ≤ cLip := cLip_nonneg
+  unfold cKer716 cKerSumZero
+  norm_num
+  nlinarith [sq_nonneg cWin]
+
+/-- A positive additive error cannot repair the unit-control numeric row, even on a
+zero-length window with unit scale and a positive leading envelope. -/
+theorem not_hnum_unit_Q {e cE : ℝ} (he : 0 ≤ e) (hcE : 0 ≤ cE) :
+    ¬ (cKer716 2 1 + (e + cE) ≤ 1) := by
+  have h := one_lt_cKer716_two
+  intro hnum
+  linarith
+
+/-- The same obstruction persists on the nonempty window of length `1/2`, with any
+nonnegative square-root contribution. -/
+theorem not_hnum_half_window_Q {e z : ℝ} (he : 0 ≤ e) (hz : 0 ≤ z) :
+    ¬ ((cKer716 2 1 + e) * (1 + 6 * (1 / 2 : ℝ)) + z ≤ 1) := by
+  have h := one_lt_cKer716_two
+  intro hnum
+  nlinarith
+
+/-- The relaxed Case-2 numeric row on the concrete first grid cell of
+`gridS_two_one_first`: positive moment envelopes, positive errors and a positive
+bad-event payment.  Here `L = 3`, so this is an arithmetic witness, not a claim about a
+growing-band model. -/
+noncomputable def numHalfQ : ℝ :=
+  (cKer716 2 4 + (errKer716 3 2 4 1 1 0 (1 / 2) + 1))
+      * (1 + 6 * (1 / 2))
+    + ((1 / 2) * (cKer716 4 4 +
+        (errKer716 3 4 4 1 1 0 (1 / 2) + 1))) ^ ((1 : ℝ) / 2)
+
+theorem numHalfQ_relaxed_witness (η : ℝ) (hη : 0 < η) :
+    ∃ C₀ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      numHalfQ ≤ C₀ * (N : ℝ) ^ (η / 2) := by
+  let C₀ := max numHalfQ 0 + 1
+  have hC₀ : 0 < C₀ := by dsimp [C₀]; have := le_max_right numHalfQ 0; linarith
+  refine ⟨C₀, hC₀, ?_⟩
+  filter_upwards [eventually_ge_atTop 1] with N hN
+  have hN' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hpow : (1 : ℝ) ≤ (N : ℝ) ^ (η / 2) :=
+    Real.one_le_rpow hN' (by linarith)
+  have ha : numHalfQ ≤ C₀ := by dsimp [C₀]; have := le_max_left numHalfQ 0; linarith
+  nlinarith [mul_nonneg hC₀.le (sub_nonneg.mpr hpow)]
 
 /-- **`RBM.Gauss.cNum716` is uniform on any window of length at most `1`.**  The bound mentions
 neither `L` nor the window, so in particular it is independent of the grid index. -/
@@ -1798,5 +2580,768 @@ transplanted.  The `hnum` row of §5b is meant to be discharged asymptotically, 
 superpolynomially small, not by an exact cancellation.  A uniform-in-`u` bound on the three
 `u`-dependent budgets (compactness of the window plus monotonicity of `ℓ̂`) is likewise left
 open; it is deterministic work in `RBM1D/Gauss/FastDecayFlow.lean`, not in this file. -/
+
+end RBM.Gauss
+
+namespace RBM.Gauss
+
+/-! ### §17  The pointwise envelope for the projected drift (T278) -/
+
+open RBM
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ}
+  {s t : ℕ → ℝ} {n : ℕ}
+
+/-- The normalized maximum of the projected drift at the current time. -/
+noncomputable def psiF (H : MomentDuhamel.Hyp X E s t n) (N : ℕ) (u : ℝ)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω) : ℝ :=
+  B.scale E N u ^ (n + 2) *
+    (Finset.univ : Finset (LoopArg (B.L N) (n + 2))).sup' Finset.univ_nonempty
+      (fun b => ‖Qop (B.L N) (u : ℂ) (H.F N u (X.H N u ω) q.1) b‖)
+
+theorem psiF_nonneg (H : MomentDuhamel.Hyp X E s t n) (N : ℕ) (u : ℝ)
+    (hE : |E| < 2) (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω) : 0 ≤ psiF H N u q ω := by
+  unfold psiF
+  apply mul_nonneg (pow_nonneg (B.scale_pos' hE N hu0 hu1).le _)
+  exact le_trans (norm_nonneg _)
+    (Finset.le_sup' (fun b => ‖Qop (B.L N) (u : ℂ) (H.F N u (X.H N u ω) q.1) b‖)
+      (Finset.mem_univ q.2))
+
+/-- The `hEnvF` row with zero envelope offset, at every sample point. -/
+theorem norm_Qop_F_le_psiF (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (N : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)) :
+    ‖Qop (B.L N) (u : ℂ) (H.F N u (X.H N u ω) q.1) b‖
+      ≤ (B.scale E N u)⁻¹ ^ (n + 2) * psiF H N u q ω := by
+  have hA0 : 0 < B.scale E N u := B.scale_pos' hE N hu0 hu1
+  have hAne : B.scale E N u ≠ 0 := ne_of_gt hA0
+  have hmul : (B.scale E N u)⁻¹ ^ (n + 2) * B.scale E N u ^ (n + 2) = 1 := by
+    rw [← mul_pow, inv_mul_cancel₀ hAne, one_pow]
+  calc
+    ‖Qop (B.L N) (u : ℂ) (H.F N u (X.H N u ω) q.1) b‖
+        ≤ (Finset.univ : Finset (LoopArg (B.L N) (n + 2))).sup' Finset.univ_nonempty
+            (fun c => ‖Qop (B.L N) (u : ℂ) (H.F N u (X.H N u ω) q.1) c‖) :=
+          Finset.le_sup'
+            (fun c => ‖Qop (B.L N) (u : ℂ) (H.F N u (X.H N u ω) q.1) c‖)
+            (Finset.mem_univ b)
+    _ = (B.scale E N u)⁻¹ ^ (n + 2) * psiF H N u q ω := by
+      unfold psiF
+      rw [← mul_assoc, hmul, one_mul]
+
+/-- Apply the deterministic fast-decay `Qop` bound to the normalized maximum, retaining
+the size estimate at the current time `u`. -/
+theorem psiF_le_of_fastDecay (H : MomentDuhamel.Hyp X E s t n)
+    (N : ℕ) {u K M δF : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (hK : 1 ≤ K) (hδF : 0 ≤ δF)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+    (hFM : ∀ b, ‖H.F N u (X.H N u ω) q.1 b‖ ≤ M)
+    (hFD : FastDecay (B.L N) (ellHat (B.L N) (u : ℂ) * K) δF
+      (H.F N u (X.H N u ω) q.1)) :
+    psiF H N u q ω ≤ B.scale E N u ^ (n + 2) *
+      ((1 + (6 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) * M
+        + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF) := by
+  have hM0 : 0 ≤ M := le_trans (norm_nonneg _) (hFM q.2)
+  have hQ := SumZeroDyn.norm_Qop_le_of_fastDecay (B.L N) (B.three_le_L N)
+    hu0 hu1 hK hM0 hδF hFM hFD
+  unfold psiF
+  exact mul_le_mul_of_nonneg_left
+    (Finset.sup'_le _ _ (fun b _ => hQ b)) (pow_nonneg (B.scale_nonneg E N hu1.le) _)
+
+/-- The projected drift estimate with the *pointwise* (5.77) size at `u`.  Its decay
+input is precisely the drift `hDecF` row with `Kd = 4*K`; no uniform `Msz` appears. -/
+theorem psiF_le_of_drift_inputs (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (N : ℕ) {u K δ δF CK C1 : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hsu : s N ≤ u) (hut : u ≤ t N)
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u)
+    (hell : 1 / 2 ≤ B.ell N u) (hK : 1 ≤ K) (hδ : 0 ≤ δ)
+    (hδF : 0 ≤ δF) (hCK : 0 ≤ CK) (hC10 : 0 ≤ C1)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+    (hKb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF →
+      ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1))
+    (hKd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ (B.Kval E N u))
+    (hDd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : Decay.LoopDecay (B.L N) (n + 3) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hC1 : X.xiLK E N u ω 1 ≤ C1)
+    (hDecF : FastDecay (B.L N) (ellHat (B.L N) (u : ℂ) * (4 * K)) δF
+      (H.F N u (X.H N u ω) q.1)) :
+    psiF H N u q ω ≤ B.scale E N u ^ (n + 2) *
+      ((1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) *
+        ((B.scale E N u)⁻¹ ^ (n + 2) * (etaT E u)⁻¹ *
+          ((K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+          + (B.W N : ℝ) * (B.L N : ℝ) * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+              DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1))
+        + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF) := by
+  let M : ℝ := (B.scale E N u)⁻¹ ^ (n + 2) * (etaT E u)⁻¹ *
+      ((K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+    + (B.W N : ℝ) * (B.L N : ℝ) * δ *
+      ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+        DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1)
+  have hFM : ∀ b, ‖H.F N u (X.H N u ω) q.1 b‖ ≤ M := by
+    intro b
+    exact DriftBound.norm_Hyp_F_le H ω q.1 b hE hu0 hu1 hsu hut
+      hA hη hell hK hδ hCK hC10 hKb hKd hDd hLd hC1
+  have hQ := psiF_le_of_fastDecay H N hu0 hu1 (by nlinarith : 1 ≤ 4 * K)
+    hδF q ω hFM hDecF
+  simpa only [M, show 6 * Real.exp 1 * cTwo52 * (4 * K) =
+      24 * Real.exp 1 * cTwo52 * K by ring] using hQ
+
+/-- The normalization cancels at the current time, leaving only the time weight
+`eta_u⁻¹` on the main term. -/
+theorem psiF_le_of_drift_inputs' (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (N : ℕ) {u K δ δF CK C1 : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hsu : s N ≤ u) (hut : u ≤ t N)
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u)
+    (hell : 1 / 2 ≤ B.ell N u) (hK : 1 ≤ K) (hδ : 0 ≤ δ)
+    (hδF : 0 ≤ δF) (hCK : 0 ≤ CK) (hC10 : 0 ≤ C1)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+    (hKb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF →
+      ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1))
+    (hKd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ (B.Kval E N u))
+    (hDd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : Decay.LoopDecay (B.L N) (n + 3) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hC1 : X.xiLK E N u ω 1 ≤ C1)
+    (hDecF : FastDecay (B.L N) (ellHat (B.L N) (u : ℂ) * (4 * K)) δF
+      (H.F N u (X.H N u ω) q.1)) :
+    psiF H N u q ω ≤
+      (etaT E u)⁻¹ * (1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) *
+        (K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω
+      + B.scale E N u ^ (n + 2) *
+        ((1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) *
+          ((B.W N : ℝ) * (B.L N : ℝ) * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+              DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1))
+          + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF) := by
+  have h := psiF_le_of_drift_inputs H hE N hu0 hu1 hsu hut hA hη hell hK hδ
+    hδF hCK hC10 q ω hKb hKd hDd hLd hC1 hDecF
+  have hA0 : 0 < B.scale E N u := lt_of_lt_of_le zero_lt_one hA
+  have hcancel : B.scale E N u ^ (n + 2) * (B.scale E N u)⁻¹ ^ (n + 2) = 1 := by
+    rw [← mul_pow, mul_inv_cancel₀ hA0.ne', one_pow]
+  let a : ℝ := B.scale E N u
+  let c : ℝ := 1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)
+  let x : ℝ := (etaT E u)⁻¹ *
+    ((K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+  let e : ℝ := (B.W N : ℝ) * (B.L N : ℝ) * δ *
+    ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+      DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1)
+  let z : ℝ := (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF
+  have hh : psiF H N u q ω ≤ a ^ (n + 2) * (c * (a⁻¹ ^ (n + 2) * x + e) + z) := by
+    dsimp [a, c, x, e, z]
+    convert h using 1 <;> ring
+  have hc : a ^ (n + 2) * a⁻¹ ^ (n + 2) = 1 := hcancel
+  have heq : a ^ (n + 2) * (c * (a⁻¹ ^ (n + 2) * x + e) + z)
+      = c * x + a ^ (n + 2) * (c * e + z) := by
+    calc
+      _ = (a ^ (n + 2) * a⁻¹ ^ (n + 2)) * (c * x)
+            + a ^ (n + 2) * (c * e + z) := by ring
+      _ = _ := by rw [hc]; ring
+  calc
+    psiF H N u q ω ≤ a ^ (n + 2) * (c * (a⁻¹ ^ (n + 2) * x + e) + z) := hh
+    _ = c * x + a ^ (n + 2) * (c * e + z) := heq
+    _ = _ := by dsimp [a, c, x, e, z]; ring
+
+/-- The §19 projected-drift bound with `K` controlled only at lengths `2 … n+2`. -/
+theorem psiF_le_of_drift_inputs_bounded (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (N : ℕ) {u K δ δF CK C1 : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hsu : s N ≤ u) (hut : u ≤ t N)
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u)
+    (hell : 1 / 2 ≤ B.ell N u) (hK : 1 ≤ K) (hδ : 0 ≤ δ)
+    (hδF : 0 ≤ δF) (hCK : 0 ≤ CK) (hC10 : 0 ≤ C1)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+    (hKb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
+      ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1))
+    (hKd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ (B.Kval E N u))
+    (hDd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : Decay.LoopDecay (B.L N) (n + 3) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hC1 : X.xiLK E N u ω 1 ≤ C1)
+    (hDecF : FastDecay (B.L N) (ellHat (B.L N) (u : ℂ) * (4 * K)) δF
+      (H.F N u (X.H N u ω) q.1)) :
+    psiF H N u q ω ≤ B.scale E N u ^ (n + 2) *
+      ((1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) *
+        ((B.scale E N u)⁻¹ ^ (n + 2) * (etaT E u)⁻¹ *
+          ((K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+          + (B.W N : ℝ) * (B.L N : ℝ) * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+              DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1))
+        + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF) := by
+  let M : ℝ := (B.scale E N u)⁻¹ ^ (n + 2) * (etaT E u)⁻¹ *
+      ((K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+    + (B.W N : ℝ) * (B.L N : ℝ) * δ *
+      ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+        DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1)
+  have hFM : ∀ b, ‖H.F N u (X.H N u ω) q.1 b‖ ≤ M := by
+    intro b
+    exact DriftBound.norm_Hyp_F_le' H ω q.1 b hE hu0 hu1 hsu hut
+      hA hη hell hK hδ hCK hC10 hKb hKd hDd hLd hC1
+  have hQ := psiF_le_of_fastDecay H N hu0 hu1 (by nlinarith : 1 ≤ 4 * K)
+    hδF q ω hFM hDecF
+  simpa only [M, show 6 * Real.exp 1 * cTwo52 * (4 * K) =
+      24 * Real.exp 1 * cTwo52 * K by ring] using hQ
+
+/-- The normalized §19 bound with bounded-length `K` input. -/
+theorem psiF_le_of_drift_inputs'' (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (N : ℕ) {u K δ δF CK C1 : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hsu : s N ≤ u) (hut : u ≤ t N)
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u)
+    (hell : 1 / 2 ≤ B.ell N u) (hK : 1 ≤ K) (hδ : 0 ≤ δ)
+    (hδF : 0 ≤ δF) (hCK : 0 ≤ CK) (hC10 : 0 ≤ C1)
+    (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+    (hKb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
+      ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1))
+    (hKd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ (B.Kval E N u))
+    (hDd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : Decay.LoopDecay (B.L N) (n + 3) (B.ell N u * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hC1 : X.xiLK E N u ω 1 ≤ C1)
+    (hDecF : FastDecay (B.L N) (ellHat (B.L N) (u : ℂ) * (4 * K)) δF
+      (H.F N u (X.H N u ω) q.1)) :
+    psiF H N u q ω ≤
+      (etaT E u)⁻¹ * (1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) *
+        (K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω
+      + B.scale E N u ^ (n + 2) *
+        ((1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)) *
+          ((B.W N : ℝ) * (B.L N : ℝ) * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+              DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1))
+          + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF) := by
+  have h := psiF_le_of_drift_inputs_bounded H hE N hu0 hu1 hsu hut hA hη hell hK hδ
+    hδF hCK hC10 q ω hKb hKd hDd hLd hC1 hDecF
+  have hA0 : 0 < B.scale E N u := lt_of_lt_of_le zero_lt_one hA
+  have hcancel : B.scale E N u ^ (n + 2) * (B.scale E N u)⁻¹ ^ (n + 2) = 1 := by
+    rw [← mul_pow, mul_inv_cancel₀ hA0.ne', one_pow]
+  let a : ℝ := B.scale E N u
+  let c : ℝ := 1 + (24 * Real.exp 1 * cTwo52 * K) ^ (n + 1)
+  let x : ℝ := (etaT E u)⁻¹ *
+    ((K + 2) * DriftBound.cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+  let e : ℝ := (B.W N : ℝ) * (B.L N : ℝ) * δ *
+    ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+      DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * C1)
+  let z : ℝ := (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δF
+  have hh : psiF H N u q ω ≤ a ^ (n + 2) * (c * (a⁻¹ ^ (n + 2) * x + e) + z) := by
+    dsimp [a, c, x, e, z]
+    convert h using 1 <;> ring
+  have hc : a ^ (n + 2) * a⁻¹ ^ (n + 2) = 1 := hcancel
+  have heq : a ^ (n + 2) * (c * (a⁻¹ ^ (n + 2) * x + e) + z)
+      = c * x + a ^ (n + 2) * (c * e + z) := by
+    calc
+      _ = (a ^ (n + 2) * a⁻¹ ^ (n + 2)) * (c * x)
+            + a ^ (n + 2) * (c * e + z) := by ring
+      _ = _ := by rw [hc]; ring
+  calc
+    psiF H N u q ω ≤ a ^ (n + 2) * (c * (a⁻¹ ^ (n + 2) * x + e) + z) := hh
+    _ = c * x + a ^ (n + 2) * (c * e + z) := heq
+    _ = _ := by dsimp [a, c, x, e, z]; ring
+
+/-- The `K` size input required by the bounded-length drift chain, uniformly in `N` and `u`.
+Both cut-and-glue factors have lengths in `2 … n+2`; no length-one or empty-loop case occurs. -/
+theorem exists_Kval_bound_for_psiF (hE : |E| < 2) :
+    ∃ CK : ℝ, 0 ≤ CK ∧ ∀ (N : ℕ) (u : ℝ), 0 ≤ u → u < 1 →
+      ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
+        ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1) :=
+  exists_norm_Kval_le_upto B hE (n + 2)
+
+/-- The finite error sum in the bounded drift estimate has the same stochastic size as
+its finitely many constituents. -/
+theorem xiSum_stochDom_of_flowXiLK
+    (hxi : ∀ m ∈ Finset.Icc 1 (n + 2),
+      StochDom B.P (Step3.flowXiLK X E s t m) (fun _ _ _ => (1 : ℝ))) :
+    StochDom B.P
+      (fun N (u : TimeIcc s t N) ω => DriftBound.xiSum X E (n + 2) N u ω)
+      (fun _ _ _ => (n + 2 : ℝ)) := by
+  have h := SumZeroDyn.stochDom_finset_sum (P := B.P) (Finset.Icc 1 (n + 2))
+    (ξ := fun m => Step3.flowXiLK X E s t m)
+    (ζ := fun _ _ _ => (1 : ℝ)) hxi
+  convert h using 1
+  · funext N u ω
+    rfl
+  · funext N u ω
+    rw [Nat.card_Icc]
+    push_cast
+    ring
+
+/-- The projected drift's main coefficient costs only `R^(n+4)` when its radius,
+one-loop input and right-hand side are all at most `R`. -/
+theorem psiF_main_coeff_le_rpow (n : ℕ) {CK R : ℝ} (hCK : 0 ≤ CK) (hR : 1 ≤ R) :
+    (1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+      (R + 2) * DriftBound.cDrift n CK R * R ≤
+      (3 * (1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+        DriftBound.cDrift n CK 1) * R ^ (n + 4) := by
+  let C : ℝ := 24 * Real.exp 1 * cTwo52
+  have hC : 0 ≤ C := by dsimp [C]; have := cTwo52_pos; positivity
+  have hR0 : 0 ≤ R := by linarith
+  have hRpow : 1 ≤ R ^ (n + 1) := one_le_pow₀ hR
+  have hCpow : 0 ≤ C ^ (n + 1) := pow_nonneg hC _
+  have hfac : 1 + (C * R) ^ (n + 1) ≤ (1 + C ^ (n + 1)) * R ^ (n + 1) := by
+    rw [mul_pow]
+    nlinarith [mul_nonneg hCpow (sub_nonneg.mpr hRpow)]
+  have hrad : R + 2 ≤ 3 * R := by linarith
+  have hdrift : DriftBound.cDrift n CK R ≤ DriftBound.cDrift n CK 1 * R := by
+    unfold DriftBound.cDrift
+    have he : 0 ≤ 4 * Real.exp 1 * ((n : ℝ) + 2) ^ 2 := by positivity
+    have hnc : 0 ≤ (n : ℝ) * CK + 1 := by positivity
+    nlinarith [mul_nonneg (sub_nonneg.mpr hR) hnc]
+  have hd0 : 0 ≤ DriftBound.cDrift n CK R := by unfold DriftBound.cDrift; positivity
+  have hd1 : 0 ≤ DriftBound.cDrift n CK 1 := by unfold DriftBound.cDrift; positivity
+  have hfac0 : 0 ≤ 1 + (C * R) ^ (n + 1) := by positivity
+  have hfac1 : 0 ≤ (1 + C ^ (n + 1)) * R ^ (n + 1) := by positivity
+  calc
+    (1 + (C * R) ^ (n + 1)) * (R + 2) * DriftBound.cDrift n CK R * R
+        ≤ ((1 + C ^ (n + 1)) * R ^ (n + 1)) * (3 * R) *
+            (DriftBound.cDrift n CK 1 * R) * R := by
+          gcongr
+    _ = (3 * (1 + C ^ (n + 1)) * DriftBound.cDrift n CK 1) *
+          R ^ (n + 4) := by
+          rw [show n + 4 = (n + 1) + 3 by omega, pow_add]
+          ring
+    _ = _ := by dsimp [C]
+
+/-- The two additive errors in the projected drift have polynomial degree at most
+`2n+6` before the fast-decay factor is applied. -/
+theorem psiF_error_coeff_le_rpow (n : ℕ) {A W L R N δ : ℝ}
+    (hN : 1 ≤ N) (hA : 0 ≤ A) (hAN : A ≤ N) (hW : 0 ≤ W) (hWN : W ≤ N)
+    (hL : 0 ≤ L) (hLN : L ≤ N) (hR : 1 ≤ R) (hRN : R ≤ N) (hδ : 0 ≤ δ)
+    {S : ℝ} (hS : 0 ≤ S) (hSN : S ≤ (n + 2 : ℝ) * R) :
+    A ^ (n + 2) *
+      ((1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+        (W * L * δ *
+          ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * S + ((n : ℝ) + 2) * R))
+        + (2 * cTwo52) ^ (n + 1) * L ^ (n + 1) * δ) ≤
+      ((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+          ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+        + (2 * cTwo52) ^ (n + 1)) * N ^ (2 * n + 6) * δ := by
+  let C : ℝ := 24 * Real.exp 1 * cTwo52
+  let c : ℝ := (2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2)
+  let d : ℝ := (2 * cTwo52) ^ (n + 1)
+  have hC : 0 ≤ C := by dsimp [C]; have := cTwo52_pos; positivity
+  have hc : 0 ≤ c := by dsimp [c]; positivity
+  have hd : 0 ≤ d := by dsimp [d]; have := cTwo52_pos; positivity
+  have hR0 : 0 ≤ R := by linarith
+  have hN0 : 0 ≤ N := by linarith
+  have hRpow : 1 ≤ R ^ (n + 1) := one_le_pow₀ hR
+  have hfac : 1 + (C * R) ^ (n + 1) ≤ (1 + C ^ (n + 1)) * N ^ (n + 1) := by
+    calc
+      _ ≤ (1 + C ^ (n + 1)) * R ^ (n + 1) := by
+        rw [mul_pow]
+        nlinarith [pow_nonneg hC (n + 1)]
+      _ ≤ (1 + C ^ (n + 1)) * N ^ (n + 1) := by gcongr
+  have hbr : (2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * S + ((n : ℝ) + 2) * R
+      ≤ c * N := by
+    dsimp [c]
+    have hq : 0 ≤ (2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 := by positivity
+    have h1 := mul_le_mul_of_nonneg_left hSN hq
+    nlinarith [mul_nonneg (sub_nonneg.mpr hRN) (by positivity : (0 : ℝ) ≤
+      (2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))]
+  have hpow : A ^ (n + 2) ≤ N ^ (n + 2) := pow_le_pow_left₀ hA hAN _
+  have hWL : W * L ≤ N ^ 2 := by
+    have h := mul_le_mul hWN hLN hL hN0
+    nlinarith
+  have hLp : L ^ (n + 1) ≤ N ^ (n + 1) := pow_le_pow_left₀ hL hLN _
+  have hsmall : N ^ (2 * n + 3) ≤ N ^ (2 * n + 6) := pow_le_pow_right₀ hN (by omega)
+  have hlarge : N ^ (n + 2) *
+      ((1 + C ^ (n + 1)) * N ^ (n + 1) *
+        (N ^ 2 * δ * (c * N)) + d * N ^ (n + 1) * δ)
+      ≤ ((1 + C ^ (n + 1)) * c + d) * N ^ (2 * n + 6) * δ := by
+    have hp : 0 ≤ (1 + C ^ (n + 1)) * c := by positivity
+    have hsmall' := mul_le_mul_of_nonneg_left hsmall (mul_nonneg hd hδ)
+    calc
+      _ = (1 + C ^ (n + 1)) * c * N ^ (2 * n + 6) * δ +
+            d * N ^ (2 * n + 3) * δ := by
+          rw [show 2 * n + 6 = (n + 2) + (n + 1) + 2 + 1 by omega,
+            show 2 * n + 3 = (n + 2) + (n + 1) by omega]
+          simp only [pow_add]
+          ring
+      _ ≤ (1 + C ^ (n + 1)) * c * N ^ (2 * n + 6) * δ +
+            d * N ^ (2 * n + 6) * δ := by linarith
+      _ = _ := by ring
+  calc
+    A ^ (n + 2) *
+        ((1 + (C * R) ^ (n + 1)) *
+          (W * L * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * S + ((n : ℝ) + 2) * R))
+          + d * L ^ (n + 1) * δ)
+        ≤ N ^ (n + 2) *
+          ((1 + C ^ (n + 1)) * N ^ (n + 1) * (N ^ 2 * δ * (c * N))
+            + d * N ^ (n + 1) * δ) := by
+          gcongr
+    _ ≤ ((1 + C ^ (n + 1)) * c + d) * N ^ (2 * n + 6) * δ := hlarge
+    _ = _ := by dsimp [C, c, d]
+
+/-- The radius cost and both additive errors fit into arbitrary stochastic-domination
+exponents after the decay exponent is chosen following the loop length. -/
+theorem eventually_psiF_coeff_bounds (n : ℕ) (CK : ℝ) {τ D : ℝ}
+    (hτ : 0 < τ) (hD : 0 < D) :
+    ∃ θ D₁ : ℝ, 0 < θ ∧ 0 < D₁ ∧
+      ∀ᶠ N : ℕ in Filter.atTop,
+        1 ≤ (N : ℝ) ∧ 1 ≤ (N : ℝ) ^ θ ∧ (N : ℝ) ^ θ ≤ N ∧
+        (3 * (1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+            DriftBound.cDrift n CK 1) * (N : ℝ) ^ ((n + 4) * θ) ≤ (N : ℝ) ^ τ ∧
+        (((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+          + (2 * cTwo52) ^ (n + 1)) * (N : ℝ) ^ (2 * n + 6) *
+            (N : ℝ) ^ (-D₁) ≤ (N : ℝ) ^ (-D)) := by
+  let θ : ℝ := min (τ / ((n : ℝ) + 5)) (1 / 2)
+  let D₁ : ℝ := D + 2 * (n : ℝ) + 8
+  have hθ : 0 < θ := by dsimp [θ]; positivity
+  have hD₁ : 0 < D₁ := by dsimp [D₁]; positivity
+  have hθ1 : θ ≤ 1 := by dsimp [θ]; linarith [min_le_right (τ / ((n : ℝ) + 5)) (1 / 2)]
+  have hmainexp : ((n : ℝ) + 4) * θ < τ := by
+    have hn : 0 < (n : ℝ) + 5 := by positivity
+    have hθle : θ ≤ τ / ((n : ℝ) + 5) := min_le_left _ _
+    have hpos : 0 ≤ (n : ℝ) + 4 := by positivity
+    have hstep := mul_le_mul_of_nonneg_left hθle hpos
+    have hstrict : ((n : ℝ) + 4) * (τ / ((n : ℝ) + 5)) < τ := by
+      calc
+        _ = (((n : ℝ) + 4) * τ) / ((n : ℝ) + 5) := by ring
+        _ < τ := (div_lt_iff₀ hn).2 (by nlinarith [hτ])
+    exact lt_of_le_of_lt hstep hstrict
+  have herrExp : 2 * (n : ℝ) + 6 + -D₁ = -D - 2 := by dsimp [D₁]; ring
+  have hmain := SumZeroDyn.eventually_const_mul_rpow_le
+    (3 * (1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+      DriftBound.cDrift n CK 1) hmainexp
+  have herr := SumZeroDyn.eventually_const_mul_rpow_le
+    ((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+        ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+      + (2 * cTwo52) ^ (n + 1))
+    (show -D - 2 < -D by linarith)
+  refine ⟨θ, D₁, hθ, hD₁, ?_⟩
+  filter_upwards [hmain, herr, Filter.eventually_ge_atTop 1] with N hm he hN
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hpowcast : (N : ℝ) ^ (2 * n + 6) =
+      (N : ℝ) ^ (2 * (n : ℝ) + 6) := by
+    calc
+      _ = (N : ℝ) ^ (((2 * n + 6 : ℕ) : ℝ)) := (Real.rpow_natCast _ _).symm
+      _ = _ := by congr 1; push_cast; ring
+  have heqpow : (N : ℝ) ^ (2 * n + 6) * (N : ℝ) ^ (-D₁) =
+      (N : ℝ) ^ (-D - 2) := by
+    calc
+      _ = (N : ℝ) ^ (2 * (n : ℝ) + 6) * (N : ℝ) ^ (-D₁) := by rw [hpowcast]
+      _ = (N : ℝ) ^ (2 * (n : ℝ) + 6 + -D₁) := by
+        rw [Real.rpow_add hN0 (2 * (n : ℝ) + 6) (-D₁)]
+      _ = _ := by rw [herrExp]
+  refine ⟨hN1, Real.one_le_rpow hN1 hθ.le,
+    (by simpa using Real.rpow_le_rpow_of_exponent_le hN1 hθ1), hm, ?_⟩
+  calc
+    ((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+          ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+        + (2 * cTwo52) ^ (n + 1)) * (N : ℝ) ^ (2 * n + 6) *
+          (N : ℝ) ^ (-D₁)
+      = ((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+          ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+        + (2 * cTwo52) ^ (n + 1)) * (N : ℝ) ^ (-D - 2) := by
+          rw [mul_assoc, heqpow]
+    _ ≤ (N : ℝ) ^ (-D) := he
+
+set_option maxHeartbeats 1600000 in
+/-- The projected drift has the required inverse-time stochastic envelope. The decay
+of the drift itself is supplied on the same event as the three loop-decay clauses. -/
+theorem psiF_stochDom_etaT_inv_of_drift_inputs (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hFI : LKDecayQuant.FlowInputs X E s t)
+    (hxi : ∀ m ∈ Finset.Icc 1 (n + 2),
+      StochDom B.P (Step3.flowXiLK X E s t m) (fun _ _ _ => (1 : ℝ)))
+    (hRhs : StochDom B.P
+      (fun N (u : TimeIcc s t N) ω => SumZeroDyn.xiRhs X E (n + 2) N u ω)
+      (fun _ _ _ => (1 : ℝ)))
+    (hDecF : ∀ θ > (0 : ℝ), ∀ D > (0 : ℝ),
+      HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N,
+        ∀ q : LoopData (B.L N) (n + 2),
+          FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) *
+            (4 * (N : ℝ) ^ θ)) ((N : ℝ) ^ (-D))
+            (H.F N (u : ℝ) (X.H N (u : ℝ) ω) q.1)})) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) (n + 2)) ω =>
+        psiF H N (p.1 : ℝ) p.2 ω)
+      (fun N p _ => (etaT E (p.1 : ℝ))⁻¹) := by
+  obtain ⟨CK, hCK, hKb⟩ := exists_Kval_bound_for_psiF (B := B) (n := n) hE
+  have hxiS := xiSum_stochDom_of_flowXiLK (B := B) (X := X)
+    (E := E) (s := s) (t := t) (n := n) hxi
+  have hxi1 := hxi 1 (by simp)
+  refine StochDom.of_highProb_add_rpow_neg (b := 0)
+    (HighProb.of_eventually_univ ?_) ?_
+  · filter_upwards with N ω p
+    have hu0 : 0 ≤ (p.1 : ℝ) := (hs0 N).trans p.1.2.1
+    have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
+    simpa using one_le_etaT_inv hE hu0 hu1
+  intro τ hτ D hD
+  obtain ⟨θ, D₁, hθ, hD₁, hnum⟩ := eventually_psiF_coeff_bounds n CK hτ hD
+  have hdec := highProb_driftInputs_decay X hE hs0 ht1 hFI n θ hθ D₁ hD₁
+  have hxi1ev := highProb_flowXiLK_le X hxi1 hθ
+  have hxiSev := hxiS.highProb hθ
+  have hRhsev := hRhs.highProb hθ
+  have hFev := hDecF θ hθ D₁ hD₁
+  have hgood := ((((hdec.inter hxi1ev).inter hxiSev).inter hRhsev).inter hFev)
+  refine HighProb.mono hgood ?_
+  filter_upwards [hnum, SumZeroDyn.flow_crude hE hs0 hst ht1 hc,
+    Filter.eventually_ge_atTop 1] with N hnumN hcr hN
+  intro ω hω
+  simp only [Set.mem_ofPred_eq] at hω ⊢
+  obtain ⟨⟨⟨⟨hdecN, hxi1N⟩, hxiSN⟩, hRhsN⟩, hFN⟩ := hω
+  obtain ⟨hN1, hR1, hRN, hnumMain, hnumErr⟩ := hnumN
+  obtain ⟨hLN, hWN, _, hscale⟩ := hcr
+  have hN0 : 0 < (N : ℝ) := by linarith
+  have hR0 : 0 ≤ (N : ℝ) ^ θ := Real.rpow_nonneg hN0.le _
+  have hδ0 : 0 ≤ (N : ℝ) ^ (-D₁) := Real.rpow_nonneg hN0.le _
+  intro p
+  let u : ℝ := (p.1 : ℝ)
+  let R : ℝ := (N : ℝ) ^ θ
+  let δ : ℝ := (N : ℝ) ^ (-D₁)
+  have hu0 : 0 ≤ u := (hs0 N).trans p.1.2.1
+  have hu1 : u < 1 := p.1.2.2.trans_lt (ht1 N)
+  have hη : 0 < etaT E u := etaT_pos hE hu1
+  have hA : 1 ≤ B.scale E N u := (hscale p.1).1
+  have hAN : B.scale E N u ≤ N := (hscale p.1).2.1
+  have hell : 1 / 2 ≤ B.ell N u := by
+    have h := one_le_ellHat (B.L N) (B.three_le_L N) hu0 hu1
+    rw [Band.ell]
+    linarith
+  have hpt := psiF_le_of_drift_inputs'' H hE N hu0 hu1 p.1.2.1 p.1.2.2
+    hA hη hell hR1 hδ0 hδ0 hCK hR0 p.2 ω
+    (fun J hJ h2 hlen => hKb N u hu0 hu1 J hJ h2 hlen)
+    (hdecN p.1).1 (hdecN p.1).2.1 (hdecN p.1).2.2
+    (hxi1N p.1) (hFN p.1 p.2)
+  have hcoef0 : 0 ≤ (1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+      (R + 2) * DriftBound.cDrift n CK R := by
+    have := cTwo52_pos
+    unfold DriftBound.cDrift
+    positivity
+  have hmain0 : 0 ≤ (etaT E u)⁻¹ := inv_nonneg.mpr hη.le
+  have hmain : (etaT E u)⁻¹ *
+      (1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+      (R + 2) * DriftBound.cDrift n CK R *
+      SumZeroDyn.xiRhs X E (n + 2) N u ω ≤
+        (N : ℝ) ^ τ * (etaT E u)⁻¹ := by
+    have hRhs' : SumZeroDyn.xiRhs X E (n + 2) N u ω ≤ R := by
+      simpa [R] using hRhsN p.1
+    have h1 := mul_le_mul_of_nonneg_left hRhs' hcoef0
+    have h2 := psiF_main_coeff_le_rpow n hCK hR1
+    have hRpow : R ^ (n + 4) = (N : ℝ) ^ (((n : ℝ) + 4) * θ) := by
+      dsimp [R]
+      calc
+        _ = ((N : ℝ) ^ θ) ^ (((n + 4 : ℕ) : ℝ)) := (Real.rpow_natCast _ _).symm
+        _ = (N : ℝ) ^ (θ * (((n + 4 : ℕ) : ℝ))) := by rw [Real.rpow_mul hN0.le]
+        _ = _ := by congr 1; push_cast; ring
+    rw [hRpow] at h2
+    have h3 := mul_le_mul_of_nonneg_left (h1.trans (h2.trans hnumMain)) hmain0
+    dsimp [R] at h3
+    convert h3 using 1 <;> ring
+  have hS0 : 0 ≤ DriftBound.xiSum X E (n + 2) N u ω := by
+    unfold DriftBound.xiSum
+    exact Finset.sum_nonneg fun m _ => X.xiLK_nonneg (by linarith : 0 ≤ B.scale E N u)
+  have hSN : DriftBound.xiSum X E (n + 2) N u ω ≤ (n + 2 : ℝ) * R := by
+    simpa [R, mul_comm] using hxiSN p.1
+  have herror := psiF_error_coeff_le_rpow n hN1 (by linarith : 0 ≤ B.scale E N u)
+    hAN (Nat.cast_nonneg _) hWN (Nat.cast_nonneg _) hLN hR1 hRN hδ0 hS0
+    hSN
+  have herror' : B.scale E N u ^ (n + 2) *
+        ((1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+          ((B.W N : ℝ) * (B.L N : ℝ) * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+              DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * R))
+          + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δ)
+        ≤ (N : ℝ) ^ (-D) := herror.trans hnumErr
+  dsimp [R, δ] at hmain herror' hpt
+  linarith
+
+private theorem eventually_psiF_poly_error_bound (n : ℕ) (C : ℝ)
+    {D : ℝ} (hD : 0 < D) :
+    ∃ D₁ : ℝ, 0 < D₁ ∧ ∀ᶠ N : ℕ in Filter.atTop,
+      1 ≤ (N : ℝ) ∧
+      ((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+          ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+        + (2 * cTwo52) ^ (n + 1)) *
+        ((1 + C) * (N : ℝ) ^ (3 * (n + 2) + 1)) ^ (2 * n + 6) *
+          (N : ℝ) ^ (-D₁) ≤ (N : ℝ) ^ (-D) := by
+  let k : ℕ := 3 * (n + 2) + 1
+  let e : ℕ := k * (2 * n + 6)
+  let D₁ : ℝ := D + (e : ℝ) + 1
+  let c : ℝ := (1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+      ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2)) +
+        (2 * cTwo52) ^ (n + 1)
+  have hev := SumZeroDyn.eventually_const_mul_rpow_le
+    (c * (1 + C) ^ (2 * n + 6)) (show -D - 1 < -D by linarith)
+  refine ⟨D₁, by dsimp [D₁]; positivity, ?_⟩
+  filter_upwards [hev, Filter.eventually_ge_atTop 1] with N hnum hN
+  have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN
+  have hN0 : (0 : ℝ) < N := by linarith
+  refine ⟨hN1, ?_⟩
+  have hpow : ((1 + C) * (N : ℝ) ^ k) ^ (2 * n + 6) =
+      (1 + C) ^ (2 * n + 6) * (N : ℝ) ^ e := by
+    dsimp [e]
+    rw [mul_pow, pow_mul]
+  have htime : (N : ℝ) ^ e * (N : ℝ) ^ (-D₁) =
+      (N : ℝ) ^ (-D - 1) := by
+    calc
+      _ = (N : ℝ) ^ (e : ℝ) * (N : ℝ) ^ (-D₁) := by rw [Real.rpow_natCast]
+      _ = (N : ℝ) ^ ((e : ℝ) + -D₁) := by rw [Real.rpow_add hN0]
+      _ = _ := by congr 1; dsimp [D₁]; ring
+  change c * ((1 + C) * (N : ℝ) ^ k) ^ (2 * n + 6) *
+      (N : ℝ) ^ (-D₁) ≤ (N : ℝ) ^ (-D)
+  rw [hpow]
+  calc
+    c * ((1 + C) ^ (2 * n + 6) * (N : ℝ) ^ e) * (N : ℝ) ^ (-D₁)
+        = (c * (1 + C) ^ (2 * n + 6)) * ((N : ℝ) ^ e * (N : ℝ) ^ (-D₁)) := by ring
+    _ = (c * (1 + C) ^ (2 * n + 6)) * (N : ℝ) ^ (-D - 1) := by rw [htime]
+    _ ≤ (N : ℝ) ^ (-D) := hnum
+
+set_option maxHeartbeats 1600000 in
+/-- The projected drift envelope with a deterministic polynomial bound for the finite
+additive loop sum. Only the length-one loop needs stochastic domination. -/
+theorem psiF_stochDom_etaT_inv_of_drift_inputs' (H : MomentDuhamel.Hyp X E s t n)
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hFI : LKDecayQuant.FlowInputs X E s t)
+    (hxi1 : StochDom B.P (Step3.flowXiLK X E s t 1)
+      (fun _ _ _ => (1 : ℝ)))
+    (hRhs : StochDom B.P
+      (fun N (u : TimeIcc s t N) ω => SumZeroDyn.xiRhs X E (n + 2) N u ω)
+      (fun _ _ _ => (1 : ℝ)))
+    (hDecF : ∀ θ > (0 : ℝ), ∀ D > (0 : ℝ),
+      HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N,
+        ∀ q : LoopData (B.L N) (n + 2),
+          FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) *
+            (4 * (N : ℝ) ^ θ)) ((N : ℝ) ^ (-D))
+            (H.F N (u : ℝ) (X.H N (u : ℝ) ω) q.1)})) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) (n + 2)) ω =>
+        psiF H N (p.1 : ℝ) p.2 ω)
+      (fun N p _ => (etaT E (p.1 : ℝ))⁻¹) := by
+  obtain ⟨CK, hCK, hKb⟩ := exists_Kval_bound_for_psiF (B := B) (n := n) hE
+  obtain ⟨Cpoly, hCpoly, hpoly⟩ :=
+    exists_xiSum_poly_window X hE hs0 hst ht1 hc (n + 2)
+  refine StochDom.of_highProb_add_rpow_neg (b := 0)
+    (HighProb.of_eventually_univ ?_) ?_
+  · filter_upwards with N ω p
+    have hu0 : 0 ≤ (p.1 : ℝ) := (hs0 N).trans p.1.2.1
+    have hu1 : (p.1 : ℝ) < 1 := p.1.2.2.trans_lt (ht1 N)
+    simpa using one_le_etaT_inv hE hu0 hu1
+  intro τ hτ D hD
+  obtain ⟨θ, _Dold, hθ, _hDold, hnum⟩ :=
+    eventually_psiF_coeff_bounds n CK hτ hD
+  obtain ⟨D₁, hD₁, hpolyNum⟩ :=
+    eventually_psiF_poly_error_bound n Cpoly hD
+  have hdec := highProb_driftInputs_decay X hE hs0 ht1 hFI n θ hθ D₁ hD₁
+  have hxi1ev := highProb_flowXiLK_le X hxi1 hθ
+  have hRhsev := hRhs.highProb hθ
+  have hFev := hDecF θ hθ D₁ hD₁
+  have hgood := (((hdec.inter hxi1ev).inter hRhsev).inter hFev)
+  refine HighProb.mono hgood ?_
+  filter_upwards [hnum, hpolyNum, hpoly,
+    SumZeroDyn.flow_crude hE hs0 hst ht1 hc,
+    Filter.eventually_ge_atTop 1] with N hnumN hpolyNumN hpolyN hcr hN
+  intro ω hω
+  simp only [Set.mem_ofPred_eq] at hω ⊢
+  obtain ⟨⟨⟨hdecN, hxi1N⟩, hRhsN⟩, hFN⟩ := hω
+  obtain ⟨hN1, hR1, hRN, hnumMain, _hnumErr⟩ := hnumN
+  obtain ⟨_hN1poly, hnumPoly⟩ := hpolyNumN
+  obtain ⟨hLN, hWN, _, hscale⟩ := hcr
+  have hN0 : 0 < (N : ℝ) := by linarith
+  have hR0 : 0 ≤ (N : ℝ) ^ θ := Real.rpow_nonneg hN0.le _
+  have hδ0 : 0 ≤ (N : ℝ) ^ (-D₁) := Real.rpow_nonneg hN0.le _
+  intro p
+  let u : ℝ := (p.1 : ℝ)
+  let R : ℝ := (N : ℝ) ^ θ
+  let δ : ℝ := (N : ℝ) ^ (-D₁)
+  have hu0 : 0 ≤ u := (hs0 N).trans p.1.2.1
+  have hu1 : u < 1 := p.1.2.2.trans_lt (ht1 N)
+  have hη : 0 < etaT E u := etaT_pos hE hu1
+  have hA : 1 ≤ B.scale E N u := (hscale p.1).1
+  have hAN : B.scale E N u ≤ N := (hscale p.1).2.1
+  have hell : 1 / 2 ≤ B.ell N u := by
+    have h := one_le_ellHat (B.L N) (B.three_le_L N) hu0 hu1
+    rw [Band.ell]
+    linarith
+  have hpt := psiF_le_of_drift_inputs'' H hE N hu0 hu1 p.1.2.1 p.1.2.2
+    hA hη hell hR1 hδ0 hδ0 hCK hR0 p.2 ω
+    (fun J hJ h2 hlen => hKb N u hu0 hu1 J hJ h2 hlen)
+    (hdecN p.1).1 (hdecN p.1).2.1 (hdecN p.1).2.2
+    (hxi1N p.1) (hFN p.1 p.2)
+  have hcoef0 : 0 ≤ (1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+      (R + 2) * DriftBound.cDrift n CK R := by
+    have := cTwo52_pos
+    unfold DriftBound.cDrift
+    positivity
+  have hmain0 : 0 ≤ (etaT E u)⁻¹ := inv_nonneg.mpr hη.le
+  have hmain : (etaT E u)⁻¹ *
+      (1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+      (R + 2) * DriftBound.cDrift n CK R *
+      SumZeroDyn.xiRhs X E (n + 2) N u ω ≤
+        (N : ℝ) ^ τ * (etaT E u)⁻¹ := by
+    have hRhs' : SumZeroDyn.xiRhs X E (n + 2) N u ω ≤ R := by
+      simpa [R] using hRhsN p.1
+    have h1 := mul_le_mul_of_nonneg_left hRhs' hcoef0
+    have h2 := psiF_main_coeff_le_rpow n hCK hR1
+    have hRpow : R ^ (n + 4) = (N : ℝ) ^ (((n : ℝ) + 4) * θ) := by
+      dsimp [R]
+      calc
+        _ = ((N : ℝ) ^ θ) ^ (((n + 4 : ℕ) : ℝ)) := (Real.rpow_natCast _ _).symm
+        _ = (N : ℝ) ^ (θ * (((n + 4 : ℕ) : ℝ))) := by rw [Real.rpow_mul hN0.le]
+        _ = _ := by congr 1; push_cast; ring
+    rw [hRpow] at h2
+    have h3 := mul_le_mul_of_nonneg_left (h1.trans (h2.trans hnumMain)) hmain0
+    dsimp [R] at h3
+    convert h3 using 1 <;> ring
+  have hS0 : 0 ≤ DriftBound.xiSum X E (n + 2) N u ω := by
+    unfold DriftBound.xiSum
+    exact Finset.sum_nonneg fun m _ => X.xiLK_nonneg (by linarith : 0 ≤ B.scale E N u)
+  have hSN : DriftBound.xiSum X E (n + 2) N u ω ≤
+      Cpoly * (N : ℝ) ^ (3 * (n + 2) + 1) := by
+    simpa [u] using hpolyN p.1 ω
+  let Rbig : ℝ := (1 + Cpoly) * (N : ℝ) ^ (3 * (n + 2) + 1)
+  have hNpow : (N : ℝ) ≤ (N : ℝ) ^ (3 * (n + 2) + 1) := by
+    calc
+      (N : ℝ) = (N : ℝ) ^ (1 : ℕ) := (pow_one _).symm
+      _ ≤ _ := pow_le_pow_right₀ hN1 (by omega)
+  have hNpow0 : 0 ≤ (N : ℝ) ^ (3 * (n + 2) + 1) := pow_nonneg hN0.le _
+  have hNbig : (N : ℝ) ≤ Rbig := by
+    dsimp [Rbig]
+    nlinarith [mul_nonneg hCpoly hNpow0]
+  have hRbig1 : 1 ≤ Rbig := hN1.trans hNbig
+  have hRle : R ≤ Rbig := hRN.trans hNbig
+  have hSbig : DriftBound.xiSum X E (n + 2) N u ω ≤ (n + 2 : ℝ) * Rbig := by
+    have hn : (1 : ℝ) ≤ (n + 2 : ℝ) := by exact_mod_cast (show 1 ≤ n + 2 by omega)
+    have hc : Cpoly ≤ (n + 2 : ℝ) * (1 + Cpoly) := by
+      nlinarith [mul_nonneg (sub_nonneg.mpr hn) hCpoly]
+    exact hSN.trans (by
+      dsimp [Rbig]
+      simpa only [mul_assoc] using mul_le_mul_of_nonneg_right hc hNpow0)
+  have herrorBig := psiF_error_coeff_le_rpow n hRbig1
+    (by linarith : 0 ≤ B.scale E N u) (hAN.trans hNbig)
+    (Nat.cast_nonneg _) (hWN.trans hNbig)
+    (Nat.cast_nonneg _) (hLN.trans hNbig)
+    hRbig1 (le_refl Rbig) hδ0 hS0 hSbig
+  have herror' : B.scale E N u ^ (n + 2) *
+        ((1 + (24 * Real.exp 1 * cTwo52 * R) ^ (n + 1)) *
+          ((B.W N : ℝ) * (B.L N : ℝ) * δ *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+              DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * R))
+          + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δ)
+        ≤ (N : ℝ) ^ (-D) := by
+    calc
+      _ ≤ B.scale E N u ^ (n + 2) *
+          ((1 + (24 * Real.exp 1 * cTwo52 * Rbig) ^ (n + 1)) *
+            ((B.W N : ℝ) * (B.L N : ℝ) * δ *
+              ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 *
+                DriftBound.xiSum X E (n + 2) N u ω + ((n : ℝ) + 2) * Rbig))
+            + (2 * cTwo52) ^ (n + 1) * (B.L N : ℝ) ^ (n + 1) * δ) := by
+          have hc0 : 0 ≤ 24 * Real.exp 1 * cTwo52 := by
+            have := cTwo52_pos
+            positivity
+          gcongr
+      _ ≤ (((1 + (24 * Real.exp 1 * cTwo52) ^ (n + 1)) *
+            ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 3 + ((n : ℝ) + 2))
+          + (2 * cTwo52) ^ (n + 1)) * Rbig ^ (2 * n + 6) * δ) := herrorBig
+      _ ≤ (N : ℝ) ^ (-D) := by simpa [Rbig, δ] using hnumPoly
+  dsimp [R, δ] at hmain herror' hpt
+  linarith
 
 end RBM.Gauss

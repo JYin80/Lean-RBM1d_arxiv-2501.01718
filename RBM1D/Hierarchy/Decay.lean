@@ -564,6 +564,76 @@ theorem norm_couplingLen_le (hL : 3 ≤ L) (W : ℕ) {lK : ℕ} (hlK : 3 ≤ lK)
         rw [hT, pow_succ, div_eq_mul_inv]
         ring
 
+/-- The first line of (5.77) with the exact cut-and-glue length range `2 ≤ |J| ≤ |I|`. -/
+theorem norm_couplingLen_le' (hL : 3 ≤ L) (W : ℕ) {lK : ℕ} (hlK : 3 ≤ lK)
+    {K D : LoopIdx (ZMod L) → ℂ} {I : LoopIdx (ZMod L)} (hI : I.WF) {A ℓ δ CK Φ : ℝ}
+    (hA : 1 ≤ A) (hℓ : 0 < ℓ) (hδ : 0 ≤ δ) (hCK : 0 ≤ CK) (hΦ : 0 ≤ Φ)
+    (hK : ∀ J : LoopIdx (ZMod L), J.WF → 2 ≤ J.length → J.length ≤ I.length →
+      ‖K J‖ ≤ CK * A⁻¹ ^ (J.length - 1))
+    (hKd : LoopDecay L I.length ℓ δ K)
+    (hD : ∀ J : LoopIdx (ZMod L), J.WF → J.length < I.length → ‖D J‖ ≤ Φ * A⁻¹ ^ J.length) :
+    ‖couplingLen L W lK K D I‖
+      ≤ 4 * exp 1 * I.length ^ 2 * CK * Φ * ((W : ℝ) * (ℓ + 1) / A) * A⁻¹ ^ I.length
+        + 2 * I.length ^ 2 * W * L * δ * Φ := by
+  set n := I.length with hn
+  have hA0 : 0 < A := by linarith
+  set T : ℝ := 2 * exp 1 * (ℓ + 1) * (CK * Φ * A⁻¹ ^ (n + 1)) + L * (δ * Φ) with hT
+  have hT0 : 0 ≤ T := by positivity
+  have hleft : ‖primBilLen L W lK K D I‖ ≤ W * n ^ 2 * T := by
+    refine norm_W_sum_le W n _ hT0 fun k hk l hl => ?_
+    rw [Finset.mem_Icc] at hk
+    rw [Finset.mem_Ioc] at hl
+    rw [primBilLen_summand L K D I hk.1 hl.1 hl.2]
+    split_ifs with h
+    · have hF : ∀ a, ‖K (I.cutGlueL k l a)‖ ≤ CK * A⁻¹ ^ (lK - 1) := fun a => by
+        have := hK _ (hI.cutGlueL a hk.1 hl.1 hl.2)
+          (LoopIdx.two_le_length_cutGlueL I a hk.1 hl.1 hl.2)
+          (LoopIdx.length_cutGlueL_le I a hk.1 hl.1 hl.2)
+        rwa [LoopIdx.length_cutGlueL I a hk.1 hl.1 hl.2, h] at this
+      have hG : ∀ b, ‖D (I.cutGlueR k l b)‖ ≤ Φ * A⁻¹ ^ (l - k + 1) := fun b => by
+        have := hD _ (hI.cutGlueR b hk.1 hl.1 hl.2)
+          (by rw [LoopIdx.length_cutGlueR I b hk.1 hl.1 hl.2]; omega)
+        rwa [LoopIdx.length_cutGlueR I b hk.1 hl.1 hl.2] at this
+      refine (norm_glueTerm_le_left L hL hI hk.1 hl.1 hl.2 hℓ hδ hKd hF hG).trans ?_
+      have e : CK * A⁻¹ ^ (lK - 1) * (Φ * A⁻¹ ^ (l - k + 1)) = CK * Φ * A⁻¹ ^ (n + 1) := by
+        rw [mul_mul_mul_comm, ← pow_add]; congr 2; omega
+      rw [e, hT]
+      refine add_le_add le_rfl (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
+      calc δ * (Φ * A⁻¹ ^ (l - k + 1)) ≤ δ * (Φ * 1) := by
+            gcongr; exact pow_inv_le_one hA _
+        _ = δ * Φ := by ring
+    · simpa using hT0
+  have hright : ‖primBilLenR L W lK D K I‖ ≤ W * n ^ 2 * T := by
+    refine norm_W_sum_le W n _ hT0 fun k hk l hl => ?_
+    rw [Finset.mem_Icc] at hk
+    rw [Finset.mem_Ioc] at hl
+    rw [primBilLenR_summand L D K I hk.1 hl.1 hl.2]
+    split_ifs with h
+    · have hG : ∀ b, ‖K (I.cutGlueR k l b)‖ ≤ CK * A⁻¹ ^ (lK - 1) := fun b => by
+        have := hK _ (hI.cutGlueR b hk.1 hl.1 hl.2)
+          (LoopIdx.two_le_length_cutGlueR I b hk.1 hl.1 hl.2)
+          (LoopIdx.length_cutGlueR_le I b hk.1 hl.1 hl.2)
+        rwa [LoopIdx.length_cutGlueR I b hk.1 hl.1 hl.2, h] at this
+      have hF : ∀ a, ‖D (I.cutGlueL k l a)‖ ≤ Φ * A⁻¹ ^ (k + n - l + 1) := fun a => by
+        have := hD _ (hI.cutGlueL a hk.1 hl.1 hl.2)
+          (by rw [LoopIdx.length_cutGlueL I a hk.1 hl.1 hl.2]; omega)
+        rwa [LoopIdx.length_cutGlueL I a hk.1 hl.1 hl.2] at this
+      refine (norm_glueTerm_le_right L hL hI hk.1 hl.1 hl.2 hℓ hδ hKd hF hG).trans ?_
+      have e : Φ * A⁻¹ ^ (k + n - l + 1) * (CK * A⁻¹ ^ (lK - 1)) = CK * Φ * A⁻¹ ^ (n + 1) := by
+        rw [mul_mul_mul_comm, ← pow_add, mul_comm Φ CK]; congr 2; omega
+      rw [e, hT]
+      refine add_le_add le_rfl (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
+      calc Φ * A⁻¹ ^ (k + n - l + 1) * δ ≤ Φ * 1 * δ := by
+            gcongr; exact pow_inv_le_one hA _
+        _ = δ * Φ := by ring
+    · simpa using hT0
+  calc ‖couplingLen L W lK K D I‖ ≤ ‖primBilLen L W lK K D I‖ + ‖primBilLenR L W lK D K I‖ :=
+        norm_add_le _ _
+    _ ≤ W * n ^ 2 * T + W * n ^ 2 * T := add_le_add hleft hright
+    _ = _ := by
+        rw [hT, pow_succ, div_eq_mul_inv]
+        ring
+
 /-- **Lemma 5.10, (5.77), second line**: `E^{((L-K)×(L-K))} = primBil D D` ((5.13), `D = L - K`).
 
 With `|D_{σ,a}| ≤ X_m A^{-m}` for loops of length `2 ≤ m ≤ n` (i.e. `X_m = Ξ^{(L-K)}_{u,m}`),
@@ -928,6 +998,23 @@ theorem norm_loopTensor_couplingLen_le (hL : 3 ≤ L) (W : ℕ) {n lK : ℕ} (hl
       ≤ 4 * exp 1 * n ^ 2 * CK * Φ * ((W : ℝ) * (ℓ + 1) / A) * A⁻¹ ^ n
         + 2 * n ^ 2 * W * L * δ * Φ := by
   have := norm_couplingLen_le L hL W hlK (wf_loopTensor L σ b) hA hℓ hδ hCK hΦ hK
+    (by rw [length_loopTensor]; exact hKd) (by rw [length_loopTensor]; exact hD)
+  rwa [length_loopTensor] at this
+
+/-- Tensor form of the bounded-length first line of (5.77). -/
+theorem norm_loopTensor_couplingLen_le' (hL : 3 ≤ L) (W : ℕ) {n lK : ℕ} (hlK : 3 ≤ lK)
+    {K D : LoopIdx (ZMod L) → ℂ} (σ : Fin n → Bool) {A ℓ δ CK Φ : ℝ}
+    (hA : 1 ≤ A) (hℓ : 0 < ℓ) (hδ : 0 ≤ δ) (hCK : 0 ≤ CK) (hΦ : 0 ≤ Φ)
+    (hK : ∀ J : LoopIdx (ZMod L), J.WF → 2 ≤ J.length → J.length ≤ n →
+      ‖K J‖ ≤ CK * A⁻¹ ^ (J.length - 1))
+    (hKd : LoopDecay L n ℓ δ K)
+    (hD : ∀ J : LoopIdx (ZMod L), J.WF → J.length < n → ‖D J‖ ≤ Φ * A⁻¹ ^ J.length)
+    (b : LoopArg L n) :
+    ‖loopTensor L (couplingLen L W lK K D) σ b‖
+      ≤ 4 * exp 1 * n ^ 2 * CK * Φ * ((W : ℝ) * (ℓ + 1) / A) * A⁻¹ ^ n
+        + 2 * n ^ 2 * W * L * δ * Φ := by
+  have := norm_couplingLen_le' L hL W hlK (wf_loopTensor L σ b) hA hℓ hδ hCK hΦ
+    (fun J hJ hJ2 hJn => hK J hJ hJ2 (by rw [length_loopTensor] at hJn; exact hJn))
     (by rw [length_loopTensor]; exact hKd) (by rw [length_loopTensor]; exact hD)
   rwa [length_loopTensor] at this
 

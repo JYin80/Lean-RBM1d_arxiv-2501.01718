@@ -68,6 +68,7 @@ import RBM1D.Gauss.APrimeDuhamelModel
 import RBM1D.Gauss.APrimeSlotArith
 import RBM1D.Gauss.Lemma514NonAlt
 import RBM1D.Gauss.Lemma514QAssembly
+import RBM1D.Gauss.Lemma514FBridge
 import RBM1D.Gauss.LkGoodMeasurable
 import RBM1D.Gauss.MomentDuhamelQInt
 import RBM1D.Gauss.TestFunQGeneral

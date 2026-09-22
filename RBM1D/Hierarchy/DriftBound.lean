@@ -456,6 +456,222 @@ theorem norm_driftF_le (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {n
   rw [hxiRhs]
   linarith [add_le_add hmain herr]
 
+set_option maxHeartbeats 1600000 in
+/-- **(5.77), pointwise, with `K` bounded only at the lengths used by coupling.** -/
+theorem norm_driftF_le' (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) {n : ℕ}
+    (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2))
+    {Krad δ CK C1 : ℝ}
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u) (hell : 1 / 2 ≤ B.ell N u)
+    (hKrad : 1 ≤ Krad) (hδ : 0 ≤ δ) (hCK : 0 ≤ CK) (hC10 : 0 ≤ C1)
+    (hKb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
+      ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1))
+    (hKd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * Krad) δ (B.Kval E N u))
+    (hDd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * Krad) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : Decay.LoopDecay (B.L N) (n + 3) (B.ell N u * Krad) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hC1 : X.xiLK E N u ω 1 ≤ C1) :
+    ‖DriftDef.driftF B E N u (X.H N u ω) σ a‖
+      ≤ (B.scale E N u)⁻¹ ^ (n + 2) * (etaT E u)⁻¹
+          * ((Krad + 2) * cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+        + (B.W N : ℝ) * (B.L N : ℝ) * δ
+            * ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω
+              + ((n : ℝ) + 2) * C1) := by
+  classical
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have hA0 : (0 : ℝ) < B.scale E N u := lt_of_lt_of_le zero_lt_one hA
+  have hAne : B.scale E N u ≠ 0 := hA0.ne'
+  have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+  have hℓ0 : (0 : ℝ) < B.ell N u * Krad := by nlinarith
+  have hsc : B.scale E N u = (B.W N : ℝ) * B.ell N u * etaT E u := rfl
+  have hfrac : (B.W N : ℝ) * (B.ell N u * Krad + 1) / B.scale E N u
+      ≤ (Krad + 2) * (etaT E u)⁻¹ := by
+    rw [hsc, ← div_eq_mul_inv]
+    exact Decay.mul_add_one_div_le hW hell hη
+  set A := B.scale E N u with hAdef
+  rw [DriftDef.driftF_eq_eG_add]
+  set D : LoopIdx (ZMod (B.L N)) → ℂ :=
+    gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u with hD
+  set Lf : LoopIdx (ZMod (B.L N)) → ℂ :=
+    gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) with hLf
+  have hxi : ∀ k, 0 ≤ X.xiLK E N u ω k := fun k => X.xiLK_nonneg hA0.le
+  set S1 : ℝ := ∑ k ∈ Finset.Ico 1 (n + 2), X.xiLK E N u ω k with hS1def
+  set S2 : ℝ := ∑ k ∈ Finset.Icc 2 (n + 2),
+    X.xiLK E N u ω k * X.xiLK E N u ω (n + 2 - k + 2) * A⁻¹ with hS2def
+  set S3 : ℝ := X.xiL E N u ω (n + 2 + 1) with hS3def
+  set SB : ℝ := ∑ k ∈ Finset.Icc 2 (n + 2), X.xiLK E N u ω k with hSBdef
+  have hS10 : 0 ≤ S1 := Finset.sum_nonneg fun k _ => hxi k
+  have hS20 : 0 ≤ S2 := Finset.sum_nonneg fun k _ =>
+    mul_nonneg (mul_nonneg (hxi _) (hxi _)) (inv_nonneg.2 hA0.le)
+  have hS30 : 0 ≤ S3 := X.xiL_nonneg hA0.le
+  have hSB0 : 0 ≤ SB := Finset.sum_nonneg fun k _ => hxi k
+  have hxiRhs : SumZeroDyn.xiRhs X E (n + 2) N u ω = S1 + S2 + S3 := rfl
+  have hSxi1 : S1 ≤ xiSum X E (n + 2) N u ω := by
+    rw [hS1def, xiSum]
+    refine Finset.sum_le_sum_of_subset_of_nonneg (fun x hx => ?_) (fun k _ _ => hxi k)
+    rw [Finset.mem_Ico] at hx
+    exact Finset.mem_Icc.mpr ⟨hx.1, by omega⟩
+  have hSxiB : SB ≤ xiSum X E (n + 2) N u ω := by
+    rw [hSBdef, xiSum]
+    refine Finset.sum_le_sum_of_subset_of_nonneg (fun x hx => ?_) (fun k _ _ => hxi k)
+    rw [Finset.mem_Icc] at hx
+    exact Finset.mem_Icc.mpr ⟨by omega, hx.2⟩
+  -- the bound on `L - K` at every length
+  have hDb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → ∀ {j : ℕ}, J.length = j →
+      ‖D J‖ ≤ X.xiLK E N u ω j * A⁻¹ ^ j := fun J hJ {j} hj =>
+    norm_lk_le X E N u ω hAne J hJ hj
+  -- three term bounds
+  have hcoup : ∀ lK ∈ Finset.Icc 3 (n + 2),
+      ‖Decay.couplingLen (B.L N) (B.W N) lK (B.Kval E N u) D (LoopData.idx (σ, a))‖
+        ≤ 4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1
+            * ((B.W N : ℝ) * (B.ell N u * Krad + 1) / A) * A⁻¹ ^ (n + 2)
+          + 2 * ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * S1 := by
+    intro lK hlK
+    rw [Finset.mem_Icc] at hlK
+    rw [← couplingLen_dTrunc]
+    have hDt : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → J.length < n + 2 →
+        ‖dTrunc (B.L N) D J‖ ≤ S1 * A⁻¹ ^ J.length := by
+      intro J hJ hlen
+      refine norm_dTrunc_le (by positivity) fun h2 => ?_
+      refine (hDb J hJ rfl).trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
+      exact Finset.single_le_sum (f := fun k => X.xiLK E N u ω k) (fun k _ => hxi k)
+        (Finset.mem_Ico.mpr ⟨by omega, hlen⟩)
+    have := Decay.norm_loopTensor_couplingLen_le' (B.L N) hL3 (B.W N) hlK.1 σ hA hℓ0 hδ hCK
+      hS10 hKb hKd hDt a
+    push_cast at this ⊢
+    exact this
+  have hquad : ‖primBil (B.L N) (B.W N) D D (LoopData.idx (σ, a))‖
+      ≤ 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2
+          * ((B.W N : ℝ) * (B.ell N u * Krad + 1) / A) * A⁻¹ ^ (n + 2)
+        + ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * SB := by
+    have hD2 : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
+        ‖D J‖ ≤ X.xiLK E N u ω J.length * A⁻¹ ^ J.length := fun J hJ _ _ => hDb J hJ rfl
+    have hX : ∀ k, 2 ≤ k → k ≤ n + 2 →
+        X.xiLK E N u ω k * X.xiLK E N u ω (n + 2 - k + 2) * A⁻¹ ≤ S2 := fun k h1 h2 =>
+      Finset.single_le_sum
+        (f := fun k => X.xiLK E N u ω k * X.xiLK E N u ω (n + 2 - k + 2) * A⁻¹)
+        (fun k _ => mul_nonneg (mul_nonneg (hxi _) (hxi _)) (inv_nonneg.2 hA0.le))
+        (Finset.mem_Icc.mpr ⟨h1, h2⟩)
+    have hXB : ∀ k, 2 ≤ k → k ≤ n + 2 → X.xiLK E N u ω k ≤ SB := fun k h1 h2 =>
+      Finset.single_le_sum (f := fun k => X.xiLK E N u ω k) (fun k _ => hxi k)
+        (Finset.mem_Icc.mpr ⟨h1, h2⟩)
+    have := Decay.norm_loopTensor_primBil_le (B.L N) hL3 (B.W N) σ
+      (fun k => X.xiLK E N u ω k) hA hℓ0 hδ hS20 hSB0 hD2 hX hXB hDd a
+    push_cast at this ⊢
+    exact this
+  have heG : ‖Decay.eG (B.L N) (B.W N) D Lf (LoopData.idx (σ, a))‖
+      ≤ 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3
+          * ((B.W N : ℝ) * (B.ell N u * Krad + 1) / A) * A⁻¹ ^ (n + 2)
+        + ((n : ℝ) + 2) * (B.W N : ℝ) * (B.L N : ℝ) * δ * C1 := by
+    have hXone : ∀ (s : Bool) (b : ZMod (B.L N)),
+        ‖D ⟨[s], [b]⟩‖ ≤ C1 * A⁻¹ := by
+      intro s b
+      have hwf : (⟨[s], [b]⟩ : LoopIdx (ZMod (B.L N))).WF := rfl
+      have := hDb ⟨[s], [b]⟩ hwf (j := 1) rfl
+      rw [pow_one] at this
+      exact this.trans (mul_le_mul_of_nonneg_right hC1 (inv_nonneg.2 hA0.le))
+    have hY : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → J.length = (n + 2) + 1 →
+        ‖Lf J‖ ≤ S3 * A⁻¹ ^ (n + 2) := by
+      intro J hJ hlen
+      have := norm_gloop_le X E N u ω hAne J hJ hlen
+      simpa using this
+    have := Decay.norm_loopTensor_eG_le (B.L N) hL3 (B.W N) σ hA hℓ0 hδ hC10 hXone hY hLd a
+    push_cast at this ⊢
+    exact this
+  clear_value S1 S2 S3 SB
+  -- the coupling sum
+  have hcard : ((Finset.Icc 3 (n + 2)).card : ℝ) = (n : ℝ) := by
+    rw [Nat.card_Icc]; congr 1
+  have hsumcoup :
+      ‖∑ lK ∈ Finset.Icc 3 (n + 2),
+          Decay.couplingLen (B.L N) (B.W N) lK (B.Kval E N u) D (LoopData.idx (σ, a))‖
+        ≤ (n : ℝ) * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1
+            * ((B.W N : ℝ) * (B.ell N u * Krad + 1) / A) * A⁻¹ ^ (n + 2)
+          + 2 * ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * S1) := by
+    refine (norm_sum_le _ _).trans ?_
+    calc ∑ lK ∈ Finset.Icc 3 (n + 2),
+            ‖Decay.couplingLen (B.L N) (B.W N) lK (B.Kval E N u) D (LoopData.idx (σ, a))‖
+          ≤ ∑ _lK ∈ Finset.Icc 3 (n + 2), (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1
+              * ((B.W N : ℝ) * (B.ell N u * Krad + 1) / A) * A⁻¹ ^ (n + 2)
+            + 2 * ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * S1) :=
+          Finset.sum_le_sum hcoup
+      _ = (n : ℝ) * _ := by rw [Finset.sum_const, nsmul_eq_mul, hcard]
+  refine le_trans ((norm_add_le _ _).trans (add_le_add
+    ((norm_add_le _ _).trans (add_le_add heG hsumcoup)) hquad)) ?_
+  -- the `Ξ` bookkeeping
+  set fr : ℝ := (B.W N : ℝ) * (B.ell N u * Krad + 1) / A with hfrdef
+  set P : ℝ := A⁻¹ ^ (n + 2) with hPdef
+  have hP0 : (0 : ℝ) ≤ P := by rw [hPdef]; exact pow_nonneg (inv_nonneg.2 hA0.le) _
+  have hη0 : (0 : ℝ) ≤ (etaT E u)⁻¹ := inv_nonneg.2 hη.le
+  have hWLd : (0 : ℝ) ≤ (B.W N : ℝ) * (B.L N : ℝ) * δ :=
+    mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _)) hδ
+  clear_value fr P
+  have hnn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hcoef : (0 : ℝ) ≤ 4 * exp 1 * ((n : ℝ) + 2) ^ 2 := by positivity
+  have hT0 : (0 : ℝ) ≤ 4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * (n : ℝ)
+      + 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 + 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3 := by
+    have h1 : (0 : ℝ) ≤ 4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * (n : ℝ) :=
+      mul_nonneg (mul_nonneg (mul_nonneg hcoef hCK) hS10) hnn
+    have h2 : (0 : ℝ) ≤ 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 := by
+      have : (0 : ℝ) ≤ 2 * exp 1 * ((n : ℝ) + 2) ^ 2 := by positivity
+      exact mul_nonneg this hS20
+    have h3 : (0 : ℝ) ≤ 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3 := by
+      have : (0 : ℝ) ≤ 2 * exp 1 * ((n : ℝ) + 2) := by positivity
+      exact mul_nonneg (mul_nonneg this hC10) hS30
+    linarith
+  have hTle := main_term_le (e := exp 1) (mm := (n : ℝ) + 2) (nn := (n : ℝ)) (C1 := C1)
+    (exp_nonneg 1) (by linarith) hnn hCK hC10 hS10 hS20 hS30
+  have hK2 : (0 : ℝ) ≤ Krad + 2 := by linarith
+  have hmain : 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3 * fr * P
+        + (n : ℝ) * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * fr * P)
+        + 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 * fr * P
+      ≤ P * (etaT E u)⁻¹ * ((Krad + 2) * cDrift n CK C1 * (S1 + S2 + S3)) := by
+    have e1 : 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3 * fr * P
+          + (n : ℝ) * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * fr * P)
+          + 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 * fr * P
+        = (fr * P) * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * (n : ℝ)
+            + 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 + 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3) := by
+      ring
+    rw [e1, cDrift]
+    calc (fr * P) * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * (n : ℝ)
+            + 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 + 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3)
+        ≤ ((Krad + 2) * (etaT E u)⁻¹ * P) * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * CK * S1 * (n : ℝ)
+            + 2 * exp 1 * ((n : ℝ) + 2) ^ 2 * S2 + 2 * exp 1 * ((n : ℝ) + 2) * C1 * S3) :=
+          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hfrac hP0) hT0
+      _ ≤ ((Krad + 2) * (etaT E u)⁻¹ * P)
+            * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * ((n : ℝ) * CK + 1 + C1) * (S1 + S2 + S3)) :=
+          mul_le_mul_of_nonneg_left hTle
+            (mul_nonneg (mul_nonneg hK2 hη0) hP0)
+      _ = P * (etaT E u)⁻¹ * ((Krad + 2)
+            * (4 * exp 1 * ((n : ℝ) + 2) ^ 2 * ((n : ℝ) * CK + 1 + C1)) * (S1 + S2 + S3)) := by
+          ring
+  -- the error budget
+  have herr : ((n : ℝ) + 2) * (B.W N : ℝ) * (B.L N : ℝ) * δ * C1
+        + (n : ℝ) * (2 * ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * S1)
+        + ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * SB
+      ≤ (B.W N : ℝ) * (B.L N : ℝ) * δ
+          * ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω
+            + ((n : ℝ) + 2) * C1) := by
+    have h1 : 2 * (n : ℝ) * ((n : ℝ) + 2) ^ 2 * S1
+        ≤ 2 * (n : ℝ) * ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω :=
+      mul_le_mul_of_nonneg_left hSxi1 (by positivity)
+    have h2 : ((n : ℝ) + 2) ^ 2 * SB ≤ ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω :=
+      mul_le_mul_of_nonneg_left hSxiB (by positivity)
+    have hsum : ((n : ℝ) + 2) * C1 + 2 * (n : ℝ) * ((n : ℝ) + 2) ^ 2 * S1
+          + ((n : ℝ) + 2) ^ 2 * SB
+        ≤ (2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω
+          + ((n : ℝ) + 2) * C1 := by nlinarith [h1, h2]
+    calc ((n : ℝ) + 2) * (B.W N : ℝ) * (B.L N : ℝ) * δ * C1
+          + (n : ℝ) * (2 * ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * S1)
+          + ((n : ℝ) + 2) ^ 2 * (B.W N : ℝ) * (B.L N : ℝ) * δ * SB
+        = (B.W N : ℝ) * (B.L N : ℝ) * δ * (((n : ℝ) + 2) * C1
+            + 2 * (n : ℝ) * ((n : ℝ) + 2) ^ 2 * S1 + ((n : ℝ) + 2) ^ 2 * SB) := by ring
+      _ ≤ (B.W N : ℝ) * (B.L N : ℝ) * δ
+            * ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω
+              + ((n : ℝ) + 2) * C1) := mul_le_mul_of_nonneg_left hsum hWLd
+  rw [hxiRhs]
+  linarith [add_le_add hmain herr]
+
 end Pointwise
 
 /-! ### The same for `RBM.MomentDuhamel.Hyp.F`, and the `≺` step without `Hierarchy` -/
@@ -495,6 +711,31 @@ theorem norm_Hyp_F_le (H : MomentDuhamel.Hyp X E s t n) {N : ℕ} {u : ℝ} (ω 
   have h := DriftDef.Fpath_eq_driftF_of_lt_one H hE hu0 hu1 hsu hut ω σ a
   rw [show H.F N u (X.H N u ω) σ a = H.Fpath N u ω σ a from rfl, h]
   exact norm_driftF_le X E N u ω σ a hA hη hell hKrad hδ hCK hC10 hKb hKd hDd hLd hC1
+
+/-- The flow-pinned version of `norm_driftF_le'`. -/
+theorem norm_Hyp_F_le' (H : MomentDuhamel.Hyp X E s t n) {N : ℕ} {u : ℝ} (ω : Ω)
+    (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2))
+    (hE : |E| < 2) (hu0 : 0 ≤ u) (hu1 : u < 1) (hsu : s N ≤ u) (hut : u ≤ t N)
+    {Krad δ CK C1 : ℝ}
+    (hA : 1 ≤ B.scale E N u) (hη : 0 < etaT E u) (hell : 1 / 2 ≤ B.ell N u)
+    (hKrad : 1 ≤ Krad) (hδ : 0 ≤ δ) (hCK : 0 ≤ CK) (hC10 : 0 ≤ C1)
+    (hKb : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 2 ≤ J.length → J.length ≤ n + 2 →
+      ‖B.Kval E N u J‖ ≤ CK * (B.scale E N u)⁻¹ ^ (J.length - 1))
+    (hKd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * Krad) δ (B.Kval E N u))
+    (hDd : Decay.LoopDecay (B.L N) (n + 2) (B.ell N u * Krad) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : Decay.LoopDecay (B.L N) (n + 3) (B.ell N u * Krad) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hC1 : X.xiLK E N u ω 1 ≤ C1) :
+    ‖H.F N u (X.H N u ω) σ a‖
+      ≤ (B.scale E N u)⁻¹ ^ (n + 2) * (etaT E u)⁻¹
+          * ((Krad + 2) * cDrift n CK C1 * SumZeroDyn.xiRhs X E (n + 2) N u ω)
+        + (B.W N : ℝ) * (B.L N : ℝ) * δ
+            * ((2 * (n : ℝ) + 1) * ((n : ℝ) + 2) ^ 2 * xiSum X E (n + 2) N u ω
+              + ((n : ℝ) + 2) * C1) := by
+  have h := DriftDef.Fpath_eq_driftF_of_lt_one H hE hu0 hu1 hsu hut ω σ a
+  rw [show H.F N u (X.H N u ω) σ a = H.Fpath N u ω σ a from rfl, h]
+  exact norm_driftF_le' X E N u ω σ a hA hη hell hKrad hδ hCK hC10 hKb hKd hDd hLd hC1
 
 /-- **`RBM.SumZeroDyn.F_stochDom` without a `Hierarchy`.**
 

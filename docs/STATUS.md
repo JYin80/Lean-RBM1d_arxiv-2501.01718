@@ -77,8 +77,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 **T230 中间报告 #2（05:01 UTC，本轮约 40 分钟，`Step2Bootstrap.lean` 1332 → 1912 行 / 79 条，模块 `lake build` exit=0、0 warning、59 条公理干净、`grep sorryAx` = 0，快照已入库）**：
 
 * ⭐⭐ **`cut` 从字段级推到结构级**：`momentHypCutEv_of_aprime`（第一遍）与 `momentHypCut2Ev_of_aprime`（第二遍）**由定理产出**，输入 `APrimeHyp` **不含任何事件受限字段**。链上唯一的自由项是 `WeightedMoment`（全测度加权矩），它**替换**了 `condMoment`，没有追加字段。`APrimeHyp` 与 `CutHypCondEv` 逐字段相同，只有两处差别：`condMoment` → `W` + `weightedMoment`；`meas` 降到实际用到的 `Measurable`（T244 的 `measurable_lk` 正好供给）。
-* **第二遍**： 只读且没有 Ev 版，故在本文件新建 `MomentHypCut2Ev` 并把两个消费者逐字重证——**未新增假设**，第二遍仍不需要第二次 bootstrap、不需要第二个初值。⚠ `∀ N` 的原版 `MomentHypCut`/`MomentHypCut2` **故意不去满足**（T232 已证其 `modulus` 对随时间变动的 `J` 不可满足，满足它只会产出空真的东西）。
-* **自己做掉了  版 Cauchy–Schwarz**：`sum_gvar_mul_le_sqrt_quadVar`（仓库原先没有），即把混时刻协变差拆成两个同时刻二次变差率的那一步。
+* **第二遍**：`Gauss/CutHypTheta.lean` 只读且没有 Ev 版，故在本文件新建 `MomentHypCut2Ev` 并把两个消费者逐字重证——**未新增假设**，第二遍仍不需要第二次 bootstrap、不需要第二个初值。⚠ `∀ N` 的原版 `MomentHypCut`/`MomentHypCut2` **故意不去满足**（T232 已证其 `modulus` 对随时间变动的 `J` 不可满足，满足它只会产出空真的东西）。
+* **自己做掉了 `quadVar` 版 Cauchy–Schwarz**：`sum_gvar_mul_le_sqrt_quadVar`（仓库原先没有），即把混时刻协变差拆成两个同时刻二次变差率的那一步。
 * **见证不是退化的**：`satAPrimeHyp` 用真软最大值权重（不是 `W ≡ 1`），功能 `J_u = 2u⁺` **真随时间变动**（T232 已证没有任何 `∀ N` 接口能承载它），`sat_satWval_eq_zero` 证明权重确会归零，`one_le_satW` 里显式处理了 `N = 0` 且 `δ ≠ 0` 的 `0/0` 支。`R > 1` 的见证仍是 `sat_StepSide_gt_one`（八条约束全取等号），两者互补。
 * **交叉项的 Grönwall 收口只等 T250**：拆分（`sum_gvar_mul_le_sqrt_quadVar`）与导数界（`abs_deriv_softMax_le`）两块砖已备好，装配需要 T250 的 (i) 对数型界 + (ii) `TestFun` 先落地。**T250 是 (A′) 当前的关键路径。**
 

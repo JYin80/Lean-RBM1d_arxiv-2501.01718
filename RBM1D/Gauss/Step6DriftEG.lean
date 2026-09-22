@@ -468,6 +468,7 @@ The proof is (5.134) and nothing else:
   bookkeeping outside the good set (`RBM.norm_integral_le_add_measure_compl`).
 
 `hKd` is the decay of `K`; `RBM.exists_loopDecay_Kval` is its satisfiability witness. -/
+@[deprecated "RETIRED (T205/T227): the envelope/measurability/integrability hypotheses here quantify the TIME v over all of the reals, while the proof only ever uses v in TimeIcc s t N. At E = 0, omega = 0, v = 1 - w the (5.131) integrand has the closed form 2(1/w - 1)/w^3/W, unbounded as w tends to 0 with no cancellation, so NO Env satisfies henvG - RBM.Gauss.not_exists_env_eG proves it. Filling these slots makes (2.71) vacuous. Use the primed version in RBM1D/Gauss/Step6EnvWindow.lean, whose only change is the time quantifier (verified verbatim otherwise), together with RBM.exists_env_window and RBM.Gauss.env_window_vs_not_exists_env_eG." (since := "2026-09-21")]
 theorem unifDetDom_driftEG (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ}
     (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
@@ -708,6 +709,7 @@ theorem unifDetDom_driftEG (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : �
   exact final_arith_eg hmain herr1 herr2 hsumerr hfin
 
 /-- **(5.135)** in the shape `RBM.Step6.DriftBound` demands: `E E^{(G̃)} ≺ η_u^{-1} A_u^{-3}`. -/
+@[deprecated "RETIRED (T205/T227): the envelope/measurability/integrability hypotheses here quantify the TIME v over all of the reals, while the proof only ever uses v in TimeIcc s t N. At E = 0, omega = 0, v = 1 - w the (5.131) integrand has the closed form 2(1/w - 1)/w^3/W, unbounded as w tends to 0 with no cancellation, so NO Env satisfies henvG - RBM.Gauss.not_exists_env_eG proves it. Filling these slots makes (2.71) vacuous. Use the primed version in RBM1D/Gauss/Step6EnvWindow.lean, whose only change is the time quantifier (verified verbatim otherwise), together with RBM.exists_env_window and RBM.Gauss.env_window_vs_not_exists_env_eG." (since := "2026-09-21")]
 theorem driftBound_driftEG (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ}
     (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
@@ -805,6 +807,7 @@ the mixed second moment: the `L-K` half of (5.134) is pathwise.
 What remains never mentions the drift: (5.132), (5.127) and `hq11` (which produce Lemma 5.15
 through `RBM.Step6.lemma515`), Lemma 5.9's decay and the power counts (5.76), the crude
 envelope with its measurability, and integrability. -/
+@[deprecated "RETIRED (T205/T227): the envelope/measurability/integrability hypotheses here quantify the TIME v over all of the reals, while the proof only ever uses v in TimeIcc s t N. At E = 0, omega = 0, v = 1 - w the (5.131) integrand has the closed form 2(1/w - 1)/w^3/W, unbounded as w tends to 0 with no cancellation, so NO Env satisfies henvG - RBM.Gauss.not_exists_env_eG proves it. Filling these slots makes (2.71) vacuous. Use the primed version in RBM1D/Gauss/Step6EnvWindow.lean, whose only change is the time quantifier (verified verbatim otherwise), together with RBM.exists_env_window and RBM.Gauss.env_window_vs_not_exists_env_eG." (since := "2026-09-21")]
 theorem sharpExpect_step6_driftEG (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)

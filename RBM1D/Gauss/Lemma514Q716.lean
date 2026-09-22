@@ -153,7 +153,7 @@ theorem norm_xi2_eq_one {E : ℝ} (hE : |E| ≤ 2) {n : ℕ} (σ : Fin (n + 2) �
   unfold SumZeroDyn.xi2
   induction i using Fin.addCases with
   | left i => rw [Fin.append_left]; exact norm_xiOf_mSigma hE σ i
-  | right i => rw [Fin.append_right]; exact norm_xiOf_mSigma hE σ i
+  | right i => rw [Fin.append_right]; exact norm_xiOf_mSigma hE (fun k => !(σ k)) i
 
 /-- **`hkerC` has no constant on the grid.**  The literal `hkerC` slot of
 `RBM.Gauss.hrhs_of_moment_inputs`, at `u = s_N`, `v_N = t_N`, on the grid of p. 24. -/
@@ -774,6 +774,54 @@ theorem gridS_Q716_witness [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 3
     (fun _ => zero_le_one) hint henv (fun _ => hdec)
     (fun _ => sumZero_witTensor L hL _) a
   rw [momNorm_const hq (zero_le_one : (0 : ℝ) ≤ 1)] at key
+  simpa using key
+
+/-- **T223 satisfiability witness for the `RBM.SumZeroDyn.xi2` slot.**
+
+T223 changed the *definition* of `RBM.SumZeroDyn.xi2` (its second half is now the conjugate
+charge vector `σ̄` of Lemma 5.5, p. 55, instead of a repeat of `σ`).  The risk a definition
+change carries is not vacuity but **unsatisfiability**: a hypothesis slot whose left-hand side
+is `‖U_{u,v,ξ₂} ∘ A‖` could in principle become impossible to meet.  It does not.  Here is an
+explicit instance, at the shortest doubled loop `(0+2)+(0+2) = 4`:
+
+* the tensor is `RBM.Gauss.witTensor L 2 1`, which is **not zero** (first conjunct) and which is
+  sum-zero and fast-decaying;
+* the charge is the **repaired** `RBM.SumZeroDyn.xi2 E σ`, entering only through
+  `RBM.SumZeroDyn.xi2_ne_zero` and `RBM.SumZeroDyn.norm_xi2_le` — both of which survive the
+  repair because `RBM.norm_xiOf_mSigma` holds for *every* charge vector, in particular for
+  `!∘σ`;
+* the window is the full `0 ≤ s ≤ u ≤ v < 1`; no short-window constant is used.
+
+Together with `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2` — which *produces* the `E ⊗ E`
+right-hand side of `RBM.MomentDuhamel.Hyp.momentDuhamel` at the repaired `xi2`, and which was
+**not provable** at the old one — this is the evidence that the repair moves every `xi2` slot
+towards producibility and away from vacuity. -/
+theorem xi2_slot_witness [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 3 ≤ L)
+    {q : ℕ} (hq : q ≠ 0) {E : ℝ} (hE : |E| < 2) (σ : Fin (0 + 2) → Bool)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    (a : LoopArg L ((0 + 2) + (0 + 2))) :
+    witTensor L 2 (1 : ℂ) ≠ 0 ∧
+    momNorm P q (fun _ω : Ω => ‖Uker L (SumZeroDyn.xi2 E σ) (u : ℂ) (v : ℂ)
+        (witTensor L 2 (1 : ℂ)) a‖)
+      ≤ cKerSumZero 4 * 3 ^ (2 * 4) * ((1 - s) / (1 - v)) ^ 4 := by
+  have hu0 : 0 ≤ u := hs0.trans hsu
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓu : (1 : ℝ) / 2 ≤ ellHat L (u : ℂ) := half_le_ellHat_real L hL hu0 hu1
+  refine ⟨witTensor_ne_zero L hL one_ne_zero, ?_⟩
+  have hdec : FastDecay L (ellHat L (u : ℂ) * 3) 0 (witTensor L 2 (1 : ℂ)) :=
+    fastDecay_witTensor L hL _ (by linarith)
+  have hGM : ∀ (_ω : Ω) (b : LoopArg L (2 + 2)),
+      ‖witTensor L 2 (1 : ℂ) b‖ ≤ (1 * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ 4 * (0 : ℝ) + 1 := by
+    intro _ b
+    simpa using norm_witTensor_le L (m := 2) (κ := (1 : ℂ)) b
+  have key := momNorm_Uker_sumZero_scale_le' (P := P) L hL hq (m := 4) (by norm_num)
+    (ξ := SumZeroDyn.xi2 E σ) (SumZeroDyn.xi2_ne_zero hE σ) (SumZeroDyn.norm_xi2_le hE σ)
+    hs0 hsu huv hv0 hv1 (κA := 1) one_pos (K := 3) (ζ := 1) (δ := 0)
+    (by norm_num) zero_le_one le_rfl
+    (G := fun _ω : Ω => witTensor L 2 (1 : ℂ)) (ψ := fun _ω : Ω => (0 : ℝ))
+    (fun _ => le_rfl) (by simp) hGM (fun _ => hdec)
+    (j := 0) (fun _ => SumZeroDyn.sumZeroAt_zero_of_sumZero L (sumZero_witTensor L hL _)) a
+  rw [momNorm_const hq (le_refl (0 : ℝ))] at key
   simpa using key
 
 end GridWitness

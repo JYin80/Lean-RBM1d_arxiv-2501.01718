@@ -1980,3 +1980,975 @@ end NonVacuous
 
 end Step2FarInputs
 end RBM
+
+/-! ## T229: the far-field bridge for `J*`, and `M_qf (1-s) ≺ 1`
+
+T215 left two items unowned.  This part of the file closes both.
+
+### 1. The bridge (`RBM.Step2FarInputs.h535_of_jS`)
+
+`RBM.EGDef.eGpm_le_reduced` takes its `J` through two hypotheses, `h531` and `h42`, both of
+which speak about the **`G`-loop** `RBM.gloop` — that is, about `L` itself.  T207's sharp
+(5.47) is a statement about `RBM.Step2.jS`, i.e. about `J*` of `L - K`.  The gap is exactly a
+far-field bound on `K`:
+
+`|K_{u,(+,-),(x,y)}| ≤ T_{u,D}(‖x - y‖)`  for  `‖x - y‖ ≥ ℓ*_u/2`.
+
+At loop length `2` this needs **no** tree representation: `σ = (+,-)` gives `m(+)m(-) = 1`
+(`RBM.Step2FarInputs.mSigma_true_mul_false`), so Example 2.15 reads
+`K_{u,(+,-),(x,y)} = W^{-1}(Θ_u)_{xy}` (`RBM.Step2FarInputs.Kval_pm_eq`), and Lemma 5.6/(5.30)
+(`RBM.Step2.eq530`) already gives `|(Θ_u)_{xy}| ≤ W^{-D} ≤ T_{u,D}` at distance `≥ δ ℓ*_u`.
+
+⚠ This corrects the route suggested by the ticket: `RBM.Band.norm_Kval_le` at `n = 2` only
+gives `A^{-1}`, which is indeed far too big, but `RBM.norm_Kgen_le_exp` is **not** the tool
+either — it requires `3 ≤ n`.  The `n = 2` decay of `K` is the decay of `Θ`, which is
+(2.52)/(5.30) and is already in the repository.
+
+With that, `‖L_{u,(+,-),(x,y)}‖ ≤ (J*-1)T + T = J* T` (`norm_gloop_pm_le_jS_mul_tT`); the `-1`
+comes from `J* = max_a |A_a|/T + 1` (5.29), so the bridge is **exact**, with no constant lost.
+
+### 2. `M_qf (1-s) ≺ 1` (`RBM.Step2FarInputs.detDom_mqfEG_mul_one_sub`)
+
+The quadratic gluing term of (5.34) is `RBM.Step2.eLL` of `L - K`
+(`RBM.Step2FarInputs.quadGlue_pm_eq_eLL`), and (5.34) itself is `RBM.Step2.norm_eLL_le`:
+
+`|E^{((L-K)×(L-K))}_a| ≤ e (J*)² (36 η_u^{-1}A_u^{-1} + W L W^{-D'}) T_{u,D'}(‖a₁-a₂‖)`.
+
+The exponent account of `M_qf (1-s)`, with `R = η_s/η_u`, `x = N^{δ/8}`, `A = W ℓ_u η_u`:
+
+| term | `(1-s)` gives | `(J*)²` gives | budget needed | `β*` |
+| --- | --- | --- | --- | --- |
+| `36 e (J*)² η_u^{-1}A^{-1}` | `m^{-1}R` | `x^{16}R⁴` | `x^{16}R⁵ ≤ A` | **2.5** |
+| `e (J*)² W L W^{-D'}` | `≤ 1` | `x^{16}R⁴` | `R⁴ ≤ A ≤ W`, `WL ≤ N ≤ W²` | — |
+
+The first row is `RBM.Step2FarInputs.jS_sq_mul_ratio_le`: `x^{16}R⁵ = N^{2δ}R⁵ ≤ N^cR^{30} ≤ A`
+by (2.72)-with-a-gain, so `β* = 2.5` — **the cheapest of the three rows of (5.35)/(5.34)**
+(T215's are `7.5` and `4.5`), and again far below (2.72)'s exponent `30`.
+
+The second row is the only place where `D'` matters: it collapses to `e W^{3-D'}`, i.e. it
+needs **`3 ≤ D'`** (after `R⁴ ≤ A ≤ W`, `W L ≤ N` and `N ≤ W²`).  That threshold is *not* in the
+constant
+`RBM.Step2FarInputs.mqfEG`, which is `D'`-free, so `hMqf'` of
+`RBM.Step2FarInputs.flowEq548_of_egData` is discharged for **every** `D'`; it is in the
+*producer* `quad_far_le_of_jS`, exactly where the `hres` mechanism of `FarResidue'`
+(`∀ D, ∃ D' ≥ D`) already lets the caller put it.
+
+### Deviations from the paper
+
+* **`T229a`** — (5.34)'s `W L W^{-D'}` term.  The paper's (5.34) reads
+  `|E^{((L-K)×(L-K))}| ≺ (J*)² η_u^{-1}(W ℓ_u η_u)^{-1} T_{t,D}` with no `W L W^{-D}`; the
+  term is the `W^{-D}·W^{-D}` floor of `T_{u,D}` summed over the `L` sites
+  (`RBM.sum_tailT_mul_tailT_le`), and the paper calls it negligible for large `D` without
+  writing it.  Here it is kept, and the producer `quad_far_le_of_jS` therefore carries
+  `3 ≤ D'`.  Nothing downstream is weakened: the residue mechanism of `FarResidue'` chooses
+  `D' ≥ D` anyway.
+-/
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 15. The far-field bridge: `K` at the `(+,-)` `2`-loop -/
+
+section KBridge
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- `m(+) m(-) = m^{(E)} \overline{m^{(E)}} = |m^{(E)}|² = 1` for `|E| ≤ 2`
+(`RBM.norm_mE`).  This is the `ξ = 1` of `RBM.xiOf_mSigma_true_false`, read off the product
+rather than the edge parameters. -/
+theorem mSigma_true_mul_false {E : ℝ} (hE : |E| ≤ 2) :
+    mSigma E true * mSigma E false = 1 := by
+  have h : mE E * (starRingEnd ℂ) (mE E) = 1 := by
+    rw [Complex.mul_conj', norm_mE hE]; simp
+  simpa [mSigma] using h
+
+/-- **`K` at the `(+,-)` `2`-loop is `W^{-1}Θ_u`.**  Example 2.15 (2.57) reads
+`K_{t,σ,(x,y)} = W^{-1} m(σ₁)m(σ₂) (Θ_{t m(σ₁)m(σ₂)})_{xy}`; at `σ = (+,-)` the factor is `1`,
+so the whole `n = 2` decay of `K` **is** the decay of `Θ`. -/
+theorem Kval_pm_eq {E : ℝ} (hE : |E| ≤ 2) (B : Band Ω) (N : ℕ) (u : ℝ)
+    (x y : ZMod (B.L N)) :
+    B.Kval E N u ⟨[true, false], [x, y]⟩
+      = ((B.W N : ℂ))⁻¹ * Theta (B.L N) ((u : ℝ) : ℂ) x y := by
+  show Kgen (B.L N) (B.W N) (mSigma E) u ⟨[true, false], [x, y]⟩ = _
+  rw [Kgen_two, kTwo, mSigma_true_mul_false hE]
+  ring_nf
+
+/-- `‖K_{u,(+,-),(x,y)}‖ ≤ ‖(Θ_u)_{xy}‖`, since `W ≥ 1`. -/
+theorem norm_Kval_pm_le_norm_Theta {E : ℝ} (hE : |E| ≤ 2) (B : Band Ω) (N : ℕ) (u : ℝ)
+    (x y : ZMod (B.L N)) :
+    ‖B.Kval E N u ⟨[true, false], [x, y]⟩‖ ≤ ‖Theta (B.L N) ((u : ℝ) : ℂ) x y‖ := by
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  rw [Kval_pm_eq hE, norm_mul, norm_inv, Complex.norm_natCast]
+  refine mul_le_of_le_one_left (norm_nonneg _) ?_
+  exact inv_le_one_of_one_le₀ hW1
+
+/-- **The far-field bound on `K`, along the flow.**  Lemma 5.6/(5.30) (`RBM.Step2.eq530`) at
+`δ = 1/2`: eventually in `N`, for every `u ∈ [s,t]` and every pair at distance `≥ ℓ*_u/2`,
+`|K_{u,(+,-),(x,y)}| ≤ W^{-D} ≤ T_{u,D}(‖x-y‖)`.
+
+This is the bridge T215 asked for.  Note that only `RBM.Cond272` — (2.72) itself — is used;
+no loop-hierarchy input enters. -/
+theorem eventually_norm_Kval_pm_le_tT {E : ℝ} (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t) (D : ℝ) :
+    ∀ᶠ N : ℕ in atTop, ∀ (u : TimeIcc s t N) (x y : ZMod (B.L N)),
+      ellStar (B.W N : ℝ) (B.ell N (u : ℝ)) / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+        ‖B.Kval E N (u : ℝ) ⟨[true, false], [x, y]⟩‖
+          ≤ Step2.tT B E N D (u : ℝ) (zdist (B.L N) (x - y)) := by
+  filter_upwards [Step2.eq530 hE hs0 hst ht1 hc (δ := 1 / 2) (D := D) (by norm_num)] with
+    N hN u x y hfar
+  have hfar' : (1 / 2 : ℝ) * ellStar (B.W N : ℝ) (B.ell N (u : ℝ))
+      ≤ (zdist (B.L N) (x - y) : ℝ) := by
+    rw [one_div, inv_mul_eq_div]; exact hfar
+  refine (norm_Kval_pm_le_norm_Theta hE.le B N (u : ℝ) x y).trans ?_
+  exact ((hN u x y hfar').1).trans (rpow_neg_le_tailT _)
+
+end KBridge
+
+/-! ### 16. `h531` and `h42` with `J := J*_{u,D}` -/
+
+section JBridge
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(5.29) read off its definition**: `J*_{u,D} = max_a |(L-K)_a| / T_{u,D} + 1`, so the
+*sharp* pointwise bound is with `J* - 1`, not `J*`.  This one unit is what pays for `K` in
+`RBM.Step2FarInputs.norm_gloop_pm_le_jS_mul_tT`, so the bridge costs nothing. -/
+theorem norm_lk_le_jS_sub_one_mul (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (a : LoopArg (B.L N) 2) :
+    ‖Step2.lk X E N u ω a‖
+      ≤ (Step2.jS X E D N u ω - 1) * Step2.tT B E N D u (zdist (B.L N) (a 0 - a 1)) := by
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by
+    have : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+    linarith
+  show ‖Step2.lk X E N u ω a‖ ≤ (Step2.jS X E D N u ω - 1)
+    * tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D (zdist (B.L N) (a 0 - a 1))
+  have hT : (0 : ℝ) < tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D
+      (zdist (B.L N) (a 0 - a 1)) := tailT_pos hW0 _
+  have hsup := Finset.le_sup' (f := fun b : LoopArg (B.L N) 2 =>
+      ‖Step2.lk X E N u ω b‖
+        / tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D (zdist (B.L N) (b 0 - b 1)))
+    (Finset.mem_univ a)
+  have heq : Step2.jS X E D N u ω - 1
+      = Finset.univ.sup' Finset.univ_nonempty (fun b : LoopArg (B.L N) 2 =>
+          ‖Step2.lk X E N u ω b‖
+            / tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D (zdist (B.L N) (b 0 - b 1))) := by
+    show Step2.jStar (B.L N) (fun b => ‖Step2.lk X E N u ω b‖) (B.W N) (B.ell N u)
+        (etaT E u) D - 1 = _
+    rw [Step2.jStar]; ring
+  rw [heq, ← div_le_iff₀ hT]
+  exact hsup
+
+/-- **The `J` bridge, sharp form.**  In the far field, where `|K| ≤ T_{u,D}`,
+`|L_{u,(+,-),(x,y)}| ≤ J*_{u,D} T_{u,D}(‖x-y‖)` — with `J*` itself, not a multiple of it:
+`(J*-1)T` for `L-K` plus `T` for `K`. -/
+theorem norm_gloop_pm_le_jS_mul_tT (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (x y : ZMod (B.L N))
+    (hK : ‖B.Kval E N u ⟨[true, false], [x, y]⟩‖
+      ≤ Step2.tT B E N D u (zdist (B.L N) (x - y))) :
+    ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) ⟨[true, false], [x, y]⟩‖
+      ≤ Step2.jS X E D N u ω * Step2.tT B E N D u (zdist (B.L N) (x - y)) := by
+  have hlk : ‖Step2.lk X E N u ω ![x, y]‖
+      ≤ (Step2.jS X E D N u ω - 1) * Step2.tT B E N D u (zdist (B.L N) (x - y)) := by
+    have h := norm_lk_le_jS_sub_one_mul X E D N u ω ![x, y]
+    simpa using h
+  have hsplit : gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) ⟨[true, false], [x, y]⟩
+      = Step2.lk X E N u ω ![x, y] + B.Kval E N u ⟨[true, false], [x, y]⟩ := by
+    show _ = (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+        ⟨[true, false], [x, y]⟩ + _
+    simp
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  have := add_le_add hlk hK
+  linarith [this]
+
+/-- **`h531` of `RBM.EGDef.eGpm_le_reduced` with `J := J*_{u,D}`** — the hypothesis that made
+`Jf := RBM.Step2.jS` impossible to instantiate before this file. -/
+theorem re_gloop_pm_le_jS_mul_tailT (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (hK : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) (B.ell N u) / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+        ‖B.Kval E N u ⟨[true, false], [x, y]⟩‖
+          ≤ Step2.tT B E N D u (zdist (B.L N) (x - y))) :
+    ∀ x y : ZMod (B.L N), ellStar (B.W N : ℝ) (B.ell N u) / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) ⟨[true, false], [x, y]⟩).re
+        ≤ Step2.jS X E D N u ω
+            * tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D (zdist (B.L N) (x - y)) := by
+  intro x y hxy
+  exact (Complex.re_le_norm _).trans (norm_gloop_pm_le_jS_mul_tT X E D N u ω x y (hK x y hxy))
+
+/-- **`h42` with `J := J*_{u,D}`**: the (4.2) two-point function is taken to be
+`G_m(x,y) = √(J* T_{u,D}(‖x-y‖))`, the square root of the `2`-loop bound just proved.  With
+this choice `h42` holds with **equality** off the diagonal band, so the `J` of `h531` and the
+`J` of `h42` are literally the same number. -/
+noncomputable def gmOfJS (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) :
+    ZMod (B.L N) → ZMod (B.L N) → ℝ :=
+  fun x y => √(Step2.jS X E D N u ω)
+    * √(tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D (zdist (B.L N) (x - y)))
+
+theorem gmOfJS_nonneg (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (x y : ZMod (B.L N)) : 0 ≤ gmOfJS X E D N u ω x y := by
+  unfold gmOfJS; positivity
+
+theorem gmOfJS_le (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (x y : ZMod (B.L N)) :
+    gmOfJS X E D N u ω x y
+      ≤ √(Step2.jS X E D N u ω)
+        * √(tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D (zdist (B.L N) (x - y))) := le_rfl
+
+end JBridge
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 17. (5.35) with `J` instantiated by `J*_{u,D}` — the acceptance of the bridge -/
+
+section Instantiate
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(5.35), shape 2, with `J := RBM.Step2.jS`.**  `RBM.Step2FarInputs.eGpm_le_rhs535`
+verbatim, except that its two `J`-hypotheses are no longer assumed: `h531` is
+`RBM.Step2FarInputs.re_gloop_pm_le_jS_mul_tailT` (the bridge) and `h42` holds by definition of
+`RBM.Step2FarInputs.gmOfJS`.  The only new input is `hK`, the far-field bound on `K`, which
+`RBM.Step2FarInputs.eventually_norm_Kval_pm_le_tT` supplies from (5.30).
+
+This is the statement T215 could not make: the `Jf` slot of
+`RBM.Step2FarInputs.EGData`/`rhs535` is now literally `RBM.Step2.jS`, the `J*` of (5.29) that
+T207's sharp (5.47) is about. -/
+theorem eGpm_le_rhs535_of_jS (X : Sample B) {E : ℝ} {N : ℕ} {u : ℝ} {ω : Ω}
+    {ℓs D' : ℝ} (hL : 3 ≤ B.L N) (hW : 1 ≤ (B.W N : ℝ)) (hℓu : 1 ≤ B.ell N u)
+    (hℓs : 0 < ℓs) (hηu : 0 < etaT E u)
+    (hA : 1 ≤ (B.W N : ℝ) * B.ell N u * etaT E u) (hr : 1 ≤ B.ell N u / ℓs)
+    (hD : (B.L N : ℝ) * √((B.W N : ℝ) ^ (-D'))
+      ≤ B.ell N u * ((B.W N : ℝ) * B.ell N u * etaT E u)⁻¹)
+    (a₁ a₂ : ZMod (B.L N)) {ρ κ : ℝ} (hρ : 0 ≤ ρ)
+    (hK : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) (B.ell N u) / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+        ‖B.Kval E N u ⟨[true, false], [x, y]⟩‖
+          ≤ Step2.tT B E N D' u (zdist (B.L N) (x - y)))
+    (h273 : ∀ b, ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[false, true, true], [a₂, b, a₁]⟩‖
+      ≤ (B.ell N u / ℓs) ^ 2 * ((((B.W N : ℝ) * B.ell N u * etaT E u)) ^ 2)⁻¹)
+    (h554 : ∀ b, Lemma57.ellStarStar (B.W N : ℝ) (B.ell N u) < (zdist (B.L N) (a₂ - b) : ℝ) →
+      ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) ⟨[false, true, true], [a₂, b, a₁]⟩‖ ≤ ρ)
+    (h557C : ∀ (x y : ZMod (B.L N)) (p : ZMod (B.L N) × Fin (B.W N)), p.1 = y →
+      ∑ r : ZMod (B.L N) × Fin (B.W N),
+          Lemma57.blkW (B.L N) (B.W N) r x * ‖green (X.H N u ω) (zt E u) r p‖
+        ≤ √(B.ell N u / ℓs) * (√((B.W N : ℝ) * B.ell N u * etaT E u))⁻¹)
+    (h557R : ∀ (x y : ZMod (B.L N)) (r : ZMod (B.L N) × Fin (B.W N)), r.1 = x →
+      ∑ p : ZMod (B.L N) × Fin (B.W N),
+          Lemma57.blkW (B.L N) (B.W N) p y * ‖green (X.H N u ω) (zt E u) r p‖
+        ≤ √(B.ell N u / ℓs) * (√((B.W N : ℝ) * B.ell N u * etaT E u))⁻¹)
+    (h560 : ∀ b, ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+        ⟨[false, true, true], [a₂, b, a₁]⟩‖
+      ≤ gmOfJS X E D' N u ω a₂ b * gmOfJS X E D' N u ω a₁ b * gmOfJS X E D' N u ω a₂ a₁)
+    (hone : ∀ σ b, ‖Matrix.trace ((Gsig (X.H N u ω) (zt E u) σ
+        - mSigma E σ • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) * Eblk (B.L N) (B.W N) b)‖
+      ≤ κ * ((B.W N : ℝ) * B.ell N u * etaT E u)⁻¹)
+    (hκ : 2 * κ ≤ B.ell N u / ℓs) :
+    ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) a₁ a₂‖
+      ≤ rhs535 (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) ℓs (etaT E u) D'
+          (Step2.jS X E D' N u ω) ρ (zdist (B.L N) (a₁ - a₂)) := by
+  have hJ1 : 1 ≤ Step2.jS X E D' N u ω := Step2Moment.one_le_jS X N u ω
+  exact eGpm_le_rhs535 (X.hermitian N u ω) hL hW hℓu hℓs hηu hJ1 hA hr hD a₁ a₂ hρ
+    (gmOfJS_nonneg X E D' N u ω) h273 h554
+    (re_gloop_pm_le_jS_mul_tailT X E D' N u ω hK)
+    (fun x y _ => gmOfJS_le X E D' N u ω x y) h557C h557R h560 (mSigma E) hone hκ
+
+/-- **The `h535` field of `RBM.Step2FarInputs.EGData` with `Jf := RBM.Step2.jS`**, uniformly in
+`u ∈ [s,t)`.  Every remaining hypothesis is one of (2.73), (5.54), (5.57), (5.60) and (2.74) —
+none of them mentions `J`. -/
+theorem h535_of_jS (X : Sample B) {E : ℝ} {N : ℕ} {ω : Ω} {D' : ℝ}
+    {ρf : ℝ → ℝ} (hL : 3 ≤ B.L N) (hW : 1 ≤ (B.W N : ℝ))
+    (hℓs : 0 < B.ell N (s N))
+    (hfacts : ∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.ell N u ∧ 0 < etaT E u
+      ∧ 1 ≤ (B.W N : ℝ) * B.ell N u * etaT E u ∧ 1 ≤ B.ell N u / B.ell N (s N)
+      ∧ (B.L N : ℝ) * √((B.W N : ℝ) ^ (-D'))
+          ≤ B.ell N u * ((B.W N : ℝ) * B.ell N u * etaT E u)⁻¹
+      ∧ 0 ≤ ρf u)
+    (hK : ∀ u ∈ Set.Ico (s N) (t N), ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) (B.ell N u) / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+        ‖B.Kval E N u ⟨[true, false], [x, y]⟩‖
+          ≤ Step2.tT B E N D' u (zdist (B.L N) (x - y)))
+    {κ : ℝ}
+    (h273 : ∀ u ∈ Set.Ico (s N) (t N), ∀ (b : LoopArg (B.L N) 2) (c : ZMod (B.L N)),
+      ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) ⟨[false, true, true], [b 1, c, b 0]⟩‖
+        ≤ (B.ell N u / B.ell N (s N)) ^ 2
+            * ((((B.W N : ℝ) * B.ell N u * etaT E u)) ^ 2)⁻¹)
+    (h554 : ∀ u ∈ Set.Ico (s N) (t N), ∀ (b : LoopArg (B.L N) 2) (c : ZMod (B.L N)),
+      Lemma57.ellStarStar (B.W N : ℝ) (B.ell N u) < (zdist (B.L N) (b 1 - c) : ℝ) →
+        ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)
+          ⟨[false, true, true], [b 1, c, b 0]⟩‖ ≤ ρf u)
+    (h557C : ∀ u ∈ Set.Ico (s N) (t N),
+      ∀ (x y : ZMod (B.L N)) (p : ZMod (B.L N) × Fin (B.W N)), p.1 = y →
+        ∑ r : ZMod (B.L N) × Fin (B.W N),
+            Lemma57.blkW (B.L N) (B.W N) r x * ‖green (X.H N u ω) (zt E u) r p‖
+          ≤ √(B.ell N u / B.ell N (s N)) * (√((B.W N : ℝ) * B.ell N u * etaT E u))⁻¹)
+    (h557R : ∀ u ∈ Set.Ico (s N) (t N),
+      ∀ (x y : ZMod (B.L N)) (r : ZMod (B.L N) × Fin (B.W N)), r.1 = x →
+        ∑ p : ZMod (B.L N) × Fin (B.W N),
+            Lemma57.blkW (B.L N) (B.W N) p y * ‖green (X.H N u ω) (zt E u) r p‖
+          ≤ √(B.ell N u / B.ell N (s N)) * (√((B.W N : ℝ) * B.ell N u * etaT E u))⁻¹)
+    (h560 : ∀ u ∈ Set.Ico (s N) (t N), ∀ (b : LoopArg (B.L N) 2) (c : ZMod (B.L N)),
+      ‖gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) ⟨[false, true, true], [b 1, c, b 0]⟩‖
+        ≤ gmOfJS X E D' N u ω (b 1) c * gmOfJS X E D' N u ω (b 0) c
+            * gmOfJS X E D' N u ω (b 1) (b 0))
+    (hone : ∀ u ∈ Set.Ico (s N) (t N), ∀ σ b,
+      ‖Matrix.trace ((Gsig (X.H N u ω) (zt E u) σ
+          - mSigma E σ • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) * Eblk (B.L N) (B.W N) b)‖
+        ≤ κ * ((B.W N : ℝ) * B.ell N u * etaT E u)⁻¹)
+    (hκ : ∀ u ∈ Set.Ico (s N) (t N), 2 * κ ≤ B.ell N u / B.ell N (s N)) :
+    ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+        ≤ rhs535 (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) D'
+            (Step2.jS X E D' N u ω) (ρf u) (zdist (B.L N) (b 0 - b 1)) := by
+  intro u hu b
+  obtain ⟨hℓu, hηu, hA, hr, hD, hρ⟩ := hfacts u hu
+  exact eGpm_le_rhs535_of_jS X hL hW hℓu hℓs hηu hA hr hD (b 0) (b 1) hρ (hK u hu)
+    (fun c => h273 u hu b c) (fun c => h554 u hu b c) (h557C u hu) (h557R u hu)
+    (fun c => h560 u hu b c) (hone u hu) (hκ u hu)
+
+end Instantiate
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 18. (5.34): the quadratic gluing term, and `M_qf (1-s) ≺ 1` -/
+
+section Quad
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(5.49)**: at the `(+,-)` `2`-loop the quadratic gluing term of (5.13)/(5.34) is
+`RBM.Step2.eLL` of `L - K` —
+`W ∑_{b₁b₂} (L-K)_{(a₁,b₁)} S^{(B)}_{b₁b₂} (L-K)_{(b₂,a₂)}` — transported from
+`RBM.LoopIdx` to `RBM.LoopArg`.  `RBM.EGDef.primBil_two_eq` is the `LoopIdx` half. -/
+theorem quadGlue_pm_eq_eLL (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
+    (x y : ZMod (B.L N)) :
+    primBil (B.L N) (B.W N)
+        (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+        (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+        ⟨[true, false], [x, y]⟩
+      = Step2.eLL (B.L N) ((B.W N : ℝ)) (Step2.lk X E N u ω) ![x, y] := by
+  rw [EGDef.primBil_two_eq]
+  simp only [Step2.eLL, Matrix.cons_val_zero, Matrix.cons_val_one, Complex.ofReal_natCast]
+  rfl
+
+/-- **`M_qf`: the far-field constant of (5.34)**, `u`-free *and* `D'`-free:
+`(36 e (Im m)^{-1} + e)(1-s)^{-1}`.  The first summand pays for
+`36 e (J*)² η_u^{-1}A_u^{-1}` and the second for the `W L W^{-D'}` floor. -/
+noncomputable def mqfEG (E : ℝ) (s : ℕ → ℝ) (N : ℕ) : ℝ :=
+  (36 * exp 1 * ((mE E).im)⁻¹ + exp 1) * (1 - s N)⁻¹
+
+/-- **`M_q`: the near-field constant of (5.34)**.  On the diagonal band `FarInputs'` asks for
+a plain constant, so the tail is thrown away at its maximum
+`T_{u,D'}(0) = A_u^{-2} + W^{-D'} ≤ 1 + W^{-D'}`. -/
+noncomputable def mqnEG (B : Band Ω) (E : ℝ) (s : ℕ → ℝ) (D' : ℝ) (N : ℕ) : ℝ :=
+  mqfEG E s N * (1 + (B.W N : ℝ) ^ (-D'))
+
+theorem mqfEG_pos {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ} {N : ℕ} (hs1 : s N < 1) :
+    0 < mqfEG E s N := by
+  have hm := mE_im_pos hE
+  have h1s : (0 : ℝ) < 1 - s N := by linarith
+  have he := exp_pos 1
+  unfold mqfEG; positivity
+
+theorem mqnEG_nonneg (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ} {D' : ℝ} {N : ℕ}
+    (hs1 : s N < 1) : 0 ≤ mqnEG B E s D' N := by
+  have h := (mqfEG_pos hE hs1).le
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by
+    have : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+    linarith
+  have : (0 : ℝ) ≤ (B.W N : ℝ) ^ (-D') := Real.rpow_nonneg hW0.le _
+  unfold mqnEG; positivity
+
+/-- **`M_qf (1-s) ≺ 1`** — the last remaining drift input of T208/T215.  It is not merely
+`≺ 1`: after multiplying by the length of the window it is the **constant**
+`36 e (Im m)^{-1} + e`. -/
+theorem detDom_mqfEG_mul_one_sub (E : ℝ) {s : ℕ → ℝ} (hs1 : ∀ N, s N < 1) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      mqfEG E s N * (1 - s N) ≤ (N : ℝ) ^ τ := by
+  intro τ hτ
+  filter_upwards [eventually_le_rpow (36 * exp 1 * ((mE E).im)⁻¹ + exp 1) hτ] with N hN
+  have h1s : (0 : ℝ) < 1 - s N := by linarith [hs1 N]
+  have heq : mqfEG E s N * (1 - s N) = 36 * exp 1 * ((mE E).im)⁻¹ + exp 1 := by
+    unfold mqfEG; field_simp
+  rw [heq]; exact hN
+
+/-! #### The exponent account, as two pure inequalities -/
+
+/-- **`β* = 2.5`**: `(J*)² R ≤ A`.  With the sharp (5.47) `J* ≤ N^δ R²` (T207) this is
+`N^{2δ} R⁵ ≤ N^c R^{30} ≤ A`, i.e. (2.72)-with-a-gain at the monomial `x^{16}R⁵`.  Compare
+T215's two rows, `β* = 7.5` and `4.5`: the quadratic term of (5.34) is the **cheapest** of the
+three, because it carries no `r = ℓ_u/ℓ_s` and no `√A`. -/
+theorem jS_sq_mul_ratio_le {J R A Nr c δ : ℝ} (hN : 1 ≤ Nr) (hR : 1 ≤ R) (hJ0 : 0 ≤ J)
+    (hδ : 4 * δ ≤ 2 * c) (hJ : J ≤ Nr ^ δ * R ^ 2)
+    (hA : Nr ^ c * R ^ 30 ≤ A) : J ^ 2 * R ≤ A := by
+  have hN0 : (0 : ℝ) < Nr := by linarith
+  have hR0 : (0 : ℝ) < R := by linarith
+  have hNd : (0 : ℝ) < Nr ^ δ := Real.rpow_pos_of_pos hN0 _
+  have hsq : Nr ^ (2 * δ) = (Nr ^ δ) ^ 2 := by
+    rw [← Real.rpow_natCast (Nr ^ δ) 2, ← Real.rpow_mul hN0.le]
+    congr 1; push_cast; ring
+  have hJsq : J ^ 2 ≤ Nr ^ (2 * δ) * R ^ 4 := by
+    have h := mul_self_le_mul_self hJ0 hJ
+    calc J ^ 2 = J * J := by ring
+      _ ≤ (Nr ^ δ * R ^ 2) * (Nr ^ δ * R ^ 2) := h
+      _ = Nr ^ (2 * δ) * R ^ 4 := by rw [hsq]; ring
+  have hexp : Nr ^ (2 * δ) ≤ Nr ^ c := Real.rpow_le_rpow_of_exponent_le hN (by linarith)
+  have hR30 : R ^ 4 * R ≤ R ^ 30 := by
+    have : R ^ 5 ≤ R ^ 30 := pow_le_pow_right₀ hR (by norm_num)
+    calc R ^ 4 * R = R ^ 5 := by ring
+      _ ≤ R ^ 30 := this
+  have hRc : (0 : ℝ) ≤ Nr ^ c := (Real.rpow_pos_of_pos hN0 c).le
+  calc J ^ 2 * R ≤ (Nr ^ (2 * δ) * R ^ 4) * R :=
+        mul_le_mul_of_nonneg_right hJsq hR0.le
+    _ = Nr ^ (2 * δ) * (R ^ 4 * R) := by ring
+    _ ≤ Nr ^ c * (R ^ 4 * R) := by
+        exact mul_le_mul_of_nonneg_right hexp (by positivity)
+    _ ≤ Nr ^ c * R ^ 30 := mul_le_mul_of_nonneg_left hR30 hRc
+    _ ≤ A := hA
+
+/-- **`(J*)² ≤ W`**, the input the `W L W^{-D'}` floor of (5.34) needs.  Same account as
+`RBM.Step2FarInputs.jS_sq_mul_ratio_le` with one power of `R` to spare, closed off by
+`A_u = W ℓ_u η_u ≤ W` (`RBM.etaT_mul_ellHat_le`, i.e. `ℓ_u η_u ≤ 1`). -/
+theorem jS_sq_le_W {J R A Wr Nr c δ : ℝ} (hN : 1 ≤ Nr) (hR : 1 ≤ R) (hJ0 : 0 ≤ J)
+    (hδ : 4 * δ ≤ 2 * c) (hJ : J ≤ Nr ^ δ * R ^ 2)
+    (hA : Nr ^ c * R ^ 30 ≤ A) (hAW : A ≤ Wr) : J ^ 2 ≤ Wr := by
+  have hR1 : (1 : ℝ) ≤ R := hR
+  have h := jS_sq_mul_ratio_le hN hR hJ0 hδ hJ hA
+  have hJ2 : (0 : ℝ) ≤ J ^ 2 := sq_nonneg J
+  nlinarith
+
+end Quad
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 19. (5.34) with `J := J*_{u,D'}`: the two quadratic inputs of `FarInputs'` -/
+
+section QuadProduce
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The far quadratic input of `FarInputs'`, from (5.34).**
+
+`RBM.Step2.norm_eLL_le` is (5.34) with the explicit constant
+`e (J*)²(36 η_u^{-1}A_u^{-1} + W L W^{-D'})`; this lemma checks, at every `u ∈ [s,t)`, that
+the constant is at most the `u`-free `RBM.Step2FarInputs.mqfEG`.  The account is the two rows
+of the module docstring: `jS_sq_mul_ratio_le` (`β* = 2.5`) for the first summand and
+`jS_sq_le_W` + `W L ≤ N ≤ W²` + `3 ≤ D'` for the floor.
+
+`hJ` is T207's sharp (5.47) for `J*` — the *whole* point of the bridge of §15–§17 is that this
+is the same `J*` that (5.35) is now allowed to use. -/
+theorem quad_far_le_of_jS (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {ω : Ω} {D' c δ : ℝ}
+    (hs0 : 0 ≤ s N) (hs1 : s N < 1) (ht1 : t N < 1) (hN1 : 1 ≤ (N : ℝ))
+    (hδ : 4 * δ ≤ 2 * c) (hD' : 3 ≤ D')
+    (hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ)) (hNW : (N : ℝ) ≤ (B.W N : ℝ) ^ 2)
+    (hA : ∀ u ∈ Set.Ico (s N) (t N),
+      (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    (hJ : ∀ u ∈ Set.Ico (s N) (t N),
+      Step2.jS X E D' N u ω ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2) :
+    ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖primBil (B.L N) (B.W N)
+          (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+          (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+          ⟨[true, false], [b 0, b 1]⟩‖
+        ≤ mqfEG E s N * Step2.tT B E N D' u (zdist (B.L N) (b 0 - b 1)) := by
+  intro u hu b
+  have hsu : s N ≤ u := hu.1
+  have hu1 : u < 1 := hu.2.trans ht1
+  have hu0 : (0 : ℝ) ≤ u := hs0.trans hsu
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have hL1 : 1 ≤ B.L N := by omega
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+  have hℓu : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg hL1 hu0 hu1
+  have hℓu0 : (0 : ℝ) < B.ell N u := by linarith
+  have hηu : 0 < etaT E u := Step2.etaT_pos' hE hu1
+  have hm := mE_im_pos hE
+  have h1s : (0 : ℝ) < 1 - s N := by linarith
+  have h1s1 : (1 : ℝ) - s N ≤ 1 := by linarith
+  set J : ℝ := Step2.jS X E D' N u ω with hJdef
+  set R : ℝ := etaT E (s N) / etaT E u with hRdef
+  set A : ℝ := (B.W N : ℝ) * B.ell N u * etaT E u with hAdef
+  have hA0 : (0 : ℝ) < A := by rw [hAdef]; positivity
+  have hAsc : B.scale E N u = A := rfl
+  have hJ0 : (0 : ℝ) ≤ J := by
+    rw [hJdef]
+    exact le_trans zero_le_one (Step2Moment.one_le_jS X N u ω)
+  have hR1 : (1 : ℝ) ≤ R := by
+    rw [hRdef, Step2.etaT_ratio hE, le_div_iff₀ (by linarith), one_mul]; linarith
+  have hAW : A ≤ (B.W N : ℝ) := by
+    have h := etaT_mul_ellHat_le (L := B.L N) hL3 hE.le hu0 hu1
+    have he : B.ell N u = ellHat (B.L N) ((u : ℝ) : ℂ) := rfl
+    rw [hAdef, he]
+    nlinarith [hW0.le]
+  have hJ2R : J ^ 2 * R ≤ A := by
+    rw [← hAsc] at *
+    exact jS_sq_mul_ratio_le hN1 hR1 hJ0 hδ (hJ u hu) (hA u hu)
+  have hJ2W : J ^ 2 ≤ (B.W N : ℝ) :=
+    jS_sq_le_W hN1 hR1 hJ0 hδ (hJ u hu) (by rw [hAsc] at *; exact hA u hu) hAW
+  -- (5.34) itself
+  have hbase := Step2.norm_eLL_le (L := B.L N) hL3 (W := (B.W N : ℝ)) (ℓu := B.ell N u)
+      (ηu := etaT E u) hW0 hℓu hηu D' (Step2.lk X E N u ω) ![b 0, b 1]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at hbase
+  rw [quadGlue_pm_eq_eLL X E N u ω (b 0) (b 1)]
+  -- the coefficient inequality
+  have hT0 : (0 : ℝ) ≤ tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D'
+      (zdist (B.L N) (b 0 - b 1)) := tailT_nonneg hW0.le _
+  set P : ℝ := (B.W N : ℝ) with hPdef
+  set Lr : ℝ := (B.L N : ℝ) with hLdef
+  set Q : ℝ := P * Lr * P ^ (-D') with hQdef
+  have hPD0 : (0 : ℝ) ≤ P ^ (-D') := Real.rpow_nonneg hW0.le _
+  have hQ0 : (0 : ℝ) ≤ Q := by rw [hQdef]; positivity
+  have hterm1 : exp 1 * J ^ 2 * (36 * ((etaT E u)⁻¹ * A⁻¹)) * (1 - s N)
+      ≤ 36 * exp 1 * ((mE E).im)⁻¹ := by
+    have hid : (etaT E u)⁻¹ * (1 - s N) = ((mE E).im)⁻¹ * R :=
+      etaT_inv_mul_one_sub_ratio hE hu1
+    have hrw : exp 1 * J ^ 2 * (36 * ((etaT E u)⁻¹ * A⁻¹)) * (1 - s N)
+        = 36 * exp 1 * (((etaT E u)⁻¹ * (1 - s N)) * (J ^ 2 * A⁻¹)) := by ring
+    rw [hrw, hid]
+    have hle1 : R * (J ^ 2 * A⁻¹) ≤ 1 := by
+      rw [show R * (J ^ 2 * A⁻¹) = (J ^ 2 * R) / A by field_simp]
+      exact (div_le_one hA0).2 hJ2R
+    have hmi : (0 : ℝ) ≤ ((mE E).im)⁻¹ := by positivity
+    have hstep : ((mE E).im)⁻¹ * R * (J ^ 2 * A⁻¹) ≤ ((mE E).im)⁻¹ * 1 := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left hle1 hmi
+    nlinarith [exp_pos 1]
+  have hterm2 : exp 1 * J ^ 2 * Q * (1 - s N) ≤ exp 1 := by
+    have hQle : Q ≤ P ^ 2 * P ^ (-D') := by
+      rw [hQdef]
+      exact mul_le_mul_of_nonneg_right (le_trans hWL hNW) hPD0
+    have hpow : P * (P ^ 2 * P ^ (-D')) ≤ 1 := by
+      have h3 : P * P ^ 2 = P ^ ((3 : ℝ)) := by
+        rw [show ((3 : ℝ)) = ((3 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]; ring
+      rw [show P * (P ^ 2 * P ^ (-D')) = (P * P ^ 2) * P ^ (-D') by ring, h3,
+        ← Real.rpow_add hW0]
+      calc P ^ ((3 : ℝ) + -D') ≤ P ^ (0 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le hW1 (by linarith)
+        _ = 1 := Real.rpow_zero P
+    have ha : J ^ 2 * Q ≤ P * (P ^ 2 * P ^ (-D')) :=
+      mul_le_mul hJ2W hQle hQ0 (by linarith)
+    have hb : J ^ 2 * Q * (1 - s N) ≤ J ^ 2 * Q * 1 :=
+      mul_le_mul_of_nonneg_left h1s1 (mul_nonneg (sq_nonneg J) hQ0)
+    rw [mul_one] at hb
+    nlinarith [exp_pos 1]
+  have hcoef : exp 1 * J ^ 2 * (36 * ((etaT E u)⁻¹ * A⁻¹) + Q) ≤ mqfEG E s N := by
+    have hsum : exp 1 * J ^ 2 * (36 * ((etaT E u)⁻¹ * A⁻¹) + Q) * (1 - s N)
+        ≤ 36 * exp 1 * ((mE E).im)⁻¹ + exp 1 := by
+      have hexpand : exp 1 * J ^ 2 * (36 * ((etaT E u)⁻¹ * A⁻¹) + Q) * (1 - s N)
+          = exp 1 * J ^ 2 * (36 * ((etaT E u)⁻¹ * A⁻¹)) * (1 - s N)
+            + exp 1 * J ^ 2 * Q * (1 - s N) := by ring
+      rw [hexpand]; linarith
+    have := (le_div_iff₀ h1s).2 hsum
+    rw [show (36 * exp 1 * ((mE E).im)⁻¹ + exp 1) / (1 - s N) = mqfEG E s N by
+      unfold mqfEG; field_simp] at this
+    exact this
+  refine hbase.trans ?_
+  exact mul_le_mul_of_nonneg_right hcoef hT0
+
+/-- **The near quadratic input of `FarInputs'`, from (5.34).**  Unconditional in the argument
+(the near restriction of `RBM.Step2FarInputs.EGData` is not needed): the tail is evaluated at
+its maximum `T_{u,D'}(0) = A_u^{-2} + W^{-D'} ≤ 1 + W^{-D'}`, which needs `1 ≤ A_u` and
+`0 ≤ D'`.  `M_q` is *not* required to be `≺ 1` — it enters only
+`RBM.Step2FarInputs.FarResidue'`. -/
+theorem quad_near_le_of_jS (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {ω : Ω} {D' c δ : ℝ}
+    (hs0 : 0 ≤ s N) (hs1 : s N < 1) (ht1 : t N < 1) (hN1 : 1 ≤ (N : ℝ))
+    (hδ : 4 * δ ≤ 2 * c) (hD' : 3 ≤ D')
+    (hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ)) (hNW : (N : ℝ) ≤ (B.W N : ℝ) ^ 2)
+    (hscale1 : ∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+    (hA : ∀ u ∈ Set.Ico (s N) (t N),
+      (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    (hJ : ∀ u ∈ Set.Ico (s N) (t N),
+      Step2.jS X E D' N u ω ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2) :
+    ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖primBil (B.L N) (B.W N)
+          (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+          (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u)
+          ⟨[true, false], [b 0, b 1]⟩‖
+        ≤ mqnEG B E s D' N := by
+  intro u hu b
+  have hsu : s N ≤ u := hu.1
+  have hu1 : u < 1 := hu.2.trans ht1
+  have hu0 : (0 : ℝ) ≤ u := hs0.trans hsu
+  have hL1 : 1 ≤ B.L N := B.one_le_L N
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+  have hℓu : 1 ≤ B.ell N u := one_le_ellHat_of_nonneg hL1 hu0 hu1
+  have hℓu0 : (0 : ℝ) < B.ell N u := by linarith
+  have hηu : 0 < etaT E u := Step2.etaT_pos' hE hu1
+  have hfar := quad_far_le_of_jS X hE hs0 hs1 ht1 hN1 hδ hD' hWL hNW hA hJ u hu b
+  have hqf0 : (0 : ℝ) ≤ mqfEG E s N := (mqfEG_pos hE hs1).le
+  have hA1 : (1 : ℝ) ≤ (B.W N : ℝ) * B.ell N u * etaT E u := hscale1 u hu
+  have hAi : ((((B.W N : ℝ) * B.ell N u * etaT E u)) ^ 2)⁻¹ ≤ 1 :=
+    inv_le_one_of_one_le₀ (by nlinarith)
+  have hd0 : (0 : ℝ) ≤ (zdist (B.L N) (b 0 - b 1) : ℝ) := by positivity
+  have hzero : tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D' 0
+      = ((((B.W N : ℝ) * B.ell N u * etaT E u)) ^ 2)⁻¹ + (B.W N : ℝ) ^ (-D') := by
+    unfold tailT; simp
+  have hTle : Step2.tT B E N D' u (zdist (B.L N) (b 0 - b 1))
+      ≤ 1 + (B.W N : ℝ) ^ (-D') := by
+    show tailT (B.W N : ℝ) (B.ell N u) (etaT E u) D' (zdist (B.L N) (b 0 - b 1))
+      ≤ 1 + (B.W N : ℝ) ^ (-D')
+    refine le_trans (tailT_antitone hℓu0 hd0) ?_
+    rw [hzero]; linarith
+  refine hfar.trans ?_
+  unfold mqnEG
+  exact mul_le_mul_of_nonneg_left hTle hqf0
+
+end QuadProduce
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 20. `M_f (1-s) ≺ 1` with **both** halves proved, and (5.48) end to end -/
+
+section Assemble535534
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **`1 ≤ M_f`** for the produced far constant `M_f = M_gf + M_qf`.  Together with
+`RBM.Step2FarInputs.farDrift_eq_zero_of_farInputs'_zero` (which says `M_n = M_f = 0` forces the
+model's drift to vanish identically) this is the anti-fiat certificate: what (5.35)+(5.34)
+produce is bounded **below** by `1`, so the witnesses below are not T198's `F = 0`. -/
+theorem one_le_mfEG_add_mqfEG (B : Band Ω) {E : ℝ} (hE : |E| < 2) (s : ℕ → ℝ) {N : ℕ}
+    (hs1 : s N < 1) : 1 ≤ mfEG B E s N + mqfEG E s N := by
+  have h1 := one_le_mfEG B hE s hs1
+  have h2 := (mqfEG_pos hE hs1).le
+  linarith
+
+/-- **`M_f (1-s) ≺ 1` with nothing assumed.**  `RBM.Step2FarInputs.detDom_mf_mul_one_sub` had
+the quadratic half `Mqf` as an *input*; here both halves are theorems —
+`detDom_mfEG_mul_one_sub` (T215, (5.35)) and `detDom_mqfEG_mul_one_sub` (T229, (5.34)).
+
+This closes the last drift input of the far half of (5.48). -/
+theorem detDom_mf_full_mul_one_sub (B : Band Ω) {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (hs1 : ∀ N, s N < 1) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      (mfEG B E s N + mqfEG E s N) * (1 - s N) ≤ (N : ℝ) ^ τ :=
+  detDom_mf_mul_one_sub B hE hs0 hs1 (detDom_mqfEG_mul_one_sub E hs1)
+
+/-- **The satisfiability witness for the produced far constant, at the critical scaling.**
+
+`1 - s_N = 1/(N+1)` — the point at which T198's `RBM.Step2MomentStep.cFarStep` is *not* `≺ 1`
+(`RBM.Step2FarInputs.cFarStep_not_detDom`), and the point T215's witness uses — with `M_f` the
+constant that (5.35) **and** (5.34) actually produce, `M_gf + M_qf`, which is `≥ 1` by
+`RBM.Step2FarInputs.one_le_mfEG_add_mqfEG`.  The drift is not `0`. -/
+theorem cFarStep'_detDom_mf_full (B : Band Ω) {E : ℝ} (hE : |E| < 2) :
+    ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      cFarStep' B E (fun N => 1 - 1 / ((N : ℝ) + 1)) (fun _ => 1)
+          (fun N => mfEG B E (fun N => 1 - 1 / ((N : ℝ) + 1)) N
+            + mqfEG E (fun N => 1 - 1 / ((N : ℝ) + 1)) N) (fun _ => 1) N ≤ (N : ℝ) ^ τ := by
+  set s : ℕ → ℝ := fun N => 1 - 1 / ((N : ℝ) + 1) with hs
+  have hpos : ∀ N : ℕ, (0 : ℝ) < (N : ℝ) + 1 := fun N => by positivity
+  have hs0 : ∀ N, 0 ≤ s N := by
+    intro N
+    have h1 : (1 : ℝ) / ((N : ℝ) + 1) ≤ 1 := by
+      rw [div_le_one (hpos N)]
+      have : (0 : ℝ) ≤ (N : ℝ) := Nat.cast_nonneg N
+      linarith
+    rw [hs]; simp only []; linarith
+  have hs1 : ∀ N, s N < 1 := by
+    intro N
+    have : (0 : ℝ) < 1 / ((N : ℝ) + 1) := by positivity
+    rw [hs]; simp only []; linarith
+  refine detDom_cFarStep' B E (fun N => (hs1 N).le) (fun _ => zero_le_one)
+    (fun N => le_trans zero_le_one (one_le_mfEG_add_mqfEG B hE s (hs1 N))) ?_ ?_ ?_
+  · intro τ hτ
+    filter_upwards [eventually_le_rpow 1 hτ] with N hN using hN
+  · exact detDom_mf_full_mul_one_sub B hE hs0 hs1
+  · intro τ hτ
+    filter_upwards [eventually_le_rpow 1 hτ] with N hN using hN
+
+/-- **(5.48) with the whole drift produced from (5.35) and (5.34).**
+
+`RBM.Step2FarInputs.flowEq548_of_egData` (T215) still took `hMqf'` — `M_qf (1-s) ≺ 1` — as a
+hypothesis; here it is filled by `RBM.Step2FarInputs.detDom_mqfEG_mul_one_sub`, for **every**
+`D'` (the constant is `D'`-free).  What is left in the hypothesis list of the far half is the
+martingale `M_m` of (5.45) — which T228 removed from the Steps 4–5 chain altogether by the
+smoothed-threshold route — and the `EGData` bundle itself, whose quadratic fields are supplied
+by `RBM.Step2FarInputs.quad_far_le_of_jS` / `quad_near_le_of_jS` and whose (5.35) field by
+`RBM.Step2FarInputs.h535_of_jS`. -/
+theorem flowEq548_of_egData_qf (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c δ : ℝ} (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    {Mi Mq Mm : ℝ → ℕ → ℝ} {Jf ρf : ℝ → ℕ → Ω → ℝ → ℝ}
+    (hMi : ∀ D' N, 0 ≤ Mi D' N) (hMq : ∀ D' N, 0 ≤ Mq D' N) (hMm : ∀ D' N, 0 ≤ Mm D' N)
+    (hMi' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mi D' N ≤ (N : ℝ) ^ τ)
+    (hMm' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mm D' N ≤ (N : ℝ) ^ τ)
+    (hdet : ∀ᶠ N : ℕ in atTop, 1 ≤ (N : ℝ)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N),
+          (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u))
+    (hHP : ∀ D' : ℝ, HighProb B.P (fun N => {ω |
+      EGData X E s t D' δ (Mi D') (Mq D') (mqfEG E s) (Mm D') (Jf D') (ρf D') N ω}))
+    (hres : ∀ D : ℝ, 0 < D → ∃ D' : ℝ, D ≤ D' ∧ ∀ᶠ N : ℕ in atTop,
+      exp 1 ≤ (B.W N : ℝ) ∧ FarResidue' B E s t D D' (Mi D')
+        (fun N => mnEG B E s t D' N + Mq D' N)
+        (fun N => mfEG B E s N + mqfEG E s N) N)
+    (hnear : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+        tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+          (zdist (B.L N) (p.2.1 - p.2.2)))) :
+    Step45.FlowEq548 X E s t := by
+  have hs1 : ∀ N, s N < 1 := fun N => lt_of_le_of_lt (hst N) (ht1 N)
+  exact flowEq548_of_egData X hE hs0 hst ht1 hδ0 hδ
+    (Mqf := fun _ N => mqfEG E s N) hMi hMq
+    (fun _ N => (mqfEG_pos hE (hs1 N)).le) hMm hMi'
+    (fun _ => detDom_mqfEG_mul_one_sub E hs1) hMm' hdet hHP hres hnear
+
+end Assemble535534
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 21. Satisfiability, vacuity and degeneracy checks for §15–§20
+
+**Anti-fiat for the `Jf` slot** is not a new lemma: `RBM.Step2Moment.one_le_jS` already gives
+`J*_{u,D} ≥ 1` unconditionally, so `Jf := RBM.Step2.jS` can never be satisfied by the
+degenerate `Jf ≡ 0` and `hJ : Jf ≤ N^δ (η_s/η_u)²` is a *critical* request. -/
+
+section Checks
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **Vacuity (reverse) check for (5.34).**  The constant of `RBM.Step2.norm_eLL_le` is
+*increasing* in `J*`, while T207's (5.47) bounds `J*` from **above**: the two directions are
+opposite, so `RBM.Step2FarInputs.quad_far_le_of_jS` is not of the "take the constant large
+enough" kind.  (This is the same check T215 ran on `rhs535`.) -/
+theorem quadConst_mono {J₁ J₂ ηu A Wr Lr D' : ℝ} (h0 : 0 ≤ J₁) (h : J₁ ≤ J₂)
+    (hηu : 0 ≤ ηu⁻¹) (hA : 0 ≤ A⁻¹) (hWr : 0 ≤ Wr) (hLr : 0 ≤ Lr)
+    (hD : 0 ≤ Wr ^ (-D')) :
+    exp 1 * J₁ ^ 2 * (36 * (ηu⁻¹ * A⁻¹) + Wr * Lr * Wr ^ (-D'))
+      ≤ exp 1 * J₂ ^ 2 * (36 * (ηu⁻¹ * A⁻¹) + Wr * Lr * Wr ^ (-D')) := by
+  have hc : (0 : ℝ) ≤ 36 * (ηu⁻¹ * A⁻¹) + Wr * Lr * Wr ^ (-D') :=
+    add_nonneg (mul_nonneg (by norm_num) (mul_nonneg hηu hA))
+      (mul_nonneg (mul_nonneg hWr hLr) hD)
+  have hJ : J₁ ^ 2 ≤ J₂ ^ 2 := by nlinarith
+  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hJ (exp_pos 1).le) hc
+
+/-- **Degeneracy check at `s = 0`** (the time Step 5 runs the argument from): `M_qf` collapses
+to the pure constant `36 e (Im m)^{-1} + e` — finite and non-zero, not `0` and not `∞`. -/
+theorem mqfEG_at_zero (E : ℝ) (N : ℕ) :
+    mqfEG E (fun _ => 0) N = 36 * exp 1 * ((mE E).im)⁻¹ + exp 1 := by
+  unfold mqfEG; norm_num
+
+/-- **The `(+,-)` reduction of `K` is charge-specific.**  At `σ = (+,+)` the same computation
+gives `m^{(E)}²`, and `Θ` is then evaluated at `t m²`, not at `t`: the `1` of
+`RBM.Step2FarInputs.mSigma_true_mul_false` is *not* a generic normalisation.  This is the
+discriminating check for `RBM.Step2FarInputs.Kval_pm_eq` (getting the charges wrong would make
+`Kval_pm_eq` false, not merely weaker). -/
+theorem mSigma_true_mul_true (E : ℝ) : mSigma E true * mSigma E true = mE E ^ 2 := by
+  simp [mSigma]; ring
+
+/-- **`M_qf > 0`.**  Together with `RBM.Step2FarInputs.one_le_mfEG_add_mqfEG` this is the
+non-degeneracy of the produced far constant: the `(5.34)` half contributes a strictly positive
+amount, so `M_f` is not `RBM.Step2FarInputs.mfEG` in disguise. -/
+theorem mqfEG_ne_zero {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ} {N : ℕ} (hs1 : s N < 1) :
+    mqfEG E s N ≠ 0 := (mqfEG_pos hE hs1).ne'
+
+end Checks
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 22. `EGData` with `Jf := RBM.Step2.jS` and both quadratic constants produced -/
+
+section EGDataJS
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The `EGData` bundle of T215, with the `J`-slot instantiated by (5.29) and both
+quadratic constants produced from (5.34).**
+
+Of the eight fields of `RBM.Step2FarInputs.EGData`, four are now theorems:
+
+* field 3 (`0 ≤ Jf`) — `RBM.Step2Moment.one_le_jS`;
+* field 6 (the near quadratic constant) — `RBM.Step2FarInputs.quad_near_le_of_jS`;
+* field 7 (the far quadratic constant) — `RBM.Step2FarInputs.quad_far_le_of_jS`;
+* and field 2 is reduced to (2.73)/(5.54)/(5.57)/(5.60)/(2.74) by
+  `RBM.Step2FarInputs.h535_of_jS`, none of which mentions `J`.
+
+What is left as an input here is exactly: (2.69) at `s` (`hinit`), the **sharp (5.47)**
+`J*_{u,D'} ≺ (η_s/η_u)²` (`hJ`, T207), the (5.54) residue (`hrem`), (5.35) itself (`h535`,
+whose `J` is now `RBM.Step2.jS`) and the (5.45) martingale (`hmart`, which T228's route
+deletes from Steps 4–5 altogether). -/
+theorem egData_of_jS (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {ω : Ω} {D' c δ : ℝ}
+    {Mi Mm : ℕ → ℝ} {ρf : ℕ → Ω → ℝ → ℝ}
+    (hs0 : 0 ≤ s N) (hs1 : s N < 1) (ht1 : t N < 1) (hN1 : 1 ≤ (N : ℝ))
+    (hδ : 4 * δ ≤ 2 * c) (hD' : 3 ≤ D')
+    (hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ)) (hNW : (N : ℝ) ≤ (B.W N : ℝ) ^ 2)
+    (hscale1 : ∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+    (hA : ∀ u ∈ Set.Ico (s N) (t N),
+      (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u)
+    (hJ : ∀ u ∈ Set.Ico (s N) (t N),
+      Step2.jS X E D' N u ω ≤ (N : ℝ) ^ δ * (etaT E (s N) / etaT E u) ^ 2)
+    (hinit : ∀ b : LoopArg (B.L N) 2, ‖Step2.lk X E N (s N) ω b‖
+      ≤ Mi N * Step2.tT B E N D' (s N) (zdist (B.L N) (b 0 - b 1)))
+    (hrem : ∀ u ∈ Set.Ico (s N) (t N),
+      B.ell N u / B.ell N (s N) * (B.ell N u * etaT E u)⁻¹ * (B.L N : ℝ) * ρf N ω u
+        ≤ (B.W N : ℝ) ^ (-D'))
+    (h535 : ∀ u ∈ Set.Ico (s N) (t N), ∀ b : LoopArg (B.L N) 2,
+      ‖EGDef.eGpm (B.L N) (B.W N) (mSigma E) (X.H N u ω) (zt E u) (b 0) (b 1)‖
+        ≤ rhs535 (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) (B.ell N (s N)) (etaT E u) D'
+            (Step2.jS X E D' N u ω) (ρf N ω u) (zdist (B.L N) (b 0 - b 1)))
+    (hmart : ∀ v : TimeIcc s t N, ∀ x y : ZMod (B.L N),
+      6 * ellStar (B.W N : ℝ) (B.ell N (v : ℝ)) ≤ (zdist (B.L N) (x - y) : ℝ) →
+        ‖farMart X E s N (v : ℝ) ω ![x, y]‖
+          ≤ Mm N * Step2.tT B E N D' (v : ℝ) (zdist (B.L N) (x - y))) :
+    EGData X E s t D' δ Mi (mqnEG B E s D') (mqfEG E s) Mm
+      (fun N ω u => Step2.jS X E D' N u ω) ρf N ω :=
+  ⟨hinit, h535, fun u _ => le_trans zero_le_one (Step2Moment.one_le_jS X N u ω), hJ, hrem,
+    fun u hu b _ => quad_near_le_of_jS X hE hs0 hs1 ht1 hN1 hδ hD' hWL hNW hscale1 hA hJ u hu b,
+    fun u hu b _ => quad_far_le_of_jS X hE hs0 hs1 ht1 hN1 hδ hD' hWL hNW hA hJ u hu b,
+    hmart⟩
+
+end EGDataJS
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 23. The account's hypothesis set is satisfiable, and its (2.72) input is load-bearing -/
+
+section AccountChecks
+
+/-- **Satisfiability of the account of §18**, with `J*` at its (5.47) **ceiling** rather than
+at `0`: `N = 1`, `δ = 1/4`, `c = 1/2` (so `4δ = 1 = 2c`), `R = η_s/η_u = 2`,
+`J* = N^δ R² = 4` and `A = W ℓ_u η_u = 2^30` — the (2.72)-with-a-gain budget
+`N^c R^{30} ≤ A` holds with equality, and the conclusion `(J*)² R ≤ A` comes out as
+`32 ≤ 2^30`.  So the hypothesis set of `RBM.Step2FarInputs.jS_sq_mul_ratio_le` is not
+vacuous. -/
+theorem jS_sq_mul_ratio_le_sat : (4 : ℝ) ^ 2 * 2 ≤ (2 : ℝ) ^ 30 :=
+  jS_sq_mul_ratio_le (Nr := 1) (c := 1 / 2) (δ := 1 / 4) (A := (2 : ℝ) ^ 30)
+    le_rfl (by norm_num) (by norm_num) (by norm_num)
+    (by rw [Real.one_rpow]; norm_num) (by rw [Real.one_rpow]; norm_num)
+
+/-- **The (2.72) input of the account is load-bearing.**  Drop `A` to `1` and keep everything
+else: `(J*)² R = 32 > 1 = A`, so the conclusion of
+`RBM.Step2FarInputs.jS_sq_mul_ratio_le` is **false** there.  The lemma therefore says
+something about `A`; it is not an inequality that holds for free. -/
+theorem jS_sq_mul_ratio_not_le : ¬ ((4 : ℝ) ^ 2 * 2 ≤ (1 : ℝ)) := by norm_num
+
+end AccountChecks
+
+end Step2FarInputs
+end RBM
+
+namespace RBM
+namespace Step2FarInputs
+
+open Real Filter MeasureTheory
+
+/-! ### 24. (5.48) with the `D'`-threshold that (5.34)'s `W L W^{-D'}` floor needs
+
+`RBM.Step2FarInputs.flowEq548_of_egData` (T215) asks for its `EGData` bundle at **every** `D'`,
+although its proof only ever uses the one `D'` that `hres` hands back.  That is harmless for
+(5.35), whose constant `RBM.Step2FarInputs.mfEG` is uniform in `D'`, but the quadratic term of
+(5.34) genuinely needs `3 ≤ D'` (the `W L W^{-D'}` floor), so the `∀ D'` form of `hHP` cannot
+be met by `RBM.Step2FarInputs.egData_of_jS`.
+
+This section repeats the three-line chain
+(`Step2MomentStep.flowEq548_of_near_far` → `stochDom_far_of_farInputs'`) with the quantifier on
+`hHP` restricted to `D₀ ≤ D'` and `hres` asked to return such a `D'`.  Nothing is weakened: the
+residue mechanism of `RBM.Step2FarInputs.FarResidue'` is already of the form
+"`∀ D > 0, ∃ D' ≥ D`", so a caller supplies `D' = max D D₀`. -/
+
+section Threshold
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(5.48), with the drift of (5.35)+(5.34) produced and the `D'`-threshold explicit.**
+
+Hypothesis list, verbatim: `M_i ≥ 0`/`≺ 1` ((2.69)), `M_q ≥ 0` (the near quadratic constant),
+`M_m ≥ 0`/`≺ 1` ((5.45), deleted from Steps 4–5 by T228), the deterministic (2.72) facts, the
+`EGData` bundle at `D' ≥ D₀`, the residue condition and the sharp near half.
+
+**There is no `M_f` input and no `M_qf` input**: `M_f = RBM.Step2FarInputs.mfEG +
+RBM.Step2FarInputs.mqfEG` and `M_f (1-s) ≺ 1` is
+`RBM.Step2FarInputs.detDom_mf_full_mul_one_sub`, a theorem. -/
+theorem flowEq548_of_egData_qf_thr (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c δ D₀ : ℝ} (hδ0 : 0 ≤ δ) (hδ : 4 * δ ≤ 2 * c)
+    {Mi Mq Mm : ℝ → ℕ → ℝ} {Jf ρf : ℝ → ℕ → Ω → ℝ → ℝ}
+    (hMi : ∀ D' N, 0 ≤ Mi D' N) (hMq : ∀ D' N, 0 ≤ Mq D' N) (hMm : ∀ D' N, 0 ≤ Mm D' N)
+    (hMi' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mi D' N ≤ (N : ℝ) ^ τ)
+    (hMm' : ∀ D' : ℝ, ∀ τ > (0 : ℝ), ∀ᶠ N : ℕ in atTop, Mm D' N ≤ (N : ℝ) ^ τ)
+    (hdet : ∀ᶠ N : ℕ in atTop, 1 ≤ (N : ℝ)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N), 1 ≤ B.scale E N u)
+      ∧ (∀ u ∈ Set.Ico (s N) (t N),
+          (N : ℝ) ^ c * (etaT E (s N) / etaT E u) ^ 30 ≤ B.scale E N u))
+    (hHP : ∀ D' : ℝ, D₀ ≤ D' → HighProb B.P (fun N => {ω |
+      EGData X E s t D' δ (Mi D') (Mq D') (mqfEG E s) (Mm D') (Jf D') (ρf D') N ω}))
+    (hres : ∀ D : ℝ, 0 < D → ∃ D' : ℝ, D ≤ D' ∧ D₀ ≤ D' ∧ ∀ᶠ N : ℕ in atTop,
+      exp 1 ≤ (B.W N : ℝ) ∧ FarResidue' B E s t D D' (Mi D')
+        (fun N => mnEG B E s t D' N + Mq D' N)
+        (fun N => mfEG B E s N + mqfEG E s N) N)
+    (hnear : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+        tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D
+          (zdist (B.L N) (p.2.1 - p.2.2)))) :
+    Step45.FlowEq548 X E s t := by
+  have hs1 : ∀ N, s N < 1 := fun N => lt_of_le_of_lt (hst N) (ht1 N)
+  have hMn0 : ∀ (D' : ℝ) (N : ℕ), 0 ≤ mnEG B E s t D' N + Mq D' N := by
+    intro D' N
+    have h1 := one_le_mnEG B hE s t D' (hs1 N) (ht1 N)
+    have h2 := hMq D' N
+    linarith
+  have hMf0 : ∀ (D' : ℝ) (N : ℕ), 0 ≤ mfEG B E s N + mqfEG E s N := by
+    intro D' N
+    have := one_le_mfEG_add_mqfEG B hE s (hs1 N)
+    linarith
+  refine Step2MomentStep.flowEq548_of_near_far X hnear fun D hD => ?_
+  obtain ⟨D', hDD, hD0, hfacts⟩ := hres D hD
+  refine stochDom_far_of_farInputs' X hE hs0 hst ht1 hDD
+    (Mi := Mi D') (Mn := fun N => mnEG B E s t D' N + Mq D' N)
+    (Mf := fun N => mfEG B E s N + mqfEG E s N) (Mm := Mm D')
+    (hMi D') (hMn0 D') (hMf0 D') (hMm D') hfacts ?_
+    (highProb_farInputs'_of_egData X hE hs0 hs1 ht1 hδ0 hδ hdet (hHP D' hD0))
+  exact detDom_cFarStep' B E (fun N => (hs1 N).le) (hMi D') (hMf0 D') (hMi' D')
+    (detDom_mf_full_mul_one_sub B hE hs0 hs1) (hMm' D')
+
+end Threshold
+
+end Step2FarInputs
+end RBM

@@ -45,6 +45,24 @@ plus real inequalities.  Nothing is an `axiom`.  The setting is the abstract one
 * `RBM.Step45.flow_sharpDecay` — **(2.79)** for the flow, in exactly the shape of the field
   `RBM.Steps.sharpDecay`; `RBM.Step45.flow_steps45` — (2.78) and (2.79) together.
 
+## Step 5 with a smoothed threshold (T228, D15 → option 3)
+
+`Eq548`'s indicator `1(d ≤ 6ℓ*_u)`, read uniformly in `u`, makes the far-field functional jump
+in `u` (`RBM.Step2FarMart.lkFar_crossing`), which blocks the bootstrap route for the far half
+of (5.48).  The primed statements replace the indicator by a weight that vanishes past
+`12ℓ*_u`; nothing else in Step 5 changes, and the conclusions are the unprimed ones verbatim.
+
+* `RBM.Step45.Eq548W` / `RBM.Step45.FlowEq548W` — (5.48) with a general near-field weight `w`.
+* `RBM.Step45.eq548W_of_eq548`, `RBM.Step45.flowEq548W_of_flowEq548` — the primed hypothesis is
+  **weaker**, so every existing producer of (5.48) still feeds it.
+* `RBM.Step45.decay_of_split_W`, `RBM.Step45.flow_sharpDecay_W`, `RBM.Step45.flow_steps45_W` —
+  Step 5 and Steps 4–5 with the threshold at `12ℓ*_u`.  The only properties of `w` used are
+  `w = 0` past `12ℓ*_u` (eventually in `N`) and Step 4's uniform bound on `d ≤ 12ℓ*_u`.
+  The concrete smooth profile is installed in `RBM1D/Hierarchy/Step2FarMart.lean`.
+
+The unprimed `Eq548`, `decay_of_split`, `FlowEq548`, `flow_sharpDecay` and `flow_steps45` are
+untouched.
+
 ## Deviations from the paper
 
 * (5.125) is taken in the bound-transfer form of `RBM.Step3.Lemma514`: if the maxima on its right
@@ -58,6 +76,11 @@ plus real inequalities.  Nothing is an `axiom`.  The setting is the abstract one
   paper leaves this implicit ("one can easily prove").
 * In the abstract induction the base case `Ξ^{(L-K)}_{u,2} ≺ (W ℓ_u η_u)^{1/2}` suffices; the
   paper's `(W ℓ_u η_u)^{1/4}` is what `xiLK_le_one_of_hyp` / `flow_sharpLmK` assume.
+* **(paper-delta `T228a`)** The primed Step 5 moves the threshold of (5.48) from `6ℓ*_u` to
+  `12ℓ*_u` and smooths the indicator on `[6ℓ*_u, 12ℓ*_u]`.  The paper's (5.39)–(5.48) are
+  statements at a *fixed* time with the endpoint threshold `6ℓ*_{t'}`, so the jump in `u` is an
+  artefact of the Lean statement's uniformity in `u`; the paper is unchanged.  The cost is
+  `e^{√12(log W)^{3/4})}` in place of `e^{√6(log W)^{3/4}}` in (5.32), both `W^{o(1)}`.
 * Inputs taken as hypotheses (random layer): Lemma 5.14 (5.92) for `n ≥ 2`, the Step 3 inputs
   `S(m,0)` and `S(m,l)` (`m ≤ 2`), the base cases from (4.5) and (2.76), and (5.48).
 * (5.48) is used at every time `u ∈ [s,t]`, with `ℓ*_u` in the indicator (the paper states it at
@@ -474,6 +497,201 @@ theorem flow_steps45 {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| �
   exact ⟨h78, flow_sharpDecay X (by linarith) hs0 ht1 (h78 2 (by norm_num)) h548⟩
 
 end FlowStep5
+
+/-! ### Step 5 with a smoothed near-field weight (T228; D15 → option 3)
+
+`Eq548` puts the sharp indicator `1(d ≤ 6ℓ*_u)` in front of the prefactor `(η_s/η_u)²`.  Read
+*uniformly in `u`*, as `FlowEq548` does, that indicator makes the far-field functional jump in
+`u` (`RBM.Step2FarMart.lkFar_crossing`), which is what blocks the bootstrap route for the far
+half.  The cure is to replace the indicator by a weight `w` that is `1` on `d ≤ 6ℓ*_u`, `0` on
+`d ≥ 12ℓ*_u` and interpolates smoothly in between.
+
+Nothing in Step 5 needs the weight to be *the* indicator: `decay_of_split` uses it only through
+"`w = 0` in the far region" and "Step 4's uniform bound holds in the near region", and the near
+region may be any fixed multiple of `ℓ*_u` because (5.32) (`RBM.inv_sq_le_tailT`) is stated for
+every constant `C ≥ 0` and costs only `e^{√C(log W)^{3/4}} = W^{o(1)}`.  So the whole of Step 5
+goes through with the threshold moved from `6ℓ*_u` to `12ℓ*_u`, at the cost of `√12` in place of
+`√6` in a `W^{o(1)}` factor.  The weight is left abstract here; the concrete smooth profile
+(`RBM.Cutoff.cutChi`) is installed in `RBM1D/Hierarchy/Step2FarMart.lean`.
+
+The primed statements are *additions*: `Eq548`, `decay_of_split`, `FlowEq548`,
+`flow_sharpDecay` and `flow_steps45` are untouched, and `eq548W_of_eq548` shows the primed
+hypothesis is weaker than the unprimed one, so every existing producer still feeds it. -/
+
+section Step5W
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {U : ℕ → Type*}
+variable {W : ℕ → ℝ} {ℓ η d : ∀ N, U N → ℝ}
+
+variable (P) in
+/-- **(5.48) with a general near-field weight `w` in place of the indicator `1(d ≤ 6ℓ*_u)`**:
+`|(L-K)_{u,σ,a}| ≺ T_{u,D}(d)(pref·w + 1)` for every `D > 0`.  Taking
+`w = 1(d ≤ 6ℓ*_u)` gives back `RBM.Step45.Eq548`. -/
+def Eq548W (ξ : ∀ N, U N → Ω → ℝ) (W : ℕ → ℝ) (ℓ η d pref w : ∀ N, U N → ℝ) : Prop :=
+  ∀ D : ℝ, 0 < D → StochDom P ξ fun N u _ =>
+    tailT (W N) (ℓ N u) (η N u) D (d N u) * (pref N u * w N u + 1)
+
+/-- **The primed hypothesis is weaker.**  Any weight dominating the indicator — in particular
+the smooth one of `RBM.Step2FarMart.nearChi` — turns `Eq548` into `Eq548W`, so the existing
+producers of (5.48) all produce the smoothed form as well. -/
+theorem eq548W_of_eq548 {ξ : ∀ N, U N → Ω → ℝ} {pref w : ∀ N, U N → ℝ}
+    (hW0 : ∀ N, 0 ≤ W N) (hpref : ∀ N u, 0 ≤ pref N u)
+    (hw : ∀ N u, (if d N u ≤ 6 * ellStar (W N) (ℓ N u) then (1 : ℝ) else 0) ≤ w N u)
+    (h : Eq548 P ξ W ℓ η d pref) : Eq548W P ξ W ℓ η d pref w := by
+  intro D hD
+  refine (h D hD).trans (StochDom.of_unifDetDom ?_)
+  intro τ hτ
+  filter_upwards [eventually_ge_atTop 1] with N hN u
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) ^ τ := Real.one_le_rpow (by exact_mod_cast hN) hτ.le
+  have hT0 : 0 ≤ tailT (W N) (ℓ N u) (η N u) D (d N u) := tailT_nonneg (hW0 N) _
+  have hmul : pref N u * (if d N u ≤ 6 * ellStar (W N) (ℓ N u) then (1 : ℝ) else 0)
+      ≤ pref N u * w N u := mul_le_mul_of_nonneg_left (hw N u) (hpref N u)
+  have hstep : tailT (W N) (ℓ N u) (η N u) D (d N u) *
+        (pref N u * (if d N u ≤ 6 * ellStar (W N) (ℓ N u) then (1 : ℝ) else 0) + 1)
+      ≤ tailT (W N) (ℓ N u) (η N u) D (d N u) * (pref N u * w N u + 1) := by
+    have := mul_le_mul_of_nonneg_left (add_le_add_right hmul 1) hT0
+    linarith
+  have hge : 0 ≤ tailT (W N) (ℓ N u) (η N u) D (d N u) * (pref N u * w N u + 1) := by
+    have h1 : 0 ≤ pref N u * w N u := by
+      have h2 : (0 : ℝ) ≤ w N u := le_trans (by positivity) (hw N u)
+      exact mul_nonneg (hpref N u) h2
+    nlinarith
+  nlinarith
+
+/-- **Step 5 with the smoothed threshold** (T228).  Same conclusion as
+`RBM.Step45.decay_of_split`, from Step 4's uniform bound and the smoothed (5.48): the only
+facts used about the weight are `w ≥ 0` and `w = 0` beyond `12ℓ*_u`.  The `W^{o(1)}` loss of
+(5.32) becomes `e^{√12 (log W)^{3/4}}` instead of `e^{√6 (log W)^{3/4}}`. -/
+theorem decay_of_split_W {ξ : ∀ N, U N → Ω → ℝ} {pref w : ∀ N, U N → ℝ}
+    (hWt : Tendsto W atTop atTop) (hWN : ∀ᶠ N : ℕ in atTop, W N ≤ N) (hW0 : ∀ N, 0 < W N)
+    (hℓ : ∀ N u, 0 < ℓ N u) (hA : ∀ N u, 0 < W N * ℓ N u * η N u)
+    (hAW : ∀ᶠ N : ℕ in atTop, ∀ u, W N * ℓ N u * η N u ≤ W N)
+    (hwfar : ∀ᶠ N : ℕ in atTop, ∀ u, 12 * ellStar (W N) (ℓ N u) < d N u → w N u = 0)
+    (h4 : StochDom P ξ fun N u _ => (W N * ℓ N u * η N u)⁻¹ ^ 2)
+    (h548 : Eq548W P ξ W ℓ η d pref w) :
+    ∀ D : ℝ, 0 < D → StochDom P ξ fun N u _ =>
+      (W N * ℓ N u * η N u)⁻¹ ^ 2 *
+        (Real.exp (-((d N u / ℓ N u) ^ ((1 : ℝ) / 2))) + W N ^ (-D)) := by
+  intro D hD
+  have hmin := stochDom_min h4 (h548 (D + 2) (by linarith))
+  refine hmin.trans (StochDom.of_unifDetDom (f := fun N u => min ((W N * ℓ N u * η N u)⁻¹ ^ 2)
+    (tailT (W N) (ℓ N u) (η N u) (D + 2) (d N u) * (pref N u * w N u + 1)))
+    (g := fun N u => (W N * ℓ N u * η N u)⁻¹ ^ 2 *
+        (Real.exp (-((d N u / ℓ N u) ^ ((1 : ℝ) / 2))) + W N ^ (-D))) ?_)
+  intro τ hτ
+  filter_upwards [hWt.eventually (eventually_exp_mul_log_rpow_le (√12) hτ),
+    hWt.eventually_ge_atTop 1, hWN, hAW, hwfar] with N hexp hW1 hWN hAW hwf u
+  set T := tailT (W N) (ℓ N u) (η N u) (D + 2) (d N u) with hT
+  have hT0 : 0 ≤ T := tailT_nonneg (hW0 N).le _
+  set c := Real.exp (√12 * Real.log (W N) ^ ((3 : ℝ) / 4)) with hc
+  have hc1 : 1 ≤ c := Real.one_le_exp (by
+    have := Real.log_nonneg hW1
+    positivity)
+  -- `min ≤ c T`
+  have hmin : min ((W N * ℓ N u * η N u)⁻¹ ^ 2) (T * (pref N u * w N u + 1)) ≤ c * T := by
+    by_cases hnear : d N u ≤ 12 * ellStar (W N) (ℓ N u)
+    · refine (min_le_left _ _).trans ?_
+      rw [inv_pow]
+      exact RBM.inv_sq_le_tailT (ℓu := ℓ N u) (ηu := η N u) (D := D + 2) hW1 (hℓ N u)
+        (by norm_num) hnear
+    · refine (min_le_right _ _).trans ?_
+      rw [hwf u (not_le.1 hnear), mul_zero, zero_add, mul_one]
+      nlinarith
+  -- `c ≤ N^τ`
+  have hcN : c ≤ (N : ℝ) ^ τ :=
+    hexp.trans (Real.rpow_le_rpow (hW0 N).le hWN hτ.le)
+  calc _ ≤ c * T := hmin
+    _ ≤ (N : ℝ) ^ τ * T := mul_le_mul_of_nonneg_right hcN hT0
+    _ ≤ _ := mul_le_mul_of_nonneg_left (tailT_add_two_le (hW0 N) (hA N u) (hAW u))
+        (Real.rpow_nonneg (Nat.cast_nonneg N) _)
+
+end Step5W
+
+/-! ### The flow form of the smoothed Step 5 (T228) -/
+
+section FlowStep5W
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **(5.48) for the flow with a general near-field weight `w`** — `RBM.Step45.FlowEq548` with
+the indicator `1(‖a₁-a₂‖ ≤ 6ℓ*_u)` replaced by `w`. -/
+def FlowEq548W {B : Band Ω} (X : Sample B) (E : ℝ) (s t : ℕ → ℝ)
+    (w : ∀ N, TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)) → ℝ) : Prop :=
+  Eq548W B.P
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+      X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+    (fun N => (B.W N : ℝ)) (fun N p => B.ell N p.1) (fun _ p => etaT E p.1)
+    (fun N p => (zdist (B.L N) (p.2.1 - p.2.2) : ℝ))
+    (fun N p => (etaT E (s N) / etaT E p.1) ^ 2) w
+
+variable {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+
+/-- `FlowEq548 → FlowEq548W` for any weight above the indicator. -/
+theorem flowEq548W_of_flowEq548
+    {w : ∀ N, TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)) → ℝ}
+    (hw : ∀ N p, (if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) ≤ 6 * ellStar (B.W N : ℝ)
+        (B.ell N p.1) then (1 : ℝ) else 0) ≤ w N p)
+    (h : FlowEq548 X E s t) : FlowEq548W X E s t w :=
+  eq548W_of_eq548 (fun _ => Nat.cast_nonneg _) (fun _ _ => sq_nonneg _) hw h
+
+/-- **(2.79) for the flow from the smoothed (5.48)** — `RBM.Step45.flow_sharpDecay` with the
+threshold moved to `12ℓ*_u`.  The conclusion is *identical* to the unprimed one, so every
+consumer of Step 5 is served unchanged. -/
+theorem flow_sharpDecay_W {w : ∀ N, TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)) → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hwfar : ∀ᶠ N : ℕ in atTop, ∀ p, 12 * ellStar (B.W N : ℝ) (B.ell N p.1)
+      < (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) → w N p = 0)
+    (h4 : StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) 2) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2))
+    (h548 : FlowEq548W X E s t w) :
+    ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2) := by
+  have hu0 : ∀ N (u : TimeIcc s t N), (0 : ℝ) ≤ (u : ℝ) := fun N u => (hs0 N).trans u.2.1
+  have hu1 : ∀ N (u : TimeIcc s t N), (u : ℝ) < 1 := fun N u => u.2.2.trans_lt (ht1 N)
+  have h4' := h4.precomp_param
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) => (p.1, pmData p.2.1 p.2.2))
+  refine decay_of_split_W (tendsto_atTop.2 fun b => B.eventually_le_W b) (eventually_W_le B)
+    (fun N => by exact_mod_cast B.W_pos N)
+    (fun N p => Step3.ellHat_pos_of_lt_one (by have := B.three_le_L N; omega) (hu1 N p.1))
+    (fun N p => B.scale_pos' hE N (hu0 N p.1) (hu1 N p.1)) ?_ hwfar h4' h548
+  refine Eventually.of_forall fun N p => ?_
+  have h := etaT_mul_ellHat_le (B.three_le_L N) hE.le (hu0 N p.1) (hu1 N p.1)
+  have hW : (0 : ℝ) ≤ B.W N := Nat.cast_nonneg _
+  have : (B.W N : ℝ) * B.ell N p.1 * etaT E p.1 = B.W N * (etaT E p.1 * B.ell N p.1) := by ring
+  rw [this]
+  exact mul_le_of_le_one_right hW h
+
+/-- **Steps 4 and 5 together, with the smoothed (5.48)** — `RBM.Step45.flow_steps45` with
+`FlowEq548` replaced by `FlowEq548W`.  The conclusion is the unprimed one verbatim. -/
+theorem flow_steps45_W {κ : ℝ} {w : ∀ N, TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)) → ℝ}
+    (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (h514 : ∀ n, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t) (Step3.flowA B E s t) n)
+    (h0 : ∀ m, 1 ≤ m → Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s)
+      (Step3.flowR B s t) (Step3.flowA B E s t) m 0)
+    (h12 : ∀ m l, 1 ≤ m → m ≤ 2 → Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s)
+      (Step3.flowR B s t) (Step3.flowA B E s t) m l)
+    (h1 : StochDom B.P (Step3.flowXiLK X E s t 1) fun _ _ _ => 1)
+    (h2 : StochDom B.P (Step3.flowXiLK X E s t 2)
+      fun N u _ => Step3.flowA B E s t N u ^ ((1 : ℝ) / 4))
+    (hwfar : ∀ᶠ N : ℕ in atTop, ∀ p, 12 * ellStar (B.W N : ℝ) (B.ell N p.1)
+      < (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) → w N p = 0)
+    (h548 : FlowEq548W X E s t w) :
+    (∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) ∧
+    (∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) := by
+  have h78 := flow_sharpLmK X hκ0 hκ1 hEκ hs0 hst ht1 hc h514 h0 h12 h1 h2
+  exact ⟨h78, flow_sharpDecay_W X (by linarith) hs0 ht1 hwfar (h78 2 (by norm_num)) h548⟩
+
+end FlowStep5W
 
 end Step45
 

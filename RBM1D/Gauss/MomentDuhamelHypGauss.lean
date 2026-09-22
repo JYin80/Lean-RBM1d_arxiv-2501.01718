@@ -93,24 +93,32 @@ T196's `RBM.Gauss.norm_ukerObsTDeriv_le` and `RBM.Gauss.bddC2C_ukerObsT` already
 primitive's own window bound is a theorem too (`RBM.Gauss.exists_bdd_Kval_Kprim`: `K` and
 `∂_u K` are continuous and the loop arguments form a finite type), so no `cK` is assumed.
 
-## What is still **not** here (two items T206 did not list)
+## What was still not here when this file was written (two items T206 did not list)
 
-1. **The quadratic variation is not yet the interface's `E ⊗ E`.**  `RBM.MomentDuhamel.MomentIneq`
-   has `‖(U⊗U) ∘ (E⊗E)_{a,a}‖_p` on the right, i.e. `RBM.Uker` at the doubled charges
-   `RBM.SumZeroDyn.xi2` applied to `RBM.MomentDuhamel.eeFun`.  What exists is
+**Both have since been supplied elsewhere; the text is kept and corrected rather than deleted,
+because it is what this file's own hypotheses were written against.**
+
+1. **The quadratic variation as the interface's `E ⊗ E`** — `RBM.MomentDuhamel.MomentIneq` has
+   `‖(U⊗U) ∘ (E⊗E)_{a,a}‖_p` on the right, i.e. `RBM.Uker` at the doubled charges
+   `RBM.SumZeroDyn.xi2` applied to `RBM.MomentDuhamel.eeFun`, while what existed here was
    `RBM.Gauss.quadVarPairs_Uker` (`quadVar(Ψ₁) = ∑_{ij} ‖(U ∘ E^{(M)}(i,j))_a‖²`) and, for a
    *single* loop, `RBM.Gauss.eeRaw_self_eq_quadVarPairs` plus the gluing (5.22)
-   `RBM.Gauss.eeEdge_eq_sum_SB`.  The **bilinear, `U`-conjugated** form of that gluing —
-   `∑_{ij} (U ∘ E^{(M)}(i,j))_a · conj((U ∘ E^{(M)}(i,j))_{a'}) = (U⊗U ∘ eeArg)_{a,a'}` — is
-   not in the repository (`RBM1D/Hierarchy/EEBridge.lean` contains no `RBM.Uker`).
-2. **The `Q_t` route (`MomentIneqQ`) is untouched.**  Its drift identity needs `∂_u Q_u`, which
-   produces the two extra terms `RBM.SumZeroDyn.commS` and `RBM.SumZeroDyn.varthetaDot` of
-   (5.91); nothing here differentiates `RBM.Qop` in the time.  (T214 has since opened
-   `RBM1D/Gauss/MomentDuhamelQ.lean` for it.)
+   `RBM.Gauss.eeEdge_eq_sum_SB`.  **T213 supplied the bilinear, `U`-conjugated form**
+   (`RBM.EEUker.sum_Uker_mul_conj_Uker`, `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun`),
+   **T223 repaired the charge** `RBM.SumZeroDyn.xi2` (its second half is the conjugate sign
+   vector `σ̄` of Lemma 5.5, not a repeat of `σ`), and **T224 discharged the two side
+   hypotheses**, so the right-hand side is now produced by a theorem whose only remaining
+   hypotheses are the window and `M` Hermitian
+   (`RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'`).
+2. **The `Q_t` route (`MomentIneqQ`)** — its drift identity needs `∂_u Q_u`, which produces the
+   two extra terms `RBM.SumZeroDyn.commS` and `RBM.SumZeroDyn.varthetaDot` of (5.91); nothing
+   *here* differentiates `RBM.Qop` in the time.  T214's `RBM1D/Gauss/MomentDuhamelQ.lean` has
+   since done it (`RBM.Gauss.hasDerivAt_qUkerObsT_drift` and
+   `RBM.MomentDuhamel.stochDom_of_momentDuhamelQ`); what that route still lacks is the `Q`
+   version of the generator identity (T225) and of the two twins (T226).
 
-Consequently `momentDuhamelHyp_gauss` still does not exist, and this file does not create it:
-what is missing is the `U`-conjugated bilinear form of (5.22) (T213) and the `Q_t` route
-(T214), not the integrability.
+`momentDuhamelHyp_gauss` still does not exist and this file does not create it; what remains
+is the assembly of the hypothesis record, not the integrability.
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/

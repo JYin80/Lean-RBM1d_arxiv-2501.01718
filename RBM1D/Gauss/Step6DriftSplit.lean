@@ -331,6 +331,7 @@ set_option maxHeartbeats 1000000 in
 
 `hlow` is the statement that the target of (5.133) is not super-polynomially small; it is the
 same side condition as `hlow` of `RBM.DriftBound.stochDom_norm_driftF`. -/
+@[deprecated "RETIRED (T205/T227): the envelope/measurability/integrability hypotheses here quantify the TIME v over all of the reals, while the proof only ever uses v in TimeIcc s t N. At E = 0, omega = 0, v = 1 - w the (5.131) integrand has the closed form 2(1/w - 1)/w^3/W, unbounded as w tends to 0 with no cancellation, so NO Env satisfies henvG - RBM.Gauss.not_exists_env_eG proves it. Filling these slots makes (2.71) vacuous. Use the primed version in RBM1D/Gauss/Step6EnvWindow.lean, whose only change is the time quantifier (verified verbatim otherwise), together with RBM.exists_env_window and RBM.Gauss.env_window_vs_not_exists_env_eG." (since := "2026-09-21")]
 theorem unifDetDom_driftELK (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
     (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     (hc : Cond272 B E s t) {Env : ℕ → ℝ} {Kenv Blow : ℝ}
@@ -625,6 +626,7 @@ drift halves are proved here: pathwise from `RBM.Decay.fastDecay_primBil` and
 `RBM.Decay.fastDecay_eG` (Definition 5.8, no stochastic step), and then in expectation by
 `RBM.fastDecay_integral_of_highProb`.  The radius arithmetic is
 `2 ℓ_v W^{τ/2} + 1 ≤ ℓ_v W^τ`, which uses `3 ≤ W^{τ/2}`, i.e. (2.2). -/
+@[deprecated "RETIRED (T205/T227): the envelope/measurability/integrability hypotheses here quantify the TIME v over all of the reals, while the proof only ever uses v in TimeIcc s t N. At E = 0, omega = 0, v = 1 - w the (5.131) integrand has the closed form 2(1/w - 1)/w^3/W, unbounded as w tends to 0 with no cancellation, so NO Env satisfies henvG - RBM.Gauss.not_exists_env_eG proves it. Filling these slots makes (2.71) vacuous. Use the primed version in RBM1D/Gauss/Step6EnvWindow.lean, whose only change is the time quantifier (verified verbatim otherwise), together with RBM.exists_env_window and RBM.Gauss.env_window_vs_not_exists_env_eG." (since := "2026-09-21")]
 theorem fastDecayHyp_driftSplit (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
     (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     (hc : Cond272 B E s t) {Env : ℕ → ℝ} {Kenv KM : ℝ}
@@ -878,6 +880,7 @@ place `E E^{(G)}` is still constrained by hypothesis, and which cannot be replac
 pathwise (5.77): pathwise the third line of (5.77) is one factor `W ℓ_u η_u` weaker than
 (5.133), and the missing factor is recovered only by the cancellation inside
 `E[(L-K)_1 L_3]`. -/
+@[deprecated "RETIRED (T205/T227): the envelope/measurability/integrability hypotheses here quantify the TIME v over all of the reals, while the proof only ever uses v in TimeIcc s t N. At E = 0, omega = 0, v = 1 - w the (5.131) integrand has the closed form 2(1/w - 1)/w^3/W, unbounded as w tends to 0 with no cancellation, so NO Env satisfies henvG - RBM.Gauss.not_exists_env_eG proves it. Filling these slots makes (2.71) vacuous. Use the primed version in RBM1D/Gauss/Step6EnvWindow.lean, whose only change is the time quantifier (verified verbatim otherwise), together with RBM.exists_env_window and RBM.Gauss.env_window_vs_not_exists_env_eG." (since := "2026-09-21")]
 theorem sharpExpect_step6_driftSplit (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)

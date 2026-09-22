@@ -6600,3 +6600,58 @@ T217–T220、T222、T223、T225–T229 的 agent **全部非正常结束**：T2
 **重派的纪律**：每个 agent 先 `lake env lean` 自己那个文件，**编不过就自己判断是推翻重写还是接着修**，不许把半成品当既成事实往上叠。中断的 agent 的完整 transcript 都在 `/private/tmp/claude-501/.../tasks/*.output`，但**不要去读**（是 JSONL 全文，会炸上下文）。
 
 **教训（已进 playbook 候选）**：并发 13 个 opus agent 会撞 529；**同时在飞的 agent 数应该压到 6–8**。
+
+## ⭐⭐⭐ T223：`xi2` 的定义修正落地——而且是「从不可产出走向可产出」（2026-09-21）
+
+按 Cowork 17:55 的裁定**原地改定义**：`SumZeroDyn.xi2` 第二半由 `σ` 改成 `!∘σ`（`:1460`），配 `xi2_eq_xi2bar`（`rfl`）、`xi2_eq_append_conj`、`xi2_ne_zero`/`norm_xi2_le` 的第二半分支、`norm_xi2_mSigma`(Holder)、`norm_xi2_eq_one`(Q716)、见证 `xi2_slot_witness`。
+
+**本单最重要的问题有确定答案：没有任何下游估计依赖未共轭的第二半。** 证据不是「build 绿」而是**穷举**：全仓 `xi2` 共 **183 处**出现，**只有 5 处触碰定义体**（`SumZeroDyn:3667/3674` 已改、`:4695` 只取 `Fin.castAdd` 即第一半、`Lemma514Holder:1166/1167`、`Lemma514Q716:153` 已改）；其余全是 `Uker (… xi2 …)` 的**参数位置**或经 `‖·‖ = 1`/`≠ 0`。`Hierarchy.bdg`/`bdgQ`、`Hyp.momentDuhamel(Q)`、`hrhs` 都是**假设槽**，没有证明体读第二半；第二半 `xi2 E σ (Fin.natAdd …)` 在全仓**从未被单独读出**。
+
+**方向相反的收获更重要**：修正把一条**旧定义下不可证**的东西变成了定理——`EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2`，右端逐字是 `Hyp.momentDuhamel` 的 `E ⊗ E` 项。**所以这次改定义是从「不可产出」走向「可产出」**，与裁定理由一致。
+
+**两处更正工单**：(i) `xi2_ne_zero`/`norm_xi2_le` **不需要** `xiOf_not` + `Complex.norm_conj`——`norm_xiOf_mSigma`/`xiOf_mSigma_ne_zero` 对**任意**电荷向量成立，直接在 `!∘σ` 上用即可；(ii)「11 个文件的机械替换」实际是**零替换**——类型没变，`Uker (… xi2 …)` 的出现位置一个都不用动（六个文件一字未改）。
+
+**论文侧直接核了印刷文本**：本机无 poppler/pdftotext，但 python3 有 `pypdf`——p.55 (5.24) 后紧接 "where σ̄ is the conjugate sign vector of σ"（上划线在抽取中丢失），随后的展开式第二个乘积逐字带 `m̄_i m̄_{i+1}`，与新定义逐字对应。**这补上了 T214 留的那个「本机无法读 PDF」缺口的一小块。**
+
+`sanity_*` 全部仍通过（`8/9 − (4/3)i`、`26/9`，两侧各自独立求值）；判别项**保留**且反了方向——`sanity_rhs_xi2_wrong` 现在陈述的是 `Fin.append ξ ξ`（**旧**定义体）在同一点算出的数 ≠ 正确值，docstring 写明「which is what `RBM.SumZeroDyn.xi2` did **before T223**」。
+
+**顺手把 T224 留在 `EEUker` 的五条带撇版落地了**（TASKS 原写「等 T223 交还文件」）：`quadVarPairs_Uker_eq_eeRawArg'`、`_eq_norm_eeRawArg'`、`_le_norm_eeArg'`、`_le_norm_eeFun'`、`_le_norm_eeFun_xi2'`。于是 **`Hyp.momentDuhamel` 的 `E ⊗ E` 右端由定理产出，假设只剩窗口与 Hermitian**；`hdiff`/`hsplit` 现在是定理（`differentiableAt_loopObs`、`emart_eq_sum_emartEdge`）。`EEUker` 因此新增 `import RBM1D.Gauss.LoopLeibniz`（无环）。
+
+**paper-delta 判断为不需新号**：#144（原 T213a）已记缺陷本身，其 ④ 栏原文就是「不需重新编号（但 Lean 侧要改定义）」，本单是**落实**。
+
+## ⭐⭐ T227：Step 6 的包络量词修完了——并更正 T205「受影响的是 5 条」（`Gauss/Step6EnvWindow.lean`，1748 行、40 条，2026-09-21）
+
+**⚠ 更正 T205：受量词缺陷影响的是 6 条，不是 5 条。** 用正则扫 `(henv…|hmeas…|hintL…) : ∀ (N : ℕ) (v : ℝ)`，`Step6DriftSplit`/`DriftEG` 命中恰好 6 条——上一轮只补了 5 条，**漏掉 `sharpExpect_step6_driftSplit`**（`henvQ/henvG/hmeasQ/hmeasG` 同样 `ℝ`-量化，同样被 `not_exists_env_eG` 否掉，同样空真）。
+
+**半成品的处置方式值得记**：上一轮的 1526 行**实际编译通过**，但 T227 没当既成事实——用脚本把 5 条带撇签名与只读文件里的冻结签名**逐行 diff**，确认唯一改动就是 `∀ (v : ℝ)` → `∀ (v : TimeIcc s t N)`，**其余假设与结论逐字节相同**，没有偷偷弱化结论或加假设。据此续做，并查出上面那个漏项。
+
+**把「残余缺口」从注释变成编译器检查的事实**：`Gauss.bounds_step_gauss_window` 把 §5 应用到高斯模型，**凡有生产者的槽位全部实插**（包络 ← `exists_env_window`；`hmeas*` ← §6；`hintL1/hintL2/hintQ/hintG` ← §6+T205；`hEL` ← `hEL_gauss`；`h527` ← `eq527_gauss`；`hq11` ← `quad11_unifDetDom_gauss'`）——**剩下的假设就是缺口**，不需要靠注释声明。
+
+**(2.71) 的步进定理写出来了，但不是 discharge**：`bounds_step_of_step6_window` 与 `bounds_step_gauss_window` 都非空真，但 **`Bounds` 在 `s > 0` 处仍无居民**。精确缺口：`hin59`/`hinQ`/`hinG`（四个好集的 `HighProb` 生产者，**本单明确排除，无主**）；**`hlk`/`hKd` 是 Lemma 5.9 的「定量」那半**——`exists_loopDecay_Kval` 只给 `δ = C(1−v)e^{−c(1−v)ℓ}`，要化成半径 `ℓ_v N^τ` 上的 `N^{−D}` 需 `c(1−v)ℓ_v N^τ ≳ D log N`，那是 `DriftInputs` 的估计，**真数学缺口不是量词**，归 `LoopDecay` 一线；余 `hcont`/`hintU1`/`hintU2`/`hlmk`。**按指示停住，没有挂到空假设上。**
+
+**见证是 `s > 0` 的非退化版**：`exists_env_window_grid`，窗口 `[1−1/(N+2), 1−1/(N+3)]`（**不是** T205 的 `s = t = 0`），`1−t_N ≍ N^{−1}` 是 Theorem 2.21 最难那端；并把两个方向**并排编译**（`env_window_vs_not_exists_env_eG`：同一能量 `E = 0`、同一族，窗口上存在包络、`ℝ` 上由 `not_exists_env_eG` 证明不存在）。
+
+**协调者已接线**：六条旧版按 T227 给的清单加了 `@[deprecated]`（`Step6DriftSplit.lean` 三条、`Step6DriftEG.lean` 三条），文案统一指向 `not_exists_env_eG` 与带撇版。**paper-delta 不需要号**——把量词从 `ℝ` 收到 `TimeIcc` 使 Lean 陈述**更贴近**论文（(5.126)–(5.136) 本来就把 `u` 限制在 `[s,t]`），不是偏离。
+
+## ⭐⭐⭐ T228：D15 选项 3 落地——**`M_m` 整条线删掉了**（`Step45.lean` +195 行、`Step2FarMart.lean` 940 → 1830 行，60 条，2026-09-21）
+
+**⚠ 更正协调者自己的 STATUS 记载**：「十一张单被中断」一节记的 `Step2FarMart.lean:1514` 那两个错误**已经不存在**——上一轮 agent 在会话结束前已自己改好，**心跳抓到的是修掉之前的快照**。两个文件重派时就是 exit=0。所以既不是「接着修」也不是「删掉重写」，而是**无需处置**，T228 逐节读完核对数学内容后**只做纯追加**。
+
+**第 0 步的答案（自己 grep，不照抄 T216）**：`Step45.lean` 里「定义里的 6」**全文件唯一一处**在 `:362`（`Eq548` 定义体的指示函数）。⚠ **T216 漏了 `:336/:337`**（`Step45.inv_sq_le_tailT` 的 `C = 6` 别名）**和 `:385/:389`**（`√6`）。`FlowEq548` 的全部消费者（`Step2PP` 六处、`StepGlue` 两处、`Thm221NoEL` 五处）**没有一处出现 `6 * ellStar`**——它们只把 `h548` 原样往下传。**结论：没有任何消费者需要恰好 `6`。** 证据是四条编译探针，其中最硬的一条是**把 `StepGlue.flow_steps45_glue'` 的证明脚本逐字复制、只换 `h548` 槽**即通过。
+
+**`FlowEq548′` 的假设表里 `M_m`/`farMart`/`FarInputs`/`cFarStep`/`bdg` 的出现次数 = 0。** 两个落点：`flowEq548W_of_cutHyp`（`hnear` + `CutHyp` + `hinit` 三条）与 `flowEq548W_of_entries`（把 `CutHyp` 换成逐项数据：窗口三条 + `hnear` + `hmeas` + 逐项模 + `hmoment` + `hinit`）。
+
+**T216 的等价性为什么不再是障碍**（T228 复核过）：`farMart_far_equiv` 说的是「`M_m ≺ 1` ⟺ **尖**远场半边」。本路线**换了泛函**（`jSfar → jSfarSm`）并**换了产出机制**（Duhamel 亏量的三角不等式 → 恒等式 `‖lk‖ = χ‖lk‖ + (1−χ)‖lk‖` + 窗口自举），所以那条等价性对本路线不适用。⚠ **T216 §3 的否定结论（`lkFar_crossing`、`cFarStep'_apriori_not_detDom`）原样成立，不要当成被推翻。**
+
+**本轮最实质的一步是 §13**：上一轮的 §10 三条（`abs_jSfarSm_sub_le` 等）**全仓没有消费者**，只是「自举可用」的说明性引理，而 §11 仍把整个 `CutHyp` 当假设收。§13 把包**真的装起来**：`window`、`Θ_pos`、`J_nonneg`、`mesh_pos`、**`mesh_fine`、`card_le`** 全部由定理供给。**因此那对最易联合不可满足的组合（`mesh_fine` 要网细、`card_le` 要网粗）从「见证」升级成「定理」——风险是被消除，不是被见证**（同一网距 `m_N = (N+1)²` 上两条都证出来了）。顺带核实：`CutHyp.continuousOn` 是**定理不是字段**（由 `modulus` 推出）。
+
+**反 fiat**：`one_le_jSfarSm`（`jSfarSm ≥ 1` 恒成立，`≺ 1` 是**临界**请求）；**光滑窗外远场族非空**由 `exists_zdist_half` → `exists_farChi_eq_one` → `jSfarSm_ge_of_farChi_eq_one` 三步显式构造（`L ≥ 3` 时取 `![⌊L/2⌋, 0]`），**过渡窗之外光滑化一点没让**；数值钉 `nearChi_nine_ellStar`（`d = 9ℓ*_u` 处权重恰为 `χ(3/2) = 1/2`——抄错阈值就编译不过）。**本路线根本没有漂移槽**，这正是「删掉 `M_m` 整条线」的含义。
+
+paper-deltas **T228a**（阈值 + 光滑化）与 **T228b**（自举取代 BDG）已入册。
+
+## ⚠ 无主的活（本批交出）
+
+1. **⭐ 把 `StepGlue.flow_steps45_glue'`（:557）、`Step2PP` 六处、`Thm221NoEL` 五处改吃 `FlowEq548W`**（T228 交出）。**可行性已由编译探针证明**（脚本逐字复制、只换 `h548` 槽即通过）。做完 Steps 4–5 整条链里就再没有不带撇的 `FlowEq548`。⚠ `Step2PP`/`Thm221NoEL` 的几处是 `flow_steps45` 的**平行副本**，不全经 `StepGlue`——**照 T221 的纪律应先把共享脚本上移再换**，否则会造出第三份重复。
+2. **四个好集的 `HighProb` 生产者**（`FDInputs`/`QuadInputs`/`EGInputs`/`DriftInputs`）与 **Lemma 5.9 的定量那半**（`hlk`/`hKd`，需 `c(1−v)ℓ_v N^τ ≳ D log N`）——T227 交出，是 `Bounds` 在 `s > 0` 处无居民的真缺口。
+3. **T216 §5 的 `FarInputs'` 第四条与 `farInputs_of_farInputs'` 的 `hmartAll` 加 `@[deprecated]`** + **`step_bound_far'` 拆两半**——要写 `Step2FarInputs.lean`，**T229 持有**。
+4. **待定夺（T228 新发现）**：`MomentDuhamelCut.CutHyp` 的 `modulus` 与 `mesh_fine` 是 **`∀ N`**，含 `N = 0`；`(0:ℝ)^Kmod = 0`，于是 `modulus` 在 `N = 0` 上逼着 `J` 对时间**为常值**——任何非退化 `J` 的生产者都得在小 `N` 上单独交代。**是否把 `modulus`/`mesh_fine` 改成 `∀ᶠ N`？** 问题**已存在、不是本单引入**。

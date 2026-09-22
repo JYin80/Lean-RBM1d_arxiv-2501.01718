@@ -1441,9 +1441,24 @@ noncomputable def QQ (L : ℕ) [NeZero L] {n : ℕ} (t : ℂ)
   fun c => Qop₁ L t (Qop₂ L t (fun a b => Bt (Fin.append a b)))
     (fun i => c (Fin.castAdd (n + 1) i)) (fun i => c (Fin.natAdd (n + 1) i))
 
-/-- The edge parameters `(ξ, ξ)` of the doubled loop in (5.85), (5.103). -/
+/-- The edge parameters `(ξ, ξ̄)` of the doubled loop in (5.85), (5.103).
+
+Lemma 5.5 (p. 55) writes the doubled operator as `U_{u,t,σ} ⊗ U_{u,t,σ̄}`, "where `σ̄` is the
+conjugate sign vector of `σ`", and the glued loop of (5.23) carries the charges
+`(σ_k, …, σ_k, σ̄_k, …, σ̄_k)`; the second factor therefore runs with the edge parameters
+`m̄_i m̄_{i+1} = conj (m_i m_{i+1})`.  Accordingly the second half is `xiOf (mSigma E) (!∘σ)`,
+which by `RBM.mSigma_not` is `conj ∘ xiOf (mSigma E) σ` (`RBM.EEUker.xi2_eq_append_conj`).
+
+**T223 (2026-09-21) corrected this definition**: it used to repeat the *unconjugated* vector,
+`Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) σ)`, which is not the object of Lemma 5.5.
+Since `‖xiOf (mSigma E) σ i‖ = 1` for `|E| ≤ 2` (`RBM.norm_xiOf_mSigma`, valid for *any* charge
+vector), every estimate that factors through `RBM.SumZeroDyn.norm_xi2_le`,
+`RBM.SumZeroDyn.xi2_ne_zero` or `RBM.Gauss.norm_xi2_mSigma` is unaffected; the *identity*
+`RBM.EEUker.sum_Uker_mul_conj_Uker`, and hence the quadratic-variation right-hand sides of
+`RBM.MomentDuhamel.Hyp.momentDuhamel`/`momentDuhamelQ` and of `bdg`/`bdgQ` below, are true only
+for the conjugated vector.  See `docs/paper-deltas.md`. -/
 noncomputable def xi2 (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) : Fin ((n + 2) + (n + 2)) → ℂ :=
-  Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) σ)
+  Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) (fun i => !(σ i)))
 
 /-- **The random-layer inputs of §5.5 for loops of length `n + 2`.**
 
@@ -3652,14 +3667,14 @@ theorem xi2_ne_zero (hE : |E| < 2) {n : ℕ} (σ : Fin (n + 2) → Bool) (i : Fi
   unfold xi2
   induction i using Fin.addCases with
   | left i => rw [Fin.append_left]; exact xiOf_mSigma_ne_zero hE.le σ i
-  | right i => rw [Fin.append_right]; exact xiOf_mSigma_ne_zero hE.le σ i
+  | right i => rw [Fin.append_right]; exact xiOf_mSigma_ne_zero hE.le (fun j => !(σ j)) i
 
 theorem norm_xi2_le (hE : |E| < 2) {n : ℕ} (σ : Fin (n + 2) → Bool) (i : Fin ((n + 2) + (n + 2))) :
     ‖xi2 E σ i‖ ≤ 1 := by
   unfold xi2
   induction i using Fin.addCases with
   | left i => rw [Fin.append_left]; exact (norm_xiOf_mSigma hE.le σ i).le
-  | right i => rw [Fin.append_right]; exact (norm_xiOf_mSigma hE.le σ i).le
+  | right i => rw [Fin.append_right]; exact (norm_xiOf_mSigma hE.le (fun j => !(σ j)) i).le
 
 /-- (5.77), line 4, + the hypothesis `Ξ^{(L)}_{u,2m+2} ≺ Λ` of Lemma 5.14:
 `E ⊗ E ≺ (Wℓ_uη_u)^{-2m} η_u^{-1} Λ`. -/

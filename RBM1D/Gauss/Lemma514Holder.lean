@@ -1164,7 +1164,8 @@ theorem norm_xi2_mSigma {E : ℝ} (hE : |E| ≤ 2) {n : ℕ} (σ : Fin (n + 2) �
     (i : Fin ((n + 2) + (n + 2))) : ‖SumZeroDyn.xi2 E σ i‖ = 1 := by
   refine Fin.addCases (fun j => ?_) (fun j => ?_) i
   · rw [SumZeroDyn.xi2, Fin.append_left]; exact norm_xiOf_mSigma hE σ j
-  · rw [SumZeroDyn.xi2, Fin.append_right]; exact norm_xiOf_mSigma hE σ j
+  · rw [SumZeroDyn.xi2, Fin.append_right]
+    exact norm_xiOf_mSigma hE (fun k => !(σ k)) j
 
 /-- The common content of `hkerlt` and `hker2lt`: `‖w ξ‖ = |w| < 1` on the window. -/
 theorem norm_mul_xi_lt_one {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)

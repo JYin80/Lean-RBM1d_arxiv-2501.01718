@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.MomentDuhamel
+import RBM1D.Gauss.LoopLeibniz
 import RBM1D.Hierarchy.ChargeReduce
 
 /-!
@@ -27,27 +28,30 @@ Missing was the **bilinear, `U`-conjugated** step that glues the two: this file 
 
 ## The step-0 audit: `E^{(M)}`, `eeArg`/`eeFun` and `RBM.SumZeroDyn.xi2`
 
-**They do not match, and the mismatch is exactly one complex conjugation on the second half
-of the doubled edge-parameter vector.**
+**They did not match, and the mismatch was exactly one complex conjugation on the second half
+of the doubled edge-parameter vector.  T223 (2026-09-21) repaired the definition in place; this
+section records what the defect was and what now discharges it.**
 
 Lemma 5.5 (p. 55) spells the operator out:
 
-`[(U_{u,t,σ} ⊗ U_{u,t,σ̄}) ∘ A]_{a,a'} = ∑_{b,b'} ∏_i ((1-u m_i m_{i+1} S)/(1-t m_i m_{i+1} S))_{a_i b_i}
-   · ∏_i ((1-u m̄_i m̄_{i+1} S)/(1-t m̄_i m̄_{i+1} S))_{a'_i b'_i} · A_{b,b'}`,
+`[(U_{u,t,σ} ⊗ U_{u,t,σ̄}) ∘ A]_{a,a'} = ∑_{b,b'}`
+   `∏_i ((1-u m_i m_{i+1} S)/(1-t m_i m_{i+1} S))_{a_i b_i}`
+   `· ∏_i ((1-u m̄_i m̄_{i+1} S)/(1-t m̄_i m̄_{i+1} S))_{a'_i b'_i} · A_{b,b'}`,
 
 "where `σ̄` is the conjugate sign vector of `σ`", and the glued loop (5.23) carries the charges
 `(σ_k, …, σ_k, σ̄_k, …, σ̄_k)`.  The second factor therefore runs with the edge parameters
 `m̄_i m̄_{i+1} = conj (m_i m_{i+1})`.
 
-`RBM.SumZeroDyn.xi2 E σ = Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) σ)` repeats the
-**unconjugated** vector.  Since `‖xiOf (mSigma E) σ i‖ = 1` for `|E| ≤ 2`, every *estimate* in
-the repository that goes through `xi2` (`RBM.SumZeroDyn.norm_xi2_le`,
-`RBM.SumZeroDyn.xi2_ne_zero`, `RBM.Gauss.norm_xi2_mSigma`, and all of §7.1) is blind to the
-difference — but the **identity** below is false for `xi2` and true for the corrected vector.
-`RBM.EEUker.xi2bar` is that corrected vector, `RBM.EEUker.norm_xi2bar` records that it has the
-same entrywise norms (so the downstream repair is mechanical), and
-`RBM.EEUker.xi2bar_ne_xi2` exhibits a concrete `(E, σ)` at which the two differ, so the
-correction is not vacuous.
+Before T223, `RBM.SumZeroDyn.xi2 E σ` was `Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) σ)`,
+which repeats the **unconjugated** vector.  Since `‖xiOf (mSigma E) σ i‖ = 1` for `|E| ≤ 2` and
+`RBM.norm_xiOf_mSigma` holds for *every* charge vector, every *estimate* in the repository that
+goes through `xi2` (`RBM.SumZeroDyn.norm_xi2_le`, `RBM.SumZeroDyn.xi2_ne_zero`,
+`RBM.Gauss.norm_xi2_mSigma`, and all of §7.1) was blind to the difference — but the **identity**
+below is false for the old vector and true for the corrected one.  `RBM.EEUker.xi2bar` is that
+corrected vector; `RBM.EEUker.xi2_eq_xi2bar` now identifies it with `RBM.SumZeroDyn.xi2`,
+`RBM.EEUker.norm_xi2bar` records that the entrywise norms did not move (so no downstream
+estimate had to change), and `RBM.EEUker.xi2bar_ne_xi2` exhibits a concrete `(E, σ)` at which
+the corrected vector differs from the **pre-T223** one, so the correction is not vacuous.
 
 The other two sides of the audit **do** match:
 
@@ -95,11 +99,23 @@ nonzero imaginary part, which is exactly what discriminates `Fin.append ξ (conj
 `Fin.append ξ ξ` (`RBM.EEUker.sanity_rhs_xi2_wrong` computes the latter and gets a different
 number).
 
-## What this file does *not* do
+## The side hypotheses `hdiff` and `hsplit` (T224, discharged)
 
-The chain rule `hsplit` and the differentiability `hdiff` are hypotheses here, exactly as in
-`RBM.Gauss.quadVarPairs_le_of_split` and `RBM.Gauss.quadVarPairs_Uker`; neither is proved in
-the repository.  Nothing here is an `axiom` and nothing is `sorry`.
+The unprimed statements carry the chain rule `hsplit` and the differentiability `hdiff` as
+hypotheses, exactly as `RBM.Gauss.quadVarPairs_le_of_split` and `RBM.Gauss.quadVarPairs_Uker`
+do.  Since T224 both are theorems (`RBM1D/Gauss/LoopLeibniz.lean`), so each statement also has
+a primed version with the two slots discharged:
+
+* `RBM.EEUker.quadVarPairs_Uker_eq_eeRawArg'`, `RBM.EEUker.quadVarPairs_Uker_eq_norm_eeRawArg'`
+  — hypothesis `Im z ≠ 0` only (`RBM.Gauss.differentiableAt_loopObs`);
+* `RBM.EEUker.quadVarPairs_Uker_le_norm_eeArg'`,
+  `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun'`,
+  `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` — `Im z ≠ 0` and `M` Hermitian; the latter
+  is needed by `RBM.Gauss.emart_eq_sum_emartEdge'` (T224: `RBM.Gauss.emart` reads `M` through
+  the Hermitian projection while `RBM.Gauss.emartEdge` reads it raw) and is no restriction in
+  §5.2, where `M = H_u`.
+
+Nothing here is an `axiom` and nothing is `sorry`.
 -/
 
 namespace RBM
@@ -247,11 +263,21 @@ section Xi2
 /-- **The doubled edge parameters of Lemma 5.5**: `σ` on the first half, the conjugate charge
 vector `σ̄` on the second, exactly as in (5.23).
 
-This is `RBM.SumZeroDyn.xi2` with the second half conjugated; see the module docstring for why
-the repository's `xi2` (which repeats `σ`) cannot appear in the identity below. -/
+Since T223 this is *definitionally* `RBM.SumZeroDyn.xi2` (`RBM.EEUker.xi2_eq_xi2bar`); it is
+kept as a separate name because the module docstring, the non-vacuity witness
+`RBM.EEUker.xi2bar_ne_xi2` and the numerical check of §8 all speak about the correction itself.
+Downstream consumers should use `RBM.SumZeroDyn.xi2`. -/
 noncomputable def xi2bar (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) :
     Fin ((n + 2) + (n + 2)) → ℂ :=
   Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) (fun i => !(σ i)))
+
+/-- **T223**: `RBM.SumZeroDyn.xi2` *is* the doubled parameter vector `(ξ, ξ̄)` of Lemma 5.5.
+
+This is the statement the correction of `RBM.SumZeroDyn.xi2` was made to produce; it is now
+`rfl`, and every `xi2bar` in this file may be replaced by `SumZeroDyn.xi2` (see
+`RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2`). -/
+theorem xi2_eq_xi2bar (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) :
+    SumZeroDyn.xi2 E σ = xi2bar E σ := rfl
 
 /-- `m(σ̄) = conj m(σ)` (the paper's (2.42), `RBM.mSigma`).
 
@@ -276,24 +302,41 @@ theorem xi2bar_eq_append_conj (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) :
   funext i
   exact xiOf_not E σ i
 
-/-- **The correction is invisible to every norm bound**: `xi2bar` and `RBM.SumZeroDyn.xi2`
-have the same entrywise norms, so `RBM.SumZeroDyn.norm_xi2_le`,
-`RBM.SumZeroDyn.xi2_ne_zero` and `RBM.Gauss.norm_xi2_mSigma` transfer verbatim. -/
-theorem norm_xi2bar (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) (i : Fin ((n + 2) + (n + 2))) :
-    ‖xi2bar E σ i‖ = ‖SumZeroDyn.xi2 E σ i‖ := by
-  refine Fin.addCases (fun j => ?_) (fun j => ?_) i
-  · rw [xi2bar, SumZeroDyn.xi2, Fin.append_left, Fin.append_left]
-  · rw [xi2bar, SumZeroDyn.xi2, Fin.append_right, Fin.append_right, xiOf_not,
-      Complex.norm_conj]
+/-- The same for `RBM.SumZeroDyn.xi2` itself: it is `Fin.append ξ (conj ∘ ξ)`, the shape the
+bilinear identity `RBM.EEUker.sum_Uker_mul_conj_Uker` produces. -/
+theorem xi2_eq_append_conj (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) :
+    SumZeroDyn.xi2 E σ
+      = Fin.append (xiOf (mSigma E) σ)
+          (fun i => (starRingEnd ℂ) (xiOf (mSigma E) σ i)) :=
+  (xi2_eq_xi2bar E σ).trans (xi2bar_eq_append_conj E σ)
 
-/-- **…but the correction is not vacuous**: at `E = 1` with all charges `+`, the two doubled
-parameter vectors differ.  (They agree exactly when every `ξ_i` is real, e.g. at `E = 0` with
-constant charges, or at any alternating charge vector, where `ξ_i = |m|² = 1`.) -/
+/-- **The correction was invisible to every norm bound**: the pre-T223 `xi2`, which repeated
+the unconjugated vector, had the same entrywise norms as the corrected one, which is why
+`RBM.SumZeroDyn.norm_xi2_le`, `RBM.SumZeroDyn.xi2_ne_zero` and `RBM.Gauss.norm_xi2_mSigma`
+transferred verbatim and no downstream estimate had to move. -/
+theorem norm_xi2bar (E : ℝ) {n : ℕ} (σ : Fin (n + 2) → Bool) (i : Fin ((n + 2) + (n + 2))) :
+    ‖xi2bar E σ i‖
+      = ‖Fin.append (xiOf (mSigma E) σ) (xiOf (mSigma E) σ) i‖ := by
+  refine Fin.addCases (fun j => ?_) (fun j => ?_) i
+  · rw [xi2bar, Fin.append_left, Fin.append_left]
+  · rw [xi2bar, Fin.append_right, Fin.append_right, xiOf_not, Complex.norm_conj]
+
+/-- **…but the correction is not vacuous**: at `E = 1` with all charges `+`, the corrected
+doubled parameter vector differs from the **pre-T223** one (`Fin.append ξ ξ`).  (They agree
+exactly when every `ξ_i` is real, e.g. at `E = 0` with constant charges, or at any alternating
+charge vector, where `ξ_i = |m|² = 1`.)
+
+Before T223 the right-hand side below was literally `RBM.SumZeroDyn.xi2`; after the repair
+`SumZeroDyn.xi2 = xi2bar` (`RBM.EEUker.xi2_eq_xi2bar`), so the *content* of this witness — that
+the conjugation actually changes the vector — is preserved only by spelling the old definition
+body out. -/
 theorem xi2bar_ne_xi2 :
-    xi2bar 1 (fun _ : Fin (0 + 2) => true) ≠ SumZeroDyn.xi2 1 (fun _ : Fin (0 + 2) => true) := by
+    xi2bar 1 (fun _ : Fin (0 + 2) => true)
+      ≠ Fin.append (xiOf (mSigma 1) (fun _ : Fin (0 + 2) => true))
+          (xiOf (mSigma 1) (fun _ : Fin (0 + 2) => true)) := by
   intro h
   have hi := congrFun h (Fin.natAdd (0 + 2) (0 : Fin (0 + 2)))
-  rw [xi2bar, SumZeroDyn.xi2, Fin.append_right, Fin.append_right, xiOf_not] at hi
+  rw [xi2bar, Fin.append_right, Fin.append_right, xiOf_not] at hi
   have him := congrArg Complex.im hi
   rw [Complex.conj_im] at him
   have hxi : (xiOf (mSigma 1) (fun _ : Fin (0 + 2) => true) (0 : Fin (0 + 2))).im
@@ -421,6 +464,30 @@ theorem quadVarPairs_Uker_eq_norm_eeRawArg (hL : 3 ≤ d.L N) (σ : Fin n → Bo
     Real.norm_of_nonneg]
   exact Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun j _ => by positivity
 
+/-- **The same with `hdiff` discharged** (T224's `RBM.Gauss.differentiableAt_loopObs`): off the
+real axis the loop observable is differentiable in the matrix at *every* `M`, with no
+Hermitian and no invertibility hypothesis. -/
+theorem quadVarPairs_Uker_eq_eeRawArg' (hL : 3 ≤ d.L N) (σ : Fin n → Bool) {ξ : Fin n → ℂ}
+    {s t : ℝ} (ht : ∀ i, ‖((t : ℝ) : ℂ) * ξ i‖ < 1) {z : ℂ} (hz : z.im ≠ 0)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) (a : LoopArg (d.L N) n) :
+    ((quadVarPairs d N (fun M' => Uker (d.L N) ξ ((s : ℝ) : ℂ) ((t : ℝ) : ℂ)
+          (fun b => loopObs d N z (toIdx σ b) M') a) M : ℝ) : ℂ)
+      = Uker (d.L N) (Fin.append ξ (fun i => (starRingEnd ℂ) (ξ i)))
+          ((s : ℝ) : ℂ) ((t : ℝ) : ℂ) (eeRawArg d N z M σ) (Fin.append a a) :=
+  quadVarPairs_Uker_eq_eeRawArg hL σ ht z M a
+    fun b => differentiableAt_loopObs hz (toIdx_wf σ b) M
+
+/-- `RBM.EEUker.quadVarPairs_Uker_eq_norm_eeRawArg` with `hdiff` discharged. -/
+theorem quadVarPairs_Uker_eq_norm_eeRawArg' (hL : 3 ≤ d.L N) (σ : Fin n → Bool) {ξ : Fin n → ℂ}
+    {s t : ℝ} (ht : ∀ i, ‖((t : ℝ) : ℂ) * ξ i‖ < 1) {z : ℂ} (hz : z.im ≠ 0)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) (a : LoopArg (d.L N) n) :
+    quadVarPairs d N (fun M' => Uker (d.L N) ξ ((s : ℝ) : ℂ) ((t : ℝ) : ℂ)
+        (fun b => loopObs d N z (toIdx σ b) M') a) M
+      = ‖Uker (d.L N) (Fin.append ξ (fun i => (starRingEnd ℂ) (ξ i)))
+          ((s : ℝ) : ℂ) ((t : ℝ) : ℂ) (eeRawArg d N z M σ) (Fin.append a a)‖ :=
+  quadVarPairs_Uker_eq_norm_eeRawArg hL σ ht z M a
+    fun b => differentiableAt_loopObs hz (toIdx_wf σ b) M
+
 /-- **(5.25)**: the quadratic variation of `Ψ₁` is at most `n · [(U ⊗ Ū) ∘ (E ⊗ E)]_{a,a}`,
 with `E ⊗ E` the `E ⊗ E` of Definition 5.4 (`RBM.EEBridge.eeArg`).
 
@@ -523,6 +590,23 @@ theorem quadVarPairs_Uker_le_norm_eeArg (hL : 3 ≤ d.L N) (σ : Fin n → Bool)
                 ‖Uker (d.L N) ξ ((s : ℝ) : ℂ) ((t : ℝ) : ℂ)
                   (fun b => emartEdge d N z (toIdx σ b) M k i j) a‖ ^ 2 := Finset.sum_comm
 
+/-- **(5.25) with both side hypotheses discharged.**  T224's
+`RBM.Gauss.differentiableAt_loopObs` gives `hdiff` and `RBM.Gauss.emart_eq_sum_emartEdge'`
+gives the chain rule `hsplit`; the latter needs `M` Hermitian, because `RBM.Gauss.emart` reads
+`M` through the Hermitian projection while `RBM.Gauss.emartEdge` reads it raw (T224), which is
+no restriction in §5.2, where `M = H_u` throughout. -/
+theorem quadVarPairs_Uker_le_norm_eeArg' (hL : 3 ≤ d.L N) (σ : Fin n → Bool) {ξ : Fin n → ℂ}
+    {s t : ℝ} (ht : ∀ i, ‖((t : ℝ) : ℂ) * ξ i‖ < 1) {z : ℂ} (hz : z.im ≠ 0)
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ} (hM : M.IsHermitian) (a : LoopArg (d.L N) n) :
+    quadVarPairs d N (fun M' => Uker (d.L N) ξ ((s : ℝ) : ℂ) ((t : ℝ) : ℂ)
+        (fun b => loopObs d N z (toIdx σ b) M') a) M
+      ≤ (n : ℝ) * ‖Uker (d.L N) (Fin.append ξ (fun i => (starRingEnd ℂ) (ξ i)))
+          ((s : ℝ) : ℂ) ((t : ℝ) : ℂ) (EEBridge.eeArg d N z M σ) (Fin.append a a)‖ :=
+  quadVarPairs_Uker_le_norm_eeArg hL σ ht z M a
+    (fun b => differentiableAt_loopObs hz (toIdx_wf σ b) M)
+    fun b i j => emart_eq_sum_emartEdge' hz hM (toIdx_wf σ b)
+      (show (toIdx σ b).a.length = n from toIdx_length σ b) i j
+
 end QuadVar
 
 /-! ### 7. The same on a `RBM.Band`, with `RBM.MomentDuhamel.eeFun` -/
@@ -538,10 +622,10 @@ At a time `u` of the window and a running time `v ∈ [0, 1)`, the quadratic var
 
 `‖U_{u,v,σ} ⊗ U_{u,v,σ̄} ∘ (E ⊗ E)_{u,σ}‖` at `(a, a)`,
 
-which is the third right-hand term of `momentDuhamel` **except** that the doubled edge
-parameters are `RBM.EEUker.xi2bar` (the paper's `(ξ, ξ̄)`) rather than `RBM.SumZeroDyn.xi2`
-(which repeats `ξ`).  See the module docstring; `RBM.EEUker.norm_xi2bar` shows the repair does
-not disturb any estimate. -/
+which is the third right-hand term of `momentDuhamel` verbatim: since T223 the doubled edge
+parameters `RBM.SumZeroDyn.xi2` *are* the paper's `(ξ, ξ̄)` (`RBM.EEUker.xi2_eq_xi2bar`), so
+`RBM.EEUker.xi2bar` below may be replaced by `RBM.SumZeroDyn.xi2` — see
+`RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2`. -/
 theorem quadVarPairs_Uker_le_norm_eeFun {E : ℝ} (hE : |E| ≤ 2) {N n : ℕ} {u v : ℝ}
     (hv0 : 0 ≤ v) (hv1 : v < 1) (σ : Fin (n + 2) → Bool)
     (M : Matrix (B.Idx N) (B.Idx N) ℂ) (a : LoopArg (B.L N) (n + 2))
@@ -563,6 +647,73 @@ theorem quadVarPairs_Uker_le_norm_eeFun {E : ℝ} (hE : |E| ≤ 2) {N n : ℕ} {
   have hcast : (((n + 2 : ℕ) : ℝ)) = (n : ℝ) + 2 := by push_cast; ring
   rw [hcast] at hkey
   exact hkey
+
+/-- **The same statement with `RBM.SumZeroDyn.xi2` on the right**, i.e. with the doubled edge
+parameters exactly as `RBM.MomentDuhamel.Hyp.momentDuhamel` and `RBM.SumZeroDyn.Hierarchy.bdg`
+spell them.  This is the T223 acceptance check: after the repair of `RBM.SumZeroDyn.xi2` no
+`xi2bar` is needed to state the `E ⊗ E` term. -/
+theorem quadVarPairs_Uker_le_norm_eeFun_xi2 {E : ℝ} (hE : |E| ≤ 2) {N n : ℕ} {u v : ℝ}
+    (hv0 : 0 ≤ v) (hv1 : v < 1) (σ : Fin (n + 2) → Bool)
+    (M : Matrix (B.Idx N) (B.Idx N) ℂ) (a : LoopArg (B.L N) (n + 2))
+    (hdiff : ∀ b : LoopArg (B.L N) (n + 2),
+      DifferentiableAt ℝ (loopObs B.toDims N (zt E u) (toIdx σ b)) M)
+    (hsplit : ∀ (b : LoopArg (B.L N) (n + 2)) (i j : B.Idx N),
+      emart B.toDims N (zt E u) (toIdx σ b) M i j
+        = ∑ k ∈ Finset.range (n + 2), emartEdge B.toDims N (zt E u) (toIdx σ b) M k i j) :
+    quadVarPairs B.toDims N (fun M' => Uker (B.L N) (xiOf (mSigma E) σ)
+        ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b => loopObs B.toDims N (zt E u) (toIdx σ b) M') a) M
+      ≤ ((n : ℝ) + 2) * ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.eeFun B E N u M σ) (Fin.append a a)‖ := by
+  rw [xi2_eq_xi2bar E σ]
+  exact quadVarPairs_Uker_le_norm_eeFun hE hv0 hv1 σ M a hdiff hsplit
+
+/-- **(5.25) on a `RBM.Band`, with both side hypotheses discharged.**  Strictly inside the
+flow (`|E| < 2`, `u < 1`) the spectral parameter `z_u` is off the real axis, so T224's
+`RBM.Gauss.differentiableAt_loopObs` and `RBM.Gauss.emart_eq_sum_emartEdge'` supply `hdiff`
+and the chain rule `hsplit`; only `M` Hermitian remains, and in §5.2 `M = H_u`. -/
+theorem quadVarPairs_Uker_le_norm_eeFun' {E : ℝ} (hE : |E| < 2) {N n : ℕ} {u v : ℝ}
+    (hu1 : u < 1) (hv0 : 0 ≤ v) (hv1 : v < 1) (σ : Fin (n + 2) → Bool)
+    {M : Matrix (B.Idx N) (B.Idx N) ℂ} (hM : M.IsHermitian)
+    (a : LoopArg (B.L N) (n + 2)) :
+    quadVarPairs B.toDims N (fun M' => Uker (B.L N) (xiOf (mSigma E) σ)
+        ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b => loopObs B.toDims N (zt E u) (toIdx σ b) M') a) M
+      ≤ ((n : ℝ) + 2) * ‖Uker (B.L N) (xi2bar E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.eeFun B E N u M σ) (Fin.append a a)‖ := by
+  have hz : (zt E u).im ≠ 0 := zt_im_ne_zero_of_lt_one hE hu1
+  refine quadVarPairs_Uker_le_norm_eeFun hE.le hv0 hv1 σ M a
+    (fun b => differentiableAt_loopObs (d := B.toDims) (N := N) hz (toIdx_wf σ b) M)
+    (fun b i j => ?_)
+  exact emart_eq_sum_emartEdge' (d := B.toDims) (N := N) (m := n + 2) hz hM (toIdx_wf σ b)
+    (show (toIdx σ b).a.length = n + 2 from toIdx_length σ b) i j
+
+/-- **The `E ⊗ E` right-hand side of `RBM.MomentDuhamel.Hyp.momentDuhamel`, produced by a
+theorem whose only remaining hypotheses are the window and `M` Hermitian.**  This is the
+`RBM.SumZeroDyn.xi2` form (T223) of `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun'`. -/
+theorem quadVarPairs_Uker_le_norm_eeFun_xi2' {E : ℝ} (hE : |E| < 2) {N n : ℕ} {u v : ℝ}
+    (hu1 : u < 1) (hv0 : 0 ≤ v) (hv1 : v < 1) (σ : Fin (n + 2) → Bool)
+    {M : Matrix (B.Idx N) (B.Idx N) ℂ} (hM : M.IsHermitian)
+    (a : LoopArg (B.L N) (n + 2)) :
+    quadVarPairs B.toDims N (fun M' => Uker (B.L N) (xiOf (mSigma E) σ)
+        ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b => loopObs B.toDims N (zt E u) (toIdx σ b) M') a) M
+      ≤ ((n : ℝ) + 2) * ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.eeFun B E N u M σ) (Fin.append a a)‖ := by
+  rw [xi2_eq_xi2bar E σ]
+  exact quadVarPairs_Uker_le_norm_eeFun' hE hu1 hv0 hv1 σ hM a
+
+/-- The bare form of the acceptance check demanded by the T223 ticket: the `E ⊗ E` term of
+`RBM.MomentDuhamel.Hyp.momentDuhamel`, written with `RBM.SumZeroDyn.xi2`, is literally the one
+the bilinear identity of §3 produces. -/
+example {E : ℝ} {N n : ℕ} {u v : ℝ} (σ : Fin (n + 2) → Bool)
+    (A : LoopArg (B.L N) ((n + 2) + (n + 2)) → ℂ)
+    (c : LoopArg (B.L N) ((n + 2) + (n + 2))) :
+    Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ) A c
+      = Uker (B.L N) (Fin.append (xiOf (mSigma E) σ)
+          (fun i => (starRingEnd ℂ) (xiOf (mSigma E) σ i)))
+          ((u : ℝ) : ℂ) ((v : ℝ) : ℂ) A c := by
+  rw [xi2_eq_append_conj E σ]
 
 end BandForm
 
@@ -721,8 +872,11 @@ theorem sanity_rhs_diag :
   norm_num [Complex.ext_iff, map_ofNat]
 
 /-- **The check discriminates**: repeating `ξ` on the second half — which is what
-`RBM.SumZeroDyn.xi2` does — gives a *different* number at the same point, so the conjugation
-in `RBM.EEUker.xi2bar` is not a cosmetic choice. -/
+`RBM.SumZeroDyn.xi2` did **before T223** — gives a *different* number at the same point, so the
+conjugation the repaired `RBM.SumZeroDyn.xi2` carries is not a cosmetic choice.  (`sanityXi` is
+`ξ = i`, so `Fin.append sanityXi sanityXi` is literally the old definition body at this point,
+while `Fin.append sanityXi (conj ∘ sanityXi)` — used in `RBM.EEUker.sanity_rhs` — is the new
+one.) -/
 theorem sanity_rhs_xi2_wrong :
     Uker 3 (Fin.append sanityXi sanityXi) ((1 : ℝ) : ℂ) ((0 : ℝ) : ℂ)
         (fun c => ∑ α : Fin 1, sanityEf α (SumZeroDyn.spl1 3 c)

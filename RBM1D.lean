@@ -17,6 +17,7 @@ import RBM1D.Gauss.Step1Hyp
 import RBM1D.Gauss.Step6Hyp
 import RBM1D.Gauss.Step6HierarchyGauss
 import RBM1D.Gauss.Step6Sample
+import RBM1D.Gauss.Step6EnvWindow
 import RBM1D.Gauss.Step6DriftSplit
 import RBM1D.Gauss.Step6DriftEG
 import RBM1D.Gauss.Eq45Flow

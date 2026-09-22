@@ -60,6 +60,20 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 1. **权重不要取「逐项截断之积」`∏_{j,a}χ(…)`**——它的梯度是对所有 `(j,a)` 求和，网点数 `N^C` × 指标数 `L^2` 全部进来（基数损失），交叉项压不住。改取**一个** ℓ^q 软最大值：`J̃_k := (∑_{j<k}∑_a (|lk_{u_j,a}|/T_{u_j,a})^q)^{1/q}`，`q ≍ log N`，权重 `w_k = χ(J̃_k/Θ)`。`J̃` 与真 max 只差 `e^{O(1)}` 倍，其梯度是各项梯度的**凸组合**（系数和为 1），没有基数损失；`|·|^q` 在 `q ≥ 2` 时光滑。
 2. **(A′) 新出现、论文里没有的一项**：Stein 在 `E[w_k·|Ψ_u|^{2p}]` 上多出交叉项 `E[χ′(J̃/Θ)Θ^{−1}⟨∇_X J̃, S∇_X|Ψ_u|^{2p}⟩]`（早时刻 `u_j` 与当前时刻 `u` 的混合协变差）。Cauchy–Schwarz 拆成两个**同时刻**二次变差率之积，Young 后多一个 Grönwall 项 `Θ^{−2}·sup_{v≤u} QV-rate_v(J*)`。粗估（在 `J̃ ≤ 2Θ` 的支撑上用 (5.42)/(5.44)，`Θ ≍ (η_s/η_t)^4`、`t−s ≲ η_s`）：近场 `≲ R^{7/2}/R^8`，远场 `≲ R·A^{−1/3}R^4`，由 (2.72) 都 `≲ 1`，所以 Grönwall 因子 `O(1)`。**请 T230 在只读设计里把这条逐项核实**（这是 (A′) 能否闭合的关键估计）；**Jun 2026-09-22 04:10 确认（「yes」）：交叉项按「两个同时刻二次变差率之积」估计是对的，门槛取 `Θ ≍ (η_s/η_t)^4` 合适。** 仍须 T230 在只读设计里逐项编译核实，作者确认不代替证明。
 
+**T230 中间报告（04:47 UTC，约 110 分钟，`Gauss/Step2Bootstrap.lean` 511 → 1332 行，34 条声明，单文件与模块 `lake build` 均 exit=0、公理干净）**：
+
+* ⭐ **`CutHypCond.condMoment` 变成定理** `condMoment_of_weightedMoment`，其前件 `WeightedMoment` 是**全测度积分**、没有任何 `∫ … in Ξ` 项——这正是 (A′) 的结构性收益，也是 Stein 能作用的唯一形状。链上剩下的自由项是 `WeightedMoment` 本身，**是替换不是追加**（两条路线都没有新增自由字段）。⚠ 但 `APrimeHyp → CutHypCondEv → MomentHypCutEv` 的结构接线（~20 字段样板）**还没写**，所以「`cut` 由定理产出」目前是**字段级**而非结构级。
+* **Cowork 04:05/04:15 的两条更正现在都有编译证据**：`abs_derivProd_le`（乘积权重的基数损失，`|Φ'| ≤ (15/8)Σ|ρ_j'|` 要对 `N^{Ccard}` 个网点求和）、`abs_deriv_softMax_le`（软最大值是**凸组合**，零基数损失）、`rpow_card_le_exp_one`（`q ≍ log N` ⟹ 损失 ≤ `e`）、`abs_le_two_mul_of_softW_ne_zero` + `cutChiD_softW_eq_zero`（支撑 `⊆ {Θ ≤ J̃ ≤ 2Θ}`，**每一项**都 `≤ 2Θ`）。
+* **瓶颈被精确定位，且不是 `matrixStein`**：`matrixStein` 的签名够用；卡的是 `Gauss.hasDerivAt_integral_Phi` 要的 `TestFun`（`ContDiff ℝ 2` + `bdd₀/₁/₂`）。乘积权重在这里**根本进不去**——`J* = max_a |lk_a|/T_a` 是 max，C² 无从谈起，`hasDerivAt_cutProd` 的前提不成立；软最大值修好这一点（`J̃^q` 是多项式）。→ **已开 T250**。
+* **唯一的真数学缺口候选**：对数型导数界 `‖∂_α lk_{u,a}‖ ≤ Λ_N‖lk_{u,a}‖ + (K 的确定性项)`。T230 判断是标准 `G∂G` 重排、不是障碍，但**库里没有**；⚠ 用现成的**绝对**界会把软最大值 `e^{O(1)}` 的优势吐回去。→ **一并归 T250**。
+* **见证在 `R > 1` 上（验收条件达成）**：`sat_StepSide_gt_one` 八条约束**全部取等号**，`sat_StepSideSharp_gt_one` 同形，`sat_StepSide_two`（`x=1, R=2`）是数值实例；`one_lt_ratR` 证 `R = η_s/η_u > 1` 在窗口内部是常态（T222 的 `R = 1` 是塌缩情形）。
+* **`N₀(ε,D)` 对 `k` 一致：是，按构造**（`∀ k ≤ cutNetTop` 写在 `∀ᶠ N` 内部），**没有新的一致性义务**。
+* ⭐ **第 3 槽（T243/T245 的 `Ξ^{(L−K)}_{·,2}` 在 `A_s^{1/2}`）能一并覆盖、不用改一个字**：`condMoment_of_weightedMoment` 对一般 `J`、`lev`、`Θ` 陈述。**第 2、3 槽剩下的是同一个 `WeightedMoment` 障碍，不是两个。**
+* **(A′) 的归约不碰 `modulus`、不需要 `s = 0` 那一格**（`prefNet` 是有限交，`measurableSet_prefNet` 只要每个固定时刻的 `J` 可测）。起点条件：`s_N` 落在窗口内且 `J_{s_N} ≺ 1`。**所以 T249 的反例不挡 (A′)。**
+* **没有找到 (A′) 的否定结论**；§2/§3 的两条 no-go 确实够不到它（它们的核心假设是「坏事件质量被向前喂」，而 `condMoment_of_weightedMoment` 里根本没有补集项）。
+
+**⚠ 退回给 Cowork 核实的一条**：交叉项粗估里的**近场 `≲ R^{7/2}/R^8` 与远场 `≲ R·A^{−1/3}R^4` 两个指数，T230 没能核到具体式子，明确表示不替 Cowork 背书**。它能核实的是这两项落进 `CutHypTheta.StepSide` 的哪两个槽：近场是 `q`（cap `q ≤ R²`，由 `Step2MomentStep.integral_nearInt_le` 经 `nearInt_fills_q_slot` **恰好填满、零余量**），远场是 `ε`（cap `ε·x^17R^10 ≤ 1`）与 `β/γ`；`A^{−1/3}` 与现有 `A ≥ x^17R^10` 的关系未验。`QV-rate` 的现成名字齐全：`Gauss.quadVar`（`MomentGronwall.lean:349`）与 `quadVarPairs`（:355），由 `quadVar_ukerObsT_eq_quadVarPairs` 相连；Cauchy–Schwarz 的 `quadVar` 版仓库里没有，T230 已接手自证（初等）。
+
 ## 4. 待 Jun 定夺
 
 （无）

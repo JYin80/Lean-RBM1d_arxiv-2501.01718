@@ -43,6 +43,16 @@ in `Flow/Iteration.lean`, the primed one is the load-bearing one: it is the weak
 
 ## Main results
 
+* `RBM.Thm221NoELN`, `RBM.Thm221NoELN'`, `RBM.BoundsCoreN_zero`, `RBM.BoundsCoreN.congr`,
+  `RBM.BoundsCoreN_of_Thm221NoELN'`, `RBM.BoundsCoreN_of_Thm221NoELN`,
+  `RBM.SpecSeqN.boundsCoreN'`, `RBM.SpecSeqN.boundsCoreN` — **T235**: the `N`-dependent
+  version of `Flow/Thm221NoEL.lean`'s p. 25 variant, i.e. Theorem 2.21 with (2.71) removed
+  from both sides.  Theorem 2.2 runs on it.
+* `RBM.boundsGrid_of_fields` — **T235**: the induction of p. 24 as a *single* script, taking
+  the bundle as a parameter `P : (ℕ → ℝ) → Prop` and the three facts it needs of `P`
+  (`hzero`, `hcongr`, `hstep`) as fields.  `RBM.BoundsN_of_Thm221N'`,
+  `RBM.BoundsCoreN_of_Thm221NoELN'` and `RBM.BoundsCore_of_Thm221NoEL'` are its three
+  one-line specializations; there is no second copy of the induction anywhere.
 * `RBM.BoundsCoreN`, `RBM.BoundsN`, `RBM.Cond272N`, `RBM.Cond272N'`, `RBM.Thm221N`,
   `RBM.Thm221N'` — the `E : ℕ → ℝ` versions, with `RBM.Thm221N.toThm221` etc. back to the
   fixed-energy ones.
@@ -76,6 +86,8 @@ in `Flow/Iteration.lean`, the primed one is the load-bearing one: it is the weak
 * `RBM.Band.rpow_le_zScale` — `W ℓ(z) η ≥ N^θ/2` at `η = N^{-1+θ}`, `θ ≤ c` (this is where
   (2.2) enters).
 * `RBM.delocalization_of_Thm221N'`, `RBM.delocalization_of_Thm221N` — **Theorem 2.2**.
+  **T235**: their hypothesis is `RBM.Thm221NoELN'` / `RBM.Thm221NoELN`, so (2.71) = (2.62) —
+  and with it every Step 6 datum — does not occur in Theorem 2.2's hypothesis table.
 
 Theorem 2.4 (`RBM.quantumDiffusion_of_Thm221`) is *not* mirrored here: the probabilistic half of
 Theorem 2.2 only uses the local law (`RBM.sq_norm_eigenvector_le_of_norm_green_le_near` of
@@ -90,8 +102,25 @@ deviation (`docs/paper-deltas.md` #38) for everything proved here.
 For Theorem 2.2 see `docs/paper-deltas.md` (T199): the paper's `η = N^{-1+τ}` uses the same `τ`
 for the scale and for the conclusion and then writes `|ψ_k|² ≤ Cη ≤ N^{-1+τ}`; we take
 `η = N^{-1+θ}` with `θ = min(τ, min(c,1))/2 < τ`, so that the constant is absorbed.  The
-hypothesis is `RBM.Thm221N'`/`RBM.Thm221N` (Theorem 2.21 at an `N`-dependent energy) rather
-than `RBM.Thm221'`/`RBM.Thm221`, because the local law has to be evaluated at a moving energy.
+hypothesis is an `N`-dependent-energy Theorem 2.21 rather than `RBM.Thm221'`/`RBM.Thm221`,
+because the local law has to be evaluated at a moving energy.
+
+**T235a** — *Theorem 2.2's Theorem 2.21 hypothesis is the (2.71)-free variant.*
+① Paper position: Theorem 2.2 (§2.1) is deduced from Theorem 2.21 (§2.7); the p. 25 remark
+after Theorem 2.21 is that Steps 1–5 never use (2.62) = (2.71).
+② The paper is **not** changed: the paper's Theorem 2.21 carries (2.62) in both hypothesis and
+conclusion, and its Theorem 2.2 is deduced from that.  We deduce Theorem 2.2 from the strictly
+smaller hypothesis table of the p. 25 remark instead — `RBM.delocalization_of_Thm221N'` now
+takes `RBM.Thm221NoELN'` where it used to take `RBM.Thm221N'`, and
+`RBM.delocalization_of_Thm221N` takes `RBM.Thm221NoELN` where it used to take `RBM.Thm221N`.
+③ Lines: two hypothesis slots (the conclusion is unchanged — `rfl`-probe in §`Deloc`).
+④ Not renumbered.
+
+Note that `RBM.Thm221NoELN'` is **incomparable** with `RBM.Thm221N'`, not weaker as a `Prop`:
+its `step` neither consumes nor produces (2.71), so a bare `RBM.Thm221N'` (whose `step` demands
+`RBM.BoundsN` as *input*) no longer suffices for Theorem 2.2.  What justifies the swap is that
+`Flow/Thm221NoEL.lean` §5b produces the (2.71)-free form directly from Steps 1–5, so the
+replacement hypothesis is the one the repository can actually discharge.
 -/
 
 namespace RBM
@@ -152,6 +181,25 @@ structure Thm221N (X : Sample B) (κ : ℝ) : Prop where
 structure Thm221N' (X : Sample B) (κ : ℝ) : Prop where
   step : ∀ E : ℕ → ℝ, (∀ N, |E N| ≤ 2 - κ) → ∀ c : ℝ, 0 < c → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) →
     (∀ N, s N ≤ t N) → (∀ N, t N < 1) → Cond272N' B E s t c → BoundsN X E s → BoundsN X E t
+
+/-- **Theorem 2.21, p. 25 variant, at an `N`-dependent energy**: (2.71) removed from both the
+assumption and the statement.  Verbatim `RBM.Thm221NoEL` with `E : ℕ → ℝ` and `|E N| ≤ 2 - κ`
+for every `N`; `RBM.Thm221NoELN.toThm221NoEL` specializes it back (T235).
+
+As for `RBM.Thm221NoEL` versus `RBM.Thm221`, this is **incomparable** with `RBM.Thm221N`:
+it neither demands nor produces (2.71).  The p. 25 remark — Steps 1–5 never use (2.71) — is
+what justifies it, and `Flow/Thm221NoEL.lean` §5b produces it from the steps. -/
+structure Thm221NoELN (X : Sample B) (κ : ℝ) : Prop where
+  step : ∀ E : ℕ → ℝ, (∀ N, |E N| ≤ 2 - κ) → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+    (∀ N, t N < 1) → Cond272N B E s t → BoundsCoreN X E s → BoundsCoreN X E t
+
+/-- **Theorem 2.21 without (2.71), with the gained (2.72), at an `N`-dependent energy.**
+Verbatim `RBM.Thm221NoEL'`; this is the variant the six steps of §2.7 can actually produce, and
+the one `RBM.BoundsCoreN_of_Thm221NoELN'` uses. -/
+structure Thm221NoELN' (X : Sample B) (κ : ℝ) : Prop where
+  step : ∀ E : ℕ → ℝ, (∀ N, |E N| ≤ 2 - κ) → ∀ c : ℝ, 0 < c → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) →
+    (∀ N, s N ≤ t N) → (∀ N, t N < 1) → Cond272N' B E s t c →
+    BoundsCoreN X E s → BoundsCoreN X E t
 
 /-! #### Specialization to a constant energy: nothing existing is weakened -/
 
@@ -232,6 +280,24 @@ theorem BoundsN.congr {s t : ℕ → ℝ} (h : BoundsN X E s) (hst : ∀ᶠ N : 
   localLaw := h.localLaw.congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
     (by filter_upwards [hst] with N hN; rw [hN])
   expect := h.expect.congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
+    (by filter_upwards [hst] with N hN; rw [hN])
+
+/-- **(2.67) with (2.71) removed**, at an `N`-dependent energy: (2.68)–(2.70) hold at `t = 0`
+with no error.  The forgetful corollary of `RBM.BoundsN_zero`; `RBM.BoundsCore_zero` is its
+constant-energy specialization (T235). -/
+theorem BoundsCoreN_zero (hE : ∀ N, |E N| ≤ 2) : BoundsCoreN X E (fun _ => 0) :=
+  (BoundsN_zero X hE).toBoundsCoreN
+
+/-- (2.68)–(2.70) at a time sequence only depend on it for large `N`.  Verbatim
+`RBM.BoundsN.congr` with the `expect` line deleted; `RBM.BoundsCore.congr` is its
+constant-energy specialization (T235). -/
+theorem BoundsCoreN.congr {s t : ℕ → ℝ} (h : BoundsCoreN X E s)
+    (hst : ∀ᶠ N : ℕ in atTop, s N = t N) : BoundsCoreN X E t where
+  LmK n hn := (h.LmK n hn).congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
+    (by filter_upwards [hst] with N hN; rw [hN])
+  decay D hD := (h.decay D hD).congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
+    (by filter_upwards [hst] with N hN; rw [hN])
+  localLaw := h.localLaw.congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
     (by filter_upwards [hst] with N hN; rw [hN])
 
 namespace Band
@@ -363,30 +429,43 @@ Theorem 2.21.**  Verbatim `RBM.Bounds_of_Thm221'` with `E N` in place of `E`.
 The grid of p. 24 supplies the gained (2.72) by itself (`RBM.Band.eventually_flow_gridN'`), and
 its `τ'`, `c`, `n₀` are chosen before `E`, so the number of grid steps is uniform in the energy
 sequence. -/
-theorem BoundsN_of_Thm221N' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N' X κ) (hE : ∀ N, |E N| ≤ 2 - κ)
+theorem boundsGrid_of_fields {κ : ℝ} (hκ : 0 < κ) (hE : ∀ N, |E N| ≤ 2 - κ)
+    {P : (ℕ → ℝ) → Prop} (hzero : P (fun _ => 0))
+    (hcongr : ∀ u v : ℕ → ℝ, P u → (∀ᶠ N : ℕ in atTop, u N = v N) → P v)
+    (hstep : ∀ c : ℝ, 0 < c → ∀ u v : ℕ → ℝ, (∀ N, 0 ≤ u N) → (∀ N, u N ≤ v N) →
+      (∀ N, v N < 1) → Cond272N' B E u v c → P u → P v)
     {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
-    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsN X E t := by
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : P t := by
   obtain ⟨τ', hτ', c, hc0, n₀, hgrid⟩ := B.eventually_flow_gridN' hκ hτ
   have hg := hgrid E hE t ht0 ht
-  have hE2 : ∀ N, |E N| ≤ 2 := fun N => by linarith [hE N]
   have hE2' : ∀ N, |E N| < 2 := fun N => by linarith [hE N]
   let u : ℕ → ℕ → ℝ := fun k N => gridT (B.W N) τ' (t N) k
-  have key : ∀ k, BoundsN X E (u k) := by
+  have key : ∀ k, P (u k) := by
     intro k
     induction k with
     | zero =>
       have h0 : u 0 = fun _ => 0 := funext fun N => gridT_zero (ht0 N)
       rw [h0]
-      exact BoundsN_zero X hE2
+      exact hzero
     | succ k ih =>
-      refine hT.step E hE c hc0 (u k) (u (k + 1)) (fun N => ?_) (fun N => ?_) (fun N => ?_) ?_ ih
+      refine hstep c hc0 (u k) (u (k + 1)) (fun N => ?_) (fun N => ?_) (fun N => ?_) ?_ ih
       · exact le_min (gridS_nonneg (B.one_le_W N) hτ'.le k) (ht0 N)
       · exact gridT_mono (B.one_le_W N) hτ'.le (t N) (Nat.le_succ k)
       · exact (min_le_left _ _).trans_lt (gridS_lt_one (by linarith [B.one_le_W N]) _)
       · filter_upwards [hg] with N hN
         rw [etaT_div_etaT (hE2' N)]
         exact hN.2.2.2 k
-  exact (key n₀).congr X (by filter_upwards [hg] with N hN; exact hN.1)
+  exact hcongr (u n₀) t (key n₀) (by filter_upwards [hg] with N hN; exact hN.1)
+
+/-- **Lemmas 2.18, 2.19 and 2.20 (p. 24) at an `N`-dependent energy, from the gained
+Theorem 2.21.**  Verbatim `RBM.Bounds_of_Thm221'` with `E N` in place of `E`; the one-line
+specialization of `RBM.boundsGrid_of_fields` at `P := fun s => BoundsN X E s`. -/
+theorem BoundsN_of_Thm221N' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N' X κ) (hE : ∀ N, |E N| ≤ 2 - κ)
+    {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsN X E t :=
+  boundsGrid_of_fields hκ hE (BoundsN_zero X fun N => by linarith [hE N])
+    (fun _ _ h hst => h.congr X hst)
+    (fun c hc0 u v hu0 huv hv1 hcond h => hT.step E hE c hc0 u v hu0 huv hv1 hcond h) hτ ht0 ht
 
 /-- **Lemmas 2.18, 2.19 and 2.20 at an `N`-dependent energy, from `RBM.Thm221N`.**  The
 corollary of `RBM.BoundsN_of_Thm221N'` along `RBM.Thm221N.toThm221N'`. -/
@@ -395,65 +474,73 @@ theorem BoundsN_of_Thm221N {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N X κ) (hE : �
     (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsN X E t :=
   BoundsN_of_Thm221N' X hκ (hT.toThm221N' hκ) hE hτ ht0 ht
 
+/-- **`RBM.Thm221NoELN` implies its gained form.**  Verbatim `RBM.Thm221NoEL.toThm221NoEL'`. -/
+theorem Thm221NoELN.toThm221NoELN' {X : Sample B} {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoELN X κ) :
+    Thm221NoELN' X κ where
+  step E hE c hc0 s t hs0 hst ht1 hcond hB :=
+    hT.step E hE s t hs0 hst ht1
+      (hcond.toCond272N (fun N => by linarith [abs_nonneg (E N), hE N]) hst ht1 hc0.le) hB
+
+/-- **Lemmas 2.18 (2.60), 2.19 (2.63) and 2.20 (2.64) — everything except (2.62) — from the
+(2.71)-free Theorem 2.21, at an `N`-dependent energy.**
+
+Verbatim `RBM.BoundsCore_of_Thm221NoEL'` with `E N` in place of `E`, and verbatim
+`RBM.BoundsN_of_Thm221N'` with `RBM.BoundsCoreN` in place of `RBM.BoundsN`: both are one-line
+specializations of the same script `RBM.boundsGrid_of_fields`, which is the induction of p. 24
+along the truncated grid `u_k = min(1 - W^{-kτ'}, t)` started at (2.67).  **No step of the
+induction sees (2.71)** — the bundle `P` is a parameter of the script, and the three facts the
+script needs of it are passed as fields (`hzero`, `hcongr`, `hstep`). -/
+theorem BoundsCoreN_of_Thm221NoELN' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoELN' X κ)
+    (hE : ∀ N, |E N| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsCoreN X E t :=
+  boundsGrid_of_fields hκ hE (BoundsCoreN_zero X fun N => by linarith [hE N])
+    (fun _ _ h hst => h.congr X hst)
+    (fun c hc0 u v hu0 huv hv1 hcond h => hT.step E hE c hc0 u v hu0 huv hv1 hcond h) hτ ht0 ht
+
+/-- **Lemmas 2.18–2.20 without (2.62), from `RBM.Thm221NoELN`** — the corollary of
+`RBM.BoundsCoreN_of_Thm221NoELN'` along `RBM.Thm221NoELN.toThm221NoELN'`. -/
+theorem BoundsCoreN_of_Thm221NoELN {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoELN X κ)
+    (hE : ∀ N, |E N| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsCoreN X E t :=
+  BoundsCoreN_of_Thm221NoELN' X hκ (hT.toThm221NoELN' hκ) hE hτ ht0 ht
+
+/-! #### `rfl`-probe: the induction of p. 24 is unchanged (T235)
+
+`RBM.BoundsN_of_Thm221N'` is now the one-line specialization of the shared script
+`RBM.boundsGrid_of_fields`; the probe type-checks only if the two sides are proofs of the same
+`Prop`, i.e. only if nothing about Lemmas 2.18–2.20 changed. -/
+example {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N' X κ) (hE : ∀ N, |E N| ≤ 2 - κ)
+    {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) :
+    BoundsN_of_Thm221N' X hκ hT hE hτ ht0 ht =
+      boundsGrid_of_fields hκ hE (BoundsN_zero X fun N => by linarith [hE N])
+        (fun _ _ h hst => h.congr X hst)
+        (fun c hc0 u v hu0 huv hv1 hcond h =>
+          hT.step E hE c hc0 u v hu0 huv hv1 hcond h) hτ ht0 ht := rfl
+
+example {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoELN' X κ) (hE : ∀ N, |E N| ≤ 2 - κ)
+    {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) :
+    BoundsCoreN_of_Thm221NoELN' X hκ hT hE hτ ht0 ht =
+      boundsGrid_of_fields hκ hE (BoundsCoreN_zero X fun N => by linarith [hE N])
+        (fun _ _ h hst => h.congr X hst)
+        (fun c hc0 u v hu0 huv hv1 hcond h =>
+          hT.step E hE c hc0 u v hu0 huv hv1 hcond h) hτ ht0 ht := rfl
+
 end Iteration
 
-/-! ### The spectral parameters, **without the energy-slice condition** -/
+/-! ### The spectral parameters, **without the energy-slice condition**
 
-/-- **The spectral parameters of Theorems 2.3/2.4 with an `N`-dependent Lemma 2.8 energy.**
-Verbatim `RBM.SpecSeq`, except that the last field now reads `lemE (z N) = E N`.
-
-⭐ That field is no longer a *condition*: `RBM.SpecSeqN.of_z` builds one for **every** sequence
-`z` with `|Re z| ≤ 2 - κ` and `N^{-1+τ} ≤ Im z ≤ 1`, by taking `E N := lemE (z N)`, and then
-`lemE_eq` is `rfl`.  `RBM.SpecSeq`'s slice condition `lemE (z N) = E` (a fixed real) is what
-restricted Theorems 2.3/2.4 to one energy slice (`docs/paper-deltas.md` #38). -/
-structure SpecSeqN (κ τ : ℝ) (E : ℕ → ℝ) (z : ℕ → ℂ) : Prop where
-  im_pos : ∀ N, 0 < (z N).im
-  im_le_one : ∀ N, (z N).im ≤ 1
-  abs_re_le : ∀ N, |(z N).re| ≤ 2 - κ
-  /-- `η ≥ N^{-1+τ}` (for large `N`). -/
-  im_ge : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ (z N).im
-  /-- The energy of Lemma 2.8 at `z N` is `E N`. -/
-  lemE_eq : ∀ N, lemE (z N) = E N
-
-/-- ⭐ **The energy-slice condition disappears**: every sequence of spectral parameters in the
-domain of Theorems 2.3/2.4 is a `RBM.SpecSeqN`, with `E N := lemE (z N)`. -/
-theorem SpecSeqN.of_z {κ τ : ℝ} {z : ℕ → ℂ} (him_pos : ∀ N, 0 < (z N).im)
-    (him_le_one : ∀ N, (z N).im ≤ 1) (habs_re : ∀ N, |(z N).re| ≤ 2 - κ)
-    (him_ge : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ (z N).im) :
-    SpecSeqN κ τ (fun N => lemE (z N)) z :=
-  ⟨him_pos, him_le_one, habs_re, him_ge, fun _ => rfl⟩
-
-/-- A fixed-energy `RBM.SpecSeq` is a constant-energy `RBM.SpecSeqN`. -/
-theorem SpecSeq.toSpecSeqN {κ τ E : ℝ} {z : ℕ → ℂ} (hz : SpecSeq κ τ E z) :
-    SpecSeqN κ τ (fun _ => E) z :=
-  ⟨hz.im_pos, hz.im_le_one, hz.abs_re_le, hz.im_ge, hz.lemE_eq⟩
+`RBM.SpecSeqN`, `RBM.SpecSeqN.of_z`, `RBM.SpecSeq.toSpecSeqN` and the nine basic facts about
+`RBM.SpecSeqN` moved to `Flow/Consequences.lean` (T235): they were duplicated there as
+`RBM.SpecSeq.abs_E_le`, …, `RBM.SpecSeq.unifDetDom_rpow`, and those nine are now one-line
+corollaries through `RBM.SpecSeq.toSpecSeqN`.  What stays here is the pair that needs
+`RBM.BoundsN`, which is defined in this file. -/
 
 namespace SpecSeqN
 
 variable {κ τ : ℝ} {E : ℕ → ℝ} {z : ℕ → ℂ} (hz : SpecSeqN κ τ E z)
 include hz
-
-/-- `|E N| ≤ 2 - κ` (Lemma 2.8: `|E| ≤ |Re z|`).  Verbatim `RBM.SpecSeq.abs_E_le`. -/
-theorem abs_E_le (hκ : 0 < κ) (N : ℕ) : |E N| ≤ 2 - κ := by
-  rw [← hz.lemE_eq N]
-  exact (lemma28_quant hκ (hz.im_pos N) (hz.im_le_one N) (hz.abs_re_le N)).1
-
-theorem lemT_nonneg (N : ℕ) : 0 ≤ lemT (z N) := (lemT_pos (hz.im_pos N)).le
-
-theorem lemT_lt_one' (N : ℕ) : lemT (z N) < 1 := lemT_lt_one (hz.im_pos N)
-
-/-- `1 - lemT z ≥ N^{-1+τ/2}` for large `N`.  Verbatim
-`RBM.SpecSeq.eventually_rpow_le_one_sub`. -/
-theorem eventually_rpow_le_one_sub (hκ : 0 < κ) (hτ : 0 < τ) :
-    ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ / 2) ≤ 1 - lemT (z N) := by
-  filter_upwards [hz.im_ge, eventually_le_rpow 16 (half_pos hτ), eventually_ge_atTop 1]
-    with N h1 h16 hN1
-  have hN0 : (0 : ℝ) < N := by exact_mod_cast hN1
-  have h := one_sub_lemT_ge hκ (hz.im_pos N) (hz.im_le_one N) (hz.abs_re_le N)
-  have hsplit : (N : ℝ) ^ (-1 + τ) = (N : ℝ) ^ (τ / 2) * (N : ℝ) ^ (-1 + τ / 2) := by
-    rw [← Real.rpow_add hN0]; congr 1; ring
-  have hp : 0 ≤ (N : ℝ) ^ (-1 + τ / 2) := Real.rpow_nonneg hN0.le _
-  nlinarith
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
 
@@ -469,35 +556,18 @@ theorem boundsN (X : Sample B) (hκ : 0 < κ) (hT : Thm221N X κ) (hτ : 0 < τ)
   BoundsN_of_Thm221N X hκ hT (hz.abs_E_le hκ) (half_pos hτ) hz.lemT_nonneg
     (hz.eventually_rpow_le_one_sub hκ hτ)
 
-theorem scale_inv_le (hκ : 0 < κ) (N : ℕ) :
-    (B.scale (E N) N (lemT (z N)))⁻¹ ≤ cScale κ * (B.zScale N (z N))⁻¹ := by
-  rw [← hz.lemE_eq N]
-  exact B.scale_inv_le hκ (hz.im_pos N) (hz.im_le_one N) (hz.abs_re_le N) N
+/-- **(2.68)–(2.70) at the time `t = lemT z`**, from `RBM.Thm221NoELN'` — the (2.71)-free
+route (T235). -/
+theorem boundsCoreN' (X : Sample B) (hκ : 0 < κ) (hT : Thm221NoELN' X κ) (hτ : 0 < τ) :
+    BoundsCoreN X E (fun N => lemT (z N)) :=
+  BoundsCoreN_of_Thm221NoELN' X hκ hT (hz.abs_E_le hκ) (half_pos hτ) hz.lemT_nonneg
+    (hz.eventually_rpow_le_one_sub hκ hτ)
 
-theorem scale_inv_nonneg (N : ℕ) : 0 ≤ (B.scale (E N) N (lemT (z N)))⁻¹ :=
-  inv_nonneg.2 (B.scale_nonneg (E N) N (hz.lemT_lt_one' N).le)
-
-theorem zScale_inv_nonneg (N : ℕ) : 0 ≤ (B.zScale N (z N))⁻¹ :=
-  inv_nonneg.2 (B.zScale_pos N (hz.im_pos N)).le
-
-/-- `(W ℓ_t η_t)^{-n} ≺ (W ℓ(z) η)^{-n}` (deterministic). -/
-theorem unifDetDom_pow (hκ : 0 < κ) {U : ℕ → Type*} (n : ℕ) :
-    UnifDetDom (fun N (_ : U N) => (B.scale (E N) N (lemT (z N)))⁻¹ ^ n)
-      (fun N _ => (B.zScale N (z N))⁻¹ ^ n) :=
-  UnifDetDom.of_eventually_le_const_mul (fun N _ => pow_nonneg (hz.zScale_inv_nonneg N) n)
-    (cScale κ ^ n) (Eventually.of_forall fun N _ => by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ (hz.scale_inv_nonneg N) (hz.scale_inv_le hκ N) n)
-
-/-- `(W ℓ_t η_t)^{-p} ≺ (W ℓ(z) η)^{-p}` for real `p ≥ 0` (deterministic). -/
-theorem unifDetDom_rpow (hκ : 0 < κ) {U : ℕ → Type*} {p : ℝ} (hp : 0 ≤ p) :
-    UnifDetDom (fun N (_ : U N) => (B.scale (E N) N (lemT (z N)))⁻¹ ^ p)
-      (fun N _ => (B.zScale N (z N))⁻¹ ^ p) :=
-  UnifDetDom.of_eventually_le_const_mul
-    (fun N _ => Real.rpow_nonneg (hz.zScale_inv_nonneg N) p)
-    (cScale κ ^ p) (Eventually.of_forall fun N _ => by
-      rw [← Real.mul_rpow (cScale_pos hκ).le (hz.zScale_inv_nonneg N)]
-      exact Real.rpow_le_rpow (hz.scale_inv_nonneg N) (hz.scale_inv_le hκ N) hp)
+/-- **(2.68)–(2.70) at the time `t = lemT z`**, from `RBM.Thm221NoELN`. -/
+theorem boundsCoreN (X : Sample B) (hκ : 0 < κ) (hT : Thm221NoELN X κ) (hτ : 0 < τ) :
+    BoundsCoreN X E (fun N => lemT (z N)) :=
+  BoundsCoreN_of_Thm221NoELN X hκ hT (hz.abs_E_le hκ) (half_pos hτ) hz.lemT_nonneg
+    (hz.eventually_rpow_le_one_sub hκ hτ)
 
 end SpecSeqN
 
@@ -1079,9 +1149,18 @@ The proof is the paper's, with the gap of p. 9 filled: `η := N^{-1+θ}` with
 `mesh/η ≤ η`; and `|ψ_k(x)|² ≤ 2η + η = 3N^{-1+θ} ≤ N^{-1+τ}`.
 
 The hypotheses are the model (`RBM.Band`, `RBM.Sample`), the identity in law
-`RBM.Transfer` (2.39) and Theorem 2.21 at an `N`-dependent energy.  `RBM.TransferLoop1` is
-*not* needed: only the entrywise law (2.3) enters. -/
-theorem delocalization_of_Thm221N' (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N' X κ)
+`RBM.Transfer` (2.39) and Theorem 2.21 at an `N`-dependent energy **with (2.71) removed from
+both sides** (`RBM.Thm221NoELN'`, the p. 25 variant).  `RBM.TransferLoop1` is *not* needed:
+only the entrywise law (2.3) enters.
+
+⭐ T235: the hypothesis used to be `RBM.Thm221N'`, whose `step` demands **and** produces
+(2.71) = (2.62).  Theorem 2.2 never needed it: the only thing it takes from Theorem 2.21 is
+(2.70) at `t = lemT z` (`RBM.SpecSeqN.boundsCoreN'`, through
+`RBM.BoundsCoreN_of_Thm221NoELN'`), so the whole `expect` side — and with it every Step 6
+datum — is gone from the hypothesis table of Theorem 2.2.  The conclusion is unchanged
+(`rfl`-probe below). -/
+theorem delocalization_of_Thm221N' (T : Transfer X) {κ : ℝ} (hκ : 0 < κ)
+    (hT : Thm221NoELN' X κ)
     {τ D : ℝ} (hτ : 0 < τ) (hD : 0 < D) :
     ∀ᶠ N : ℕ in atTop,
       B.P {ω | ∃ p : B.Idx N × B.Idx N, (N : ℝ) ^ (-1 + τ) <
@@ -1161,8 +1240,7 @@ theorem delocalization_of_Thm221N' (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (h
         ‖(green (T.Hband N ω) (znet N (j N)) -
           msc (znet N (j N)) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) v.1 v.2‖)
       (fun N (_ : B.Idx N × B.Idx N) (_ : Ω) => (B.zScale N (znet N (j N)))⁻¹ ^ ((1 : ℝ) / 2))
-      from localLaw_of_boundsCoreN T hκ (hspec j)
-        ((hspec j).boundsN' X hκ hT hθ0).toBoundsCoreN
+      from localLaw_of_boundsCoreN T hκ (hspec j) ((hspec j).boundsCoreN' X hκ hT hθ0)
   have hgood := hsd.highProb (τ := θ / 4) (by positivity)
   filter_upwards [hgood D hD, eventually_ge_atTop 1, B.rpow_le_zScale hθ0 hθc,
     eventually_le_rpow (Real.sqrt 2) (by positivity : (0:ℝ) < θ / 4),
@@ -1250,9 +1328,10 @@ theorem delocalization_of_Thm221N' (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (h
   linarith [hp, hpsi, hdiv, hb, hη2.le, hη2.ge]
 
 
-/-- **Theorem 2.2 from the paper-literal Theorem 2.21** (`RBM.Thm221N`), along
-`RBM.Thm221N.toThm221N'`. -/
-theorem delocalization_of_Thm221N (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT : Thm221N X κ)
+/-- **Theorem 2.2 from the paper-literal, (2.71)-free Theorem 2.21** (`RBM.Thm221NoELN`),
+along `RBM.Thm221NoELN.toThm221NoELN'`. -/
+theorem delocalization_of_Thm221N (T : Transfer X) {κ : ℝ} (hκ : 0 < κ)
+    (hT : Thm221NoELN X κ)
     {τ D : ℝ} (hτ : 0 < τ) (hD : 0 < D) :
     ∀ᶠ N : ℕ in atTop,
       B.P {ω | ∃ p : B.Idx N × B.Idx N, (N : ℝ) ^ (-1 + τ) <
@@ -1260,7 +1339,7 @@ theorem delocalization_of_Thm221N (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT
           Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
             ((T.hermitian N ω).eigenvalues p.1)}
         ≤ ENNReal.ofReal ((N : ℝ) ^ (-D)) :=
-  delocalization_of_Thm221N' T hκ (hT.toThm221N' hκ) hτ hD
+  delocalization_of_Thm221N' T hκ (hT.toThm221NoELN' hκ) hτ hD
 
 /-! ### Satisfiability probes for Theorem 2.2 -/
 
@@ -1300,6 +1379,27 @@ example {τ : ℝ} (hτ1 : τ < 1) {N : ℕ} (hN : 2 ≤ N) {κ : ℝ} (hκ2 : �
   rw [hone, Set.indicator_of_mem hmem, mul_one]
   have hN2 : (1 : ℝ) < (N : ℝ) := by exact_mod_cast hN
   exact Real.rpow_lt_one_of_one_lt_of_neg hN2 (by linarith)
+
+/-! ### `rfl`-probe: Theorem 2.2's statement is unchanged (T235)
+
+The hypothesis of `RBM.delocalization_of_Thm221N'` changed from `RBM.Thm221N'` to the
+(2.71)-free `RBM.Thm221NoELN'`; the **conclusion** did not.  The first probe restates the
+conclusion verbatim, the second pins the paper-literal version to the gained one. -/
+
+example (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoELN' X κ) {τ D : ℝ} (hτ : 0 < τ)
+    (hD : 0 < D) :
+    ∀ᶠ N : ℕ in atTop,
+      B.P {ω | ∃ p : B.Idx N × B.Idx N, (N : ℝ) ^ (-1 + τ) <
+        ‖(T.hermitian N ω).eigenvectorBasis p.1 p.2‖ ^ 2 *
+          Set.indicator (Set.Icc (-2 + κ) (2 - κ)) (fun _ => (1 : ℝ))
+            ((T.hermitian N ω).eigenvalues p.1)}
+        ≤ ENNReal.ofReal ((N : ℝ) ^ (-D)) :=
+  delocalization_of_Thm221N' T hκ hT hτ hD
+
+example (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoELN X κ) {τ D : ℝ} (hτ : 0 < τ)
+    (hD : 0 < D) :
+    delocalization_of_Thm221N T hκ hT hτ hD =
+      delocalization_of_Thm221N' T hκ (hT.toThm221NoELN' hκ) hτ hD := rfl
 
 end Deloc
 

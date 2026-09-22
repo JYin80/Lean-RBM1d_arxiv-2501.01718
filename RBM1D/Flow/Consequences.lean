@@ -36,6 +36,17 @@ Each item: the paper equation, where it comes from, the `≺` form, the paper (`
 The assembled statements are `RBM.localSemicircleLaw_of_Thm221` (**Theorem 2.3**) and
 `RBM.quantumDiffusion_of_Thm221` (**Theorem 2.4**), assuming Theorem 2.21.
 
+## The spectral parameters (T235)
+
+`RBM.SpecSeq` (a fixed Lemma 2.8 energy slice) and `RBM.SpecSeqN` (an `N`-dependent energy
+sequence) both live here, with `RBM.SpecSeqN.of_z` and `RBM.SpecSeq.toSpecSeqN`.  The nine
+basic facts — `abs_E_le`, `lemT_nonneg`, `lemT_lt_one'`, `eventually_rpow_le_one_sub`,
+`scale_inv_le`, `scale_inv_nonneg`, `zScale_inv_nonneg`, `unifDetDom_pow`, `unifDetDom_rpow` —
+are proved **once**, for `RBM.SpecSeqN`; the `RBM.SpecSeq` versions are one-line corollaries
+through `RBM.SpecSeq.toSpecSeqN`, with `rfl`-probes next to them.  Only
+`RBM.SpecSeqN.boundsCoreN'`, `RBM.SpecSeqN.boundsN'` and their `RBM.Thm221N`-variants stay in
+`Flow/EnergyUniform.lean`, where the bundles they mention are defined.
+
 ## (2.71) is used only by (2.8), (2.9) and Theorem 2.5 (T211)
 
 Everything above except the `expect_*` items uses only `RBM.BoundsCore` — (2.68)–(2.70) — so it
@@ -184,22 +195,58 @@ structure SpecSeq (κ τ E : ℝ) (z : ℕ → ℂ) : Prop where
   /-- The energy of Lemma 2.8 is `E` for every `N`. -/
   lemE_eq : ∀ N, lemE (z N) = E
 
-namespace SpecSeq
+/-! ### The same, **without the energy-slice condition** (T235)
 
-variable {κ τ E : ℝ} {z : ℕ → ℂ} (hz : SpecSeq κ τ E z)
+`RBM.SpecSeqN` is verbatim `RBM.SpecSeq` with the last field reading `lemE (z N) = E N` for a
+sequence `E : ℕ → ℝ`.  It lives here, upstream of `Flow/EnergyUniform.lean`, because its nine
+basic facts are exactly `RBM.SpecSeq`'s nine (T235 removed the duplicate): the fixed-energy
+versions below are one-line corollaries through `RBM.SpecSeq.toSpecSeqN`. -/
+
+/-- **The spectral parameters of Theorems 2.3/2.4 with an `N`-dependent Lemma 2.8 energy.**
+Verbatim `RBM.SpecSeq`, except that the last field now reads `lemE (z N) = E N`.
+
+⭐ That field is no longer a *condition*: `RBM.SpecSeqN.of_z` builds one for **every** sequence
+`z` with `|Re z| ≤ 2 - κ` and `N^{-1+τ} ≤ Im z ≤ 1`, by taking `E N := lemE (z N)`, and then
+`lemE_eq` is `rfl`.  `RBM.SpecSeq`'s slice condition `lemE (z N) = E` (a fixed real) is what
+restricted Theorems 2.3/2.4 to one energy slice (`docs/paper-deltas.md` #38). -/
+structure SpecSeqN (κ τ : ℝ) (E : ℕ → ℝ) (z : ℕ → ℂ) : Prop where
+  im_pos : ∀ N, 0 < (z N).im
+  im_le_one : ∀ N, (z N).im ≤ 1
+  abs_re_le : ∀ N, |(z N).re| ≤ 2 - κ
+  /-- `η ≥ N^{-1+τ}` (for large `N`). -/
+  im_ge : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ (z N).im
+  /-- The energy of Lemma 2.8 at `z N` is `E N`. -/
+  lemE_eq : ∀ N, lemE (z N) = E N
+
+/-- ⭐ **The energy-slice condition disappears**: every sequence of spectral parameters in the
+domain of Theorems 2.3/2.4 is a `RBM.SpecSeqN`, with `E N := lemE (z N)`. -/
+theorem SpecSeqN.of_z {κ τ : ℝ} {z : ℕ → ℂ} (him_pos : ∀ N, 0 < (z N).im)
+    (him_le_one : ∀ N, (z N).im ≤ 1) (habs_re : ∀ N, |(z N).re| ≤ 2 - κ)
+    (him_ge : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ (z N).im) :
+    SpecSeqN κ τ (fun N => lemE (z N)) z :=
+  ⟨him_pos, him_le_one, habs_re, him_ge, fun _ => rfl⟩
+
+/-- A fixed-energy `RBM.SpecSeq` is a constant-energy `RBM.SpecSeqN`. -/
+theorem SpecSeq.toSpecSeqN {κ τ E : ℝ} {z : ℕ → ℂ} (hz : SpecSeq κ τ E z) :
+    SpecSeqN κ τ (fun _ => E) z :=
+  ⟨hz.im_pos, hz.im_le_one, hz.abs_re_le, hz.im_ge, hz.lemE_eq⟩
+
+namespace SpecSeqN
+
+variable {κ τ : ℝ} {E : ℕ → ℝ} {z : ℕ → ℂ} (hz : SpecSeqN κ τ E z)
 include hz
 
-/-- `|E| ≤ 2 - κ` (Lemma 2.8: `|E| ≤ |Re z|`). -/
-theorem abs_E_le (hκ : 0 < κ) : |E| ≤ 2 - κ := by
-  rw [← hz.lemE_eq 0]
-  exact (lemma28_quant hκ (hz.im_pos 0) (hz.im_le_one 0) (hz.abs_re_le 0)).1
+/-- `|E N| ≤ 2 - κ` (Lemma 2.8: `|E| ≤ |Re z|`).  Verbatim `RBM.SpecSeq.abs_E_le`. -/
+theorem abs_E_le (hκ : 0 < κ) (N : ℕ) : |E N| ≤ 2 - κ := by
+  rw [← hz.lemE_eq N]
+  exact (lemma28_quant hκ (hz.im_pos N) (hz.im_le_one N) (hz.abs_re_le N)).1
 
 theorem lemT_nonneg (N : ℕ) : 0 ≤ lemT (z N) := (lemT_pos (hz.im_pos N)).le
 
 theorem lemT_lt_one' (N : ℕ) : lemT (z N) < 1 := lemT_lt_one (hz.im_pos N)
 
-/-- The time `t = lemT z` of Lemma 2.8 satisfies `1 - t ≥ N^{-1+τ/2}` for large `N`
-(`1 - t ≥ Im z_t ≥ η/16`, p. 22), so Lemmas 2.18–2.20 apply at `t` with `τ/2` in place of `τ`. -/
+/-- `1 - lemT z ≥ N^{-1+τ/2}` for large `N`.  Verbatim
+`RBM.SpecSeq.eventually_rpow_le_one_sub`. -/
 theorem eventually_rpow_le_one_sub (hκ : 0 < κ) (hτ : 0 < τ) :
     ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ / 2) ≤ 1 - lemT (z N) := by
   filter_upwards [hz.im_ge, eventually_le_rpow 16 (half_pos hτ), eventually_ge_atTop 1]
@@ -213,26 +260,20 @@ theorem eventually_rpow_le_one_sub (hκ : 0 < κ) (hτ : 0 < τ) :
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
 
-/-- **Lemmas 2.18–2.20 at the time `t = lemT z` of Lemma 2.8**, from Theorem 2.21. -/
-theorem bounds (X : Sample B) (hκ : 0 < κ) (hT : Thm221 X κ) (hτ : 0 < τ) :
-    Bounds X E (fun N => lemT (z N)) :=
-  Bounds_of_Thm221 X hκ hT (hz.abs_E_le hκ) (half_pos hτ) hz.lemT_nonneg
-    (hz.eventually_rpow_le_one_sub hκ hτ)
-
 theorem scale_inv_le (hκ : 0 < κ) (N : ℕ) :
-    (B.scale E N (lemT (z N)))⁻¹ ≤ cScale κ * (B.zScale N (z N))⁻¹ := by
+    (B.scale (E N) N (lemT (z N)))⁻¹ ≤ cScale κ * (B.zScale N (z N))⁻¹ := by
   rw [← hz.lemE_eq N]
   exact B.scale_inv_le hκ (hz.im_pos N) (hz.im_le_one N) (hz.abs_re_le N) N
 
-theorem scale_inv_nonneg (N : ℕ) : 0 ≤ (B.scale E N (lemT (z N)))⁻¹ :=
-  inv_nonneg.2 (B.scale_nonneg E N (hz.lemT_lt_one' N).le)
+theorem scale_inv_nonneg (N : ℕ) : 0 ≤ (B.scale (E N) N (lemT (z N)))⁻¹ :=
+  inv_nonneg.2 (B.scale_nonneg (E N) N (hz.lemT_lt_one' N).le)
 
 theorem zScale_inv_nonneg (N : ℕ) : 0 ≤ (B.zScale N (z N))⁻¹ :=
   inv_nonneg.2 (B.zScale_pos N (hz.im_pos N)).le
 
 /-- `(W ℓ_t η_t)^{-n} ≺ (W ℓ(z) η)^{-n}` (deterministic). -/
 theorem unifDetDom_pow (hκ : 0 < κ) {U : ℕ → Type*} (n : ℕ) :
-    UnifDetDom (fun N (_ : U N) => (B.scale E N (lemT (z N)))⁻¹ ^ n)
+    UnifDetDom (fun N (_ : U N) => (B.scale (E N) N (lemT (z N)))⁻¹ ^ n)
       (fun N _ => (B.zScale N (z N))⁻¹ ^ n) :=
   UnifDetDom.of_eventually_le_const_mul (fun N _ => pow_nonneg (hz.zScale_inv_nonneg N) n)
     (cScale κ ^ n) (Eventually.of_forall fun N _ => by
@@ -241,13 +282,96 @@ theorem unifDetDom_pow (hκ : 0 < κ) {U : ℕ → Type*} (n : ℕ) :
 
 /-- `(W ℓ_t η_t)^{-p} ≺ (W ℓ(z) η)^{-p}` for real `p ≥ 0` (deterministic). -/
 theorem unifDetDom_rpow (hκ : 0 < κ) {U : ℕ → Type*} {p : ℝ} (hp : 0 ≤ p) :
-    UnifDetDom (fun N (_ : U N) => (B.scale E N (lemT (z N)))⁻¹ ^ p)
+    UnifDetDom (fun N (_ : U N) => (B.scale (E N) N (lemT (z N)))⁻¹ ^ p)
       (fun N _ => (B.zScale N (z N))⁻¹ ^ p) :=
   UnifDetDom.of_eventually_le_const_mul
     (fun N _ => Real.rpow_nonneg (hz.zScale_inv_nonneg N) p)
     (cScale κ ^ p) (Eventually.of_forall fun N _ => by
       rw [← Real.mul_rpow (cScale_pos hκ).le (hz.zScale_inv_nonneg N)]
       exact Real.rpow_le_rpow (hz.scale_inv_nonneg N) (hz.scale_inv_le hκ N) hp)
+
+end SpecSeqN
+
+/-! ### The spectral parameters of Theorems 2.3/2.4, on a fixed energy slice -/
+
+namespace SpecSeq
+
+variable {κ τ E : ℝ} {z : ℕ → ℂ} (hz : SpecSeq κ τ E z)
+include hz
+
+/-- `|E| ≤ 2 - κ` (Lemma 2.8: `|E| ≤ |Re z|`).  `RBM.SpecSeqN.abs_E_le` at `N = 0`. -/
+theorem abs_E_le (hκ : 0 < κ) : |E| ≤ 2 - κ := hz.toSpecSeqN.abs_E_le hκ 0
+
+theorem lemT_nonneg (N : ℕ) : 0 ≤ lemT (z N) := hz.toSpecSeqN.lemT_nonneg N
+
+theorem lemT_lt_one' (N : ℕ) : lemT (z N) < 1 := hz.toSpecSeqN.lemT_lt_one' N
+
+/-- The time `t = lemT z` of Lemma 2.8 satisfies `1 - t ≥ N^{-1+τ/2}` for large `N`
+(`1 - t ≥ Im z_t ≥ η/16`, p. 22), so Lemmas 2.18–2.20 apply at `t` with `τ/2` in place of `τ`. -/
+theorem eventually_rpow_le_one_sub (hκ : 0 < κ) (hτ : 0 < τ) :
+    ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ / 2) ≤ 1 - lemT (z N) :=
+  hz.toSpecSeqN.eventually_rpow_le_one_sub hκ hτ
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **Lemmas 2.18–2.20 at the time `t = lemT z` of Lemma 2.8**, from Theorem 2.21. -/
+theorem bounds (X : Sample B) (hκ : 0 < κ) (hT : Thm221 X κ) (hτ : 0 < τ) :
+    Bounds X E (fun N => lemT (z N)) :=
+  Bounds_of_Thm221 X hκ hT (hz.abs_E_le hκ) (half_pos hτ) hz.lemT_nonneg
+    (hz.eventually_rpow_le_one_sub hκ hτ)
+
+theorem scale_inv_le (hκ : 0 < κ) (N : ℕ) :
+    (B.scale E N (lemT (z N)))⁻¹ ≤ cScale κ * (B.zScale N (z N))⁻¹ :=
+  hz.toSpecSeqN.scale_inv_le hκ N
+
+theorem scale_inv_nonneg (N : ℕ) : 0 ≤ (B.scale E N (lemT (z N)))⁻¹ :=
+  hz.toSpecSeqN.scale_inv_nonneg N
+
+theorem zScale_inv_nonneg (N : ℕ) : 0 ≤ (B.zScale N (z N))⁻¹ :=
+  hz.toSpecSeqN.zScale_inv_nonneg N
+
+/-- `(W ℓ_t η_t)^{-n} ≺ (W ℓ(z) η)^{-n}` (deterministic). -/
+theorem unifDetDom_pow (hκ : 0 < κ) {U : ℕ → Type*} (n : ℕ) :
+    UnifDetDom (fun N (_ : U N) => (B.scale E N (lemT (z N)))⁻¹ ^ n)
+      (fun N _ => (B.zScale N (z N))⁻¹ ^ n) :=
+  hz.toSpecSeqN.unifDetDom_pow hκ n
+
+/-- `(W ℓ_t η_t)^{-p} ≺ (W ℓ(z) η)^{-p}` for real `p ≥ 0` (deterministic). -/
+theorem unifDetDom_rpow (hκ : 0 < κ) {U : ℕ → Type*} {p : ℝ} (hp : 0 ≤ p) :
+    UnifDetDom (fun N (_ : U N) => (B.scale E N (lemT (z N)))⁻¹ ^ p)
+      (fun N _ => (B.zScale N (z N))⁻¹ ^ p) :=
+  hz.toSpecSeqN.unifDetDom_rpow hκ hp
+
+/-! #### `rfl`-probes: the nine `RBM.SpecSeq` facts *are* the `RBM.SpecSeqN` ones (T235)
+
+Each probe type-checks only if the two sides are proofs of the same `Prop`, so none of the
+nine statements changed when the duplicated script was removed. -/
+
+example (hκ : 0 < κ) : hz.abs_E_le hκ = hz.toSpecSeqN.abs_E_le hκ 0 := rfl
+
+example (N : ℕ) : hz.lemT_nonneg N = hz.toSpecSeqN.lemT_nonneg N := rfl
+
+example (N : ℕ) : hz.lemT_lt_one' N = hz.toSpecSeqN.lemT_lt_one' N := rfl
+
+example (hκ : 0 < κ) (hτ : 0 < τ) :
+    hz.eventually_rpow_le_one_sub hκ hτ = hz.toSpecSeqN.eventually_rpow_le_one_sub hκ hτ := rfl
+
+example (hκ : 0 < κ) (N : ℕ) :
+    hz.scale_inv_le (B := B) hκ N = hz.toSpecSeqN.scale_inv_le (B := B) hκ N := rfl
+
+example (N : ℕ) :
+    hz.scale_inv_nonneg (B := B) N = hz.toSpecSeqN.scale_inv_nonneg (B := B) N := rfl
+
+example (N : ℕ) :
+    hz.zScale_inv_nonneg (B := B) N = hz.toSpecSeqN.zScale_inv_nonneg (B := B) N := rfl
+
+example (hκ : 0 < κ) {U : ℕ → Type*} (n : ℕ) :
+    hz.unifDetDom_pow (B := B) (U := U) hκ n =
+      hz.toSpecSeqN.unifDetDom_pow (B := B) (U := U) hκ n := rfl
+
+example (hκ : 0 < κ) {U : ℕ → Type*} {p : ℝ} (hp : 0 ≤ p) :
+    hz.unifDetDom_rpow (B := B) (U := U) hκ hp =
+      hz.toSpecSeqN.unifDetDom_rpow (B := B) (U := U) hκ hp := rfl
 
 end SpecSeq
 

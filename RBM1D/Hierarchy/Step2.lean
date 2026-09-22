@@ -1613,17 +1613,24 @@ theorem kval_stochDom {C : ℝ}
   rw [idx_sigPM] at h
   simpa using h
 
-/-- **(2.75)** (Step 2) in exactly the shape of the field `RBM.Steps.localLaw`:
-`‖G_u - m‖_max ≺ (W ℓ_u η_u)^{-1/2}`, uniformly in `u ∈ [s, t]`.
+/-- **(2.75), from the scale facts.**  `RBM.Step2.localLaw` with its single use of `hreg` —
+the line `hfacts := RBM.Step2.eventually_R4_le_scale hE hst ht1 hc0 hreg` — promoted to a
+hypothesis, so that either `RBM.Cond272'` (through `RBM.Step2.eventually_R4_le_scale`) or
+`RBM.Cond272Reg` (through `RBM.StepGlue.eventually_R4_le_scale_of_cond272`) may discharge it.
+The proof script is `RBM.Step2.localLaw`'s, unchanged.
 
-Proof (p. 63): (2.76) and the `K` bound (2.59) give (5.73)
-`|L_{u,(+,-),(a,b)}| ≺ (W ℓ_u η_u)^{-1}`; Lemma 4.1 ((4.2), (4.3), hypothesis `Lemma41Flow` of
-Step 1) turns this into `‖G_u - m‖²_max ≺ (W ℓ_u η_u)^{-1}` on the event
-`{‖G_u - m‖_max ≤ (W ℓ_u η_u)^{-1/6}}`, which holds w.h.p. by the weak law (2.74). -/
-theorem localLaw {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+`c` still occurs: the weak law (2.74) is upgraded on the event
+`{‖G_u - m‖_max ≤ (W ℓ_u η_u)^{-1/6}}`, and the margin `N^{c/24}` of that upgrade comes from
+the second conjunct of `hfacts`.
+
+(T235: moved here from `RBM.StepGlue.localLaw_of_scale_facts`, which is now the one-line
+corollary at the old name.  Its proof body only ever used `RBM.Step3.exists_norm_Kval_le`,
+`RBM.Step3.stochDom_mono`, `RBM.Band.decayProf` and `RBM.Step1.Lemma41Flow`, all already
+available here.) -/
+theorem localLaw_of_scale_facts {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
     (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
-    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
-      B.scale E N (t N))
+    (hfacts : ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N,
+      (etaT E (s N) / etaT E u) ^ 4 ≤ B.scale E N u ∧ (N : ℝ) ^ c ≤ B.scale E N u)
     (h276 : ∀ D : ℝ, 0 < D → StochDom B.P
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
@@ -1642,7 +1649,6 @@ theorem localLaw {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 
   have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
     B.scale_pos' hE N (hu0 N u) (hu1 N u)
   have hAi : ∀ N (u : TimeIcc s t N), 0 ≤ (B.scale E N u)⁻¹ := fun N u => (inv_pos.2 (hA N u)).le
-  have hfacts := eventually_R4_le_scale (B := B) hE hst ht1 hc0 hreg
   -- (5.73): `|L_{u,(+,-)}| ≺ (W ℓ_u η_u)^{-1}`
   obtain ⟨C, -, hC⟩ := Step3.exists_norm_Kval_le (B := B) hκ0 hκ1 hEκ hs0 ht1 (n := 2)
     (by norm_num)
@@ -1750,6 +1756,56 @@ theorem localLaw {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 
     (ξ' := fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => Step1.llMax X E N p.1 ω)
     (fun N p ω => Step1.llErr_le_llMax X N p.1 ω p.2) ?_
   exact hfin
+
+/-- **(2.75)** (Step 2) in exactly the shape of the field `RBM.Steps.localLaw`:
+`‖G_u - m‖_max ≺ (W ℓ_u η_u)^{-1/2}`, uniformly in `u ∈ [s, t]`.
+
+Proof (p. 63): (2.76) and the `K` bound (2.59) give (5.73)
+`|L_{u,(+,-),(a,b)}| ≺ (W ℓ_u η_u)^{-1}`; Lemma 4.1 ((4.2), (4.3), hypothesis `Lemma41Flow` of
+Step 1) turns this into `‖G_u - m‖²_max ≺ (W ℓ_u η_u)^{-1}` on the event
+`{‖G_u - m‖_max ≤ (W ℓ_u η_u)^{-1/6}}`, which holds w.h.p. by the weak law (2.74). -/
+theorem localLaw {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (h276 : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2))
+    (h274 : StochDom B.P
+      (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 4)))
+    (h41 : Step1.Lemma41Flow X E s t) :
+    StochDom B.P
+      (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) :=
+  localLaw_of_scale_facts X hκ0 hκ1 hEκ hs0 hst ht1 hc0
+    (eventually_R4_le_scale (B := B) (by linarith) hst ht1 hc0 hreg) h276 h274 h41
+
+
+/-! #### `rfl`-probe: (2.75) is unchanged (T235)
+
+`RBM.Step2.localLaw` is now the one-line specialization of
+`RBM.Step2.localLaw_of_scale_facts` at `hfacts := RBM.Step2.eventually_R4_le_scale …`.  The
+probe type-checks only if the two sides are proofs of the same `Prop`, i.e. only if nothing
+about the statement of (2.75) changed. -/
+example {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (h276 : ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2))
+    (h274 : StochDom B.P
+      (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 4)))
+    (h41 : Step1.Lemma41Flow X E s t) :
+    localLaw X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg h276 h274 h41 =
+      localLaw_of_scale_facts X hκ0 hκ1 hEκ hs0 hst ht1 hc0
+        (eventually_R4_le_scale (B := B) (by linarith) hst ht1 hc0 hreg) h276 h274 h41 := rfl
 
 end LocalLaw
 

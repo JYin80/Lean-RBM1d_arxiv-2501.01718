@@ -352,6 +352,22 @@ axioms).  Compared with `RBM.Step2.Hyp`, the *stopped* martingale field `mart` a
 * `env`, `env_le` — the deterministic envelope of `J*` (T77, `RBM.Gauss.norm_gloop_le_det`
   together with `RBM.Step2.jStar_le`): it makes dominated convergence available, hence the
   continuity of `φ_q`.
+
+  ⚠ **Quantifier audit (T235).**  `env_le` is the one field of this structure that quantifies
+  over *every* `ω`, with no `Good` event, no `HighProb` and no `≺`.  That is **not** the
+  defect the satisfiability discipline warns about, for two reasons.  (i) `env : ℕ → ℝ` is a
+  *data* field, i.e. the bound is existentially quantified — `env_le` asks only that `J*` be
+  *finite* uniformly in `ω`, not that it be small; a pointwise-for-all-`ω` inequality against
+  a fixed small right-hand side is what fails at `ω = 0`, and this is not one.  (ii) The time
+  quantifier is windowed (`u ∈ Set.Icc (s N) (t N)`), which is what makes (i) true: for
+  `t N < 1` the flow Green's functions obey `‖G_u‖ ≤ η_u⁻¹ ≤ η_{t N}⁻¹` for every `ω`.
+  The compiled witness is `RBM.Step2Bootstrap.jS_le_rpow`, whose statement is literally
+  `∀ ω, Step2.jS X E D N u ω ≤ (1 + C_K) N^{D + 2c_η} + 1`; so `env` may be taken to be that
+  right-hand side, and the field is satisfiable rather than vacuous.
+
+  There is deliberately **no** `p` here: `env_le` is not an asymptotic condition, so it is not
+  of the forbidden `∀ p N, …` shape and needs no `∀ p, ∀ᶠ N in atTop, …`.  The asymptotic
+  fields of this structure (`bnd_lt_thr`, `init`, `step`, `bnd_poly`) already have it.
 * `meas` — measurability of `ω ↦ J*_{u,D}`.
 * `bnd`, `thr`, `bnd_lt_thr`, `init`, `step`, `bnd_poly` — **(5.39)–(5.41) together with (5.45)
   in moment form**: the a priori bound `E[(J*_u/(η_s/η_u)^4)^q] ≤ Λ_q(N)` on `[s, v]` improves
@@ -532,14 +548,15 @@ section Conclusions
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
 
-/-- **(2.76) from (5.47)**, route-independent.  The passage from `J*_{u,D} ≺ (η_s/η_u)^4` to
-(2.76) uses nothing but the definition (5.29) of `J*` and the deterministic estimates of
-`RBM1D/Hierarchy/Step2.lean`; it is the proof of `RBM.Step2.aprioriDecay` with (5.47) taken as
-an input, so that either route may supply it. -/
-theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
-    (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
-    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
-      B.scale E N (t N))
+/-- **(2.76) from (5.47), from the bare (2.72).**  `RBM.Step2Moment.aprioriDecay_of_jS` with
+`hregS` replaced by `RBM.Cond272`: the original's only use of `hregS` is
+`RBM.Step2.cond272_of_strict`, so no gain was ever needed here.  The proof script is
+unchanged.
+
+(T235: moved here from `RBM.StepGlue.aprioriDecay_of_jS_of_cond272`, which is now the
+one-line corollary at the old name.) -/
+theorem aprioriDecay_of_jS_of_cond272 (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hcond : Cond272 B E s t)
     (hJ : ∀ D : ℝ, 60 ≤ D → StochDom B.P
       (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N u ω)
       (fun N u _ => (etaT E (s N) / etaT E u) ^ 4)) :
@@ -564,7 +581,7 @@ theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N,
       (Step2.etaT_pos' hE (p.1.2.2.trans_lt (ht1 N)))
     positivity
   have hmul := StochDom.mul hT0 hR0 hJD (StochDom.refl hT0)
-  have h272 := Step2.cond272_of_strict hE hst ht1 hc0 hreg
+  have h272 : Cond272 B E s t := hcond
   refine Step3.stochDom_mono (ζ := fun N p ω => (etaT E (s N) / etaT E p.1) ^ 4 *
       Step2.tT B E N D p.1 (zdist (B.L N) (p.2.1 - p.2.2))) ?_ 1 ?_ ?_
   · intro N p ω
@@ -584,6 +601,42 @@ theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N,
       (ηu := etaT E p.1) (D := D) (hW0 N) ![p.2.1, p.2.2]
     rw [Step2.norm_lk_eq] at h
     simpa [Step2.jS, Step2.tT] using h
+
+/-- **(2.76) from (5.47)**, route-independent.  The passage from `J*_{u,D} ≺ (η_s/η_u)^4` to
+(2.76) uses nothing but the definition (5.29) of `J*` and the deterministic estimates of
+`RBM1D/Hierarchy/Step2.lean`; it is the proof of `RBM.Step2.aprioriDecay` with (5.47) taken as
+an input, so that either route may supply it. -/
+theorem aprioriDecay_of_jS (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (hJ : ∀ D : ℝ, 60 ≤ D → StochDom B.P
+      (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N u ω)
+      (fun N u _ => (etaT E (s N) / etaT E u) ^ 4)) :
+    ∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2) :=
+  aprioriDecay_of_jS_of_cond272 X hE hs0 hst ht1
+    (Step2.cond272_of_strict hE hst ht1 hc0 hreg) hJ
+
+/-! #### `rfl`-probe: (2.76) from (5.47) is unchanged (T235)
+
+`RBM.Step2Moment.aprioriDecay_of_jS` is now the one-line corollary of
+`RBM.Step2Moment.aprioriDecay_of_jS_of_cond272` along `RBM.Step2.cond272_of_strict` — the
+original script's only use of `hreg`.  The probe type-checks only if the two sides are proofs
+of the same `Prop`. -/
+example (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) {c : ℝ} (hc0 : 0 < c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (hJ : ∀ D : ℝ, 60 ≤ D → StochDom B.P
+      (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N u ω)
+      (fun N u _ => (etaT E (s N) / etaT E u) ^ 4)) :
+    aprioriDecay_of_jS X hE hs0 hst ht1 hc0 hreg hJ =
+      aprioriDecay_of_jS_of_cond272 X hE hs0 hst ht1
+        (Step2.cond272_of_strict hE hst ht1 hc0 hreg) hJ := rfl
 
 /-- **(2.76)** along the moment route, in exactly the shape of the field
 `RBM.Steps.aprioriDecay`. -/

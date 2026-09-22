@@ -45,16 +45,29 @@ to be discharged as producers for them appear.
 * `RBM.thm221NoEL_of_inputs_cutHyp` — the same, stopping one level earlier, at a `CutHyp` for
   `RBM.Step2FarMart.jSfarSm`.
 * `RBM.thm221Assembly_hyp_consistent`, `RBM.thm221Assembly_far_critical` — the
-  satisfiability checks of §3.
+  satisfiability checks of §4.
+* `RBM.inv_sq_mul_decayProf_le_tT`, `RBM.stochDom_jSfarSm_init_of_boundsCore` — **T241**: the
+  producer of `RBM.Eq548EntryData.init`.  The left endpoint `J*^{sm}_{s_N,D} ≺ 1` of the
+  (5.48) bootstrap is (2.69) at `u = s_N`, i.e. the field `RBM.BoundsCore.decay`, which
+  Theorem 2.21 assumes anyway.
+* `RBM.Eq548EntryData'`, `RBM.Eq548EntryData.toPrime`, `RBM.flowEq548Sm_of_entryData'` —
+  **T241**: the same entrywise package with the field `init` deleted.
+* `RBM.thm221NoEL_of_inputs_entries'` — **T241**: the assembly whose (5.48) slot asks for
+  `RBM.Eq548EntryData'` and receives the `RBM.BoundsCore X E s` that `RBM.Thm221NoEL.step`
+  gets anyway, so that **`init` no longer occurs in the hypothesis table**.
+  `RBM.thm221NoEL_of_inputs_entries_of_unprimed` is the compiled certificate that the new
+  table is weaker than the old one, and `RBM.thm221Assembly_init_witness` the satisfiability
+  witness of the producer.
 
 ## What this file does **not** close
 
 The five other named inputs of Steps 1–5 (`RBM.Step1.Hyp`,
 `RBM.MomentDuhamelCut.MomentHypCut`, the Step-3 `≺` input, `RBM.Step3.Lemma514`,
 `RBM.StepGlue.Eq45Flow`) and, inside the (5.48) item, the three fields of T228 that have no
-producer yet (`hmeas`, `hmod`, `hmoment`) and the initial bound `hinit` are **still
-hypotheses**, listed as such in the signature of `RBM.thm221NoEL_of_inputs_entries`.  They are
-not hidden behind a bundle that no object satisfies — see §3.
+producer yet (`hmeas`, `hmod`, `hmoment`) are **still hypotheses**, listed as such in the
+signature of `RBM.thm221NoEL_of_inputs_entries'`.  They are not hidden behind a bundle that no
+object satisfies — see §4 and §7.  The initial bound `hinit` is **no longer among them**
+(T241, §5–§7).
 
 ## Deviations from the paper
 
@@ -407,5 +420,286 @@ theorem thm221Assembly_far_critical {B : Band Ω} (X : Sample B) {E : ℝ}
     Step2FarMart.pref_grid_critical hE N, Step2FarMart.sat_mesh_card_at_one hN⟩
 
 end Satisfiable
+
+/-! ### 5. `init` is **not** an independent hypothesis: it comes from `BoundsCore` (T241)
+
+`RBM.Eq548EntryData.init` — the left endpoint `J*^{sm}_{s_N,D} ≺ 1` of the (5.48) bootstrap —
+is in the paper the value at `u = s_N` of **(2.69) = (2.63)**, and (2.69) at the time `s` is a
+*hypothesis of Theorem 2.21 itself*: the field `RBM.BoundsCore.decay`.  T239 found it listed
+as an independent sixth datum only because `RBM.thm221NoEL_of_inputs_W` does not pass the
+`hB : RBM.BoundsCore X E s` it already has in scope (the tenth argument of
+`RBM.Thm221NoEL.step`) down to the (5.48) slot.
+
+This section closes that gap.  Giving the slot an extra `RBM.BoundsCore X E s →` antecedent is
+a **free strengthening** of the theorem — the hypothesis becomes weaker, and
+`RBM.thm221NoEL_of_inputs_entries_of_unprimed` below is the compiled proof that everything
+which satisfied the old table satisfies the new one.
+
+The estimate is the elementary one: (2.69) bounds `|(L-K)_{s,(+,-),a}|` by
+`(W ℓ_s η_s)^{-2}(e^{-(‖a₁-a₂‖/ℓ_s)^{1/2}} + W^{-D})`, which is `≤ T_{s,D}(‖a₁-a₂‖)` of (5.27)
+as soon as `W ℓ_s η_s ≥ 1` (`inv_sq_mul_decayProf_le_tT`; the scale bound is (2.72), through
+`RBM.Step1.eventually_one_le_scale_s`).  Then `RBM.Step2.jStar_le` turns the pointwise bound
+`lkFarSm ≤ N^{τ/2} T_{s,D}` into `J*^{sm}_{s_N,D} ≤ N^{τ/2} + 1 ≤ N^τ`, which is exactly what
+`≺ 1` asks for.  No smoothing property of `RBM.Step2FarMart.farChi` is used beyond
+`lkFarSm ≤ |(L-K)|` (`RBM.Step2FarMart.lkFarSm_le`), so the same proof would serve the sharp
+`RBM.Step2FarMart.jSfar`. -/
+
+section Init
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **(2.69)'s profile is below (5.27)'s tail**:
+`(W ℓ_u η_u)^{-2}·(e^{-(d/ℓ_u)^{1/2}} + W^{-D}) ≤ T_{u,D}(d)` once `W ℓ_u η_u ≥ 1`.
+
+The only difference between the two right-hand sides is where the `W^{-D}` sits: (2.69) has it
+*inside* the `(W ℓ_u η_u)^{-2}`, (5.27) outside.  The converse direction (with a loss of `W^4`)
+is `RBM.Step2.tT_le_decayProf`. -/
+theorem inv_sq_mul_decayProf_le_tT {E : ℝ} {N : ℕ} {u D : ℝ} (hA1 : 1 ≤ B.scale E N u)
+    (a b : ZMod (B.L N)) :
+    (B.scale E N u)⁻¹ ^ 2 * B.decayProf N u D a b
+      ≤ Step2.tT B E N D u (zdist (B.L N) (a - b)) := by
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hinv : (B.scale E N u)⁻¹ ^ 2 ≤ 1 := by
+    rw [inv_pow]
+    exact inv_le_one_of_one_le₀ (one_le_pow₀ hA1)
+  have hWD : (0 : ℝ) ≤ (B.W N : ℝ) ^ (-D) := Real.rpow_nonneg hW0.le _
+  have hexp : (0 : ℝ) ≤
+      Real.exp (-√((zdist (B.L N) (a - b) : ℝ) / B.ell N u)) := (Real.exp_pos _).le
+  have ht : Step2.tT B E N D u (zdist (B.L N) (a - b))
+      = (B.scale E N u)⁻¹ ^ 2 *
+          Real.exp (-√((zdist (B.L N) (a - b) : ℝ) / B.ell N u))
+        + (B.W N : ℝ) ^ (-D) := by
+    simp only [Step2.tT, tailT, Band.scale, inv_pow]
+  have hd : B.decayProf N u D a b
+      = Real.exp (-√((zdist (B.L N) (a - b) : ℝ) / B.ell N u))
+        + (B.W N : ℝ) ^ (-D) := by
+    simp only [Band.decayProf, ← Real.sqrt_eq_rpow]
+  rw [ht, hd]
+  nlinarith [hinv, hWD, hexp]
+
+/-- **`RBM.Eq548EntryData.init` from `RBM.BoundsCore`** (T241).
+
+`jSfarSm ≺ 1` at the left endpoint `u = s_N` is (2.69) at that time, i.e. the field
+`RBM.BoundsCore.decay`, plus the scale bound `W ℓ_s η_s ≥ 1` that (2.72) supplies.  So the
+initial datum of the (5.48) bootstrap has a **producer**, and is not a hypothesis. -/
+theorem stochDom_jSfarSm_init_of_boundsCore (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (hE : |E| < 2) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hB : BoundsCore X E s) (D : ℝ) (hD : 0 < D) :
+    StochDom B.P (fun N (_ : Unit) ω => Step2FarMart.jSfarSm X E D N (s N) ω)
+      (fun _ _ _ => (1 : ℝ)) := by
+  refine StochDom.of_subset_union (hB.decay D hD) (hB.decay D hD)
+    fun τ hτ => ⟨τ / 2, half_pos hτ, ?_⟩
+  filter_upwards [Step1.eventually_one_le_scale_s (B := B) (s := s) (t := t) hE hst ht1 hc,
+    eventually_le_rpow (2 : ℝ) (half_pos hτ)] with N hA1 hN2
+  intro ω hω
+  obtain ⟨u0, hbig0⟩ := hω
+  have hbig : (N : ℝ) ^ τ < Step2FarMart.jSfarSm X E D N (s N) ω := by simpa using hbig0
+  by_contra hno
+  simp only [Set.mem_union, badSet, Set.mem_ofPred_eq, not_or, not_exists, not_lt] at hno
+  obtain ⟨hno, -⟩ := hno
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hτ0 : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have hkey : ∀ a : LoopArg (B.L N) 2,
+      Step2FarMart.lkFarSm X E N (s N) ω a
+        ≤ (N : ℝ) ^ (τ / 2) *
+          tailT (B.W N : ℝ) (B.ell N (s N)) (etaT E (s N)) D
+            (zdist (B.L N) (a 0 - a 1)) := by
+    intro a
+    refine (Step2FarMart.lkFarSm_le X a).trans ?_
+    rw [Step2.norm_lk_eq]
+    refine (hno (a 0, a 1)).trans ?_
+    exact mul_le_mul_of_nonneg_left (inv_sq_mul_decayProf_le_tT hA1 (a 0) (a 1)) hτ0
+  have hJ : Step2FarMart.jSfarSm X E D N (s N) ω ≤ (N : ℝ) ^ (τ / 2) + 1 :=
+    Step2.jStar_le hW0 hkey
+  have hsq : (2 : ℝ) * (N : ℝ) ^ (τ / 2) ≤ (N : ℝ) ^ τ := by
+    rw [← UnifDetDom.rpow_half_mul_rpow_half N hτ]
+    exact mul_le_mul_of_nonneg_right hN2 hτ0
+  linarith
+
+end Init
+
+/-! ### 6. The entrywise package with `init` deleted, and the assembly (T241) -/
+
+section Entries'
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **`RBM.Eq548EntryData` with the field `init` deleted** — the four entrywise data of (5.48)
+that really are open.  The four field types are verbatim those of `RBM.Eq548EntryData`
+(`RBM.Eq548EntryData.toPrime` is the forgetful map), and `init` is now produced by
+`RBM.stochDom_jSfarSm_init_of_boundsCore` out of `RBM.BoundsCore X E s`. -/
+structure Eq548EntryData' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop where
+  near : ∀ D : ℝ, 0 < D → StochDom B.P
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+      X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+    (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+      tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D (zdist (B.L N) (p.2.1 - p.2.2)))
+  meas : ∀ D : ℝ, 0 < D → ∀ (N : ℕ) (u : ℝ),
+    AEStronglyMeasurable (fun ω => Step2FarMart.jSfarSm X E D N u ω) B.P
+  modulus : ∀ D : ℝ, 0 < D → ∀ (N : ℕ) (ω : Ω), ∀ v ∈ Set.Icc (s N) (t N),
+    ∀ w ∈ Set.Icc (s N) (t N), ∀ x : LoopArg (B.L N) 2,
+      15 / 8 * |(zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N v))
+            - (zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N w))|
+          * |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))|
+        + |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))
+            - ‖Step2.lk X E N w ω x‖ / tailT (B.W N : ℝ) (B.ell N w) (etaT E w) D
+              (zdist (B.L N) (x 0 - x 1))|
+          ≤ (N : ℝ) ^ (1 : ℝ) * |v - w| ^ ((1 : ℝ) / 2)
+  moment : ∀ D : ℝ, 0 < D → ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+    ∀ᶠ N : ℕ in atTop,
+    ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+      ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+            (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+        ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))
+
+variable {E : ℝ} {s t : ℕ → ℝ}
+
+/-- Forgetting `init`: the old package is stronger than the new one. -/
+theorem Eq548EntryData.toPrime {X : Sample B} (H : Eq548EntryData X E s t) :
+    Eq548EntryData' X E s t :=
+  ⟨H.near, H.meas, H.modulus, H.moment⟩
+
+/-- **The (5.48) slot from the four open entrywise data, `init` produced from `BoundsCore`.** -/
+theorem flowEq548Sm_of_entryData' (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hB : BoundsCore X E s) (H : Eq548EntryData' X E s t) :
+    FlowEq548Sm X E s t :=
+  flowEq548Sm_of_entries X hst hs0 ht1 H.near H.meas H.modulus H.moment
+    (stochDom_jSfarSm_init_of_boundsCore X (t := t) hE hst ht1 hc hB)
+
+end Entries'
+
+section Assembly'
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **Theorem 2.21 without (2.71), in D13's shape, with `init` removed from the (5.48) slot.**
+
+Verbatim `RBM.thm221NoEL_of_inputs_entries` except that the (5.48) slot asks for
+`RBM.Eq548EntryData'` — the same package with the field `init` deleted — and is handed the
+`RBM.BoundsCore X E s` that `RBM.Thm221NoEL.step` receives anyway.  The `init` datum is then
+produced by `RBM.stochDom_jSfarSm_init_of_boundsCore`, so it **no longer occurs in the
+hypothesis table**.
+
+Nothing is weakened: the extra `RBM.BoundsCore X E s →` in front of the slot makes that
+hypothesis *weaker* (`RBM.thm221NoEL_of_inputs_entries_of_unprimed` derives the conclusion from
+the old table), and the conclusion `RBM.Thm221NoEL X κ` is literally the same as in
+`RBM.thm221NoEL_of_inputs_W`. -/
+theorem thm221NoEL_of_inputs_entries' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → BoundsCore X E s →
+      Eq548EntryData' X E s t) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hΘ E hE s t hs0 hst ht1 c hc0 hreg) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45 E hE s t hs0 hst ht1 c hc0 hreg)
+      (flowEq548Sm_of_entryData' X (by linarith : |E| < 2) hs0 hst ht1 hreg.toCond272 hB
+        (h548e E hE s t hs0 hst ht1 c hc0 hreg hB))
+
+/-- **The new hypothesis table is weaker than the old one** — the compiled certificate that
+deleting `init` costs nothing.  Given the six inputs of
+`RBM.thm221NoEL_of_inputs_entries` (whose (5.48) slot still carries `init`), the primed
+assembly delivers `RBM.Thm221NoEL X κ`: the `RBM.BoundsCore X E s` antecedent is simply
+ignored and `RBM.Eq548EntryData.toPrime` drops the extra field. -/
+theorem thm221NoEL_of_inputs_entries_of_unprimed (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ)
+    (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq548EntryData X E s t) :
+    Thm221NoEL X κ :=
+  thm221NoEL_of_inputs_entries' X hκ0 hκ1 h1 Hy hΘ h514 h45
+    fun E hE s t hs0 hst ht1 c hc0 hreg _ =>
+      (h548e E hE s t hs0 hst ht1 c hc0 hreg).toPrime
+
+end Assembly'
+
+/-! ### 7. Satisfiability of the `init` producer (T241)
+
+The producer's own hypotheses have to be jointly satisfiable, or `init` has been "removed" only
+by being made unreachable.  They are: `|E| < 2`, `s ≤ t`, `t < 1`, `RBM.Cond272` and
+`RBM.BoundsCore X E s`.  On T202's explicit band model at `E = 0` and the start `s ≡ 0` of the
+grid of p. 24 — the very step `RBM.thm221Assembly_hyp_consistent` certifies — all five hold at
+once, and the conclusion `jSfarSm ≺ 1` follows.  `RBM.gridT_zero` is what identifies the
+grid's `k = 0` time with the `s ≡ 0` at which `RBM.boundsCore_gauss_witness` lives.
+
+Together with `RBM.thm221Assembly_far_critical` (`1 ≤ jSfarSm` for **every** `ω`, so the
+conclusion is not something the degenerate `ω = 0` meets for free) this says the producer is
+both usable and non-trivial. -/
+
+section SatisfiableInit
+
+/-- **The `init` producer fires on T202's explicit model** (T241): at `E = 0`, on the first
+step `s ≡ 0 → t = u_1` of the grid of p. 24, all five hypotheses of
+`RBM.stochDom_jSfarSm_init_of_boundsCore` hold simultaneously and the deleted field `init` is
+*obtained*.  So `RBM.Eq548EntryData'` is `RBM.Eq548EntryData` with a field that is genuinely
+derivable, not with a field that was quietly dropped. -/
+theorem thm221Assembly_init_witness {τ : ℝ} (hτ0 : 0 < τ) :
+    ∃ τ' : ℝ, 0 < τ' ∧ ∃ c : ℝ, 0 < c ∧
+      ∀ t : ℕ → ℝ, (∀ N, 0 ≤ t N) →
+        (∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) →
+        ∃ v : ℕ → ℝ, (∀ N, (0 : ℝ) ≤ v N) ∧ (∀ N, v N < 1) ∧
+          Cond272Reg (Gauss.band Gauss.Dims.exampleGrow) 0 (fun _ => 0) v c ∧
+          BoundsCore (Gauss.sample Gauss.Dims.exampleGrow) 0 (fun _ => 0) ∧
+          ∀ D : ℝ, 0 < D → StochDom (Gauss.band Gauss.Dims.exampleGrow).P
+            (fun N (_ : Unit) ω =>
+              Step2FarMart.jSfarSm (Gauss.sample Gauss.Dims.exampleGrow) 0 D N 0 ω)
+            (fun _ _ _ => (1 : ℝ)) := by
+  obtain ⟨τ', hτ'0, c, hc0, n₀, hgrid⟩ :=
+    cond272Reg_grid_step_domain (Gauss.band Gauss.Dims.exampleGrow)
+      (κ := 1) (τ := τ) one_pos hτ0
+  refine ⟨τ', hτ'0, c, hc0, fun t ht0 ht => ?_⟩
+  obtain ⟨-, hstep⟩ := hgrid 0 (by norm_num) t ht0 ht
+  obtain ⟨-, hmono, h1lt, hreg⟩ := hstep 0
+  have hz : ∀ N : ℕ,
+      gridT ((Gauss.band Gauss.Dims.exampleGrow).W N) τ' (t N) 0 = 0 :=
+    fun N => gridT_zero (ht0 N)
+  have hzf : (fun N => gridT ((Gauss.band Gauss.Dims.exampleGrow).W N) τ' (t N) 0)
+      = (fun _ : ℕ => (0 : ℝ)) := funext hz
+  rw [hzf] at hreg
+  have hmono' : ∀ N : ℕ,
+      (0 : ℝ) ≤ gridT ((Gauss.band Gauss.Dims.exampleGrow).W N) τ' (t N) 1 := by
+    intro N
+    have := hmono N
+    rwa [hz N] at this
+  refine ⟨fun N => gridT ((Gauss.band Gauss.Dims.exampleGrow).W N) τ' (t N) 1,
+    hmono', h1lt, hreg, boundsCore_gauss_witness.1, fun D hD => ?_⟩
+  exact stochDom_jSfarSm_init_of_boundsCore (Gauss.sample Gauss.Dims.exampleGrow)
+    (by norm_num) hmono' h1lt hreg.toCond272 boundsCore_gauss_witness.1 D hD
+
+end SatisfiableInit
+
 
 end RBM

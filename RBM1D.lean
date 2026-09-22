@@ -164,6 +164,8 @@ import RBM1D.Flow.Thm221Gain
 import RBM1D.Flow.EnergyUniform
 import RBM1D.Flow.Thm221NoEL
 import RBM1D.Flow.Thm221Assembly
+import RBM1D.Flow.Step1Producer
+import RBM1D.Flow.Step345Producer
 import RBM1D.Flow.Universality
 import RBM1D.Gauss.Stein
 import RBM1D.Gauss.SteinMatrix

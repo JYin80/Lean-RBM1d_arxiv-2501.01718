@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Flow.Thm221Bare
+import RBM1D.Flow.EnergyUniform
 import RBM1D.Hierarchy.Step2PP
 import RBM1D.Gauss.MomentDuhamelCut
 import RBM1D.Gauss.DimsExample
@@ -50,13 +51,22 @@ three `hregS`-consumers went.
 ## Main results
 
 * `RBM.BoundsCore_zero`, `RBM.BoundsCore.congr` — (2.67) without (2.71), and stability under
-  changing the time sequence for small `N`.
+  changing the time sequence for small `N`.  **T235**: both are now the constant-energy
+  specializations of `RBM.BoundsCoreN_zero` and `RBM.BoundsCoreN.congr`
+  (`Flow/EnergyUniform.lean`), with `rfl`-probes next to them.
 * `RBM.Thm221NoEL`, `RBM.Thm221NoEL'`, `RBM.Thm221NoEL.toThm221NoEL'` — Theorem 2.21 with
   (2.71) removed from hypothesis *and* conclusion.  `RBM.Thm221NoEL.step_boundsCore` is the
   one-step acceptance probe: `RBM.BoundsCore` at `s` in, `RBM.BoundsCore` at `t` out.
 * `RBM.BoundsCore_of_Thm221NoEL'`, `RBM.BoundsCore_of_Thm221NoEL` — **Lemmas 2.18 (2.60),
   2.19 (2.63), 2.20 (2.64)** — everything except (2.62) — for every time sequence
   `0 ≤ t ≤ 1 - N^{-1+τ}`.  `RBM.stochDom_norm_Lval_of_Thm221NoEL'` is (2.61).
+  **T235**: the induction of p. 24 is no longer written out here — it is the shared,
+  field-taking script `RBM.boundsGrid_of_fields` of `Flow/EnergyUniform.lean`, of which this
+  and `RBM.BoundsN_of_Thm221N'` are one-line specializations at
+  `P := fun s => BoundsCore X E s` and `P := fun s => BoundsN X E s`.
+* `RBM.Thm221NoELN'.toThm221NoEL'`, `RBM.Thm221NoELN.toThm221NoEL` — **T235**: the
+  `N`-dependent, (2.71)-free Theorem 2.21 of `Flow/EnergyUniform.lean` is the stronger
+  statement; specializing to a constant energy sequence recovers the two structures here.
 * `RBM.Band.cond272Reg_grid`, `RBM.Band.eventually_rpow_le_scale`,
   `RBM.Band.scale_zero_ge_rpow`, `RBM.boundsCore_hyp_consistent`,
   `RBM.boundsCore_gauss_witness` — the satisfiability checks of §4: the step condition
@@ -90,10 +100,9 @@ three `hregS`-consumers went.
   `RBM.Cond272Reg.hA_betaStar` were **not** needed on this path — they are the side conditions
   of the *moment* route, i.e. of the hypothesis `RBM.MomentDuhamelCut.MomentHypCut`, and the
   chain below consumes that as a black box.
-* Theorem 2.2 is not assembled anywhere in the tree yet (`RBM.sq_norm_eigenvector_le_of_norm_
-  green_le` is its deterministic core, `RBM.localSemicircleLaw_of_Thm221N_of_z` the local law
-  it needs), so there is nothing here to convert; the `RBM.BoundsCoreN` version of the latter
-  belongs in `Flow/EnergyUniform.lean`.
+* Theorem 2.2 lives in `Flow/EnergyUniform.lean` (`RBM.delocalization_of_Thm221N'`), and
+  **T235** put it on the (2.71)-free footing there: its hypothesis is now
+  `RBM.Thm221NoELN'`, the `N`-dependent version of `RBM.Thm221NoEL'` defined in that file.
 * The six named inputs of Steps 1–5 are still hypotheses.
 
 ## Deviations from the paper
@@ -115,18 +124,22 @@ variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) {E : ℝ
 /-- **(2.67) with (2.71) removed**: (2.68)–(2.70) hold at `t = 0` with no error.  The
 expectation bound (2.62) = (2.71) is simply not part of the bundle. -/
 theorem BoundsCore_zero (hE : |E| ≤ 2) : BoundsCore X E (fun _ => 0) :=
-  (Bounds_zero X hE).toBoundsCore
+  (BoundsCoreN_zero X fun _ => hE).toBoundsCore
 
 /-- (2.68)–(2.70) at a time sequence only depend on it for large `N`.  Verbatim
-`RBM.Bounds.congr` with the `expect` line deleted. -/
+`RBM.Bounds.congr` with the `expect` line deleted; the constant-energy specialization of
+`RBM.BoundsCoreN.congr`, where the script now lives (T235). -/
 theorem BoundsCore.congr {s t : ℕ → ℝ} (h : BoundsCore X E s)
-    (hst : ∀ᶠ N : ℕ in atTop, s N = t N) : BoundsCore X E t where
-  LmK n hn := (h.LmK n hn).congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
-    (by filter_upwards [hst] with N hN; rw [hN])
-  decay D hD := (h.decay D hD).congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
-    (by filter_upwards [hst] with N hN; rw [hN])
-  localLaw := h.localLaw.congr_eventually (by filter_upwards [hst] with N hN; rw [hN])
-    (by filter_upwards [hst] with N hN; rw [hN])
+    (hst : ∀ᶠ N : ℕ in atTop, s N = t N) : BoundsCore X E t :=
+  (h.toBoundsCoreN.congr X hst).toBoundsCore
+
+/-! #### `rfl`-probes: (2.67) and the `congr` stability are unchanged (T235) -/
+
+example (hE : |E| ≤ 2) :
+    BoundsCore_zero X hE = (BoundsCoreN_zero X fun _ => hE).toBoundsCore := rfl
+
+example {s t : ℕ → ℝ} (h : BoundsCore X E s) (hst : ∀ᶠ N : ℕ in atTop, s N = t N) :
+    h.congr X hst = (h.toBoundsCoreN.congr X hst).toBoundsCore := rfl
 
 end Initial
 
@@ -165,6 +178,20 @@ theorem Thm221NoEL.toThm221NoEL' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoEL X κ
     hT.step E hE c hc0 s t hs0 hst ht1
       (hcond.toCond272Reg (by linarith [abs_nonneg E]) hst ht1 hc0.le) hB
 
+/-- **The `N`-dependent, (2.71)-free Theorem 2.21 is stronger** (T235): specializing to a
+constant energy sequence recovers `RBM.Thm221NoEL'`.  Verbatim `RBM.Thm221N'.toThm221'`. -/
+theorem Thm221NoELN'.toThm221NoEL' {κ : ℝ} (h : Thm221NoELN' X κ) : Thm221NoEL' X κ where
+  step E hE c hc0 s t hs0 hst ht1 hcond hB :=
+    (h.step (fun _ => E) (fun _ => hE) c hc0 s t hs0 hst ht1 hcond.toCond272N'
+      hB.toBoundsCoreN).toBoundsCore
+
+/-- The same for the paper-literal step condition: `RBM.Thm221NoELN` implies `RBM.Thm221NoEL`
+(the `RBM.Cond272Reg` of D13 carries `RBM.Cond272` as its first component). -/
+theorem Thm221NoELN.toThm221NoEL {κ : ℝ} (h : Thm221NoELN X κ) : Thm221NoEL X κ where
+  step E hE _c _hc0 s t hs0 hst ht1 hcond hB :=
+    (h.step (fun _ => E) (fun _ => hE) s t hs0 hst ht1 hcond.1.toCond272N
+      hB.toBoundsCoreN).toBoundsCore
+
 /-- **The acceptance probe of T204, one step**: `RBM.BoundsCore X E s` in, `RBM.BoundsCore X E t`
 out, through `RBM.Thm221NoEL`.  The hypothesis list contains no `RBM.Bounds.expect`, no
 `RBM.Steps.sharpExpect` and no other Step 6 datum; the (2.72) side is `RBM.Cond272Reg` (D13).
@@ -196,28 +223,24 @@ Verbatim the statement of `RBM.Bounds_of_Thm221'` with `RBM.BoundsCore` in place
 the induction sees (2.71). -/
 theorem BoundsCore_of_Thm221NoEL' {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoEL' X κ)
     (hE : |E| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
-    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsCore X E t := by
-  obtain ⟨τ', hτ', c, hc0, n₀, hgrid⟩ := B.eventually_flow_grid' hκ hτ
-  have hg := hgrid E hE t ht0 ht
-  have hE2 : |E| ≤ 2 := by linarith
-  have hE2' : |E| < 2 := by linarith
-  let u : ℕ → ℕ → ℝ := fun k N => gridT (B.W N) τ' (t N) k
-  have key : ∀ k, BoundsCore X E (u k) := by
-    intro k
-    induction k with
-    | zero =>
-      have h0 : u 0 = fun _ => 0 := funext fun N => gridT_zero (ht0 N)
-      rw [h0]
-      exact BoundsCore_zero X hE2
-    | succ k ih =>
-      refine hT.step E hE c hc0 (u k) (u (k + 1)) (fun N => ?_) (fun N => ?_) (fun N => ?_) ?_ ih
-      · exact le_min (gridS_nonneg (B.one_le_W N) hτ'.le k) (ht0 N)
-      · exact gridT_mono (B.one_le_W N) hτ'.le (t N) (Nat.le_succ k)
-      · exact (min_le_left _ _).trans_lt (gridS_lt_one (by linarith [B.one_le_W N]) _)
-      · filter_upwards [hg] with N hN
-        rw [etaT_div_etaT hE2']
-        exact hN.2.2.2 k
-  exact (key n₀).congr X (by filter_upwards [hg] with N hN; exact hN.1)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) : BoundsCore X E t :=
+  boundsGrid_of_fields (B := B) (E := fun _ => E) (P := fun s => BoundsCore X E s)
+    hκ (fun _ => hE) (BoundsCore_zero X (by linarith)) (fun _ _ h hst => h.congr X hst)
+    (fun c hc0 u v hu0 huv hv1 hcond h =>
+      hT.step E hE c hc0 u v hu0 huv hv1 hcond.toCond272' h) hτ ht0 ht
+
+/-- `rfl`-probe: (2.68)–(2.70) from the (2.71)-free Theorem 2.21 is exactly the shared
+script `RBM.boundsGrid_of_fields` specialized at `P := fun s => BoundsCore X E s`, so the
+statement did not change when the duplicated induction was removed (T235). -/
+example {κ : ℝ} (hκ : 0 < κ) (hT : Thm221NoEL' X κ) (hE : |E| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ)
+    {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) :
+    BoundsCore_of_Thm221NoEL' X hκ hT hE hτ ht0 ht =
+      boundsGrid_of_fields (B := B) (E := fun _ => E) (P := fun s => BoundsCore X E s)
+        hκ (fun _ => hE) (BoundsCore_zero X (by linarith))
+        (fun _ _ h hst => h.congr X hst)
+        (fun c hc0 u v hu0 huv hv1 hcond h =>
+          hT.step E hE c hc0 u v hu0 huv hv1 hcond.toCond272' h) hτ ht0 ht := rfl
 
 /-- **Lemmas 2.18–2.20 without (2.62), from `RBM.Thm221NoEL`** — the corollary of
 `RBM.BoundsCore_of_Thm221NoEL'` along `RBM.Thm221NoEL.toThm221NoEL'`. -/

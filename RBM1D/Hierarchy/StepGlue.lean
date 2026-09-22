@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Green.EntryBound
 import RBM1D.Hierarchy.Step2
+import RBM1D.Hierarchy.Step2Moment
 import RBM1D.Hierarchy.Step45
 
 /-!
@@ -766,9 +767,11 @@ Each is the `RBM.Cond272'`-shaped original with its use of `hregS` isolated:
   the one line `hfacts := RBM.Step2.eventually_R4_le_scale …`, here promoted to a hypothesis.
   The proof script is copied unchanged.
 
-The originals are not corollaries of these only because `Hierarchy/Step2.lean` and
-`Hierarchy/Step2Moment.lean` were outside T209's writable set; the statements here are strictly
-more general. -/
+T235 closed the loop: the proofs of the last two now live next to the statements they
+generalize (`RBM.Step2.localLaw_of_scale_facts`, `RBM.Step2Moment.aprioriDecay_of_jS_of_cond272`),
+the originals `RBM.Step2.localLaw` and `RBM.Step2Moment.aprioriDecay_of_jS` are one-line
+corollaries of them, and what is left here are the one-line corollaries kept at the old names
+for this file's consumers. -/
 
 /-- **`(η_s/η_u)^4 ≤ W ℓ_u η_u` and `N^c ≤ W ℓ_u η_u` for every `u ∈ [s,t]`, from the bare
 (2.72) plus the regime bound.**  Verbatim the conclusion of
@@ -817,8 +820,10 @@ theorem eventually_R4_le_scale_of_cond272 (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N
 
 /-- **(2.76) from (5.47), from the bare (2.72).**  `RBM.Step2Moment.aprioriDecay_of_jS` with
 `hregS` replaced by `RBM.Cond272`: the original's only use of `hregS` is
-`RBM.Step2.cond272_of_strict`, so no gain was ever needed here.  The proof script is
-unchanged. -/
+`RBM.Step2.cond272_of_strict`, so no gain was ever needed here.
+
+T235 moved the proof to `RBM.Step2Moment.aprioriDecay_of_jS_of_cond272`, next to the statement
+it generalizes; this is the one-line corollary kept at the old name for its consumers. -/
 theorem aprioriDecay_of_jS_of_cond272 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
     (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hcond : Cond272 B E s t)
     (hJ : ∀ D : ℝ, 60 ≤ D → StochDom B.P
@@ -828,53 +833,20 @@ theorem aprioriDecay_of_jS_of_cond272 (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
       (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
-        B.decayProf N p.1 D p.2.1 p.2.2) := by
-  intro D₀ hD₀
-  set D := max (D₀ + 4) 60 with hDdef
-  have hD : 60 ≤ D := le_max_right _ _
-  have hDD : D₀ + 4 ≤ D := le_max_left _ _
-  have hJD := (hJ D hD).precomp_param
-    (V := fun N => TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) fun N p => p.1
-  have hW0 : ∀ N, (0 : ℝ) < B.W N := fun N => by exact_mod_cast B.W_pos N
-  have hT0 : ∀ N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) (_ : Ω),
-      0 ≤ Step2.tT B E N D p.1 (zdist (B.L N) (p.2.1 - p.2.2)) :=
-    fun N p _ => tailT_nonneg (hW0 N).le _
-  have hR0 : ∀ N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) (_ : Ω),
-      0 ≤ (etaT E (s N) / etaT E p.1) ^ 4 := fun N p _ => by
-    have := div_pos (Step2.etaT_pos' hE ((hst N).trans_lt (ht1 N)))
-      (Step2.etaT_pos' hE (p.1.2.2.trans_lt (ht1 N)))
-    positivity
-  have hmul := StochDom.mul hT0 hR0 hJD (StochDom.refl hT0)
-  have h272 : Cond272 B E s t := hcond
-  refine Step3.stochDom_mono (ζ := fun N p ω => (etaT E (s N) / etaT E p.1) ^ 4 *
-      Step2.tT B E N D p.1 (zdist (B.L N) (p.2.1 - p.2.2))) ?_ 1 ?_ ?_
-  · intro N p ω
-    have := hR0 N p ω
-    have hA := B.scale_nonneg E N (p.1.2.2.trans (ht1 N).le)
-    have : 0 ≤ B.decayProf N p.1 D₀ p.2.1 p.2.2 := by unfold Band.decayProf; positivity
-    positivity
-  · filter_upwards [SumZeroDyn.flow_crude hE hs0 hst ht1 h272, Step2.eventually_le_W_sq B] with
-      N hcr hW2 p ω
-    obtain ⟨-, -, -, hsc⟩ := hcr
-    rw [one_mul, mul_assoc]
-    refine mul_le_mul_of_nonneg_left ?_ (hR0 N p ω)
-    exact Step2.tT_le_decayProf hDD (hsc p.1).1 ((hsc p.1).2.1.trans hW2) _ _
-  · refine StochDom.of_le_left (fun N p ω => ?_) hmul
-    simp only [Pi.mul_apply]
-    have h := Step2.le_jStar_mul (f := fun b => ‖Step2.lk X E N p.1 ω b‖) (ℓu := B.ell N p.1)
-      (ηu := etaT E p.1) (D := D) (hW0 N) ![p.2.1, p.2.2]
-    rw [Step2.norm_lk_eq] at h
-    simpa [Step2.jS, Step2.tT] using h
+        B.decayProf N p.1 D p.2.1 p.2.2) :=
+  Step2Moment.aprioriDecay_of_jS_of_cond272 X hE hs0 hst ht1 hcond hJ
 
 /-- **(2.75), from the scale facts.**  `RBM.Step2.localLaw` with its single use of `hregS` —
 the line `hfacts := RBM.Step2.eventually_R4_le_scale hE hst ht1 hc0 hreg` — promoted to a
 hypothesis, so that either `RBM.Cond272'` (through `RBM.Step2.eventually_R4_le_scale`) or
 `RBM.Cond272Reg` (through `RBM.StepGlue.eventually_R4_le_scale_of_cond272`) may discharge it.
-The proof script is copied unchanged.
 
 `c` still occurs: the weak law (2.74) is upgraded on the event
 `{‖G_u - m‖_max ≤ (W ℓ_u η_u)^{-1/6}}`, and the margin `N^{c/24}` of that upgrade comes from
-the second conjunct of `hfacts`. -/
+the second conjunct of `hfacts`.
+
+T235 moved the proof to `RBM.Step2.localLaw_of_scale_facts`, next to the statement it
+generalizes; this is the one-line corollary kept at the old name for its consumers. -/
 theorem localLaw_of_scale_facts (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c)
@@ -891,121 +863,40 @@ theorem localLaw_of_scale_facts (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 
     (h41 : Step1.Lemma41Flow X E s t) :
     StochDom B.P
       (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
-      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) := by
-  have hE : |E| < 2 := by linarith
-  have hu0 : ∀ N (u : TimeIcc s t N), (0 : ℝ) ≤ (u : ℝ) := fun N u => (hs0 N).trans u.2.1
-  have hu1 : ∀ N (u : TimeIcc s t N), (u : ℝ) < 1 := fun N u => u.2.2.trans_lt (ht1 N)
-  have hA : ∀ N (u : TimeIcc s t N), 0 < B.scale E N u := fun N u =>
-    B.scale_pos' hE N (hu0 N u) (hu1 N u)
-  have hAi : ∀ N (u : TimeIcc s t N), 0 ≤ (B.scale E N u)⁻¹ := fun N u => (inv_pos.2 (hA N u)).le
-  -- (5.73): `|L_{u,(+,-)}| ≺ (W ℓ_u η_u)^{-1}`
-  obtain ⟨C, -, hC⟩ := Step3.exists_norm_Kval_le (B := B) hκ0 hκ1 hEκ hs0 ht1 (n := 2)
-    (by norm_num)
-  have hLK : StochDom B.P
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 2)) :=
+  Step2.localLaw_of_scale_facts X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hfacts h276 h274 h41
+
+/-! ### `rfl`-probes: the two T209 remainders are unchanged (T235)
+
+The two theorems above are now the one-line corollaries of the versions that live next to the
+statements they generalize.  Each probe type-checks only if the two sides are proofs of the
+same `Prop`, i.e. only if the statement kept at the old name is *verbatim* the one that moved:
+nothing here was strengthened or weakened by the move. -/
+
+example (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hcond : Cond272 B E s t)
+    (hJ : ∀ D : ℝ, 60 ≤ D → StochDom B.P
+      (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N u ω)
+      (fun N u _ => (etaT E (s N) / etaT E u) ^ 4)) :
+    aprioriDecay_of_jS_of_cond272 X hE hs0 hst ht1 hcond hJ =
+      Step2Moment.aprioriDecay_of_jS_of_cond272 X hE hs0 hst ht1 hcond hJ := rfl
+
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c)
+    (hfacts : ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N,
+      (etaT E (s N) / etaT E u) ^ 4 ≤ B.scale E N u ∧ (N : ℝ) ^ c ≤ B.scale E N u)
+    (h276 : ∀ D : ℝ, 0 < D → StochDom B.P
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
-      (fun N p _ => (B.scale E N p.1)⁻¹) := by
-    refine Step3.stochDom_mono (fun N p _ => hAi N p.1) 2 ?_ (h276 1 one_pos)
-    filter_upwards [hfacts] with N hN p ω
-    obtain ⟨hR4, -⟩ := hN p.1
-    have hW0 : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
-    have hW1 : (1 : ℝ) ≤ B.W N := by exact_mod_cast B.W_pos N
-    have hdec : B.decayProf N p.1 1 p.2.1 p.2.2 ≤ 2 := by
-      unfold Band.decayProf
-      have h1 : Real.exp (-(((zdist (B.L N) (p.2.1 - p.2.2) : ℝ) / B.ell N p.1) ^ ((1 : ℝ) / 2)))
-          ≤ 1 := Real.exp_le_one_iff.2 (by
-            have hℓ : 0 < B.ell N p.1 := Step3.ellHat_pos_of_lt_one (B.one_le_L N) (hu1 N p.1)
-            have := Real.rpow_nonneg (div_nonneg (Nat.cast_nonneg (zdist (B.L N)
-              (p.2.1 - p.2.2))) hℓ.le) ((1 : ℝ) / 2)
-            linarith)
-      have h2 : (B.W N : ℝ) ^ (-(1 : ℝ)) ≤ 1 :=
-        Real.rpow_le_one_of_one_le_of_nonpos hW1 (by norm_num)
-      linarith
-    have hApos := hA N p.1
-    have hdec0 : 0 ≤ B.decayProf N p.1 1 p.2.1 p.2.2 := by unfold Band.decayProf; positivity
-    have hR0 : 0 ≤ (etaT E (s N) / etaT E p.1) ^ 4 := by
-      have := div_pos (Step2.etaT_pos' hE ((hst N).trans_lt (ht1 N)))
-        (Step2.etaT_pos' hE (hu1 N p.1))
-      positivity
-    calc (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
-          B.decayProf N p.1 1 p.2.1 p.2.2
-        ≤ B.scale E N p.1 * (B.scale E N p.1)⁻¹ ^ 2 * 2 := by gcongr
-      _ = 2 * (B.scale E N p.1)⁻¹ := by field_simp
-  have hK := Step2.kval_stochDom (B := B) (Ω := Ω) (s := s) (t := t) hC hA
-  have hL : StochDom B.P
-      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
-        ‖X.Lval E N p.1 ω (pmLoop p.2.1 p.2.2)‖)
-      (fun N p _ => (B.scale E N p.1)⁻¹) := by
-    refine Step3.stochDom_mono (fun N p _ => hAi N p.1) 2
-      (Eventually.of_forall fun N p ω => ?_) (StochDom.of_le_left (fun N p ω => ?_) (hLK.add hK))
-    · simp only [Pi.add_apply]; linarith
-    · simp only [Pi.add_apply, Sample.lkErr]
-      have := norm_sub_norm_le (X.Lval E N p.1 ω (pmLoop p.2.1 p.2.2))
-        (B.Kval E N p.1 (pmLoop p.2.1 p.2.2))
-      linarith
-  -- Lemma 4.1
-  have hLind : StochDom B.P
-      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
-        (Step1.goodEv X E N p.1).indicator
-          (fun ω => ‖X.Lval E N p.1 ω (pmLoop p.2.1 p.2.2)‖) ω)
-      (fun N p _ => (B.scale E N p.1)⁻¹) := by
-    refine StochDom.of_le_left (fun N p ω => ?_) hL
-    by_cases hω : ω ∈ Step1.goodEv X E N p.1
-    · rw [Set.indicator_of_mem hω]
-    · rw [Set.indicator_of_notMem hω]; exact norm_nonneg _
-  have h41' := h41 (fun N u => (B.scale E N u)⁻¹) hAi hLind
-  have hsq : StochDom B.P
-      (fun N (u : TimeIcc s t N) ω => (Step1.goodEv X E N u).indicator
-        (fun ω => Step1.llMax X E N u ω ^ 2) ω)
-      (fun N u _ => (B.scale E N u)⁻¹) := by
-    refine Step3.stochDom_mono (fun N u _ => hAi N u) 2 (Eventually.of_forall fun N u ω => ?_) h41'
-    have := Step1.inv_W_le_inv_scale (B := B) hE N (hu0 N u) (hu1 N u)
-    linarith
-  -- the good event of Lemma 4.1 holds for all `u` w.h.p., by (2.74)
-  have hΩ : HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N, ω ∈ Step1.goodEv X E N u}) := by
-    refine (h274.highProb (by positivity : (0 : ℝ) < c / 24)).mono ?_
-    filter_upwards [hfacts, eventually_ge_atTop 1] with N hN hN1 ω hω u
-    simp only [Set.mem_ofPred_eq] at hω ⊢
-    have hN1' : (1 : ℝ) ≤ N := by exact_mod_cast hN1
-    obtain ⟨-, hNc⟩ := hN u
-    have hApos := hA N u
-    have hA1 : 1 ≤ B.scale E N u := (Real.one_le_rpow hN1' hc0.le).trans hNc
-    refine Step1.llMax_le X fun ij => (hω (u, ij)).trans ?_
-    -- `N^{c/24} A^{-1/4} ≤ A^{-1/6}`
-    have h1 : (N : ℝ) ^ (c / 24) ≤ B.scale E N u ^ ((1 : ℝ) / 12) := by
-      have e : (N : ℝ) ^ (c / 24) = ((N : ℝ) ^ c) ^ ((1 : ℝ) / 24) := by
-        rw [← Real.rpow_mul (Nat.cast_nonneg N)]; ring_nf
-      rw [e]
-      calc ((N : ℝ) ^ c) ^ ((1 : ℝ) / 24) ≤ B.scale E N u ^ ((1 : ℝ) / 24) :=
-            Real.rpow_le_rpow (Real.rpow_nonneg (Nat.cast_nonneg N) _) hNc (by norm_num)
-        _ ≤ B.scale E N u ^ ((1 : ℝ) / 12) :=
-            Real.rpow_le_rpow_of_exponent_le hA1 (by norm_num)
-    rw [Real.inv_rpow hApos.le, Real.inv_rpow hApos.le]
-    have e2 : B.scale E N u ^ ((1 : ℝ) / 4) =
-        B.scale E N u ^ ((1 : ℝ) / 12) * B.scale E N u ^ ((1 : ℝ) / 6) := by
-      rw [← Real.rpow_add hApos]; norm_num
-    rw [e2, mul_inv, ← mul_assoc]
-    have hp : 0 < B.scale E N u ^ ((1 : ℝ) / 12) := Real.rpow_pos_of_pos hApos _
-    have hq : 0 < (B.scale E N u ^ ((1 : ℝ) / 6))⁻¹ := inv_pos.2 (Real.rpow_pos_of_pos hApos _)
-    have : (N : ℝ) ^ (c / 24) * (B.scale E N u ^ ((1 : ℝ) / 12))⁻¹ ≤ 1 := by
-      rw [← div_eq_mul_inv, div_le_one hp]; exact h1
-    calc (N : ℝ) ^ (c / 24) * (B.scale E N u ^ ((1 : ℝ) / 12))⁻¹ *
-          (B.scale E N u ^ ((1 : ℝ) / 6))⁻¹ ≤ 1 * (B.scale E N u ^ ((1 : ℝ) / 6))⁻¹ := by
-          gcongr
-      _ = _ := one_mul _
-  have hmax := Step1.stochDom_of_indicator
-    (Ωs := fun N (u : TimeIcc s t N) => Step1.goodEv X E N u)
-    (ξ := fun N (u : TimeIcc s t N) ω => Step1.llMax X E N u ω ^ 2)
-    (ζ := fun N u _ => (B.scale E N u)⁻¹) hΩ hsq
-  have hhalf := Step2.stochDom_rpow_half_of_sq
-    (ξ := fun N (u : TimeIcc s t N) ω => Step1.llMax X E N u ω)
-    (fun N (u : TimeIcc s t N) _ => hAi N u) hmax
-  have hfin := hhalf.precomp_param (V := fun N => TimeIcc s t N × (B.Idx N × B.Idx N))
-    fun N p => p.1
-  refine StochDom.of_le_left
-    (ξ' := fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => Step1.llMax X E N p.1 ω)
-    (fun N p ω => Step1.llErr_le_llMax X N p.1 ω p.2) ?_
-  exact hfin
+      (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 4 * (B.scale E N p.1)⁻¹ ^ 2 *
+        B.decayProf N p.1 D p.2.1 p.2.2))
+    (h274 : StochDom B.P
+      (fun N (p : TimeIcc s t N × (B.Idx N × B.Idx N)) ω => X.llErr E N p.1 ω p.2)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ ((1 : ℝ) / 4)))
+    (h41 : Step1.Lemma41Flow X E s t) :
+    localLaw_of_scale_facts X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hfacts h276 h274 h41 =
+      Step2.localLaw_of_scale_facts X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hfacts h276 h274 h41 := rfl
 
 end StepGlue
 

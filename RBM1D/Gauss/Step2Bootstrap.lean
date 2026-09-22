@@ -138,6 +138,11 @@ interface step is free and that the two no-gos of §2–§3 do not reach it.
   through `RBM.MomentDuhamelCut.onEvent` and routed back at the cost of one `N^{-1}` (§14–§15).
   ⚠ This is only *half* of what T249 forces; the other half is `0 < s N`, which `APrimeHyp`
   does **not** imply — see §14.
+* `weightedMoment_bound_of_sq`, `weightedMoment_bound_of_oneStep`,
+  `weightedMoment_bound_of_oneStepSharp`, `weightedMoment_mono` — the bridge from the one-step
+  arithmetic of (5.39)–(5.44) to `WeightedMoment`, i.e. the (A′) counterparts of
+  `RBM.CutHypTheta.condMoment_of_oneStep` (§16).  This is the last interface step on the (A′)
+  side; the estimate itself needs `RBM1D/Gauss/APrimeTestFun.lean` and lives downstream.
 
 ## Non-vacuity (compiled)
 
@@ -2246,6 +2251,136 @@ theorem sat_stochDom_of_aprimeOn (P : Measure Ω) [IsProbabilityMeasure P] :
     (Filter.Eventually.of_forall fun _ => le_rfl) (MomentDuhamelCut.sat_init_ev P)
 
 end SatAPrimeOn
+
+/-! ### 16. From the one-step arithmetic to `WeightedMoment`
+
+`RBM.CutHypTheta.condMoment_of_oneStep` is the bridge from `RBM.Step2MomentStep.phi_arith'`
+— the accounting layer of (5.39)–(5.44) — to `CutHypCond.condMoment`.  Route (A′) needs the
+same bridge with the **unconditional weighted** integral in place of the conditional one, and
+it is the same arithmetic: `condMoment`'s and `WeightedMoment`'s right-hand sides are the same
+`C·(N^{δ/2·p}·Θ_N^{2p})`, so `RBM.CutHypTheta.rpow_sq_pow` and `stepRhs_div_le` apply verbatim.
+
+This is the last interface step on the (A′) side; what remains is the estimate itself, which
+needs the `TestFun` instance of `RBM1D/Gauss/APrimeTestFun.lean` and therefore lives
+downstream.
+
+`WeightedMoment.mono` is the other half a producer needs: the moment field only gets easier as
+the weight gets smaller, so it may be proved for the crudest admissible weight.
+-/
+
+section OneStep
+
+open MomentDuhamelCut CutHypTheta MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {J : ℕ → ℝ → Ω → ℝ}
+  {s t mesh : ℕ → ℝ} {lev : ℕ → ℝ → ℝ} {Θ : ℕ → ℝ} {W : ℝ → ℕ → ℕ → Ω → ℝ}
+
+/-- **The (A′) analogue of `RBM.CutHypTheta.condMoment_of_sq_bound`**: a one-step output of
+the form `(c₀ x²)^{2p}` with `x = N^{δ/8}` *is* the per-`p` clause of `WeightedMoment`, with
+the honest constant `C = c₀^{2p}`. -/
+theorem weightedMoment_bound_of_sq {δ c₀ : ℝ} (hc₀ : 0 < c₀) (hΘ : ∀ N, Θ N = 1) (p : ℕ)
+    (h : ∀ᶠ N : ℕ in atTop, ∀ k ≤ cutNetTop s t mesh N,
+      ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+          (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+        ≤ (c₀ * ((N : ℝ) ^ (δ / 8)) ^ 2) ^ (2 * p)) :
+    ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ k ≤ cutNetTop s t mesh N,
+      ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+          (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+        ≤ C * ((N : ℝ) ^ (δ / 2 * p) * Θ N ^ (2 * p)) := by
+  refine ⟨c₀ ^ (2 * p), pow_pos hc₀ _, ?_⟩
+  filter_upwards [h, eventually_ge_atTop 1] with N hN hN1 k hk
+  have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  refine (hN k hk).trans (le_of_eq ?_)
+  rw [mul_pow, rpow_sq_pow hNR p, hΘ N, one_pow, mul_one]
+
+/-- **The (A′) analogue of `RBM.CutHypTheta.condMoment_of_oneStep`**: `WeightedMoment`'s
+per-`p` clause from the blunt one-step arithmetic `RBM.Step2MomentStep.phi_arith'`, read in
+the blunt normalization `J*/R⁴`, with `C = (cStep' m)^{2p}`. -/
+theorem weightedMoment_bound_of_oneStep {δ m : ℝ} (hδ0 : 0 ≤ δ) (hm : 0 < m)
+    (hΘ : ∀ N, Θ N = 1) (p : ℕ)
+    (h : ∀ᶠ N : ℕ in atTop, ∀ k ≤ cutNetTop s t mesh N, ∃ R Ξ A ε q β γ Jv : ℝ,
+      StepSide ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv ∧
+        ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+            (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+          ≤ (stepRhs m ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv / R ^ 4) ^ (2 * p)) :
+    ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ k ≤ cutNetTop s t mesh N,
+      ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+          (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+        ≤ C * ((N : ℝ) ^ (δ / 2 * p) * Θ N ^ (2 * p)) := by
+  refine weightedMoment_bound_of_sq (Step2MomentStep.cStep'_pos hm) hΘ p ?_
+  filter_upwards [h, eventually_ge_atTop 1] with N hN hN1 k hk
+  have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hx : (1 : ℝ) ≤ (N : ℝ) ^ (δ / 8) := Real.one_le_rpow hNR (by linarith)
+  obtain ⟨R, Ξ, A, ε, q, β, γ, Jv, hside, hmom⟩ := hN k hk
+  have hR0 : (0 : ℝ) < R ^ 4 := by
+    have : (0 : ℝ) < R := by linarith [hside.R_ge]
+    positivity
+  have h0 : (0 : ℝ) ≤ stepRhs m ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv / R ^ 4 :=
+    div_nonneg (le_trans zero_le_one (one_le_stepRhs hx hm hside)) hR0.le
+  exact hmom.trans (pow_le_pow_left₀ h0 (stepRhs_div_le hx hm hside) _)
+
+/-- **The sharp one-step arithmetic** (`RBM.Step2Near47.phi_arith_second_pass`), for the second
+pass: same loss exponent, constant `(cSharp m)^{2p}`. -/
+theorem weightedMoment_bound_of_oneStepSharp {δ m : ℝ} (hδ0 : 0 ≤ δ) (hm : 0 < m)
+    (hΘ : ∀ N, Θ N = 1) (p : ℕ)
+    (h : ∀ᶠ N : ℕ in atTop, ∀ k ≤ cutNetTop s t mesh N, ∃ R Ξ A ε qI β γ Jv : ℝ,
+      StepSideSharp m ((N : ℝ) ^ (δ / 8)) R Ξ A ε qI β γ Jv ∧
+        ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+            (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+          ≤ (stepRhsSharp m ((N : ℝ) ^ (δ / 8)) R Ξ A ε qI β γ Jv / R ^ 2) ^ (2 * p)) :
+    ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ k ≤ cutNetTop s t mesh N,
+      ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+          (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+        ≤ C * ((N : ℝ) ^ (δ / 2 * p) * Θ N ^ (2 * p)) := by
+  refine weightedMoment_bound_of_sq (Step2Near47.cSharp_pos hm) hΘ p ?_
+  filter_upwards [h, eventually_ge_atTop 1] with N hN hN1 k hk
+  have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hx : (1 : ℝ) ≤ (N : ℝ) ^ (δ / 8) := Real.one_le_rpow hNR (by linarith)
+  obtain ⟨R, Ξ, A, ε, qI, β, γ, Jv, hside, hmom⟩ := hN k hk
+  have hR0 : (0 : ℝ) < R ^ 2 := by
+    have : (0 : ℝ) < R := by linarith [hside.R_ge]
+    positivity
+  have h0 : (0 : ℝ) ≤ stepRhsSharp m ((N : ℝ) ^ (δ / 8)) R Ξ A ε qI β γ Jv / R ^ 2 :=
+    div_nonneg (le_trans zero_le_one (one_le_stepRhsSharp hx hm hside)) hR0.le
+  exact hmom.trans (pow_le_pow_left₀ h0 (stepRhsSharp_div_le hx hm hside) _)
+
+/-- **`WeightedMoment` is monotone in the weight.**  A producer may therefore prove the moment
+field for the crudest admissible weight and transport it; this is what
+`APrimeHypOn.toAPrimeHyp` does for `weightOn` (there the inequality goes the other way and the
+`p = 0` clause has to be treated separately, which is why that proof is not this lemma). -/
+theorem weightedMoment_mono [IsFiniteMeasure P] {δ₀ : ℝ} {W' : ℝ → ℕ → ℕ → Ω → ℝ}
+    (hmesh : ∀ N, 0 < mesh N) (hΘ : ∀ N, 0 < Θ N) (hwin : ∀ N, s N ≤ t N)
+    (hlev : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), Θ N ≤ lev N u)
+    (hJ0 : ∀ N u ω, 0 ≤ J N u ω)
+    (hJm : ∀ (N : ℕ) (u : ℝ), AEStronglyMeasurable (fun ω => J N u ω) P)
+    (hWm : ∀ (δ : ℝ) (N k : ℕ), AEStronglyMeasurable (fun ω => W δ N k ω) P)
+    (hW0 : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω), 0 ≤ W δ N k ω)
+    (hW1 : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω), W δ N k ω ≤ 1)
+    (hW' : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω), 0 ≤ W' δ N k ω)
+    (hle : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω), W' δ N k ω ≤ W δ N k ω)
+    (H : WeightedMoment P J s t mesh lev Θ δ₀ W) :
+    WeightedMoment P J s t mesh lev Θ δ₀ W' := by
+  intro δ hδ0 hδ p
+  obtain ⟨C, hC0, hC⟩ := H δ hδ0 hδ p
+  refine ⟨C, hC0, ?_⟩
+  filter_upwards [hC, eventually_ge_atTop 1] with N hN hN1 k hk
+  have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hrp : (0 : ℝ) < (N : ℝ) ^ (2 * δ) := Real.rpow_pos_of_pos (by linarith) _
+  have hmem : cutNetPt s mesh N k ∈ Set.Icc (s N) (t N) :=
+    netFinset_subset_Icc (hwin N) (hmesh N) _ (cutNetPt_mem_netFinset hk)
+  have hθ : 0 < (N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k) :=
+    mul_pos hrp (lt_of_lt_of_le (hΘ N) (hlev N _ hmem))
+  have hRi : Integrable (fun ω => W δ N k ω *
+      |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+        (J N (cutNetPt s mesh N k) ω)| ^ (2 * p)) P :=
+    integrable_weight_mul hθ (hW0 δ N k) (hW1 δ N k) (hWm δ N k) (fun ω => hJ0 N _ ω)
+      (hJm N (cutNetPt s mesh N k)) (2 * p)
+  refine le_trans (integral_mono_of_nonneg (Filter.Eventually.of_forall fun ω => ?_) hRi
+    (Filter.Eventually.of_forall fun ω => ?_)) (hN k hk)
+  · exact mul_nonneg (hW' δ N k ω) (by positivity)
+  · exact mul_le_mul_of_nonneg_right (hle δ N k ω) (by positivity)
+
+end OneStep
 
 end Step2Bootstrap
 

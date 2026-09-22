@@ -44,14 +44,14 @@
 
 | 单 | 内容一句话 | 可写文件 | 依赖 |
 |---|---|---|---|
-| T274 | `APrimeSlot` 在 `jSnorm` 处的确定性字段 + 好事件 + `init` 去留 + 迁移规范总装 | `Gauss/APrimeSlotFields.lean`、`Flow/Step345Producer.lean` | 无 |
-| T275 | 模型层 Duhamel 展开：(G) 分析包 + `hBbd` | `Gauss/APrimeDuhamelModel.lean` | 无 |
-| T276 | 槽算术 `hfit`/`hbudget`（`p`-常数由 `∀ᶠ N` 吸收） | `Gauss/APrimeSlotArith.lean` | 无 |
+| T274（Claude Code） | `APrimeSlot` 在 `jSnorm` 处的确定性字段 + 好事件 + `init` 去留 + 迁移规范总装 | `Gauss/APrimeSlotFields.lean`、`Flow/Step345Producer.lean` | 无 |
+| T275（Claude Code） | 模型层 Duhamel 展开：(G) 分析包 + `hBbd` | `Gauss/APrimeDuhamelModel.lean` | 无 |
+| T276（Claude Code） | 槽算术 `hfit`/`hbudget`（`p`-常数由 `∀ᶠ N` 吸收） | `Gauss/APrimeSlotArith.lean` | 无 |
 | T277 | (5.42) 的 `U`-传播：`Q_u` 的端点界 | `Gauss/APrimeQVEndpoint.lean` | 无 |
 | T278 | 第 4 槽 Lemma 5.14：`hnum` 渐近卸掉 | `Gauss/Lemma514QAssembly.lean`、`Gauss/Lemma514NonAlt.lean` | 无 |
 | T279 | 第 5 槽 `Eq45FlowInputs` 的网格数据 `hΩ`/`hHol`/`hfix` | `Gauss/Eq45FlowGrid.lean` | 无 |
 
-⚠ 08:09 时 T274、T275、T276 已由 Claude Code 子 agent 开工（未提交的文件 `APrimeSlotFields.lean`、`APrimeDuhamelModel.lean` 在工作树里）。若改交 Codex：**先让 Jun 决定**是等它们交完，还是停掉它们、把未提交文件留作 Codex 的起点（Codex 开工前 `git status` 看一眼，别覆盖）。
+⚠ **分工（Jun 08:12 定）**：T274、T275、T276 **由 Claude Code 做完**（08:09 已开工）；**Codex 只接 T277、T278、T279**。Codex 不要碰 `APrimeSlotFields.lean`、`APrimeDuhamelModel.lean`、`APrimeSlotArith.lean`、`Flow/Step345Producer.lean`。
 
 **第二批（第一批落地后）**
 

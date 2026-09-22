@@ -74,6 +74,14 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 **⚠ 退回给 Cowork 核实的一条**：交叉项粗估里的**近场 `≲ R^{7/2}/R^8` 与远场 `≲ R·A^{−1/3}R^4` 两个指数，T230 没能核到具体式子，明确表示不替 Cowork 背书**。它能核实的是这两项落进 `CutHypTheta.StepSide` 的哪两个槽：近场是 `q`（cap `q ≤ R²`，由 `Step2MomentStep.integral_nearInt_le` 经 `nearInt_fills_q_slot` **恰好填满、零余量**），远场是 `ε`（cap `ε·x^17R^10 ≤ 1`）与 `β/γ`；`A^{−1/3}` 与现有 `A ≥ x^17R^10` 的关系未验。`QV-rate` 的现成名字齐全：`Gauss.quadVar`（`MomentGronwall.lean:349`）与 `quadVarPairs`（:355），由 `quadVar_ukerObsT_eq_quadVarPairs` 相连；Cauchy–Schwarz 的 `quadVar` 版仓库里没有，T230 已接手自证（初等）。
 
+**T230 中间报告 #2（05:01 UTC，本轮约 40 分钟，`Step2Bootstrap.lean` 1332 → 1912 行 / 79 条，模块 `lake build` exit=0、0 warning、59 条公理干净、`grep sorryAx` = 0，快照已入库）**：
+
+* ⭐⭐ **`cut` 从字段级推到结构级**：`momentHypCutEv_of_aprime`（第一遍）与 `momentHypCut2Ev_of_aprime`（第二遍）**由定理产出**，输入 `APrimeHyp` **不含任何事件受限字段**。链上唯一的自由项是 `WeightedMoment`（全测度加权矩），它**替换**了 `condMoment`，没有追加字段。`APrimeHyp` 与 `CutHypCondEv` 逐字段相同，只有两处差别：`condMoment` → `W` + `weightedMoment`；`meas` 降到实际用到的 `Measurable`（T244 的 `measurable_lk` 正好供给）。
+* **第二遍**： 只读且没有 Ev 版，故在本文件新建 `MomentHypCut2Ev` 并把两个消费者逐字重证——**未新增假设**，第二遍仍不需要第二次 bootstrap、不需要第二个初值。⚠ `∀ N` 的原版 `MomentHypCut`/`MomentHypCut2` **故意不去满足**（T232 已证其 `modulus` 对随时间变动的 `J` 不可满足，满足它只会产出空真的东西）。
+* **自己做掉了  版 Cauchy–Schwarz**：`sum_gvar_mul_le_sqrt_quadVar`（仓库原先没有），即把混时刻协变差拆成两个同时刻二次变差率的那一步。
+* **见证不是退化的**：`satAPrimeHyp` 用真软最大值权重（不是 `W ≡ 1`），功能 `J_u = 2u⁺` **真随时间变动**（T232 已证没有任何 `∀ N` 接口能承载它），`sat_satWval_eq_zero` 证明权重确会归零，`one_le_satW` 里显式处理了 `N = 0` 且 `δ ≠ 0` 的 `0/0` 支。`R > 1` 的见证仍是 `sat_StepSide_gt_one`（八条约束全取等号），两者互补。
+* **交叉项的 Grönwall 收口只等 T250**：拆分（`sum_gvar_mul_le_sqrt_quadVar`）与导数界（`abs_deriv_softMax_le`）两块砖已备好，装配需要 T250 的 (i) 对数型界 + (ii) `TestFun` 先落地。**T250 是 (A′) 当前的关键路径。**
+
 ## 4. 待 Jun 定夺
 
 （无）
@@ -135,3 +143,4 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **Case 1 侧的同一条换线**（T246 交出，做法已写清）：在 `Ξ := measCore B.P (Ξ N)` 处实例化 `momNorm_Uker_short_scale_le_on_event`，`hΞm` 消失且不引入新假设；然后把 `rhsNonAltAt_of_kernel_inputs` 的三条 `hDec*` 改成 `∀ ω ∈ Ξ N`。**那边不需要 `hErr*`**（该引理原样返回输入的 `δ`）。三项而非五项，估 ~250 行。
 * **`cKerShort_nonneg` 是同型的第四处重复**（T248 顺带发现）：`Hierarchy/Decay.lean:969` 与 `Hierarchy/SumZeroDyn.lean:1200` 各一份（同名不同 namespace）。
 * **`Gauss.stochDom_lkT_nonAlt_of_momentDuhamel` 的证明可从 19 行缩到 6 行**（T248 验证过的一行实例，签名不改）——不删重复、只缩证明，留给下次碰那个文件的人。
+* **`MomentHypCut2Ev` 应下沉到 `Gauss/CutHypTheta.lean` 与 `MomentHypCut2` 并列**（T230 交出，纯机械搬运）：现在它定义在 `Gauss/Step2Bootstrap.lean` 里，因为 T230 对 `CutHypTheta.lean` 只读。这同时补上 T232 交回的那条同名无主项。

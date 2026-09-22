@@ -127,7 +127,7 @@ T280 第 0 步审计准确：`APrimeSlot'` 的完整见证还导不出，缺口�
 1. **权重 `W` 没有 `p` 参数，而估计要 `softW^{2p}`** → 接口权重取 `p` 无关的 `W := χ(J̃/Θ′)`；估计时对每个 `p` 用 `W_p := χ(J̃/(2Θ′))^{2p}`，逐点 `W ≤ W_p`（`J̃ ≤ 2Θ′` 处 `χ(J̃/(2Θ′)) = 1`）。新增引理 `weightedMoment_of_stepBound_mono`：若对每个 `p` 有 `W ≤ W_p` 且 `Hstep` 对 `W_p` 成立，则 `WeightedMoment` 对 `W` 成立。
 2. **`hdom`：`jSnorm` 是 `1 + max_a`，不被单个坐标 `Y_a` 支配** → 用族版：`∣cutTrunc θ J∣^{2p} ≤ 2^{2p−1}(1 + Σ_a ∣Ψ^{(a)}_{u_k}∣^{2p})`（端点处 `U_{t,t} = id`，`Ψ^{(a)}_t = lk_{t,a}/(T R⁴)`）；对每个 `a` 跑一次 (G)，`a` 的求和付 `L² ≤ N²`，`p ≥ 4/δ` 时被 `N^{δp/2}` 吸收，小 `p` 用 Lyapunov（审稿 §5 第 4 步）。
 3. **数值 `hinit`**（加权 `2p` 阶矩的初值）→ 反向桥 `Gauss.momentDom_of_stochDom_of_nonneg` 作用在 (5.39)@`s` 上：`Ψ^{(a)}_s = U_{s,t}(L−K)_s/T_t` 的 `≺` 界由 `BoundsCore X E s`（p.24 归纳在每一格都给）+ Lemma 7.1 给出，确定性包络 `‖G‖ ≤ η⁻¹`；`W ≤ 1` 故加权 ≤ 不加权。**不循环**：只用左端点的 `BoundsCore`，不用 `W_dom`。
-4. **`Good` 固定 vs (S3)/Step 1 事件依赖 `δ`** 与 5. **`hwDoff`** → `APrimeSlot'.Good` **只取** `{‖X‖ ≤ N}`（只为时间模）。(S3)、Step 1 等事件 `E_{δ,p,N}` **只在 `Hstep` 的证明内部**出现，而且**在范数里**拆坏事件：`‖Z‖_{W,2p} ≤ ‖Z·1_E‖_{W,2p} + ‖Z·1_{Eᶜ}‖_{W,2p}`，后者 ≤ 确定性多项式包络 × `P(Eᶜ)^{1/(2p)} ≤ N^{−1}`（`D′` 按 `p` 取）。交叉项用 T265 的**逐点、无事件** (S5) `sum_gvar_crossTerm_le`，事件只在界 `‖√(Q·κ̂)‖_{2p}` 时进来——**不需要 `hwDoff`**，T275 的 `crossPart_le_of_S5` 那条路不走。
+4. ⚠ **（§17 D21-2：其中「交 `EarlyQVRateEv` 的 (S3) 事件」撤回，`J` 改由 T280f 供给）** **`Good` 固定 vs (S3)/Step 1 事件依赖 `δ`** 与 5. **`hwDoff`** → `APrimeSlot'.Good` **只取** `{‖X‖ ≤ N}`（只为时间模）。(S3)、Step 1 等事件 `E_{δ,p,N}` **只在 `Hstep` 的证明内部**出现，而且**在范数里**拆坏事件：`‖Z‖_{W,2p} ≤ ‖Z·1_E‖_{W,2p} + ‖Z·1_{Eᶜ}‖_{W,2p}`，后者 ≤ 确定性多项式包络 × `P(Eᶜ)^{1/(2p)} ≤ N^{−1}`（`D′` 按 `p` 取）。交叉项用 T265 的**逐点、无事件** (S5) `sum_gvar_crossTerm_le`，事件只在界 `‖√(Q·κ̂)‖_{2p}` 时进来——**不需要 `hwDoff`**，T275 的 `crossPart_le_of_S5` 那条路不走。
 6. **前缀 vs 全网**（T269 的传播对 `netFinset`）→ 出前缀版：`v ∈ [s, u_k]` 由前缀点 `u_j`（`j < k`）经时间模覆盖（`[u_{k−1}, u_k]` 用左端 `u_{k−1}`）。**`W_dom` 对所有 `k`、所有 `N`**：定义 `W δ N k := if k ≤ cutNetTop ∧ N ≥ N₀ then χ(J̃/Θ′) else 1`，界外 `W = 1` 平凡满足，`WeightedMoment` 本来只在 `k ≤ cutNetTop`、`∀ᶠ N` 上要求。
 7. **T276 的 `≺ 1` 前提的实际指数**（T280 点名 `QBd` 含 `Λ³ = N^{6δ}`）→ 要核：远场 `N^{6δ}R^{12}/A_t`，由 (2.72)+论文改动第 16 条 `A_t ≥ N^{c}R^{30}` 得 `≤ N^{6δ−c}R^{−18}`，需 `6δ < c`（T263 是 `5δ < c`）——把 `δ₀` 收紧到 `c/7` 并逐项核其余各项；若某项需要 `δ` 以外的余量，停下报。
 
@@ -184,7 +184,7 @@ T277 交出 `APrimeQVEndpoint.sqrt_evolvedQV_le_endpoint`（演化版 (5.42)，�
 **T280d（`δ₀ = c/11` 已证，四行 margin 全过）→ 余下的 `QBd` 各项有现成供给者，出 `4R⁴G ≺ 1` 与 `fitLhs ≺ 1`**：
 * 近场 `cNear2·r⁵` 项：**T273 已证** `integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le` / `qHatNear` 的积分界 `∫_s^t Q̂^{near} ≤ (Im m)⁻¹(η_t/η_s)⁴`（`APrimeTimeInt.lean` §(e)），`cNear2 = W^{o(1)}`（`Lemma57.cNear2`，`log` 的幂）。
 * 二次远场 `A_u·√Smax`：**T273 的 `sMax_le`**（`EarlyQVRateEv.lean` §8）给 `Smax ≤ K′·(ℓ_u/ℓ_s)³A_u^{−3}`，所以 `A_u√Smax ≲ r^{3/2}A_u^{−1/2}`——与 `StepSide''.β_le` 同一行 `(4, 11/2)`，已在你的表里。
-* `ρfar`：它就是 `h564` 的水平，由 (2.73) 在 `n = 6` 给 `ρ ≲ r⁵A_u^{−3}`（T267 `h564` 由 `h273` 导出），比三次远场小。
+* ⛔ **本条作废（Cowork 的错，见 §17 D21-1）**：`ρfar`：它就是 `h564` 的水平，由 (2.73) 在 `n = 6` 给 `ρ ≲ r⁵A_u^{−3}`（T267 `h564` 由 `h273` 导出），比三次远场小。
 * `W^{−D}` 尾项：`D` 在 `δ, p` 之后取，`W ≥ N^{1/2}`（`Band.bandwidth`）。
 * `η_u^{−1}`、`T_{u}/T_t`、时间积分、`cWt³`：用 T268 的时间积分（`integral_inv_sqrt_mul_sqrt_kappa_le`，首格走 `integral_early_le_budget`）与 `(5.32)` 的 `T_u ≤ T_t`（`tailT_sub_le`）。
 可写 `Gauss/APrimeExponents.lean`（续）。若某项的 `N` 幂在 `δ₀ = c/11` 下仍不够，编译出该行并停下。
@@ -214,3 +214,61 @@ T280b 按 §11 做成：小槽 `x^{1/4}`、`stepRhs''/R⁴ ≤ (cStep′+1)x^{5/
 * 于是 `Ψ_s ≺ 1`，再走 T280b 的 `weightedMomentDom_of_stochDom_of_nonneg` → `numerical_hinit_of_weighted_integral`，常数与 `N^ε` 吸收进 `initTerm x R (slotXi′ x)/R⁴`（`x^{1/4}` 的余量）。
 
 **T280e 现在就可以重跑**（不必等 T280d）：把 T280d 尚未交出的 `δ₀` 与 `4R⁴G ≺ 1`、`fitLhs ≺ 1` 写成组装文件里的**具名输入**，其余照 §12/§13 与本节接线；T280d 交出后逐个替换。T280e 顺带做上面的 `hinit` 化归（可写 `APrimeAssembly.lean`）。
+
+## §17 D21：更正 §14 的 ρfar 条；(S3) 的 J 换接法；T278 的漂移投影行（Cowork 10:10；每条均已读源码核对，行号为 10:05 的工作区）
+
+**D21 裁定**
+1. **§14 的「`ρfar` 就是 (2.73) 水平、比三次远场小」作废——Cowork 的错。** `W·L·ρ` 对 `L` 个块求和再除以 `T_t²`，多出因子 `L`；T280d 的 `no_uniform_rho_row_at_principal_tail` 是对的。**修法**：`h564` 在 `Lemma57.ee_le_sym` 的证明里**只进近场分支**（`Hierarchy/Lemma57.lean:2702–2707`：近场调 `ee_near_le … h564`，远场分支里 `W·L·ρ` 只是被 `nlinarith` 加进去的余量）；论文 (5.64) 也只在 Case 1（p.61）。故把 `h564` 限在近场、以 `ε·T_u(d)²/(W·L)` 的形式给，余项并入近场系数，`ρ` 整个消失。见 T280g。
+2. **`EarlyQVRateEv.jStar`（`Gauss/EarlyQVRateEv.lean:146`）不得用作任何带 `hJ : J ≤ cWt·Λ` 的 `J`。** 它取全局 `gMax`（`:112`，含对角元 `|G_xx| ≈ |m|`）作 `Gm`，于是 `J ≥ gMax²/tailT(远) ≳ W^D`（早期时刻存在远块对，尾函数只剩地板 `W^{−D}`）；`s3GridDet`（`:694`）用的正是它。**§9 第 4 条「交 `EarlyQVRateEv` 的 (S3) 事件」撤回**（`sMax` 不受影响，照用）。T277 的 `sqrt_evolvedQV_le_endpoint` 对 `Gm/Gsq/J` 不绑定，改由 T280f 用块级最大值 + (4.2) 带地板版供给。
+3. **T278 的漂移投影行走 `SumZeroDyn.norm_Qop_le_of_fastDecay`**（`Hierarchy/SumZeroDyn.lean:2538`，纯确定性，签名无 `Hierarchy`，D16 允许）。它的两个输入与 `'''` 生产者已要的 `hAMF`/`hDecF` 同源，不引入新前提。
+
+**所有单的通用规则**：先 `#check` 下列每个名字、核签名；本节任何一句在 Lean 里不成立 → 编译否定结论、停下报告。不 commit，不改旧签名（一律带撇新声明）。
+
+### T280g（Codex，新；文件 `Gauss/APrimeNearRem.lean`）：近场限定的 `h564`，端点无残差
+第 0 步 `#check`：`Lemma57.ee_le_sym`/`ee_near_le`/`ee_far_le_sym`，`EEDef.ee_le_EEpath_sym`/`eeL6_two_le_far`（:1134）/`eeL6k_two_one_le_glue`（:735）/`eeL6k_two_zero_le_glue`（:782）/`eeL6_two_eq`，`APrimeQVEndpoint.diagShape`（:280）/`sqrt_quadVar_Uker_le_diagShape`（:295）/`sqrt_diagShape_le_three`（:823）/`sqrt_evolvedQV_le_endpoint`（:865），`tailT_antitone`（`Analysis/StretchedExp.lean:307`），`zdist_sub_le_add`（:444），`Loop.norm_Gsig_le`（`Loop/Split.lean:534`），`zt_im_eq`（`SumZeroDyn.lean:5317`）。
+* **(a)** `Lemma57.ee_le_sym'`：同 `ee_le_sym`，但去掉 `ρ`，`h564` 换成
+  `h564' : (zdist L (a₁ - a₂) : ℝ) ≤ 4 * ellStar W ℓu → ∀ b, ellStarStar W ℓu < zdist L (a₁ - b) → L6 b ≤ ε * tailT W ℓu ηu D (zdist L (a₁ - a₂)) ^ 2 / (W * L)`（`0 ≤ ε`）；
+  结论同 `ee_le_sym`，去掉 `W*L*ρ`，近场系数 `cNear2 W ℓu * (ℓu/ℓs)^5` 换成 `cNear2 W ℓu * (ℓu/ℓs)^5 + ηu * ε`。证明抄 `split_ifs`：近场分支 `ee_near_le (ρ := ε*T²/(W*L)) … (h564' hd)`，远场分支原样。
+* **(b)** `EEDef.ee_le_EEpath_sym'`：在 `ee_le_EEpath_sym` 里做同一替换。
+* **(c)** 生产者 `EEDef.eeL6_le_nearFar`：设 `d ≤ 4ℓ*_u`、`ℓ**_u < dist(a₁,b)`，令 `F := ellStarStar W ℓu − 4·ellStar W ℓu`。则 `eeL6 b ≤ 2·Gbar·J²·tailT(F)²`，这里 `Gsq a₁ a₂ ≤ Gbar`、`Gsq a₂ a₁ ≤ Gbar` 是新前提。证明照 `eeL6_two_le_far`：它的 `hfar` **只**用于 `hA12/hA21`（(a₁,a₂) 那一对），换成 `Gbar`；两个 `b` 对走 `h42sq`，因为 `dist(a₂,b) ≥ ℓ** − 4ℓ* ≥ ℓ*/2`（`log W ≥ 3` 即可，从 `hlog` 推），再用 `tailT_antitone`。实例化时取 `Gbar = (etaT E u)⁻²`（`norm_Gsig_le` + `zt_im_eq`）。
+* **(d)** 算术：近场 `d ≤ 4ℓ*_u` 时 `T_u(d) ≥ A_u^{−2}·exp(−2(log W)^{3/4})`。取
+  `ε := W·L·2·η_u^{−2}·J²·tailT(F)² · A_u⁴·exp(4(log W)^{3/4})`，则 (c) 给出 `h564'`。再证 `ε ≤ W⁻¹`，前提是：`η_u ≥ N⁻¹`、`A_u ≤ N`、`N ≤ W²`、`J ≤ N^k`、`D ≥ 2k+14`、`(4D)² ≤ log W`。
+  - 核算：指数部分 `≤ 4W^{6+4k}·e^{−√2(log W)^{3/2}+4(log W)^{3/4}}`（用 `(log W)³ − 4(log W)^{3/2} ≥ (log W)³/2`）；
+  - 地板部分 `≤ 4W^{14+4k−2D}·e^{4(log W)^{3/4}} ≤ 4W^{−13}`。
+* **(e)** T277 带撇链：`sqrt_quadVar_Uker_le_diagShape'`、`sqrt_diagShape_le_three'`、`sqrt_evolvedQV_le_endpoint'`。
+  - `h564 : ∀ c b, …≤ ρ` 换成 `h564' : ∀ c, near(c) → ∀ b, far → eeL6 … ≤ ε·T_u(c)²/(W·L)`；
+  - `diagShape` 里的 `ρ` 删掉，`diagResidual` 项消失，近场率换成 `diagNearRate + 2ε`（`diagShape` 外层有因子 2）。证明照抄。
+* **停止条件**：`ee_le_sym` 的远场分支其实用到了 `h564`（与 :2706 矛盾）；或 T277 近场分支吃不下多出的 `ε`。
+
+### T280f（Codex，新；文件 `Gauss/APrimeJG.lean`）：(5.42)/(S3) 的 `J` 用块级最大值
+第 0 步 `#check`：`Gauss.EntryBoundFlow'`（`Gauss/EntryBoundTime.lean:126`）/`entryBoundFlow_floor`（:155），`Lre`（`Green/EntryBound.lean:1032`），`norm_gloop_pm_eq_Lre`（`Gauss/Lemma41Glue.lean:42`），`Step2FarInputs.norm_gloop_pm_le_jS_mul_tT`（:2146），`Step2.eq530`（`Hierarchy/Step2.lean:1909`，`δ` 任取 `>0`），`Step2FarInputs.eventually_norm_Kval_pm_le_tT`（:2093），`tailT_sub_le`（`StretchedExp.lean:337`），`Step2.jS`（:642），以及沿流 `goodSet` 的 `HighProb` 供给者（`goodSetFlow`/`FlowGoodEv`，先找）。
+* **定义**
+  - `gmBlk x y := max_{s, p∈I_x, q∈I_y} ‖Gsig s p q‖`；
+  - `gsqBlk p q := max_{p' : SB p p' ≠ 0} gmBlk q p' * gmBlk p' q`；
+  - `jG := 1 + max_{ℓ*/2 ≤ dist} gsqBlk/tT`。
+* **确定性结论**（按定义）：`hGm`、`hGm0`、`hGsq0`；`hGsq2`（取 `p' = p`，`SB p p = 1/3 ≠ 0`）；`hrow`；`h42sq`（同 `gMax_sq_le_jStar_mul_tailT` 的写法）；`gsqBlk ≤ (etaT E u)⁻²`。
+* **概率结论**：`StochDom P (fun N (u : TimeIcc s t N) ω => jG …) (fun N u ω => C * (1 + Step2.jS X E D N u ω))`。
+  - (4.2) 带地板版取 `fl = 2N^{−B}`、`B := D`；于是 `N^{−D} ≤ W^{−D} ≤ tT`。
+  - 远对不相邻，所以 `sbSupport` 项为 0。
+  - 平移后的对上 `Lre ≤ jS·tT`：K 的界用 `eq530` 取 `δ = 1/4`，因为平移至多 3 格 `≤ ℓ*/4`。
+  - 平移回来用 `tailT_sub_le`，`C·ℓ* = 3` 时代价是常数 `e^{√3}`。
+  - `goodSet` 的指示函数：与它的 `HighProb` 事件相交。
+* **停止条件**：`EntryBoundFlow'` 的块下标次序归不到远对上；或沿流 `goodSet` 在仓库里没有 `HighProb` 供给者。报告缺哪一件。
+
+### T280d 续做（§15 的停止规则不变）
+* **`ρfar` 行**改为 T280g 的 `ε` 行：`2ε·T_u(d)²/(T_t(d)R⁴)² ≤ 2ε ≤ 2W⁻¹`。你报告里说缺的时间比较**仓库里有**：`tailT_le_tailT_of_flow`（`Gauss/CutoffBounds.lean:427`）；`ℓ_u ≤ ℓ_t` 用 `ellHat_mono`（`Hierarchy/Step3.lean:693`），`A_t ≤ A_u` 用 `flowScale_antitoneOn`（`Flow/Scales.lean:100`）。
+* **`W^{−D}` 行**：`16·W·L·W^{−D}·cWt³Λ³·T_u²/(T_tR⁴)² ≤ 16·N·W^{−D}·cWt³Λ³`，用同一个时间比较。`D` 在 `δ, p` 之后取，`N ≤ W²`（`bandwidth`）。
+* **`J`**：是 T280f 的 `jG`。`hJ : jG ≤ cWt·Λ` 作具名输入；`Λ` 允许多带一个 `N^τ`。
+* **形式**：`QBd` 的 `ρfar` 槽取 0，`ε` 单列一行或并入近场系数都可以，写进报告。
+* 然后做 `fitLhs ≺ 1`（按 §15 原文）。
+
+### T278 第六步：`hEnvF` 的 `ψ`
+* 定义 `ψF N u q ω := A_u^{n+2} · sup_b ‖Qop_u (H.F N u (X.H N u ω) q.1) b‖`。这样 `hEnvF` 在 `ζ = 0` 时按定义成立。
+* **`ψF` 的 `≺` 界，在 `Ξ` 上**：用 `norm_Qop_le_of_fastDecay`（取 `n := n+1`）。
+  - `FastDecay` 输入：就是你给 `hDecF` 的那条（`DriftDef.F_eq_driftF` + `FastDecayFlow.fastDecay_driftF_window`，:453，半径 `ℓ_u·4K`）。
+  - 尺寸输入用**逐点的** `DriftBound.norm_driftF_le`（`Hierarchy/DriftBound.lean:245`，形如 `A_u^{−(n+2)}η_u⁻¹(Krad+2)·cDrift·xiRhs + W·L·δ·…`）。**不要用 `hAMF` 的一致上界 `Msz`**：对 `u` 取 sup 会多出 `(A_u/A_v)^{n+2}`。
+  - 得到 `ψF ≤ η_u⁻¹(1+(24e·cTwo52·K)^{n+1})(Krad+2)·cDrift·xiRhs + A_u^{n+2}·(加性尾项)`。
+  - `K = N^τ` 吸收进 `≺`；`δ = N^{−D}`，`D` 在 `n` 之后取，使加性项 `≤ N⁻¹`；`η_u⁻¹` 就是 §10 的时间权 `ρ`。
+* **`Ξ` 外**：用确定性包络 `‖G‖ ≤ η⁻¹`，走 §8 的反向桥。
+* 第 0 步 `#check`：`norm_Qop_le_of_fastDecay`、`fastDecay_driftF_window`、`norm_driftF_le`、`F_eq_driftF`；核对 `B.ell N u` 与 `ellHat (B.L N) (u:ℂ)` 的关系，以及半径 `K → 4K` 的换算。
+* **停止条件**：`norm_driftF_le` 的输入（`hKb` 的 `CK·A^{−(len−1)}`、`xiLK`）在 `hDecF` 所用的同一个 `Ξ` 上拿不到——报告缺哪一件。LoopDecay 输入与 Step 2 结论是否循环：这是既有问题，只报告，不在本步解决。

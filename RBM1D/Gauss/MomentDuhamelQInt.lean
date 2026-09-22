@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.MomentDuhamelQ
 import RBM1D.Gauss.EEUker
+import RBM1D.Gauss.DriftEnvelope
 
 /-!
 # The two twin gaps of the `Q_t` route: the `E ⊗ E` bridge and the side conditions (T226)
@@ -39,14 +40,22 @@ conditions.
   it serves the `Q_t` route as soon as a `RBM.Gauss.TestFunT₁` for
   `RBM.Gauss.qMomentObsT` is available (T225's `RBM.Gauss.testFunT₁_qMomentObsT`).
 
-## ⚠ What is **not** here
+## The drift integrand `Q_uF_u` (was the one gap; closed by T238)
 
-The first drift integrand `Q_uF_u` needs a **pointwise deterministic envelope for
-`RBM.DriftDef.driftF`**, which the repository does not have: T212's route through
-`RBM.Gauss.uker_driftF_eq` bounds only `(U ∘ F_u)_a`, and `Q_u` reads `F_u` at `L^{n+1}` other
-loop arguments through `RBM.Psum`, so the identity does not transfer.  It enters
-`RBM.Gauss.exists_bdd_uker_Qop_driftF` and its three consequences as the named hypothesis
-`hFb`, the same shape `RBM.Gauss.hGd_Qop_driftF` uses.
+The first drift integrand needs a **pointwise deterministic envelope for
+`RBM.DriftDef.driftF`**: T212's route through `RBM.Gauss.uker_driftF_eq` bounds only
+`(U ∘ F_u)_a`, and `Q_u` reads `F_u` at `L^{n+1}` other loop arguments through `RBM.Psum`, so
+the identity does not transfer.  T226 left it as the named hypothesis `hFb` of
+`RBM.Gauss.exists_bdd_uker_Qop_driftF` and its three consequences — the same shape
+`RBM.FastDecayFlow.hGd_Qop_driftF` uses.
+
+T238 proves it (`RBM.Gauss.exists_driftF_envelope`, `RBM1D/Gauss/DriftEnvelope.lean`), and the
+section `DriftEnvT238` below carries the four `_env` forms, in which `hFb` is no longer a
+hypothesis.  With those, items 3 and 9 of `RBM.MomentDuhamel.momentIneqQ_of_derivBound`'s side
+conditions join items 1, 2, 6, 7, 8 as unconditional on the window;
+`RBM.Gauss.driftSideConditionsQ_gauss_window_zero` is the joint witness at critical scaling.
+The two conditions still gated are the `φ'` slot's derivative and integrability, which need a
+`RBM.Gauss.TestFunT₁` for `RBM.Gauss.qMomentObsT` (T225), and the drift inequality itself.
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/
@@ -1925,6 +1934,90 @@ theorem intervalIntegrable_psiQ_mul_driftQ_gauss (E : ℝ) (N : ℕ) (hE : |E| <
     · exact fun ω' => (continuousOn_uker_PsumVarthetaDot_lkT_time E N hE hs0 hv1 σ a t ω').norm
   exact ((hψ.mul ((h1.add h2).add h3)).mono hmono)
 
+/-! #### T238: the `hFb` slot, discharged
+
+The four theorems above take the pointwise envelope of the drift as `hFb`.
+`RBM.Gauss.exists_driftF_envelope` proves it: a deterministic bound on `RBM.DriftDef.driftF`
+at every Hermitian matrix — hence at every sample point, with no exceptional set — uniform on
+the window `[s, v]`, `0 ≤ s`, `v < 1`.  The same theorem closes
+`RBM.FastDecayFlow.hGd_Qop_driftF`'s `hAM` (`RBM.FastDecayFlow.exists_norm_driftF_le`); those
+were the repository's two copies of this gap.
+
+The `hKb` of the product statement is closed at the same time, by
+`RBM.Gauss.exists_bdd_Kval_Kprim`, so all four `_env` forms below are **unconditional** on the
+window. -/
+
+section DriftEnvT238
+
+variable {d : Dims}
+
+/-- `hFb`, produced (T238): the pointwise envelope of the drift on the window. -/
+theorem exists_driftF_bdd_window (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hs0 : 0 ≤ s)
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) :
+    ∃ cF : ℝ, 0 ≤ cF ∧ ∀ u ∈ Set.Icc s v, ∀ M : Matrix (d.Idx N) (d.Idx N) ℂ, M.IsHermitian →
+      ∀ b : LoopArg (d.L N) (n + 2), ‖DriftDef.driftF (band d) E N u M σ b‖ ≤ cF := by
+  obtain ⟨cF, hcF0, hcF⟩ := exists_driftF_envelope (band d) hE n N hs0 hv1
+  exact ⟨cF, hcF0, fun u hu M hM b => hcF u hu M hM σ b⟩
+
+/-- **`RBM.Gauss.exists_bdd_uker_Qop_driftF`, unconditional** (T238). -/
+theorem exists_bdd_uker_Qop_driftF_env (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ} (hs0 : 0 ≤ s)
+    (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (t : ℂ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ Set.Icc s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+        (Qop (d.L N) ((u : ℝ) : ℂ)
+          (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖ ≤ C := by
+  obtain ⟨cF, -, hcF⟩ := exists_driftF_bdd_window (d := d) E N hE hs0 hv1 σ
+  exact exists_bdd_uker_Qop_driftF E N hs0 hv1 σ a t hcF
+
+/-- **`RBM.Gauss.continuousOn_momNorm_Qop_driftF_gauss`, unconditional** (T238). -/
+theorem continuousOn_momNorm_Qop_driftF_gauss_env (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (t : ℂ) (q : ℕ) :
+    ContinuousOn (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+        (Qop (d.L N) ((u : ℝ) : ℂ)
+          (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)) (Set.Icc s v) := by
+  obtain ⟨cF, -, hcF⟩ := exists_driftF_bdd_window (d := d) E N hE hs0 hv1 σ
+  exact continuousOn_momNorm_Qop_driftF_gauss E N hE hs0 hv1 σ a t q hcF
+
+/-- **`RBM.Gauss.intervalIntegrable_momNorm_Qop_driftF_gauss`, unconditional** (T238). -/
+theorem intervalIntegrable_momNorm_Qop_driftF_gauss_env (E : ℝ) (N : ℕ) (hE : |E| < 2)
+    {s v : ℝ} (hs0 : 0 ≤ s) (hsv : s ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (t : ℂ) (q : ℕ) :
+    IntervalIntegrable (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) t
+        (Qop (d.L N) ((u : ℝ) : ℂ)
+          (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)) volume s v := by
+  obtain ⟨cF, -, hcF⟩ := exists_driftF_bdd_window (d := d) E N hE hs0 hv1 σ
+  exact intervalIntegrable_momNorm_Qop_driftF_gauss E N hE hs0 hsv hv1 σ a t q hcF
+
+/-- **`RBM.Gauss.intervalIntegrable_psiQ_mul_driftQ_gauss`, unconditional** (T238): the whole
+product `ψ · f` of (5.91), on every initial segment of the window, with no free data. -/
+theorem intervalIntegrable_psiQ_mul_driftQ_gauss_env (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (t : ℂ) (q : ℕ) :
+    ∀ u ∈ Set.Icc s v, IntervalIntegrable (fun r : ℝ =>
+      MomentDuhamel.momNorm (band d).P q (fun ω =>
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) t
+          (Qop (d.L N) ((r : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N r ω σ)) a‖)
+      * (MomentDuhamel.momNorm (band d).P q (fun ω =>
+          ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) t
+            (Qop (d.L N) ((r : ℝ) : ℂ)
+              (DriftDef.driftF (band d) E N r ((sample d).H N r ω) σ)) a‖)
+        + MomentDuhamel.momNorm (band d).P q (fun ω =>
+            ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) t
+              (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N r ω σ)) a‖)
+        + MomentDuhamel.momNorm (band d).P q (fun ω =>
+            ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) t
+              (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N r ω σ) (b 0)
+                * SumZeroDyn.varthetaDot (d.L N) r b) a‖))) volume s u := by
+  obtain ⟨cF, -, hcF⟩ := exists_driftF_bdd_window (d := d) E N hE hs0 hv1 σ
+  obtain ⟨cK, hcK, hKb, -⟩ := exists_bdd_Kval_Kprim (d := d) E N hE.le hs0 hv1 σ
+  exact intervalIntegrable_psiQ_mul_driftQ_gauss E N hE hs0 hv1 σ a t q hcK hKb hcF
+
+end DriftEnvT238
+
 end QIntegrands
 
 /-! ### The `φ'` slot: interval integrability from the test-function class (T226 item 3)
@@ -2075,10 +2168,57 @@ theorem quadVar_qUkerObsT_le_at_zero {E : ℝ} (hE : |E| < 2) {N n : ℕ} {u v :
   EEUker.quadVar_qUkerObsT_le_norm_QQ_eeFun' (B := band d) hE hu0 hu1 hv0 hv1 σ
     Matrix.isHermitian_zero a K
 
+/-- **T238's positive witness, at critical scaling.**  The three drift side conditions that
+`hFb` used to gate — the envelope of `(U ∘ Q_u F_u)_a`, its continuity and its integrability —
+plus the whole product `ψ · f` of (5.91), hold **simultaneously and with no free data** on the
+full window `[0, v]` for every `v < 1`.
+
+`v` is universally quantified and may run up to `1`, so `η_v = (1 - v) Im m^{(E)}` is allowed
+to tend to `0`: the constant degrades like `η_v^{-O(n)}` and no hypothesis forbids that.  The
+window does not collapse (`0 ≤ v` and `[0, v] ∋ 0`), and the matrix quantifier of the envelope
+covers `H = 0`, i.e. the sample point `ω = 0` (`RBM.Gauss.driftF_envelope_critical_zero`). -/
+theorem driftSideConditionsQ_gauss_window_zero (E : ℝ) (N : ℕ) (hE : |E| < 2) {v : ℝ}
+    (hv0 : 0 ≤ v) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (q : ℕ) :
+    (∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ Set.Icc (0 : ℝ) v, ∀ ω : Ω d,
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (Qop (d.L N) ((u : ℝ) : ℂ)
+            (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖ ≤ C)
+      ∧ ContinuousOn (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+          ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (Qop (d.L N) ((u : ℝ) : ℂ)
+              (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)) (Set.Icc 0 v)
+      ∧ IntervalIntegrable (fun u : ℝ => MomentDuhamel.momNorm (band d).P q (fun ω =>
+          ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (Qop (d.L N) ((u : ℝ) : ℂ)
+              (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)) volume 0 v
+      ∧ ∀ u ∈ Set.Icc (0 : ℝ) v, IntervalIntegrable (fun r : ℝ =>
+          MomentDuhamel.momNorm (band d).P q (fun ω =>
+            ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (Qop (d.L N) ((r : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N r ω σ)) a‖)
+          * (MomentDuhamel.momNorm (band d).P q (fun ω =>
+              ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (d.L N) ((r : ℝ) : ℂ)
+                  (DriftDef.driftF (band d) E N r ((sample d).H N r ω) σ)) a‖)
+            + MomentDuhamel.momNorm (band d).P q (fun ω =>
+                ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ)
+                    (SumZeroDyn.lkT (sample d) E N r ω σ)) a‖)
+            + MomentDuhamel.momNorm (band d).P q (fun ω =>
+                ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N r ω σ) (b 0)
+                    * SumZeroDyn.varthetaDot (d.L N) r b) a‖))) volume 0 u :=
+  ⟨exists_bdd_uker_Qop_driftF_env E N hE le_rfl hv1 σ a ((v : ℝ) : ℂ),
+    continuousOn_momNorm_Qop_driftF_gauss_env E N hE le_rfl hv1 σ a ((v : ℝ) : ℂ) q,
+    intervalIntegrable_momNorm_Qop_driftF_gauss_env E N hE le_rfl hv0 hv1 σ a
+      ((v : ℝ) : ℂ) q,
+    intervalIntegrable_psiQ_mul_driftQ_gauss_env E N hE le_rfl hv1 σ a ((v : ℝ) : ℂ) q⟩
+
 end SatisfiabilityQ
 
 end Gauss
 
 end RBM
+
 
 

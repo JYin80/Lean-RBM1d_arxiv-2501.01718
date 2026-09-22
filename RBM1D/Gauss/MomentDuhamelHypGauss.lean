@@ -7,6 +7,7 @@ import RBM1D.Gauss.MomentDuhamelBddT
 import RBM1D.Gauss.Step6HierarchyGauss
 import RBM1D.Gauss.DischargeBDG
 import RBM1D.Gauss.SteinMatrix
+import RBM1D.Gauss.EEUker
 
 /-!
 # The identification of `φ'` with the pinned drift (T206)
@@ -2376,6 +2377,78 @@ attribute [deprecated
    `RBM.MomentDuhamel.cMDval'`).  See docs/paper-deltas.md #155."
   (since := "2026-09-21")]
   momentIneq_of_derivBound_gauss
+
+/-! ### The quadratic-variation bridge (5.25) along the Gaussian flow (T240)
+
+`RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` proves (5.25) on an abstract `RBM.Band` at a
+Hermitian matrix.  The slot that consumes it — the `hQV` of
+`RBM.Gauss.derivAndBound_momentObsT_gauss'` — speaks about a `RBM.Gauss.Dims`, at
+`M = H_u = (sample d).H N u ω`, and carries the window and Hermiticity implicitly.  The two
+statements are the **same `Prop`** (the first `example … := rfl` below checks it, and the
+second checks that the adapter *is* the `RBM.EEUker` term, unreshaped); what differs is only
+
+* the carrier — `B : Band Ω` versus `d : Dims`, through `RBM.Band.toDims`, an identity by
+  structure eta (`(band d).toDims` and `d` are the same term);
+* the order of the arguments (`σ`, `M`, `a` there; `σ`, `a`, `ω` here);
+* the implicitness of `M`, which is here the *value* `(sample d).H N u ω`, so it cannot be
+  passed as the named implicit `M` and `(d := …)` is not even a legal argument name of the
+  `RBM.EEUker` lemma (its carrier is `B`).  This is why no `exact` closes the slot directly.
+
+Hermiticity is the field `RBM.Sample.hermitian` (`RBM.Gauss.Hflow_isHermitian`), so after this
+adapter the bridge slot needs nothing but the window. -/
+
+theorem quadVarPairs_Uker_le_norm_eeFun_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {N n : ℕ}
+    {u v : ℝ} (hu1 : u < 1) (hv0 : 0 ≤ v) (hv1 : v < 1) (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (ω : Ω d) :
+    quadVarPairs d N (fun M' => Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          ((v : ℝ) : ℂ) (fun b => loopObs d N (zt E u) (toIdx σ b) M') a)
+        ((sample d).H N u ω)
+      ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+          (Fin.append a a)‖ :=
+  EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2' (B := band d) hE hu1 hv0 hv1 σ
+    ((sample d).hermitian N u ω) a
+
+/-- **Statement-identity check 1**: the `Dims`-side and the `Band`-side readings of (5.25)
+along the flow are literally the same `Prop`. -/
+example (d : Dims) {E : ℝ} {N n : ℕ} {u v : ℝ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (ω : Ω d) :
+    (quadVarPairs d N (fun M' => Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          ((v : ℝ) : ℂ) (fun b => loopObs d N (zt E u) (toIdx σ b) M') a)
+        ((sample d).H N u ω)
+      ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ) (Fin.append a a)‖)
+      = (quadVarPairs (band d).toDims N (fun M' => Uker ((band d).L N) (xiOf (mSigma E) σ)
+            ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (fun b => loopObs (band d).toDims N (zt E u) (toIdx σ b) M') a) (Hflow d N u ω)
+      ≤ ((n : ℝ) + 2) * ‖Uker ((band d).L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (MomentDuhamel.eeFun (band d) E N u (Hflow d N u ω) σ) (Fin.append a a)‖) := rfl
+
+/-- **Statement-identity check 2**: the adapter's proof term is the `RBM.EEUker` lemma itself,
+so neither side's statement was changed. -/
+example : @quadVarPairs_Uker_le_norm_eeFun_flow
+    = fun (d : Dims) {E : ℝ} (hE : |E| < 2) {N n : ℕ} {u v : ℝ} (hu1 : u < 1) (hv0 : 0 ≤ v)
+        (hv1 : v < 1) (σ : Fin (n + 2) → Bool) (a : LoopArg (d.L N) (n + 2)) (ω : Ω d) =>
+      EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2' (B := band d) hE hu1 hv0 hv1 σ
+        ((sample d).hermitian N u ω) a := rfl
+
+/-- **Satisfiability witness for the bridge slot**: at T202's non-degenerate dimensions
+`RBM.Gauss.Dims.exampleGrow`, at `E = 0` and `u = v = 1/2` (interior of the window), the
+hypotheses of `RBM.Gauss.quadVarPairs_Uker_le_norm_eeFun_flow` hold simultaneously, so the
+bridge slot is a genuine inequality at a genuine model — not a hypothesis that happens to be
+unsatisfiable. -/
+theorem quadVarPairs_Uker_le_norm_eeFun_flow_witness (n : ℕ) (σ : Fin (n + 2) → Bool) (N : ℕ)
+    (a : LoopArg (Dims.exampleGrow.L N) (n + 2)) (ω : Ω Dims.exampleGrow) :
+    quadVarPairs Dims.exampleGrow N (fun M' => Uker (Dims.exampleGrow.L N)
+          (xiOf (mSigma 0) σ) (((1 / 2 : ℝ) : ℝ) : ℂ) (((1 / 2 : ℝ) : ℝ) : ℂ)
+          (fun b => loopObs Dims.exampleGrow N (zt 0 (1 / 2)) (toIdx σ b) M') a)
+        ((sample Dims.exampleGrow).H N (1 / 2) ω)
+      ≤ ((n : ℝ) + 2) * ‖Uker (Dims.exampleGrow.L N) (SumZeroDyn.xi2 0 σ)
+          (((1 / 2 : ℝ) : ℝ) : ℂ) (((1 / 2 : ℝ) : ℝ) : ℂ)
+          (MomentDuhamel.eeFun (band Dims.exampleGrow) 0 N (1 / 2)
+            ((sample Dims.exampleGrow).H N (1 / 2) ω) σ) (Fin.append a a)‖ :=
+  quadVarPairs_Uker_le_norm_eeFun_flow Dims.exampleGrow (E := 0) (by norm_num)
+    (u := 1 / 2) (v := 1 / 2) (by norm_num) (by norm_num) (by norm_num) σ a ω
 
 end Gauss
 

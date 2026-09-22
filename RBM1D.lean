@@ -47,6 +47,7 @@ import RBM1D.Gauss.MomentDuhamelBddT
 import RBM1D.Gauss.MomentDuhamelHypGauss
 import RBM1D.Gauss.MomentDuhamelQ
 import RBM1D.Gauss.Lemma514QRoute
+import RBM1D.Gauss.DriftEnvelope
 import RBM1D.Gauss.FastDecayFlow
 import RBM1D.Gauss.Lemma514QAssembly
 import RBM1D.Gauss.MomentDuhamelQInt
@@ -160,6 +161,7 @@ import RBM1D.Flow.Thm221Bare
 import RBM1D.Flow.Thm221Gain
 import RBM1D.Flow.EnergyUniform
 import RBM1D.Flow.Thm221NoEL
+import RBM1D.Flow.Thm221Assembly
 import RBM1D.Flow.Universality
 import RBM1D.Gauss.Stein
 import RBM1D.Gauss.SteinMatrix

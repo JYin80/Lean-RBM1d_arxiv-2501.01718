@@ -30,6 +30,19 @@
 
 * **T231 转交**（Cowork 03:15）：plain 路线 `hQV` 的签名适配 → **T240**；两条旧 `momentIneq(Q)_of_derivBound` 的 `@[deprecated]` **等消费者都换完带撇版再加**，由换掉最后一个消费者的单一并加。
 
+## 2a. 调度纪律（协调者自采，Jun 2026-09-22「最近的工单都没有完成、而是提出意见」之后）
+
+1. **不接受「第 0 步交判断就收工」，除非判断是否定的**——判断为正就当场接着实现，不交回来再派一轮。
+2. **每张单的验收多一条：「这张单让主链上哪一条具名假设减少了？」** 只在自己文件里加定理、不减少主链假设的，不算完成。派单 prompt 要贴主链当前假设表（**完整的一份在 `docs/reports/T239.md`**）。
+
+（详见 `docs/agent-playbook.md` 第十二节。同批里 T238 与 T239 就是这个形状。）
+
+## 2b. ⚠ 需要更正的过时记载（T234 查出）
+
+STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `hKd` 记成「`c(1−v)ℓ_vN^τ ≳ D log N`，真数学缺口」——**错**。`cor35Rate` 是 `c₀√δ/4`（根号），见 `docs/reports/T234.md` 第 0 步。另：建议给 `exists_loopDecay_Kval` 加 `@[deprecated]` 指向 `loopDecay_Kval_quant`。
+
+⚠ **运维**：**scratchpad 路径不是每会话隔离的**——T234 的探针被并发 agent 覆写，造成一次**假的 `Unknown constant`**。派单 prompt 起从下一批要求**探针文件名带工单号**。
+
 ## 3. ⭐ T230：Step 2 第一遍自举——路线 (B) 被编译否定，改走 (A′)
 
 **第 0 步结论**（`Gauss/Step2Bootstrap.lean`，未入库时见工作树）：
@@ -50,6 +63,9 @@
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
 
+* **T239**（本次）：**(5.48) 从 `Thm221NoEL` 的假设表里整条消失**（`Flow/Thm221Assembly.lean`，新的下游总装文件解决「两个 import 叶子谁都放不下那条桥」）。⭐ 交出**完整假设表 + 每条归谁**（见 `docs/reports/T239.md`，后续派单请照它写）。`CutHyp` 的 `mesh_fine`/`card_le` 由 `cutHyp_jSfarSm_of_entries` **证出来不是假设**，故那对拉扯条件**不可能联合不可满足**。⚠ 查出 `Eq548EntryData.init` 是**结构性多余**——它是 (2.68)/(2.69) 在 `u = s_N` 的推论、**只有拿到 `hB` 才能证**，而上游 `thm221NoEL_of_inputs_W` **没把已在作用域内的 `hB` 透给 (5.48) 槽**；加 `BoundsCore X E s →` 前件是**免费的加强**。
+* **T238**（本次）：`driftF` 的逐点确定性包络——**`hFb` 与 `hGd_Qop_driftF` 两处由同一条定理供给**；`momentIneqQ` 的 11 项从「5 项无条件」到**只剩 3 项有条件**。⭐ **工单假设的「缺 `Kval` 一致有界」其实仓库已有**（T203 的 `exists_norm_Kval_le_upto`），**只读文件零改动**；另删掉自己重复写的 `one_le_inv_etaT`。⚠ 如实：包络**是粗的**（`η_v^{−O(n)}`），**够可积性但不能做定量估计**。paper-delta T238a。
+* **T234**（本次）：⚠⚠ **`hKd` 不是数学缺口——T205/T227 读错了**：`cor35Rate δ = c₀√δ/4` 是**根号**在间隙上，衰减长度正是 `ℓ̂_v = (1−v)^{−1/2}`，于是 `cor35Rate(1−v)·ℓ_vN^τ = (c₀/4)N^τ`（`cor35Rate_mul_ell_mul`，间隙**精确抵消**），**没有 `D log N` 门槛**。`loopDecay_Kval_quant` **无条件、任意环长**，同时交付 T220 转来的环长 `n+2`。四个好集 **3 完整 + 1 部分**，`hlk` 也通；残余 **10 → 7 项**。好集非空**是证出来的**。完整报告 `docs/reports/T234.md`。
 * **T231**（本次）：`hbound` 的常数落实成 `cMDval' p n = (n+2)·max 0 (2p−1)`，**两条桥各读一遍、都恰好是 `(n+2)`**。判别性编译在案：`hbound_slot_one_fails` 证明 `(n+2)` 形的界**推不出** `1` 形的界，**旧 `hbound` 按字面永远卸不掉**；`deriv_le_*_sharp_one'` 三条取**等号**，说明新常数**无余量**。**不用改 `MomentDuhamelTime.lean`**（`of_diffIneq` 本来就把 `cMD` 收成参数）。plain 一路走通（`momentIneq_gauss_cMDval'`，只剩 `hQV`）。⭐ 顺带解决一个工单没点名的缺口：**二次变差看不见 `K`**，所以不需要「移位版」桥。完整报告 `docs/reports/T231.md`。
 * **T233**（fd81869）：Steps 4–5 的脚本全部改吃 `FlowEq548W`，三份脚本并成两份；12 条 `rfl` 探针；`FlowEq548` 的生产者一个没动。转交 C1–C3（见 §2）。
 * **T219**（37f5581）：`hkerC`/`hker2C` 从 Lemma 5.14 的假设表里消失（D14 核心目标达成）；网格见证在论文 p.24 网格上。交出 D16。
@@ -64,5 +80,9 @@
 
 （全部已开单：T236–T239。新的无主项写在这里，调度下一轮开单。）
 
+* **⭐ `hinit` 可免费消除**（T239 交出）：给 `thm221NoEL_of_inputs_W` 的各槽加 `BoundsCore X E s →` 前件（`hB` 已在作用域内），`Eq548EntryData.init` 即可由 (2.68)/(2.69) 在 `u = s_N` 推出。**全仓没有任何 `hinit` 的生产者。** 这是假设表里唯一结构性多余的一条。
+* **`Step2FarMart` 的 `meas`/`modulus`/`moment` 三条生产者**（T239 交出）；⚠ 其中 **`.modulus` 对尖锐 `jSfar` 为假**，只对平滑版有希望。
+* **`hcont`/`hintU1`/`hintU2`**（T234 交出）：`E(L−K)` 的时间连续性 + `U` 对两个漂移张量的区间可积性。**纯分析，无主**——这是 `Bounds` 在 `s > 0` 处余下 7 项里唯一不属 Steps 1–5 主线或总装线的。
+* **`nonempty_of_highProb` 重复两份**（T234 交出）：`FastDecayFlow.nonempty_of_highProb`(:708) 与 `Step6EnvWindow.highProb_nonempty` **逐字相同**，而前者在后者**下游、无法 import**。**建议下沉 `Defs/StochDom.lean` 并删两份。**
 * **plain 的 `hQV` 接线**（T231 交出）：`momentIneq_gauss_cMDval'_bridge` 的 `hQV` 槽与 `EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` 的结论**形状同义但签名对不上**（参数次序与显隐性）。⚠ 协调者已实测「加一行 `import` + 一行 `exact`」**不成立**，需要一条桥引理。**这是 plain 路线 `MomentIneq` 唯一剩下的缺口。**
 * **两条 `attribute [deprecated]` 的落地时机**（T231 交出，→ Cowork）：`momentIneq_of_derivBound` / `momentIneqQ_of_derivBound`——等 T226 的后继换完带撇版，还是现在加并接受 `MomentDuhamelQInt` 里的一片 warning。确切语句见 `docs/reports/T231.md`。

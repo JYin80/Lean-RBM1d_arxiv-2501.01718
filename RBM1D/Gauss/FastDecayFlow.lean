@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.Lemma514Q716
 import RBM1D.Hierarchy.DriftDef
 import RBM1D.Hierarchy.LKDecayQuant
+import RBM1D.Gauss.DriftEnvelope
 
 /-!
 # T220: the (7.13) premise of the five `momentDuhamelQ` terms, along the flow
@@ -1150,4 +1151,65 @@ theorem momNorm_Uker_Qop_lkT_le (hE : |E| ≤ 2) {q n N : ℕ} (hq : q ≠ 0)
 
 end EndToEnd
 
+/-! ### §13  The `hAM` slot of `hGd_Qop_driftF`, discharged (T238)
+
+`RBM.FastDecayFlow.hGd_Qop_driftF` above takes the size envelope of the drift as the named
+hypothesis `hAM`.  T238 proves it: `RBM.Gauss.exists_driftF_envelope_at` is a *deterministic*
+pointwise bound on `RBM.DriftDef.driftF`, valid at every Hermitian matrix, hence at every
+sample point — so the event `Ξ` is not used, and there is no exceptional set to carry.
+
+The same theorem supplies the `hFb` of `RBM.Gauss.exists_bdd_uker_Qop_driftF` in
+`RBM1D/Gauss/MomentDuhamelQInt.lean`; those were the repository's two copies of this gap. -/
+
+section DriftEnvelopeT238
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ}
+
+/-- **`hAM` of `RBM.FastDecayFlow.hGd_Qop_driftF`, discharged** (T238).
+
+The window is the only restriction: `0 ≤ u < 1`, i.e. `z_u` in the upper half plane.  `η_u` is
+allowed to be arbitrarily small — the constant degrades as `η_u^{-O(n)}` and nothing here needs
+it bounded below. -/
+theorem exists_norm_driftF_le (X : Sample B) (hE : |E| < 2) (n N : ℕ) {u : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (σ : Fin (n + 2) → Bool) (Ξ : Set Ω) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ ω ∈ Ξ, ∀ b : LoopArg (B.L N) (n + 2),
+      ‖DriftDef.driftF B E N u (X.H N u ω) σ b‖ ≤ M := by
+  obtain ⟨cF, hcF0, hcF⟩ := Gauss.exists_driftF_envelope B hE n N (s := u) (v := u) hu0 hu1
+  exact ⟨cF, hcF0, fun ω _ b => hcF u ⟨le_rfl, le_rfl⟩ _ (X.hermitian N u ω) σ b⟩
+
+/-- **`RBM.FastDecayFlow.hGd_Qop_driftF` with its `hAM` slot closed** (T238).
+
+Everything else is unchanged: the `K`/`L` decay inputs of Lemma 5.9 and the budget of (5.77)
+are still hypotheses on the event, as `RBM.DriftBound` takes them.  What is no longer a
+hypothesis is the *size* of the drift. -/
+theorem hGd_Qop_driftF_env (hE : |E| < 2) {n N : ℕ} {u K δ MK MD δF : ℝ} (hu0 : 0 ≤ u)
+    (hu1 : u < 1) (hK : 1 ≤ K) (hδ : 0 ≤ δ) (hMK : 0 ≤ MK) (hMD : 0 ≤ MD) (hδF : 0 ≤ δF)
+    (σ : Fin (n + 2) → Bool) {Ξ : Set Ω}
+    (hKd : ∀ ω ∈ Ξ, Decay.LoopDecay (B.L N) (n + 2)
+      (ellHat (B.L N) ((u : ℝ) : ℂ) * K) δ (B.Kval E N u))
+    (hDd : ∀ ω ∈ Ξ, Decay.LoopDecay (B.L N) (n + 2)
+      (ellHat (B.L N) ((u : ℝ) : ℂ) * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : ∀ ω ∈ Ξ, Decay.LoopDecay (B.L N) (n + 3)
+      (ellHat (B.L N) ((u : ℝ) : ℂ) * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hKb : ∀ ω ∈ Ξ, ∀ J : LoopIdx (ZMod (B.L N)), J.WF → J.length ≤ n + 2 →
+      ‖B.Kval E N u J‖ ≤ MK)
+    (hDb : ∀ ω ∈ Ξ, ∀ J : LoopIdx (ZMod (B.L N)), J.WF → J.length ≤ n + 2 →
+      ‖(gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u) J‖ ≤ MD)
+    (hbudget : (B.W N : ℝ) * ((n : ℝ) + 2) * ((B.L N : ℝ) * (MD * δ))
+        + (n : ℝ) * (2 * (B.W N : ℝ) * ((n : ℝ) + 2) ^ 2 * (B.L N : ℝ) * δ * (MK + MD))
+        + 2 * (B.W N : ℝ) * ((n : ℝ) + 2) ^ 2 * (B.L N : ℝ) * δ * MD ≤ δF) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ ω : Ω,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (4 * K))
+        (qopErr1 (B.L N) n (4 * K) M δF)
+        (Qop (B.L N) ((u : ℝ) : ℂ)
+          (Set.indicator Ξ (fun ω => DriftDef.driftF B E N u (X.H N u ω) σ) ω)) := by
+  obtain ⟨M, hM0, hAM⟩ := exists_norm_driftF_le X hE n N hu0 hu1 σ Ξ
+  exact ⟨M, hM0, fun ω => hGd_Qop_driftF hu0 hu1 hK hδ hMK hMD hM0 hδF σ hAM hKd hDd hLd
+    hKb hDb hbudget ω⟩
+
+end DriftEnvelopeT238
+
 end RBM.FastDecayFlow
+

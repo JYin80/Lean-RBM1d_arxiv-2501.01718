@@ -2194,6 +2194,37 @@ attribute [deprecated
   (since := "2026-09-21")]
   hbound_qMomentObsT_gauss_one
 
+/-- **The plain route's `RBM.MomentDuhamel.MomentIneq` at `C_{n,p}`, with no external
+hypothesis left** (T240): the quadratic-variation bridge (5.25) is supplied by
+`RBM.Gauss.quadVarPairs_Uker_le_norm_eeFun_flow`, the primitive `K_u` drops out by
+`RBM.Gauss.quadVar_ukerObsT_eq_quadVarPairs`, and the window conditions of (5.25) are read
+off `hs0`, `hu ∈ Set.Ioo (s N) v` and `ht1`.
+
+⚠ This supersedes `RBM.Gauss.momentIneq_gauss_cMDval'` / `…_bridge`, whose `hQV`
+quantifies over **all** `u v : ℝ` with no window restriction and is therefore strictly
+stronger than (5.25) proves — see `docs/reports/T240.md`. -/
+theorem momentIneq_gauss_cMDval'_closed (d : Dims) {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) :
+    MomentDuhamel.MomentIneq (sample d) E s t n (fun p => MomentDuhamel.cMDval' p n) := by
+  refine momentIneq_of_derivBound_gauss' d hE hs0 ht1 ?_
+  intro p hp N σ v hsv hvt a
+  have hv1 : v < 1 := lt_of_le_of_lt hvt (ht1 N)
+  refine derivAndBound_momentObsT_gauss' E N hE (hs0 N) hv1 σ a hp ?_
+  intro u hu ω
+  refine (quadVar_ukerObsT_eq_quadVarPairs (d := d) (N := N) E σ (xiOf (mSigma E) σ)
+    ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u
+    (Hflow d N u ω)).trans_le ?_
+  exact quadVarPairs_Uker_le_norm_eeFun_flow d hE (lt_trans hu.2 hv1)
+    (le_trans (hs0 N) (le_of_lt (lt_trans hu.1 hu.2))) hv1 σ a ω
+
+/-- **Non-vacuity of the plain route's `MomentIneq`** (T240): at T202's
+`RBM.Gauss.Dims.exampleGrow`, `E = 0`, window `[0, 1/2]`, for every `n`. -/
+theorem momentIneq_gauss_cMDval'_exampleGrow (n : ℕ) :
+    MomentDuhamel.MomentIneq (sample Dims.exampleGrow) 0 (fun _ => 0) (fun _ => 1 / 2) n
+      (fun p => MomentDuhamel.cMDval' p n) :=
+  momentIneq_gauss_cMDval'_closed Dims.exampleGrow (by norm_num)
+    (fun _ => le_rfl) (fun _ => by norm_num)
+
 end Gauss
 
 end RBM

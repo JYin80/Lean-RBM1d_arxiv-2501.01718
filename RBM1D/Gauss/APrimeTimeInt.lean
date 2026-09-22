@@ -51,6 +51,13 @@ integrand of the shape `u^{-1/2} √(κ̂ · Q_u)`, and this file turns that int
 * `sat_timeInt` — the satisfiability witness, on `R = 2 > 1`, with `Q > 0` pointwise and
   `κ̂ > 0`, for every admissible energy `|E| < 2`.
 
+* **(e)** `qHatNear`, `integral_qHatNear_le`, `integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le`,
+  `sat_qHatNear` — **T273b**: the producer of `hQbd`.  `Q̂^{near} := Q^{near}/Λ²` with
+  `Λ² = R^8`, and A1's `∫_s^t Q^{near} ≤ (Im m)^{-1}R^{+4}` divided by `Λ²` is
+  `∫_s^t Q̂^{near} ≤ (Im m)^{-1}R^{-4}` — the exponent account is `4 - 8 = -4`.  With it, (d)
+  holds with no `hQbd` hypothesis left; the pointwise non-negativity and the integrability of
+  `Q̂^{near}` are theorems here as well (`qHatNear_nonneg`, `intervalIntegrable_qHatNear`).
+
 ## The far field
 
 The far-field half of the same accounting is **not** redone here: it is
@@ -603,6 +610,126 @@ theorem sat_timeInt {E : ℝ} (hE : |E| < 2) :
     hκ0.le (by norm_num) le_rfl hm (by positivity) hηt (by rw [he1, he2]; linarith)
     hκle hlog (le_of_eq hQval)
 
+/-! ## (e) The producer of `hQbd`: the hat-normalization of the near-field budget
+
+A1 (`RBM.Step2MomentStep.integral_nearInt_le`) reads `∫_s^t Q^{near} ≤ (Im m)^{-1} R^{+4}`,
+while `(S6)` — and hence the hypothesis `hQbd` of (d) — quotes `∫_s^t Q̂^{near} ≤ (Im m)^{-1}
+R^{-4}`.  The two differ by the level `Λ² = R^8` at which the near field is normalized:
+
+`R^4 / Λ² = R^4 / R^8 = R^{-4}`,  i.e.  `(η_s/η_t)^4 / (η_s/η_t)^8 = (η_t/η_s)^4`.
+-/
+
+/-- **The hat-normalized near-field rate** `Q̂^{near} := Q^{near} / Λ²` with `Λ² = R^8`,
+`R = η_s/η_t`. -/
+noncomputable def qHatNear (E s t u : ℝ) : ℝ :=
+  Step2MomentStep.nearInt E s t u / (etaT E s / etaT E t) ^ 8
+
+theorem nearInt_nonneg {E : ℝ} (hE : |E| < 2) {s t u : ℝ} (hu1 : u < 1) :
+    0 ≤ Step2MomentStep.nearInt E s t u := by
+  have hu : 0 < etaT E u := Step2.etaT_pos' hE hu1
+  have h1 : (0 : ℝ) ≤ (etaT E u)⁻¹ := (inv_nonneg.2 hu.le)
+  have h2 : (0 : ℝ) ≤ (etaT E u / etaT E t) ^ 4 := by positivity
+  have h3 : (0 : ℝ) ≤ √(etaT E s / etaT E u) ^ 5 := by positivity
+  rw [Step2MomentStep.nearInt]
+  exact mul_nonneg (mul_nonneg h1 h2) h3
+
+theorem qHatNear_nonneg {E : ℝ} (hE : |E| < 2) {s t u : ℝ} (hu1 : u < 1) :
+    0 ≤ qHatNear E s t u := by
+  rw [qHatNear]
+  exact div_nonneg (nearInt_nonneg hE hu1) (by positivity)
+
+theorem etaT_continuous (E : ℝ) : Continuous fun u : ℝ => etaT E u := by
+  simp only [Step2.etaT_eq]
+  exact (continuous_const.sub continuous_id).mul continuous_const
+
+theorem nearInt_continuousOn {E : ℝ} (hE : |E| < 2) {s t : ℝ} (hst : s ≤ t) (ht1 : t < 1) :
+    ContinuousOn (fun u => Step2MomentStep.nearInt E s t u) (Set.uIcc s t) := by
+  rw [Set.uIcc_of_le hst]
+  have hc : Continuous fun u : ℝ => etaT E u := etaT_continuous E
+  have hne : ∀ u ∈ Set.Icc s t, etaT E u ≠ 0 := fun u hu =>
+    (Step2.etaT_pos' hE (lt_of_le_of_lt hu.2 ht1)).ne'
+  have htne : etaT E t ≠ 0 := (Step2.etaT_pos' hE ht1).ne'
+  simp only [Step2MomentStep.nearInt]
+  refine ContinuousOn.mul (ContinuousOn.mul (hc.continuousOn.inv₀ hne) ?_) ?_
+  · exact (hc.continuousOn.div continuousOn_const fun u _ => htne).pow 4
+  · exact ((Real.continuous_sqrt.comp_continuousOn
+      (continuousOn_const.div hc.continuousOn hne)).pow 5)
+
+theorem intervalIntegrable_nearInt {E : ℝ} (hE : |E| < 2) {s t : ℝ} (hst : s ≤ t)
+    (ht1 : t < 1) :
+    IntervalIntegrable (fun u => Step2MomentStep.nearInt E s t u) volume s t :=
+  (nearInt_continuousOn hE hst ht1).intervalIntegrable
+
+theorem intervalIntegrable_qHatNear {E : ℝ} (hE : |E| < 2) {s t : ℝ} (hst : s ≤ t)
+    (ht1 : t < 1) : IntervalIntegrable (fun u => qHatNear E s t u) volume s t := by
+  simp only [qHatNear]
+  exact (intervalIntegrable_nearInt hE hst ht1).div_const _
+
+/-- **The producer of `hQbd`** (`T268b`): A1 divided by the level `Λ² = R^8`.
+
+`∫_s^t Q̂^{near} = (∫_s^t Q^{near}) / R^8 ≤ (Im m)^{-1} R^4 / R^8 = (Im m)^{-1} R^{-4}`,
+with `R = η_s/η_t ≥ 1`; `R^{-4}` is written `(η_t/η_s)^4`, which is exactly the shape the
+hypothesis `hQbd` of `RBM.APrimeTimeInt.integral_inv_sqrt_mul_sqrt_kappa_le` asks for.
+
+The exponent account, step by step: A1 gives `+4`; the hat normalization divides by `Λ² = R^8`;
+`4 - 8 = -4`. -/
+theorem integral_qHatNear_le {E : ℝ} (hE : |E| < 2) {s t : ℝ} (hst : s ≤ t) (ht1 : t < 1) :
+    (∫ u in s..t, qHatNear E s t u) ≤ ((mE E).im)⁻¹ * (etaT E t / etaT E s) ^ 4 := by
+  have hs1 : s < 1 := lt_of_le_of_lt hst ht1
+  have ha : 0 < etaT E s := Step2.etaT_pos' hE hs1
+  have hc : 0 < etaT E t := Step2.etaT_pos' hE ht1
+  have hΛ : (0 : ℝ) < (etaT E s / etaT E t) ^ 8 := by positivity
+  have hint : (∫ u in s..t, qHatNear E s t u)
+      = (∫ u in s..t, Step2MomentStep.nearInt E s t u) / (etaT E s / etaT E t) ^ 8 := by
+    simp only [qHatNear]
+    exact intervalIntegral.integral_div _ _
+  rw [hint, div_le_iff₀ hΛ]
+  refine (Step2MomentStep.integral_nearInt_le hE hst ht1).trans (le_of_eq ?_)
+  field_simp
+
+/-- **(d) with `hQbd` discharged.**  The cross-term budget of `(S6)` on a window `0 < s`, with
+the near-field rate the hat-normalized `RBM.APrimeTimeInt.qHatNear`: no `hQbd` hypothesis is
+left, it is supplied by `RBM.APrimeTimeInt.integral_qHatNear_le`, and the pointwise
+non-negativity and the two integrabilities are theorems here as well. -/
+theorem integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le {E : ℝ} (hE : |E| < 2) {s t : ℝ}
+    (hs : 0 < s) (hst : s ≤ t) (ht1 : t < 1)
+    (hIint : IntervalIntegrable
+      (fun u => Real.sqrt u⁻¹ * Real.sqrt (qHatNear E s t u)) volume s t)
+    {κ N ε δ C : ℝ} (hκ0 : 0 ≤ κ) (hN : 1 ≤ N) (hε : 0 ≤ ε) (hC : 0 ≤ C)
+    (hκ : κ ≤ N ^ (ε - 4 * δ) * (etaT E s)⁻¹)
+    (hlog : Real.log (t / s) ≤ C * etaT E s * Real.log N) :
+    (∫ u in s..t, Real.sqrt u⁻¹ * Real.sqrt (κ * qHatNear E s t u))
+      ≤ N ^ (ε - 2 * δ) * (etaT E t / etaT E s) ^ 2
+          * Real.sqrt (C * ((mE E).im)⁻¹ * Real.log N) := by
+  have hs1 : s < 1 := lt_of_le_of_lt hst ht1
+  have hm : 0 < (mE E).im := mE_im_pos hE
+  have hηt : 0 < etaT E t := Step2.etaT_pos' hE ht1
+  have hηts : etaT E t ≤ etaT E s := by
+    rw [Step2.etaT_eq, Step2.etaT_eq]
+    nlinarith [show (1 : ℝ) - t ≤ 1 - s by linarith]
+  exact integral_inv_sqrt_mul_sqrt_kappa_le hs hst
+    (fun u hu => qHatNear_nonneg hE (lt_of_le_of_lt hu.2 ht1))
+    (intervalIntegrable_qHatNear hE hst ht1) hIint hκ0 hN hε hm hC hηt hηts hκ hlog
+    (integral_qHatNear_le hE hst ht1)
+
+/-- **The hat-normalized budget is not vacuous**: on the window of `RBM.APrimeTimeInt.sat_timeInt`
+(`s = 1/2`, `t = 3/4`, so `R = 2 > 1`) the rate `Q̂^{near}` is **strictly positive** pointwise
+and its integral obeys the `R^{-4}` budget. -/
+theorem sat_qHatNear {E : ℝ} (hE : |E| < 2) :
+    (∀ u < (1 : ℝ), 0 < qHatNear E (1 / 2) (3 / 4) u) ∧
+      (∫ u in (1 / 2 : ℝ)..(3 / 4), qHatNear E (1 / 2) (3 / 4) u)
+        ≤ ((mE E).im)⁻¹ * (etaT E (3 / 4) / etaT E (1 / 2)) ^ 4 := by
+  refine ⟨fun u hu => ?_, integral_qHatNear_le hE (by norm_num) (by norm_num)⟩
+  have hu0 : 0 < etaT E u := Step2.etaT_pos' hE hu
+  have hs0 : 0 < etaT E (1 / 2) := Step2.etaT_pos' hE (by norm_num)
+  have ht0 : 0 < etaT E (3 / 4) := Step2.etaT_pos' hE (by norm_num)
+  have hsq : 0 < √(etaT E (1 / 2) / etaT E u) := Real.sqrt_pos.2 (by positivity)
+  rw [qHatNear, Step2MomentStep.nearInt]
+  have h1 : (0 : ℝ) < (etaT E u)⁻¹ * (etaT E u / etaT E (3 / 4)) ^ 4
+      * √(etaT E (1 / 2) / etaT E u) ^ 5 := by positivity
+  have h2 : (0 : ℝ) < (etaT E (1 / 2) / etaT E (3 / 4)) ^ 8 := by positivity
+  exact div_pos h1 h2
+
 /-! ## Deviations (temporary id `T268a`)
 
 `T268a` — **the `s = 0` cell and its explicit constant `4`.**
@@ -635,6 +762,32 @@ hypothesis, so whichever normalization the producer supplies, the shape is expli
 silently drift.
 
 ③ *Lines*: 1 (the hypothesis `hQbd`).
+
+④ *Renumbering*: none.
+
+`T273b` — **`T268b` discharged: `hQbd` is now produced, not assumed.**
+
+① *Paper position*: the same A1, §5.3 (5.44), and the `(S6)` line
+`∫_s^t Q̂^{near} ≤ (Im m)^{-1} R^{-4}`.
+
+② *Is the paper changed?*  **No.**  `RBM.APrimeTimeInt.qHatNear` is the definition
+`Q̂^{near} := Q^{near}/Λ²` with the level `Λ² = R^8 = (η_s/η_t)^8` at which `(S6)` normalizes
+the near field, and `RBM.APrimeTimeInt.integral_qHatNear_le` is A1 divided by that level.  The
+exponent account is the whole content: A1 gives `+4`, the normalization divides by `R^8`, and
+`4 - 8 = -4`; written without `R`,
+`(η_s/η_t)^4 / (η_s/η_t)^8 = (η_t/η_s)^4`, which is the `(η_t/η_s)^4` that the hypothesis
+`hQbd` of `RBM.APrimeTimeInt.integral_inv_sqrt_mul_sqrt_kappa_le` asks for — note the sign of
+the exponent, `R^{-4}` and not `R^{+4}`.  With it,
+`RBM.APrimeTimeInt.integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le` is (d) with no `hQbd` left;
+the pointwise non-negativity of `Q̂^{near}` (`qHatNear_nonneg`) and its integrability
+(`intervalIntegrable_qHatNear`, through the continuity of `η_u` on a window with `t < 1`) are
+theorems too, so the only remaining side condition is the integrability of the *product*
+`u^{-1/2}√(Q̂_u)` at the left endpoint, which is a genuine hypothesis of (a) and not of the
+budget.  **No new named hypothesis, no class, no structure.**  `sat_qHatNear` certifies that
+the budget is not vacuous: on `s = 1/2`, `t = 3/4` (`R = 2 > 1`) the rate `Q̂^{near}` is
+strictly positive pointwise.
+
+③ *Lines*: about 70 (`qHatNear` … `sat_qHatNear`).
 
 ④ *Renumbering*: none.
 -/

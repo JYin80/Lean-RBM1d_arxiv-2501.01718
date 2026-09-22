@@ -49,6 +49,12 @@ bound **simultaneously at every grid time `u_j`, `j ≤ n_N`, and at every label
 * `RBM.EarlyQVRateEv.prob_exists_grid_le` — the same, unfolded:
   `∀ ε > 0, ∀ D'' > 0, ∃ N₀, ∀ N ≥ N₀, P(∃ j ≤ n_N, ∃ σ, ∃ b, quadVar > N^ε · RHS) ≤ N^{-D''}`.
 * `RBM.EarlyQVRateEv.sat_stochDom_quadVar_grid` — satisfiability on a non-degenerate grid.
+* `RBM.EarlyQVRateEv.sDet`, `s3Rhs_sqrt_le`, `s3AtDet`, `s3At_le_mul_s3AtDet`,
+  `quadVar_le_mul_s3AtDet`, `s3GridDet`, `stochDom_quadVar_grid_det`,
+  `sat_stochDom_quadVar_grid_det` — **T273a**: the same `≺` with `μ = 2√Smax` already
+  evaluated at its (2.73) level `(ℓ_u/ℓ_s)^3(Wℓ_uη_u)^{-3}`, i.e. the paper's
+  `μ ≺ r_u^{3/2}A_u^{-3/2}`.  `ζ` still does not depend on `τ`: the two a-priori levels are
+  taken at `τ/4` and the loss `2N^{τ/4}√(N^{τ/4}) ≤ N^τ` goes into the `N^τ` of `RBM.StochDom`.
 
 ## Where the union bound comes from, and why no new hypothesis appears
 
@@ -566,6 +572,203 @@ theorem prob_exists_grid_le (X : Sample B) {E : ℝ} {s t mesh : ℕ → ℝ} {�
   · rintro ⟨⟨⟨j, hj⟩, σ, a⟩, hlt⟩
     exact ⟨j, hj, σ, a, hlt⟩
 
+/-! ### 8. `μ = 2√Smax` written into `ζ` -/
+
+/-- **The deterministic level of `Smax`**: `(ℓ_u/ℓ_s)^3 (W ℓ_u η_u)^{-3}`, i.e. the square of
+the paper's `μ ≺ r_u^{3/2} A_u^{-3/2}`, which is what (2.73) delivers at `n = 4`
+(`RBM.Step1.apriori` with `n = 4`, whose `ζ` is exactly this). -/
+noncomputable def sDet (B : Band Ω) (E : ℝ) (N : ℕ) (u ℓs : ℝ) : ℝ :=
+  (B.ell N u / ℓs) ^ 3 * (B.scale E N u)⁻¹ ^ 3
+
+theorem sDet_nonneg (B : Band Ω) (E : ℝ) (N : ℕ) {u ℓs : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (hℓs : 0 < ℓs) : 0 ≤ sDet B E N u ℓs := by
+  have hℓu : (1 : ℝ) ≤ B.ell N u := one_le_ellHat (B.L N) (B.three_le_L N) hu0 hu1
+  have hA : 0 ≤ B.scale E N u := B.scale_nonneg E N hu1.le
+  exact mul_nonneg (pow_nonneg (div_nonneg (by linarith) hℓs.le) 3)
+    (pow_nonneg (inv_nonneg.2 hA) 3)
+
+/-- **`√S ↦ s3Rhs` is affine with non-negative coefficients.**  `S` enters
+`RBM.EarlyQVRateEv.s3Rhs` only through the far-field factor `μ = 2√S`, with a non-negative
+coefficient, so inflating `√S` by `M ≥ 1` inflates the whole right-hand side by at most `M`
+— exactly the absorption `RBM.EarlyQVRateEv.s3Rhs_mul_le` performs for the near coefficient
+`κn`. -/
+theorem s3Rhs_sqrt_le {W Lr ℓu ηu D κn J S S₀ d M : ℝ} (hW : 1 ≤ W) (hLr : 0 ≤ Lr)
+    (hℓu : 0 < ℓu) (hηu : 0 < ηu) (hJ : 1 ≤ J) (hκn : 0 ≤ κn) (hM : 1 ≤ M)
+    (hS : √S ≤ M * √S₀) :
+    s3Rhs W Lr ℓu ηu D κn J S d ≤ M * s3Rhs W Lr ℓu ηu D κn J S₀ d := by
+  have hW0 : (0 : ℝ) < W := by linarith
+  have hA : (0 : ℝ) < W * ℓu * ηu := by positivity
+  have hT : 0 < tailT W ℓu ηu D d := tailT_pos hW0 d
+  have hT2 : (0 : ℝ) ≤ tailT W ℓu ηu D d ^ 2 := by positivity
+  have hcN : 0 ≤ Lemma57.cNear2 W ℓu := Lemma57.cNear2_nonneg hW hℓu
+  have hcF : 0 ≤ Lemma57.cFar2 W ℓu := Lemma57.cFar2_nonneg hW hℓu
+  have hind : (0 : ℝ) ≤ (if d ≤ 4 * ellStar W ℓu then 1 else 0) := by split <;> norm_num
+  have hJ0 : (0 : ℝ) ≤ 2 * J := by linarith
+  have hJ2 : (0 : ℝ) ≤ (2 * J) ^ 2 := by positivity
+  have hJ3 : (0 : ℝ) ≤ (2 * J) ^ 3 := by positivity
+  have hWD : (0 : ℝ) ≤ W ^ (-D) := Real.rpow_nonneg hW0.le _
+  have hηi : (0 : ℝ) ≤ ηu⁻¹ := inv_nonneg.2 hηu.le
+  have hAi : (0 : ℝ) ≤ (W * ℓu * ηu)⁻¹ := inv_nonneg.2 hA.le
+  have hρ : 0 ≤ rho0 W ℓu ηu κn := rho0_nonneg hW0.le hℓu.le hηu.le hκn
+  -- the coefficient of `√S`, and the part of the right-hand side that does not involve `S`
+  set C₁ : ℝ := 2 * (ηu⁻¹ * (Lemma57.cFar2 W ℓu * ((2 * J) ^ 2 * ((W * ℓu * ηu) * 2)))
+      * tailT W ℓu ηu D d ^ 2) with hC₁
+  set C₂ : ℝ := 2 * (ηu⁻¹ * (Lemma57.cNear2 W ℓu * κn * (if d ≤ 4 * ellStar W ℓu then 1 else 0)
+      + 72 * (2 * J) ^ 3 * (W * ℓu * ηu)⁻¹) * tailT W ℓu ηu D d ^ 2
+      + (W * Lr * rho0 W ℓu ηu κn
+        + 2 * W * Lr * W ^ (-D) * (2 * J) ^ 3 * tailT W ℓu ηu D d ^ 2)) with hC₂
+  have hC₁0 : 0 ≤ C₁ := by
+    have h1 : (0 : ℝ) ≤ Lemma57.cFar2 W ℓu * ((2 * J) ^ 2 * ((W * ℓu * ηu) * 2)) :=
+      mul_nonneg hcF (mul_nonneg hJ2 (by linarith))
+    have h2 := mul_nonneg (mul_nonneg hηi h1) hT2
+    rw [hC₁]; linarith
+  have hC₂0 : 0 ≤ C₂ := by
+    have h1 : (0 : ℝ) ≤ Lemma57.cNear2 W ℓu * κn
+        * (if d ≤ 4 * ellStar W ℓu then 1 else 0) := mul_nonneg (mul_nonneg hcN hκn) hind
+    have h2 : (0 : ℝ) ≤ 72 * (2 * J) ^ 3 * (W * ℓu * ηu)⁻¹ :=
+      mul_nonneg (by linarith) hAi
+    have h3 := mul_nonneg (mul_nonneg hηi (by linarith : (0 : ℝ) ≤
+      Lemma57.cNear2 W ℓu * κn * (if d ≤ 4 * ellStar W ℓu then 1 else 0)
+        + 72 * (2 * J) ^ 3 * (W * ℓu * ηu)⁻¹)) hT2
+    have h4 : (0 : ℝ) ≤ W * Lr * rho0 W ℓu ηu κn := mul_nonneg (mul_nonneg hW0.le hLr) hρ
+    have h5 : (0 : ℝ) ≤ 2 * W * Lr * W ^ (-D) * (2 * J) ^ 3 * tailT W ℓu ηu D d ^ 2 :=
+      mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg (by linarith) hLr) hWD) hJ3) hT2
+    rw [hC₂]; linarith
+  have he₁ : s3Rhs W Lr ℓu ηu D κn J S d = C₁ * √S + C₂ := by
+    rw [s3Rhs, hC₁, hC₂]; ring
+  have he₂ : s3Rhs W Lr ℓu ηu D κn J S₀ d = C₁ * √S₀ + C₂ := by
+    rw [s3Rhs, hC₁, hC₂]; ring
+  rw [he₁, he₂]
+  nlinarith [mul_le_mul_of_nonneg_left hS hC₁0, mul_nonneg (sub_nonneg.2 hM) hC₂0]
+
+/-- The right-hand side of `(S3)` at a single time `u` with the `Smax` slot replaced by its
+(2.73) level at `n = 4`: the `ζ` no longer contains `√Smax`.  The remaining `ω`-dependence is
+`J*_{u,D}`, which the paper's own (5.36) carries as well. -/
+noncomputable def s3AtDet (X : Sample B) (E : ℝ) (N : ℕ) (u ℓs D : ℝ) (ω : Ω)
+    (a : LoopArg (B.L N) (0 + 2)) : ℝ :=
+  s3Rhs (B.W N : ℝ) (B.L N : ℝ) (B.ell N u) (etaT E u) D ((B.ell N u / ℓs) ^ 5)
+    (jStar X E N u ω (B.ell N u) (etaT E u) D) (sDet B E N u ℓs)
+    (zdist (B.L N) (a 0 - a 1))
+
+/-- **`μ = 2√Smax` replaced by its (2.73) level**, at the cost of a factor `√K'`.  A uniform
+bound `K' · (ℓ_u/ℓ_s)^3 (Wℓ_uη_u)^{-3}` on the `4`-loops at the time `u` — what
+`RBM.Step1.apriori` delivers at `n = 4`, with `K' = N^τ` — bounds `Smax`
+(`RBM.EarlyQVRateEv.sMax_le`), hence `√Smax ≤ √K' √(sDet)`, and the right-hand side is affine
+in `√S` with non-negative coefficients. -/
+theorem s3At_le_mul_s3AtDet (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {u ℓs : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hℓs : 0 < ℓs) (ω : Ω) (a : LoopArg (B.L N) (0 + 2))
+    {D K' : ℝ} (hK' : 1 ≤ K')
+    (hL4 : ∀ p : LoopData (B.L N) 4, ‖X.Lval E N u ω p.idx‖ ≤ K' * sDet B E N u ℓs) :
+    s3At X E N u ℓs D ω a ≤ √K' * s3AtDet X E N u ℓs D ω a := by
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+  have hℓu : (1 : ℝ) ≤ B.ell N u := one_le_ellHat (B.L N) (B.three_le_L N) hu0 hu1
+  have hηu : 0 < etaT E u := etaT_pos hE hu1
+  have hsm : sMax X E N u ω ≤ K' * sDet B E N u ℓs := sMax_le X E N u ω hL4
+  have hsqrt : √(sMax X E N u ω) ≤ √K' * √(sDet B E N u ℓs) := by
+    rw [← Real.sqrt_mul (by linarith : (0 : ℝ) ≤ K')]
+    exact Real.sqrt_le_sqrt hsm
+  exact s3Rhs_sqrt_le hW1 (Nat.cast_nonneg _) (by linarith) hηu
+    (one_le_jStar X E N u ω hW0) (pow_nonneg (div_nonneg (by linarith) hℓs.le) 5)
+    (Real.one_le_sqrt.2 hK') hsqrt
+
+/-- **`(S3)` at one time, with `μ` already at its (2.73) level.**  The two levels are the
+`n = 6` one of `RBM.EarlyQVRateEv.quadVar_le_mul_s3At` (the near coefficient) and the `n = 4`
+one (the far-field `μ`); the total loss is `2 K √K'`, which `≺` absorbs. -/
+theorem quadVar_le_mul_s3AtDet (X : Sample B) {E : ℝ} (hE : |E| < 2) {N : ℕ} {u ℓs : ℝ}
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hℓs : 0 < ℓs) (ω : Ω) (σ : Fin (0 + 2) → Bool)
+    (a : LoopArg (B.L N) (0 + 2)) {D K K' : ℝ} (hK : 1 ≤ K) (hK' : 1 ≤ K')
+    (hL : ∀ p : LoopData (B.L N) 6, ‖X.Lval E N u ω p.idx‖
+      ≤ K * (B.ell N u / ℓs) ^ 5 * (B.scale E N u)⁻¹ ^ 5)
+    (hL4 : ∀ p : LoopData (B.L N) 4, ‖X.Lval E N u ω p.idx‖ ≤ K' * sDet B E N u ℓs) :
+    quadVar B.toDims N (fun M' => MomentDuhamel.lkFun B E N u M' σ a) (X.H N u ω)
+      ≤ (2 * K * √K') * s3AtDet X E N u ℓs D ω a := by
+  have h1 := quadVar_le_mul_s3At X hE hu0 hu1 hℓs ω σ a (D := D) hK hL
+  have h2 := s3At_le_mul_s3AtDet X hE hu0 hu1 hℓs ω a (D := D) hK' hL4
+  have hK0 : (0 : ℝ) ≤ 2 * K := by linarith
+  refine h1.trans ?_
+  refine (mul_le_mul_of_nonneg_left h2 hK0).trans (le_of_eq ?_)
+  ring
+
+/-- The right-hand side of `(S3)` at the grid time `u_j`, with `μ` at its (2.73) level. -/
+noncomputable def s3GridDet (X : Sample B) (E : ℝ) (s t mesh : ℕ → ℝ) (D : ℝ) :
+    ∀ N, GridIdx B s t mesh N → Ω → ℝ :=
+  fun N v ω =>
+    s3AtDet X E N (CutHypTheta.cutNetPt s mesh N v.1.1) (B.ell N (s N)) D ω v.2.2
+
+/-- **The deliverable of `T267a`**: the same `≺` as `RBM.EarlyQVRateEv.stochDom_quadVar_grid`,
+with `μ = 2√Smax` replaced in the `ζ` by its (2.73) level `(ℓ_u/ℓ_s)^3(Wℓ_uη_u)^{-3}`.
+
+`ζ` does **not** depend on `τ`: both a-priori levels are taken at `τ/4`, and the total loss
+`2 N^{τ/4} √(N^{τ/4}) ≤ 2 N^{τ/2} ≤ N^τ` is absorbed into the `N^τ` of `RBM.StochDom`, which
+is where the `τ` of a `≺` is allowed to live.  The union of the two failure events (one at
+`n = 6`, one at `n = 4`) is `RBM.StochDom.of_subset_union`. -/
+theorem stochDom_quadVar_grid_det (X : Sample B) {E : ℝ} {s t mesh : ℕ → ℝ} {κ : ℝ}
+    (hκ : 0 < κ) (hE : |E| ≤ 2 - κ) (hB : BoundsCore X E s)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hc : Cond272 B E s t) {c : ℝ} (hc0 : 0 < c)
+    (hreg : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N))
+    (hHyp : Step1.Hyp X E s t) (hmesh : ∀ N, 0 < mesh N) (D : ℝ) :
+    StochDom B.P (qvGrid X E s t mesh) (s3GridDet X E s t mesh D) := by
+  have hE2 : |E| < 2 := by
+    have := abs_nonneg E; linarith
+  have hap6 := Step1.apriori X hκ hE hB hs0 hst ht1 hc hc0 hreg hHyp 6 (by norm_num)
+  have hap4 := Step1.apriori X hκ hE hB hs0 hst ht1 hc hc0 hreg hHyp 4 (by norm_num)
+  refine StochDom.of_subset_union hap6 hap4 (fun τ hτ => ⟨τ / 4, by linarith, ?_⟩)
+  filter_upwards [eventually_le_rpow 2 (half_pos hτ), eventually_ge_atTop 1] with N h2N hN1
+  rintro ω ⟨v, hv⟩
+  by_contra hcon
+  simp only [Set.mem_union, not_or] at hcon
+  obtain ⟨h6, h4⟩ := hcon
+  simp only [badSet, Set.mem_ofPred_eq, not_exists, not_lt] at h6 h4
+  set u : ℝ := CutHypTheta.cutNetPt s mesh N v.1.1 with hudef
+  have humem : u ∈ Set.Icc (s N) (t N) :=
+    MomentDuhamelCut.netFinset_subset_Icc (hst N) (hmesh N) u
+      (CutHypTheta.cutNetPt_mem_netFinset v.1.2)
+  have hu0 : 0 ≤ u := le_trans (hs0 N) humem.1
+  have hu1 : u < 1 := lt_of_le_of_lt humem.2 (ht1 N)
+  have hℓs : 0 < B.ell N (s N) :=
+    lt_of_lt_of_le zero_lt_one (one_le_ellHat (B.L N) (B.three_le_L N) (hs0 N)
+      (lt_of_le_of_lt (hst N) (ht1 N)))
+  have hNr1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hK : (1 : ℝ) ≤ (N : ℝ) ^ (τ / 4) := Real.one_le_rpow hNr1 (by linarith)
+  have hL : ∀ p : LoopData (B.L N) 6, ‖X.Lval E N u ω p.idx‖
+      ≤ (N : ℝ) ^ (τ / 4) * (B.ell N u / B.ell N (s N)) ^ 5 * (B.scale E N u)⁻¹ ^ 5 := by
+    intro p
+    have := h6 ((⟨u, humem⟩ : TimeIcc s t N), p)
+    simpa [mul_assoc] using this
+  have hL4 : ∀ p : LoopData (B.L N) 4, ‖X.Lval E N u ω p.idx‖
+      ≤ (N : ℝ) ^ (τ / 4) * sDet B E N u (B.ell N (s N)) := by
+    intro p
+    have := h4 ((⟨u, humem⟩ : TimeIcc s t N), p)
+    simpa [sDet] using this
+  have hmain := quadVar_le_mul_s3AtDet X hE2 hu0 hu1 hℓs ω v.2.1 v.2.2 (D := D) hK hK hL hL4
+  have hpos : 0 ≤ s3AtDet X E N u (B.ell N (s N)) D ω v.2.2 := by
+    have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+    have hW0 : (0 : ℝ) < (B.W N : ℝ) := by linarith
+    have hℓu : (1 : ℝ) ≤ B.ell N u := one_le_ellHat (B.L N) (B.three_le_L N) hu0 hu1
+    exact s3Rhs_nonneg hW1 (Nat.cast_nonneg _) (by linarith) (etaT_pos hE2 hu1)
+      (pow_nonneg (div_nonneg (by linarith) hℓs.le) 5) (one_le_jStar X E N u ω hW0)
+  have hsplit : (N : ℝ) ^ (τ / 4) * (N : ℝ) ^ (τ / 4) = (N : ℝ) ^ (τ / 2) := by
+    rw [← Real.rpow_add' (Nat.cast_nonneg N) (by linarith : (0 : ℝ) < τ / 4 + τ / 4).ne']
+    congr 1
+    ring
+  have habs : 2 * (N : ℝ) ^ (τ / 4) * √((N : ℝ) ^ (τ / 4)) ≤ (N : ℝ) ^ τ := by
+    have hsq : √((N : ℝ) ^ (τ / 4)) ≤ (N : ℝ) ^ (τ / 4) :=
+      Real.sqrt_le_self_iff.2 (Or.inr hK)
+    have h1 : 2 * (N : ℝ) ^ (τ / 4) * √((N : ℝ) ^ (τ / 4))
+        ≤ 2 * (N : ℝ) ^ (τ / 4) * (N : ℝ) ^ (τ / 4) :=
+      mul_le_mul_of_nonneg_left hsq (by positivity)
+    have h2 : 2 * (N : ℝ) ^ (τ / 4) * (N : ℝ) ^ (τ / 4) = 2 * (N : ℝ) ^ (τ / 2) := by
+      rw [mul_assoc, hsplit]
+    have hnn : (0 : ℝ) ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+    have hid := UnifDetDom.rpow_half_mul_rpow_half N hτ
+    nlinarith
+  have : qvGrid X E s t mesh N v ω ≤ (N : ℝ) ^ τ * s3GridDet X E s t mesh D N v ω := by
+    refine hmain.trans ?_
+    exact mul_le_mul_of_nonneg_right habs hpos
+  exact absurd hv (not_lt.2 this)
+
 /-! ### 7. Satisfiability, on a non-degenerate grid -/
 
 section Witness
@@ -653,6 +856,60 @@ theorem sat_stochDom_quadVar_grid :
       rw [heq]; linarith
     exact Nat.le_floor (by exact_mod_cast hkey)
 
+/-- **The hypotheses of `RBM.EarlyQVRateEv.stochDom_quadVar_grid_det` are jointly satisfiable,
+non-degenerately.**  Same model, energy, window and grid as
+`RBM.EarlyQVRateEv.sat_stochDom_quadVar_grid`, with the same two non-degeneracy certificates
+(the window does not collapse, and the grid runs over at least two times); only the `ζ` is the
+one whose `μ` slot has already been evaluated at the (2.73) level.  The `ζ` here is still
+non-trivial: `sDet ≥ 0` and `jStar ≥ 1`, so no factor of the right-hand side is `0`. -/
+theorem sat_stochDom_quadVar_grid_det :
+    ∃ τ' : ℝ, 0 < τ' ∧ ∃ mesh : ℕ → ℝ, (∀ N, 0 < mesh N) ∧
+      StochDom (band Dims.exampleGrow).P
+          (qvGrid (sample Dims.exampleGrow) 0
+            (fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 0)
+            (fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 1) mesh)
+          (s3GridDet (sample Dims.exampleGrow) 0
+            (fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 0)
+            (fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 1) mesh 60)
+        ∧ (∀ᶠ N : ℕ in atTop,
+            gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 0
+              < gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 1)
+        ∧ (∀ᶠ N : ℕ in atTop, 1 ≤ CutHypTheta.cutNetTop
+            (fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 0)
+            (fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 1) mesh N) := by
+  obtain ⟨τ', hτ'0, c, hc0, n₀, hgrid⟩ :=
+    cond272Reg_grid_step_domain (band Dims.exampleGrow) (κ := 1) (τ := (1 : ℝ) / 2)
+      one_pos (by norm_num)
+  obtain ⟨-, hstep⟩ := hgrid 0 (by norm_num) satT satT_nonneg satT_window
+  obtain ⟨hu0, huv, hv1, hcond⟩ := hstep 0
+  set sS : ℕ → ℝ := fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 0 with hsS
+  set tT : ℕ → ℝ := fun N => gridT ((band Dims.exampleGrow).W N : ℝ) τ' (satT N) 1 with htT
+  have htT0 : ∀ N, 0 ≤ tT N := fun N => le_trans (hu0 N) (huv N)
+  have hmesh : ∀ N, 0 < (tT N)⁻¹ + 1 := by
+    intro N
+    have h : (0 : ℝ) ≤ (tT N)⁻¹ := inv_nonneg.2 (htT0 N)
+    linarith
+  refine ⟨τ', hτ'0, fun N => (tT N)⁻¹ + 1, hmesh, ?_, ?_, ?_⟩
+  · have hB : BoundsCore (sample Dims.exampleGrow) 0 sS :=
+      (BoundsCore_zero (sample Dims.exampleGrow) (by norm_num : |(0 : ℝ)| ≤ 2)).congr
+        (sample Dims.exampleGrow)
+        (Eventually.of_forall fun N => (gridT_zero (satT_nonneg N)).symm)
+    exact stochDom_quadVar_grid_det (sample Dims.exampleGrow) one_pos (by norm_num) hB
+      hu0 huv hv1 hcond.1 hc0 hcond.2
+      (step1Hyp_gauss_of_scale'' Dims.exampleGrow one_pos (by norm_num) hB hu0 huv hv1
+        hcond.1 hc0 hcond.2)
+      hmesh 60
+  · exact eventually_gridT_zero_lt_gridT_one (band Dims.exampleGrow) hτ'0 satT_pos
+  · filter_upwards [eventually_gridT_zero_lt_gridT_one (band Dims.exampleGrow) hτ'0 satT_pos]
+      with N hN
+    have hs0N : sS N = 0 := gridT_zero (satT_nonneg N)
+    have htpos : 0 < tT N := by rw [← hs0N]; exact hN
+    have hkey : (1 : ℝ) ≤ (tT N - sS N) * ((tT N)⁻¹ + 1) := by
+      rw [hs0N, sub_zero]
+      have heq : tT N * ((tT N)⁻¹ + 1) = 1 + tT N := by field_simp
+      rw [heq]; linarith
+    exact Nat.le_floor (by exact_mod_cast hkey)
+
 end Witness
 
 /-! ### Deviations
@@ -677,6 +934,21 @@ is `N^τ` times that, and the `k`-sum of (5.22) at `n = 0` has two terms, for a 
 `RBM.EarlyQVRateEv.s3Rhs`, which is affine in it with non-negative coefficients
 (`s3Rhs_mul_le`), and the loss `2N^{τ/2}` is absorbed into the `N^τ` of `RBM.StochDom` — the
 standard `≺` bookkeeping, no change to the paper's statement.
+
+**T273a** (`T267a` discharged for the `μ` slot).  `RBM.EarlyQVRateEv.stochDom_quadVar_grid_det`
+carries the paper's own `μ ≺ r_u^{3/2} A_u^{-3/2}` in its `ζ`: `Smax` is replaced there by
+`RBM.EarlyQVRateEv.sDet = (ℓ_u/ℓ_s)^3 (W ℓ_u η_u)^{-3}`, which is literally the `ζ` of
+`RBM.Step1.apriori` at `n = 4`, so `μ = 2√Smax ≤ 2√K' (ℓ_u/ℓ_s)^{3/2}(Wℓ_uη_u)^{-3/2}`.  The
+step is an *affine absorption*: `RBM.EarlyQVRateEv.s3Rhs` is affine in `√S` with non-negative
+coefficients (`RBM.EarlyQVRateEv.s3Rhs_sqrt_le`), exactly as it is affine in the near
+coefficient `κn` (`s3Rhs_mul_le`), so the level `√K'` factors out of the whole right-hand
+side.  Both a-priori levels are taken at `τ/4`, and the total loss
+`2 N^{τ/4} √(N^{τ/4}) ≤ 2 N^{τ/2} ≤ N^τ` is absorbed into the `N^τ` of `RBM.StochDom`;
+**`ζ` therefore does not depend on `τ`**, which is what `RBM.StochDom` requires.  The union of
+the two failure events (`n = 6` for `κn`, `n = 4` for `μ`) is `RBM.StochDom.of_subset_union`.
+The `J*_{u,D}` half of `T267a` is *not* discharged and should not be: the paper's (5.36)
+carries `J*_{u,D}` on its right-hand side too.  No new named hypothesis: the hypothesis list of
+`stochDom_quadVar_grid_det` is, verbatim, that of `stochDom_quadVar_grid`.
 
 No other deviation: the far field is `RBM.Lemma57.ee_le`'s, i.e. (5.71)+(5.72) times the
 factor `W` of (5.22), with `(J*)²` in place of the `(J*)³` of the *statement* (5.36) and with

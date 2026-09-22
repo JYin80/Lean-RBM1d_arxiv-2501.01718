@@ -6863,3 +6863,23 @@ T226 **没有** import T225 的 `TestFunQGeneral.lean`（对方文件、仍在�
 **D16 → (i)（Cowork 按路由类裁定）→ T236**。理由：(ii)「仅在非交替电荷上引用 `Hierarchy`」等于实例化 `SumZeroDyn.Hierarchy`——它的 `mart :=` 残差是 fiat，T118 起禁止；在一部分电荷上开口子，结论就被 fiat 污染，审计时无法与干净部分分开。(i) 是零新数学：非交替电荷不需要 sum-zero，(7.16) Case 1 直接适用；矩路线的**未投影**接口 `Hyp.momentDuhamel` 已经有二次变差桥（T213/T223）。T236 照 T201 做 Case 1 的矩形式，逐字相同的脚本段按 T221/T235 上移共享。
 
 **无主项分派**：`lkGood` 可测性 + `hDec*` 事件限制 + `hEnv*` 的 `Qop` 半边 → **T237**（建议先用 T222 的 `toMeasurable` 手法）；`driftF` 逐点确定性包络 `hFb`（全仓第二次当假设收）→ **T238**；环长 `n+2` 上 `K` 的 `LoopDecay` 已在 **T234** 第 (3) 项。paper-deltas T219a → 160、T226a → 161。
+
+## ⭐⭐ T233：Steps 4–5 的证明脚本全部改吃 `FlowEq548W`；三份脚本并成两份（`StepGlue`/`Step2PP`/`Thm221NoEL`，14 条 + 12 条 `rfl` 探针，全量绿、审计 11928）
+
+**⚠ 更正 T228 的位置记载**：`Thm221NoEL` 是 **7 处**不是「五处」（漏了 `:634` 之前那条 `_reg` 与 `:661` 的既有探针）；`StepGlue` 是 **2 处**不是「`:557` 一处」（`:648` 的 bundle 版也吃）。Step2PP 六处属实。**硬编码 `6` 自查**：三个消费者文件里改动前**一处 `6 * ellStar` 都没有**——**没有任何消费者要求恰好 `6`**（与 T228 的编译探针结论一致）。
+
+**上移方案（避免重演 T221 那次「更一般的重述在下游」）**：`Step2PP` 的两份并成一份（`flow_steps45_glue_of_cond272_W'` 是 `(+,+)` 自举路线里**唯一**一次调用 `flow_steps45_W`）；`StepGlue` 那份**保留但换底**（`AprioriDecayAll` 路线塞的是 `flow_S_le_two'`/`flow_hs2`，与 `hΘ` 路线**不可合并**——合并就得抽出一个吃 `h0/h12/h1/h2` 的中间层，而那正是 `flow_steps45_W` 本身）。**三份变两份，没有造出第三份。** 公用的**指示函数见证**下沉到三者最上游的 `StepGlue`（`eventually_indicator_far_eq_zero`），`Step2PP` 与 `Thm221NoEL` 都 import 得到。
+
+**越界检查**：12 处替换**全部是「吃假设」的 `h548` 槽**；`FlowEq548` 的**生产者**（`Step2Near47:837`、`Step2FarMart:308`、`Step2MomentStep:837/1793`、`Step2FarInputs` 五处）**一个都没动**——仍产出尖形式，经 `flowEq548Sm_of_flowEq548` 喂进新链，所以结论既没弱化也没失去居民。**12 条 `rfl` 探针，每处替换一条。**
+
+**`thm221NoEL_of_inputs_W` 的 (5.48) 一项确实由 `FlowEq548W` 供给**：`FlowEq548Sm X E s t = ∃ w, (∀ᶠ N, ∀ p, 12·ℓ*(…) < zdist … → w N p = 0) ∧ Step45.FlowEq548W X E s t w`，链上（`thm221NoEL_of_inputs_W → boundsCore_step_of_inputs_reg_W → boundsCore_step_of_flow_reg_W → Step2PP.flow_steps45_glue_flowAs_of_reg_W' → flow_steps45_glue_of_cond272_W' → Step45.flow_steps45_W`）**没有一步再经过不带撇的 `FlowEq548`**。
+
+**`StepGlue.lean` 的改动范围（T235 接手用）**：只有**一处插入 + 一处证明体改写**，**没有删除、没有重命名任何声明**——插入 552–617，`flow_steps45_glue'` 现在 618–645（**签名一字未改**，证明体改成一行推论），探针 647–664，其余整体后移 **+72 行**；T235 要动的三条现位于 `eventually_R4_le_scale_of_cond272` **:781**、`aprioriDecay_of_jS_of_cond272` **:822**、`localLaw_of_scale_facts` **:878**（文件 941 → 1013 行）。
+
+## ⚠ 待 Cowork 处理（三条，按 Jun 2026-09-22 的新规矩：报错与卡点先报 Cowork，它解决不了再联系 Jun）
+
+**C1（T233 交出）：工单验收条与硬规则互相排斥。** 「Steps 4–5 整条链里**不再出现**不带撇的 `FlowEq548`」与「**旧签名不改**」不能同时满足——`flow_steps45_glue'`、`flow_steps45_glue_of'`、`thm221NoEL_of_inputs` 等 **13 条兼容一行推论的签名里**必然还留着 `Step45.FlowEq548`。T233 选了**保签名**：所有**证明脚本**只吃 `FlowEq548W`，不带撇的名字只剩在 (a) 兼容推论的签名、(b) `rfl` 探针的 binder、(c) 文档注释里（`grep` 已核，无第四类）。**若要字面清零**，就给那 13 条加 `@[deprecated]` 或把 `_W` 版改名占掉原名——可逆，但**会动冻结签名，需要裁定**。
+
+**C2（T233 交出）：`FlowEq548Sm` 与 T228 的 `nearChi` 生产者还没接上线。** 目前**没有任何文件同时看到** `Hierarchy/Step2FarMart`（生产者）与 `Flow/Thm221NoEL`（`FlowEq548Sm` 的定义处）——两者都是 import 叶子，只由 `RBM1D.lean` 根导入。要把 `⟨nearChi, eventually_nearChi_eq_zero, flowEq548W_of_entries⟩` 真的塞进 `h548` 槽，**需要新开一个下游文件或加一条 import 边**。眼下 `h548` 槽仍由尖形式经 `flowEq548Sm_of_flowEq548` 供给（**非空真、非弱化**）。归总装单。
+
+**C3（协调者提，影响所有 agent 的成本）：`docs/STATUS.md` 需要归档。** 它已到 **6856 行**，`docs/TASKS.md` **2753 行**（表格单元格极长）。实测：agent 只要把两份读全，**还没开始干活就已经 25 万 token**——这正是每张单 200–490k 的主因（派单 prompt 只占 2–3k，不是主因）。协调者从下一批起改为**把相关节的正文直接贴进 prompt 并明禁读整份文档**；但文档本身也该切：建议保留最近约 15 张单，其余移入 `docs/STATUS-archive.md`。**这改的是共享契约，请 Cowork 决定切分方式与时点。**

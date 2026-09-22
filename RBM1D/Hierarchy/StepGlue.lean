@@ -550,10 +550,78 @@ theorem flow_sharpLoop_glue' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : �
     (flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
     (flow_S_le_two' X hE hs0 hst ht1 hcond hc0 hregS hll h276) hn
 
+/-! #### Steps 4–5 with the smoothed (5.48) (T233)
+
+T228 replaced the sharp indicator `1(d ≤ 6ℓ*_u)` of (5.48) by a weight `w` vanishing beyond
+`12ℓ*_u` (`RBM.Step45.FlowEq548W`), because read *uniformly in `u`* the indicator makes the
+far-field functional jump in `u`.  `RBM.Step45.flow_steps45_W` proves (2.78)/(2.79) from the
+smoothed form, with the **conclusion unchanged**.
+
+The glue below is therefore stated on `RBM.Step45.FlowEq548W` and the unprimed
+`flow_steps45_glue'` is a one-line specialization at `w = 1(d ≤ 6ℓ*_u)`, so that the proof
+script exists **once**.  `RBM.Step45.flowEq548W_of_flowEq548` supplies the hypothesis and
+`eventually_indicator_far_eq_zero` its far vanishing. -/
+
+/-- The sharp indicator `1(‖a₁-a₂‖ ≤ 6ℓ*_u)` of (5.48) vanishes beyond `12ℓ*_u` — the side
+condition `hwfar` of `RBM.Step45.flow_steps45_W` at the indicator weight.  Only `ℓ*_u ≥ 0` is
+used (`ℓ*_u = (log W)^{3/2} ℓ_u`, and `W ≥ 1`, `ℓ_u > 0` for `u < 1`). -/
+theorem eventually_indicator_far_eq_zero (B : Band Ω) {s t : ℕ → ℝ} (ht1 : ∀ N, t N < 1) :
+    ∀ᶠ N : ℕ in atTop, ∀ p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)),
+      12 * ellStar (B.W N : ℝ) (B.ell N p.1) < (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) →
+      (if (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) ≤ 6 * ellStar (B.W N : ℝ) (B.ell N p.1)
+        then (1 : ℝ) else 0) = 0 := by
+  refine Eventually.of_forall fun N p hp => ?_
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hℓ : 0 < B.ell N p.1 :=
+    Step3.ellHat_pos_of_lt_one (by have := B.three_le_L N; omega) (p.1.2.2.trans_lt (ht1 N))
+  have hstar : 0 ≤ ellStar (B.W N : ℝ) (B.ell N p.1) := by
+    have hlog : (0 : ℝ) ≤ Real.log (B.W N : ℝ) := Real.log_nonneg hW1
+    unfold ellStar
+    positivity
+  exact ite_eq_right (by linarith)
+
+/-- **(2.78) and (2.79) with `h0`, `h12`, `h1`, `h2` discharged, from the smoothed (5.48)**
+(T233), in exactly the shapes of the fields `RBM.Steps.sharpLmK` and `RBM.Steps.sharpDecay`.
+Remaining inputs: the fields of `RBM.Steps` produced by Steps 1–2, `hregS`, Lemma 5.14 (5.92)
+for `n ≥ 2`, `AprioriDecayAll`, `Eq45Flow` and `RBM.Step45.FlowEq548W`.  The conclusion is
+verbatim that of `flow_steps45_glue'`. -/
+theorem flow_steps45_glue_W' (X : Sample B) {κ : ℝ}
+    {w : ∀ N, TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)) → ℝ}
+    (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c)
+    (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hsharp : SharpLoopFlow X E s t) (h276 : AprioriDecayAll X E s t) (h45 : Eq45Flow X E s t)
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (hwfar : ∀ᶠ N : ℕ in atTop, ∀ p, 12 * ellStar (B.W N : ℝ) (B.ell N p.1)
+      < (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) → w N p = 0)
+    (h548 : Step45.FlowEq548W X E s t w) :
+    (∀ n : ℕ, 1 ≤ n → StochDom B.P
+      (fun N (p : TimeIcc s t N × LoopData (B.L N) n) ω => X.lkErr E N p.1 ω p.2.idx)
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ n)) ∧
+    (∀ D : ℝ, 0 < D → StochDom B.P
+      (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+        X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) := by
+  have hE : |E| < 2 := by linarith
+  have hcond : Cond272 B E s t := Step2.cond272_of_strict hE hst ht1 hc0 hregS
+  exact Step45.flow_steps45_W X hκ0 hκ1 hEκ hs0 hst ht1 hcond h514
+    (flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
+    (flow_S_le_two' X hE hs0 hst ht1 hcond hc0 hregS hll h276)
+    (flow_hs1 X hE hs0 ht1 h45 (hsharp 2 (by norm_num)))
+    (flow_hs2 X hE hs0 hst ht1 hc0 hregS h276) hwfar h548
+
 /-- **(2.78) and (2.79) with `h0`, `h12`, `h1`, `h2` discharged**, in exactly the shapes of the
 fields `RBM.Steps.sharpLmK` and `RBM.Steps.sharpDecay`.  Remaining inputs: the fields of
 `RBM.Steps` produced by Steps 1–2, `hregS`, Lemma 5.14 (5.92) for `n ≥ 2`, `AprioriDecayAll`,
-`Eq45Flow` and (5.48). -/
+`Eq45Flow` and (5.48).
+
+**Signature unchanged** (T233); the proof is now `flow_steps45_glue_W'` at the sharp indicator
+`w = 1(d ≤ 6ℓ*_u)`, which `RBM.Step45.flowEq548W_of_flowEq548` dominates by `le_rfl`. -/
 theorem flow_steps45_glue' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ)
     (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
@@ -571,14 +639,29 @@ theorem flow_steps45_glue' (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ 
     (∀ D : ℝ, 0 < D → StochDom B.P
       (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
         X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
-      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) := by
-  have hE : |E| < 2 := by linarith
-  have hcond : Cond272 B E s t := Step2.cond272_of_strict hE hst ht1 hc0 hregS
-  exact Step45.flow_steps45 X hκ0 hκ1 hEκ hs0 hst ht1 hcond h514
-    (flow_S_zero' X hκ0 hκ1 hEκ hs0 hst ht1 hcond hapriori)
-    (flow_S_le_two' X hE hs0 hst ht1 hcond hc0 hregS hll h276)
-    (flow_hs1 X hE hs0 ht1 h45 (hsharp 2 (by norm_num)))
-    (flow_hs2 X hE hs0 hst ht1 hc0 hregS h276) h548
+      (fun N p _ => (B.scale E N p.1)⁻¹ ^ 2 * B.decayProf N p.1 D p.2.1 p.2.2)) :=
+  flow_steps45_glue_W' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hsharp h276 h45 h514
+    (eventually_indicator_far_eq_zero B ht1)
+    (Step45.flowEq548W_of_flowEq548 X (fun _ _ => le_rfl) h548)
+
+/-- **`rfl` probe (T233)**: the smoothed glue at the indicator weight and the unprimed
+`flow_steps45_glue'` are the *same statement* — `Eq` forces the two conclusions to be one and
+the same Prop, so nothing was reshaped when the (5.48) slot was replaced. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c)
+    (hregS : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c * (etaT E (s N) / etaT E (t N)) ^ 30 ≤
+      B.scale E N (t N))
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hsharp : SharpLoopFlow X E s t) (h276 : AprioriDecayAll X E s t) (h45 : Eq45Flow X E s t)
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h548 : Step45.FlowEq548 X E s t) :
+    flow_steps45_glue' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hsharp h276 h45 h514
+        h548 =
+      flow_steps45_glue_W' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hsharp h276 h45 h514
+        (eventually_indicator_far_eq_zero B ht1)
+        (Step45.flowEq548W_of_flowEq548 X (fun _ _ => le_rfl) h548) := rfl
 
 
 /-! ### The bundle-shaped corollaries (kept for compatibility)

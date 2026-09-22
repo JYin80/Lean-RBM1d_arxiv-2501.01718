@@ -434,10 +434,61 @@ theorem BoundsCore_of_flow (hst : ∀ N, s N ≤ t N) (hll : LocalLawFlow X E s 
   decay D hD := (hdec D hD).precomp_param fun N a => (TimeIcc.last hst N, a)
   localLaw := hll.precomp_param fun N ij => (TimeIcc.last hst N, ij)
 
+/-- **The smoothed (5.48) of T228, packaged for the assembly** (T233): there is a near-field
+weight `w`, vanishing beyond `12ℓ*_u`, for which (5.48) holds in the form
+`RBM.Step45.FlowEq548W`.
+
+The existential is what lets the `∀ E s t c` hypothesis tables below quantify over the
+smoothed form at all: `w` lives in a type that depends on `s` and `t`
+(`RBM.TimeIcc s t N × …`), so it cannot be hoisted out in front of them.  It is **weaker**
+than the sharp (5.48) (`flowEq548W_of_flowEq548` at the indicator, whose far vanishing is
+`RBM.StepGlue.eventually_indicator_far_eq_zero`) and it is what T228's producers
+(`RBM.Step2FarMart.flowEq548W_of_entries` and `flowEq548W_of_cutHyp`, at the smooth weight
+`RBM.Step2FarMart.nearChi`, whose far vanishing is
+`RBM.Step2FarMart.eventually_nearChi_eq_zero`) actually deliver. -/
+def FlowEq548Sm {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) (E : ℝ)
+    (s t : ℕ → ℝ) : Prop :=
+  ∃ w : ∀ N, TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N)) → ℝ,
+    (∀ᶠ N : ℕ in atTop, ∀ p, 12 * ellStar (B.W N : ℝ) (B.ell N p.1)
+      < (zdist (B.L N) (p.2.1 - p.2.2) : ℝ) → w N p = 0) ∧
+    Step45.FlowEq548W X E s t w
+
+/-- The sharp (5.48) gives the smoothed package, at the indicator weight. -/
+theorem flowEq548Sm_of_flowEq548 {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B)
+    {E : ℝ} {s t : ℕ → ℝ} (ht1 : ∀ N, t N < 1) (h548 : Step45.FlowEq548 X E s t) :
+    FlowEq548Sm X E s t :=
+  ⟨_, StepGlue.eventually_indicator_far_eq_zero B ht1,
+    Step45.flowEq548W_of_flowEq548 X (fun _ _ => le_rfl) h548⟩
+
+/-- **Steps 3, 4 and 5 chained into (2.68)–(2.70) at `t`, from the smoothed (5.48)** (T233).
+Verbatim `boundsCore_step_of_flow` with `RBM.Step45.FlowEq548` replaced by the weaker
+`FlowEq548Sm`. -/
+theorem boundsCore_step_of_flow_W (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : FlowEq548Sm X E s t) :
+    BoundsCore X E t := by
+  obtain ⟨w, hwfar, h548W⟩ := h548
+  have hsharp : SharpLoopFlow X E s t := fun n hn =>
+    Step2PP.flow_sharpLoop_glue_flowAs' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ
+      (fun m hm => h514 m (by omega)) hn
+  obtain ⟨hLmK, hdec⟩ :=
+    Step2PP.flow_steps45_glue_flowAs_W' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hsharp
+      h45 hΘ h514 hwfar h548W
+  exact BoundsCore_of_flow hst hll hLmK hdec
+
 /-- **Steps 3, 4 and 5 chained into (2.68)–(2.70) at `t`.**  Input: the conclusions (2.73) of
 Step 1 and (2.75), (2.76) of Step 2, plus the four named hypotheses the `(+,+)` bootstrap and
 the (5.48) reduction still take.  Output: `RBM.BoundsCore X E t`, i.e. the conclusion of the
-(2.71)-free Theorem 2.21. -/
+(2.71)-free Theorem 2.21.
+
+**Signature unchanged** (T233); the proof is now `boundsCore_step_of_flow_W` at the sharp
+indicator weight. -/
 theorem boundsCore_step_of_flow (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c)
@@ -447,14 +498,24 @@ theorem boundsCore_step_of_flow (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 
     (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) n)
     (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
-    BoundsCore X E t := by
-  have hsharp : SharpLoopFlow X E s t := fun n hn =>
-    Step2PP.flow_sharpLoop_glue_flowAs' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ
-      (fun m hm => h514 m (by omega)) hn
-  obtain ⟨hLmK, hdec⟩ :=
-    Step2PP.flow_steps45_glue_flowAs' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hsharp
-      h45 hΘ h514 h548
-  exact BoundsCore_of_flow hst hll hLmK hdec
+    BoundsCore X E t :=
+  boundsCore_step_of_flow_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45
+    (flowEq548Sm_of_flowEq548 X ht1 h548)
+
+/-- **`rfl` probe (T233)**: `boundsCore_step_of_flow` and `boundsCore_step_of_flow_W` at the
+indicator weight are the *same statement*, `RBM.BoundsCore X E t`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    boundsCore_step_of_flow X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45 h548 =
+      boundsCore_step_of_flow_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45
+        (flowEq548Sm_of_flowEq548 X ht1 h548) := rfl
 
 /-- **Steps 1–5 chained: the step of the (2.71)-free Theorem 2.21.**
 
@@ -466,7 +527,7 @@ probe P1 left open on the Steps 1–5 half of the chain: `RBM.Step1.Hyp`,
 `RBM.MomentHyp.step` that T132c proved unprovable in its frozen shape), the `(+,+)` bootstrap
 target `hΘ`, Lemma 5.14, (4.5) and (5.48).  **`hH`, `hFD`, `h5133` and every other Step 6 datum
 are absent**, which is the point of the p. 25 variant. -/
-theorem boundsCore_step_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+theorem boundsCore_step_of_inputs_W (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c) (hB : BoundsCore X E s)
     (h1 : Step1.Hyp X E s t)
@@ -475,7 +536,7 @@ theorem boundsCore_step_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ
       (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
     (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) n)
-    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : FlowEq548Sm X E s t) :
     BoundsCore X E t := by
   have hE : |E| < 2 := by linarith
   have hcond : Cond272 B E s t := Step2.cond272_of_strict hE hst ht1 hc0 hregS
@@ -486,7 +547,40 @@ theorem boundsCore_step_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ
     (Step1.step1 X hκ0 hEκ hB hs0 hst ht1 hcond hc0 hreg h1).1
   have hll : LocalLawFlow X E s t :=
     (MomentDuhamelCut.step2_cut X hκ0 hκ1 hEκ Hy h1 hB hs0 hst ht1 hc0 hregS).1
-  exact boundsCore_step_of_flow X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45 h548
+  exact boundsCore_step_of_flow_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45
+    h548
+
+/-- **Steps 1–5 chained: the step of the (2.71)-free Theorem 2.21, at the sharp (5.48).**
+**Signature unchanged** (T233); the proof is `boundsCore_step_of_inputs_W` at the sharp
+indicator weight. -/
+theorem boundsCore_step_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c) (hB : BoundsCore X E s)
+    (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    BoundsCore X E t :=
+  boundsCore_step_of_inputs_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hB h1 Hy hΘ h514 h45
+    (flowEq548Sm_of_flowEq548 X ht1 h548)
+
+/-- **`rfl` probe (T233)** for `boundsCore_step_of_inputs`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c) (hB : BoundsCore X E s)
+    (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    boundsCore_step_of_inputs X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hB h1 Hy hΘ h514 h45 h548 =
+      boundsCore_step_of_inputs_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hB h1 Hy hΘ h514 h45
+        (flowEq548Sm_of_flowEq548 X ht1 h548) := rfl
 
 /-- **The (2.71)-free Theorem 2.21 from the inputs Steps 1–5 still take.**
 
@@ -496,7 +590,37 @@ domain `RBM.Step1.Hyp` and `RBM.MomentDuhamelCut.MomentHypCut` are not expected 
 `t ≥ 1` the Green function is singular), and quantifying over all of them would be an
 unsatisfiable hypothesis of exactly the kind T164/T188 produced.
 
-`RBM.BoundsCore_of_Thm221NoEL'` then runs the induction of p. 24 on the result. -/
+`RBM.BoundsCore_of_Thm221NoEL'` then runs the induction of p. 24 on the result.
+
+T233: the (5.48) item is `FlowEq548Sm`, i.e. T228's `RBM.Step45.FlowEq548W` at some weight
+vanishing beyond `12ℓ*_u`. -/
+theorem thm221NoEL'_of_inputs_W (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → FlowEq548Sm X E s t) :
+    Thm221NoEL' X κ where
+  step E hE c hc0 s t hs0 hst ht1 hregS hB :=
+    boundsCore_step_of_inputs_W X hκ0 hκ1 hE hs0 hst ht1 hc0 hregS hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hregS) (Hy E hE s t hs0 hst ht1 c hc0 hregS)
+      (hΘ E hE s t hs0 hst ht1 c hc0 hregS) (h514 E hE s t hs0 hst ht1 c hc0 hregS)
+      (h45 E hE s t hs0 hst ht1 c hc0 hregS) (h548 E hE s t hs0 hst ht1 c hc0 hregS)
+
+/-- **The (2.71)-free Theorem 2.21 from the sharp (5.48).**  **Signature unchanged** (T233);
+the proof is `thm221NoEL'_of_inputs_W` with the indicator witness supplied pointwise. -/
 theorem thm221NoEL'_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
       (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → Step1.Hyp X E s t)
@@ -515,12 +639,35 @@ theorem thm221NoEL'_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : 
       (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → StepGlue.Eq45Flow X E s t)
     (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
       (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → Step45.FlowEq548 X E s t) :
-    Thm221NoEL' X κ where
-  step E hE c hc0 s t hs0 hst ht1 hregS hB :=
-    boundsCore_step_of_inputs X hκ0 hκ1 hE hs0 hst ht1 hc0 hregS hB
-      (h1 E hE s t hs0 hst ht1 c hc0 hregS) (Hy E hE s t hs0 hst ht1 c hc0 hregS)
-      (hΘ E hE s t hs0 hst ht1 c hc0 hregS) (h514 E hE s t hs0 hst ht1 c hc0 hregS)
-      (h45 E hE s t hs0 hst ht1 c hc0 hregS) (h548 E hE s t hs0 hst ht1 c hc0 hregS)
+    Thm221NoEL' X κ :=
+  thm221NoEL'_of_inputs_W X hκ0 hκ1 h1 Hy hΘ h514 h45
+    fun E hE s t hs0 hst ht1 c hc0 hregS =>
+      flowEq548Sm_of_flowEq548 X ht1 (h548 E hE s t hs0 hst ht1 c hc0 hregS)
+
+/-- **`rfl` probe (T233)** for `thm221NoEL'_of_inputs`: the sharp and the smoothed hypothesis
+tables end at the *same* `RBM.Thm221NoEL' X κ`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272' B E s t c → Step45.FlowEq548 X E s t) :
+    thm221NoEL'_of_inputs X hκ0 hκ1 h1 Hy hΘ h514 h45 h548 =
+      thm221NoEL'_of_inputs_W X hκ0 hκ1 h1 Hy hΘ h514 h45
+        (fun E hE s t hs0 hst ht1 c hc0 hregS =>
+          flowEq548Sm_of_flowEq548 X ht1 (h548 E hE s t hs0 hst ht1 c hc0 hregS)) := rfl
 
 end Assembly
 
@@ -558,8 +705,33 @@ section AssemblyReg
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
 
+/-- **Steps 3, 4 and 5 chained into (2.68)–(2.70) at `t`, from `RBM.Cond272Reg` and the
+smoothed (5.48)** (T233).  Verbatim `boundsCore_step_of_flow_reg` with
+`RBM.Step45.FlowEq548` replaced by the weaker `FlowEq548Sm`. -/
+theorem boundsCore_step_of_flow_reg_W (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : FlowEq548Sm X E s t) :
+    BoundsCore X E t := by
+  obtain ⟨w, hwfar, h548W⟩ := h548
+  have hsharp : SharpLoopFlow X E s t := fun n hn =>
+    Step2PP.flow_sharpLoop_glue_flowAs_of_cond272' X hκ0 hκ1 hEκ hs0 hst ht1 hreg.1 hapriori hll
+      hΘ (fun m hm => h514 m (by omega)) hn
+  obtain ⟨hLmK, hdec⟩ :=
+    Step2PP.flow_steps45_glue_flowAs_of_reg_W' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg.1 hreg.2
+      hapriori hll hsharp h45 hΘ h514 hwfar h548W
+  exact BoundsCore_of_flow hst hll hLmK hdec
+
 /-- **Steps 3, 4 and 5 chained into (2.68)–(2.70) at `t`, from `RBM.Cond272Reg`.**  Verbatim
-`RBM.boundsCore_step_of_flow` with the (2.72) side moved to D13's shape. -/
+`RBM.boundsCore_step_of_flow` with the (2.72) side moved to D13's shape.
+
+**Signature unchanged** (T233); the proof is `boundsCore_step_of_flow_reg_W` at the sharp
+indicator weight. -/
 theorem boundsCore_step_of_flow_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c)
@@ -569,14 +741,24 @@ theorem boundsCore_step_of_flow_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (h
     (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) n)
     (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
-    BoundsCore X E t := by
-  have hsharp : SharpLoopFlow X E s t := fun n hn =>
-    Step2PP.flow_sharpLoop_glue_flowAs_of_cond272' X hκ0 hκ1 hEκ hs0 hst ht1 hreg.1 hapriori hll
-      hΘ (fun m hm => h514 m (by omega)) hn
-  obtain ⟨hLmK, hdec⟩ :=
-    Step2PP.flow_steps45_glue_flowAs_of_reg' X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg.1 hreg.2
-      hapriori hll hsharp h45 hΘ h514 h548
-  exact BoundsCore_of_flow hst hll hLmK hdec
+    BoundsCore X E t :=
+  boundsCore_step_of_flow_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hapriori hll hΘ h514 h45
+    (flowEq548Sm_of_flowEq548 X ht1 h548)
+
+/-- **`rfl` probe (T233)** for `boundsCore_step_of_flow_reg`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    boundsCore_step_of_flow_reg X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hapriori hll hΘ h514 h45
+        h548 =
+      boundsCore_step_of_flow_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hapriori hll hΘ h514 h45
+        (flowEq548Sm_of_flowEq548 X ht1 h548) := rfl
 
 /-- **Steps 1–5 chained: the step of the (2.71)-free Theorem 2.21, in D13's shape.**
 
@@ -585,7 +767,29 @@ theorem boundsCore_step_of_flow_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (h
 RBM.Step2PP.flow_sharpLoop_glue_flowAs_of_cond272' →
 RBM.Step2PP.flow_steps45_glue_flowAs_of_reg'`.  The remaining named hypotheses are the same six
 as in `RBM.boundsCore_step_of_inputs`; the only change is that the (2.72) side is
-`RBM.Cond272Reg`, i.e. (2.72) **exactly as printed** plus the regime bound. -/
+`RBM.Cond272Reg`, i.e. (2.72) **exactly as printed** plus the regime bound.
+
+T233: the (5.48) item is `FlowEq548Sm`, i.e. T228's `RBM.Step45.FlowEq548W`. -/
+theorem boundsCore_step_of_inputs_reg_W (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s)
+    (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : FlowEq548Sm X E s t) :
+    BoundsCore X E t := by
+  have hapriori : AprioriFlow X E s t :=
+    (Step1.step1 X hκ0 hEκ hB hs0 hst ht1 hreg.1 hc0 hreg.2 h1).1
+  have hll : LocalLawFlow X E s t :=
+    (MomentDuhamelCut.step2_cut_of_reg X hκ0 hκ1 hEκ Hy h1 hB hs0 hst ht1 hc0 hreg.1 hreg.2).1
+  exact boundsCore_step_of_flow_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hapriori hll hΘ h514
+    h45 h548
+
+/-- **Steps 1–5 chained in D13's shape, at the sharp (5.48).**  **Signature unchanged**
+(T233); the proof is `boundsCore_step_of_inputs_reg_W` at the sharp indicator weight. -/
 theorem boundsCore_step_of_inputs_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
     {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s)
@@ -596,13 +800,25 @@ theorem boundsCore_step_of_inputs_reg (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) 
     (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) n)
     (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
-    BoundsCore X E t := by
-  have hapriori : AprioriFlow X E s t :=
-    (Step1.step1 X hκ0 hEκ hB hs0 hst ht1 hreg.1 hc0 hreg.2 h1).1
-  have hll : LocalLawFlow X E s t :=
-    (MomentDuhamelCut.step2_cut_of_reg X hκ0 hκ1 hEκ Hy h1 hB hs0 hst ht1 hc0 hreg.1 hreg.2).1
-  exact boundsCore_step_of_flow_reg X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hapriori hll hΘ h514
-    h45 h548
+    BoundsCore X E t :=
+  boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy hΘ h514 h45
+    (flowEq548Sm_of_flowEq548 X ht1 h548)
+
+/-- **`rfl` probe (T233)** for `boundsCore_step_of_inputs_reg`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hreg : Cond272Reg B E s t c) (hB : BoundsCore X E s)
+    (h1 : Step1.Hyp X E s t)
+    (Hy : ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
+    boundsCore_step_of_inputs_reg X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy hΘ h514 h45
+        h548 =
+      boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hreg hB h1 Hy hΘ h514 h45
+        (flowEq548Sm_of_flowEq548 X ht1 h548) := rfl
 
 /-- **The (2.71)-free Theorem 2.21 in D13's shape, from the inputs Steps 1–5 still take.**
 
@@ -613,7 +829,40 @@ the inputs are asked for on a **larger** domain than before (`RBM.Cond272'` impl
 `RBM.exists_cond272_not_rpow_le_scale`).
 
 Together with `RBM.Thm221NoEL.toThm221NoEL'` this makes `RBM.Thm221NoEL'` a corollary of what
-is produced here, so nothing downstream of T204 loses a producer. -/
+is produced here, so nothing downstream of T204 loses a producer.
+
+**T233**: the (5.48) item of the hypothesis table is `FlowEq548Sm`, i.e. T228's
+`RBM.Step45.FlowEq548W` at *some* near-field weight vanishing beyond `12ℓ*_u`, and no
+occurrence of the unprimed `RBM.Step45.FlowEq548` is left on the Steps 4–5 chain that reaches
+this theorem. -/
+theorem thm221NoEL_of_inputs_W (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → FlowEq548Sm X E s t) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_reg_W X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hΘ E hE s t hs0 hst ht1 c hc0 hreg) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45 E hE s t hs0 hst ht1 c hc0 hreg) (h548 E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **The (2.71)-free Theorem 2.21 in D13's shape, at the sharp (5.48).**  **Signature
+unchanged** (T233); the proof is `thm221NoEL_of_inputs_W` with the indicator witness supplied
+pointwise. -/
 theorem thm221NoEL_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
     (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
       (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
@@ -632,12 +881,35 @@ theorem thm221NoEL_of_inputs (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : �
       (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
     (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
       (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step45.FlowEq548 X E s t) :
-    Thm221NoEL X κ where
-  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
-    boundsCore_step_of_inputs_reg X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
-      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
-      (hΘ E hE s t hs0 hst ht1 c hc0 hreg) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
-      (h45 E hE s t hs0 hst ht1 c hc0 hreg) (h548 E hE s t hs0 hst ht1 c hc0 hreg)
+    Thm221NoEL X κ :=
+  thm221NoEL_of_inputs_W X hκ0 hκ1 h1 Hy hΘ h514 h45
+    fun E hE s t hs0 hst ht1 c hc0 hreg =>
+      flowEq548Sm_of_flowEq548 X ht1 (h548 E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **`rfl` probe (T233)** for `thm221NoEL_of_inputs`: the sharp and the smoothed hypothesis
+tables end at the *same* `RBM.Thm221NoEL X κ`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hΘ : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      StochDom B.P (Step3.flowXiLK X E s t 2)
+        (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → StepGlue.Eq45Flow X E s t)
+    (h548 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step45.FlowEq548 X E s t) :
+    thm221NoEL_of_inputs X hκ0 hκ1 h1 Hy hΘ h514 h45 h548 =
+      thm221NoEL_of_inputs_W X hκ0 hκ1 h1 Hy hΘ h514 h45
+        (fun E hE s t hs0 hst ht1 c hc0 hreg =>
+          flowEq548Sm_of_flowEq548 X ht1 (h548 E hE s t hs0 hst ht1 c hc0 hreg)) := rfl
 
 /-- **The acceptance probe of T209**: `RBM.BoundsCore X E s` in, `RBM.BoundsCore X E t` out,
 with the (2.72) side `RBM.Cond272Reg` and **no `RBM.Cond272'` anywhere** in the hypothesis
@@ -661,6 +933,23 @@ example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| 
     (h45 : StepGlue.Eq45Flow X E s t) (h548 : Step45.FlowEq548 X E s t) :
     boundsCore_step_of_flow X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45 h548 =
       boundsCore_step_of_flow_reg X hκ0 hκ1 hEκ hs0 hst ht1 hc0
+        (hregS.toCond272Reg (by linarith [abs_nonneg E]) hst ht1 hc0.le)
+        hapriori hll hΘ h514 h45 h548 := rfl
+
+/-- The same for the smoothed (5.48) (T233): the two routes still end at the *same*
+`RBM.BoundsCore X E t` after the (5.48) slot was replaced by `FlowEq548Sm`. -/
+example (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 < c) (hregS : Cond272' B E s t c)
+    (hapriori : AprioriFlow X E s t) (hll : LocalLawFlow X E s t)
+    (hΘ : StochDom B.P (Step3.flowXiLK X E s t 2)
+      (fun N (_ : TimeIcc s t N) (_ : Ω) => Step3.flowAs B E s N ^ ((1 : ℝ) / 2)))
+    (h514 : ∀ n, 2 ≤ n → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) n)
+    (h45 : StepGlue.Eq45Flow X E s t) (h548 : FlowEq548Sm X E s t) :
+    boundsCore_step_of_flow_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0 hregS hapriori hll hΘ h514 h45
+        h548 =
+      boundsCore_step_of_flow_reg_W X hκ0 hκ1 hEκ hs0 hst ht1 hc0
         (hregS.toCond272Reg (by linarith [abs_nonneg E]) hst ht1 hc0.le)
         hapriori hll hΘ h514 h45 h548 := rfl
 

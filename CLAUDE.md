@@ -137,6 +137,10 @@ Phase 1 传播子 Θ_ξ 已完成到 `Propagator/Support.lean`，全绿 0 sorry�
 `Replayed RBM1D.Xxx` 以及它后面 warning 的**行号是否对得上你现在的文件**，
 再加上末尾的 `errors: 0`，才是准的。
 
+**补充（T222，2026-09-22）：`lake env lean <文件>` 不施加 library 的 `leanOptions`**（`autoImplicit` 等），
+所以它会放过 `lake build` 拒收的文件——单文件 exit=0 而模块 exit=1，未定义的标识符靠 auto-bound 蒙过。
+**新文件收工前必须额外跑一次 `lake build RBM1D.<模块名>`**，只看单文件编译不算数。
+
 ## 造轮子之前先查
 
 证任何**通用工具引理**之前，先在仓库里搜一遍：

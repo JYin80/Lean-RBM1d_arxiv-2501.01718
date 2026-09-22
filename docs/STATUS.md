@@ -1,6 +1,6 @@
 # STATUS — current project state
 
-> Updated 2026-09-22 12:04 UTC. This file holds only current decisions, blockers, and a short recent record. Completed ticket rows go to `docs/archive/TASKS-done.md`; full ticket evidence goes to `docs/reports/Txxx.md`. Earlier snapshots are in `docs/archive/STATUS-2026-09-22_11-14.md`, `docs/archive/STATUS-2026-09-22_11.md`, and `docs/archive/STATUS-2026-09-19_22.md`. Search archives by ticket or formula number and read only the matching span.
+> Updated 2026-09-22 12:08 UTC. This file holds only current decisions, blockers, and a short recent record. Completed ticket rows go to `docs/archive/TASKS-done.md`; full ticket evidence goes to `docs/reports/Txxx.md`. Earlier snapshots are in `docs/archive/STATUS-2026-09-22_11-14.md`, `docs/archive/STATUS-2026-09-22_11.md`, and `docs/archive/STATUS-2026-09-19_22.md`. Search archives by ticket or formula number and read only the matching span.
 
 ## 1. Objective and proof boundary
 
@@ -20,7 +20,7 @@
 
 ## 3. Active work and ready queue
 
-- T294 is active in the existing T297 worker task, owning only `Gauss/APrimeQVRateTime.lean` and its report. The other two workers are idle while their next scopes undergo mathematical preflight; no new sidebar task was created.
+- T294 is active in the existing T297 worker task, owning only `Gauss/APrimeQVRateTime.lean` and its report. The T298 worker is idle: next preflight must identify the actual `Qb` producer and compute `tc·Qb` before T287 can be sent. The T293 worker is idle: next preflight must prove one common (4.2)/soft-support sample or a probability overlap before T295 can be sent. No new sidebar task was created.
 - T287 and T295 remain held for mathematical preflight. T293 identifies a separate propagated-QV-to-(G) numerical budget bridge; route it after checking the exact common event and hypotheses. T281/T282 depend on full T280; T283 follows the production chain. T217 is the final-report lane, and T159 must be reconciled with T283.
 
 ## 4. Mathematical preflight before dispatch (2026-09-22)

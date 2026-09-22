@@ -6469,3 +6469,24 @@ paper-deltas 赋号：T216a → 147、T215a → 148、T215b → 149。
 ## Cowork 18:18：审计 T212
 
 **T212 审计通过**：`momentIneq_of_derivBound_gauss` 的假设表从八件降到两件（开区间导数存在 + 逐点不等式），`cK` 与 `MatrixStein d` 也由定理供给。见证 `sideConditions_gauss_window_zero` 在**全开窗口**上、`v ↑ 1` 允许、无短窗口常数（T195 同形检查）；漂移是钉死的 `driftF`；`ω = 0` 退化检查做了。`φ′` 的下界用导数唯一性钉死成生成元表达式——这是工单没点名的一步，做法对。paper-delta T212a → **150**（`|E| < 2` vs 接口的 `|E| ≤ 2`，论文 `|E| ≤ 2 − κ` 更强，不是对论文的偏离）。`momentDuhamelHyp_gauss` 的余下缺口：T223（`xi2` 定义）→ T213 线的双线性识别已交、T214 线的 `Q` 路线（T225/T226）。T221 解锁。
+
+## T221：`BoundsCore` 下游的三份同一脚本合成一份（`Flow/{Consequences,EnergyUniform,Thm221NoEL}.lean`，2026-09-21）
+
+(2.3)/(2.4)/迹律的证明脚本从**三份变成一份**：新增四条**取字段而非 bundle、能量取序列 `EN : ℕ → ℝ`** 的共享脚本 `localLaw_of_fields`/`loop1_of_fields`/`partialTrace_of_fields`/`trace_of_fields`，固定能量版与 `N` 依赖版都成为它的一行特化。
+
+* `Thm221NoEL.lean`（925 → 831 行）：删掉 §6 与 `RBM.Core.*_of_boundsCore` **逐字相同**的七条；`localSemicircleLaw_of_Thm221NoEL'`、`quantumDiffusion_pm_pp_of_Thm221NoEL'` 各降为一行推论。**没有新增任何声明。**
+* `Consequences.lean`：删 `namespace Core`，19 处去前缀，七条回到裸名。
+* `EnergyUniform.lean`：新增六条 `*_of_boundsCoreN`；四条 `*_of_boundsN` 降为一行推论（**签名一字未改**）；`delocalization_of_Thm221N'` **只换那一个生产者调用**。**Theorem 2.2 这一支现在不再经过 `.expect`**。
+
+**删除的证据**：`grep -rn "\bCore\.[a-z]"` 全仓零命中；删前先用**七条 `Eq`/`rfl` 归并等价性探针**证明被删的与上游的**陈述逐字相同**（T107 手法）。**硬边界复核通过**：五条 `expect_*` 签名仍是 `Bounds`，全仓 `.expect` 在 `Consequences.lean` 仍只有一处，**T211 的两条反向探针（(2.8)(2.9) 仍吃 (2.71)）继续通过**；`QDExpect.of_Thm221*`/`theorem2_5_of_Thm221*` 三个文件一字未动。新增 `EnergyUniform.lean` 的**六条跨文件 `rfl` 探针**，是「固定能量版 = 能量依赖版的常值特化」的编译证据。
+
+**paper-delta 不需要任何号**（连临时号都不需要）：无陈述改变（全部由 `rfl` 证实）、无新假设、无削弱。
+
+## ⚠ 待定夺 / 无主（T221 交出）
+
+1. **⭐ Theorem 2.2 彻底脱离 (2.71) 该怎么做**（待定夺）：需要 `Thm221NoELN'` + `BoundsCoreN_of_Thm221NoELN'`。照 STATUS 的 T199 交接项直接在 `EnergyUniform.lean` 里镜像，会**复制 p.24 归纳的整段脚本（第四份重复）**——恰是 T221 要消灭的东西。两条路线：**(a)** 把 `Thm221NoEL.lean` 的 `BoundsCore_zero`/`BoundsCore.congr`/`BoundsCore_of_Thm221NoEL'` 三条按 T221 的手法改写成「取字段的共享脚本」上移，两边一行特化；**(b)** 接受一份重复。T221 建议 (a)，但那是**结构性重排**，不该塞进去重单。
+2. **`SpecSeq.*` 与 `SpecSeqN.*` 是另一对九条重复脚本**（`Consequences.lean:193–251` vs `EnergyUniform.lean:422–493`）。消除办法是把 `SpecSeqN` 结构上移到 `Consequences.lean`，再让 `SpecSeq.*` 走 `hz.toSpecSeqN.*`（**签名可保持不变**）。**无主。**
+3. **T209 余项的正确做法（T221 查明，与 T211 同病）**：`Step2.localLaw` 与 `Step2Moment.aprioriDecay_of_jS` 的更一般重述在**下游**（`StepGlue.lean` import `Step2.lean`），所以原版**没法一行推出来**——要**把一般版上移**，`StepGlue` 的名字降为一行再导出（签名不改）。
+   * **(A)** 把 `StepGlue.localLaw_of_scale_facts` 整段移进 `Hierarchy/Step2.lean`（已核：证明体只用 `Step3.exists_norm_Kval_le`、`Step3.stochDom_mono`、`Band.decayProf`、`Step1.Lemma41Flow`，**全在 `Step2.lean` 已有依赖内**），然后 `Step2.localLaw` 加上原脚本里多出的那一行 `hfacts`（`Step2.lean:1566`）即可。唯一外部消费者 `Gauss/MomentDuhamelCut.lean:1086` 不受影响。
+   * **(B)** 把 `StepGlue.aprioriDecay_of_jS_of_cond272` 整段移进 `Hierarchy/Step2Moment.lean`（已核依赖全在内），然后 `aprioriDecay_of_jS` 经 `Step2.cond272_of_strict` 一行导出——原脚本里 `hregS` 的**唯一用处**就是取出 `Cond272`。消费者 `Step2Near47.lean:853`、`MomentDuhamelCut.lean:990/1052`、`Step2Moment.lean:599` 全部不受影响。
+   * ⚠ 两处都要配 `rfl` 探针；`StepGlue.lean` 目前**无人认领**，而 `Step45.lean` 在 T228 手上（`StepGlue` import 它）。

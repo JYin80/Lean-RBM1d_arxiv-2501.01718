@@ -53,11 +53,21 @@ in `Flow/Iteration.lean`, the primed one is the load-bearing one: it is the weak
 * `RBM.SpecSeqN` — the spectral parameters **without the energy-slice condition**:
   `RBM.SpecSeqN.of_z` produces one for *every* sequence `z` with `|Re z| ≤ 2 - κ`,
   `N^{-1+τ} ≤ Im z ≤ 1`, by taking `E N := lemE (z N)`.
-* `RBM.localLaw_of_boundsN`, `RBM.localSemicircleLaw_of_Thm221N`,
-  `RBM.localSemicircleLaw_of_Thm221N'` — **Theorem 2.3** ((2.3), (2.4), the tracial law) at an
-  `N`-dependent energy, and `RBM.localSemicircleLaw_of_Thm221N_of_z`,
-  `RBM.localSemicircleLaw_of_Thm221N'_of_z` — the same for an **arbitrary** sequence of spectral
-  parameters, with no energy parameter left in the statement.  This is what route (ii) needs.
+* `RBM.localLaw_of_boundsCoreN`, `RBM.loop1_of_boundsCoreN`, `RBM.partialTrace_of_boundsCoreN`,
+  `RBM.trace_of_boundsCoreN`, `RBM.localSemicircleLaw_of_boundsCoreN`,
+  `RBM.localSemicircleLaw_of_boundsCoreN_of_z` — **Theorem 2.3** ((2.3), (2.4), the tracial law)
+  at an `N`-dependent energy, on `RBM.BoundsCoreN`: **(2.71) is not used** (T221; the paper's
+  remark on p. 25).  `RBM.localLaw_of_boundsN` etc. are the `RBM.BoundsN` corollaries, and
+  `RBM.localSemicircleLaw_of_Thm221N`, `RBM.localSemicircleLaw_of_Thm221N'` the assembled forms,
+  with `RBM.localSemicircleLaw_of_Thm221N_of_z`, `RBM.localSemicircleLaw_of_Thm221N'_of_z` for an
+  **arbitrary** sequence of spectral parameters, with no energy parameter left in the statement.
+  This is what route (ii) needs.
+
+  **T221**: the proof scripts are *not* repeated here.  They are
+  `RBM.localLaw_of_fields`, `RBM.loop1_of_fields`, `RBM.partialTrace_of_fields`,
+  `RBM.trace_of_fields` of `Flow/Consequences.lean`, which take the fields they use and an
+  energy *sequence*, so that the fixed-energy statements there and the `N`-dependent ones here
+  are both one-line corollaries of one script (`rfl`-probes at the end of §`Main`).
 
 * `RBM.StochDom.of_forall_seq` — `≺` with the union over a polynomially small `N`-dependent
   index set *inside* the probability, from a `≺`-bound along every sequence of indices (T199).
@@ -69,8 +79,7 @@ in `Flow/Iteration.lean`, the primed one is the load-bearing one: it is the weak
 
 Theorem 2.4 (`RBM.quantumDiffusion_of_Thm221`) is *not* mirrored here: the probabilistic half of
 Theorem 2.2 only uses the local law (`RBM.sq_norm_eigenvector_le_of_norm_green_le_near` of
-`Delocalization.lean` needs a bound on `G_xx`).  Its `N`-dependent version is the same verbatim
-copy of `Flow/Consequences.lean`, on top of `RBM.BoundsN_of_Thm221N'`.
+`Delocalization.lean` needs a bound on `G_xx`).
 
 ## Deviations from the paper
 
@@ -502,20 +511,33 @@ variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {κ τ :
   {z : ℕ → ℂ}
 
 /-- **Theorem 2.3, (2.3)** (local semicircle law) at an `N`-dependent energy, from (2.64) and
-(2.65): `max_{x,y} |(G(z) - m(z))_{xy}| ≺ (W ℓ(z) η)^{-1/2}`.  Verbatim
-`RBM.localLaw_of_bounds`. -/
+(2.65): `max_{x,y} |(G(z) - m(z))_{xy}| ≺ (W ℓ(z) η)^{-1/2}`, on `RBM.BoundsCoreN` — (2.71) is
+not used (T221).  Verbatim `RBM.localLaw_of_boundsCore`, through the shared script
+`RBM.localLaw_of_fields`. -/
+theorem localLaw_of_boundsCoreN (T : Transfer X) (hκ : 0 < κ) (hz : SpecSeqN κ τ E z)
+    (hB : BoundsCoreN X E (fun N => lemT (z N))) :
+    StochDom B.P (fun N (ij : B.Idx N × B.Idx N) ω =>
+        ‖(green (T.Hband N ω) (z N) - msc (z N) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) ij.1 ij.2‖)
+      (fun N _ _ => (B.zScale N (z N))⁻¹ ^ ((1 : ℝ) / 2)) :=
+  localLaw_of_fields T E hz.im_pos hz.lemE_eq
+    (hz.unifDetDom_rpow hκ (by norm_num : (0 : ℝ) ≤ 1 / 2)) hB.localLaw
+
+/-- **Theorem 2.3, (2.3)** at an `N`-dependent energy.  Verbatim `RBM.localLaw_of_bounds`. -/
 theorem localLaw_of_boundsN (T : Transfer X) (hκ : 0 < κ) (hz : SpecSeqN κ τ E z)
     (hB : BoundsN X E (fun N => lemT (z N))) :
     StochDom B.P (fun N (ij : B.Idx N × B.Idx N) ω =>
         ‖(green (T.Hband N ω) (z N) - msc (z N) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) ij.1 ij.2‖)
-      (fun N _ _ => (B.zScale N (z N))⁻¹ ^ ((1 : ℝ) / 2)) := by
-  have h1 := hB.localLaw.trans
-    (StochDom.of_unifDetDom (hz.unifDetDom_rpow hκ (by norm_num : (0 : ℝ) ≤ 1 / 2)))
-  refine T.green_sub_msc z hz.im_pos _ (StochDom.of_le_left (fun N ij ω => ?_) h1)
-  rw [hz.lemE_eq N, Matrix.smul_apply, norm_smul, Sample.llErr]
-  refine mul_le_of_le_one_left (norm_nonneg _) ?_
-  rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
-  exact Real.sqrt_le_one.2 (hz.lemT_lt_one' N).le
+      (fun N _ _ => (B.zScale N (z N))⁻¹ ^ ((1 : ℝ) / 2)) :=
+  localLaw_of_boundsCoreN T hκ hz hB.toBoundsCoreN
+
+/-- **Theorem 2.3, (2.4)** in loop form at an `N`-dependent energy, on `RBM.BoundsCoreN`.
+Verbatim `RBM.loop1_of_boundsCore`, through `RBM.loop1_of_fields`. -/
+theorem loop1_of_boundsCoreN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
+    (hz : SpecSeqN κ τ E z) (hB : BoundsCoreN X E (fun N => lemT (z N))) :
+    StochDom B.P (fun N (a : ZMod (B.L N)) ω =>
+        ‖gloop (B.L N) (B.W N) (T.Hband N ω) (z N) ⟨[true], [a]⟩ - msc (z N)‖)
+      (fun N _ _ => (B.zScale N (z N))⁻¹) :=
+  loop1_of_fields T T1 E hz.im_pos hz.lemE_eq (hz.unifDetDom_pow hκ 1) (hB.LmK 1 le_rfl)
 
 /-- **Theorem 2.3, (2.4)** in loop form at an `N`-dependent energy.  Verbatim
 `RBM.loop1_of_bounds`. -/
@@ -523,20 +545,18 @@ theorem loop1_of_boundsN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
     (hz : SpecSeqN κ τ E z) (hB : BoundsN X E (fun N => lemT (z N))) :
     StochDom B.P (fun N (a : ZMod (B.L N)) ω =>
         ‖gloop (B.L N) (B.W N) (T.Hband N ω) (z N) ⟨[true], [a]⟩ - msc (z N)‖)
-      (fun N _ _ => (B.zScale N (z N))⁻¹) := by
-  have h1 := ((hB.LmK 1 le_rfl).trans
-    (StochDom.of_unifDetDom (hz.unifDetDom_pow hκ 1))).precomp_param
-    (fun N (a : ZMod (B.L N)) => ((fun _ => true, fun _ => a) : LoopData (B.L N) 1))
-  have h2 := T1.loop1 z hz.im_pos (fun N _ => msc (z N)) (fun N _ => (B.zScale N (z N))⁻¹ ^ 1)
-    (StochDom.of_le_left (fun N a ω => ?_) h1)
-  · simpa only [pow_one] using h2
-  have hidx : LoopData.idx ((fun _ => true, fun _ => a) : LoopData (B.L N) 1) =
-      ⟨[true], [a]⟩ := by simp [LoopData.idx]
-  rw [hidx, Sample.lkErr, Band.Kval, Kgen_one, msc_eq_sqrt_mul_mE (hz.im_pos N), hz.lemE_eq N,
-    ← mul_sub, norm_mul]
-  refine mul_le_of_le_one_left (norm_nonneg _) ?_
-  rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
-  exact Real.sqrt_le_one.2 (hz.lemT_lt_one' N).le
+      (fun N _ _ => (B.zScale N (z N))⁻¹) :=
+  loop1_of_boundsCoreN T T1 hκ hz hB.toBoundsCoreN
+
+/-- **Theorem 2.3, (2.4)** (partial tracial local law) at an `N`-dependent energy, on
+`RBM.BoundsCoreN`.  Verbatim `RBM.partialTrace_of_boundsCore`, through
+`RBM.partialTrace_of_fields`. -/
+theorem partialTrace_of_boundsCoreN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
+    (hz : SpecSeqN κ τ E z) (hB : BoundsCoreN X E (fun N => lemT (z N))) :
+    StochDom B.P (fun N (a : ZMod (B.L N)) ω =>
+        ‖(B.W N : ℂ)⁻¹ * ∑ x : Fin (B.W N), green (T.Hband N ω) (z N) (a, x) (a, x) - msc (z N)‖)
+      (fun N _ _ => (B.zScale N (z N))⁻¹) :=
+  partialTrace_of_fields T T1 E hz.im_pos hz.lemE_eq (hz.unifDetDom_pow hκ 1) (hB.LmK 1 le_rfl)
 
 /-- **Theorem 2.3, (2.4)** (partial tracial local law) at an `N`-dependent energy.  Verbatim
 `RBM.partialTrace_of_bounds`. -/
@@ -544,9 +564,17 @@ theorem partialTrace_of_boundsN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0
     (hz : SpecSeqN κ τ E z) (hB : BoundsN X E (fun N => lemT (z N))) :
     StochDom B.P (fun N (a : ZMod (B.L N)) ω =>
         ‖(B.W N : ℂ)⁻¹ * ∑ x : Fin (B.W N), green (T.Hband N ω) (z N) (a, x) (a, x) - msc (z N)‖)
-      (fun N _ _ => (B.zScale N (z N))⁻¹) := by
-  refine StochDom.of_le_left (fun N a ω => le_of_eq ?_) (loop1_of_boundsN T T1 hκ hz hB)
-  rw [gloop_one_eq]
+      (fun N _ _ => (B.zScale N (z N))⁻¹) :=
+  partialTrace_of_boundsCoreN T T1 hκ hz hB.toBoundsCoreN
+
+/-- **Theorem 2.3, the tracial local law** at an `N`-dependent energy, on `RBM.BoundsCoreN`.
+Verbatim `RBM.trace_of_boundsCore`, through `RBM.trace_of_fields`. -/
+theorem trace_of_boundsCoreN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
+    (hz : SpecSeqN κ τ E z) (hB : BoundsCoreN X E (fun N => lemT (z N))) :
+    StochDom B.P (fun N (_ : Unit) ω =>
+        ‖((B.L N * B.W N : ℕ) : ℂ)⁻¹ * (green (T.Hband N ω) (z N)).trace - msc (z N)‖)
+      (fun N _ _ => (B.zScale N (z N))⁻¹) :=
+  trace_of_fields T T1 E hz.im_pos hz.lemE_eq (hz.unifDetDom_pow hκ 1) (hB.LmK 1 le_rfl)
 
 /-- **Theorem 2.3, the tracial local law** at an `N`-dependent energy.  Verbatim
 `RBM.trace_of_bounds`. -/
@@ -554,15 +582,32 @@ theorem trace_of_boundsN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
     (hz : SpecSeqN κ τ E z) (hB : BoundsN X E (fun N => lemT (z N))) :
     StochDom B.P (fun N (_ : Unit) ω =>
         ‖((B.L N * B.W N : ℕ) : ℂ)⁻¹ * (green (T.Hband N ω) (z N)).trace - msc (z N)‖)
-      (fun N _ _ => (B.zScale N (z N))⁻¹) := by
-  have h := StochDom.average (V := fun N => ZMod (B.L N)) (c := fun N => msc (z N))
-    (ζ := fun N => (B.zScale N (z N))⁻¹) (partialTrace_of_boundsN T T1 hκ hz hB)
-  refine StochDom.of_le_left (fun N _ ω => le_of_eq ?_) h
-  have hW : (B.W N : ℂ) ≠ 0 := by exact_mod_cast (B.W_pos N).ne'
-  have hL : (B.L N : ℂ) ≠ 0 := by exact_mod_cast (NeZero.ne (B.L N))
-  simp only [ZMod.card, Matrix.trace, Matrix.diag, Fintype.sum_prod_type, ← Finset.mul_sum]
-  push_cast
-  field_simp
+      (fun N _ _ => (B.zScale N (z N))⁻¹) :=
+  trace_of_boundsCoreN T T1 hκ hz hB.toBoundsCoreN
+
+/-- **Theorem 2.3 (local semicircle law) at an `N`-dependent energy**, on `RBM.BoundsCoreN`:
+(2.71) is not used (T221).  Verbatim `RBM.localSemicircleLaw_of_boundsCore`. -/
+theorem localSemicircleLaw_of_boundsCoreN (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
+    (hz : SpecSeqN κ τ E z) (hB : BoundsCoreN X E (fun N => lemT (z N))) {τ' D : ℝ}
+    (hτ' : 0 < τ') (hD : 0 < D) :
+    (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ ij : B.Idx N × B.Idx N,
+      (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ ^ ((1 : ℝ) / 2) <
+        ‖(green (T.Hband N ω) (z N) - msc (z N) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) ij.1 ij.2‖}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) ∧
+    (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ a : ZMod (B.L N),
+      (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ <
+        ‖(B.W N : ℂ)⁻¹ * ∑ x : Fin (B.W N), green (T.Hband N ω) (z N) (a, x) (a, x) - msc (z N)‖}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) ∧
+    (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ _u : Unit,
+      (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ <
+        ‖((B.L N * B.W N : ℕ) : ℂ)⁻¹ * (green (T.Hband N ω) (z N)).trace - msc (z N)‖}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) :=
+  ⟨B.prob_le_of_stochDom (fun N _ _ => Real.rpow_nonneg (hz.zScale_inv_nonneg N) _)
+      (localLaw_of_boundsCoreN T hκ hz hB) hτ' hD,
+    B.prob_le_of_stochDom (fun N _ _ => hz.zScale_inv_nonneg N)
+      (partialTrace_of_boundsCoreN T T1 hκ hz hB) hτ' hD,
+    B.prob_le_of_stochDom (fun N _ _ => hz.zScale_inv_nonneg N)
+      (trace_of_boundsCoreN T T1 hκ hz hB) hτ' hD⟩
 
 /-- **Theorem 2.3 (local semicircle law) at an `N`-dependent energy**, from `RBM.Thm221N'`.
 Verbatim `RBM.localSemicircleLaw_of_Thm221'`, with `RBM.SpecSeqN` in place of `RBM.SpecSeq`. -/
@@ -580,14 +625,8 @@ theorem localSemicircleLaw_of_Thm221N' (T : Transfer X) (T1 : TransferLoop1 T) (
     (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ _u : Unit,
       (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ <
         ‖((B.L N * B.W N : ℕ) : ℂ)⁻¹ * (green (T.Hband N ω) (z N)).trace - msc (z N)‖}
-      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) := by
-  have hB := hz.boundsN' X hκ hT hτ
-  refine ⟨B.prob_le_of_stochDom (fun N _ _ => Real.rpow_nonneg (hz.zScale_inv_nonneg N) _)
-      (localLaw_of_boundsN T hκ hz hB) hτ' hD,
-    B.prob_le_of_stochDom (fun N _ _ => hz.zScale_inv_nonneg N)
-      (partialTrace_of_boundsN T T1 hκ hz hB) hτ' hD,
-    B.prob_le_of_stochDom (fun N _ _ => hz.zScale_inv_nonneg N)
-      (trace_of_boundsN T T1 hκ hz hB) hτ' hD⟩
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) :=
+  localSemicircleLaw_of_boundsCoreN T T1 hκ hz (hz.boundsN' X hκ hT hτ).toBoundsCoreN hτ' hD
 
 /-- **Theorem 2.3 at an `N`-dependent energy**, from `RBM.Thm221N`. -/
 theorem localSemicircleLaw_of_Thm221N (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ)
@@ -606,6 +645,30 @@ theorem localSemicircleLaw_of_Thm221N (T : Transfer X) (T1 : TransferLoop1 T) (h
         ‖((B.L N * B.W N : ℕ) : ℂ)⁻¹ * (green (T.Hband N ω) (z N)).trace - msc (z N)‖}
       ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) :=
   localSemicircleLaw_of_Thm221N' T T1 hκ (hT.toThm221N' hκ) hτ hz hτ' hD
+
+/-- **Theorem 2.3 for an arbitrary sequence of spectral parameters, on `RBM.BoundsCoreN`** —
+no energy parameter and no (2.71).  `RBM.SpecSeqN.of_z` supplies the spectral data, with
+`E N := lemE (z N)`. -/
+theorem localSemicircleLaw_of_boundsCoreN_of_z (T : Transfer X) (T1 : TransferLoop1 T)
+    (hκ : 0 < κ) {z : ℕ → ℂ} (him_pos : ∀ N, 0 < (z N).im) (him_le_one : ∀ N, (z N).im ≤ 1)
+    (habs_re : ∀ N, |(z N).re| ≤ 2 - κ)
+    (him_ge : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-1 + τ) ≤ (z N).im)
+    (hB : BoundsCoreN X (fun N => lemE (z N)) (fun N => lemT (z N))) {τ' D : ℝ} (hτ' : 0 < τ')
+    (hD : 0 < D) :
+    (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ ij : B.Idx N × B.Idx N,
+      (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ ^ ((1 : ℝ) / 2) <
+        ‖(green (T.Hband N ω) (z N) - msc (z N) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) ij.1 ij.2‖}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) ∧
+    (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ a : ZMod (B.L N),
+      (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ <
+        ‖(B.W N : ℂ)⁻¹ * ∑ x : Fin (B.W N), green (T.Hband N ω) (z N) (a, x) (a, x) - msc (z N)‖}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) ∧
+    (∀ᶠ N : ℕ in atTop, B.P {ω | ∃ _u : Unit,
+      (B.W N : ℝ) ^ τ' * (B.zScale N (z N))⁻¹ <
+        ‖((B.L N * B.W N : ℕ) : ℂ)⁻¹ * (green (T.Hband N ω) (z N)).trace - msc (z N)‖}
+      ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) :=
+  localSemicircleLaw_of_boundsCoreN T T1 hκ (SpecSeqN.of_z him_pos him_le_one habs_re him_ge) hB
+    hτ' hD
 
 /-- ⭐ **Theorem 2.3 for an arbitrary sequence of spectral parameters** — no energy parameter
 occurs in the statement at all.
@@ -654,6 +717,42 @@ theorem localSemicircleLaw_of_Thm221N'_of_z (T : Transfer X) (T1 : TransferLoop1
       ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))) :=
   localSemicircleLaw_of_Thm221N' T T1 hκ hT hτ
     (SpecSeqN.of_z him_pos him_le_one habs_re him_ge) hτ' hD
+
+/-! #### `rfl`-probes: the merge of T221 changed no statement
+
+`Eq` forces both sides to have the same type, so each `example` type-checks only if the two
+conclusions are **definitionally equal** (T107's technique).  The first five check the merge
+*across files*: the fixed-energy statements of `Flow/Consequences.lean` are literally the
+constant-energy case of the `N`-dependent ones here, which is why both can be one-line
+corollaries of the single script (`RBM.localLaw_of_fields`, …).  The last one checks the same
+for the assembled Theorem 2.3. -/
+
+section Probes
+
+variable (T : Transfer X) (T1 : TransferLoop1 T) (hκ : 0 < κ) {E₀ : ℝ}
+  (hz : SpecSeq κ τ E₀ z) (hB : BoundsCore X E₀ (fun N => lemT (z N))) {τ' D : ℝ}
+  (hτ' : 0 < τ') (hD : 0 < D)
+
+example : localLaw_of_boundsCore T hκ hz hB =
+    localLaw_of_boundsCoreN T hκ hz.toSpecSeqN hB.toBoundsCoreN := rfl
+
+example : loop1_of_boundsCore T T1 hκ hz hB =
+    loop1_of_boundsCoreN T T1 hκ hz.toSpecSeqN hB.toBoundsCoreN := rfl
+
+example : partialTrace_of_boundsCore T T1 hκ hz hB =
+    partialTrace_of_boundsCoreN T T1 hκ hz.toSpecSeqN hB.toBoundsCoreN := rfl
+
+example : trace_of_boundsCore T T1 hκ hz hB =
+    trace_of_boundsCoreN T T1 hκ hz.toSpecSeqN hB.toBoundsCoreN := rfl
+
+example : localSemicircleLaw_of_boundsCore T T1 hκ hz hB hτ' hD =
+    localSemicircleLaw_of_boundsCoreN T T1 hκ hz.toSpecSeqN hB.toBoundsCoreN hτ' hD := rfl
+
+example (hT : Thm221N X κ) (hτ : 0 < τ) :
+    localSemicircleLaw_of_Thm221 T T1 hκ hT.toThm221 hτ hz hτ' hD =
+      localSemicircleLaw_of_Thm221N T T1 hκ hT hτ hz.toSpecSeqN hτ' hD := rfl
+
+end Probes
 
 end Main
 
@@ -1062,7 +1161,8 @@ theorem delocalization_of_Thm221N' (T : Transfer X) {κ : ℝ} (hκ : 0 < κ) (h
         ‖(green (T.Hband N ω) (znet N (j N)) -
           msc (znet N (j N)) • (1 : Matrix (B.Idx N) (B.Idx N) ℂ)) v.1 v.2‖)
       (fun N (_ : B.Idx N × B.Idx N) (_ : Ω) => (B.zScale N (znet N (j N)))⁻¹ ^ ((1 : ℝ) / 2))
-      from localLaw_of_boundsN T hκ (hspec j) ((hspec j).boundsN' X hκ hT hθ0)
+      from localLaw_of_boundsCoreN T hκ (hspec j)
+        ((hspec j).boundsN' X hκ hT hθ0).toBoundsCoreN
   have hgood := hsd.highProb (τ := θ / 4) (by positivity)
   filter_upwards [hgood D hD, eventually_ge_atTop 1, B.rpow_le_zScale hθ0 hθc,
     eventually_le_rpow (Real.sqrt 2) (by positivity : (0:ℝ) < θ / 4),

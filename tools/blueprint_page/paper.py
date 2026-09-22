@@ -41,7 +41,7 @@ if _nparsed != _nenv:
 # Cowork overrides: nodes whose Lean proof is conditional on a hypothesis still being discharged
 STATUS_OVERRIDE = {
     'thm:fluc-high': ('repl', '旧接口在 B≍Ψ 处不可满足（T171/T172）；已由带基数预算的条件化版取代，(4.12)→Eq45Flow 闭合（T177/T188）'),
-    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init（T241）、meas（T244，无条件）已关，modulus 按字面为假、需事件限制（T244 证出空真第 11 例，事件限制版 → T249）；钝版自举：路线 (B) 编译否定，(A′) ℓ^q 软最大值权重实现中 → T230'),
+    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init（T241）、meas（T244）已关，modulus 对每个 ω 为假（T244、T249 空真第 11、12 例）→ 窗口左端取 s_N ≥ N^{−C} 并用不依赖 ‖X‖ 的 Lipschitz（T249、T251、T252）；停时的替代 (A′)：cut 已由定理产出（APrimeHyp → MomentHypCutEv），只剩全测度加权矩 WeightedMoment 的 Grönwall 收口（T230、T250）'),
 }
 for _l, (_st, _tk) in STATUS_OVERRIDE.items():
     if _l in NODE:
@@ -89,7 +89,7 @@ EXTRA = [
  ('lem5.3b','Lem 5.3  随机积分（逐路径形状）','lem','hyp',''),
  ('eq2.39', '(2.39) 分布相等\n逐点恒等式，已证',   'lem','done',''),
  ('eq6.1',  '(6.1) 分布标度\n逐点恒等式，已证',    'lem','done',''),
- ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','第一遍总装（Flow/Thm221Assembly，T239）；六槽已关四项：Step1.Hyp（T242）、hΘ 与 Eq45Flow（T243）、(5.48) 的 init（T241）；Lemma514 的 NonAlt514 已删（T236）；余 MomentHypCut → T230 (A′)、(5.48) 的 modulus → T249、moment → T230；四处闭合合并 → T245；(2.71) 第二遍余项 → T234/T247'),
+ ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','一份总装同时关掉四槽（T245）；余：第 2、3 槽同一个 WeightedMoment 障碍 → T230 (A′)；Lemma514 的 hErr*/换线 → T253、T254；Eq45FlowInputs 的网格数据 → T124 续；(5.48) 的 near → Step2Near47、modulus → T251、T252、moment → T230；(2.71) 第二遍三条分析性假设已关（T247）'),
 ]
 for i, (x, lab, k, st, tk) in enumerate(EXTRA):
     NODE[x] = dict(kind=k, title=lab, chap=9, st=st, tk=tk, uses=[])

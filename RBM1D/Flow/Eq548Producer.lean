@@ -7,6 +7,7 @@ import RBM1D.Hierarchy.Step2FarMart
 import RBM1D.Hierarchy.Step2Near47
 import RBM1D.Defs.MatrixMeasurable
 import RBM1D.Gauss.FlowHolder
+import RBM1D.Gauss.LoopLipschitz
 
 /-!
 # Producers for the entrywise data of (5.48): `near`, `meas`, `modulus` (T244)
@@ -849,156 +850,49 @@ theorem gloop_pm_involMat (a₁ a₂ : ZMod L) (ha : a₁ ≠ a₂) {z : ℂ}
 end LoopValue
 
 /-! ### 9. T249 (part B): the `‖X‖`-free Lipschitz bound on `s_N ≥ N^{-C}`
+— **moved to `RBM1D/Gauss/LoopLipschitz.lean` (T252)**
 
-The identity `X G_v = v^{-1/2}(1 + z_v G_v)` (`RBM.mul_green_smul`) removes `X` from the
-resolvent identity altogether: no bound on `‖X‖` is used, and the estimate holds for **every**
-`ω`.  On a window whose left endpoint is `s > 0` the resulting constant is `O(1/s)`
-(`RBM.norm_green_sqrt_sub_le_lip`), so on `s_N ≥ N^{-C}` it is `N^{C}` times the `η`-factors —
-a Lipschitz (`γ = 1`) modulus, not a Hölder one. -/
+The three lemmas of this section (`RBM.isHermitian_real_smul`, `RBM.mul_green_smul`,
+`RBM.norm_green_sqrt_sub_le`, `RBM.norm_green_sqrt_sub_le_lip`) are pure resolvent identities
+that use nothing from `RBM1D/Flow/`, and `RBM1D/Gauss/` needs them (T252: the loop-level
+modulus).  Importing `Flow/` from `Gauss/` would reverse the dependency, so they were sunk to
+`RBM1D/Gauss/LoopLipschitz.lean` **with their signatures unchanged**; this file imports it and
+the names stay in the `RBM` namespace, so §10 below (the counterexample) is untouched.
 
-section SqrtFlowLip
+The `rfl` probes below are the re-export check: if a signature ever drifts, they fail here. -/
+
+section SqrtFlowLipReexport
 
 open scoped Matrix.Norms.L2Operator
 
-variable {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+example {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n] {Y : Matrix n n ℂ}
+    (hY : Y.IsHermitian) (r : ℝ) : ((r : ℂ) • Y).IsHermitian :=
+  isHermitian_real_smul hY r
 
-theorem isHermitian_real_smul {Y : Matrix n n ℂ} (hY : Y.IsHermitian) (r : ℝ) :
-    ((r : ℂ) • Y).IsHermitian := by
-  ext i j
-  show (starRingEnd ℂ) ((r : ℂ) * Y j i) = (r : ℂ) * Y i j
-  rw [map_mul, Complex.conj_ofReal]
-  congr 1
-  simpa using hY.apply i j
-
-theorem mul_green_smul {Y : Matrix n n ℂ} (hY : Y.IsHermitian) {z : ℂ} (hz : z.im ≠ 0)
-    {r : ℝ} (hr : r ≠ 0) :
+example {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n] {Y : Matrix n n ℂ}
+    (hY : Y.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) {r : ℝ} (hr : r ≠ 0) :
     Y * green ((r : ℂ) • Y) z
-      = ((r : ℂ))⁻¹ • ((1 : Matrix n n ℂ) + z • green ((r : ℂ) • Y) z) := by
-  have hYr : ((r : ℂ) • Y).IsHermitian := isHermitian_real_smul hY r
-  have hdet : IsUnit (((r : ℂ) • Y) - z • (1 : Matrix n n ℂ)).det :=
-    isUnit_det_sub_smul_one hYr hz
-  have hinv : (((r : ℂ) • Y) - z • (1 : Matrix n n ℂ)) * green ((r : ℂ) • Y) z = 1 :=
-    Matrix.mul_nonsing_inv _ hdet
-  have hrC : ((r : ℂ)) ≠ 0 := by exact_mod_cast hr
-  rw [Matrix.sub_mul, Matrix.smul_mul, Matrix.smul_mul, Matrix.one_mul] at hinv
-  have : (r : ℂ) • (Y * green ((r : ℂ) • Y) z)
-      = (1 : Matrix n n ℂ) + z • green ((r : ℂ) • Y) z := by
-    rw [← hinv]; abel
-  rw [← this, smul_smul, inv_mul_cancel₀ hrC, one_smul]
+      = ((r : ℂ))⁻¹ • ((1 : Matrix n n ℂ) + z • green ((r : ℂ) • Y) z) :=
+  mul_green_smul hY hz hr
 
-/-- **The `‖X‖`-free resolvent increment of the `√u` flow.** -/
-theorem norm_green_sqrt_sub_le {Y : Matrix n n ℂ} (hY : Y.IsHermitian) {E : ℝ} (hE : |E| < 2)
-    {u v : ℝ} (hv0 : 0 < v) (_hu0 : 0 ≤ u) (hu1 : u < 1) (hv1 : v < 1) :
+example {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n] {Y : Matrix n n ℂ}
+    (hY : Y.IsHermitian) {E : ℝ} (hE : |E| < 2) {u v : ℝ} (hv0 : 0 < v) (hu0 : 0 ≤ u)
+    (hu1 : u < 1) (hv1 : v < 1) :
     ‖green ((Real.sqrt u : ℂ) • Y) (zt E u) - green ((Real.sqrt v : ℂ) • Y) (zt E v)‖
       ≤ |Real.sqrt v - Real.sqrt u| / Real.sqrt v *
           ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹))
-        + |u - v| * ((etaT E u)⁻¹ * (etaT E v)⁻¹) := by
-  have hηu : 0 < etaT E u := by
-    show 0 < (1 - u) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
-  have hηv : 0 < etaT E v := by
-    show 0 < (1 - v) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
-  have hzu : (zt E u).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact hηu.ne'
-  have hzv : (zt E v).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact hηv.ne'
-  have hYu : ((Real.sqrt u : ℂ) • Y).IsHermitian := isHermitian_real_smul hY _
-  have hYv : ((Real.sqrt v : ℂ) • Y).IsHermitian := isHermitian_real_smul hY _
-  set Gu := green ((Real.sqrt u : ℂ) • Y) (zt E u) with hGu
-  set Gv := green ((Real.sqrt v : ℂ) • Y) (zt E v) with hGv
-  have hnu : ‖Gu‖ ≤ (etaT E u)⁻¹ :=
-    Gauss.norm_green_le hYu hηu (by rw [← etaT_eq_zt_im, abs_of_pos hηu])
-  have hnv : ‖Gv‖ ≤ (etaT E v)⁻¹ :=
-    Gauss.norm_green_le hYv hηv (by rw [← etaT_eq_zt_im, abs_of_pos hηv])
-  have hsv : Real.sqrt v ≠ 0 := (Real.sqrt_pos.2 hv0).ne'
-  have hid := green_sub_eq (isUnit_det_sub_smul_one hYu hzu) (isUnit_det_sub_smul_one hYv hzv)
-  have hYG : Y * Gv = ((Real.sqrt v : ℂ))⁻¹ • ((1 : Matrix n n ℂ) + (zt E v) • Gv) :=
-    mul_green_smul hY hzv hsv
-  have hsplit : Gu - Gv
-      = ((((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) / (Real.sqrt v : ℂ)) •
-            (Gu + (zt E v) • (Gu * Gv)))
-        - ((zt E v) - (zt E u)) • (Gu * Gv) := by
-    rw [hid]
-    rw [show ((Real.sqrt v : ℂ) • Y - (zt E v) • (1 : Matrix n n ℂ))
-          - ((Real.sqrt u : ℂ) • Y - (zt E u) • (1 : Matrix n n ℂ))
-        = (((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) • Y)
-          - ((zt E v) - (zt E u)) • (1 : Matrix n n ℂ) by
-      rw [sub_smul, sub_smul]; abel]
-    rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_smul,
-      Matrix.smul_mul, Matrix.mul_one]
-    rw [Matrix.mul_assoc, hYG, Matrix.mul_smul, smul_smul, Matrix.mul_add, Matrix.mul_one,
-      Matrix.mul_smul]
-    rw [div_eq_mul_inv]
-  have hGuv : ‖Gu * Gv‖ ≤ (etaT E u)⁻¹ * (etaT E v)⁻¹ :=
-    (norm_mul_le _ _).trans (mul_le_mul hnu hnv (norm_nonneg _) (by positivity))
-  have hscal : ‖(((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) / (Real.sqrt v : ℂ))‖
-      = |Real.sqrt v - Real.sqrt u| / Real.sqrt v := by
-    rw [← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.norm_real, Real.norm_eq_abs,
-      abs_div, abs_of_nonneg (Real.sqrt_nonneg v)]
-  have h1 : ‖((((Real.sqrt v : ℂ) - (Real.sqrt u : ℂ)) / (Real.sqrt v : ℂ)) •
-        (Gu + (zt E v) • (Gu * Gv)))‖
-      ≤ |Real.sqrt v - Real.sqrt u| / Real.sqrt v *
-          ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹)) := by
-    rw [norm_smul, hscal]
-    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul]
-    have : ‖zt E v‖ * ‖Gu * Gv‖ ≤ ‖zt E v‖ * ((etaT E u)⁻¹ * (etaT E v)⁻¹) :=
-      mul_le_mul_of_nonneg_left hGuv (norm_nonneg _)
-    nlinarith [hnu, norm_nonneg (zt E v)]
-  have h2 : ‖((zt E v) - (zt E u)) • (Gu * Gv)‖
-      ≤ |u - v| * ((etaT E u)⁻¹ * (etaT E v)⁻¹) := by
-    rw [norm_smul, norm_zt_sub hE.le, abs_sub_comm]
-    exact mul_le_mul_of_nonneg_left hGuv (abs_nonneg _)
-  rw [hsplit]
-  exact (norm_sub_le _ _).trans (add_le_add h1 h2)
+        + |u - v| * ((etaT E u)⁻¹ * (etaT E v)⁻¹) :=
+  norm_green_sqrt_sub_le hY hE hv0 hu0 hu1 hv1
 
-
-/-- **The Lipschitz form on a window with a positive left endpoint.**  `|√v - √u|/√v ≤
-|u - v|/(2s)` for `u, v ≥ s > 0`, so the increment is `O(|u-v|/s)` — Lipschitz (`γ = 1`), and
-**no bound on `‖Y‖` is used**.  On `s_N ≥ N^{-C}` and `t_N ≤ t₀ < 1` the bracket is at most
-`(η_{t₀})⁻¹(1 + 3(η_{t₀})⁻¹) N^C / 2 + (η_{t₀})⁻²`, i.e. `N^C` times a constant of `E` and
-`t₀` (use `‖z_v‖ ≤ |E| + 1 ≤ 3` and `η_v ≥ η_{t₀}`). -/
-theorem norm_green_sqrt_sub_le_lip {Y : Matrix n n ℂ} (hY : Y.IsHermitian) {E : ℝ}
-    (hE : |E| < 2) {s u v : ℝ} (hs : 0 < s) (hsu : s ≤ u) (hsv : s ≤ v) (hu1 : u < 1)
-    (hv1 : v < 1) :
+example {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n] {Y : Matrix n n ℂ}
+    (hY : Y.IsHermitian) {E : ℝ} (hE : |E| < 2) {s u v : ℝ} (hs : 0 < s) (hsu : s ≤ u)
+    (hsv : s ≤ v) (hu1 : u < 1) (hv1 : v < 1) :
     ‖green ((Real.sqrt u : ℂ) • Y) (zt E u) - green ((Real.sqrt v : ℂ) • Y) (zt E v)‖
       ≤ |u - v| * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹) / (2 * s)
-          + (etaT E u)⁻¹ * (etaT E v)⁻¹) := by
-  have hv0 : 0 < v := lt_of_lt_of_le hs hsv
-  have hu0 : (0 : ℝ) ≤ u := le_trans hs.le hsu
-  have hsqu : Real.sqrt u * Real.sqrt u = u := Real.mul_self_sqrt hu0
-  have hsqv : Real.sqrt v * Real.sqrt v = v := Real.mul_self_sqrt hv0.le
-  have hs2u : Real.sqrt s ≤ Real.sqrt u := Real.sqrt_le_sqrt hsu
-  have hs2v : Real.sqrt s ≤ Real.sqrt v := Real.sqrt_le_sqrt hsv
-  have hss : Real.sqrt s * Real.sqrt s = s := Real.mul_self_sqrt hs.le
-  have hs0 : 0 < Real.sqrt s := Real.sqrt_pos.2 hs
-  have hv0' : 0 < Real.sqrt v := Real.sqrt_pos.2 hv0
-  have hu0' : (0 : ℝ) ≤ Real.sqrt u := Real.sqrt_nonneg u
-  have habs : |Real.sqrt v - Real.sqrt u| * (Real.sqrt u + Real.sqrt v) = |u - v| := by
-    rw [← abs_of_nonneg (by positivity : (0 : ℝ) ≤ Real.sqrt u + Real.sqrt v), ← abs_mul]
-    rw [show (Real.sqrt v - Real.sqrt u) * (Real.sqrt u + Real.sqrt v) = v - u by nlinarith]
-    exact abs_sub_comm v u
-  have hnn : (0 : ℝ) ≤ |Real.sqrt v - Real.sqrt u| := abs_nonneg _
-  have hden : 2 * s ≤ (Real.sqrt u + Real.sqrt v) * Real.sqrt v := by nlinarith
-  have hkey : |Real.sqrt v - Real.sqrt u| / Real.sqrt v ≤ |u - v| / (2 * s) := by
-    rw [div_le_div_iff₀ hv0' (by positivity)]
-    have hmul := mul_le_mul_of_nonneg_left hden hnn
-    nlinarith [habs, hmul]
-  have hηu : 0 < etaT E u := by
-    show 0 < (1 - u) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
-  have hηv : 0 < etaT E v := by
-    show 0 < (1 - v) * (mE E).im; exact mul_pos (by linarith) (mE_im_pos hE)
-  refine (norm_green_sqrt_sub_le hY hE hv0 hu0 hu1 hv1).trans ?_
-  have hfac : (0 : ℝ) ≤ (etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹) := by positivity
-  have h1 : |Real.sqrt v - Real.sqrt u| / Real.sqrt v *
-        ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹))
-      ≤ |u - v| / (2 * s) * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹)) :=
-    mul_le_mul_of_nonneg_right hkey hfac
-  have hd : |u - v| / (2 * s) * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹))
-      = |u - v| * ((etaT E u)⁻¹ * (1 + ‖zt E v‖ * (etaT E v)⁻¹) / (2 * s)) := by
-    field_simp
-  rw [hd] at h1
-  linarith
+          + (etaT E u)⁻¹ * (etaT E v)⁻¹) :=
+  norm_green_sqrt_sub_le_lip hY hE hs hsu hsv hu1 hv1
 
-end SqrtFlowLip
+end SqrtFlowLipReexport
 
 
 

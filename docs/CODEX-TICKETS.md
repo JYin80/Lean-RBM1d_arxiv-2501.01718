@@ -273,7 +273,7 @@ T280b 按 §11 做成：小槽 `x^{1/4}`、`stepRhs''/R⁴ ≤ (cStep′+1)x^{5/
 * 第 0 步 `#check`：`norm_Qop_le_of_fastDecay`、`fastDecay_driftF_window`、`norm_driftF_le`、`F_eq_driftF`；核对 `B.ell N u` 与 `ellHat (B.L N) (u:ℂ)` 的关系，以及半径 `K → 4K` 的换算。
 * **停止条件**：`norm_driftF_le` 的输入（`hKb` 的 `CK·A^{−(len−1)}`、`xiLK`）在 `hDecF` 所用的同一个 `Ξ` 上拿不到——报告缺哪一件。LoopDecay 输入与 Step 2 结论是否循环：这是既有问题，只报告，不在本步解决。
 
-## §18 T280g、T280e 的回报（Cowork 10:40；已读两份报告与相关签名）
+## §18 T280g、T280e 的回报（Cowork 10:23；已读两份报告与相关签名）
 
 ### T280g：否定成立，是 Cowork §17(c) 的疏漏
 §17(c) 写「`log W ≥ 3`，从 `hlog` 推」，但 `hlog : (4D)² ≤ log W` 在 `D = 0` 时什么也不给；`not_log_three_of_endpoint_hlog` 对。**修法（路由，已核算）**：

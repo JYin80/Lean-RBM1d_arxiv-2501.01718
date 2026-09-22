@@ -1497,4 +1497,208 @@ theorem unifDomIcc_flucAvg_blockAvg_env (d : Dims) (hE : |E| < 2) (ht1 : ∀ N, 
 
 end FlucEnv
 
+/-! ### Split threshold and mesh for the time net — T279 -/
+
+open scoped Matrix.Norms.L2Operator
+
+/-- The primed slow-variation estimate uses `δ` only for the good-event threshold and
+`μ` only for the time spacing.  The old declaration is kept unchanged. -/
+theorem Lmax_flow_slow_of_net' {V : ℕ → Type*} (d : Dims) {E : ℝ} {s t δ μ : ℕ → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hμ0 : ∀ N, 0 ≤ μ N)
+    (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hμ1 : ∀ᶠ N : ℕ in atTop, μ N ≤ 1)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * μ N ^ ((1 : ℝ) / 2) ≤ 1) :
+    ∀ ε > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ _a : V N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N), |u - v| ≤ μ N →
+        Lmax (Hflow d N v ω) (zt E v) ≤ (N : ℝ) ^ ε * Lmax (Hflow d N u ω) (zt E u) := by
+  intro ε hε
+  filter_upwards [hδ1, hμ1, hfine, rpow_neg_le_Lmax_flow (E := E) (s := s) (t := t) d hE.le hδ1,
+    eventually_le_rpow 2 hε, eventually_ge_atTop 1]
+    with N hδN hμN hfineN hlowN h2N hN1 ω hω _a u hu v hv huv
+  obtain ⟨hωΩ, hωX⟩ := hω
+  set η : ℝ := etaT E (t N) with hη_def
+  have hηpos : 0 < η := etaT_pos_of_lt_one' hE (ht1 N)
+  have hu1 : u < 1 := lt_of_le_of_lt hu.2 (ht1 N)
+  have hv1 : v < 1 := lt_of_le_of_lt hv.2 (ht1 N)
+  have hu0 : (0 : ℝ) ≤ u := (hs0 N).trans hu.1
+  have hv0 : (0 : ℝ) ≤ v := (hs0 N).trans hv.1
+  have hiu : (etaT E u)⁻¹ ≤ η⁻¹ := by
+    rw [← one_div, ← one_div]; exact one_div_le_one_div_of_le hηpos (etaT_le_of_le hE hu.2)
+  have hiv : (etaT E v)⁻¹ ≤ η⁻¹ := by
+    rw [← one_div, ← one_div]; exact one_div_le_one_div_of_le hηpos (etaT_le_of_le hE hv.2)
+  have hiu0 : (0 : ℝ) < (etaT E u)⁻¹ := by
+    have := etaT_pos_of_lt_one' hE hu1; positivity
+  have hiv0 : (0 : ℝ) < (etaT E v)⁻¹ := by
+    have := etaT_pos_of_lt_one' hE hv1; positivity
+  have hNpos : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  set dh : ℝ := μ N ^ ((1 : ℝ) / 2) with hdh_def
+  have hdh0 : (0 : ℝ) ≤ dh := Real.rpow_nonneg (hμ0 N) _
+  -- the middle factor of the resolvent modulus
+  have hmid : |Real.sqrt u - Real.sqrt v| * ‖Xmat d N ω‖ + |u - v| ≤ 2 * (N : ℝ) * dh := by
+    have hd1 : |u - v| ≤ 1 := huv.trans hμN
+    have h1 : |Real.sqrt u - Real.sqrt v| ≤ |u - v| ^ ((1 : ℝ) / 2) := by
+      have h := RBM.abs_sqrt_sub_sqrt_le hu0 hv0
+      rwa [show Real.sqrt |u - v| = |u - v| ^ ((1 : ℝ) / 2) from Real.sqrt_eq_rpow _] at h
+    have h2 : |u - v| ≤ |u - v| ^ ((1 : ℝ) / 2) := self_le_rpow_half (abs_nonneg _) hd1
+    have h3 : |u - v| ^ ((1 : ℝ) / 2) ≤ dh :=
+      Real.rpow_le_rpow (abs_nonneg _) huv (by norm_num)
+    have hX0 : (0 : ℝ) ≤ ‖Xmat d N ω‖ := norm_nonneg _
+    have hXN : ‖Xmat d N ω‖ ≤ (N : ℝ) := hωX
+    nlinarith [h1, h2, h3, hX0, hXN, hdh0]
+  have hm0 : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt v| * ‖Xmat d N ω‖ + |u - v| := by
+    have h1 : (0 : ℝ) ≤ |Real.sqrt u - Real.sqrt v| * ‖Xmat d N ω‖ := by positivity
+    linarith [abs_nonneg (u - v)]
+  -- the resolvent modulus, with every `η_u` replaced by `η`
+  have hΔ : ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)‖
+      ≤ η⁻¹ * (2 * (N : ℝ) * dh) * η⁻¹ := by
+    refine (norm_green_flow_sub_le d N hE hu1 hv1 ω).trans ?_
+    gcongr
+  have hΔ0 : (0 : ℝ) ≤ ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)‖ :=
+    norm_nonneg _
+  -- the total error
+  have herr : Lmax (Hflow d N v ω) (zt E v)
+      ≤ Lmax (Hflow d N u ω) (zt E u) + 4 * (η⁻¹) ^ 3 * (N : ℝ) * dh := by
+    refine (Lmax_flow_le_add d N hE hu1 hv1 ω).trans ?_
+    have hfirst : (etaT E u)⁻¹ + (etaT E v)⁻¹ ≤ 2 * η⁻¹ := by linarith
+    have h2η : (0 : ℝ) ≤ 2 * η⁻¹ := by positivity
+    have hstep : ((etaT E u)⁻¹ + (etaT E v)⁻¹)
+        * ‖green (Hflow d N u ω) (zt E u) - green (Hflow d N v ω) (zt E v)‖
+        ≤ (2 * η⁻¹) * (η⁻¹ * (2 * (N : ℝ) * dh) * η⁻¹) :=
+      mul_le_mul hfirst hΔ hΔ0 h2η
+    have heq : (2 * η⁻¹) * (η⁻¹ * (2 * (N : ℝ) * dh) * η⁻¹) = 4 * (η⁻¹) ^ 3 * (N : ℝ) * dh := by
+      ring
+    linarith [hstep, heq ▸ hstep]
+  -- the error is below `N^{-2} ≤ L^max_u`
+  have hNsq : (0 : ℝ) < (N : ℝ) ^ (2 : ℕ) := by positivity
+  have hprod : (4 * (η⁻¹) ^ 3 * (N : ℝ) * dh) * (N : ℝ) ^ (2 : ℕ) ≤ 1 := by
+    calc (4 * (η⁻¹) ^ 3 * (N : ℝ) * dh) * (N : ℝ) ^ (2 : ℕ)
+        = 4 * (η⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * dh := by ring
+      _ ≤ 1 := hfineN
+  have hsmall : 4 * (η⁻¹) ^ 3 * (N : ℝ) * dh ≤ ((N : ℝ) ^ (2 : ℕ))⁻¹ := by
+    have hstep := mul_le_mul_of_nonneg_right hprod (le_of_lt (inv_pos.2 hNsq))
+    rwa [mul_assoc, mul_inv_cancel₀ hNsq.ne', mul_one, one_mul] at hstep
+  have hlow : ((N : ℝ) ^ (2 : ℕ))⁻¹ ≤ Lmax (Hflow d N u ω) (zt E u) := by
+    have h := hlowN ω hωΩ u hu
+    have hrw : (N : ℝ) ^ (-(2 : ℝ)) = ((N : ℝ) ^ (2 : ℕ))⁻¹ := by
+      rw [Real.rpow_neg hNpos.le, ← Real.rpow_natCast (N : ℝ) 2]
+      norm_num
+    rwa [hrw] at h
+  have hL0 : 0 ≤ Lmax (Hflow d N u ω) (zt E u) := Lmax_nonneg (Hflow_isHermitian d N u ω)
+  nlinarith [herr, hsmall, hlow, hL0, h2N]
+
+
+/-- The `Lmax` net engine with independent good-event threshold `δ` and time spacing `μ`. -/
+theorem stochDom_timeIcc_Lmax_of_unifDom' {V : ℕ → Type*} [∀ N, Fintype (V N)] (d : Dims)
+    {E : ℝ} {s t δ μ : ℕ → ℝ} {K : ℝ}
+    (hcard : ∀ᶠ N : ℕ in atTop, (Fintype.card (V N) : ℝ) ≤ (N : ℝ) ^ (1 : ℝ))
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
+    (hK : 0 ≤ K) (hμ0 : ∀ N, 0 ≤ μ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hμ1 : ∀ᶠ N : ℕ in atTop, μ N ≤ 1)
+    (hμnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ μ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * μ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {ξ : ∀ N, ℝ → V N → Ω d → ℝ}
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : V N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |ξ N u a ω - ξ N v a ω| ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hfix : UnifDomIcc (P d) s t ξ (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u))) :
+    StochDom (P d) (U := fun N => RBM.TimeIcc s t N × V N)
+      (fun N p ω => ξ N (p.1 : ℝ) p.2 ω)
+      (fun N p ω => Lmax (Hflow d N (p.1 : ℝ) ω) (zt E (p.1 : ℝ))) := by
+  refine stochDom_timeIcc_of_unifDom (δ := μ) hcard hst one_pos ?_ hK (by norm_num : (0:ℝ) ≤ 2)
+    (by norm_num : (0:ℝ) < (1:ℝ)/2) ?_ hμnet (highProb_flowNetEvent d hΩ) hHol ?_
+    (Lmax_flow_slow_of_net' (V := V) d hE hs0 ht1 hμ0 hδ1 hμ1 hfine) hfix
+  · intro N; have h1 := hs0 N; have h2 := (ht1 N).le; linarith
+  · intro N u a ω; exact Lmax_nonneg (Hflow_isHermitian d N u ω)
+  · filter_upwards [rpow_neg_le_Lmax_flow (E := E) (s := s) (t := t) d hE.le hδ1]
+      with N hN ω hω a u hu
+    exact hN ω hω.1 u hu
+
+
+/-- The three flow inputs with the time mesh `μ` separated from the event threshold `δ`. -/
+theorem ibpFlow_of_unifDom' (d : Dims)
+    {E : ℝ} {s t δ μ : ℕ → ℝ} {K : ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
+    (hK : 0 ≤ K) (hμ0 : ∀ N, 0 ≤ μ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hμ1 : ∀ᶠ N : ℕ in atTop, μ N ≤ 1)
+    (hμnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ μ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * μ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {y : ∀ N, ℝ → Ω d → d.Idx N → ℂ}
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖y N u ω i - (u : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N u ω) (zt E u) k k - mE E)‖
+          - ‖y N v ω i - (v : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * (green (Hflow d N v ω) (zt E v) k k - mE E)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hfix : UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖y N u ω i - (u : ℂ) * mE E ^ 2 * ∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * (green (Hflow d N u ω) (zt E u) k k - mE E)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u))) :
+    IBPFlow (sample d) E s t (fun N u ω i => y N (u : ℝ) ω i) :=
+  stochDom_timeIcc_Lmax_of_unifDom' d (card_Idx_le d) hE hs0 ht1 hst hK hμ0 hδ1 hμ1 hμnet hfine hΩ
+    hHol hfix
+
+/-- **`RBM.Gauss.FlucRowFlow`** — (4.12) for `t_k = S_{ik}` with the time in the index set. -/
+theorem flucRowFlow_of_unifDom' (d : Dims)
+    {E : ℝ} {s t δ μ : ℕ → ℝ} {K : ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
+    (hK : 0 ≤ K) (hμ0 : ∀ N, 0 ≤ μ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hμ1 : ∀ᶠ N : ℕ in atTop, μ N ≤ 1)
+    (hμnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ μ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * μ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {y : ∀ N, ℝ → Ω d → d.Idx N → ℂ}
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ i : d.Idx N,
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E) - y N u ω k)‖
+          - ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E) - y N v ω k)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hfix : UnifDomIcc (P d) s t
+      (fun N u (i : d.Idx N) ω =>
+        ‖∑ k, (Sblk (d.L N) (d.W N) i k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E) - y N u ω k)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u))) :
+    FlucRowFlow (sample d) E s t (fun N u ω i => y N (u : ℝ) ω i) :=
+  stochDom_timeIcc_Lmax_of_unifDom' d (card_Idx_le d) hE hs0 ht1 hst hK hμ0 hδ1 hμ1 hμnet hfine hΩ
+    hHol hfix
+
+/-- **`RBM.Gauss.FlucBlkFlow`** — (4.12) for `t_k = W⁻¹ 1(k ∈ I_a)` with the time in the index
+set. -/
+theorem flucBlkFlow_of_unifDom' (d : Dims)
+    {E : ℝ} {s t δ μ : ℕ → ℝ} {K : ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (hst : ∀ N, s N ≤ t N)
+    (hK : 0 ≤ K) (hμ0 : ∀ N, 0 ≤ μ N) (hδ1 : ∀ᶠ N : ℕ in atTop, δ N ≤ 1 / 2)
+    (hμ1 : ∀ᶠ N : ℕ in atTop, μ N ≤ 1)
+    (hμnet : ∀ᶠ N : ℕ in atTop, 1 / (N : ℝ) ^ ((K + 2 + 1) / ((1 : ℝ) / 2)) ≤ μ N)
+    (hfine : ∀ᶠ N : ℕ in atTop,
+      4 * ((etaT E (t N))⁻¹) ^ 3 * (N : ℝ) ^ (3 : ℕ) * μ N ^ ((1 : ℝ) / 2) ≤ 1)
+    (hΩ : HighProb (P d) (goodSetFlow d E s t δ))
+    {y : ∀ N, ℝ → Ω d → d.Idx N → ℂ}
+    (hHol : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ flowNetEvent d E s t δ N, ∀ a : ZMod (d.L N),
+      ∀ u ∈ Set.Icc (s N) (t N), ∀ v ∈ Set.Icc (s N) (t N),
+        |‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N u ω) (zt E u) k k - mE E) - y N u ω k)‖
+          - ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+              * ((green (Hflow d N v ω) (zt E v) k k - mE E) - y N v ω k)‖|
+          ≤ (N : ℝ) ^ K * |u - v| ^ ((1 : ℝ) / 2))
+    (hfix : UnifDomIcc (P d) s t
+      (fun N u (a : ZMod (d.L N)) ω =>
+        ‖∑ k, (blkCoef (d.L N) (d.W N) a k : ℂ)
+          * ((green (Hflow d N u ω) (zt E u) k k - mE E) - y N u ω k)‖)
+      (fun N u _ ω => Lmax (Hflow d N u ω) (zt E u))) :
+    FlucBlkFlow (sample d) E s t (fun N u ω i => y N (u : ℝ) ω i) :=
+  stochDom_timeIcc_Lmax_of_unifDom' d (card_ZMod_L_le d) hE hs0 ht1 hst hK hμ0 hδ1
+    hμ1 hμnet hfine hΩ hHol hfix
+
+
 end RBM.Gauss

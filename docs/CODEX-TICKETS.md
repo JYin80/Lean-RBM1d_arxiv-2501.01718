@@ -173,3 +173,8 @@ T280e 停下的两条（`first_pass_D20_obstructions`）正是 §9(2)、§9(7)�
 * 坏事件：T280c 的 `drift_norm_le_of_event`、`evolved_qv_norm_le_of_event`、`crossPart_le_of_S5_event` → `crossPart_budget_of_event_bound`；每个 `(δ,p,N)` 自选事件 `E`，`HighProb` 指数取 `> 2p(a+1)`（`a` = 包络的多项式次数）。
 * 仍要新证的小件（T280c 点名）：前缀权重梯度率 `hK` 的具体界与归一化（接 T265 (S5)）；漂移、演化 QV、交叉绝对和的全局多项式包络；`hYm/hQm/hYi/hQi/hProdInt` 可积性。可在 `APrimeAssembly.lean` 里补。
 * 链：`aprimeHypOn_jSnorm_event`（T274）+ 权重 → `aprimeHypOn_of_stepBound''` → `APrimeSlot'` → `jsNormDom_of_aprimeSlot'` → `thm221NoEL_of_inputs_mergedOnAll_aprime'`。
+
+## §13 T277 已交（Cowork 09:28）——T280e 清单补一项
+
+T277 交出 `APrimeQVEndpoint.sqrt_evolvedQV_le_endpoint`（演化版 (5.42)，逐 `(u,ω)`，端点指示 `6ℓ*_v`、`(η_u/η_v)⁴`、锐 `(J*)²` 远场 + `(J*)³` 项 + `256e³W^{−D}T` 泄漏；确定性条件 `A_u ≥ 1`、`log W ≥ (4D)²`，见证 `endpoint_scale_witness`），并由 `quadVar_ukerObsT_eq_evolved_loopObs` 认同为 T275 `qvRateEvolved` 所界之量。
+**T280e 重跑时加一步**：由它在事件 `E`（Step 1 事件，逐点前提在那里成立）上交割 T275 的 `EvolvedQVBound … E … Qev`，`Qev` 取端点界的平方；再按 T269 的 `qvShape` 归一化（`(T_t R⁴)²`）出 `QBd` 形的预算——T269 的 `div_le_QBd_of_le_qvShape` 是对未演化率写的，**另写演化版**，不要硬套。两个确定性条件 `A_u ≥ 1`、`log W ≥ (4D)²` 由 (2.72)/`Cond272Reg` 与 `D ≥ 60`、`W ≥ N^{1/2}` 最终成立给出。

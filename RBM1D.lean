@@ -71,6 +71,7 @@ import RBM1D.Gauss.APrimeNormalizedTestFun
 import RBM1D.Gauss.APrimeNormalizedGenerator
 import RBM1D.Gauss.APrimeQVRateTime
 import RBM1D.Gauss.APrimeQVBridge
+import RBM1D.Gauss.APrimeDriftEnvelope
 import RBM1D.Gauss.Lemma514NonAlt
 import RBM1D.Gauss.Lemma514QAssembly
 import RBM1D.Gauss.Lemma514FBridge

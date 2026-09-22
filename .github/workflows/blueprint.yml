@@ -2,10 +2,9 @@ name: Compile blueprint
 
 # Scheduled publication of the site (API docs + blueprint + home page).
 #
-# Why a schedule and not every push: with several agents committing every few
-# minutes, a push trigger kept one doc-gen4 build running and cancelled every
-# queued one, so almost no run finished, the Mathlib doc cache (saved only on
-# success) was never written, and every build started from scratch.
+# Ordinary Lean and ticket commits do not trigger publication: frequent pushes
+# used to cancel doc-gen4 runs before the Mathlib documentation cache was saved.
+# Only changes to the blueprint source or this workflow trigger an extra run.
 #
 # docgen-action only uploads and deploys when github.event_name == 'push', and it
 # also skips the API docs and the Jekyll build on other events.  So this workflow
@@ -17,6 +16,12 @@ on:
   schedule:
     - cron: '23 */3 * * *'   # every three hours
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'blueprint/src/content.tex'
+      - 'tools/blueprint_page/**'
+      - '.github/workflows/blueprint.yml'
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -94,6 +99,17 @@ jobs:
         env:
           JEKYLL_GITHUB_TOKEN: ${{ github.token }}
         run: JEKYLL_ENV=production bundle exec jekyll build
+
+      - name: Build the interactive whole-paper map
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y graphviz
+          NTHM=$(git grep -hE '^[[:space:]]*(@\[[^]]*\][[:space:]]*)?((private|protected|nonrec|noncomputable)[[:space:]]+)*(theorem|lemma)[[:space:]]' HEAD -- RBM1D | wc -l)
+          cd tools/blueprint_page
+          python3 paper.py ../../blueprint/src/content.tex "$NTHM"
+          python3 build.py ../../blueprint/src/content.tex "$NTHM"
+          mkdir -p ../../home_page/_site/overview
+          cp blueprint.html paper.svg g*.svg ../../home_page/_site/overview/
 
       - name: Upload the site
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

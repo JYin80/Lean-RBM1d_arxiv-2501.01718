@@ -40,8 +40,13 @@ if _nparsed != _nenv:
 
 # Cowork overrides: nodes whose Lean proof is conditional on a hypothesis still being discharged
 STATUS_OVERRIDE = {
-    'thm:fluc-high': ('repl', '旧接口在 B≍Ψ 处不可满足（T171/T172）；已由带基数预算的条件化版取代，(4.12)→Eq45Flow 闭合（T177/T188）'),
-    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init、meas 已关，时间模字段已填（T241、T244、T257–T266）；停时的替代 (A′)：独立审稿 V548 判定正确，抽象部分全部落地（T262–T270）；模型层：第 2 槽已换成 (A′) 接口 APrimeSlot（T271），其确定性字段已有生产者、init 为结构性多余已删（T274），槽算术已证（T276）；余：模型层 Duhamel 展开 → T275，演化版二次变差 (5.42) 端点界 → T277，然后第一遍收口 T280、第二遍 T281'),
+    'thm:fluc-high': ('repl', '旧 B≍Ψ 接口不可满足（T171/T172）。T279 已拆开好事件阈值 δ 与网距 μ，并接通第 5 槽；预算版涨落增益 hg/hBK 尚待 T284 从 (4.12) 真实供给。'),
+    'thm:step2': ('repl', '(A′) 的确定性字段与初值去冗余已由 T274 完成，模型 Duhamel 与槽算术由 T275/T276 完成；T277 给出 (5.42) 的部分端点界。T280 正处理近场残差、块级 J、加权矩族及第一遍总装；第二遍 T281 待第一遍。'),
+    'lem:5.14': ('repl', '矩路线已建立，但第 4 槽的 hnum 渐近卸假设仍由 T278 处理；当前正在把 K 的全长度前提改成实际使用的有界长度。'),
+    'thm:step45': ('repl', '第 5 槽的 δ/μ 网格拆参和首格接线已由 T279 编译；其预算版增益 hg/hBK 由 T284 处理。第 4 槽仍依赖 T278。'),
+    'thm:thm221-gain': ('repl', '这是条件性总装；第一遍尚待 T278、T280、T284，第二遍待 T281/T282，完整六步链须经 T159 非空真审计。'),
+    'thm:2.3-2.4': ('repl', '从 Theorem 2.21 的条件性推论已有 Lean 证明；真实模型的无条件结论仍依赖六步闭合与 T159 审计。'),
+    'thm:2.5-2.6': ('repl', 'Theorem 2.5 目前以 Theorem 2.21 为前提；Theorem 2.6 的 OUFlow 分布尚未钉死，现有 theorem2_6_of_steps 不算论文 (2.18) 的形式化。'),
 }
 for _l, (_st, _tk) in STATUS_OVERRIDE.items():
     if _l in NODE:
@@ -79,7 +84,7 @@ EXTRA = [
  ('eq5.12', '(5.12)–(5.15) L−K 的动力学',   'lem','done',''),
  ('def5.4', 'Def 5.4  E⊗E',                 'def','done',''),
  ('lem5.5', 'Lem 5.5  (5.24) —— 已不用 BDG','lem','done',''),
- ('thm2.2', 'Theorem 2.2  退局域化',        'thm','done',''),
+ ('thm2.2', 'Theorem 2.2  退局域化',        'thm','repl','概率版已作为 Theorem 2.21 的条件性推论落地；等待六步闭合与 T159 审计'),
  ('itoG',   'G_t 的 Itô 方程',              'lem','repl','T76'),
  ('lem2.11','Lem 2.11  loop 层级 (2.45)',   'lem','repl','T76/T134/T140：矩形式只剩 MatrixStein（已卸）'),
  ('lem5.15','Lem 5.15 / p.50  高斯分部积分显式式','lem','done','T83/T117/T136'),
@@ -89,7 +94,7 @@ EXTRA = [
  ('lem5.3b','Lem 5.3  随机积分（逐路径形状）','lem','hyp',''),
  ('eq2.39', '(2.39) 分布相等\n逐点恒等式，已证',   'lem','done',''),
  ('eq6.1',  '(6.1) 分布标度\n逐点恒等式，已证',    'lem','done',''),
- ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','合并总装里 MomentHypCut 已由 (A′) 接口取代、结论仍为 Thm221NoEL（T271、T274）；余：第 2 槽的 weightedMoment（T275、T277 → T280）；第 3 槽与 (5.48) 的 moment（T282）；第 4 槽 Lemma 5.14 的 hnum → T278（改用带 ε 余量的生产者）；第 5 槽网格数据 → T279；之后 T159 端到端核对'),
+ ('thm2.21','Theorem 2.21  六步总装',       'thm','todo','第 2 槽 (A′) 第一遍 T280 在跑；第 3 槽及 (5.48) 的 moment 待 T282；第 4 槽 Lemma 5.14 由 T278 在跑；第 5 槽网格 T279 已接，预算增益待 T284；第二遍 T281 后由 T159 审计全链。'),
 ]
 for i, (x, lab, k, st, tk) in enumerate(EXTRA):
     NODE[x] = dict(kind=k, title=lab, chap=9, st=st, tk=tk, uses=[])

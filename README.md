@@ -7,6 +7,7 @@ A Lean 4 / Mathlib formalization of the **deterministic core** of
 
 * **[Blueprint](https://jyin80.github.io/Lean-RBM1d_arxiv-2501.01718/blueprint/)** — the statements and their Lean counterparts
 * **[Dependency graph](https://jyin80.github.io/Lean-RBM1d_arxiv-2501.01718/blueprint/dep_graph_document.html)** — green nodes are formalized
+* **[Interactive whole-paper map](https://jyin80.github.io/Lean-RBM1d_arxiv-2501.01718/overview/blueprint.html)** — live tasks and proof dependencies
 * **[API documentation](https://jyin80.github.io/Lean-RBM1d_arxiv-2501.01718/docs/)**
 
 ## Scope

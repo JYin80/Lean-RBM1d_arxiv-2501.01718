@@ -303,3 +303,28 @@ T280b 按 §11 做成：小槽 `x^{1/4}`、`stepRhs''/R⁴ ≤ (cStep′+1)x^{5/
 
   其余全部要证：`hG`（`weightedMinkowski_of_deriv_le` ∘ `momFlowDeriv_le`）、hinit（用 (i)）、`coordinate_integral_of_small_slots`、端点恒等式（第 2 条）、族求和的高 `p` 部分（`32 ≤ 3δp`）、小 `p` 的 Lyapunov（`momNormW_le_momNormW_of_exponent_le`）。最后接到 `aprimeSlot_of_widened_family`。
 * **停止条件**：端点恒等式在 Lean 里不成立；或 (N1)–(N3) 之外还冒出新的模型前提。精确报告是哪一条。
+
+## §19 T278 第六步回报：`hKb` 换成有界长度版（Cowork 10:28；已读报告与相关源码）
+
+**收下的部分**：`psiF`、`norm_Qop_F_le_psiF`（在 ζ = 0 时就是 `hEnvF`）、`psiF_le_of_fastDecay`、`psiF_le_of_drift_inputs'`。主项是 `η_u⁻¹[1+(24e·cTwo52·K)^{n+1}](K+2)·cDrift·xiRhs`，不带 `(A_u/A_v)` 因子，也没有用 `hgood_QF`。
+
+**停得对**。`DriftBound.norm_driftF_le`（:245）的 `hKb` 要求**同一个 `CK` 对所有长度**的 `J` 成立，仓库里没有供给者：
+- `Band.norm_Kval_le`（`Flow/Iteration.lean:598`）的常数是逐个长度给的；
+- `Gauss.exists_norm_Kval_le_upto`（`Lemma514Holder.lean:835`）只覆盖 `2 ≤ len ≤ m`。
+
+Cowork 已核对：`hKb` 一路传到 `Decay.norm_couplingLen_le`（`Hierarchy/Decay.lean`），在那里**只用在 `I` 的切-粘片段上**（`hK _ (hI.cutGlueL …)`、`hK _ (hI.cutGlueR …)`）。这些片段的长度有界，同一个文件里也已有有界长度的先例（`J.length ≤ I.length → ‖K J‖ ≤ MK`）。
+
+**修法（路由）**：写一条带撇、有界长度的链，旧声明不动：
+1. `Decay.norm_couplingLen_le'`：`hK'` 只要求 `lmin ≤ J.length ≤ lmax`。`lmin`、`lmax` 读 `LoopIdx.WF.cutGlueL/cutGlueR` 的长度引理确定（预计 `lmax = I.length + 1`）。
+2. `norm_loopTensor_couplingLen_le'`、`DriftBound.norm_driftF_le'`、`DriftBound.norm_Hyp_F_le'`、`psiF_le_of_drift_inputs''`：证明都照抄。
+3. **`hKb'` 的供给**：
+   - `2 ≤ len ≤ lmax` 用 `exists_norm_Kval_le_upto (m := lmax)`；
+   - 若 `lmin ≤ 1`，`len = 1` 用 `Band.norm_Kval_le (n := 1)`（`A⁰ = 1`）；
+   - `CK := max`。
+
+   `len = 0` 的空环：`WF` 允许它；若 `lmin = 0`，先查 `Kval` 在空环上的值再定，不行就停下报告。
+4. 然后按 §17 把 `ψF ≺ η_u⁻¹` 做完。事件取三者之交：LoopDecay 事件、`highProb_flowXiLK_le`（`Step6EnvWindow.lean:1947`）、`xiRhs ≺ 1`。
+
+**停止条件**：若 `norm_couplingLen_le` 的证明里其实有长度无界的使用（与上面核到的两处不符）；或 `lmin = 0` 时空环拿不到界。
+
+**审计备忘（不在第一遍）**：未带撇的全长度 `hKb` 链（`DriftBound` :245、:481、:613、:792、:860）没有供给者。若按长度的常数 `C_n` 无界，这条链就不可满足。等第一遍收口后核一次，现在不动。

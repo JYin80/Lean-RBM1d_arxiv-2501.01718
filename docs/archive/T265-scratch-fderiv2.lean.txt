@@ -1,0 +1,151 @@
+import RBM1D.Gauss.APrimeDuhamel
+import RBM1D.Test.Axioms
+
+namespace RBM
+namespace Gauss
+
+section Probe
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+theorem fderiv2_normSq_apply {F : E → ℂ} (hF : ContDiff ℝ 2 F) (M B A : E) :
+    fderiv ℝ (fderiv ℝ (fun M => ‖F M‖ ^ 2)) M B A
+      = 2 * (inner ℝ (F M) (fderiv ℝ (fderiv ℝ F) M B A)
+          + inner ℝ (fderiv ℝ F M B) (fderiv ℝ F M A) : ℝ) := by
+  have hFd : Differentiable ℝ F := hF.differentiable (by norm_num)
+  have hsq : ContDiff ℝ 2 (fun M => ‖F M‖ ^ 2) := hF.norm_sq ℝ
+  have hlhs : HasDerivAt (fun t : ℝ => fderiv ℝ (fun M => ‖F M‖ ^ 2) (M + t • B) A)
+      (fderiv ℝ (fderiv ℝ (fun M => ‖F M‖ ^ 2)) M B A) 0 := hasDerivAt_dir2' hsq M A B
+  have hg : HasDerivAt (fun t : ℝ => F (M + t • B)) (fderiv ℝ F M B) 0 := by
+    simpa using hasDerivAt_dir (hF.of_le (by norm_num)) M B 0
+  have hh : HasDerivAt (fun t : ℝ => fderiv ℝ F (M + t • B) A)
+      (fderiv ℝ (fderiv ℝ F) M B A) 0 := hasDerivAt_dir2' hF M A B
+  have hinner := hg.inner ℝ hh
+  simp only [zero_smul, add_zero] at hinner
+  have hmul := hinner.const_mul (2 : ℝ)
+  have hrw : (fun t : ℝ => fderiv ℝ (fun M => ‖F M‖ ^ 2) (M + t • B) A)
+      = fun t : ℝ => 2 * (inner ℝ (F (M + t • B)) (fderiv ℝ F (M + t • B) A) : ℝ) := by
+    funext t
+    have hd : HasFDerivAt F (fderiv ℝ F (M + t • B)) (M + t • B) := (hFd _).hasFDerivAt
+    rw [hd.norm_sq.fderiv]
+    simp [nsmul_eq_mul]
+    ring
+  rw [hrw] at hlhs
+  exact hlhs.unique hmul
+
+theorem norm_fderiv2_normSq_le {F : E → ℂ} {b₀ b₁ b₂ : ℝ} (hF : BddC2C F b₀ b₁ b₂) (M : E) :
+    ‖fderiv ℝ (fderiv ℝ (fun M => ‖F M‖ ^ 2)) M‖ ≤ 2 * (b₁ * b₁ + ‖F M‖ * b₂) := by
+  have hb1 : 0 ≤ b₁ := hF.nonneg₁
+  have hb2 : 0 ≤ b₂ := hF.nonneg₂
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun B => ?_
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun A => ?_
+  rw [fderiv2_normSq_apply hF.contDiff M B A, Real.norm_eq_abs, abs_mul,
+    abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2)]
+  have h1 : |(inner ℝ (F M) (fderiv ℝ (fderiv ℝ F) M B A) : ℝ)| ≤ ‖F M‖ * (b₂ * ‖B‖ * ‖A‖) :=
+    (abs_real_inner_le_norm _ _).trans
+      (mul_le_mul_of_nonneg_left (norm_fderiv2_apply_le hF.bdd₂ M B A) (norm_nonneg _))
+  have h2 : |(inner ℝ (fderiv ℝ F M B) (fderiv ℝ F M A) : ℝ)| ≤ (b₁ * ‖B‖) * (b₁ * ‖A‖) :=
+    (abs_real_inner_le_norm _ _).trans
+      (mul_le_mul (norm_fderiv_apply_le hF.bdd₁ M B) (norm_fderiv_apply_le hF.bdd₁ M A)
+        (norm_nonneg _) (by positivity))
+  calc 2 * |(inner ℝ (F M) (fderiv ℝ (fderiv ℝ F) M B A)
+        + inner ℝ (fderiv ℝ F M B) (fderiv ℝ F M A) : ℝ)|
+      ≤ 2 * (‖F M‖ * (b₂ * ‖B‖ * ‖A‖) + (b₁ * ‖B‖) * (b₁ * ‖A‖)) := by
+        have := (abs_add_le _ _).trans (add_le_add h1 h2)
+        linarith
+    _ = 2 * (b₁ * b₁ + ‖F M‖ * b₂) * ‖B‖ * ‖A‖ := by ring
+
+theorem fderiv2_comp_real_apply {F : E → ℝ} {g : ℝ → ℝ} (hF : ContDiff ℝ 2 F)
+    (hg : ContDiff ℝ 2 g) (M B A : E) :
+    fderiv ℝ (fderiv ℝ (fun M => g (F M))) M B A
+      = deriv (deriv g) (F M) * fderiv ℝ F M B * fderiv ℝ F M A
+        + deriv g (F M) * fderiv ℝ (fderiv ℝ F) M B A := by
+  have hgd : Differentiable ℝ g := hg.differentiable (by norm_num)
+  have hgd' : Differentiable ℝ (deriv g) := (hg.deriv' (n := 1)).differentiable one_ne_zero
+  have hFd : Differentiable ℝ F := hF.differentiable (by norm_num)
+  have hcd : ContDiff ℝ 2 (fun M => g (F M)) := hg.comp hF
+  have hfd : ∀ M, fderiv ℝ (fun M => g (F M)) M = deriv g (F M) • fderiv ℝ F M :=
+    fun M => fderiv_comp_real hFd hgd M
+  have hlhs : HasDerivAt (fun t : ℝ => fderiv ℝ (fun M => g (F M)) (M + t • B) A)
+      (fderiv ℝ (fderiv ℝ fun M => g (F M)) M B A) 0 := hasDerivAt_dir2' hcd M A B
+  have hline : HasDerivAt (fun t : ℝ => F (M + t • B)) (fderiv ℝ F M B) 0 := by
+    simpa using hasDerivAt_dir (hF.of_le (by norm_num)) M B 0
+  have h1 : HasDerivAt (fun t : ℝ => deriv g (F (M + t • B)))
+      (deriv (deriv g) (F M) * (fderiv ℝ F M B)) 0 := by
+    have hc := ((hgd' (F (M + (0 : ℝ) • B))).hasDerivAt).comp (0 : ℝ) hline
+    simpa [Function.comp_def] using hc
+  have h2 : HasDerivAt (fun t : ℝ => fderiv ℝ F (M + t • B) A)
+      (fderiv ℝ (fderiv ℝ F) M B A) 0 := hasDerivAt_dir2' hF M A B
+  have hprod := h1.mul h2
+  simp only [zero_smul, add_zero] at hprod
+  have hrw : (fun t : ℝ => fderiv ℝ (fun M => g (F M)) (M + t • B) A)
+      = fun t : ℝ => deriv g (F (M + t • B)) * (fderiv ℝ F (M + t • B) A) := by
+    funext t
+    rw [hfd (M + t • B)]
+    simp
+  rw [hrw] at hlhs
+  exact hlhs.unique hprod
+
+/-- **⭐ The sharp per-index second differential.** -/
+theorem norm_fderiv2_norm_pow_le {G : E → ℂ} {c₀ c₁ c₂ : ℝ} (hG : BddC2C G c₀ c₁ c₂)
+    {r : ℕ} (hr : 1 ≤ r) (M : E) :
+    ‖fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ (2 * r))) M‖
+      ≤ ((2 * r : ℕ) : ℝ) * (((2 * r : ℕ) : ℝ) - 1) * ‖G M‖ ^ (2 * r - 2) * (c₁ * c₁)
+        + ((2 * r : ℕ) : ℝ) * ‖G M‖ ^ (2 * r - 1) * c₂ := by
+  have hc1 : 0 ≤ c₁ := hG.nonneg₁
+  have hc2 : 0 ≤ c₂ := hG.nonneg₂
+  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  set ρ : ℝ := ‖G M‖ with hρ
+  have hρ0 : 0 ≤ ρ := norm_nonneg _
+  have hsq : BddC2C (fun M => ‖G M‖ ^ 2) _ _ _ := bddC2C_normSq hG
+  have hqc : ContDiff ℝ 2 (fun M => ‖G M‖ ^ 2) := hsq.contDiff
+  have hgc : ContDiff ℝ 2 (fun y : ℝ => y ^ r) := contDiff_id.pow r
+  have hd1 : deriv (fun y : ℝ => y ^ r) = fun y : ℝ => (r : ℝ) * y ^ (r - 1) := by
+    funext y; simp
+  have hd2 : ∀ y : ℝ, deriv (deriv fun y : ℝ => y ^ r) y
+      = (r : ℝ) * ((r : ℝ) - 1) * y ^ (r - 2) := by
+    intro y
+    rw [hd1]
+    have h : deriv (fun y : ℝ => (r : ℝ) * y ^ (r - 1)) y
+        = (r : ℝ) * (((r - 1 : ℕ) : ℝ) * y ^ (r - 1 - 1)) := by simp
+    rw [h]
+    have hcast : ((r - 1 : ℕ) : ℝ) = (r : ℝ) - 1 := by
+      have h1 : (r - 1 : ℕ) + 1 = r := by omega
+      have h2 : (((r - 1 : ℕ) : ℝ)) + 1 = (r : ℝ) := by
+        exact_mod_cast congrArg (Nat.cast : ℕ → ℝ) h1
+      linarith
+    rw [hcast, show r - 1 - 1 = r - 2 from by omega]; ring
+  have hfun : (fun M : E => ‖G M‖ ^ (2 * r)) = fun M : E => (fun y : ℝ => y ^ r) (‖G M‖ ^ 2) := by
+    funext M; rw [pow_mul]
+  rw [hfun]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun B => ?_
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun A => ?_
+  rw [fderiv2_comp_real_apply hqc hgc M B A, hd1, hd2]
+  -- bounds on the inner pieces
+  have hDq : ∀ X : E, |fderiv ℝ (fun M => ‖G M‖ ^ 2) M X| ≤ 2 * ρ * c₁ * ‖X‖ := by
+    intro X
+    have := (fderiv ℝ (fun M => ‖G M‖ ^ 2) M).le_opNorm X
+    have hb := norm_fderiv_normSq_le hG M
+    rw [Real.norm_eq_abs] at this
+    calc |fderiv ℝ (fun M => ‖G M‖ ^ 2) M X| ≤ ‖fderiv ℝ (fun M => ‖G M‖ ^ 2) M‖ * ‖X‖ := this
+      _ ≤ (2 * ρ * c₁) * ‖X‖ := by
+          exact mul_le_mul_of_nonneg_right hb (norm_nonneg _)
+  have hD2q : |fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ 2)) M B A|
+      ≤ 2 * (c₁ * c₁ + ρ * c₂) * ‖B‖ * ‖A‖ := by
+    have h1 := (fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ 2)) M B).le_opNorm A
+    have h2 := (fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ 2)) M).le_opNorm B
+    have hb := norm_fderiv2_normSq_le hG M
+    rw [Real.norm_eq_abs] at h1
+    calc |fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ 2)) M B A|
+        ≤ ‖fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ 2)) M B‖ * ‖A‖ := h1
+      _ ≤ (‖fderiv ℝ (fderiv ℝ (fun M => ‖G M‖ ^ 2)) M‖ * ‖B‖) * ‖A‖ := by
+          exact mul_le_mul_of_nonneg_right h2 (norm_nonneg _)
+      _ ≤ (2 * (c₁ * c₁ + ρ * c₂) * ‖B‖) * ‖A‖ := by
+          have : (0:ℝ) ≤ ‖B‖ := norm_nonneg _
+          gcongr
+  sorry
+
+end Probe
+
+end Gauss
+end RBM

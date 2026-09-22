@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.Lemma514Q716
 import RBM1D.Hierarchy.DriftDef
+import RBM1D.Hierarchy.LKDecayQuant
 
 /-!
 # T220: the (7.13) premise of the five `momentDuhamelQ` terms, along the flow
@@ -92,6 +93,8 @@ which `Q_u` fixes.
   `…_QQ_event_le` — T201's five estimates with `hGd` **discharged by a theorem** (§10; terms
   1 and 2 of `momentDuhamelQ` share the first shape).
 * `RBM.FastDecayFlow.hGd_witness` — the satisfiability witness (§11).
+* `RBM.FastDecayFlow.momNorm_Uker_Qop_lkT_le` — the whole chain composed at the model, for
+  term 1: no decay hypothesis is left in it (§12).
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/
@@ -182,7 +185,7 @@ theorem Psum_zero {n : ℕ} (x : ZMod L) : Psum L (0 : LoopArg L (n + 1) → ℂ
 
 theorem Qop_zero {n : ℕ} (t : ℂ) : Qop L t (0 : LoopArg L (n + 1) → ℂ) = 0 := by
   funext b
-  show (0 : LoopArg L (n + 1) → ℂ) b - Psum L (0 : LoopArg L (n + 1) → ℂ) (b 0)
+  change (0 : LoopArg L (n + 1) → ℂ) b - Psum L (0 : LoopArg L (n + 1) → ℂ) (b 0)
       * vartheta L t b = 0
   rw [Psum_zero]
   simp
@@ -210,7 +213,7 @@ theorem dotMap_zero {n : ℕ} (u : ℝ) : dotMap L (n := n) u 0 = 0 := by
 theorem Q1_zero {k m' : ℕ} (t : ℂ) :
     Q1 L (k := k) (m' := m') t (0 : LoopArg L ((k + 1) + m') → ℂ) = 0 := by
   funext c
-  show Qop L t (fun a' => (0 : LoopArg L ((k + 1) + m') → ℂ) (Fin.append a' (spl2 L c)))
+  change Qop L t (fun a' => (0 : LoopArg L ((k + 1) + m') → ℂ) (Fin.append a' (spl2 L c)))
       (spl1 L c) = 0
   have h : (fun a' => (0 : LoopArg L ((k + 1) + m') → ℂ) (Fin.append a' (spl2 L c)))
       = (0 : LoopArg L (k + 1) → ℂ) := rfl
@@ -220,7 +223,7 @@ theorem Q1_zero {k m' : ℕ} (t : ℂ) :
 theorem Q2_zero {m k : ℕ} (t : ℂ) :
     Q2 L (m := m) (k := k) t (0 : LoopArg L (m + (k + 1)) → ℂ) = 0 := by
   funext c
-  show Qop L t (fun b' => (0 : LoopArg L (m + (k + 1)) → ℂ) (Fin.append (spl1 L c) b'))
+  change Qop L t (fun b' => (0 : LoopArg L (m + (k + 1)) → ℂ) (Fin.append (spl1 L c) b'))
       (spl2 L c) = 0
   have h : (fun b' => (0 : LoopArg L (m + (k + 1)) → ℂ) (Fin.append (spl1 L c) b'))
       = (0 : LoopArg L (k + 1) → ℂ) := rfl
@@ -245,6 +248,21 @@ section Budgets
 noncomputable def qopErr (L n : ℕ) (K M δ : ℝ) : ℝ :=
   δ + ((6 * exp 1 * cTwo52 * (4 * K)) ^ (n + 1) * M
       + (2 * cTwo52) ^ (n + 1) * (L : ℝ) ^ (n + 1) * δ) * exp (-(cZero * (4 * K) / 2))
+
+/-- **(5.87)** again, read at a general radius `ℓ_u K` rather than at `ℓ_u (4K)`.
+`RBM.SumZeroDyn.fastDecay_Qop_le` does **not** widen the radius, so this is the form in which
+the `Q_u` terms cost nothing at all; `qopErr` is its value at `4K`. -/
+noncomputable def qopErr1 (L n : ℕ) (K M δ : ℝ) : ℝ :=
+  δ + ((6 * exp 1 * cTwo52 * K) ^ (n + 1) * M
+      + (2 * cTwo52) ^ (n + 1) * (L : ℝ) ^ (n + 1) * δ) * exp (-(cZero * K / 2))
+
+theorem qopErr_eq (L n : ℕ) (K M δ : ℝ) : qopErr L n K M δ = qopErr1 L n (4 * K) M δ := rfl
+
+theorem qopErr1_nonneg (L n : ℕ) {K M δ : ℝ} (hK : 0 ≤ K) (hM : 0 ≤ M) (hδ : 0 ≤ δ) :
+    0 ≤ qopErr1 L n K M δ := by
+  have := cTwo52_pos
+  unfold qopErr1
+  positivity
 
 /-- **(5.99)**: the decay budget of the commutator `[Q_u, Θ_{u,σ}]`. -/
 noncomputable def commErr (L n : ℕ) (ℓr u K Pb : ℝ) : ℝ :=
@@ -345,6 +363,22 @@ theorem hGd_Qop (L : ℕ) [NeZero L] (hL : 3 ≤ L) {n : ℕ} {u : ℝ} (hu0 : 0
   exact fastDecay_Qop_le L (n := n + 1) hL hu0 hu1 (by linarith : (1 : ℝ) ≤ 4 * K) hM hδ
     (hAM ω hω) (SumZeroDyn.FastDecay.mono L (hAd ω hω) hwide le_rfl)
 
+/-- **`hGd` for terms 1 and 2, sharp radius.**  `RBM.SumZeroDyn.fastDecay_Qop_le` returns the
+*same* `ℓ` it is given, so when the tensor's own (7.13) radius is already `ℓ_u K` — which is
+what `RBM.FastDecayFlow.lkGood` delivers — the `Q_u` projection costs no radius at all, and
+`RBM.FastDecayFlow.hGd_Qop`'s widening to `ℓ_u (4K)` (needed only to share a radius with the
+commutator) can be dispensed with. -/
+theorem hGd_Qop_sharp (L : ℕ) [NeZero L] (hL : 3 ≤ L) {n : ℕ} {u : ℝ} (hu0 : 0 ≤ u)
+    (hu1 : u < 1) {K M δ : ℝ} (hK : 1 ≤ K) (hM : 0 ≤ M) (hδ : 0 ≤ δ)
+    {Ξ : Set Ω} {A : Ω → LoopArg L (n + 2) → ℂ}
+    (hAM : ∀ ω ∈ Ξ, ∀ b, ‖A ω b‖ ≤ M)
+    (hAd : ∀ ω ∈ Ξ, FastDecay L (ellHat L ((u : ℝ) : ℂ) * K) δ (A ω)) (ω : Ω) :
+    FastDecay L (ellHat L ((u : ℝ) : ℂ) * K) (qopErr1 L n K M δ)
+      (Qop L ((u : ℝ) : ℂ) (Set.indicator Ξ A ω)) := by
+  refine fastDecay_of_mem_of_zero (qopErr1_nonneg L n (by linarith) hM hδ)
+    (Qop_zero L (n := n + 1) _) (fun ω hω => ?_) ω
+  exact fastDecay_Qop_le L (n := n + 1) hL hu0 hu1 hK hM hδ (hAM ω hω) (hAd ω hω)
+
 /-- **`hGd` for term 3**, the commutator `[Q_u, Θ_{u,σ}] ∘ (L-K)_u` of (5.99).
 
 Note what the input is: `RBM.SumZeroDyn.fastDecay_commS` needs **no** decay of `A` itself,
@@ -388,7 +422,7 @@ theorem hGd_dot (L : ℕ) [NeZero L] (hL : 3 ≤ L) {n : ℕ} {u : ℝ} (hu0 : 0
 
 end HGd
 
-/-! ### §4  The decay of the unprojected tensors along the flow
+/-! ### §4b  The decay of the unprojected tensors along the flow
 
 `hGd_Qop` asks for (7.13) of `A` itself.  For the initial datum and for the commutator/`ϑ̇`
 terms `A` is `L - K`, whose decay **is** (5.75) = `RBM.SumZeroDyn.LKDecay` — the object Step 2
@@ -575,7 +609,7 @@ theorem fastDecay_eeArg (hM : M.IsHermitian) {m : ℕ} (σ : Fin m → Bool) {�
           = 2 * m + 2 :=
     fun k b b' => ⟨glueIdx_wf _ _ _ _ _, glueIdx_length hIwf hI'wf hIl hI'l (hclamp k) b b'⟩
   have key := Decay.norm_eTens_le_of_far (d.L N) (d.three_le_L N) (d.W N) m hJ hYd hfar
-  show ‖eeArg d N z M σ c‖ ≤ _
+  change ‖eeArg d N z M σ c‖ ≤ _
   rw [show eeArg d N z M σ c
       = Gauss.eeTens d N z M (Gauss.toIdx σ (leftArg c)) (Gauss.toIdx σ (rightArg c)) from rfl,
     eeTens_eq_eTens hM, hIl]
@@ -654,5 +688,466 @@ theorem fastDecay_eeFun (B : Band Ω) (E : ℝ) (N : ℕ) (u : ℝ)
   fastDecay_eeArg (d := B.toDims) (N := N) (z := zt E u) (M := Mx) hM σ hYd
 
 end EEFlow
+
+/-! ### §8  The good events, and their high probability
+
+This is the section that keeps §1's truncation honest.  `RBM.FastDecayFlow.hGd_Qop` and its
+three siblings are statements about `1_Ξ A`; if `Ξ` could be taken empty they would be
+statements about the zero tensor, and the whole file would be content-free in exactly the way
+T164/T169 warn about.  So `Ξ` is not assumed here — it is **produced** from (5.75), with its
+`RBM.HighProb` and (hence) its non-emptiness proved. -/
+
+section GoodEvents
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **A high-probability family of events is eventually non-empty.**
+
+No measurability is needed: if `Ξ N` were empty then `(Ξ N)ᶜ = univ` has measure `1`, while
+`RBM.HighProb` at `D = 1` puts it below `N^{-1} < 1`. -/
+theorem nonempty_of_highProb {P : Measure Ω} [IsProbabilityMeasure P] {Ξ : ℕ → Set Ω}
+    (h : HighProb P Ξ) : ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty := by
+  filter_upwards [h 1 one_pos, eventually_ge_atTop 2] with N hN hN2
+  rw [Set.nonempty_iff_ne_empty]
+  intro hemp
+  rw [hemp, Set.compl_empty, measure_univ] at hN
+  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hrw : (N : ℝ) ^ (-(1 : ℝ)) = ((N : ℝ))⁻¹ := by
+    rw [Real.rpow_neg (by linarith), Real.rpow_one]
+  have hlt : (N : ℝ) ^ (-(1 : ℝ)) < 1 := by
+    rw [hrw, inv_lt_one_iff₀]
+    right; linarith
+  exact absurd hN (not_le.2 (ENNReal.ofReal_lt_one.2 hlt))
+
+variable {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The good event of (5.75)** at loop length `m`, radius exponent `τ`, Markov exponent `τ₁`
+and order `D`: at every time of the window and every charge, `RBM.Sample.lkErr` is below
+`N^{τ₁} N^{-D}` as soon as two labels are `ℓ_u N^τ` apart.
+
+This is literally the set `RBM.SumZeroDyn.good_of_stochDom` produces from
+`RBM.SumZeroDyn.LKDecay`, which is why `RBM.FastDecayFlow.highProb_lkGood` is one `exact`. -/
+def lkGood (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (m : ℕ) (τ τ₁ D : ℝ) (N : ℕ) : Set Ω :=
+  {ω | ∀ p : TimeIcc s t N × LoopData (B.L N) m,
+      X.lkErr E N (p.1 : ℝ) ω p.2.idx
+          * farInd (B.L N) (B.ell N (p.1 : ℝ) * (N : ℝ) ^ τ) p.2.2
+        ≤ (N : ℝ) ^ τ₁ * (N : ℝ) ^ (-D)}
+
+/-- **(5.75) ⇒ the good event holds with high probability.**  The stochastic input is
+(2.76): `RBM.LKDecayQuant.lkDecay_of_inputs` produces `LKDecay` from it. -/
+theorem highProb_lkGood (hdec : LKDecay X E s t) {m : ℕ} (hm : 1 ≤ m) {τ τ₁ D : ℝ}
+    (hτ : 0 < τ) (hτ₁ : 0 < τ₁) (hD : 0 < D) :
+    HighProb B.P (lkGood X E s t m τ τ₁ D) :=
+  good_of_stochDom (hdec m hm τ hτ D hD) hτ₁
+
+/-- **The good event is eventually non-empty** — the anti-vacuity statement for the whole
+file. -/
+theorem nonempty_lkGood (hdec : LKDecay X E s t) {m : ℕ} (hm : 1 ≤ m) {τ τ₁ D : ℝ}
+    (hτ : 0 < τ) (hτ₁ : 0 < τ₁) (hD : 0 < D) :
+    ∀ᶠ N : ℕ in atTop, (lkGood X E s t m τ τ₁ D N).Nonempty := by
+  have := B.isProbabilityMeasure
+  exact nonempty_of_highProb (highProb_lkGood hdec hm hτ hτ₁ hD)
+
+/-- **(7.13) for `L - K` on the good event**, at the radius `ℓ_u N^τ` the kernel estimates
+read it at.  This is (5.75) unwrapped through `RBM.SumZeroDyn.fastDecay_of_farInd`. -/
+theorem fastDecay_lkT_of_mem_lkGood {m N : ℕ} {τ τ₁ D u : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N)
+    {ω : Ω} (hω : ω ∈ lkGood X E s t m τ τ₁ D N) (σ : Fin m → Bool) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (N : ℝ) ^ τ)
+      ((N : ℝ) ^ τ₁ * (N : ℝ) ^ (-D)) (lkT X E N u ω σ) :=
+  fastDecay_of_farInd fun b => by
+    rw [norm_lkT]; exact hω (⟨u, hsu, hut⟩, (σ, b))
+
+/-- **(7.13) for `E ⊗ E` on the `G`-loop decay event**, i.e. §5 read along the flow.
+
+The event is `RBM.LKDecayQuant.GLoopDecayEvent` at the glued length `2(n+2)+2`, which is
+definitionally `RBM.EEBridge.eeDecayEvent` and which
+`RBM.LKDecayQuant.highProb_gLoopDecay_of_flowInputs` produces with high probability. -/
+theorem fastDecay_eeFun_of_mem_gLoopDecay {n N : ℕ} {τ D u : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N)
+    {ω : Ω} (hω : ω ∈ LKDecayQuant.GLoopDecayEvent X E s t (2 * (n + 2) + 2) τ D N)
+    (σ : Fin (n + 2) → Bool) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (N : ℝ) ^ τ)
+      ((B.W N : ℝ) * ((n + 2 : ℕ) : ℝ) * ((B.L N : ℝ) * (N : ℝ) ^ (-D)))
+      (MomentDuhamel.eeFun B E N u (X.H N u ω) σ) :=
+  fastDecay_eeFun B E N u (X.hermitian N u ω) σ (hω ⟨u, hsu, hut⟩)
+
+/-- **(5.96) on the good event**: the Ward bound on the slot sums of `L - K`, which is the
+*only* thing terms 3 and 4 of `momentDuhamelQ` ask of the tensor.
+
+`RBM.SumZeroDyn.norm_Psum_lkT_le` with its decay slot filled by `lkGood` **at loop length
+`n+1`** — one length below the tensor, because Ward's identity trades a label for a factor
+`κ_u = (2iWη_u)^{-1}`. -/
+theorem norm_Psum_lkT_le_of_mem_lkGood (hE : |E| < 2) {n : ℕ} (hW : WardP X E n) {N : ℕ}
+    {u : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N) (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (hA0 : 0 < B.scale E N u) {σ : Fin (n + 2) → Bool} (hq : QGood σ)
+    {τ τ₁ D φ : ℝ} (hN1 : 1 ≤ N) (hφ : 0 ≤ φ)
+    {ω : Ω} (hω : ω ∈ lkGood X E s t (n + 1) τ τ₁ D N)
+    (hX : X.xiLK E N u ω (n + 1) ≤ (N : ℝ) ^ τ * φ) (x : ZMod (B.L N)) :
+    ‖Psum (B.L N) (lkT X E N u ω σ) x‖
+      ≤ (2 * (B.W N : ℝ) * etaT E u)⁻¹
+          * (2 * ((2 * exp 1 * (B.ell N u * (N : ℝ) ^ τ + 1)) ^ n
+            * ((N : ℝ) ^ τ * φ * (B.scale E N u)⁻¹ ^ (n + 1))
+          + (B.L N : ℝ) ^ n * ((N : ℝ) ^ τ₁ * (N : ℝ) ^ (-D)))) := by
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hK0 : (0 : ℝ) < (N : ℝ) ^ τ := Real.rpow_pos_of_pos (by linarith) _
+  refine norm_Psum_lkT_le X hE hW hu0 hu1 hA0 hq hK0 hφ
+    (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) _)
+      (Real.rpow_nonneg (Nat.cast_nonneg N) _)) hX (fun ρ b => ?_) x
+  exact hω (⟨u, hsu, hut⟩, (ρ, b))
+
+end GoodEvents
+
+/-! ### §9  The `hGd` slot at the five tensors of `momentDuhamelQ` themselves
+
+§4 and §6 discharge `hGd` for an abstract tensor controlled on `Ξ`; here `Ξ` and the tensor
+are the model's.  These five are what T219's assembly plugs in. -/
+
+section FiveTensors
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **Term 1 of `momentDuhamelQ`**, the initial datum `Q_{s_N} ∘ (L-K)_{s_N,σ}` of (5.91),
+read at a general window time `u` (the field uses `u = s_N`).
+
+The radius is *not* given away: `RBM.SumZeroDyn.fastDecay_Qop_le` returns the same `ℓ`, so
+`ℓ_u N^τ` — the radius `lkGood` provides — is also the radius the kernel estimate is read
+at. -/
+theorem hGd_Qop_lkT {n N : ℕ} {τ τ₁ D u M : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N)
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hτK : 1 ≤ (N : ℝ) ^ τ) (hM : 0 ≤ M)
+    (σ : Fin (n + 2) → Bool) {Ξ : Set Ω} (hΞ : Ξ ⊆ lkGood X E s t (n + 2) τ τ₁ D N)
+    (hAM : ∀ ω ∈ Ξ, ∀ b, ‖lkT X E N u ω σ b‖ ≤ M) (ω : Ω) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (N : ℝ) ^ τ)
+      (qopErr1 (B.L N) n ((N : ℝ) ^ τ) M ((N : ℝ) ^ τ₁ * (N : ℝ) ^ (-D)))
+      (Qop (B.L N) ((u : ℝ) : ℂ) (Set.indicator Ξ (fun ω => lkT X E N u ω σ) ω)) :=
+  hGd_Qop_sharp (B.L N) (B.three_le_L N) hu0 hu1 hτK hM (by positivity) hAM
+    (fun ω hω => fastDecay_lkT_of_mem_lkGood hsu hut (hΞ hω) σ) ω
+
+/-- **Term 2 of `momentDuhamelQ`**, the drift `Q_u ∘ F_u` of (5.91) with `F` pinned to
+`RBM.DriftDef.driftF` (T58/T206).
+
+Note where the stochastic input is and is not: `RBM.DriftDef.fastDecay_driftF` is pathwise and
+deterministic, so the event only has to deliver *its* inputs — Lemma 5.9's decay of `K`, of
+`L` and of `L - K` at the flow's matrix, and their sup bounds.  Those are taken here as
+hypotheses on `Ξ`, exactly as `RBM.DriftBound` takes them; the `K` half has no producer above
+loop length `3` anywhere in the repository (`RBM.exists_loopDecay_Kval`). -/
+theorem hGd_Qop_driftF {n N : ℕ} {u K δ MK MD δF M : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (hK : 1 ≤ K) (hδ : 0 ≤ δ) (hMK : 0 ≤ MK) (hMD : 0 ≤ MD) (hM : 0 ≤ M) (hδF : 0 ≤ δF)
+    (σ : Fin (n + 2) → Bool) {Ξ : Set Ω}
+    (hAM : ∀ ω ∈ Ξ, ∀ b, ‖DriftDef.driftF B E N u (X.H N u ω) σ b‖ ≤ M)
+    (hKd : ∀ ω ∈ Ξ, Decay.LoopDecay (B.L N) (n + 2)
+      (ellHat (B.L N) ((u : ℝ) : ℂ) * K) δ (B.Kval E N u))
+    (hDd : ∀ ω ∈ Ξ, Decay.LoopDecay (B.L N) (n + 2)
+      (ellHat (B.L N) ((u : ℝ) : ℂ) * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u))
+    (hLd : ∀ ω ∈ Ξ, Decay.LoopDecay (B.L N) (n + 3)
+      (ellHat (B.L N) ((u : ℝ) : ℂ) * K) δ
+      (gloop (B.L N) (B.W N) (X.H N u ω) (zt E u)))
+    (hKb : ∀ ω ∈ Ξ, ∀ J : LoopIdx (ZMod (B.L N)), J.WF → J.length ≤ n + 2 →
+      ‖B.Kval E N u J‖ ≤ MK)
+    (hDb : ∀ ω ∈ Ξ, ∀ J : LoopIdx (ZMod (B.L N)), J.WF → J.length ≤ n + 2 →
+      ‖(gloop (B.L N) (B.W N) (X.H N u ω) (zt E u) - B.Kval E N u) J‖ ≤ MD)
+    (hbudget : (B.W N : ℝ) * ((n : ℝ) + 2) * ((B.L N : ℝ) * (MD * δ))
+        + (n : ℝ) * (2 * (B.W N : ℝ) * ((n : ℝ) + 2) ^ 2 * (B.L N : ℝ) * δ * (MK + MD))
+        + 2 * (B.W N : ℝ) * ((n : ℝ) + 2) ^ 2 * (B.L N : ℝ) * δ * MD ≤ δF) (ω : Ω) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (4 * K))
+      (qopErr1 (B.L N) n (4 * K) M δF)
+      (Qop (B.L N) ((u : ℝ) : ℂ)
+        (Set.indicator Ξ (fun ω => DriftDef.driftF B E N u (X.H N u ω) σ) ω)) :=
+  hGd_Qop_sharp (B.L N) (B.three_le_L N) hu0 hu1 (by linarith) hM hδF hAM
+    (fun ω hω => fastDecay_driftF_window B E N u (B.three_le_L N) hu0 hu1 (X.H N u ω) σ hK hδ
+      hMK hMD (hKd ω hω) (hDd ω hω) (hLd ω hω) (hKb ω hω) (hDb ω hω) hbudget) ω
+
+/-- **Term 3 of `momentDuhamelQ`**, the commutator `[Q_u, Θ_{u,σ}] ∘ (L-K)_u` of (5.99).
+
+The tensor's own (7.13) is **not** used: the decay is `ϑ_u`'s, and all that is asked of
+`L - K` is the Ward bound (5.96) on its slot sums
+(`RBM.FastDecayFlow.norm_Psum_lkT_le_of_mem_lkGood`). -/
+theorem hGd_commS_lkT {n N : ℕ} {u K Pb : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1) (hE : |E| ≤ 2)
+    (hK : 1 ≤ K) (hP0 : 0 ≤ Pb) (σ : Fin (n + 2) → Bool) {Ξ : Set Ω}
+    (hAP : ∀ ω ∈ Ξ, ∀ x, ‖Psum (B.L N) (lkT X E N u ω σ) x‖ ≤ Pb) (ω : Ω) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (4 * K))
+      (commErr (B.L N) n (ellHat (B.L N) ((u : ℝ) : ℂ)) u K Pb)
+      (commS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+        (Set.indicator Ξ (fun ω => lkT X E N u ω σ) ω)) :=
+  hGd_commS (B.L N) (B.three_le_L N) hu0 hu1
+    (fun i => (norm_xiOf_mSigma hE σ i).le) hK hP0 hAP ω
+
+/-- **Term 4 of `momentDuhamelQ`**, the `ϑ̇` term of (5.100).  Same input as term 3: (5.96)
+only. -/
+theorem hGd_dot_lkT {n N : ℕ} {u K Pb : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1)
+    (hK : 1 ≤ K) (hP0 : 0 ≤ Pb) (σ : Fin (n + 2) → Bool) {Ξ : Set Ω}
+    (hAP : ∀ ω ∈ Ξ, ∀ x, ‖Psum (B.L N) (lkT X E N u ω σ) x‖ ≤ Pb) (ω : Ω) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (4 * K))
+      (dotErr n (ellHat (B.L N) ((u : ℝ) : ℂ)) u K Pb)
+      (dotMap (B.L N) (n := n + 1) u (Set.indicator Ξ (fun ω => lkT X E N u ω σ) ω)) :=
+  hGd_dot (B.L N) (B.three_le_L N) hu0 hu1 hK hP0 hAP ω
+
+/-- **Term 5 of `momentDuhamelQ`**, the `E ⊗ E` term `(Q_u ⊗ Q_u) ∘ (E ⊗ E)_u` of (5.103),
+with `E ⊗ E` the pinned `RBM.MomentDuhamel.eeFun` of Definition 5.4.
+
+The decay input is the one of §5/§8: Definition 5.8 for the flow's `G`-loops at the glued
+length `2(n+2)+2`. -/
+theorem hGd_QQ_eeFun {n N : ℕ} {τ D u e : ℝ} (hsu : s N ≤ u) (hut : u ≤ t N)
+    (hu0 : 0 ≤ u) (hu1 : u < 1) (hτK : 1 ≤ (N : ℝ) ^ τ) (he : 0 ≤ e)
+    (σ : Fin (n + 2) → Bool) {Ξ : Set Ω}
+    (hΞ : Ξ ⊆ LKDecayQuant.GLoopDecayEvent X E s t (2 * (n + 2) + 2) τ D N)
+    (hAe : ∀ ω ∈ Ξ, ∀ c, ‖MomentDuhamel.eeFun B E N u (X.H N u ω) σ c‖ ≤ e) (ω : Ω) :
+    FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * (4 * (N : ℝ) ^ τ))
+      (qqErr (B.L N) (n + 1) (ellHat (B.L N) ((u : ℝ) : ℂ)) ((N : ℝ) ^ τ) e
+        ((B.W N : ℝ) * ((n + 2 : ℕ) : ℝ) * ((B.L N : ℝ) * (N : ℝ) ^ (-D))))
+      (QQ (B.L N) ((u : ℝ) : ℂ)
+        (Set.indicator Ξ (fun ω => MomentDuhamel.eeFun B E N u (X.H N u ω) σ) ω)) :=
+  hGd_QQ (B.L N) (B.three_le_L N) hu0 hu1 hτK he (by positivity) hAe
+    (fun ω hω => fastDecay_eeFun_of_mem_gLoopDecay hsu hut (hΞ hω) σ) ω
+
+end FiveTensors
+
+/-! ### §10  T201's five kernel estimates with `hGd` discharged
+
+These are `RBM.Gauss.momNorm_Uker_Qop_le`, `…_commS_le`, `…_PsumVarthetaDot_le`, `…_QQ_le`
+with their **last open premise supplied by a theorem** rather than by a hypothesis.  Terms 1
+and 2 of `RBM.MomentDuhamel.Hyp.momentDuhamelQ` share the first shape (the tensor under `Q_u`
+is `(L-K)_{s_N}` for the datum and `F_u` for the drift), so four statements cover the five
+terms; §9 supplies the tensor in each case.
+
+What is *not* discharged here, and is not this ticket's: the size envelope `hGM`, the
+integrability `hint`, and the passage from the truncated tensor `1_Ξ A` back to `A` (that is
+`RBM.Gauss.momNorm_le_affine_on_event`, i.e. T218/T219). -/
+
+section Discharged
+
+open RBM.MomentDuhamel
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- **Terms 1 and 2 of `momentDuhamelQ`, with `hGd` discharged.**  The decay premise is gone:
+all that is left about the tensor is that on the good event it is bounded by `M` and
+`(ℓ_u K, δ)`-fast-decaying — which §8 produces from (5.75). -/
+theorem momNorm_Uker_Qop_event_le [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 3 ≤ L)
+    {q : ℕ} (hq : q ≠ 0) {n : ℕ} {E : ℝ} (hE : |E| ≤ 2) (σ : Fin (n + 2) → Bool)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K M ζ δ : ℝ} (hK : 1 ≤ K) (hM : 0 ≤ M) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
+    {Ξ : Set Ω} {A : Ω → LoopArg L (n + 2) → ℂ} {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω)
+    (hint : Integrable (fun ω => ψ ω ^ q) P)
+    (hGM : ∀ ω b, ‖Qop L ((u : ℝ) : ℂ) (Set.indicator Ξ A ω) b‖
+      ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ ω + ζ)
+    (hAM : ∀ ω ∈ Ξ, ∀ b, ‖A ω b‖ ≤ M)
+    (hAd : ∀ ω ∈ Ξ, FastDecay L (ellHat L ((u : ℝ) : ℂ) * K) δ (A ω))
+    (a : LoopArg L (n + 2)) :
+    momNorm P q (fun ω => ‖Uker L (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop L ((u : ℝ) : ℂ) (Set.indicator Ξ A ω)) a‖)
+      ≤ cKerSumZero (n + 2) * K ^ (2 * (n + 2))
+            * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * momNorm P q ψ
+        + (cKerSumZero (n + 2) * K ^ (2 * (n + 2)) * ((1 - s) / (1 - v)) ^ (n + 2) * ζ
+          + cKerSumZeroErr (n + 2) * (L : ℝ) ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2)
+              * qopErr1 L n K M δ) :=
+  Gauss.momNorm_Uker_Qop_le L hL hq hE σ hs0 hsu huv hv0 hv1 hκA hK hζ
+    (qopErr1_nonneg L n (by linarith) hM hδ) hψ0 hint hGM
+    (hGd_Qop_sharp L hL (hs0.trans hsu) (huv.trans_lt hv1) hK hM hδ hAM hAd) a
+
+/-- **Term 3 of `momentDuhamelQ` (5.99), with `hGd` discharged.**  Note that no (7.13) of the
+tensor is left either — only the Ward bound (5.96) on its slot sums. -/
+theorem momNorm_Uker_commS_event_le [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 3 ≤ L)
+    {q : ℕ} (hq : q ≠ 0) {n : ℕ} {E : ℝ} (hE : |E| ≤ 2) (σ : Fin (n + 2) → Bool)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K Pb ζ : ℝ} (hK : 1 ≤ K) (hζ : 0 ≤ ζ) (hP0 : 0 ≤ Pb)
+    {Ξ : Set Ω} {A : Ω → LoopArg L (n + 2) → ℂ} {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω)
+    (hint : Integrable (fun ω => ψ ω ^ q) P)
+    (hGM : ∀ ω b, ‖commS L (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) (Set.indicator Ξ A ω) b‖
+      ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ ω + ζ)
+    (hAP : ∀ ω ∈ Ξ, ∀ x, ‖Psum L (A ω) x‖ ≤ Pb)
+    (a : LoopArg L (n + 2)) :
+    momNorm P q (fun ω => ‖Uker L (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (commS L (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) (Set.indicator Ξ A ω)) a‖)
+      ≤ cKerSumZero (n + 2) * (4 * K) ^ (2 * (n + 2))
+            * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * momNorm P q ψ
+        + (cKerSumZero (n + 2) * (4 * K) ^ (2 * (n + 2)) * ((1 - s) / (1 - v)) ^ (n + 2) * ζ
+          + cKerSumZeroErr (n + 2) * (L : ℝ) ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2)
+              * commErr L n (ellHat L ((u : ℝ) : ℂ)) u K Pb) := by
+  have hu0 : 0 ≤ u := hs0.trans hsu
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓ0 : (0 : ℝ) < ellHat L ((u : ℝ) : ℂ) := by
+    have := half_le_ellHat_real L hL hu0 hu1; linarith
+  exact Gauss.momNorm_Uker_commS_le L hL hq hE σ hs0 hsu huv hv0 hv1 hκA (by linarith) hζ
+    (commErr_nonneg L n hℓ0 hu1 (by linarith : (0 : ℝ) ≤ K) hP0) hψ0 hint hGM
+    (hGd_commS L hL hu0 hu1 (fun i => (norm_xiOf_mSigma hE σ i).le) hK hP0 hAP) a
+
+/-- **Term 4 of `momentDuhamelQ` (5.100), with `hGd` discharged.** -/
+theorem momNorm_Uker_dot_event_le [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 3 ≤ L)
+    {q : ℕ} (hq : q ≠ 0) {n : ℕ} {E : ℝ} (hE : |E| ≤ 2) (σ : Fin (n + 2) → Bool)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K Pb ζ : ℝ} (hK : 1 ≤ K) (hζ : 0 ≤ ζ) (hP0 : 0 ≤ Pb)
+    {Ξ : Set Ω} {A : Ω → LoopArg L (n + 2) → ℂ} {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω)
+    (hint : Integrable (fun ω => ψ ω ^ q) P)
+    (hGM : ∀ (ω : Ω) (b : LoopArg L (n + 2)),
+      ‖Psum L (Set.indicator Ξ A ω) (b 0) * varthetaDot L (n := n + 1) u b‖
+      ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ ω + ζ)
+    (hAP : ∀ ω ∈ Ξ, ∀ x, ‖Psum L (A ω) x‖ ≤ Pb)
+    (a : LoopArg L (n + 2)) :
+    momNorm P q (fun ω => ‖Uker L (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b : LoopArg L (n + 2) =>
+          Psum L (Set.indicator Ξ A ω) (b 0) * varthetaDot L (n := n + 1) u b) a‖)
+      ≤ cKerSumZero (n + 2) * (4 * K) ^ (2 * (n + 2))
+            * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * momNorm P q ψ
+        + (cKerSumZero (n + 2) * (4 * K) ^ (2 * (n + 2)) * ((1 - s) / (1 - v)) ^ (n + 2) * ζ
+          + cKerSumZeroErr (n + 2) * (L : ℝ) ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2)
+              * dotErr n (ellHat L ((u : ℝ) : ℂ)) u K Pb) := by
+  have hu0 : 0 ≤ u := hs0.trans hsu
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓ0 : (0 : ℝ) < ellHat L ((u : ℝ) : ℂ) := by
+    have := half_le_ellHat_real L hL hu0 hu1; linarith
+  exact Gauss.momNorm_Uker_PsumVarthetaDot_le L hL hq hE σ hs0 hsu huv hv0 hv1 hκA
+    (by linarith) hζ (dotErr_nonneg n hℓ0 hu1 hP0) hψ0 hint hGM
+    (hGd_dot L hL hu0 hu1 hK hP0 hAP) a
+
+/-- **Term 5 of `momentDuhamelQ` (5.103), with `hGd` discharged.** -/
+theorem momNorm_Uker_QQ_event_le [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 3 ≤ L)
+    {q : ℕ} (hq : q ≠ 0) {n : ℕ} {E : ℝ} (hE : |E| < 2) (σ : Fin (n + 2) → Bool)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K e ζ δ : ℝ} (hK : 1 ≤ K) (hζ : 0 ≤ ζ) (he : 0 ≤ e) (hδ : 0 ≤ δ)
+    {Ξ : Set Ω} {A : Ω → LoopArg L ((n + 2) + (n + 2)) → ℂ} {ψ : Ω → ℝ}
+    (hψ0 : ∀ ω, 0 ≤ ψ ω) (hint : Integrable (fun ω => ψ ω ^ q) P)
+    (hGM : ∀ ω b, ‖QQ L ((u : ℝ) : ℂ) (Set.indicator Ξ A ω) b‖
+      ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ ((n + 2) + (n + 2)) * ψ ω + ζ)
+    (hAe : ∀ ω ∈ Ξ, ∀ c, ‖A ω c‖ ≤ e)
+    (hAd : ∀ ω ∈ Ξ, FastDecay L (ellHat L ((u : ℝ) : ℂ) * K) δ (A ω))
+    (a : LoopArg L ((n + 2) + (n + 2))) :
+    momNorm P q (fun ω => ‖Uker L (xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (QQ L ((u : ℝ) : ℂ) (Set.indicator Ξ A ω)) a‖)
+      ≤ cKerSumZero ((n + 2) + (n + 2)) * (4 * K) ^ (2 * ((n + 2) + (n + 2)))
+            * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ ((n + 2) + (n + 2)) * momNorm P q ψ
+        + (cKerSumZero ((n + 2) + (n + 2)) * (4 * K) ^ (2 * ((n + 2) + (n + 2)))
+              * ((1 - s) / (1 - v)) ^ ((n + 2) + (n + 2)) * ζ
+          + cKerSumZeroErr ((n + 2) + (n + 2)) * (L : ℝ) ^ ((n + 2) + (n + 2))
+              * ((1 - s) / (1 - v)) ^ ((n + 2) + (n + 2))
+              * qqErr L (n + 1) (ellHat L ((u : ℝ) : ℂ)) K e δ) := by
+  have hu0 : 0 ≤ u := hs0.trans hsu
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓ0 : (0 : ℝ) < ellHat L ((u : ℝ) : ℂ) := by
+    have := half_le_ellHat_real L hL hu0 hu1; linarith
+  exact Gauss.momNorm_Uker_QQ_le L hL hq hE σ hs0 hsu huv hv0 hv1 hκA (by linarith) hζ
+    (qqErr_nonneg L (n + 1) hℓ0 (by linarith : (0 : ℝ) ≤ K) he hδ) hψ0 hint hGM
+    (hGd_QQ L hL hu0 hu1 hK he hδ hAe hAd) a
+
+end Discharged
+
+/-! ### §11  Satisfiability
+
+Two statements, in the two directions the project's discipline asks for.
+
+* `RBM.FastDecayFlow.nonempty_lkGood` (§8) rules out the **empty good event**: the truncation
+  of §1 is not what makes the `hGd` slots true, because the event is provably non-empty.
+* `RBM.FastDecayFlow.hGd_witness` is the **positive witness**: an explicit non-zero tensor,
+  at the critical scaling `1 - u = L^{-1}` where the decay length `ℓ̂_u = √L` is genuinely
+  long (neither `0` nor saturated at `L`), meeting every premise of
+  `RBM.FastDecayFlow.hGd_Qop_sharp` with error `δ = 0` and with `Ξ = univ`, and which `Q_u`
+  fixes rather than annihilates. -/
+
+section Witness
+
+/-- **The decay length is genuinely long at the critical scaling.**  At `1 - u = L^{-1}`,
+`ℓ̂_u = min(|1-u|^{-1/2}, L) = √L`: the minimum is *not* attained at the saturating branch
+`L`, so the witness below is read at a non-degenerate radius. -/
+theorem ellHat_critical (L : ℕ) (hL : 3 ≤ L) :
+    ellHat L ((1 - (L : ℝ)⁻¹ : ℝ) : ℂ) = Real.sqrt L := by
+  have hL3 : (3 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL
+  have hL0 : (0 : ℝ) < (L : ℝ) := by linarith
+  have hinv : (0 : ℝ) < (L : ℝ)⁻¹ := by positivity
+  rw [ellHat_ofReal L (by linarith), show (1 : ℝ) - (1 - (L : ℝ)⁻¹) = (L : ℝ)⁻¹ by ring,
+    Real.sqrt_inv, one_div, inv_inv]
+  exact min_eq_left (Real.sqrt_le_self_iff.2 (Or.inr (by linarith)))
+
+variable {Ω : Type*}
+
+/-- **The satisfiability witness for the `hGd` slot.**
+
+All four clauses hold simultaneously, with `Ξ = Set.univ`, input error `0`, and data
+`(M, δ) = (‖κ‖, 0)` that do not depend on `N`:
+
+1. the radius is read at the critical scaling, where `ℓ̂_u = √L` is genuinely long;
+2. the tensor is **not** the zero tensor;
+3. `Q_u` does not annihilate it — it fixes it, so the `hGd` below is not a statement about
+   `0`;
+4. `RBM.FastDecayFlow.hGd_Qop_sharp`'s conclusion holds for it.
+
+Clause 3 is the one that matters: a version of §1 in which `Q_u ∘ 1_Ξ A` happened to be `0`
+would satisfy every `hGd` slot and be worthless. -/
+theorem hGd_witness (L : ℕ) [NeZero L] (hL : 3 ≤ L) {n : ℕ} {K : ℝ} (hK : 2 ≤ K) {κ : ℂ}
+    (hκ : κ ≠ 0) (ω : Ω) :
+    ellHat L ((1 - (L : ℝ)⁻¹ : ℝ) : ℂ) = Real.sqrt L
+    ∧ Gauss.witTensor L n κ ≠ 0
+    ∧ Qop L (((1 - (L : ℝ)⁻¹ : ℝ) : ℝ) : ℂ) (Gauss.witTensor L n κ) = Gauss.witTensor L n κ
+    ∧ FastDecay L (ellHat L ((1 - (L : ℝ)⁻¹ : ℝ) : ℂ) * K) (qopErr1 L n K ‖κ‖ 0)
+        (Qop L (((1 - (L : ℝ)⁻¹ : ℝ) : ℝ) : ℂ)
+          (Set.indicator (Set.univ : Set Ω) (fun _ => Gauss.witTensor L n κ) ω)) := by
+  have hL3 : (3 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL
+  have hL0 : (0 : ℝ) < (L : ℝ) := by linarith
+  have hinv1 : (L : ℝ)⁻¹ ≤ 1 / 3 := by
+    rw [inv_le_comm₀ hL0 (by norm_num)]; linarith
+  have hinv0 : (0 : ℝ) < (L : ℝ)⁻¹ := by positivity
+  have hu0 : (0 : ℝ) ≤ 1 - (L : ℝ)⁻¹ := by linarith
+  have hu1 : (1 - (L : ℝ)⁻¹ : ℝ) < 1 := by linarith
+  have hell : ellHat L ((1 - (L : ℝ)⁻¹ : ℝ) : ℂ) = Real.sqrt L := ellHat_critical L hL
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt L := Real.one_le_sqrt.2 (by linarith)
+  have hrad : (1 : ℝ) < ellHat L ((1 - (L : ℝ)⁻¹ : ℝ) : ℂ) * K := by
+    rw [hell]; nlinarith
+  refine ⟨hell, Gauss.witTensor_ne_zero L hL hκ, Gauss.Qop_witTensor L hL κ _, ?_⟩
+  exact hGd_Qop_sharp L hL hu0 hu1 (by linarith : (1 : ℝ) ≤ K) (norm_nonneg κ) le_rfl
+    (fun _ _ b => Gauss.norm_witTensor_le L b)
+    (fun _ _ => Gauss.fastDecay_witTensor L hL κ hrad) ω
+
+end Witness
+
+/-! ### §12  End to end, for term 1 of `momentDuhamelQ`
+
+The point of this section is that the chain really closes: §8's good event, §9's `hGd` at the
+model tensor and §10's discharged estimate compose into one statement in which **nothing
+about the decay is a hypothesis any more** — the only inputs left are the size envelope
+`hGM`/`hAM`, the integrability, and the inclusion `Ξ ⊆ lkGood`, whose right-hand side §8
+proves to hold with high probability from (5.75).
+
+The other four terms compose the same way, with `hGd_Qop_driftF`, `hGd_commS_lkT`,
+`hGd_dot_lkT`, `hGd_QQ_eeFun` in place of `fastDecay_lkT_of_mem_lkGood`; term 1 is spelled
+out because it is the one T219's assembly reaches first. -/
+
+section EndToEnd
+
+open RBM.MomentDuhamel
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **(7.16) in moment form for `Q_u ∘ (L-K)_u`, with (7.13) discharged from (5.75).**
+
+This is `RBM.Gauss.momNorm_Uker_Qop_le` — term 1 (and, at `u` in the interior, term 2's
+shape) of `RBM.MomentDuhamel.Hyp.momentDuhamelQ` — with its `hGd` slot filled by a theorem.
+The decay radius is `ℓ_u N^τ` and the decay error `N^{τ₁-D}`, i.e. exactly what
+`RBM.FastDecayFlow.lkGood` delivers: `RBM.SumZeroDyn.fastDecay_Qop_le` gives away no radius,
+so the `K` of the kernel estimate *is* `N^τ`. -/
+theorem momNorm_Uker_Qop_lkT_le (hE : |E| ≤ 2) {q n N : ℕ} (hq : q ≠ 0)
+    (σ : Fin (n + 2) → Bool) {u v : ℝ} (hs0 : 0 ≤ s N) (hsu : s N ≤ u) (hut : u ≤ t N)
+    (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {τ τ₁ D M ζ : ℝ} (hτK : 1 ≤ (N : ℝ) ^ τ) (hM : 0 ≤ M)
+    (hζ : 0 ≤ ζ) {Ξ : Set Ω} (hΞ : Ξ ⊆ lkGood X E s t (n + 2) τ τ₁ D N)
+    {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω) (hint : Integrable (fun ω => ψ ω ^ q) B.P)
+    (hGM : ∀ ω b, ‖Qop (B.L N) ((u : ℝ) : ℂ)
+        (Set.indicator Ξ (fun ω => lkT X E N u ω σ) ω) b‖
+      ≤ (κA * ((1 - u) * ellHat (B.L N) (u : ℂ)))⁻¹ ^ (n + 2) * ψ ω + ζ)
+    (hAM : ∀ ω ∈ Ξ, ∀ b, ‖lkT X E N u ω σ b‖ ≤ M)
+    (a : LoopArg (B.L N) (n + 2)) :
+    momNorm B.P q (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop (B.L N) ((u : ℝ) : ℂ) (Set.indicator Ξ (fun ω => lkT X E N u ω σ) ω)) a‖)
+      ≤ cKerSumZero (n + 2) * ((N : ℝ) ^ τ) ^ (2 * (n + 2))
+            * (κA * ((1 - v) * ellHat (B.L N) (v : ℂ)))⁻¹ ^ (n + 2) * momNorm B.P q ψ
+        + (cKerSumZero (n + 2) * ((N : ℝ) ^ τ) ^ (2 * (n + 2))
+              * ((1 - s N) / (1 - v)) ^ (n + 2) * ζ
+          + cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+              * ((1 - s N) / (1 - v)) ^ (n + 2)
+              * qopErr1 (B.L N) n ((N : ℝ) ^ τ) M ((N : ℝ) ^ τ₁ * (N : ℝ) ^ (-D))) := by
+  have := B.isProbabilityMeasure
+  exact momNorm_Uker_Qop_event_le (B.L N) (B.three_le_L N) hq hE σ hs0 hsu huv hv0 hv1 hκA
+    hτK hM hζ (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) _)
+      (Real.rpow_nonneg (Nat.cast_nonneg N) _)) hψ0 hint hGM hAM
+    (fun ω hω => fastDecay_lkT_of_mem_lkGood hsu hut (hΞ hω) σ) a
+
+end EndToEnd
 
 end RBM.FastDecayFlow

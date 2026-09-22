@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.MomentDuhamelQ
+import Mathlib.Probability.Distributions.Geometric
 
 /-!
 # Back from `Q_v ∘ (L-K)_v` to `(L-K)_v`: the `P` half of (5.101) on the moment route (T218)
@@ -49,6 +50,19 @@ This file supplies the other half and composes the two into a bound on `‖(L-K)
   Its `Q_v` part is **non-zero** (T201's `RBM.Gauss.witTensor`) and its `P` part is
   **exactly `1`**, so neither half of (5.101) is degenerate; the normalisation is the critical
   one, `A_v^{-(m+2)} = (κ_A (1-v) ℓ_v)^{-(m+2)}`, and `v ↑ 1` is allowed.
+* §7 — `RBM.Gauss.stochDom_scale` and `RBM.Gauss.stochDom_Psum_vartheta_qGood`: the `P` half in
+  the shape the `Q`-route assembly of Lemma 5.14 consumes, i.e. with the weight moved to the
+  control and the control equal to `RBM.Step3.Lemma514`'s own `(Λ^{1/2} + Φ) A_v^{-(n+2)}`.
+  Its only random input is the `m = n + 1` slot of `RBM.Gauss.Lemma514Premises`.
+* §8 — `RBM.Gauss.Psum_const` and `RBM.Gauss.pow_card_le_of_norm_Psum_le`: **the `QGood` guard
+  cannot be dropped.**  An unguarded slot-sum bound forces the constant `≥ L^n`, with equality
+  at the constant tensor, and `A_v^{-(n+2)}` carries no positive power of `L`.
+* §9 — `RBM.Gauss.eventually_momNorm_norm_lkT_le_highProb`: §3 chained with §4, so the moment
+  form of (5.101) comes out with the good-event loss already replaced by `N^{-D}`.  Quantifier
+  order `∀ p, 1 ≤ p → ∀ D > 0, ∀ᶠ N in atTop`.
+* §10 — `RBM.Gauss.highProb_geom_compl_singleton` and `RBM.Gauss.eventLoss_geom_witness`: the
+  witness for the *price* of the split.  The events are not `univ` and their complements carry
+  strictly positive mass at every `N`, yet the loss is eventually below `N^{-D}` for every `D`.
 
 ## Deviations from the paper
 
@@ -598,5 +612,296 @@ theorem qpWit_route_witness [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 
   linarith
 
 end GridWitness
+
+/-! ### §7  The `P` half in the shape the `Q`-route assembly consumes
+
+§5 delivers the composition with the weight `A_v^{n+2}` multiplied in, because that is the
+normalisation `RBM.SumZeroDyn.termP` states (5.96) × (5.87) in.  The assembly of Lemma 5.14 on
+the `Q` route wants the *unweighted* slot-sum product with the weight moved to the control, and
+with the control of `RBM.Step3.Lemma514`, namely `(Λ^{1/2} + Φ) A_v^{-(n+2)}`.  That is a
+division by a positive deterministic factor, plus `1 ≤ Λ^{1/2}`.
+
+**The `QGood` guard stays.**  It is not a convenience: §8 shows that dropping it costs a factor
+`L^n`, which `A_v^{-(n+2)}` cannot absorb.  Ward's identity (`RBM.SumZeroDyn.WardP`) speaks
+about `QGood` charges only, and on non-alternating charges §5.5 does not project at all — it
+uses (5.20) directly (`RBM.SumZeroDyn.bound_nonAlt`). -/
+
+section Consume
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- `≺` is invariant under scaling both sides by the same positive deterministic factor: the
+two failure events are *equal*, not merely nested, so nothing is lost. -/
+theorem stochDom_scale {U : ℕ → Type*} {ξ ζ : ∀ N, U N → Ω → ℝ} {c : ∀ N, U N → ℝ}
+    (hc : ∀ N u, 0 < c N u) (h : StochDom P ξ ζ) :
+    StochDom P (fun N u ω => c N u * ξ N u ω) (fun N u ω => c N u * ζ N u ω) := by
+  intro τ hτ D hD
+  have hset : ∀ N : ℕ,
+      badSet (fun N u ω => c N u * ξ N u ω) (fun N u ω => c N u * ζ N u ω) τ N
+        = badSet ξ ζ τ N := by
+    intro N
+    ext ω
+    simp only [badSet, Set.mem_ofPred_eq]
+    refine exists_congr fun u => ?_
+    rw [show (N : ℝ) ^ τ * (c N u * ζ N u ω) = c N u * ((N : ℝ) ^ τ * ζ N u ω) by ring]
+    exact mul_lt_mul_iff_right₀ (hc N u)
+  filter_upwards [h τ hτ D hD] with N hN
+  rw [hset N]
+  exact hN
+
+end Consume
+
+section ConsumeFlow
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **The `P` half of (5.101) in the shape the `Q`-route assembly of Lemma 5.14 consumes it.**
+
+`‖(P ∘ (L-K)_v)_{a₁}‖ ‖ϑ_{v,a}‖ ≺ (Λ^{1/2} + Φ) A_v^{-(n+2)}` on `QGood` charges, at *every*
+terminal time `v` of the window (`v N ∈ [s N, t N]`, so `v ↑ t ↑ 1` is allowed — no short
+window).
+
+Everything on the right of `≺` is the control `RBM.Step3.Lemma514` already carries, and the
+only random input is `Ξ^{(L-K)}_{·,n+1} ≺ Φ`, i.e. the slot `m = n + 1 < n + 2` of
+`RBM.Gauss.Lemma514Premises`.  So the `P` half is **a theorem, not a new field**: its
+deterministic core is Ward's (5.96) (`RBM.SumZeroDyn.norm_Psum_lkT_le`) and Lemma 5.13's (5.87)
+(`RBM.SumZeroDyn.norm_vartheta_real_le`), both already proved, assembled by
+`RBM.SumZeroDyn.termP`.
+
+Note the direction of the `Λ` slack: `RBM.SumZeroDyn.termP` gives the *stronger* control
+`1 + Φ`, and `1 ≤ Λ^{1/2}` (eventually) weakens it to the assembly's `Λ^{1/2} + Φ`.  The `Λ`
+half is therefore not used by the `P` half at all; it is carried only so that the two halves of
+(5.101) have literally the same control. -/
+theorem stochDom_Psum_vartheta_qGood (X : Sample B) {E : ℝ} {s t : ℕ → ℝ} (hE : |E| < 2)
+    (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hcond : Cond272 B E s t) {n : ℕ} (hW : SumZeroDyn.WardP X E n)
+    (hdec : SumZeroDyn.LKDecay X E s t) {Λ Φ : ℕ → ℝ} (hΛ0 : ∀ N, 0 ≤ Λ N)
+    (hΦ0 : ∀ N, 0 ≤ Φ N) (hΛ1 : ∀ᶠ N : ℕ in atTop, 1 ≤ Λ N)
+    (hXi : StochDom B.P (Step3.flowXiLK X E s t (n + 1)) (fun N _ _ => Φ N))
+    (v : ℕ → ℝ) (hv : ∀ N, v N ∈ Set.Icc (s N) (t N)) :
+    StochDom B.P
+      (fun N (w : LoopData (B.L N) (n + 2)) ω =>
+        if SumZeroDyn.QGood w.1 then
+          ‖Psum (B.L N) (SumZeroDyn.lkT X E N (v N) ω w.1) (w.2 0)‖
+            * ‖vartheta (B.L N) ((v N : ℝ) : ℂ) w.2‖
+        else 0)
+      (fun N _ _ => (Λ N ^ ((1 : ℝ) / 2) + Φ N) * (B.scale E N (v N) ^ (n + 2))⁻¹) := by
+  classical
+  have hA : ∀ N, 0 < B.scale E N (v N) ^ (n + 2) := fun N =>
+    pow_pos (B.scale_pos' hE N ((hs0 N).le.trans (hv N).1) ((hv N).2.trans_lt (ht1 N))) _
+  have hPw := (SumZeroDyn.termP X hE hs0 hst ht1 hcond hW hdec hΦ0 hXi).precomp_param
+    (V := fun N => LoopData (B.L N) (n + 2))
+    (fun N w => ((⟨v N, (hv N).1, (hv N).2⟩ : TimeIcc s t N), w))
+  have hsc := stochDom_scale (c := fun N (_ : LoopData (B.L N) (n + 2)) =>
+      (B.scale E N (v N) ^ (n + 2))⁻¹) (fun N _ => inv_pos.2 (hA N)) hPw
+  refine StochDom.of_le_left (fun N w ω => ?_) (Step3.stochDom_mono (fun N w ω => ?_) 1 ?_ hsc)
+  · split_ifs with h
+    · rw [← mul_assoc, inv_mul_cancel₀ (hA N).ne', one_mul]
+    · rw [mul_zero]
+  · have h1 : (0 : ℝ) ≤ Λ N ^ ((1 : ℝ) / 2) := Real.rpow_nonneg (hΛ0 N) _
+    have := hΦ0 N
+    have := hA N
+    positivity
+  · filter_upwards [hΛ1] with N hN w ω
+    have h1 : (1 : ℝ) ≤ Λ N ^ ((1 : ℝ) / 2) := Real.one_le_rpow hN (by norm_num)
+    have h2 : (0 : ℝ) < (B.scale E N (v N) ^ (n + 2))⁻¹ := inv_pos.2 (hA N)
+    have h3 : (1 : ℝ) + Φ N ≤ Λ N ^ ((1 : ℝ) / 2) + Φ N := by linarith
+    calc (B.scale E N (v N) ^ (n + 2))⁻¹ * (1 + Φ N)
+        ≤ (B.scale E N (v N) ^ (n + 2))⁻¹ * (Λ N ^ ((1 : ℝ) / 2) + Φ N) :=
+          mul_le_mul_of_nonneg_left h3 h2.le
+      _ = 1 * ((Λ N ^ ((1 : ℝ) / 2) + Φ N) * (B.scale E N (v N) ^ (n + 2))⁻¹) := by ring
+
+end ConsumeFlow
+
+/-! ### §8  Why the `QGood` guard cannot be dropped: the missing factor is `L^n`
+
+The tempting shape for the `P` half is the *unguarded* one, a `≺` for
+`‖(P ∘ (L-K)_v)_{a₁}‖ ‖ϑ_{v,a}‖` at every charge.  It is not available, and the obstruction is
+quantitative rather than technical: off `QGood` charges Ward's identity gives nothing, the only
+remaining route is the triangle inequality on the definition of `P ∘ A` — and that route loses
+exactly the number of summands, `L^n`, with **equality** at the constant tensor.  Since the
+normalisation the two halves of (5.101) share is `A_v^{-(n+2)} = (W ℓ_v η_v)^{-(n+2)}`, which
+carries no positive power of `L`, the loss cannot be absorbed.
+
+This is why §5 and §7 carry the guard, and it is a correction to the `PHalf514` slot drafted
+(unguarded) in `RBM1D/Gauss/Lemma514QAssembly.lean`: the assembly has to route non-alternating
+charges through (5.20) (`RBM.SumZeroDyn.bound_nonAlt`) exactly as
+`RBM.SumZeroDyn.lemma514_flow` does, not through (5.101). -/
+
+section Obstruction
+
+variable (L : ℕ) [NeZero L]
+
+/-- `P ∘ A` of the constant tensor: the slot sum of Definition 5.12 has `L^n` summands. -/
+theorem Psum_const (n : ℕ) (c : ℂ) (x : ZMod L) :
+    Psum L (fun _ : LoopArg L (n + 1) => c) x = (L : ℂ) ^ n * c := by
+  simp [Psum, Finset.sum_const, Finset.card_univ, ZMod.card]
+
+/-- **The unguarded slot-sum bound costs a factor `L^n`, and that is optimal.**  Any constant
+`C` with `‖(P ∘ A)_x‖ ≤ C · sup‖A‖` for *all* tensors `A` of `n + 1` slots satisfies
+`L^n ≤ C`.  Hence no `N`-independent (indeed, no sub-`L^n`) unguarded `P` half exists, and
+`RBM.SumZeroDyn.WardP`'s restriction to `QGood` charges is doing real work. -/
+theorem pow_card_le_of_norm_Psum_le (n : ℕ) {C : ℝ}
+    (h : ∀ (A : LoopArg L (n + 1) → ℂ) (M : ℝ), (∀ b, ‖A b‖ ≤ M) →
+      ∀ x, ‖Psum L A x‖ ≤ C * M) :
+    (L : ℝ) ^ n ≤ C := by
+  have h1 := h (fun _ => 1) 1 (fun b => by simp) 0
+  rw [Psum_const] at h1
+  simpa using h1
+
+end Obstruction
+
+/-! ### §9  Cashing the good-event price inside (5.101)
+
+§3's conclusion carries the extra summand `Env · P(Ξᶜ)^{1/q}`, and §4 says what makes it
+negligible.  This section chains the two, so that the moment form of (5.101) along the flow
+comes out with the loss already replaced by `N^{-D}` — the shape `≺` expects.
+
+The quantifier order is the one the discipline demands: `∀ p, 1 ≤ p → ∀ D > 0, ∀ᶠ N in atTop`.
+Writing `∀ p N` instead would be unsatisfiable, since `q = 2p` sits in the exponent `1/q` of the
+loss and `HighProb` only gives a threshold `N₀(D, q)`. -/
+
+section Pay
+
+open RBM.MomentDuhamel
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **(5.101) in moment form with the good-event loss paid.**
+
+`‖(L-K)_v‖_{2p} ≤ ‖Q_v ∘ (L-K)_v‖_{2p} + (P half) + N^{-D}`, eventually in `N`, for every
+fixed `p ≥ 1` and every `D > 0`.
+
+The premises are exactly §3's, made into families over `N`, plus the two that pay for the
+split: `RBM.HighProb` for the event and a polynomial envelope `N^{C_env}` off it.  Nothing
+here is free — `RBM.Gauss.no_const_event_loss` shows that replacing `RBM.HighProb` by a bound
+`P(Ξᶜ) ≤ N^{-D₀}` at a *fixed* `D₀` makes the loss unbounded as soon as `D₀ < 2p·C_env`. -/
+theorem eventually_momNorm_norm_lkT_le_highProb [IsProbabilityMeasure B.P]
+    (X : Sample B) {E : ℝ} (hE : |E| < 2) {n : ℕ} (hW : SumZeroDyn.WardP X E n)
+    {v : ℕ → ℝ} (hv0 : ∀ N, 0 ≤ v N) (hv1 : ∀ N, v N < 1)
+    {K φ δ : ℕ → ℝ} (hK : ∀ N, 0 < K N) (hφ : ∀ N, 0 ≤ φ N) (hδ : ∀ N, 0 ≤ δ N)
+    {Ξ : ℕ → Set Ω} (hΞm : ∀ N, MeasurableSet (Ξ N)) (hΞ : HighProb B.P Ξ)
+    (hΞ1 : ∀ N, ∀ ω ∈ Ξ N, X.xiLK E N (v N) ω (n + 1) ≤ K N * φ N)
+    (hΞ2 : ∀ N, ∀ ω ∈ Ξ N, ∀ (ρ : Fin (n + 1) → Bool) b,
+      X.lkErr E N (v N) ω (LoopData.idx (ρ, b))
+        * SumZeroDyn.farInd (B.L N) (B.ell N (v N) * K N) b ≤ δ N)
+    {Cenv : ℝ} (hCenv : 0 ≤ Cenv)
+    (hEnv : ∀ᶠ N : ℕ in atTop, ∀ (ω : Ω) (σ : Fin (n + 2) → Bool)
+      (a : LoopArg (B.L N) (n + 2)), ‖SumZeroDyn.lkT X E N (v N) ω σ a‖ ≤ (N : ℝ) ^ Cenv)
+    (hQint : ∀ (q N : ℕ) (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2)),
+      Integrable (fun ω =>
+        ‖Qop (B.L N) ((v N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (v N) ω σ) a‖ ^ q) B.P)
+    (hAint : ∀ (q N : ℕ) (σ : Fin (n + 2) → Bool) (a : LoopArg (B.L N) (n + 2)),
+      Integrable (fun ω => |‖SumZeroDyn.lkT X E N (v N) ω σ a‖| ^ q) B.P) :
+    ∀ p : ℕ, 1 ≤ p → ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ σ : Fin (n + 2) → Bool, SumZeroDyn.QGood σ → ∀ a : LoopArg (B.L N) (n + 2),
+        momNorm B.P (2 * p) (fun ω => ‖SumZeroDyn.lkT X E N (v N) ω σ a‖)
+          ≤ momNorm B.P (2 * p)
+              (fun ω => ‖Qop (B.L N) ((v N : ℝ) : ℂ)
+                (SumZeroDyn.lkT X E N (v N) ω σ) a‖)
+            + pHalfBound B E N (v N) n (K N) (φ N) (δ N) + (N : ℝ) ^ (-D) := by
+  intro p hp D hD
+  have hq : 2 * p ≠ 0 := by omega
+  have hloss := eventually_env_mul_prob_rpow_le (P := B.P) (q := 2 * p) hq hΞ
+    (Env := fun N : ℕ => (N : ℝ) ^ Cenv) hCenv (Eventually.of_forall fun N => le_rfl) hD
+  filter_upwards [hEnv, hloss] with N hEN hLN σ hqg a
+  have key := momNorm_norm_lkT_le_of_event X hE (q := 2 * p) hq hW (hv0 N) (hv1 N) hqg a
+    (hK N) (hφ N) (hδ N) (hΞm N) (hΞ1 N) (hΞ2 N)
+    (Env := (N : ℝ) ^ Cenv) (pr := (B.P (Ξ N)ᶜ).toReal)
+    (Real.rpow_nonneg (Nat.cast_nonneg N) _) ENNReal.toReal_nonneg
+    (fun ω => hEN ω σ a) le_rfl (hQint (2 * p) N σ a) (hAint (2 * p) N σ a)
+  linarith
+
+end Pay
+
+/-! ### §10  The good-event split is used, and it is not free
+
+§6's witness takes the deterministic branch (`Ξ = univ`, `pr = 0`), which shows the *shape* of
+(5.101) is attained but says nothing about the price.  Here is the price, realised: a
+probability measure and a family of events `Ξ_N` which
+
+* is **not** the trivial family — `Ξ_N ≠ univ`, and `P(Ξ_Nᶜ) > 0` for every `N`, so the split
+  really does discard mass at every finite `N`;
+* is nevertheless `RBM.HighProb`, so §9's loss `Env · P(Ξ_Nᶜ)^{1/q}` is eventually below
+  `N^{-D}` for every `D`.
+
+Take the geometric law on `ℕ` with parameter `1/2` and `Ξ_N = {N}ᶜ`: the discarded mass is
+`2^{-(N+1)}`, positive but super-polynomially small.  Together with
+`RBM.Gauss.no_const_event_loss` (a compiled `False` for a fixed polynomial bound) this pins the
+premise of §9 down to `RBM.HighProb` exactly. -/
+
+section EventWitness
+
+open ProbabilityTheory
+
+/-- `1/2` as a point of the unit interval. -/
+noncomputable def halfUI : unitInterval := ⟨1 / 2, by constructor <;> norm_num⟩
+
+@[simp] theorem coe_halfUI : ((halfUI : unitInterval) : ℝ) = 1 / 2 := rfl
+
+theorem halfUI_ne_zero : halfUI ≠ 0 := by
+  intro h
+  have hc : ((halfUI : unitInterval) : ℝ) = 0 := by rw [h]; rfl
+  rw [coe_halfUI] at hc
+  norm_num at hc
+
+/-- The discarded mass is **strictly positive** at every `N`: the split is not free. -/
+theorem geom_singleton_pos (N : ℕ) : 0 < geometricMeasure halfUI {N} := by
+  rw [geometricMeasure_singleton halfUI_ne_zero, coe_halfUI]
+  exact ENNReal.ofReal_pos.2 (by positivity)
+
+/-- …and yet the family is `RBM.HighProb`: `2^{-(N+1)} ≤ N^{-D}` eventually, for every `D`. -/
+theorem highProb_geom_compl_singleton :
+    HighProb (geometricMeasure halfUI) (fun N : ℕ => ({N} : Set ℕ)ᶜ) := by
+  intro D hD
+  set k : ℕ := ⌈D⌉₊ with hk
+  have hDk : D ≤ (k : ℝ) := Nat.le_ceil D
+  have hten :=
+    (tendsto_pow_const_div_const_pow_of_one_lt k (r := 2) one_lt_two).eventually_lt_const
+      (show (0 : ℝ) < 2 by norm_num)
+  filter_upwards [hten, eventually_ge_atTop 1] with N hN hN1
+  have hN0 : (1 : ℝ) ≤ N := by exact_mod_cast hN1
+  have hNpos : (0 : ℝ) < N := by linarith
+  rw [compl_compl, geometricMeasure_singleton halfUI_ne_zero, coe_halfUI]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have h2N : (0 : ℝ) < (2 : ℝ) ^ N := by positivity
+  have hstep : (N : ℝ) ^ k < 2 * (2 : ℝ) ^ N := by
+    rw [div_lt_iff₀ h2N] at hN; linarith
+  have hrp : (N : ℝ) ^ D ≤ (N : ℝ) ^ k := by
+    calc (N : ℝ) ^ D ≤ (N : ℝ) ^ (k : ℝ) := Real.rpow_le_rpow_of_exponent_le hN0 hDk
+      _ = (N : ℝ) ^ k := by rw [Real.rpow_natCast]
+  have hDpos : (0 : ℝ) < (N : ℝ) ^ D := Real.rpow_pos_of_pos hNpos D
+  have hkey : (N : ℝ) ^ D ≤ (2 : ℝ) ^ N * 2 := by linarith
+  have hlhs : (1 - 1 / 2 : ℝ) ^ N * (1 / 2) = ((2 : ℝ) ^ N * 2)⁻¹ := by
+    rw [show (1 - 1 / 2 : ℝ) = 2⁻¹ by norm_num, inv_pow, mul_inv]
+    norm_num
+  rw [hlhs, Real.rpow_neg hNpos.le, ← one_div, ← one_div]
+  exact one_div_le_one_div_of_le hDpos hkey
+
+/-- **The satisfiability witness for the cost of the good-event split (T218, risk (b)).**
+
+One probability space, one family of events, all three conjuncts at once: the events are not
+`univ`, their complements carry positive mass at every `N`, and the loss of §9 —
+`Env · P(Ξ_Nᶜ)^{1/q}` with `Env = N^{C_env}` and `q = 2p` fixed first — is eventually below
+`N^{-D}` for every `D > 0`.  So `RBM.Gauss.eventually_momNorm_norm_lkT_le_highProb` is not
+about a family for which the split was vacuous. -/
+theorem eventLoss_geom_witness {Cenv : ℝ} (hCenv : 0 ≤ Cenv) {p : ℕ} (hp : 1 ≤ p) :
+    (∀ N : ℕ, ({N} : Set ℕ)ᶜ ≠ Set.univ)
+    ∧ (∀ N : ℕ, 0 < geometricMeasure halfUI (({N} : Set ℕ)ᶜ)ᶜ)
+    ∧ ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+        (N : ℝ) ^ Cenv
+            * ((geometricMeasure halfUI (({N} : Set ℕ)ᶜ)ᶜ).toReal) ^ ((1 : ℝ) / (2 * p : ℕ))
+          ≤ (N : ℝ) ^ (-D) := by
+  refine ⟨fun N h => ?_, fun N => ?_, fun D hD => ?_⟩
+  · have hmem : N ∉ ({N} : Set ℕ)ᶜ := by simp
+    rw [h] at hmem
+    exact hmem (Set.mem_univ N)
+  · rw [compl_compl]
+    exact geom_singleton_pos N
+  · exact eventually_env_mul_prob_rpow_le (P := geometricMeasure halfUI) (q := 2 * p)
+      (by omega) highProb_geom_compl_singleton hCenv
+      (Eventually.of_forall fun N => le_rfl) hD
+
+end EventWitness
 
 end RBM.Gauss

@@ -6720,3 +6720,42 @@ paper-deltas **T228a**（阈值 + 光滑化）与 **T228b**（自举取代 BDG�
 **顺带**：T229 先 grep 到了仓库已有的 `Step2Moment.one_le_jS`，**删掉了自己重复写的那条**——「造轮子之前先查」生效的一例。
 
 **未做（归谁）**：`hHP` 的 `HighProb` 提升——短的不是本单的东西，是**别人单子的高概率输入**（(2.69) 的 `Mi`、T207 的 (5.47) 在 `HighProb` 层、(5.54) 的 `hrem`/`ρ`、(5.57)/(5.60)/(2.74)），`egData_of_jS` 的假设表就是这张清单。`Mm` 仍在不带撇的 `FlowEq548` 那条线上——**T228 已用光滑阈值把它从 Steps 4–5 删掉**，归 T228 的后续接线单。`import` 顺带项**归 T221**（Cowork 18:10 已裁定并入），T229 核实**不成环**，但删 `margin_pow_le` 要改本文件已有行、与「只许追加」冲突，故未做。
+
+## ⭐⭐⭐ T218：`P∘(L−K)` 半边接上矩路线——**并编译证明无护栏的 `PHalf514` 做不出来**（`Gauss/Lemma514QRoute.lean` 602 → 907 行、30 条，全量绿）
+
+**半成品的处置**：602 行**编译通过且逐条核过**（对 T201 `momNorm_le_affine_on_event` 与 `SumZeroDyn.termP` 的用法忠实；`hrhs` 槽与 `stochDom_of_momentDuhamelQ` 的**五项逐字相同、无删项**；事件量化只在 `ω ∈ Ξ` 上、时间全窗口 `0 ≤ v < 1`、量词次序正确；T223 改 `xi2` **无影响**，本文件唯一一处是不透明传递、无 `rw`/`unfold`），据此续做。
+
+**`‖(L−K)_v‖` 的矩界合成出来了，两种形态**：
+* **矩范数**：`eventually_momNorm_norm_lkT_le_highProb` —— `‖(L−K)_v‖_{2p} ≤ ‖Q_v∘(L−K)_v‖_{2p} + pHalfBound + N^{−D}`（`∀ p, 1 ≤ p → ∀ D > 0, ∀ᶠ N`），**好事件代价已兑换掉**；
+* **`≺`**：`stochDom_Psum_vartheta_qGood` —— 控制与 `Q` 半边**字面同形**。
+
+**⭐ P 半边的输入全是已证定理、零新字段**：`Cond272`、`SumZeroDyn.WardP`、`SumZeroDyn.LKDecay`、以及 `hΛ0/hΦ0/hΛ1/hXi`（**就是 `Lemma514Premises` 在 `m = n+1` 的槽**）。核心是 `SumZeroDyn.termP`（`:2894`）。
+
+**⚠⚠ 本单最硬的一条否定结论（已入库）：无护栏的 `PHalf514` 做不出来，而且不该做。** T219 的半成品把它写成对**所有**电荷量化；非 QGood 电荷上 Ward 给不出任何东西，唯一剩下的是对 `Psum` 定义用三角不等式，**短的因子精确是 `L^n` 且在常数张量处取等**——`pow_card_le_of_norm_Psum_le` 证明任何满足 `‖(P∘A)_x‖ ≤ C·sup‖A‖`（对一切 `A`）的 `C` 必有 `L^n ≤ C`，而两半共用的归一化 `A_v^{−(n+2)}` **不含 `L` 的正幂、吸收不掉**。**修法归 T219**：加 `if QGood` 护栏，非交替电荷照 `SumZeroDyn.lemma514_flow`（`:5060` 起）走 (5.20)/`bound_nonAlt` 三分支。**已即时发消息告知在飞的 T219。**
+
+**见证**：`qpWit = witTensor + ϑ_v` 取 T201 `gridS_Q716_witness` 的**临界标度**；`Q` 半边非零（`Qop_qpWit_ne_zero`）、**`P` 半边非零**（`Psum_qpWit` 证 `Psum_v qpWit ≡ 1`，所以 (5.101) 的第二个加项**真实存在**，合成不是 `Q` 半边的换装）。**好事件代价真的付掉了**：`eventLoss_geom_witness` 一条定理三个合取——`Ξ_N ≠ univ`（**不是平凡事件**）、`0 < P(Ξ_Nᶜ) = 2^{−(N+1)}`（**每个有限 `N` 都真的丢了质量，拆分不免费**）、但 `HighProb`；配继承的 `no_const_event_loss`（固定 `D₀ < q·C_env` 时损失无界，编译出 `False`），`HighProb` 被钉成**恰好够且必需**。
+
+## ⭐⭐⭐ T220：T201 五条核估计的 `hGd` 槽 **5/5 全部卸掉**——并查出半成品里一个致命的 fiat（`Gauss/FastDecayFlow.lean` 628 → 1153 行、61 条）
+
+**半成品里查出的四个缺陷（都已改）**，其中第 2 条是本项目头号缺陷的同形：
+1. 文件头 "Main results" **虚报 10 条不存在的定理**——已重写文件头，**并把这些定理真的做出来**；
+2. **⚠ 没有任何高概率生产者**：`Ξ` 是自由的 `Set Ω`，**取 `Ξ = ∅` 时全部 `hGd` 都是「关于 `0` 张量」的平凡陈述**——正是 T164/T169 那类空洞。已补 §8：`highProb_lkGood` + `nonempty_lkGood`（**好集是证出来非空的，不是假设非空**，仿 `T169.MinorGoodLe.goodEvent`）；
+3. `hGd_Qop` **无谓地把半径从 `K` 放宽到 `4K`**（`FastDecay` 半径越大越弱，这是弱化）——已补 `hGd_Qop_sharp`，半径与 `lkGood` 给出的**完全一致、零损耗**；
+4. 两个 `§4` 标题重号、超长行、四条 `show` warning——全部修掉，`lake build` 现在打 `✔` 而非 `⚠`。
+
+**⚠⚠ 更正 T220 工单（Cowork 的猜测两处不对）**：
+* **第 3、4 项根本不带张量的 (7.13) 假设**——`fastDecay_commS`/`fastDecay_varthetaDot` 的衰减来自 `ϑ_u`、`ϑ̇_u` **本身**，对 `L−K` 只要 **(5.96) Ward** 的槽和界（`norm_Psum_lkT_le`）；(5.75) 仍进来但**低一个环长**（`n+1`，在 Ward 里面）；
+* **第 5 项不走 (5.35)/(5.36)**，走**粘接长度 `2(n+2)+2` 的 `G` 环 Def 5.8 衰减**（`LKDecayQuant.GLoopDecayEvent`，生产者 `highProb_gLoopDecay_of_flowInputs`）；
+* 工单点的 `aprioriDecay_cut` **不是**来源；来源是 `Hierarchy/LKDecayQuant.lean` 的 `lkDecay_of_inputs`(:999) 与 `highProb_gLoopDecay_of_flowInputs`(:1064)。
+
+**本文件唯一的新数学是 §5 `fastDecay_eeArg`**（约 130 行）：`mem_cutPairs_of_mem` / `mem_rflip` / `mem_glueIdx_of_mem` 证「(5.23) 的粘接**不丢标号**」，从而 `Decay.norm_eTens_le_of_far` 的「每个粘接环带一对远标号」前提可卸。
+
+**见证 `hGd_witness`** 四个合取同时成立，`Ξ = Set.univ`（**不是靠截断成 0 才成立**）、`δ = 0`、数据与 `N` 无关：`ellHat L (1−L⁻¹) = √L`（临界标度，**衰减长度真的在长**，既不是退化的 0 也没顶到 `L`）、`witTensor ≠ 0`、**`Qop` 固定它而不是杀它**（这条最要命——若 `Q_u ∘ 1_Ξ A` 恰好是 0，所有 `hGd` 都平凡满足却毫无内容）、`hGd_Qop_sharp` 对它成立。
+
+## ⚠ 无主的活（本批交出）
+
+1. **⭐ `FastDecayFlow.lkGood` 的可测性**——它是对 `TimeIcc × LoopData` 的交，而 **`TimeIcc` 不可数**，所以不是可数交。这是 `Gauss.momNorm_le_affine_on_event`（`Lemma514Q716.lean:496`）的 `hΞ : MeasurableSet Ξ` 槽现在**唯一缺的东西**。T220 明确点名归 **T218/T219**，**是真缺口不是记账**。已即时告知在飞的 T219。
+2. **第 2 项（drift）的 `hKd`：`K` 在环长 `n+2` 上的 `LoopDecay` 全仓无生产者**——唯一的 `exists_loopDecay_Kval`（`Gauss/Step6DriftEG.lean:390`）只到环长 **3**，`DriftBound` 一直把它当具名输入。**无主。**
+3. **`hGM`（尺寸包络）**仍是假设；`Qop` 那一半的现成件是 `SumZeroDyn.norm_Qop_le_of_fastDecay`（`termI1` 就这么用），接线归 T219。
+4. 第 3、4 项的 `Pb` 还需 `WardP`、`QGood σ`、`X.xiLK ≤ N^τ·φ` 三件（前两件是结构性假设，第三件是 Lemma 5.10 的功率计数，归 T210/T212 线）。
+5. 轻微重复记档：`FastDecayFlow.Uker_zero` 与 `RBM.Step6.Uker_zero` 同名不同 namespace、不同形状（逐点 vs 函数版），不冲突。

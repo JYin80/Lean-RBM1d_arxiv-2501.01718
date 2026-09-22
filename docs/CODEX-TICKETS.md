@@ -138,3 +138,15 @@ T280 第 0 步审计准确：`APrimeSlot'` 的完整见证还导不出，缺口�
 * **T280d**（Codex，纯算术）：第 7 条。文件 `Gauss/APrimeExponents.lean`。
 * **T280e**（最后，谁有空谁做）：把 a–d + T274–T277 组装成 `APrimeSlot'` 在 `jSnorm` 处的见证，第 2 槽由定理产出。
 每单：先 `#check` 核对所用声明的签名；若发现本节某条裁定在 Lean 里不成立，编译成否定结论并停下。
+
+## §10 T278 第五步：包络对时间 `u` 带权（Cowork 09:08，读 T278 §8 报告后）
+
+T278 精确定位了：漂移行与 `E⊗E` 行的 `≺` 控制都带一个 **`η_u^{−1}`**（`DriftBound.norm_driftF_le`、`SumZeroDyn.hgood_QF`、`Gauss.stochDom_norm_eeFun_det`）。这是论文本来就有的——(5.40)–(5.42) 的被积函数都是「`η_u^{−1}` × …」，论文**对 `u` 积分**：在 p.24 相邻格上 `∫_s^v η_u^{−1} du = log((1−s)/(1−v)) / Im m = τ′·log W / Im m`，只是对数，被 `N^ε` 吸收。**卡住的是接口**：现在的 `''` 生产者用 `(v−s)·sup_u` 处理时间积分，而 `(v−s)·sup_u η_u^{−1} = (1−s)/(1−v) − 1 ≈ W^{τ′}`，是正幂。
+
+**修法（带撇 `'''`，旧签名不动）**：
+* `hMψ`/`hMψE` 的包络允许依赖 `u`：`momNorm(ψ N u q) ≤ C·N^{ε/2}·ρ_N(u)·Phi N q`，`ρ_N(u) := (etaT E u)^{−1}`（或一般的非负可积权 `ρ`）。
+* `hnum` 里漂移/交换子/`ϑ̇` 三项的 `(v−s)` 换成 `∫_s^v ρ_N(u) du`，`E⊗E` 项的 `√((v−s)·…)` 换成 `√(∫_s^v ρ_N(u) du · …)`。先核对生产者内部：它逐点把被积函数界成「核系数 × `scale_v^{−m}` × 包络」再对 `u` 积分，所以 `ρ(u)` 可以原样留在积分里——**若核系数本身也依赖 `u` 且与 `ρ` 不可分，停下报**。
+* 积分算术：`∫_s^v (etaT E u)^{−1} du = log((1−s)/(1−v)) / Im(mE E) ≤ C·log N`，因为 `1−v ≥ N^{−1+τ}`（论文改动第 16 条，Theorem 2.21 的区间条件，仓库里已在 `Cond272Reg`/窗口条件中）。`log N ≤ N^{η/4}` 最终成立。
+* 于是漂移行用 `SumZeroDyn.xiRhs_stochDom`（控制 `(2n+3)Φ_N`）+ `DriftBound.hdom_of_stochDom_driftF`，`E⊗E` 行用 `Gauss.stochDom_norm_eeFun_det`（控制 `Λ_N`），`ψ := A_u^m·max‖·‖·η_u`（把 `η_u^{−1}` 移到 `ρ` 里）再走 `momentDom_of_stochDom_of_nonneg`。
+* **初值行** `lkT` 在 `s`：如你所说由外层的 `BoundsCore.LmK m`（`Gauss.hinit_of_stochDom`）供给，不从 `Lemma514Premises` 来——在 `'''` 生产者里把它作为独立输入，由总装交割。
+* **验收**不变；见证在 p.24 相邻格（`1−v = W^{−(k+1)τ′}`）上，确认 `∫ρ` 是 `O(log W)` 而不是 `W^{τ′}`。

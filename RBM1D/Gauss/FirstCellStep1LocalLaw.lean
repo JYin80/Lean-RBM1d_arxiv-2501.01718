@@ -236,9 +236,10 @@ private theorem firstCell_localLawUnifIcc_of_llMax_sq {τ' : ℝ}
     simpa only [B, band] using hgreen
   exact unifDomIcc_of_stochDom_timeIcc hgreen'
 
-/-- The sharp first-cell entry law follows from Step 1, on an actual growing Gaussian band. -/
-theorem firstCell_localLawUnifIcc_of_step1 :
+/-- The actual Step-1 source and sharp entry law share one first-cell grid parameter. -/
+theorem firstCell_step1_and_localLaw_same_parameter :
     ∃ τ' : ℝ, 0 < τ' ∧
+      Step1.Hyp (sample Dims.exampleGrow) 0 (firstCellS τ') (firstCellT τ') ∧
       LocalLawUnifIcc Dims.exampleGrow 0
         (firstCellS τ') (firstCellT τ') firstCellPsi := by
   let d := Dims.exampleGrow
@@ -276,7 +277,15 @@ theorem firstCell_localLawUnifIcc_of_step1 :
     step1Hyp_gauss_of_scale'' d (κ := 1) (by norm_num) (by norm_num)
       hB hs0 hst ht1 hcond.1 hc0 hcond.2
   have hraw := firstCell_llMax_sq_stochDom hc0 hB hs0 hst ht1 hcond.1 hcond.2 h1
-  exact ⟨τ', hτ', firstCell_localLawUnifIcc_of_llMax_sq hraw⟩
+  exact ⟨τ', hτ', h1, firstCell_localLawUnifIcc_of_llMax_sq hraw⟩
+
+/-- The unchanged first-cell local-law interface. -/
+theorem firstCell_localLawUnifIcc_of_step1 :
+    ∃ τ' : ℝ, 0 < τ' ∧
+      LocalLawUnifIcc Dims.exampleGrow 0
+        (firstCellS τ') (firstCellT τ') firstCellPsi := by
+  obtain ⟨τ', hτ', _, hll⟩ := firstCell_step1_and_localLaw_same_parameter
+  exact ⟨τ', hτ', hll⟩
 
 /-- The same Gaussian first cell has positive duration and one inhabited flow good event. -/
 theorem firstCell_step1_localLaw_witness :
@@ -295,6 +304,7 @@ theorem firstCell_step1_localLaw_witness :
 #print axioms firstCell_invW_eq_four_psi_sq
 #print axioms firstCell_localLawUnifIcc_of_llMax_sq
 #print axioms firstCell_localLawUnifIcc_of_step1
+#print axioms firstCell_step1_and_localLaw_same_parameter
 #print axioms firstCell_step1_localLaw_witness
 
 end RBM.Gauss

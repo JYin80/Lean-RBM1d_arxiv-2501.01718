@@ -613,7 +613,405 @@ theorem integral_weight_pow_zero_le {P : Measure Ω} [IsProbabilityMeasure P] {W
 
 end PZero
 
-/-! ### 8. Compiled satisfiability witnesses -/
+/-! ### 8. The vector bound (S2) and the cross term (S5) of the Stein route
+
+⚠ **These replace the `∇²χ` accounting of §5–§6 above, not the `∇χ` one.**  The referee's
+ruling (V548, §6) is that the global `C²` mean-value closure cannot produce a one-step moment
+bound: the main estimate goes through the Stein identity (★), where `∇²` only ever hits the
+resolvent factor `F_u` and `∇²χ` never appears.  What the cross term needs instead is a bound
+on the **quadratic-variation rate** of the soft maximum in which the constant is the *random*
+rate of the numerators, not a deterministic derivative bound.
+
+`RBM.Step2Bootstrap.abs_deriv_softMax_le_affine` is a **scalar** statement: for one fixed
+coordinate `α` it turns `|∂_α ρ_i| ≤ Λ|ρ_i| + K` into `|∂_α J̃| ≤ Λ J̃ + card^{1/q} K`.  Summing
+that over `α` is not enough, because `∑_α σ_α · max_i |∂_α ρ_i|²` and
+`max_i ∑_α σ_α |∂_α ρ_i|²` differ by as much as `card S` (V548, appendix B); and taking for
+`K` the deterministic first-derivative constant `b₁` of `RBM.Gauss.BddC2C` gives a bound that
+is true but useless.  `RBM.Gauss.sqrt_quadVar_softMax_le` below is the **vector** form: it
+performs Minkowski in `ℓ²(usedCoord, gvar)` *before* Hölder in `i`, so the constant that comes
+out is `max_i √(quadVar f_i)/c_i` — a random, same-time quadratic-variation rate, which
+`RBM.EarlyQVRate.quadVar_lkFun_le_ee_sym` supplies on the model.
+
+Main results:
+
+* `RBM.Gauss.sqrt_wsum_add_le`, `RBM.Gauss.sqrt_wsum_sum_le` — Minkowski for a finite sum in
+  a weighted `ℓ²` over a `Finset`, the one step the scalar brick was missing.
+* `RBM.Gauss.abs_fderiv_ratio_pow_apply_le` — the **directional** derivative of one ratio
+  power, `|∂_B ρ_i^{2r}| ≤ 2r ρ_i^{2r-1}‖∂_B f_i‖/c_i`: the numerator's own derivative in the
+  same direction, never a uniform constant.
+* `RBM.Gauss.abs_fderiv_softMax_apply_le` — the same for `J̃ = Y^{1/(2r)}`.
+* `RBM.Gauss.sqrt_quadVar_softMax_le` — **(S2)**:
+  `√(quadVar J̃) ≤ card^{1/(2r)} · max_i √(quadVar f_i)/c_i`.
+* `RBM.Gauss.sqrt_quadVar_softW_pow_le` — the same for the weight `W = χ(J̃/Θ)^{2p}`, with
+  `|χ'| ≤ 15/8` (`RBM.Cutoff.abs_cutChiD_le`); at `Y = 0` the weight is locally constant `1`
+  and both sides vanish, so no hypothesis excludes the configuration `L = K`.
+* `RBM.Gauss.sum_gvar_crossTerm_le` — **(S5)**, the cross term's pointwise bound.
+
+**Both gradients are taken in the same matrix variable `M`.**  Every statement below is a
+pointwise inequality at one `M : Matrix (d.Idx N) (d.Idx N) ℂ`, and `coordD1 d N · M q` is
+used for the weight and for the moment factor alike.  The rescaling `M ↦ lk_{u_j,b}(√(u_j/u)M)`
+that this forces on the earlier-time loops, and the factor `√(u_j/u)` its `coordD1` picks up,
+belong to the caller: `√u_j ≤ 1` is absorbed into `κ̂_j` and `u^{-1/2}` into the time integral
+(S6).  Nothing here silently mixes two variables.
+-/
+
+section VectorQV
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {κ ι : Type*}
+
+/-! #### 8.1 Minkowski in a weighted `ℓ²` over a `Finset` -/
+
+/-- Two-term Minkowski for a weighted `ℓ²` sum over a `Finset`. -/
+theorem sqrt_wsum_add_le (T : Finset κ) (σ : κ → ℝ) (hσ : ∀ q ∈ T, 0 ≤ σ q) (x y : κ → ℝ) :
+    √(∑ q ∈ T, σ q * (x q + y q) ^ 2)
+      ≤ √(∑ q ∈ T, σ q * x q ^ 2) + √(∑ q ∈ T, σ q * y q ^ 2) := by
+  set A : ℝ := ∑ q ∈ T, σ q * x q ^ 2 with hA
+  set Bq : ℝ := ∑ q ∈ T, σ q * y q ^ 2 with hB
+  have hA0 : 0 ≤ A := Finset.sum_nonneg fun q hq => mul_nonneg (hσ q hq) (sq_nonneg _)
+  have hB0 : 0 ≤ Bq := Finset.sum_nonneg fun q hq => mul_nonneg (hσ q hq) (sq_nonneg _)
+  set a : κ → ℝ := fun q => √(σ q) * x q with ha
+  set b : κ → ℝ := fun q => √(σ q) * y q with hb
+  have hsq : ∀ q ∈ T, √(σ q) ^ 2 = σ q := fun q hq => Real.sq_sqrt (hσ q hq)
+  have hA' : ∑ q ∈ T, a q ^ 2 = A := by
+    refine Finset.sum_congr rfl fun q hq => ?_
+    rw [ha, mul_pow, hsq q hq]
+  have hB' : ∑ q ∈ T, b q ^ 2 = Bq := by
+    refine Finset.sum_congr rfl fun q hq => ?_
+    rw [hb, mul_pow, hsq q hq]
+  have hcs := Finset.sum_mul_sq_le_sq_mul_sq T a b
+  rw [hA', hB'] at hcs
+  have hcross : ∑ q ∈ T, σ q * (x q * y q) ≤ √A * √Bq := by
+    have h1 : ∑ q ∈ T, a q * b q = ∑ q ∈ T, σ q * (x q * y q) := by
+      refine Finset.sum_congr rfl fun q hq => ?_
+      have hmm : √(σ q) * √(σ q) = σ q := Real.mul_self_sqrt (hσ q hq)
+      simp only [ha, hb]
+      calc (√(σ q) * x q) * (√(σ q) * y q)
+          = (√(σ q) * √(σ q)) * (x q * y q) := by ring
+        _ = σ q * (x q * y q) := by rw [hmm]
+    have h2 : (∑ q ∈ T, σ q * (x q * y q)) ^ 2 ≤ A * Bq := by rw [← h1]; exact hcs
+    have h3 : ∑ q ∈ T, σ q * (x q * y q) ≤ √(A * Bq) := by
+      calc ∑ q ∈ T, σ q * (x q * y q) ≤ |∑ q ∈ T, σ q * (x q * y q)| := le_abs_self _
+        _ = √((∑ q ∈ T, σ q * (x q * y q)) ^ 2) := (Real.sqrt_sq_eq_abs _).symm
+        _ ≤ √(A * Bq) := Real.sqrt_le_sqrt h2
+    rwa [Real.sqrt_mul hA0] at h3
+  have hexp : ∑ q ∈ T, σ q * (x q + y q) ^ 2
+      = A + 2 * (∑ q ∈ T, σ q * (x q * y q)) + Bq := by
+    rw [hA, hB, Finset.mul_sum, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun q _ => by ring
+  rw [hexp]
+  have hkey : A + 2 * (∑ q ∈ T, σ q * (x q * y q)) + Bq ≤ (√A + √Bq) ^ 2 := by
+    have h1 : (√A + √Bq) ^ 2 = A + 2 * (√A * √Bq) + Bq := by
+      have e1 : √A ^ 2 = A := Real.sq_sqrt hA0
+      have e2 : √Bq ^ 2 = Bq := Real.sq_sqrt hB0
+      nlinarith [e1, e2]
+    rw [h1]; linarith
+  calc √(A + 2 * (∑ q ∈ T, σ q * (x q * y q)) + Bq) ≤ √((√A + √Bq) ^ 2) :=
+        Real.sqrt_le_sqrt hkey
+    _ = √A + √Bq := Real.sqrt_sq (by positivity)
+
+/-- **Minkowski for a finite sum in a weighted `ℓ²`.**  This is the step that the scalar
+`RBM.Step2Bootstrap.abs_deriv_softMax_le_affine` cannot perform, and without which the
+cardinality factor of appendix B returns. -/
+theorem sqrt_wsum_sum_le (T : Finset κ) (S : Finset ι) (σ : κ → ℝ) (hσ : ∀ q ∈ T, 0 ≤ σ q)
+    (g : ι → κ → ℝ) :
+    √(∑ q ∈ T, σ q * (∑ i ∈ S, g i q) ^ 2) ≤ ∑ i ∈ S, √(∑ q ∈ T, σ q * g i q ^ 2) := by
+  classical
+  induction S using Finset.induction_on with
+  | empty => simp
+  | insert j S hj ih =>
+      have hsplit : ∀ q, ∑ i ∈ insert j S, g i q = g j q + ∑ i ∈ S, g i q := fun q => by
+        rw [Finset.sum_insert hj]
+      have hrw : ∑ q ∈ T, σ q * (∑ i ∈ insert j S, g i q) ^ 2
+          = ∑ q ∈ T, σ q * (g j q + ∑ i ∈ S, g i q) ^ 2 :=
+        Finset.sum_congr rfl fun q _ => by rw [hsplit q]
+      rw [hrw, Finset.sum_insert hj]
+      exact (sqrt_wsum_add_le T σ hσ (g j) (fun q => ∑ i ∈ S, g i q)).trans (by gcongr)
+
+/-! #### 8.2 The directional derivatives, against the numerator's own gradient -/
+
+/-- `ρ^{2r}` is `C¹` whenever the numerator is; the even power is what keeps the map smooth
+at `f = 0` (`RBM.Gauss.not_bddC2C_norm_div`). -/
+theorem contDiff_ratio_pow {f : E → ℂ} (hf : ContDiff ℝ 1 f) (c : ℝ) (r : ℕ) :
+    ContDiff ℝ 1 (fun M => (‖f M‖ / c) ^ (2 * r)) := by
+  have h : ContDiff ℝ 1 (fun M => (‖f M‖ ^ 2 / c ^ 2) ^ r) :=
+    (((hf.norm_sq ℝ).div_const (c ^ 2)).pow r)
+  have hfun : (fun M : E => (‖f M‖ / c) ^ (2 * r)) = fun M : E => (‖f M‖ ^ 2 / c ^ 2) ^ r := by
+    funext M; rw [pow_mul, div_pow]
+  rw [hfun]; exact h
+
+/-- **⭐ The directional derivative of one ratio power.**  Unlike
+`RBM.Gauss.norm_fderiv_ratio_pow_le`, the right-hand side carries the numerator's *own*
+derivative in the *same* direction, not a uniform constant — this is what allows the
+`ℓ²(usedCoord, gvar)` sum to be taken afterwards. -/
+theorem abs_fderiv_ratio_pow_apply_le {f : E → ℂ} (hf : ContDiff ℝ 1 f) {c : ℝ} (hc : 0 < c)
+    {r : ℕ} (hr : 1 ≤ r) (M B : E) :
+    |fderiv ℝ (fun M => (‖f M‖ / c) ^ (2 * r)) M B|
+      ≤ ((2 * r : ℕ) : ℝ) * (‖f M‖ / c) ^ (2 * r - 1) * (‖fderiv ℝ f M B‖ / c) := by
+  have hc2 : (0 : ℝ) < c ^ 2 := by positivity
+  have hd : HasFDerivAt f (fderiv ℝ f M) M := (hf.differentiable one_ne_zero M).hasFDerivAt
+  have hns := hd.norm_sq
+  have hq : HasFDerivAt (fun x : E => ‖f x‖ ^ 2 / c ^ 2)
+      (((c ^ 2)⁻¹ : ℝ) • (2 • (innerSL ℝ (f M)).comp (fderiv ℝ f M))) M := by
+    have h := hns.const_smul ((c ^ 2)⁻¹ : ℝ)
+    simpa [Pi.smul_def, div_eq_inv_mul, smul_eq_mul] using h
+  have hp := hq.pow r
+  have hfun : (fun M : E => (‖f M‖ / c) ^ (2 * r)) = fun M : E => (‖f M‖ ^ 2 / c ^ 2) ^ r := by
+    funext M; rw [pow_mul, div_pow]
+  rw [hfun, hp.fderiv]
+  have hval : ((r • (‖f M‖ ^ 2 / c ^ 2) ^ (r - 1)) •
+      (((c ^ 2)⁻¹ : ℝ) • (2 • (innerSL ℝ (f M)).comp (fderiv ℝ f M)))) B
+      = (r : ℝ) * (‖f M‖ ^ 2 / c ^ 2) ^ (r - 1) *
+        ((2 * (inner ℝ (f M) (fderiv ℝ f M B) : ℝ)) / c ^ 2) := by
+    simp [nsmul_eq_mul]
+    left; field_simp
+  rw [hval]
+  set ρ : ℝ := ‖f M‖ / c with hρ
+  have hρ0 : 0 ≤ ρ := by rw [hρ]; positivity
+  have hρ2 : ρ ^ 2 = ‖f M‖ ^ 2 / c ^ 2 := by rw [hρ, div_pow]
+  have he1 : (‖f M‖ ^ 2 / c ^ 2) ^ (r - 1) = ρ ^ (2 * r - 2) := by
+    rw [← hρ2, ← pow_mul]; congr 1; omega
+  have he2 : ρ ^ (2 * r - 2) * ρ = ρ ^ (2 * r - 1) := by
+    rw [← pow_succ]; congr 1; omega
+  rw [he1]
+  have hbound : |(2 * (inner ℝ (f M) (fderiv ℝ f M B) : ℝ)) / c ^ 2|
+      ≤ 2 * (‖f M‖ * ‖fderiv ℝ f M B‖) / c ^ 2 := by
+    rw [abs_div, abs_of_pos hc2, abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2)]
+    have := abs_real_inner_le_norm (f M) (fderiv ℝ f M B)
+    gcongr
+  calc |(r : ℝ) * ρ ^ (2 * r - 2) * ((2 * (inner ℝ (f M) (fderiv ℝ f M B) : ℝ)) / c ^ 2)|
+      = (r : ℝ) * ρ ^ (2 * r - 2) *
+          |(2 * (inner ℝ (f M) (fderiv ℝ f M B) : ℝ)) / c ^ 2| := by
+        rw [abs_mul, abs_mul, abs_of_nonneg (Nat.cast_nonneg r),
+          abs_of_nonneg (pow_nonneg hρ0 _)]
+    _ ≤ (r : ℝ) * ρ ^ (2 * r - 2) * (2 * (‖f M‖ * ‖fderiv ℝ f M B‖) / c ^ 2) := by
+        have h0 : (0:ℝ) ≤ (r : ℝ) * ρ ^ (2 * r - 2) := by positivity
+        exact mul_le_mul_of_nonneg_left hbound h0
+    _ = ((2 * r : ℕ) : ℝ) * (ρ ^ (2 * r - 2) * ρ) * (‖fderiv ℝ f M B‖ / c) := by
+        rw [hρ]; push_cast; field_simp
+    _ = ((2 * r : ℕ) : ℝ) * ρ ^ (2 * r - 1) * (‖fderiv ℝ f M B‖ / c) := by rw [he2]
+
+/-- The `c = 1` case: the directional derivative of `‖Ψ‖^{2p}`. -/
+theorem abs_fderiv_norm_pow_apply_le {f : E → ℂ} (hf : ContDiff ℝ 1 f) {p : ℕ} (hp : 1 ≤ p)
+    (M B : E) :
+    |fderiv ℝ (fun M => ‖f M‖ ^ (2 * p)) M B|
+      ≤ ((2 * p : ℕ) : ℝ) * ‖f M‖ ^ (2 * p - 1) * ‖fderiv ℝ f M B‖ := by
+  have h := abs_fderiv_ratio_pow_apply_le hf (c := 1) one_pos hp M B
+  simpa using h
+
+/-- **The directional gradient of `J̃ = Y^{1/(2r)}`**, bounded by the numerators' gradients in
+the same direction.  The factor `2r` of the polynomial is cancelled by the outer exponent. -/
+theorem abs_fderiv_softMax_apply_le (S : Finset ι) {f : ι → E → ℂ} {c : ι → ℝ} {r : ℕ}
+    (hr : 1 ≤ r) (hc : ∀ i ∈ S, 0 < c i) (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i)) (M B : E)
+    (hY : 0 < ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r)) :
+    |fderiv ℝ (fun M => softMax r S (fun i => ‖f i M‖ / c i)) M B|
+      ≤ (∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r)) ^ ((1 : ℝ) / (2 * (r : ℝ)) - 1) *
+          ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1) * (‖fderiv ℝ (f i) M B‖ / c i) := by
+  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  have hn0 : (0 : ℝ) < 2 * (r : ℝ) := by linarith
+  set a : ℝ := (1 : ℝ) / (2 * (r : ℝ)) with ha
+  set Y : E → ℝ := fun M => ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r) with hYdef
+  have hdi : ∀ i ∈ S, HasFDerivAt (fun M => (‖f i M‖ / c i) ^ (2 * r))
+      (fderiv ℝ (fun M => (‖f i M‖ / c i) ^ (2 * r)) M) M := fun i hi =>
+    ((contDiff_ratio_pow (hf i hi) (c i) r).differentiable one_ne_zero M).hasFDerivAt
+  have hYd : HasFDerivAt Y (∑ i ∈ S, fderiv ℝ (fun M => (‖f i M‖ / c i) ^ (2 * r)) M) M :=
+    HasFDerivAt.fun_sum hdi
+  have hJ : HasFDerivAt (fun M => Y M ^ a) ((a * Y M ^ (a - 1)) • fderiv ℝ Y M) M :=
+    hYd.fderiv ▸ (hYd.rpow_const (Or.inl hY.ne'))
+  have hfun : (fun M : E => softMax r S (fun i => ‖f i M‖ / c i)) = fun M => Y M ^ a := rfl
+  rw [hfun, hJ.fderiv]
+  have hYa : (0 : ℝ) < Y M ^ (a - 1) := Real.rpow_pos_of_pos hY _
+  have ha0 : (0 : ℝ) < a := by rw [ha]; positivity
+  have hsum : |fderiv ℝ Y M B|
+      ≤ ((2 * r : ℕ) : ℝ) *
+        ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1) * (‖fderiv ℝ (f i) M B‖ / c i) := by
+    rw [hYd.fderiv]
+    have hstep : |(∑ i ∈ S, fderiv ℝ (fun M => (‖f i M‖ / c i) ^ (2 * r)) M) B|
+        ≤ ∑ i ∈ S, ((2 * r : ℕ) : ℝ) * (‖f i M‖ / c i) ^ (2 * r - 1) *
+            (‖fderiv ℝ (f i) M B‖ / c i) := by
+      rw [FunLike.coe_sum, Finset.sum_apply]
+      refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i hi => ?_)
+      exact abs_fderiv_ratio_pow_apply_le (hf i hi) (hc i hi) hr M B
+    refine hstep.trans (le_of_eq ?_)
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  have hcast : ((2 * r : ℕ) : ℝ) * a = 1 := by rw [ha]; push_cast; field_simp
+  have hnn : (0 : ℝ) ≤ ∑ i ∈ S,
+      (‖f i M‖ / c i) ^ (2 * r - 1) * (‖fderiv ℝ (f i) M B‖ / c i) := by
+    refine Finset.sum_nonneg fun i hi => ?_
+    have := (hc i hi).le
+    positivity
+  rw [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, abs_mul,
+    abs_of_nonneg (by positivity : (0:ℝ) ≤ a * Y M ^ (a - 1))]
+  calc a * Y M ^ (a - 1) * |fderiv ℝ Y M B|
+      ≤ a * Y M ^ (a - 1) * (((2 * r : ℕ) : ℝ) *
+          ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1) * (‖fderiv ℝ (f i) M B‖ / c i)) := by
+        exact mul_le_mul_of_nonneg_left hsum (by positivity)
+    _ = (((2 * r : ℕ) : ℝ) * a) * (Y M ^ (a - 1) *
+          ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1) * (‖fderiv ℝ (f i) M B‖ / c i)) := by ring
+    _ = Y M ^ (a - 1) *
+          ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1) * (‖fderiv ℝ (f i) M B‖ / c i) := by
+        rw [hcast, one_mul]
+
+end VectorQV
+
+/-! #### 8.3 (S2) on the model's coordinates -/
+
+section S2
+
+variable {d : Dims} {N : ℕ} {ι : Type*}
+
+/-- A real-valued functional, read through `RBM.Gauss.coordD1`. -/
+theorem norm_coordD1_ofReal {g : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ}
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ} (hg : DifferentiableAt ℝ g M)
+    (q : d.Idx N × d.Idx N × Bool) :
+    ‖coordD1 d N (fun M => ((g M : ℝ) : ℂ)) M q‖
+      = |fderiv ℝ g M (Bmat d N q.1 q.2.1 q.2.2)| := by
+  have hfd : fderiv ℝ (fun M => ((g M : ℝ) : ℂ)) M
+      = Complex.ofRealCLM.comp (fderiv ℝ g M) :=
+    (Complex.ofRealCLM.hasFDerivAt.comp M hg.hasFDerivAt).fderiv
+  change ‖fderiv ℝ (fun M => ((g M : ℝ) : ℂ)) M (Bmat d N q.1 q.2.1 q.2.2)‖ = _
+  rw [hfd]
+  simp [Complex.norm_real, Real.norm_eq_abs]
+
+/-- A coordinatewise comparison of two gradients upgrades to their quadratic-variation
+rates. -/
+theorem sqrt_quadVar_le_of_apply_le {F G : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ}
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ} {L : ℝ} (hL : 0 ≤ L)
+    (h : ∀ q ∈ usedCoord d N, ‖coordD1 d N F M q‖ ≤ L * ‖coordD1 d N G M q‖) :
+    √(quadVar d N F M) ≤ L * √(quadVar d N G M) := by
+  have hq : quadVar d N F M ≤ L ^ 2 * quadVar d N G M := by
+    rw [quadVar, quadVar, Finset.mul_sum]
+    refine Finset.sum_le_sum fun q hq => ?_
+    have h1 : ‖coordD1 d N F M q‖ ^ 2 ≤ L ^ 2 * ‖coordD1 d N G M q‖ ^ 2 := by
+      have := pow_le_pow_left₀ (norm_nonneg _) (h q hq) 2
+      calc ‖coordD1 d N F M q‖ ^ 2 ≤ (L * ‖coordD1 d N G M q‖) ^ 2 := this
+        _ = L ^ 2 * ‖coordD1 d N G M q‖ ^ 2 := by ring
+    calc ((gvar d (crd d N q) : ℝ)) * ‖coordD1 d N F M q‖ ^ 2
+        ≤ ((gvar d (crd d N q) : ℝ)) * (L ^ 2 * ‖coordD1 d N G M q‖ ^ 2) :=
+          mul_le_mul_of_nonneg_left h1 (gvar d (crd d N q)).2
+      _ = L ^ 2 * (((gvar d (crd d N q) : ℝ)) * ‖coordD1 d N G M q‖ ^ 2) := by ring
+  calc √(quadVar d N F M) ≤ √(L ^ 2 * quadVar d N G M) := Real.sqrt_le_sqrt hq
+    _ = L * √(quadVar d N G M) := by
+        rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hL]
+
+/-- **⭐⭐ (S2): the vector bound on the quadratic-variation rate of the soft maximum.**
+
+`√(quadVar J̃) ≤ card^{1/(2r)} · max_{i ∈ S} √(quadVar f_i)/c_i`, stated with any upper bound
+`K` for the maximum (the maximum itself is the least such `K`).
+
+⚠ The constant `K` is a **quadratic-variation rate of the numerators at the same point `M`**,
+not a deterministic derivative bound: substituting the uniform `b₁` of
+`RBM.Gauss.BddC2C` here produces a true but useless estimate (V548, appendix B).  The proof
+does Minkowski in `ℓ²(usedCoord, gvar)` first (`RBM.Gauss.sqrt_wsum_sum_le`) and Hölder in `i`
+second (`RBM.Step2Bootstrap.sum_abs_pow_pred_le`); doing them in the other order is exactly
+what costs the factor `card S`. -/
+theorem sqrt_quadVar_softMax_le (S : Finset ι)
+    {f : ι → Matrix (d.Idx N) (d.Idx N) ℂ → ℂ} {c : ι → ℝ} {r : ℕ} {K : ℝ}
+    (hr : 1 ≤ r) (hc : ∀ i ∈ S, 0 < c i) (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i))
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ)
+    (hY : 0 < ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r))
+    (hK : ∀ i ∈ S, √(quadVar d N (f i) M) / c i ≤ K) :
+    √(quadVar d N (fun M => ((softMax r S (fun i => ‖f i M‖ / c i) : ℝ) : ℂ)) M)
+      ≤ (S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) * K := by
+  classical
+  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  have hn0 : (0 : ℝ) < 2 * (r : ℝ) := by linarith
+  set a : ℝ := (1 : ℝ) / (2 * (r : ℝ)) with ha
+  set Yv : ℝ := ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r) with hYv
+  have hYa : (0 : ℝ) < Yv ^ (a - 1) := Real.rpow_pos_of_pos hY _
+  have hSne : S.Nonempty := by
+    by_contra h
+    rw [Finset.not_nonempty_iff_eq_empty] at h
+    rw [hYv, h] at hY; simp at hY
+  obtain ⟨i₀, hi₀⟩ := hSne
+  have hK0 : 0 ≤ K :=
+    le_trans (div_nonneg (Real.sqrt_nonneg _) (hc i₀ hi₀).le) (hK i₀ hi₀)
+  set w : ι → ℝ := fun i => Yv ^ (a - 1) * (‖f i M‖ / c i) ^ (2 * r - 1) / c i with hw
+  have hw0 : ∀ i ∈ S, 0 ≤ w i := by
+    intro i hi
+    have := (hc i hi).le
+    rw [hw]
+    positivity
+  set g : ι → d.Idx N × d.Idx N × Bool → ℝ :=
+    fun i q => w i * ‖coordD1 d N (f i) M q‖ with hg
+  have hJd : DifferentiableAt ℝ (fun M => softMax r S (fun i => ‖f i M‖ / c i)) M := by
+    have hdi : ∀ i ∈ S, HasFDerivAt (fun M => (‖f i M‖ / c i) ^ (2 * r))
+        (fderiv ℝ (fun M => (‖f i M‖ / c i) ^ (2 * r)) M) M := fun i hi =>
+      ((contDiff_ratio_pow (hf i hi) (c i) r).differentiable one_ne_zero M).hasFDerivAt
+    have hYd : HasFDerivAt (fun M => ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r))
+        (∑ i ∈ S, fderiv ℝ (fun M => (‖f i M‖ / c i) ^ (2 * r)) M) M :=
+      HasFDerivAt.fun_sum hdi
+    exact ((hYd.rpow_const (Or.inl hY.ne')).differentiableAt)
+  have hpt : ∀ q ∈ usedCoord d N,
+      ‖coordD1 d N (fun M => ((softMax r S (fun i => ‖f i M‖ / c i) : ℝ) : ℂ)) M q‖
+        ≤ ∑ i ∈ S, g i q := by
+    intro q _
+    rw [norm_coordD1_ofReal hJd q]
+    refine (abs_fderiv_softMax_apply_le S hr hc hf M _ hY).trans (le_of_eq ?_)
+    rw [hg, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [hw]
+    simp only [coordD1]
+    ring
+  have hquad : quadVar d N (fun M => ((softMax r S (fun i => ‖f i M‖ / c i) : ℝ) : ℂ)) M
+      ≤ ∑ q ∈ usedCoord d N, ((gvar d (crd d N q) : ℝ)) * (∑ i ∈ S, g i q) ^ 2 := by
+    rw [quadVar]
+    refine Finset.sum_le_sum fun q hq => ?_
+    refine mul_le_mul_of_nonneg_left ?_ (gvar d (crd d N q)).2
+    exact pow_le_pow_left₀ (norm_nonneg _) (hpt q hq) 2
+  have hmink := sqrt_wsum_sum_le (usedCoord d N) S (fun q => (gvar d (crd d N q) : ℝ))
+    (fun q _ => (gvar d (crd d N q)).2) g
+  have hterm : ∀ i ∈ S,
+      √(∑ q ∈ usedCoord d N, ((gvar d (crd d N q) : ℝ)) * g i q ^ 2)
+        = w i * √(quadVar d N (f i) M) := by
+    intro i hi
+    have hrw : ∑ q ∈ usedCoord d N, ((gvar d (crd d N q) : ℝ)) * g i q ^ 2
+        = w i ^ 2 * quadVar d N (f i) M := by
+      rw [quadVar, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun q _ => ?_
+      rw [hg]; ring
+    rw [hrw, Real.sqrt_mul (by positivity), Real.sqrt_sq (hw0 i hi)]
+  refine le_trans (Real.sqrt_le_sqrt hquad) (le_trans hmink ?_)
+  have hstep : ∑ i ∈ S, √(∑ q ∈ usedCoord d N, ((gvar d (crd d N q) : ℝ)) * g i q ^ 2)
+      ≤ ∑ i ∈ S, Yv ^ (a - 1) * ((‖f i M‖ / c i) ^ (2 * r - 1) * K) := by
+    rw [Finset.sum_congr rfl hterm]
+    refine Finset.sum_le_sum fun i hi => ?_
+    have hci : (0 : ℝ) < c i := hc i hi
+    have h1 : √(quadVar d N (f i) M) / c i ≤ K := hK i hi
+    have hpow : (0 : ℝ) ≤ (‖f i M‖ / c i) ^ (2 * r - 1) := by positivity
+    have hsplit : w i * √(quadVar d N (f i) M)
+        = Yv ^ (a - 1) * (‖f i M‖ / c i) ^ (2 * r - 1) *
+          (√(quadVar d N (f i) M) / c i) := by
+      rw [hw]; field_simp
+    rw [hsplit]
+    have h0 : (0 : ℝ) ≤ Yv ^ (a - 1) * (‖f i M‖ / c i) ^ (2 * r - 1) := by positivity
+    calc Yv ^ (a - 1) * (‖f i M‖ / c i) ^ (2 * r - 1) * (√(quadVar d N (f i) M) / c i)
+        ≤ Yv ^ (a - 1) * (‖f i M‖ / c i) ^ (2 * r - 1) * K :=
+          mul_le_mul_of_nonneg_left h1 h0
+      _ = Yv ^ (a - 1) * ((‖f i M‖ / c i) ^ (2 * r - 1) * K) := by ring
+  refine hstep.trans ?_
+  have hcollect : ∑ i ∈ S, Yv ^ (a - 1) * ((‖f i M‖ / c i) ^ (2 * r - 1) * K)
+      = Yv ^ (a - 1) * ((∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1)) * K) := by
+    rw [← Finset.mul_sum, ← Finset.sum_mul]
+  rw [hcollect]
+  have hhold := sum_abs_pow_pred_le (S := S) (ρ := fun i => ‖f i M‖ / c i) hr
+  have habs : ∑ i ∈ S, |‖f i M‖ / c i| ^ (2 * r - 1)
+      = ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1) := by
+    refine Finset.sum_congr rfl fun i hi => ?_
+    rw [abs_of_nonneg (div_nonneg (norm_nonneg _) (hc i hi).le)]
+  rw [habs] at hhold
+  calc Yv ^ (a - 1) * ((∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r - 1)) * K)
+      ≤ Yv ^ (a - 1) * (((S.card : ℝ) ^ a * Yv ^ (1 - a)) * K) := by
+        exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hhold hK0) hYa.le
+    _ = (Yv ^ (a - 1) * Yv ^ (1 - a)) * ((S.card : ℝ) ^ a * K) := by ring
+    _ = (S.card : ℝ) ^ a * K := by
+        rw [← Real.rpow_add hY]
+        norm_num
+
+end S2
+
+/-! ### 9. Compiled satisfiability witnesses -/
 
 section Sat
 

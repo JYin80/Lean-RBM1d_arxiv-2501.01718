@@ -28,6 +28,8 @@
 * **T233 转交的 C2**（Cowork 03:05）：`FlowEq548Sm`/`nearChi` 与 `Thm221NoEL` 之间缺一个同时 import 两边的下游文件 → **T239 总装单**（新建文件，只 import 不改上游；此后第一遍的具名假设都往这个文件里收口）。
 * **T233 转交的 C3 = 本次文档瘦身**（Jun 同一时间提出）：见本文件开头的读法。
 
+* **T231 转交**（Cowork 03:15）：plain 路线 `hQV` 的签名适配 → **T240**；两条旧 `momentIneq(Q)_of_derivBound` 的 `@[deprecated]` **等消费者都换完带撇版再加**，由换掉最后一个消费者的单一并加。
+
 ## 3. ⭐ T230：Step 2 第一遍自举——路线 (B) 被编译否定，改走 (A′)
 
 **第 0 步结论**（`Gauss/Step2Bootstrap.lean`，未入库时见工作树）：

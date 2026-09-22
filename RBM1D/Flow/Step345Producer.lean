@@ -1033,6 +1033,156 @@ end WindowLeftWitness
 
 end Gauss
 
+/-! ### 13. T256/D17: the same tables **without** `RBM.WindowLeft`, concluding `RBM.Thm221NoEL`
+
+D17 (2026-09-21) rules that the first cell `u_0 = 0 → u_1` of the grid of p. 24 is *not* a
+mathematical gap: T249's refutation is driven by the sample point `ω = v^{-1/2}`, whose
+`‖X(ω)‖` blows up as `v → 0`, so it leaves every event `{‖X‖ ≤ N}`
+(`RBM.t249_witness_norm_gt`, `RBM1D/Flow/FirstCell.lean`).  On such an event the second
+resolvent identity gives a Hölder-`1/2` modulus in time that is valid **including at `u = 0`**
+(`RBM.Gauss.norm_green_flow_sub_le_event`), so the `RBM.WindowLeft` premise added in §§9–10 is
+not needed and the conclusion is `RBM.Thm221NoEL` again.
+
+Nothing in §§9–12 is removed: `RBM.WindowLeft`, `RBM.Thm221NoELFrom`,
+`RBM.thm221NoEL_of_from`, `RBM.not_windowLeft_gridT_zero` and
+`RBM.windowLeft_gridT_succ` are all correct theorems, just no longer on the main route.  The
+tables here are the §§10–11 ones with the `RBM.WindowLeft s C` antecedent deleted from slots 3
+and 6, which makes those two hypotheses **stronger** — so these assemblies are the *harder*
+ones to satisfy, and `RBM.thm221NoEL_of_inputs_mergedOnAll_toFrom` is the compiled certificate
+that they imply §10's.
+
+⚠ What the two starred slots now have to be produced at `s ≡ 0` is the exponent-`Kmod`
+modulus, **not** the exponent-`1` one that `RBM.EntryModulusEvOn` currently hard-codes; see
+§3 of `RBM1D/Flow/FirstCell.lean` (`RBM.jump_le_one_of_kmod_one`, `RBM.gap_lower_W`) for the
+compiled statement of that constraint. -/
+
+section MergedOnAll
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The merged assembly of §10 with `RBM.WindowLeft` deleted, general band.**  The table is
+
+`RBM.Step1.Hyp` · `RBM.MomentDuhamelCut.MomentHypCut` · **`RBM.CutHypEvOnSlot`** ·
+`RBM.Step3.Lemma514` · `RBM.Eq45FlowInputs` · **`RBM.Eq548EntryDataEvOn'`**,
+
+the two starred slots asked on **every** window `0 ≤ s ≤ t < 1`, and the conclusion is
+`RBM.Thm221NoEL X κ` — the first cell of p. 24's grid included. -/
+theorem thm221NoEL_of_inputs_mergedOnAll (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      BoundsCore X E s → CutHypEvOnSlot X E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq45FlowInputs X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      Eq548EntryDataEvOn' X E s t) :
+    Thm221NoEL X κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_mergedOn X hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (h1 E hE s t hs0 hst ht1 c hc0 hreg) (Hy E hE s t hs0 hst ht1 c hc0 hreg)
+      (hcut E hE s t hs0 hst ht1 c hc0 hreg hB) (h514 E hE s t hs0 hst ht1 c hc0 hreg)
+      (h45i E hE s t hs0 hst ht1 c hc0 hreg) (h548e E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **This table implies §10's**, for every `C`: deleting an antecedent from a slot strengthens
+it, and `RBM.Thm221NoEL.toFrom` weakens the conclusion.  So §13 is nowhere easier to satisfy
+than §10 — the certificate that restoring `RBM.Thm221NoEL` is a genuine strengthening. -/
+theorem thm221NoEL_of_inputs_mergedOnAll_toFrom (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ)
+    (hκ1 : κ ≤ 1) (C : ℝ)
+    (h1 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Step1.Hyp X E s t)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut X E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      BoundsCore X E s → CutHypEvOnSlot X E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+        (Step3.flowA B E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c → Eq45FlowInputs X E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg B E s t c →
+      Eq548EntryDataEvOn' X E s t) :
+    Thm221NoELFrom X κ C :=
+  (thm221NoEL_of_inputs_mergedOnAll X hκ0 hκ1 h1 Hy hcut h514 h45i h548e).toFrom C
+
+end MergedOnAll
+
+namespace Gauss
+
+section MergedOnAllGauss
+
+variable {d : Dims}
+
+/-- **The merged assembly of §10 with `RBM.WindowLeft` deleted, Gaussian model.**
+`RBM.Step1.Hyp` is discharged by `RBM.Gauss.step1Hyp_slot` exactly as in
+`RBM.Gauss.thm221NoEL_of_inputs_mergedOn_gauss`; the conclusion is `RBM.Thm221NoEL`, so the
+grid of p. 24 runs from its first cell `u_0 = 0` (`RBM.BoundsCore_of_Thm221NoEL`). -/
+theorem thm221NoEL_of_inputs_mergedOnAll_gauss (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut (sample d) E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      BoundsCore (sample d) E s → CutHypEvOnSlot (sample d) E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
+        (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq45FlowInputs (sample d) E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq548EntryDataEvOn' (sample d) E s t) :
+    Thm221NoEL (sample d) κ where
+  step E hE c hc0 s t hs0 hst ht1 hreg hB :=
+    boundsCore_step_of_inputs_mergedOn (sample d) hκ0 hκ1 hE hs0 hst ht1 hc0 hreg hB
+      (step1Hyp_slot d hκ0 E hE s t hs0 hst ht1 c hc0 hreg hB)
+      (Hy E hE s t hs0 hst ht1 c hc0 hreg) (hcut E hE s t hs0 hst ht1 c hc0 hreg hB)
+      (h514 E hE s t hs0 hst ht1 c hc0 hreg) (h45i E hE s t hs0 hst ht1 c hc0 hreg)
+      (h548e E hE s t hs0 hst ht1 c hc0 hreg)
+
+/-- **Lemmas 2.18–2.20 at the right end of the window, from §13's table** — the grid of p. 24
+run in full, first cell included.  This is what §10's `RBM.Thm221NoELFrom` could not give. -/
+theorem boundsCore_of_inputs_mergedOnAll_gauss (d : Dims) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (Hy : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      ∀ D : ℝ, 60 ≤ D → MomentDuhamelCut.MomentHypCut (sample d) E s t D)
+    (hcut : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      BoundsCore (sample d) E s → CutHypEvOnSlot (sample d) E s t)
+    (h514 : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c → ∀ n : ℕ, 2 ≤ n →
+      Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
+        (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) n)
+    (h45i : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq45FlowInputs (sample d) E s t)
+    (h548e : ∀ E : ℝ, |E| ≤ 2 - κ → ∀ s t : ℕ → ℝ, (∀ N, 0 ≤ s N) → (∀ N, s N ≤ t N) →
+      (∀ N, t N < 1) → ∀ c : ℝ, 0 < c → Cond272Reg (band d) E s t c →
+      Eq548EntryDataEvOn' (sample d) E s t)
+    {E : ℝ} (hE : |E| ≤ 2 - κ) {τ : ℝ} (hτ : 0 < τ) {t : ℕ → ℝ} (ht0 : ∀ N, 0 ≤ t N)
+    (ht : ∀ᶠ N : ℕ in Filter.atTop, (N : ℝ) ^ (-1 + τ) ≤ 1 - t N) :
+    BoundsCore (sample d) E t :=
+  BoundsCore_of_Thm221NoEL (sample d) hκ0
+    (thm221NoEL_of_inputs_mergedOnAll_gauss d hκ0 hκ1 Hy hcut h514 h45i h548e) hE hτ ht0 ht
+
+end MergedOnAllGauss
+
+end Gauss
+
 /-! ### 12. Deviations from the paper introduced here (T251)
 
 **`T251a` — the window of (5.48) is asked with a left endpoint `s_N ≥ N^{-C}`, and the

@@ -204,3 +204,13 @@ T280d 的否定结论对（`not_quadratic_far_margin_budget_at_delta0`、`not_qu
 * **只有**当某行 `b ≥ 30`、或该行不能写成这种形状（例如多出不随 `δ` 缩小的 `N` 正幂、或需要 `R` 的下界），才编译否定结论并停下。
 
 **续做**：先取 `δ₀ = c/20`（`< 37c/480`），把 §14 列的其余各行（近场、`ρfar`、`W^{−D}` 尾、`η_u^{−1}` 与时间积分、`cWt³`）逐行列 `(a,b)` 并更新 `δ₀`；然后做 `fitLhs ≺ 1`——它的 `tc`、`Qb`、`Qm`、`εs` 输入由 T268 的时间积分引理（`integral_early_le_budget`、`integral_inv_sqrt_mul_sqrt_kappa_le`、`integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le`）给出，逐个核签名后接上。`sMax_le` 所需的四环界是 Step 1 的 (2.73)@`n = 4`（`Step1.apriori`），在事件上给，不是 `∀ω`。
+
+## §16 T280b 收下；它的余项与 T280e 重跑（Cowork 09:42）
+
+T280b 按 §11 做成：小槽 `x^{1/4}`、`stepRhs''/R⁴ ≤ (cStep′+1)x^{5/4}`（八项逐一核过）、族求和 `N²N^{5δp/16} ≤ N^{δp/2}`（`32 ≤ 3δp`）、加权 Lyapunov、反向桥的两端。**余项只有一件**：数值 `hinit`，即 `Ψ_s = U_{s,t}lk_s/(T_{t,D}R⁴)` 的加权 `2p` 矩。**这不需要新数学**，逐点化归到现成件：
+* `∣Ψ_s(a)∣ ≤ Σ_b ∣U_{s,t}(a,b)∣·∣lk_s(b)∣/(T_t R⁴) ≤ J*_s · Σ_b ∣U_{s,t}(a,b)∣·T_{s,D}(b)/(T_t R⁴)`（`J*` 的定义，`Step2.le_jStar_mul`）；
+* 核-尾卷积用 **T277 的 `APrimeQVEndpoint.weightedKernel_tail_le`**（`:385`，绝对核卷积，保留 `T` 尾）得 `≲ R^{O(1)}·T_t(a)`，除以 `T_t R⁴` 后 `≲ 1`（核对 `R` 的幂，若 `> 4` 停下报）；
+* `J*_s ≺ 1` 由 **T274 的 `stochDom_jS_init_of_boundsCore`**（`APrimeSlotFields.lean:537`，吃 `BoundsCore X E s`）；
+* 于是 `Ψ_s ≺ 1`，再走 T280b 的 `weightedMomentDom_of_stochDom_of_nonneg` → `numerical_hinit_of_weighted_integral`，常数与 `N^ε` 吸收进 `initTerm x R (slotXi′ x)/R⁴`（`x^{1/4}` 的余量）。
+
+**T280e 现在就可以重跑**（不必等 T280d）：把 T280d 尚未交出的 `δ₀` 与 `4R⁴G ≺ 1`、`fitLhs ≺ 1` 写成组装文件里的**具名输入**，其余照 §12/§13 与本节接线；T280d 交出后逐个替换。T280e 顺带做上面的 `hinit` 化归（可写 `APrimeAssembly.lean`）。

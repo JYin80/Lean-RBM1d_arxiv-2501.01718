@@ -124,7 +124,7 @@ T278 的清单准确：卡在 `ζ_N` 与 `ψ/ψE` 的矩包络。**这两处可�
 
 T280 第 0 步审计准确：`APrimeSlot'` 的完整见证还导不出，缺口不在数学（审稿 V548 §2a/§5 都有），而在接口。逐条裁定：
 
-1. **权重 `W` 没有 `p` 参数，而估计要 `softW^{2p}`** → 接口权重取 `p` 无关的 `W := χ(J̃/Θ′)`；估计时对每个 `p` 用 `W_p := χ(J̃/(2Θ′))^{2p}`，逐点 `W ≤ W_p`（`J̃ ≤ 2Θ′` 处 `χ(J̃/(2Θ′)) = 1`）。新增引理 `weightedMoment_of_stepBound_mono`：若对每个 `p` 有 `W ≤ W_p` 且 `Hstep` 对 `W_p` 成立，则 `WeightedMoment` 对 `W` 成立。
+1. ⚠ **（§18 D22：对完整 `jSnorm` 走 `weightedMoment_of_stepBound_mono` 这条作废，改走逐坐标 → 族 → `weightedMoment_of_widened_family`）** **权重 `W` 没有 `p` 参数，而估计要 `softW^{2p}`** → 接口权重取 `p` 无关的 `W := χ(J̃/Θ′)`；估计时对每个 `p` 用 `W_p := χ(J̃/(2Θ′))^{2p}`，逐点 `W ≤ W_p`（`J̃ ≤ 2Θ′` 处 `χ(J̃/(2Θ′)) = 1`）。新增引理 `weightedMoment_of_stepBound_mono`：若对每个 `p` 有 `W ≤ W_p` 且 `Hstep` 对 `W_p` 成立，则 `WeightedMoment` 对 `W` 成立。
 2. **`hdom`：`jSnorm` 是 `1 + max_a`，不被单个坐标 `Y_a` 支配** → 用族版：`∣cutTrunc θ J∣^{2p} ≤ 2^{2p−1}(1 + Σ_a ∣Ψ^{(a)}_{u_k}∣^{2p})`（端点处 `U_{t,t} = id`，`Ψ^{(a)}_t = lk_{t,a}/(T R⁴)`）；对每个 `a` 跑一次 (G)，`a` 的求和付 `L² ≤ N²`，`p ≥ 4/δ` 时被 `N^{δp/2}` 吸收，小 `p` 用 Lyapunov（审稿 §5 第 4 步）。
 3. **数值 `hinit`**（加权 `2p` 阶矩的初值）→ 反向桥 `Gauss.momentDom_of_stochDom_of_nonneg` 作用在 (5.39)@`s` 上：`Ψ^{(a)}_s = U_{s,t}(L−K)_s/T_t` 的 `≺` 界由 `BoundsCore X E s`（p.24 归纳在每一格都给）+ Lemma 7.1 给出，确定性包络 `‖G‖ ≤ η⁻¹`；`W ≤ 1` 故加权 ≤ 不加权。**不循环**：只用左端点的 `BoundsCore`，不用 `W_dom`。
 4. ⚠ **（§17 D21-2：其中「交 `EarlyQVRateEv` 的 (S3) 事件」撤回，`J` 改由 T280f 供给）** **`Good` 固定 vs (S3)/Step 1 事件依赖 `δ`** 与 5. **`hwDoff`** → `APrimeSlot'.Good` **只取** `{‖X‖ ≤ N}`（只为时间模）。(S3)、Step 1 等事件 `E_{δ,p,N}` **只在 `Hstep` 的证明内部**出现，而且**在范数里**拆坏事件：`‖Z‖_{W,2p} ≤ ‖Z·1_E‖_{W,2p} + ‖Z·1_{Eᶜ}‖_{W,2p}`，后者 ≤ 确定性多项式包络 × `P(Eᶜ)^{1/(2p)} ≤ N^{−1}`（`D′` 按 `p` 取）。交叉项用 T265 的**逐点、无事件** (S5) `sum_gvar_crossTerm_le`，事件只在界 `‖√(Q·κ̂)‖_{2p}` 时进来——**不需要 `hwDoff`**，T275 的 `crossPart_le_of_S5` 那条路不走。
@@ -272,3 +272,34 @@ T280b 按 §11 做成：小槽 `x^{1/4}`、`stepRhs''/R⁴ ≤ (cStep′+1)x^{5/
 * **`Ξ` 外**：用确定性包络 `‖G‖ ≤ η⁻¹`，走 §8 的反向桥。
 * 第 0 步 `#check`：`norm_Qop_le_of_fastDecay`、`fastDecay_driftF_window`、`norm_driftF_le`、`F_eq_driftF`；核对 `B.ell N u` 与 `ellHat (B.L N) (u:ℂ)` 的关系，以及半径 `K → 4K` 的换算。
 * **停止条件**：`norm_driftF_le` 的输入（`hKb` 的 `CK·A^{−(len−1)}`、`xiLK`）在 `hDecF` 所用的同一个 `Ξ` 上拿不到——报告缺哪一件。LoopDecay 输入与 Step 2 结论是否循环：这是既有问题，只报告，不在本步解决。
+
+## §18 T280g、T280e 的回报（Cowork 10:40；已读两份报告与相关签名）
+
+### T280g：否定成立，是 Cowork §17(c) 的疏漏
+§17(c) 写「`log W ≥ 3`，从 `hlog` 推」，但 `hlog : (4D)² ≤ log W` 在 `D = 0` 时什么也不给；`not_log_three_of_endpoint_hlog` 对。**修法（路由，已核算）**：
+* (c)、(d) 各加一条显式前提 `4 ≤ Real.log W`。(c) 需要 `(log W)^{3/2} ≥ 4.5`，也就是 `log W ≥ 2.73`；(d) 需要 `(log W)³ − 4(log W)^{3/2} ≥ (log W)³/2`，也就是 `(log W)^{3/2} ≥ 8`，即 `log W ≥ 4`。`4` 两处都够。
+* (e) 的带撇端点定理加前提 `1 ≤ D`（T280e 的构造器本来就有 `hD : 1 ≤ D`）。由 `hlog` 得 `log W ≥ 16 ≥ 4`，再喂给 (c)(d)。
+* (d) 的其余前提照旧：`D ≥ 2k+14`、`J ≤ N^k`、`η_u ≥ N⁻¹`、`A_u ≤ N`、`W·L ≤ N`、`N ≤ W²`。Cowork 逐项复核过：
+  - 指数部分 `≤ 4W^{6+4k}e^{−√2(log W)^{3/2}+4(log W)^{3/4}}`：因为 `√(log W) ≥ 4D ≥ 8k+56`，指数 `≥ (11k+78)·log W`；
+  - 地板部分 `≤ 4W^{14+4k−2D+4(log W)^{−1/4}} ≤ 4W^{−13}`。
+
+继续做 (c)–(e)。
+
+### T280e：改道收下（D22）
+1. **D22**：§9 第 1 条「对完整 `jSnorm` 走 `weightedMoment_of_stepBound_mono`」**作废**。它要求完整 `jSnorm` 在族求和**之前**就达到小槽尺度 `N^{5δp/16}`；而 T280b 的族求和只给出**之后**的 `N^{δp/2}`，两者接不上，T280e 的判断对。**新路线**：逐坐标的 Hstep → T280b 的族求和（高 `p`）/ Lyapunov（小 `p`）→ 在宽权重 `Wp` 下得到 `hfamily` → 用 `weightedMoment_of_widened_family` 做单调转移。T280a 的 `weightedMoment_of_stepBound_mono` 保留，只是不再用于 `jSnorm`。
+2. **端点恒等式已核**：`jSnorm = jS/R_u⁴`（`APrimeSlotFields.jSnorm_eq_mul`，:170），且 `jS = 1 + max_a ‖lk_u(a)‖/T_u(a)`（`Step2.jStar`）。所以在网点 `u_k` 取**端点 `v = u_k`** 时，`jSnorm(u_k) ≤ 1 + max_a |Ψ^{(a)}_{u_k}|`，其中 `Ψ` 按 `T_{u_k}·R_{u_k}⁴` 归一。
+3. ⚠ **一致性要点**：第 `k` 个网点的坐标族以 `u_k` 为端点，所以逐坐标的输入都要对端点 `v ∈ [s_N, t_N]` 一致（`∀ᶠ N, ∀ v, ∀ a`），不能对固定的 `t` 取 `∀ᶠ`。`eventually_initial_hinit_gauss`（:628）现在是固定 `t` 序列的形式。
+
+**T280e 下一步**（写在 `APrimeAssembly.lean`，旧声明不动）：
+* **第 0 步（只读）**：`#check` 并列出以下三个声明的**全部前提**，逐条标注为「已证 / 具名输入 / T280c 件」：
+  - `APrimeDuhamelModel.momFlowDeriv_le`（:638）；
+  - `APrimeGronwall.weightedMinkowski_of_deriv_le`（:404，给 `hG`）；
+  - `APrimeInit.coordinate_integral_of_small_slots`（:209）。
+* **(i)** 把 hinit 改成对端点一致：先出 `initialEvolvedNorm_stochDom_sharp'`，指标集换成「`TimeIcc s t N` × 坐标」，端点 `v` 随指标走；再出对应的 `eventually_initial_hinit_gauss'`，形如 `∀ᶠ N, ∀ v ∈ [s_N,t_N], ∀ a`。若某个阈值依赖 `v` 且不一致，编译出否定并停下。
+* **(ii)** `hfamily_of_coord_budgets`：由三组逐坐标的具名输入推出 `hfamily`，对 `v = u_k`、`∀ k ≤ cutNetTop`、`∀ a` 一致：
+  - **(N1)** drift 预算 `2∫(Adr+Bcr) ≤ driftTerm/R⁴`：将由 T280d 的指数行和 T278 提供；
+  - **(N2)** QV 预算 `√((2p−1)∫g) ≤ tailTerm/R⁴`：将由 T277 + T280f/T280g + T280d 的 `QBd` 行提供；
+  - **(N3)** `momFlowDeriv_le` 里模型方面的前提，按第 0 步的清单具名写出。
+
+  其余全部要证：`hG`（`weightedMinkowski_of_deriv_le` ∘ `momFlowDeriv_le`）、hinit（用 (i)）、`coordinate_integral_of_small_slots`、端点恒等式（第 2 条）、族求和的高 `p` 部分（`32 ≤ 3δp`）、小 `p` 的 Lyapunov（`momNormW_le_momNormW_of_exponent_le`）。最后接到 `aprimeSlot_of_widened_family`。
+* **停止条件**：端点恒等式在 Lean 里不成立；或 (N1)–(N3) 之外还冒出新的模型前提。精确报告是哪一条。

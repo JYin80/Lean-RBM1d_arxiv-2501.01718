@@ -66,6 +66,7 @@ import RBM1D.Gauss.APrimeModel
 import RBM1D.Gauss.APrimeSlotFields
 import RBM1D.Gauss.APrimeDuhamelModel
 import RBM1D.Gauss.APrimeSlotArith
+import RBM1D.Gauss.APrimeSmoothPrefix
 import RBM1D.Gauss.APrimeJGWidened
 import RBM1D.Gauss.APrimeNormalizedTestFun
 import RBM1D.Gauss.APrimeNormalizedGenerator
@@ -75,6 +76,7 @@ import RBM1D.Gauss.APrimeDriftEnvelope
 import RBM1D.Gauss.Lemma514NonAlt
 import RBM1D.Gauss.Lemma514QAssembly
 import RBM1D.Gauss.Lemma514FBridge
+import RBM1D.Gauss.FirstCellLocalLawBridge
 import RBM1D.Gauss.LkGoodMeasurable
 import RBM1D.Gauss.MomentDuhamelQInt
 import RBM1D.Gauss.TestFunQGeneral

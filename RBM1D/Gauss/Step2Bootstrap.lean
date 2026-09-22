@@ -126,11 +126,18 @@ interface step is free and that the two no-gos of §2–§3 do not reach it.
 * `sum_gvar_mul_le_sqrt_quadVar` — Cauchy–Schwarz for `RBM.Gauss.quadVar`, the step that
   splits route (A′)'s mixed-time cross term into two same-time quadratic-variation rates.
 * `LogDerivBound`, `abs_deriv_softMax_le_of_logDerivBound`, `logDerivBound_gives_softMax` —
-  the interface asked of `RBM1D/Gauss/APrimeTestFun.lean` (§12).
+  the interface with `RBM1D/Gauss/APrimeTestFun.lean` (§12).  ⚠ T250 **refuted** the purely
+  multiplicative shape on the loops; the usable one is affine, and §12 records both.
 * `satAPrimeHyp`, `satCutHypEv_of_aprime`, `sat_stochDom_of_aprime`, `sat_satWval_eq_zero` —
   a compiled `APrimeHyp` **with the soft-max weight**, on the time-dependent `J_u = 2u⁺` that
   no `∀ N` interface of `RBM1D/Gauss/CutHypTheta.lean` can carry, and the chain run end to end
   on it (§13).
+* `APrimeHypOn`, `weightOn`, `APrimeHypOn.toAPrimeHyp`, `stochDom_of_aprimeOn`,
+  `APrimeHypOn.of_aprime`, `satAPrimeHypOn`, `sat_stochDom_of_aprimeOn` — **the T249 repair**:
+  the modulus asserted only on an event `Good N` (in the application `{‖X‖ ≤ N}`), transferred
+  through `RBM.MomentDuhamelCut.onEvent` and routed back at the cost of one `N^{-1}` (§14–§15).
+  ⚠ This is only *half* of what T249 forces; the other half is `0 < s N`, which `APrimeHyp`
+  does **not** imply — see §14.
 
 ## Non-vacuity (compiled)
 
@@ -1668,57 +1675,68 @@ theorem sum_gvar_mul_le_sqrt_quadVar (d : Dims) (N : ℕ)
 
 end CauchySchwarz
 
-/-! ### 12. What route (A′) asks of `RBM1D/Gauss/APrimeTestFun.lean`
+/-! ### 12. The interface with `RBM1D/Gauss/APrimeTestFun.lean` (T250: **both items settled**)
 
-Two statements turn `WeightedMoment` from an interface into a theorem, and neither is in the
-repository.  Their exact shapes, so that file can be written against them.
+Two statements turn `WeightedMoment` from an interface into a theorem.  Both are now in
+`RBM1D/Gauss/APrimeTestFun.lean`, which imports this file, so the names below are *downstream*
+and cannot be cited by a `theorem` here — only by the assembly, which lives there.
 
-**(i) The *logarithmic* derivative bound.**  `abs_deriv_softMax_le` consumes
-`∀ i ∈ S, |ρ' i| ≤ Λ · |ρ i|`, and the adjective matters: an **absolute** bound — which is
-what `RBM.Gauss.lkErr_le_rpow` and `RBM.exists_driftF_envelope` give — would reintroduce the
-factor `(card)^{1/q}` that `softMax_le`/`rpow_card_le_exp_one` were calibrated to remove, and
-the cardinality loss would be back.  In the model the ratios are
-`ρ_{(j,a)}(M) = ‖(L-K)_{u_j,(+,-),a}(M)‖ / (Θ_N · T_{u_j,D}(a))`, so the wanted statement is
+**⚠ The target this section first asked for was refuted.**  It asked for a **purely
+multiplicative** ("logarithmic") derivative bound `‖∂_α F‖ ≤ Λ‖F‖`, on the reasoning that an
+absolute bound would reintroduce the `(card)^{1/q}` of `softMax_le`.  That shape is **false**
+on the loop error, and not for a quantitative reason: at a Hermitian `M` where `L = K` the
+right-hand side vanishes while `∂_α(L-K) = ∂_α L` has no reason to
+(`RBM.Gauss.not_coordD1_le_mul_norm`, and abstractly
+`RBM.Step2Bootstrap.not_logDerivBound_of_zero`).  `∂_α K = 0` makes this **worse**, not better.
+So `LogDerivBound` below, and `abs_deriv_softMax_le_of_logDerivBound` /
+`logDerivBound_gives_softMax` that consume it, are correct statements with **no instance on
+the loops**; they are kept only because they are what `abs_deriv_softMax_le` literally says.
 
-    theorem abs_coordD1_lkFun_le (d : Dims) (E : ℝ) (N : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1)
-        (σ : Fin 2 → Bool) (a : LoopArg ((band d).L N) 2)
-        (M : Matrix (d.Idx N) (d.Idx N) ℂ) (hM : M.IsHermitian)
-        (q : d.Idx N × d.Idx N × Bool) :
-        ‖RBM.Gauss.coordD1 d N (fun M' => lkFun (band d) E N u M' σ a) M q‖
-          ≤ Λ d N u * ‖lkFun (band d) E N u M σ a‖
+**(i) The bound the model does supply is *affine*:**
 
-with `Λ d N u` polynomial in `N` and `η_u⁻¹`.  (`K_u` is deterministic, so it contributes
-nothing to `coordD1`; if the split of (5.29) is performed *before* differentiating, an
-additive deterministic term may be carried along and it is harmless — only the multiplicative
-part has to be logarithmic.)  The route is the resolvent identity
-`∂_α G = -G (∂_α H) G` together with `‖G‖ ≤ η_u⁻¹` (`RBM.Gauss.norm_gloop_le_det`), reassembled
-so that one of the two `G`'s stays inside the loop.
+    ‖∂_α F‖ ≤ 0 · ‖F‖ + a₁ · ‖B_α‖        (`RBM.Gauss.abs_coordD1_le_affine`)
 
-**(ii) The `RBM.Gauss.TestFun` instance for the weighted integrand.**
-`RBM.Gauss.hasDerivAt_integral_Phi` needs `TestFun d N Φ`, i.e. `ContDiff ℝ 2 Φ` together with
-`bdd₀`, `bdd₁`, `bdd₂`, for
+and the corresponding estimate on the soft maximum is
+`RBM.Step2Bootstrap.abs_deriv_softMax_le_affine`:
 
-    Φ M = (softW r S (fun i => ρ i M) Θ : ℂ) *
-            (Uker … (fun b => loopObs … M) a) ^ (2 * p)
+    (∀ i ∈ S, |ρ' i| ≤ Λ|ρ i| + K) → |∂J̃| ≤ Λ · J̃ + (card)^{1/(2r)} · K.
 
-(`softW` embedded in `ℂ`).  **This is where the soft maximum is indispensable**: the product
-weight of §4 is built from `J* = max_a …`, which is not `C¹`, so `TestFun` is unreachable for
-it; `J̃^{2r} = ∑_i ρ_i^{2r}` is a *polynomial* in the entries of `Re G` and `Im G`, and
-`y ↦ y^{1/(2r)}` is smooth away from `0` — `cutChiD_softW_eq_zero` shows the origin is the one
-place where `χ'` already vanishes, so the singularity is never met.
+⭐ **What the soft maximum actually buys is therefore not the factor `Λ` — it is the absence of
+`card`.**  The naive route sends the additive part to `∑_i 2r|ρ_i|^{2r-1}K`, i.e. `card · K`;
+the Hölder step `RBM.Step2Bootstrap.sum_abs_pow_pred_le` turns it into `(card)^{1/(2r)} · K`,
+which `rpow_card_le_exp_one` calibrates to `e·K` at `q = 2r ≍ log N`.  **This works at `Λ = 0`,
+which is the case the model is in.**  The product weight of §4 cannot do this
+(`abs_derivProd_le` is a bare sum over the net).
 
-`bdd₀` is free from this file (`softW_le_one` and `RBM.MomentDuhamelCut.abs_cutTrunc_le`, as
-used in `integrable_weight_mul`); `bdd₁` follows from (i) plus `abs_deriv_softMax_le` and
-`Cutoff.abs_cutChiD_le`; `bdd₂` additionally needs the second derivative of `G` and
-`Cutoff.abs_cutChiDD_le`.
+**(ii) The `RBM.Gauss.TestFun` instance**, `RBM.Gauss.testFun_softW_mul`:
+
+    TestFun d N (fun M => ((softW r S (fun i => ρ i M) Θ : ℝ) : ℂ) * Ψ M)
+
+from `BddC2C (fun M => ∑ i ∈ S, ρ i M ^ (2r))` and `BddC2C Ψ`.  **This is where the soft
+maximum is indispensable**: the product weight of §4 is built from `J* = max_a …`, which is
+not `C¹`, so `TestFun` is unreachable for it; `J̃^{2r} = ∑_i ρ_i^{2r}` is a *polynomial* in the
+entries of `Re G` and `Im G`, and `y ↦ y^{1/(2r)}` is smooth away from `0` —
+`cutChiD_softW_eq_zero` records that the origin is the one place where `χ'` already vanishes,
+so the singularity is never met.  T250 also checked that `ContDiff ℝ 2` is **used to the
+letter** by `RBM.Gauss.hasDerivAt_integral_Phi`, so the order cannot be lowered to `C¹`.
+
+**What is still missing** is the *model-level* instance: `BddC2C` for the concrete ratio
+`ρ_{(j,a)}(M) = ‖(L-K)_{u_j,(+,-),a}(M)‖ / (Θ_N · T_{u_j,D}(a))`, with its constants pinned in
+terms of `lkFun`, `band d` and `η_u`.  That lives in `RBM1D/Gauss/MomentDuhamel.lean` /
+`RBM1D/Flow/Hypotheses.lean`, neither of which is writable from here.
 -/
 
 section Interface
 
 variable {ι : Type*}
 
-/-- **(i) in the abstract form this file consumes**: the hypothesis of
-`abs_deriv_softMax_le`, named so that `RBM1D/Gauss/APrimeTestFun.lean` has a target. -/
+/-- **The hypothesis `abs_deriv_softMax_le` literally consumes.**
+
+⚠ **It has no instance on the loop ratios** (T250): at a point where `ρ i = 0` but `ρ' i ≠ 0`
+it is false for *every* `Λ` (`RBM.Step2Bootstrap.not_logDerivBound_of_zero`, downstream), and
+`L = K` is such a point.  The shape the model supplies is the **affine** one,
+`|ρ' i| ≤ Λ|ρ i| + K`, handled by `RBM.Step2Bootstrap.abs_deriv_softMax_le_affine`.  Kept
+because it is what `abs_deriv_softMax_le` says; see §12. -/
 def LogDerivBound (S : Finset ι) (ρ ρ' : ι → ℝ) (Λ : ℝ) : Prop :=
   ∀ i ∈ S, |ρ' i| ≤ Λ * |ρ i|
 
@@ -1731,11 +1749,9 @@ theorem abs_deriv_softMax_le_of_logDerivBound {r : ℕ} (hr : 1 ≤ r) {S : Fins
       ≤ Λ * softMax r S ρ :=
   abs_deriv_softMax_le hr h hY
 
-/-- **An absolute bound is strictly weaker than a logarithmic one on this family.**  From
-`|ρ' i| ≤ Λ|ρ i|` and the soft maximum one gets `|ρ' i| ≤ Λ·J̃` with no cardinality factor;
-from an absolute bound `|ρ' i| ≤ A` one only gets `∑_i |ρ' i| ≤ (card)·A`, which is the loss
-`abs_derivProd_le` already exhibits for the product weight.  Recorded so that a producer of
-(i) cannot satisfy it by supplying the wrong shape. -/
+/-- Under `LogDerivBound` every entry's derivative is controlled by the soft maximum with no
+cardinality factor.  ⚠ Vacuous on the loops, for the reason recorded on `LogDerivBound`; the
+usable statement is `RBM.Step2Bootstrap.abs_deriv_softMax_le_affine`. -/
 theorem logDerivBound_gives_softMax {r : ℕ} (hr : 1 ≤ r) {S : Finset ι} {ρ ρ' : ι → ℝ}
     {Λ : ℝ} (hΛ : 0 ≤ Λ) (h : LogDerivBound S ρ ρ' Λ) {i : ι} (hi : i ∈ S) :
     |ρ' i| ≤ Λ * softMax r S ρ :=
@@ -1910,6 +1926,326 @@ theorem sat_satWval_eq_zero {δ : ℝ} {N k : ℕ} {j : ℕ} (hj : j ∈ Finset.
   softW_eq_zero le_rfl (by positivity) hj h
 
 end SatAPrime
+
+/-! ### 14. The event-restricted interface (T249)
+
+T249 compiled `RBM.not_cutHypEv_swapSample_of_far`: **no `CutHypEv` at all carries the far
+functional on a window with `s ≡ 0`**, and the mechanism is the `∀ ω` of `modulus`, not the
+`∀ N`.  Two independent repairs are needed, and route (A′) needs both:
+
+* **the left endpoint must be positive.**  Nothing in `APrimeHyp` forces `0 < s N` — `window`
+  only asks `s N ≤ t N`, and `lev_ge` only compares `lev` to `Θ` — so it is **not** implied,
+  and a producer on the real chain has to supply it.  Route (A′)'s own reduction
+  (`condMoment_of_weightedMoment`) never touches `modulus` and never touches the left
+  endpoint, so the requirement is inherited from the fields `APrimeHyp` shares with
+  `RBM.CutHypTheta.CutHypCondEv`, not created by the weight.  **Starting condition: `s_N > 0`
+  (in the application `s_N ≥ N^{-C}`), plus `J_{s_N} ≺ 1`, which is (2.69).**
+* **the modulus must be asserted on an event.**  `APrimeHypOn` is `APrimeHyp` with `modulus`
+  restricted to `Good N` (in the application `{ω | ‖X(ω)‖ ≤ N}`), exactly as
+  `RBM.MomentDuhamelCut.CutHypEvOn` is for `CutHypEv`, and by the same device: the cut-down
+  functional `RBM.MomentDuhamelCut.onEvent J Good` satisfies the **unrestricted** interface,
+  because off `Good N` it is constantly `0`.
+
+`APrimeHypOn.toAPrimeHyp` performs that transfer — the moment field costs nothing, because
+the restricted integrand is dominated by the unrestricted one pointwise — and
+`stochDom_of_aprimeOn` routes the conclusion back, paying one `N^{-1}` for `Good`.
+-/
+
+section APrimeOn
+
+open MomentDuhamelCut CutHypTheta MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {J : ℕ → ℝ → Ω → ℝ} {s t : ℕ → ℝ}
+  {lev : ℕ → ℝ → ℝ} {Θ : ℕ → ℝ} {Good : ℕ → Set Ω}
+
+/-- **`APrimeHyp` with the modulus restricted to an event** (T249).  The one change: `modulus`
+is asked only for `ω ∈ Good N`. -/
+structure APrimeHypOn (P : Measure Ω) (J : ℕ → ℝ → Ω → ℝ) (s t : ℕ → ℝ) (lev : ℕ → ℝ → ℝ)
+    (Θ : ℕ → ℝ) (Good : ℕ → Set Ω) where
+  /-- The window is non-degenerate. -/
+  window : ∀ N, s N ≤ t N
+  /-- The range `0 < δ ≤ δ₀` of bootstrap margins. -/
+  δ₀ : ℝ
+  δ₀_pos : 0 < δ₀
+  Θ_pos : ∀ N, 0 < Θ N
+  /-- The truncation level dominates the control, on the window. -/
+  lev_ge : ∀ N, ∀ u ∈ Set.Icc (s N) (t N), Θ N ≤ lev N u
+  /-- The state functional is nonnegative. -/
+  J_nonneg : ∀ N u ω, 0 ≤ J N u ω
+  meas : ∀ (N : ℕ) (u : ℝ), Measurable fun ω => J N u ω
+  /-- The event the modulus is asserted on. -/
+  good_meas : ∀ N, MeasurableSet (Good N)
+  /-- The mesh of the net of (5.46). -/
+  mesh : ℕ → ℝ
+  mesh_pos : ∀ N, 0 < mesh N
+  /-- The exponent of the modulus of continuity. -/
+  Kmod : ℝ
+  /-- Its Hölder exponent (`1` for the Lipschitz bound on `s_N ≥ N^{-C}`). -/
+  γ : ℝ
+  γ_pos : 0 < γ
+  /-- **The modulus, only on `Good N`.** -/
+  modulus : ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Good N, ∀ v ∈ Set.Icc (s N) (t N),
+    ∀ w ∈ Set.Icc (s N) (t N),
+    |J N v ω - J N w ω| ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+  mesh_fine : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ Kmod * (1 / mesh N) ^ γ ≤ Θ N
+  /-- The exponent of the net's cardinality. -/
+  Ccard : ℝ
+  card_le : ∀ᶠ N : ℕ in atTop, (t N - s N) * mesh N + 2 ≤ (N : ℝ) ^ Ccard
+  /-- The exponent bounding the truncation level against the control. -/
+  Clev : ℝ
+  Clev_nonneg : 0 ≤ Clev
+  levpoly : ∀ᶠ N : ℕ in atTop, ∀ ws ∈ netFinset s t mesh N,
+    2 * lev N ws ≤ (N : ℝ) ^ Clev * Θ N
+  /-- The weight of route (A′). -/
+  W : ℝ → ℕ → ℕ → Ω → ℝ
+  W_meas : ∀ (δ : ℝ) (N k : ℕ), AEStronglyMeasurable (fun ω => W δ N k ω) P
+  W_nonneg : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω), 0 ≤ W δ N k ω
+  W_le_one : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω), W δ N k ω ≤ 1
+  W_dom : ∀ (δ : ℝ) (N k : ℕ) (ω : Ω),
+    ω ∈ prefNet J s mesh (fun N u => (N : ℝ) ^ (2 * δ) * lev N u) N k → 1 ≤ W δ N k ω
+  /-- **The moment field, unconditional.**  Unchanged from `APrimeHyp`: the event restriction
+  costs nothing here (`APrimeHypOn.toAPrimeHyp`). -/
+  weightedMoment : WeightedMoment P J s t mesh lev Θ δ₀ W
+
+/-- The weight transported to the cut-down functional: `W` on `Good N`, `1` off it. -/
+noncomputable def weightOn (W : ℝ → ℕ → ℕ → Ω → ℝ) (Good : ℕ → Set Ω)
+    (δ : ℝ) (N k : ℕ) (ω : Ω) : ℝ :=
+  1 - Set.indicator (Good N) (fun ω => 1 - W δ N k ω) ω
+
+omit [MeasurableSpace Ω] in
+theorem weightOn_of_mem {W : ℝ → ℕ → ℕ → Ω → ℝ} {δ : ℝ} {N k : ℕ} {ω : Ω}
+    (h : ω ∈ Good N) : weightOn W Good δ N k ω = W δ N k ω := by
+  rw [weightOn, Set.indicator_of_mem h]; ring
+
+omit [MeasurableSpace Ω] in
+theorem weightOn_of_notMem {W : ℝ → ℕ → ℕ → Ω → ℝ} {δ : ℝ} {N k : ℕ} {ω : Ω}
+    (h : ω ∉ Good N) : weightOn W Good δ N k ω = 1 := by
+  rw [weightOn, Set.indicator_of_notMem h, sub_zero]
+
+omit [MeasurableSpace Ω] in
+theorem weightOn_nonneg {W : ℝ → ℕ → ℕ → Ω → ℝ} (hW : ∀ δ N k ω, 0 ≤ W δ N k ω)
+    (δ : ℝ) (N k : ℕ) (ω : Ω) : 0 ≤ weightOn W Good δ N k ω := by
+  by_cases h : ω ∈ Good N
+  · rw [weightOn_of_mem h]; exact hW δ N k ω
+  · rw [weightOn_of_notMem h]; norm_num
+
+omit [MeasurableSpace Ω] in
+theorem weightOn_le_one {W : ℝ → ℕ → ℕ → Ω → ℝ} (hW : ∀ δ N k ω, W δ N k ω ≤ 1)
+    (δ : ℝ) (N k : ℕ) (ω : Ω) : weightOn W Good δ N k ω ≤ 1 := by
+  by_cases h : ω ∈ Good N
+  · rw [weightOn_of_mem h]; exact hW δ N k ω
+  · rw [weightOn_of_notMem h]
+
+/-- **⭐ The event-restricted interface produces the unrestricted one, for the cut-down
+functional.**  Off `Good N` the functional is constantly `0`, so the modulus is free there and
+the moment only drops (`cutTrunc θ 0 = 0`). -/
+noncomputable def APrimeHypOn.toAPrimeHyp [IsProbabilityMeasure P]
+    (H : APrimeHypOn P J s t lev Θ Good) :
+    APrimeHyp P (onEvent J Good) s t lev Θ where
+  window := H.window
+  δ₀ := H.δ₀
+  δ₀_pos := H.δ₀_pos
+  Θ_pos := H.Θ_pos
+  lev_ge := H.lev_ge
+  J_nonneg := by
+    intro N u ω
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h]; exact H.J_nonneg N u ω
+    · rw [onEvent_of_notMem h]
+  meas := fun N u => (H.meas N u).indicator (H.good_meas N)
+  mesh := H.mesh
+  mesh_pos := H.mesh_pos
+  Kmod := H.Kmod
+  γ := H.γ
+  γ_pos := H.γ_pos
+  modulus := by
+    filter_upwards [H.modulus] with N hN ω v hv w hw
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h, onEvent_of_mem h]
+      exact hN ω h v hv w hw
+    · rw [onEvent_of_notMem h, onEvent_of_notMem h, sub_self, abs_zero]
+      positivity
+  mesh_fine := H.mesh_fine
+  Ccard := H.Ccard
+  card_le := H.card_le
+  Clev := H.Clev
+  Clev_nonneg := H.Clev_nonneg
+  levpoly := H.levpoly
+  W := weightOn H.W Good
+  W_meas := by
+    intro δ N k
+    exact (aestronglyMeasurable_const.sub
+      (((aestronglyMeasurable_const.sub (H.W_meas δ N k)).indicator (H.good_meas N))))
+  W_nonneg := weightOn_nonneg H.W_nonneg
+  W_le_one := weightOn_le_one H.W_le_one
+  W_dom := by
+    intro δ N k ω hω
+    by_cases h : ω ∈ Good N
+    · rw [weightOn_of_mem h]
+      refine H.W_dom δ N k ω fun j hj => ?_
+      have := hω j hj
+      rwa [onEvent_of_mem h] at this
+    · rw [weightOn_of_notMem h]
+  weightedMoment := by
+    intro δ hδ0 hδ p
+    obtain ⟨C, hC0, hC⟩ := H.weightedMoment δ hδ0 hδ p
+    rcases Nat.eq_zero_or_pos p with hp0 | hp1
+    · -- `p = 0`: the integrand is the weight itself, which is at most `1`.
+      subst hp0
+      refine ⟨C + 1, by linarith, Filter.Eventually.of_forall fun N k _ => ?_⟩
+      have hle : ∫ ω : Ω, weightOn H.W Good δ N k ω *
+          |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s H.mesh N k))
+            (onEvent J Good N (cutNetPt s H.mesh N k) ω)| ^ (2 * 0) ∂P
+            ≤ ∫ _ω : Ω, (1 : ℝ) ∂P := by
+        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun ω => ?_)
+          (integrable_const 1) (Filter.Eventually.of_forall fun ω => ?_)
+        · exact mul_nonneg (weightOn_nonneg H.W_nonneg δ N k ω) (by positivity)
+        · dsimp only
+          simpa using weightOn_le_one H.W_le_one δ N k ω
+      have hone : ∫ _ω : Ω, (1 : ℝ) ∂P = 1 := by simp
+      rw [hone] at hle
+      refine hle.trans ?_
+      have h1 : (N : ℝ) ^ (δ / 2 * ((0 : ℕ) : ℝ)) = 1 := by
+        norm_num
+      have h2 : Θ N ^ (2 * 0) = 1 := by norm_num
+      rw [h1, h2]
+      linarith
+    refine ⟨C, hC0, ?_⟩
+    filter_upwards [hC, eventually_ge_atTop 1] with N hN hN1 k hk
+    have hNR : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+    have hrp : (0 : ℝ) < (N : ℝ) ^ (2 * δ) := Real.rpow_pos_of_pos (by linarith) _
+    have hmem : cutNetPt s H.mesh N k ∈ Set.Icc (s N) (t N) :=
+      netFinset_subset_Icc (H.window N) (H.mesh_pos N) _ (cutNetPt_mem_netFinset hk)
+    have hθ : 0 < (N : ℝ) ^ (2 * δ) * lev N (cutNetPt s H.mesh N k) :=
+      mul_pos hrp (lt_of_lt_of_le (H.Θ_pos N) (H.lev_ge N _ hmem))
+    have hRi : Integrable (fun ω => H.W δ N k ω *
+        |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s H.mesh N k))
+          (J N (cutNetPt s H.mesh N k) ω)| ^ (2 * p)) P :=
+      integrable_weight_mul hθ (H.W_nonneg δ N k) (H.W_le_one δ N k) (H.W_meas δ N k)
+        (fun ω => H.J_nonneg N _ ω)
+        ((H.meas N (cutNetPt s H.mesh N k)).aestronglyMeasurable) (2 * p)
+    refine le_trans (integral_mono_of_nonneg (Filter.Eventually.of_forall fun ω => ?_) hRi
+      (Filter.Eventually.of_forall fun ω => ?_)) (hN k hk)
+    · exact mul_nonneg (weightOn_nonneg H.W_nonneg δ N k ω) (by positivity)
+    · dsimp only
+      by_cases h : ω ∈ Good N
+      · rw [weightOn_of_mem h, onEvent_of_mem h]
+      · rw [weightOn_of_notMem h, onEvent_of_notMem h, cutTrunc_zero, abs_zero,
+          zero_pow (by omega : 2 * p ≠ 0), mul_zero]
+        have := H.W_nonneg δ N k ω
+        positivity
+
+/-- **⭐⭐ `J ≺ Θ` from the event-restricted interface of route (A′).**
+
+`stochDom_of_aprime` on the cut-down functional, then the conclusion is transported back
+across `Good`, which costs one extra `N^{-1}` in the union bound.  This is
+`RBM.MomentDuhamelCut.stochDom_of_cutHypEvOn`'s argument, for route (A′)'s interface. -/
+theorem stochDom_of_aprimeOn [IsProbabilityMeasure P] (H : APrimeHypOn P J s t lev Θ Good)
+    (hgood : HighProb P Good) (hΘ1 : ∀ᶠ N : ℕ in atTop, 1 ≤ Θ N)
+    (hinit : StochDom P (fun N (_ : Unit) ω => J N (s N) ω) (fun _ _ _ => (1 : ℝ))) :
+    StochDom P (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) := by
+  have hle : ∀ N u ω, onEvent J Good N u ω ≤ J N u ω := by
+    intro N u ω
+    by_cases h : ω ∈ Good N
+    · rw [onEvent_of_mem h]
+    · rw [onEvent_of_notMem h]; exact H.J_nonneg N u ω
+  have hinit' : StochDom P (fun N (_ : Unit) ω => onEvent J Good N (s N) ω)
+      (fun _ _ _ => (1 : ℝ)) := by
+    intro τ hτ D hD
+    filter_upwards [hinit τ hτ D hD] with N hN
+    refine le_trans (measure_mono ?_) hN
+    rintro ω ⟨u, hu⟩
+    exact ⟨u, lt_of_lt_of_le hu (hle N (s N) ω)⟩
+  have hmain := stochDom_of_aprime H.toAPrimeHyp hΘ1 hinit'
+  intro τ hτ D hD
+  filter_upwards [hmain τ hτ (D + 1) (by linarith), hgood (D + 1) (by linarith),
+    eventually_ge_atTop 2] with N hbad hgd hN2
+  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hsub : badSet (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) τ N
+      ⊆ badSet (fun N (u : TimeIcc s t N) ω => onEvent J Good N (u : ℝ) ω)
+          (fun N _ _ => Θ N) τ N ∪ (Good N)ᶜ := by
+    rintro ω ⟨u, hu⟩
+    by_cases h : ω ∈ Good N
+    · refine Or.inl ⟨u, ?_⟩
+      simp only
+      rwa [onEvent_of_mem h]
+    · exact Or.inr h
+  refine le_trans (measure_mono hsub) (le_trans (measure_union_le _ _) ?_)
+  have hp : (0 : ℝ) ≤ (N : ℝ) ^ (-(D + 1)) := Real.rpow_nonneg hN0.le _
+  refine le_trans (add_le_add hbad hgd) ?_
+  rw [← ENNReal.ofReal_add hp hp]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have h2 : (2 : ℝ) ≤ (N : ℝ) ^ (1 : ℝ) := by rw [Real.rpow_one]; exact hN2'
+  calc (N : ℝ) ^ (-(D + 1)) + (N : ℝ) ^ (-(D + 1)) = 2 * (N : ℝ) ^ (-(D + 1)) := by ring
+    _ ≤ (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ (-(D + 1)) := mul_le_mul_of_nonneg_right h2 hp
+    _ = (N : ℝ) ^ (-D) := by rw [← Real.rpow_add hN0]; congr 1; ring
+
+/-- The unrestricted interface is the `Good = univ` case, so `APrimeHypOn` is not vacuous:
+`satAPrimeHyp` transports to it. -/
+noncomputable def APrimeHypOn.of_aprime (H : APrimeHyp P J s t lev Θ) :
+    APrimeHypOn P J s t lev Θ (fun _ => Set.univ) where
+  window := H.window
+  δ₀ := H.δ₀
+  δ₀_pos := H.δ₀_pos
+  Θ_pos := H.Θ_pos
+  lev_ge := H.lev_ge
+  J_nonneg := H.J_nonneg
+  meas := H.meas
+  good_meas := fun _ => MeasurableSet.univ
+  mesh := H.mesh
+  mesh_pos := H.mesh_pos
+  Kmod := H.Kmod
+  γ := H.γ
+  γ_pos := H.γ_pos
+  modulus := by
+    filter_upwards [H.modulus] with N hN ω _ v hv w hw
+    exact hN ω v hv w hw
+  mesh_fine := H.mesh_fine
+  Ccard := H.Ccard
+  card_le := H.card_le
+  Clev := H.Clev
+  Clev_nonneg := H.Clev_nonneg
+  levpoly := H.levpoly
+  W := H.W
+  W_meas := H.W_meas
+  W_nonneg := H.W_nonneg
+  W_le_one := H.W_le_one
+  W_dom := H.W_dom
+  weightedMoment := H.weightedMoment
+
+/-- `Good = univ` is `HighProb`. -/
+theorem highProb_univ : HighProb P (fun _ : ℕ => (Set.univ : Set Ω)) := by
+  intro D _
+  filter_upwards with N
+  simp
+
+end APrimeOn
+
+/-! ### 15. The event-restricted chain, run on the witness -/
+
+section SatAPrimeOn
+
+open MomentDuhamelCut CutHypTheta MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **`APrimeHypOn` is non-vacuous**, at `Good = univ`. -/
+noncomputable def satAPrimeHypOn (P : Measure Ω) [IsProbabilityMeasure P] :
+    APrimeHypOn P (fun _ u (_ : Ω) => 2 * max u 0) (fun _ => 0) (fun _ => 1)
+      (fun _ _ => (1 : ℝ)) (fun _ => 1) (fun _ => Set.univ) :=
+  APrimeHypOn.of_aprime (satAPrimeHyp P)
+
+/-- **The event-restricted chain runs end to end on the witness.** -/
+theorem sat_stochDom_of_aprimeOn (P : Measure Ω) [IsProbabilityMeasure P] :
+    StochDom P
+      (fun N (u : TimeIcc (fun _ => (0 : ℝ)) (fun _ => (1 : ℝ)) N) (_ : Ω) =>
+        2 * max (u : ℝ) 0)
+      (fun _ _ _ => (1 : ℝ)) :=
+  stochDom_of_aprimeOn (satAPrimeHypOn P) highProb_univ
+    (Filter.Eventually.of_forall fun _ => le_rfl) (MomentDuhamelCut.sat_init_ev P)
+
+end SatAPrimeOn
 
 end Step2Bootstrap
 

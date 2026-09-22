@@ -48,6 +48,7 @@
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
 
+* **T231**（本次）：`hbound` 的常数落实成 `cMDval' p n = (n+2)·max 0 (2p−1)`，**两条桥各读一遍、都恰好是 `(n+2)`**。判别性编译在案：`hbound_slot_one_fails` 证明 `(n+2)` 形的界**推不出** `1` 形的界，**旧 `hbound` 按字面永远卸不掉**；`deriv_le_*_sharp_one'` 三条取**等号**，说明新常数**无余量**。**不用改 `MomentDuhamelTime.lean`**（`of_diffIneq` 本来就把 `cMD` 收成参数）。plain 一路走通（`momentIneq_gauss_cMDval'`，只剩 `hQV`）。⭐ 顺带解决一个工单没点名的缺口：**二次变差看不见 `K`**，所以不需要「移位版」桥。完整报告 `docs/reports/T231.md`。
 * **T233**（fd81869）：Steps 4–5 的脚本全部改吃 `FlowEq548W`，三份脚本并成两份；12 条 `rfl` 探针；`FlowEq548` 的生产者一个没动。转交 C1–C3（见 §2）。
 * **T219**（37f5581）：`hkerC`/`hker2C` 从 Lemma 5.14 的假设表里消失（D14 核心目标达成）；网格见证在论文 p.24 网格上。交出 D16。
 * **T226**（3280616）：`Q` 版二次变差桥无自由假设，系数 `(n+2)`；可积性 11 项关 6 项；交出 `driftF` 包络（→ T238）。
@@ -60,3 +61,6 @@
 ## 7. 无主的活
 
 （全部已开单：T236–T239。新的无主项写在这里，调度下一轮开单。）
+
+* **plain 的 `hQV` 接线**（T231 交出）：`momentIneq_gauss_cMDval'_bridge` 的 `hQV` 槽与 `EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` 的结论**形状同义但签名对不上**（参数次序与显隐性）。⚠ 协调者已实测「加一行 `import` + 一行 `exact`」**不成立**，需要一条桥引理。**这是 plain 路线 `MomentIneq` 唯一剩下的缺口。**
+* **两条 `attribute [deprecated]` 的落地时机**（T231 交出，→ Cowork）：`momentIneq_of_derivBound` / `momentIneqQ_of_derivBound`——等 T226 的后继换完带撇版，还是现在加并接受 `MomentDuhamelQInt` 里的一片 warning。确切语句见 `docs/reports/T231.md`。

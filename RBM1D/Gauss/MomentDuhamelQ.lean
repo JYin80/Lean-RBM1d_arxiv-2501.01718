@@ -878,6 +878,153 @@ theorem qIntegrable_gauss (d : Gauss.Dims) (E : ℝ) (s t : ℕ → ℝ) (n : �
   rw [h1]
   exact pow_le_pow_left₀ (norm_nonneg _) (hQb ω) q
 
+
+/-! ### T231: the `Q_u` route's moment inequality with the constant `C_{n,p}` of (5.103)
+
+`RBM.MomentDuhamel.momentIneqQ_of_derivBound` hard-codes `RBM.MomentDuhamel.cMDval`, which
+depends on `p` only, while (5.103)'s quadratic-variation bridge
+(`RBM.EEUker.quadVar_qUkerObsT_le_norm_QQ_eeFun`) carries a factor `n + 2`.  The primed form
+below takes the `hbound` slot **with** that factor and pays for it in the conclusion's
+constant `RBM.MomentDuhamel.cMDval' p n = (n+2)(2p-1)`, which is the paper's `C_{n,p}`.  See
+`docs/paper-deltas.md` #155, and `RBM.Gauss.hbound_qMomentObsT_gauss_n_add_two` for the slot
+produced by a theorem. -/
+
+section CnpAssemblyQ
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+theorem momentIneqQ_of_derivBound' {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| ≤ 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : ∀ (p : ℕ), 1 ≤ p → ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ), s N ≤ v → v ≤ t N →
+      ∀ a : LoopArg (B.L N) (n + 2), ∃ φ' : ℝ → ℝ, ∃ C : ℝ,
+        (∀ u ∈ Set.Icc (s N) v,
+            (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖| ^ (2 * p) ∂B.P)
+              ^ ((1 : ℝ) / p) ≤ C)
+        ∧ ContinuousOn (fun u => ∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+              ((v : ℝ) : ℂ) (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖|
+                ^ (2 * p) ∂B.P) (Set.Icc (s N) v)
+        ∧ (∀ u ∈ Set.Ioo (s N) v, HasDerivAt
+              (fun r => ∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (B.L N) ((r : ℝ) : ℂ) (SumZeroDyn.lkT X E N r ω σ)) a‖| ^ (2 * p) ∂B.P)
+              (φ' u) u)
+        ∧ IntervalIntegrable φ' volume (s N) v
+        ∧ IntervalIntegrable (fun u => momNorm B.P (2 * p) (fun ω =>
+              ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (B.L N) ((u : ℝ) : ℂ) (DriftDef.driftF B E N u (X.H N u ω) σ)) a‖))
+            volume (s N) v
+        ∧ IntervalIntegrable (fun u => momNorm B.P (2 * p) (fun ω =>
+              ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+                  (SumZeroDyn.lkT X E N u ω σ)) a‖)) volume (s N) v
+        ∧ IntervalIntegrable (fun u => momNorm B.P (2 * p) (fun ω =>
+              ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N u ω σ) (b 0)
+                  * SumZeroDyn.varthetaDot (B.L N) u b) a‖)) volume (s N) v
+        ∧ IntervalIntegrable (fun u => momNorm B.P p (fun ω =>
+              ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) σ))
+                (Fin.append a a)‖)) volume (s N) v
+        ∧ (∀ u ∈ Set.Icc (s N) v, IntervalIntegrable (fun r =>
+              momNorm B.P (2 * p) (fun ω =>
+                ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (Qop (B.L N) ((r : ℝ) : ℂ) (SumZeroDyn.lkT X E N r ω σ)) a‖)
+              * (momNorm B.P (2 * p) (fun ω =>
+                  ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (Qop (B.L N) ((r : ℝ) : ℂ) (DriftDef.driftF B E N r (X.H N r ω) σ)) a‖)
+                + momNorm B.P (2 * p) (fun ω =>
+                    ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ)
+                        (SumZeroDyn.lkT X E N r ω σ)) a‖)
+                + momNorm B.P (2 * p) (fun ω =>
+                    ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N r ω σ) (b 0)
+                        * SumZeroDyn.varthetaDot (B.L N) r b) a‖))) volume (s N) u)
+        ∧ (∀ u ∈ Set.Ioo (s N) v, φ' u
+            ≤ 2 * (p : ℝ)
+                * (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖|
+                      ^ (2 * p) ∂B.P) ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+                * (momNorm B.P (2 * p) (fun ω =>
+                    ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (Qop (B.L N) ((u : ℝ) : ℂ) (DriftDef.driftF B E N u (X.H N u ω) σ)) a‖)
+                  + momNorm B.P (2 * p) (fun ω =>
+                      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                        (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+                          (SumZeroDyn.lkT X E N u ω σ)) a‖)
+                  + momNorm B.P (2 * p) (fun ω =>
+                      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                        (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N u ω σ) (b 0)
+                          * SumZeroDyn.varthetaDot (B.L N) u b) a‖))
+              + (p : ℝ) * (2 * (p : ℝ) - 1)
+                * (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖|
+                      ^ (2 * p) ∂B.P) ^ (((p : ℝ) - 1) / (p : ℝ))
+                * (((n : ℝ) + 2) * momNorm B.P p (fun ω =>
+                    ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) σ))
+                      (Fin.append a a)‖)))) :
+    MomentIneqQ X E s t n (fun p => cMDval' p n) := by
+  refine momentIneqQ_of_diffIneq hE hs0 ht1 (fun p => cMDval'_nonneg p n) ?_
+  intro p hp N σ v hsv hvt a
+  obtain ⟨φ', C, hCb, hcont, hderiv, hφ'int, hint₁, hint₂, hint₃, hgint, hintψf, hbound⟩ :=
+    h p hp N σ v hsv hvt a
+  obtain ⟨M, hM⟩ := exists_isLUB_Icc (ψ := fun u =>
+    (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+      (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖| ^ (2 * p) ∂B.P)
+        ^ ((1 : ℝ) / p)) hsv hCb
+  refine ⟨fun u => (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖| ^ (2 * p) ∂B.P)
+          ^ ((1 : ℝ) / p),
+    fun u => momNorm B.P (2 * p) (fun ω =>
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop (B.L N) ((u : ℝ) : ℂ) (DriftDef.driftF B E N u (X.H N u ω) σ)) a‖),
+    fun u => momNorm B.P (2 * p) (fun ω =>
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω σ)) a‖),
+    fun u => momNorm B.P (2 * p) (fun ω =>
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N u ω σ) (b 0)
+          * SumZeroDyn.varthetaDot (B.L N) u b) a‖),
+    fun u => momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) σ))
+        (Fin.append a a)‖),
+    M, fun _ => rfl, fun _ => rfl, fun _ => rfl, fun _ => rfl, fun _ => rfl, hM, hintψf,
+    hint₁, hint₂, hint₃, hgint, ?_⟩
+  intro u hu
+  have hkey := diffIneq_of_deriv_le (Y := fun r ω =>
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop (B.L N) ((r : ℝ) : ℂ) (SumZeroDyn.lkT X E N r ω σ)) a‖)
+    (g := fun r => ((n : ℝ) + 2) * momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((r : ℝ) : ℂ) (eeFun B E N r (X.H N r ω) σ))
+        (Fin.append a a)‖))
+    hsv hp hcont hderiv hφ'int
+    (fun _ _ => add_nonneg (add_nonneg (momNorm_nonneg _ _ _) (momNorm_nonneg _ _ _))
+      (momNorm_nonneg _ _ _))
+    (fun _ _ => mul_nonneg (by positivity) (momNorm_nonneg _ _ _))
+    ((hint₁.add hint₂).add hint₃) (hgint.const_mul _) hbound u hu
+  have hrw : (∫ r in (s N)..u, ((n : ℝ) + 2) * momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((r : ℝ) : ℂ) (eeFun B E N r (X.H N r ω) σ))
+          (Fin.append a a)‖))
+      = ((n : ℝ) + 2) * ∫ r in (s N)..u, momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((r : ℝ) : ℂ) (eeFun B E N r (X.H N r ω) σ))
+          (Fin.append a a)‖) :=
+    intervalIntegral.integral_const_mul _ _
+  rw [hrw] at hkey
+  rw [cMDval'_of_one_le hp]
+  calc (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (Qop (B.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ)) a‖| ^ (2 * p) ∂B.P)
+            ^ ((1 : ℝ) / (p : ℝ))
+      ≤ _ := hkey
+    _ = _ := by ring
+
+end CnpAssemblyQ
+
 end MomentDuhamel
 
 end RBM

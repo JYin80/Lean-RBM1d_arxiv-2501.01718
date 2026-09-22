@@ -1614,6 +1614,586 @@ theorem testFunT₁_coefMomentObsT_kink (E : ℝ) (N : ℕ) (hE : |E| < 2) {v : 
     (fun u hu b => norm_kinkCoefFam'_le ⟨hu.1, hu.2.trans hv1.le⟩ m b)
     hK hKb hK'b
 
+
+/-! ## T231: the `hbound` slots at the paper's constant `C_{n,p}`
+
+The `hbound` slots of `RBM.MomentDuhamel.momentIneq_of_derivBound` and of
+`momentIneqQ_of_derivBound` hard-code a constant depending on `p` only, while the
+quadratic-variation bridge of §5.2 carries a factor `n + 2` on **both** routes
+(`RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun` for the plain one,
+`RBM.EEUker.quadVar_qUkerObsT_le_norm_QQ_eeFun` for the `Q_u` one — each checked separately,
+each `(n : ℝ) + 2`).  `docs/paper-deltas.md` #155; the repaired constant is
+`RBM.MomentDuhamel.cMDval'`.
+
+What this section adds:
+
+* the plain route's missing derivative slot, `RBM.Gauss.hasDerivAt_integral_psi_gauss`
+  (unconditional, `φ'` pinned to `RBM.Gauss.phiCoefDeriv` — the `Q_u` twin
+  `RBM.Gauss.hasDerivAt_integral_psiQ_gauss` was T225's);
+* the plain route's `hbound`, `RBM.Gauss.hbound_momentObsT_gauss`, **with every side condition
+  discharged except the bridge itself**: the continuity in `ω` and the window envelopes of the
+  drift and of the `E ⊗ E` term are theorems on the plain side
+  (`RBM.Gauss.continuous_uker_driftF_omega`, `RBM.Gauss.exists_bdd_uker_driftF`,
+  `RBM.Gauss.continuous_uker_eeFun_omega`, `RBM.Gauss.exists_bdd_uker_eeFun`), so the only
+  hypothesis left is `hQV`, and its constant `cq` is explicit;
+* `RBM.Gauss.hbound_momentObsT_gauss_n_add_two` and
+  `RBM.Gauss.hbound_qMomentObsT_gauss_n_add_two`: the two slots at `cq = n + 2`, i.e. the
+  `hbound` of `RBM.MomentDuhamel.momentIneq_of_derivBound'` / `momentIneqQ_of_derivBound'`
+  verbatim;
+* `RBM.Gauss.quadVar_sub_const` / `RBM.Gauss.quadVar_ukerObsT_eq_quadVarPairs`: the primitive
+  `K_u` is constant in the matrix, so it drops out of the quadratic variation
+  (`fderiv_sub_const`).  This is what lets `hQV` be stated **exactly** as
+  `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` proves it, with no shifted bridge;
+* `RBM.Gauss.momentIneq_gauss_cMDval'` and `…_bridge`: the plain route's
+  `RBM.MomentDuhamel.MomentIneq` at `RBM.MomentDuhamel.cMDval'`, whose only input is that
+  bridge. -/
+
+theorem hasDerivAt_integral_psi_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) (p : ℕ) {u : ℝ} (hu : u ∈ Set.Ioo s v) :
+    HasDerivAt (fun r : ℝ =>
+        ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) ∂(band d).P)
+      (phiCoefDeriv d N E (List.ofFn σ)
+        (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p u) u := by
+  classical
+  obtain ⟨cK, hcK, hKb, hK'b⟩ :=
+    exists_bdd_Kval_Kprim (d := d) E N hE.le hs0 hv1 (v := v) σ
+  have hT₁ : TestFunT₁ d N (Set.Icc s v)
+      (momentObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p) :=
+    testFunT₁_momentObsT_of_coef E (m := n + 2) (List.length_ofFn) (by omega)
+      (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b)))
+      (Kprim (band d) E N σ) a p (window_eta_pos hE hv1) hcK
+      (window_le_abs_im hE hv1)
+      (fun r hr b => hasDerivAt_Kval_Kprim (band d) E N
+        (window_norm_mul_lt hE.le hs0 hv1 r hr) σ b) hKb hK'b
+  set Ψ : ℝ → Matrix (d.Idx N) (d.Idx N) ℂ → ℂ :=
+    momentObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p with hΨ
+  set φ : ℝ → ℝ := fun r : ℝ =>
+    ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+      (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) ∂(band d).P with hφ
+  have hΦφ : (fun r : ℝ => ∫ ω, Ψ r (Hflow d N r ω) ∂(P d))
+      = fun r : ℝ => ((φ r : ℝ) : ℂ) := by
+    funext r
+    have hpt : ∀ ω : Ω d, Ψ r (Hflow d N r ω)
+        = ((|‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) : ℝ) : ℂ) := fun ω =>
+      momentObsT_flow (band d) (sample d) E N σ a ((v : ℝ) : ℂ) (fun _ _ => rfl) p r ω
+    rw [show (fun ω : Ω d => Ψ r (Hflow d N r ω))
+        = fun ω : Ω d => ((|‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p) : ℝ) : ℂ) from funext hpt]
+    exact integral_complex_ofReal
+  have hu0 : 0 < u := lt_of_le_of_lt hs0 hu.1
+  have hD := hasDerivAt_integral_Psi₁ (matrixStein d) hT₁ hu0 (Icc_mem_nhds hu.1 hu.2)
+  rw [hΦφ] at hD
+  have hre : HasDerivAt (fun r : ℝ => (((φ r : ℝ) : ℂ)).re)
+      (Complex.reCLM ((∫ ω, timeD1 Ψ u (Hflow d N u ω) ∂(P d))
+        + (1 / 2 : ℝ) • ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ) •
+          ∫ ω, coordD2 d N (Ψ u) (Hflow d N u ω) q ∂(P d))) u :=
+    Complex.reCLM.hasFDerivAt.comp_hasDerivAt u hD
+  simp only [Complex.ofReal_re, Complex.reCLM_apply] at hre
+  have hΨeq : Ψ = coefMomentObsT d N E (List.ofFn σ)
+      (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p :=
+    momentObsT_eq_coefMomentObsT E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p
+  rw [hΨeq] at hre
+  exact hre
+
+theorem integral_le_holder_one_of_bdd {p : ℕ} (hp : 1 ≤ p)
+    {Φ Y G₁ Qd g : Ω d → ℝ} {CY CG cq : ℝ}
+    (hΦi : Integrable Φ (P d)) (hYc : Continuous Y) (hG₁c : Continuous G₁)
+    (hQc : Continuous Qd) (hgc : Continuous g)
+    (hYb : ∀ ω, |Y ω| ≤ CY) (hG₁b : ∀ ω, |G₁ ω| ≤ CG) (hgb : ∀ ω, |g ω| ≤ CG)
+    (hQ0 : ∀ ω, 0 ≤ Qd ω) (hcq : 0 ≤ cq) (hQg : ∀ ω, Qd ω ≤ cq * g ω)
+    (hle : ∀ ω, Φ ω ≤ 2 * (p : ℝ) * (|Y ω| ^ (2 * p - 1) * |G₁ ω|)
+        + (p : ℝ) * (2 * (p : ℝ) - 1) * (|Y ω| ^ (2 * p - 2) * Qd ω)) :
+    ∫ ω, Φ ω ∂(P d)
+      ≤ 2 * (p : ℝ) * (∫ ω, |Y ω| ^ (2 * p) ∂(P d)) ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+            * MomentDuhamel.momNorm (P d) (2 * p) G₁
+        + (p : ℝ) * (2 * (p : ℝ) - 1)
+            * (∫ ω, |Y ω| ^ (2 * p) ∂(P d)) ^ (((p : ℝ) - 1) / (p : ℝ))
+            * (cq * MomentDuhamel.momNorm (P d) p g) := by
+  have hCG0 : (0 : ℝ) ≤ CG := le_trans (abs_nonneg _) (hG₁b 0)
+  have hz : MomentDuhamel.momNorm (P d) (2 * p) (fun _ : Ω d => (0 : ℝ)) = 0 :=
+    MomentDuhamel.momNorm_zero (P d) (by omega)
+  have hkey := integral_le_holder_sum_of_bdd (d := d) hp (CY := CY) (CG := CG) (cq := cq)
+    (Φ := Φ) (Y := Y) (G₁ := G₁) (G₂ := fun _ => 0) (G₃ := fun _ => 0) (Qd := Qd) (g := g)
+    hΦi hYc hG₁c continuous_const continuous_const hQc hgc
+    hYb hG₁b (fun _ => by simpa using hCG0) (fun _ => by simpa using hCG0) hgb hQ0 hcq hQg
+    (fun ω => by simpa using hle ω)
+  rw [hz, add_zero, add_zero] at hkey
+  exact hkey
+
+
+theorem hbound_momentObsT_gauss (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) {p : ℕ} (hp : 1 ≤ p) {u : ℝ} (hu : u ∈ Set.Ioo s v)
+    {cq : ℝ} (hcq : 0 ≤ cq)
+    (hQV : ∀ ω : Ω d, quadVar d N (ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ)
+          ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+          (Hflow d N u ω)
+        ≤ cq * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+            (Fin.append a a)‖) :
+    phiCoefDeriv d N E (List.ofFn σ)
+          (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p u
+      ≤ 2 * (p : ℝ)
+            * (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(P d))
+                  ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+            * MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)
+        + (p : ℝ) * (2 * (p : ℝ) - 1)
+            * (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(P d))
+                  ^ (((p : ℝ) - 1) / (p : ℝ))
+            * (cq * MomentDuhamel.momNorm (P d) p (fun ω =>
+                ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+                  (Fin.append a a)‖)) := by
+  classical
+  obtain ⟨cK, hcK, hKb, hK'b⟩ :=
+    exists_bdd_Kval_Kprim (d := d) E N hE.le hs0 hv1 (v := v) σ
+  have hmemI : u ∈ Set.Icc s v := ⟨hu.1.le, hu.2.le⟩
+  have hz : (zt E u).im ≠ 0 := window_im_ne_zero hE hv1 u hmemI
+  have hsv : s ≤ v := (hu.1.trans hu.2).le
+  have hv0 : 0 ≤ v := hs0.trans hsv
+  have hT₁ : TestFunT₁ d N (Set.Icc s v)
+      (momentObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p) :=
+    testFunT₁_momentObsT_of_coef E (m := n + 2) (List.length_ofFn) (by omega)
+      (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b)))
+      (Kprim (band d) E N σ) a p (window_eta_pos hE hv1) hcK
+      (window_le_abs_im hE hv1)
+      (fun r hr b => hasDerivAt_Kval_Kprim (band d) E N
+        (window_norm_mul_lt hE.le hs0 hv1 r hr) σ b) hKb hK'b
+  have hΨeq : momentObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p
+      = coefMomentObsT d N E (List.ofFn σ)
+          (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p :=
+    momentObsT_eq_coefMomentObsT E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a p
+  obtain ⟨cc, hcc, hcb, hc'b⟩ :=
+    exists_bound_ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a s v
+  have hbdd := bddC2C_coefObsT (d := d) (N := N) (window_eta_pos hE hv1) hz
+    (window_le_abs_im hE hv1 u hmemI) (σ := List.ofFn σ) (m := n + 2) (List.length_ofFn)
+    (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+    (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) hcc (hcb u hmemI) (hKb u hmemI)
+  rw [hΨeq] at hT₁
+  have hphi := phiCoefDeriv_eq_integral E
+    (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+    (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p hT₁ hmemI hbdd.contDiff
+  have hQc : Continuous fun ω : Ω d =>
+      quadVar d N (coefObsT d N E (List.ofFn σ)
+        (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) u) (Hflow d N u ω) :=
+    continuous_quadVar_Hflow hbdd.bddC2 u
+  have hfun : (ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+      = coefObsT d N E (List.ofFn σ) (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) u :=
+    funext fun M => ukerObsT_eq_coefObsT E (List.ofFn σ) (xiOf (mSigma E) σ)
+      ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u M
+  have hY : ∀ ω : Ω d, Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.lkT (sample d) E N u ω σ) a
+      = coefObsT d N E (List.ofFn σ) (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) u (Hflow d N u ω) :=
+    fun ω =>
+      ((ukerObsT_flow (band d) (sample d) E N σ a ((v : ℝ) : ℂ)
+        (fun _ _ => rfl) u ω).symm).trans (congrFun hfun (Hflow d N u ω))
+  have hYc : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.lkT (sample d) E N u ω σ) a‖ := by
+    have hrw : (fun ω : Ω d => ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N u ω σ) a‖)
+        = fun ω : Ω d => ‖coefObsT d N E (List.ofFn σ)
+            (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+            (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) u (Hflow d N u ω)‖ :=
+      funext fun ω => by rw [hY ω]
+    rw [hrw]
+    exact (hbdd.contDiff.continuous.comp (continuous_Hflow d N u)).norm
+  -- the two envelopes of the drift and of the `E ⊗ E` term
+  obtain ⟨CD, hCD0, hCD⟩ := exists_bdd_uker_driftF (band d) E N σ a ((v : ℝ) : ℂ)
+    (window_eta_pos hE hv1) (window_le_abs_im hE hv1) hKb hK'b
+    (window_norm_mul_lt hE.le hs0 hv1) (window_norm_xi_lt hE.le hs0 hv1 σ)
+    (window_norm_xi_lt hE.le hs0 hv1 σ v ⟨hsv, le_rfl⟩)
+  obtain ⟨CE, hCE0, hCE⟩ := exists_bdd_uker_eeFun (d := d) E N hE (s := s) hv1 σ a
+    ((v : ℝ) : ℂ)
+  have hG₁c : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖ :=
+    (continuous_uker_driftF_omega d E N hz (window_norm_mul_lt hE.le hs0 hv1 u hmemI)
+      σ a ((v : ℝ) : ℂ)).norm
+  have hgc : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ) (Fin.append a a)‖ :=
+    (continuous_uker_eeFun_omega d E N hz σ (SumZeroDyn.xi2 E σ) (Fin.append a a)
+      ((v : ℝ) : ℂ)).norm
+  -- `Φ` is integrable
+  have hcontT : Continuous fun ω : Ω d =>
+      timeD1 (coefMomentObsT d N E (List.ofFn σ)
+        (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+        (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p) u (Hflow d N u ω) :=
+    (hT₁.contT u hmemI).comp (continuous_Hflow d N u)
+  obtain ⟨CT, hCT⟩ := hT₁.bddT
+  have hintT := integrable_of_continuous_of_bound hcontT (C := CT)
+    fun ω => hCT u hmemI (Hflow d N u ω)
+  have hslice := hT₁.slice hmemI
+  rw [hphi]
+  rw [hfun] at hQV
+  refine integral_le_holder_one_of_bdd (d := d) hp (CG := max CD CE) (cq := cq)
+    (hintT.re.add (integrable_genMomentPt hslice u))
+    hYc hG₁c hQc hgc
+    (fun ω => by rw [abs_norm, hY ω]; exact hbdd.bdd₀ _)
+    (fun ω => le_trans (by rw [abs_norm]; exact hCD u hmemI _ (Hflow_isHermitian d N u ω))
+      (le_max_left _ _))
+    (fun ω => le_trans (by rw [abs_norm]; exact hCE u hmemI ω) (le_max_right _ _))
+    (fun ω => quadVar_nonneg _ _) hcq hQV ?_
+  have hring : ∀ A B₁ Q : ℝ,
+      2 * (p : ℝ) * (A ^ (2 * p - 1) * B₁)
+          + (p : ℝ) * (2 * (p : ℝ) - 1) * (A ^ (2 * p - 2) * Q)
+        = 2 * (p : ℝ) * A ^ (2 * p - 1) * B₁
+          + (p : ℝ) * (2 * (p : ℝ) - 1) * A ^ (2 * p - 2) * Q :=
+    fun A B₁ Q => by ring
+  intro ω
+  simp only [abs_norm]
+  rw [← hfun, ← hΨeq, hring]
+  exact timeD1_add_genMomentPt_le_driftF_flow (band d) (sample d) E N hE
+    (hs0.trans hu.1.le) (hu.2.trans hv1) hv0 hv1 σ a ω hp
+
+
+theorem hbound_momentObsT_gauss_n_add_two (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) {p : ℕ} (hp : 1 ≤ p) {u : ℝ} (hu : u ∈ Set.Ioo s v)
+    (hQV : ∀ ω : Ω d, quadVar d N (ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ)
+          ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+          (Hflow d N u ω)
+        ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+            (Fin.append a a)‖) :
+    phiCoefDeriv d N E (List.ofFn σ)
+          (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p u
+      ≤ 2 * (p : ℝ)
+            * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+            * MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+                ‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)
+        + (p : ℝ) * (2 * (p : ℝ) - 1)
+            * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ (((p : ℝ) - 1) / (p : ℝ))
+            * (((n : ℝ) + 2) * MomentDuhamel.momNorm (band d).P p (fun ω =>
+                ‖Uker ((band d).L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+                  (Fin.append a a)‖)) :=
+  hbound_momentObsT_gauss E N hE hs0 hv1 σ a hp hu (cq := (n : ℝ) + 2) (by positivity) hQV
+
+/-- **The two mathematical slots of `RBM.Gauss.momentIneq_of_derivBound_gauss'`, produced by
+theorems**, with the constant `C_{n,p}` of (5.24) explicit: the `u`-derivative is the pinned
+`RBM.Gauss.phiCoefDeriv`, and the pointwise bound is
+`RBM.Gauss.hbound_momentObsT_gauss_n_add_two`. -/
+theorem derivAndBound_momentObsT_gauss' (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) {p : ℕ} (hp : 1 ≤ p)
+    (hQV : ∀ u ∈ Set.Ioo s v, ∀ ω : Ω d,
+      quadVar d N (ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ)
+          ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+          (Hflow d N u ω)
+        ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+            (Fin.append a a)‖) :
+    ∃ φ' : ℝ → ℝ,
+      (∀ u ∈ Set.Ioo s v, HasDerivAt
+          (fun r => ∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ)
+            ((v : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p)
+              ∂(band d).P) (φ' u) u)
+      ∧ (∀ u ∈ Set.Ioo s v, φ' u ≤ 2 * (p : ℝ)
+            * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+            * MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+                ‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)
+        + (p : ℝ) * (2 * (p : ℝ) - 1)
+            * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ (((p : ℝ) - 1) / (p : ℝ))
+            * (((n : ℝ) + 2) * MomentDuhamel.momNorm (band d).P p (fun ω =>
+                ‖Uker ((band d).L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+                  (Fin.append a a)‖))) :=
+  ⟨phiCoefDeriv d N E (List.ofFn σ) (ukerCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p,
+    fun _u hu => hasDerivAt_integral_psi_gauss E N hE hs0 hv1 σ a p hu,
+    fun u hu => hbound_momentObsT_gauss_n_add_two E N hE hs0 hv1 σ a hp hu (hQV u hu)⟩
+
+
+/-! ### The `Q_t` route's `hbound` slot at the constant `C_{n,p}` -/
+
+/-- **`RBM.Gauss.hbound_qMomentObsT_gauss` at `cq = n + 2`** — the factor the quadratic
+variation bridge (5.103) actually produces, so this is the `hbound` slot of
+`RBM.MomentDuhamel.momentIneqQ_of_derivBound'` verbatim. -/
+theorem hbound_qMomentObsT_gauss_n_add_two (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) {p : ℕ} (hp : 1 ≤ p) {u : ℝ} (hu : u ∈ Set.Ioo s v)
+    {CG : ℝ}
+    (hG₁c : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop (d.L N) ((u : ℝ) : ℂ)
+          (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)
+    (hG₁b : ∀ ω : Ω d, ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (Qop (d.L N) ((u : ℝ) : ℂ)
+          (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖ ≤ CG)
+    (hG₂c : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖)
+    (hG₂b : ∀ ω : Ω d, ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖ ≤ CG)
+    (hG₃c : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N u ω σ) (b 0)
+          * SumZeroDyn.varthetaDot (d.L N) u b) a‖)
+    (hG₃b : ∀ ω : Ω d, ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N u ω σ) (b 0)
+          * SumZeroDyn.varthetaDot (d.L N) u b) a‖ ≤ CG)
+    (hgc : Continuous fun ω : Ω d =>
+      ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+          (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)) (Fin.append a a)‖)
+    (hgb : ∀ ω : Ω d, ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+          (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ))
+          (Fin.append a a)‖ ≤ CG)
+    (hQV : ∀ ω : Ω d, quadVar d N (qUkerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ)
+          ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+          (Hflow d N u ω)
+        ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+              (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ))
+            (Fin.append a a)‖) :
+    phiCoefDeriv d N E (List.ofFn σ)
+          (qCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+          (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p u
+      ≤ 2 * (p : ℝ)
+            * (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (d.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖|
+                  ^ (2 * p) ∂(P d)) ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+            * (MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                  ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (Qop (d.L N) ((u : ℝ) : ℂ)
+                      (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)
+              + MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                  ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+                      (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖)
+              + MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                  ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N u ω σ) (b 0)
+                      * SumZeroDyn.varthetaDot (d.L N) u b) a‖))
+        + (p : ℝ) * (2 * (p : ℝ) - 1)
+            * (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (d.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖|
+                  ^ (2 * p) ∂(P d)) ^ (((p : ℝ) - 1) / (p : ℝ))
+            * (((n : ℝ) + 2) * MomentDuhamel.momNorm (P d) p (fun ω =>
+                ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+                    (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ))
+                  (Fin.append a a)‖)) :=
+  hbound_qMomentObsT_gauss E N hE hs0 hv1 σ a hp hu (cq := (n : ℝ) + 2) (CG := CG)
+    (by positivity) hG₁c hG₁b hG₂c hG₂b hG₃c hG₃b hgc hgb hQV
+
+
+/-- **The two mathematical slots of `RBM.MomentDuhamel.momentIneqQ_of_derivBound'`, produced by
+theorems**, with the constant `C_{n,p}` of (5.103) explicit.  The derivative is the pinned
+`RBM.Gauss.phiCoefDeriv` (`RBM.Gauss.hasDerivAt_integral_psiQ_gauss`, unconditional) and the
+pointwise bound is `RBM.Gauss.hbound_qMomentObsT_gauss_n_add_two`; what remains assumed is
+exactly T226's two items — the window envelopes of the three drift integrands of (5.91) and
+of the `E ⊗ E` term, and the quadratic-variation bridge (5.103) **with its factor `n + 2`**. -/
+theorem derivAndBound_qMomentObsT_gauss' (E : ℝ) (N : ℕ) (hE : |E| < 2) {s v : ℝ}
+    (hs0 : 0 ≤ s) (hv1 : v < 1) {n : ℕ} (σ : Fin (n + 2) → Bool)
+    (a : LoopArg (d.L N) (n + 2)) {p : ℕ} (hp : 1 ≤ p) {CG : ℝ}
+    (hG₁c : ∀ u ∈ Set.Ioo s v, Continuous fun ω : Ω d =>
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (Qop (d.L N) ((u : ℝ) : ℂ)
+            (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)
+    (hG₁b : ∀ u ∈ Set.Ioo s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (Qop (d.L N) ((u : ℝ) : ℂ)
+            (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖ ≤ CG)
+    (hG₂c : ∀ u ∈ Set.Ioo s v, Continuous fun ω : Ω d =>
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+            (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖)
+    (hG₂b : ∀ u ∈ Set.Ioo s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+            (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖ ≤ CG)
+    (hG₃c : ∀ u ∈ Set.Ioo s v, Continuous fun ω : Ω d =>
+        ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N u ω σ) (b 0)
+            * SumZeroDyn.varthetaDot (d.L N) u b) a‖)
+    (hG₃b : ∀ u ∈ Set.Ioo s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N u ω σ) (b 0)
+            * SumZeroDyn.varthetaDot (d.L N) u b) a‖ ≤ CG)
+    (hgc : ∀ u ∈ Set.Ioo s v, Continuous fun ω : Ω d =>
+        ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)) (Fin.append a a)‖)
+    (hgb : ∀ u ∈ Set.Ioo s v, ∀ ω : Ω d,
+      ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ))
+            (Fin.append a a)‖ ≤ CG)
+    (hQV : ∀ u ∈ Set.Ioo s v, ∀ ω : Ω d,
+      quadVar d N (qUkerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ)
+            ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+            (Hflow d N u ω)
+          ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+                (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ))
+              (Fin.append a a)‖) :
+    ∃ φ' : ℝ → ℝ,
+      (∀ u ∈ Set.Ioo s v, HasDerivAt
+          (fun r => ∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (Qop (d.L N) ((r : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N r ω σ)) a‖|
+              ^ (2 * p) ∂(band d).P) (φ' u) u)
+      ∧ (∀ u ∈ Set.Ioo s v, φ' u
+          ≤ 2 * (p : ℝ)
+            * (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (d.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖|
+                  ^ (2 * p) ∂(P d)) ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+            * (MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                  ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (Qop (d.L N) ((u : ℝ) : ℂ)
+                      (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ)) a‖)
+              + MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                  ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.commS (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+                      (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖)
+              + MomentDuhamel.momNorm (P d) (2 * p) (fun ω =>
+                  ‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (fun b => Psum (d.L N) (SumZeroDyn.lkT (sample d) E N u ω σ) (b 0)
+                      * SumZeroDyn.varthetaDot (d.L N) u b) a‖))
+        + (p : ℝ) * (2 * (p : ℝ) - 1)
+            * (∫ ω, |‖Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (Qop (d.L N) ((u : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N u ω σ)) a‖|
+                  ^ (2 * p) ∂(P d)) ^ (((p : ℝ) - 1) / (p : ℝ))
+            * (((n : ℝ) + 2) * MomentDuhamel.momNorm (P d) p (fun ω =>
+                ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (SumZeroDyn.QQ (d.L N) ((u : ℝ) : ℂ)
+                    (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ))
+                  (Fin.append a a)‖))) :=
+  ⟨phiCoefDeriv d N E (List.ofFn σ) (qCoefFam (xiOf (mSigma E) σ) ((v : ℝ) : ℂ) a)
+      (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) p,
+    fun _u hu => hasDerivAt_integral_psiQ_gauss E N hE hs0 hv1 σ a p hu,
+    fun u hu => hbound_qMomentObsT_gauss_n_add_two E N hE hs0 hv1 σ a hp hu (CG := CG)
+      (hG₁c u hu) (hG₁b u hu) (hG₂c u hu) (hG₂b u hu) (hG₃c u hu) (hG₃b u hu)
+      (hgc u hu) (hgb u hu) (hQV u hu)⟩
+
+
+/-! ### The quadratic variation does not see the primitive `K` -/
+
+theorem coordD1_sub_const (F : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ) (c : ℂ)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) (q : d.Idx N × d.Idx N × Bool) :
+    coordD1 d N (fun M' => F M' - c) M q = coordD1 d N F M q := by
+  simp only [coordD1, fderiv_sub_const]
+
+theorem quadVar_sub_const (F : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ) (c : ℂ)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) :
+    quadVar d N (fun M' => F M' - c) M = quadVar d N F M := by
+  simp only [quadVar, coordD1_sub_const]
+
+theorem ukerObsT_eq_uker_loopObs_sub (E : ℝ) {m : ℕ} (σ : Fin m → Bool)
+    (ξ : Fin m → ℂ) (t : ℂ) (K : ℝ → LoopArg (d.L N) m → ℂ)
+    (a : LoopArg (d.L N) m) (u : ℝ) (M : Matrix (d.Idx N) (d.Idx N) ℂ) :
+    ukerObsT d N E (List.ofFn σ) ξ t K a u M
+      = Uker (d.L N) ξ ((u : ℝ) : ℂ) t
+          (fun b => loopObs d N (zt E u) (toIdx σ b) M) a
+        - Uker (d.L N) ξ ((u : ℝ) : ℂ) t (K u) a := by
+  rw [ukerObsT_eq_coefObsT]
+  simp only [coefObsT, Uker_apply, ukerCoefFam, mul_sub]
+  rw [Finset.sum_sub_distrib]
+  rfl
+
+theorem quadVar_ukerObsT_eq_quadVarPairs (E : ℝ) {m : ℕ} (σ : Fin m → Bool)
+    (ξ : Fin m → ℂ) (t : ℂ) (K : ℝ → LoopArg (d.L N) m → ℂ)
+    (a : LoopArg (d.L N) m) (u : ℝ) (M : Matrix (d.Idx N) (d.Idx N) ℂ) :
+    quadVar d N (ukerObsT d N E (List.ofFn σ) ξ t K a u) M
+      = quadVarPairs d N (fun M' => Uker (d.L N) ξ ((u : ℝ) : ℂ) t
+          (fun b => loopObs d N (zt E u) (toIdx σ b) M') a) M := by
+  have hf : (ukerObsT d N E (List.ofFn σ) ξ t K a u)
+      = fun M' => Uker (d.L N) ξ ((u : ℝ) : ℂ) t
+            (fun b => loopObs d N (zt E u) (toIdx σ b) M') a
+          - Uker (d.L N) ξ ((u : ℝ) : ℂ) t (K u) a :=
+    funext fun M' => ukerObsT_eq_uker_loopObs_sub E σ ξ t K a u M'
+  rw [hf, quadVar_sub_const, secondOrder_eq_quadVar]
+
+/-- **The plain route's `RBM.MomentDuhamel.MomentIneq` with the constant `C_{n,p}`** of (5.24):
+every slot is a theorem except the quadratic-variation bridge (5.25) itself, whose factor
+`n + 2` is the one the constant now carries. -/
+theorem momentIneq_gauss_cMDval' (d : Dims) {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hQV : ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ) (a : LoopArg ((band d).L N) (n + 2))
+      (u : ℝ) (ω : Ω d), quadVar d N (ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ)
+          ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u)
+          (Hflow d N u ω)
+        ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+            (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+            (Fin.append a a)‖) :
+    MomentDuhamel.MomentIneq (sample d) E s t n (fun p => MomentDuhamel.cMDval' p n) := by
+  refine momentIneq_of_derivBound_gauss' d hE hs0 ht1 ?_
+  intro p hp N σ v hsv hvt a
+  exact derivAndBound_momentObsT_gauss' E N hE (hs0 N) (lt_of_le_of_lt hvt (ht1 N)) σ a hp
+    (fun u _ ω => hQV N σ v a u ω)
+
+
+/-- **The plain route's `MomentIneq` at `C_{n,p}`, with the bridge hypothesis written exactly
+as (5.25) proves it.**  `hQV` here is verbatim the conclusion of
+`RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` at `M = H_u` — the primitive `K` drops out
+of the quadratic variation (`RBM.Gauss.quadVar_ukerObsT_eq_quadVarPairs`), so no shifted
+version of the bridge is needed. -/
+theorem momentIneq_gauss_cMDval'_bridge (d : Dims) {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hQV : ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ) (a : LoopArg ((band d).L N) (n + 2))
+      (u : ℝ) (ω : Ω d),
+        quadVarPairs d N (fun M' => Uker (d.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+              ((v : ℝ) : ℂ) (fun b => loopObs d N (zt E u) (toIdx σ b) M') a)
+            ((sample d).H N u ω)
+          ≤ ((n : ℝ) + 2) * ‖Uker (d.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+              (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+              (Fin.append a a)‖) :
+    MomentDuhamel.MomentIneq (sample d) E s t n (fun p => MomentDuhamel.cMDval' p n) := by
+  refine momentIneq_gauss_cMDval' d hE hs0 ht1 fun N σ v a u ω => ?_
+  exact (quadVar_ukerObsT_eq_quadVarPairs (d := d) (N := N) E σ (xiOf (mSigma E) σ)
+    ((v : ℝ) : ℂ) (fun r b => (band d).Kval E N r (LoopData.idx (σ, b))) a u
+    (Hflow d N u ω)).trans_le (hQV N σ v a u ω)
+
+/-! The `cq = 1` reading of `RBM.Gauss.hbound_qMomentObsT_gauss` is kept with its signature
+unchanged, but no bridge produces it: (5.103) gives `cq = n + 2`.  Use
+`RBM.Gauss.hbound_qMomentObsT_gauss_n_add_two`; see `docs/paper-deltas.md` #155. -/
+
+attribute [deprecated
+  "T231: (5.103) gives `cq = n + 2`, not `1`; use \
+   `hbound_qMomentObsT_gauss_n_add_two` (constant `RBM.MomentDuhamel.cMDval'`). \
+   See docs/paper-deltas.md #155."
+  (since := "2026-09-21")]
+  hbound_qMomentObsT_gauss_one
+
 end Gauss
 
 end RBM

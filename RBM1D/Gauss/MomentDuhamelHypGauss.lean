@@ -2075,4 +2075,308 @@ end SideConditions
 
 end Gauss
 
+/-! ## T231: the constant of (5.24)/(5.25)/(5.103) is `C_{n,p}`, not `C_p`
+
+`RBM.MomentDuhamel.cMDval p = max 0 (2p-1)` depends on `p` only, while the quadratic-variation
+bridge of §5.2 — `RBM.EEUker.quadVarPairs_Uker_le_norm_eeFun` for the plain route and
+`RBM.EEUker.quadVar_qUkerObsT_le_norm_QQ_eeFun` for the `Q_u` route — carries a factor
+`n + 2`, the Cauchy–Schwarz over the `n+2` edges of the chain rule
+`E^{(M)}(α) = ∑_m E^{(M)}(α, m)`.  So the `hbound` slot of
+`RBM.MomentDuhamel.momentIneq_of_derivBound` and of `momentIneqQ_of_derivBound` is, **read
+literally, one factor `n + 2` short of what the bridge proves**, and `cMDval` cannot absorb it.
+
+The paper's constant in (5.24) is already written `C_{n,p}`, with `n` the fixed loop length, so
+this is a defect of the Lean interface, not a deviation from the paper (`docs/paper-deltas.md`
+#155).  The repair is `RBM.MomentDuhamel.cMDval'`:
+
+`cMDval' p n = (n + 2) · cMDval p`,
+
+together with the primed theorems `RBM.MomentDuhamel.momentIneq_of_derivBound'` and
+`RBM.MomentDuhamel.momentIneqQ_of_derivBound'`, whose `hbound` slots carry the factor the
+bridge actually gives.  The old, unprimed forms are kept with their signatures unchanged.
+
+That the sharpening is **necessary** and **not an over-inflation** is compiled here:
+
+* `RBM.MomentDuhamel.hbound_slot_n_add_two_holds` / `hbound_slot_one_fails` — at `p = 1`,
+  `A = 1`, one vanishing drift integrand and `E ⊗ E` moment `1`, the value `φ' = 2` satisfies
+  the primed slot for **every** `n` and violates the unprimed one: the `(n+2)`-shaped bound
+  does not imply the `1`-shaped bound, which is exactly why the slot could never be
+  discharged.
+* `RBM.MomentDuhamel.deriv_le_hyp_sharp_one'` / `rpow_inv_le_of_deriv_le_sharp_one'` /
+  `deriv_le_conclusion_sharp_one'` — the descent lemma at `φ u = (n+2)u`, `f ≡ 0`,
+  `g ≡ (n+2)` satisfies the primed hypothesis with **equality** and its conclusion is an
+  **equality** too, so the new constant has no slack.
+* `RBM.MomentDuhamel.cMDval'_enough` / `cMDval_not_enough` — on that same data, with the
+  pinned `E ⊗ E` integrand `g ≡ 1`, the conclusion holds with `cMDval' 1 n` and is **false**
+  with `cMDval 1` whenever `1 ≤ n` and `0 < v`.
+
+At `p = 0` the `max` of `cMDval` keeps `cMDval' 0 n = 0` (`RBM.MomentDuhamel.cMDval'_zero`), so
+the field `RBM.MomentDuhamel.Hyp.cMD_nonneg`, which quantifies over all `p`, is still met
+(`RBM.MomentDuhamel.cMDval'_nonneg`). -/
+
+namespace MomentDuhamel
+
+noncomputable def cMDval' (p n : ℕ) : ℝ := ((n : ℝ) + 2) * cMDval p
+
+theorem cMDval'_nonneg (p n : ℕ) : 0 ≤ cMDval' p n :=
+  mul_nonneg (by positivity) (cMDval_nonneg p)
+
+theorem cMDval'_eq (p n : ℕ) : cMDval' p n = ((n : ℝ) + 2) * cMDval p := rfl
+
+theorem cMDval'_of_one_le {p : ℕ} (hp : 1 ≤ p) (n : ℕ) :
+    cMDval' p n = ((n : ℝ) + 2) * (2 * (p : ℝ) - 1) := by
+  rw [cMDval', cMDval_of_one_le hp]
+
+theorem cMDval'_zero (n : ℕ) : cMDval' 0 n = 0 := by
+  rw [cMDval', cMDval]
+  norm_num
+
+theorem cMDval_lt_cMDval' {p n : ℕ} (hp : 1 ≤ p) (hn : 1 ≤ n) : cMDval p < cMDval' p n := by
+  have hp1 : (1 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [cMDval_of_one_le hp, cMDval'_of_one_le hp]
+  nlinarith
+
+section CnpAssembly
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+theorem momentIneq_of_derivBound' {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| ≤ 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : ∀ (p : ℕ), 1 ≤ p → ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ), s N ≤ v → v ≤ t N →
+      ∀ a : LoopArg (B.L N) (n + 2), ∃ φ' : ℝ → ℝ, ∃ C : ℝ,
+        (∀ u ∈ Set.Icc (s N) v,
+            (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P) ^ ((1 : ℝ) / p) ≤ C)
+        ∧ ContinuousOn (fun u => ∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ)
+              ((v : ℝ) : ℂ) (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P)
+            (Set.Icc (s N) v)
+        ∧ (∀ u ∈ Set.Ioo (s N) v, HasDerivAt
+              (fun r => ∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (SumZeroDyn.lkT X E N r ω σ) a‖| ^ (2 * p) ∂B.P) (φ' u) u)
+        ∧ IntervalIntegrable φ' volume (s N) v
+        ∧ IntervalIntegrable (fun u => momNorm B.P (2 * p) (fun ω =>
+              ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (DriftDef.driftF B E N u (X.H N u ω) σ) a‖)) volume (s N) v
+        ∧ IntervalIntegrable (fun u => momNorm B.P p (fun ω =>
+              ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                (eeFun B E N u (X.H N u ω) σ) (Fin.append a a)‖)) volume (s N) v
+        ∧ (∀ u ∈ Set.Icc (s N) v, IntervalIntegrable (fun r =>
+              momNorm B.P (2 * p) (fun ω =>
+                ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (SumZeroDyn.lkT X E N r ω σ) a‖)
+              * momNorm B.P (2 * p) (fun ω =>
+                ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                  (DriftDef.driftF B E N r (X.H N r ω) σ) a‖)) volume (s N) u)
+        ∧ (∀ u ∈ Set.Ioo (s N) v, φ' u
+            ≤ 2 * (p : ℝ)
+                * (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P)
+                  ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+                * momNorm B.P (2 * p) (fun ω =>
+                    ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (DriftDef.driftF B E N u (X.H N u ω) σ) a‖)
+              + (p : ℝ) * (2 * (p : ℝ) - 1)
+                * (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P)
+                  ^ (((p : ℝ) - 1) / (p : ℝ))
+                * (((n : ℝ) + 2) * momNorm B.P p (fun ω =>
+                    ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (eeFun B E N u (X.H N u ω) σ) (Fin.append a a)‖)))) :
+    MomentIneq X E s t n (fun p => cMDval' p n) := by
+  refine momentIneq_of_diffIneq hE hs0 ht1 (fun p => cMDval'_nonneg p n) ?_
+  intro p hp N σ v hsv hvt a
+  obtain ⟨φ', C, hCb, hcont, hderiv, hφ'int, hfint, hgint, hintψf, hbound⟩ :=
+    h p hp N σ v hsv hvt a
+  obtain ⟨M, hM⟩ := exists_isLUB_Icc (ψ := fun u =>
+    (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+      (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P) ^ ((1 : ℝ) / p)) hsv hCb
+  refine ⟨fun u => (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P) ^ ((1 : ℝ) / p),
+    fun u => momNorm B.P (2 * p) (fun ω =>
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (DriftDef.driftF B E N u (X.H N u ω) σ) a‖),
+    fun u => momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (eeFun B E N u (X.H N u ω) σ) (Fin.append a a)‖),
+    M, fun _ => rfl, fun _ => rfl, fun _ => rfl, hM, hintψf, hfint, hgint, ?_⟩
+  intro u hu
+  have hkey := diffIneq_of_deriv_le (Y := fun r ω =>
+      ‖Uker (B.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (SumZeroDyn.lkT X E N r ω σ) a‖)
+    (g := fun r => ((n : ℝ) + 2) * momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+        (eeFun B E N r (X.H N r ω) σ) (Fin.append a a)‖))
+    hsv hp hcont hderiv hφ'int
+    (fun _ _ => momNorm_nonneg _ _ _)
+    (fun _ _ => mul_nonneg (by positivity) (momNorm_nonneg _ _ _))
+    hfint (hgint.const_mul _) hbound u hu
+  have hrw : (∫ r in (s N)..u, ((n : ℝ) + 2) * momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (eeFun B E N r (X.H N r ω) σ) (Fin.append a a)‖))
+      = ((n : ℝ) + 2) * ∫ r in (s N)..u, momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (eeFun B E N r (X.H N r ω) σ) (Fin.append a a)‖) :=
+    intervalIntegral.integral_const_mul _ _
+  rw [hrw] at hkey
+  rw [cMDval'_of_one_le hp]
+  calc (∫ ω, |‖Uker (B.L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω σ) a‖| ^ (2 * p) ∂B.P) ^ ((1 : ℝ) / (p : ℝ))
+      ≤ _ := hkey
+    _ = _ := by ring
+
+/-! ### Sharpness and the discriminating check -/
+
+theorem deriv_le_hyp_sharp_one' (n : ℕ) (u : ℝ) :
+    ((n : ℝ) + 2)
+      = 2 * ((1 : ℕ) : ℝ) * (((n : ℝ) + 2) * u)
+            ^ ((2 * ((1 : ℕ) : ℝ) - 1) / (2 * ((1 : ℕ) : ℝ))) * 0
+        + ((1 : ℕ) : ℝ) * (2 * ((1 : ℕ) : ℝ) - 1) * (((n : ℝ) + 2) * u)
+            ^ ((((1 : ℕ) : ℝ) - 1) / ((1 : ℕ) : ℝ)) * (((n : ℝ) + 2) * 1) := by
+  norm_num
+
+theorem rpow_inv_le_of_deriv_le_sharp_one' (n : ℕ) {v : ℝ} (hv : 0 ≤ v) :
+    (fun u : ℝ => ((n : ℝ) + 2) * u) v ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+      ≤ (fun u : ℝ => ((n : ℝ) + 2) * u) 0 ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+        + 2 * (∫ r in (0 : ℝ)..v, (fun u : ℝ => ((n : ℝ) + 2) * u) r
+            ^ ((1 : ℝ) / (2 * (((1 : ℕ)) : ℝ))) * (fun _ : ℝ => (0 : ℝ)) r)
+        + (2 * (((1 : ℕ)) : ℝ) - 1) * ∫ r in (0 : ℝ)..v, (fun _ : ℝ => ((n : ℝ) + 2) * 1) r :=
+  rpow_inv_le_of_deriv_le hv le_rfl
+    (fun u hu => mul_nonneg (by positivity) hu.1)
+    ((continuous_const.mul continuous_id).continuousOn)
+    (fun u _ => by simpa using (hasDerivAt_id u).const_mul ((n : ℝ) + 2))
+    intervalIntegrable_const (fun _ _ => le_rfl) (fun _ _ => by positivity)
+    intervalIntegrable_const intervalIntegrable_const
+    (fun u _ => le_of_eq (deriv_le_hyp_sharp_one' n u))
+
+theorem deriv_le_conclusion_sharp_one' (n : ℕ) (v : ℝ) :
+    (fun u : ℝ => ((n : ℝ) + 2) * u) 0 ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+        + 2 * (∫ r in (0 : ℝ)..v, (fun u : ℝ => ((n : ℝ) + 2) * u) r
+            ^ ((1 : ℝ) / (2 * (((1 : ℕ)) : ℝ))) * (fun _ : ℝ => (0 : ℝ)) r)
+        + (2 * (((1 : ℕ)) : ℝ) - 1) * ∫ r in (0 : ℝ)..v, (fun _ : ℝ => ((n : ℝ) + 2) * 1) r
+      = (fun u : ℝ => ((n : ℝ) + 2) * u) v ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ)) := by
+  simp only [mul_zero, mul_one, intervalIntegral.integral_const, smul_eq_mul, sub_zero]
+  rw [Nat.cast_one, one_div_one, Real.rpow_one]
+  norm_num
+  ring
+
+theorem cMDval'_enough (n : ℕ) {v : ℝ} (hv : 0 ≤ v) :
+    (fun u : ℝ => ((n : ℝ) + 2) * u) v ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+      ≤ (fun u : ℝ => ((n : ℝ) + 2) * u) 0 ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+        + 2 * (∫ r in (0 : ℝ)..v, (fun u : ℝ => ((n : ℝ) + 2) * u) r
+            ^ ((1 : ℝ) / (2 * (((1 : ℕ)) : ℝ))) * (fun _ : ℝ => (0 : ℝ)) r)
+        + cMDval' 1 n * ∫ r in (0 : ℝ)..v, (fun _ : ℝ => (1 : ℝ)) r := by
+  have h := rpow_inv_le_of_deriv_le_sharp_one' n hv
+  have he : (2 * (((1 : ℕ)) : ℝ) - 1) * ∫ r in (0 : ℝ)..v, (fun _ : ℝ => ((n : ℝ) + 2) * 1) r
+      = cMDval' 1 n * ∫ r in (0 : ℝ)..v, (fun _ : ℝ => (1 : ℝ)) r := by
+    rw [cMDval'_of_one_le le_rfl]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, sub_zero, mul_one]
+    norm_num
+    ring
+  rwa [he] at h
+
+theorem cMDval_not_enough (n : ℕ) (hn : 1 ≤ n) {v : ℝ} (hv : 0 < v) :
+    ¬ ((fun u : ℝ => ((n : ℝ) + 2) * u) v ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+      ≤ (fun u : ℝ => ((n : ℝ) + 2) * u) 0 ^ ((1 : ℝ) / (((1 : ℕ)) : ℝ))
+        + 2 * (∫ r in (0 : ℝ)..v, (fun u : ℝ => ((n : ℝ) + 2) * u) r
+            ^ ((1 : ℝ) / (2 * (((1 : ℕ)) : ℝ))) * (fun _ : ℝ => (0 : ℝ)) r)
+        + cMDval 1 * ∫ r in (0 : ℝ)..v, (fun _ : ℝ => (1 : ℝ)) r) := by
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  simp only [mul_zero, mul_one, intervalIntegral.integral_const, smul_eq_mul, sub_zero,
+    cMDval_of_one_le (le_refl 1)]
+  rw [Nat.cast_one, one_div_one, Real.rpow_one]
+  intro hcon
+  nlinarith
+
+theorem hbound_slot_n_add_two_holds (n : ℕ) :
+    (2 : ℝ) ≤ 2 * ((1 : ℕ) : ℝ) * (1 : ℝ) ^ ((2 * ((1 : ℕ) : ℝ) - 1) / (2 * ((1 : ℕ) : ℝ))) * 0
+      + ((1 : ℕ) : ℝ) * (2 * ((1 : ℕ) : ℝ) - 1) * (1 : ℝ)
+          ^ ((((1 : ℕ) : ℝ) - 1) / ((1 : ℕ) : ℝ)) * (((n : ℝ) + 2) * 1) := by
+  simp only [Real.one_rpow]
+  norm_num
+
+theorem hbound_slot_one_fails :
+    ¬ ((2 : ℝ) ≤ 2 * ((1 : ℕ) : ℝ) * (1 : ℝ)
+          ^ ((2 * ((1 : ℕ) : ℝ) - 1) / (2 * ((1 : ℕ) : ℝ))) * 0
+      + ((1 : ℕ) : ℝ) * (2 * ((1 : ℕ) : ℝ) - 1) * (1 : ℝ)
+          ^ ((((1 : ℕ) : ℝ) - 1) / ((1 : ℕ) : ℝ)) * 1) := by
+  simp only [Real.one_rpow]
+  norm_num
+
+
+theorem momNorm_zero {Ω' : Type*} [MeasurableSpace Ω'] (P' : Measure Ω') {q : ℕ}
+    (hq : q ≠ 0) : momNorm P' q (fun _ => (0 : ℝ)) = 0 := by
+  have hq0 : (q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq
+  rw [momNorm]
+  simp only [abs_zero]
+  rw [zero_pow hq]
+  simp only [integral_zero]
+  exact Real.zero_rpow (by positivity)
+
+end CnpAssembly
+
+end MomentDuhamel
+
+namespace Gauss
+
+open scoped Matrix.Norms.L2Operator NNReal InnerProductSpace
+
+/-- **`RBM.Gauss.momentIneq_of_derivBound_gauss` with the constant `C_{n,p}` of (5.24)** — the
+five integrability side conditions are discharged exactly as there, and the `hbound` slot now
+carries the factor `n + 2` that the quadratic-variation bridge (5.25) produces.  The
+conclusion's constant is `RBM.MomentDuhamel.cMDval' p n = (n+2)(2p-1)`. -/
+theorem momentIneq_of_derivBound_gauss' (d : Dims) {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (h : ∀ (p : ℕ), 1 ≤ p → ∀ N (σ : Fin (n + 2) → Bool) (v : ℝ), s N ≤ v → v ≤ t N →
+      ∀ a : LoopArg ((band d).L N) (n + 2), ∃ φ' : ℝ → ℝ,
+        (∀ u ∈ Set.Ioo (s N) v, HasDerivAt
+              (fun r => ∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ)
+                ((v : ℝ) : ℂ) (SumZeroDyn.lkT (sample d) E N r ω σ) a‖| ^ (2 * p)
+                  ∂(band d).P) (φ' u) u)
+        ∧ (∀ u ∈ Set.Ioo (s N) v, φ' u
+            ≤ 2 * (p : ℝ)
+                * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ ((2 * (p : ℝ) - 1) / (2 * (p : ℝ)))
+                * MomentDuhamel.momNorm (band d).P (2 * p) (fun ω =>
+                    ‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (DriftDef.driftF (band d) E N u ((sample d).H N u ω) σ) a‖)
+              + (p : ℝ) * (2 * (p : ℝ) - 1)
+                * (∫ ω, |‖Uker ((band d).L N) (xiOf (mSigma E) σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                    (SumZeroDyn.lkT (sample d) E N u ω σ) a‖| ^ (2 * p) ∂(band d).P)
+                  ^ (((p : ℝ) - 1) / (p : ℝ))
+                * (((n : ℝ) + 2) * MomentDuhamel.momNorm (band d).P p (fun ω =>
+                    ‖Uker ((band d).L N) (SumZeroDyn.xi2 E σ) ((u : ℝ) : ℂ) ((v : ℝ) : ℂ)
+                      (MomentDuhamel.eeFun (band d) E N u ((sample d).H N u ω) σ)
+                        (Fin.append a a)‖)))) :
+    MomentDuhamel.MomentIneq (sample d) E s t n (fun p => MomentDuhamel.cMDval' p n) := by
+  refine MomentDuhamel.momentIneq_of_derivBound' hE.le hs0 ht1 ?_
+  intro p hp N σ v hsv hvt a
+  obtain ⟨φ', hd, hb⟩ := h p hp N σ v hsv hvt a
+  have hv1 : v < 1 := lt_of_le_of_lt hvt (ht1 N)
+  obtain ⟨cK, hcK, hKb, hK'b⟩ :=
+    exists_bdd_Kval_Kprim (d := d) E N hE.le (hs0 N) hv1 (v := v) σ
+  obtain ⟨C, hC⟩ := exists_bdd_psi_gauss E N hE (hs0 N) hv1 σ a ((v : ℝ) : ℂ) p hcK hKb
+  exact ⟨φ', C, hC,
+    continuousOn_integral_psi_gauss E N hE (hs0 N) hv1 σ a ((v : ℝ) : ℂ) p hcK hKb,
+    hd,
+    intervalIntegrable_phi'_gauss E N hE (hs0 N) hsv hv1 σ a p hcK hKb hK'b hd,
+    intervalIntegrable_momNorm_driftF_gauss E N hE (hs0 N) hsv hv1 σ a (2 * p) hKb hK'b,
+    intervalIntegrable_momNorm_eeFun_gauss E N hE hsv hv1 σ a p,
+    intervalIntegrable_psi_mul_driftF_gauss E N hE (hs0 N) hsv hv1 σ a (2 * p) hcK hKb hK'b,
+    hb⟩
+
+/-! The unprimed form is kept for compatibility, with its signature unchanged; its `hbound`
+slot is one factor `n + 2` short of (5.25) and therefore cannot be discharged — see
+`docs/paper-deltas.md` #155 and use `RBM.Gauss.momentIneq_of_derivBound_gauss'`. -/
+
+attribute [deprecated
+  "T231: the `hbound` slot is one factor `n + 2` short of the quadratic-variation \
+   bridge (5.25); use `momentIneq_of_derivBound_gauss'` (constant \
+   `RBM.MomentDuhamel.cMDval'`).  See docs/paper-deltas.md #155."
+  (since := "2026-09-21")]
+  momentIneq_of_derivBound_gauss
+
+end Gauss
+
 end RBM

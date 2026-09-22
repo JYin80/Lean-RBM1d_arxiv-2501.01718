@@ -111,6 +111,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
 
+* **T271**（本次，新建 `Gauss/APrimeModel.lean` 978 行/48 条，审计 13832，48 条公理全干净、零 lint warning）：⭐⭐ **第 2 槽从合并总装消失**——`thm221NoEL_of_inputs_mergedOnAll_aprime` 里 `MomentHypCut` **不出现**，换成 `APrimeSlot`，**结论未变**（含 p.24 第一格）。⭐ **它做了一步没要求的化简**：第 2 槽**只在一处被消费**，故化简成 `JSNormDom`（归一化后的 (5.47)），并证 `jsNormDom_of_momentHypCut` 说明**新表不更易满足**。⭐ **T265 的两条调用者义务交割了**（两者之积**恰被 (S6) 的被积权重支配**）。⭐ **它对碰过的每条输入重查空真**，并**自己标出一个活陷阱**（`momentHypCutEv_of_stepBound''` 走未限制的 `APrimeHyp`，其 `modulus` 对 `jSnorm` 为假 —— 总装只用 `APrimeHypOn`）。⚠⚠ **但第 2 槽目前形状对、无见证**：`APrimeSlot` 在 `J = jSnorm` 处还没人组装（数据恰好是 T257 的 `cutHypEvOn_jSfarSm`）。报告 `docs/reports/T271.md`；paper-delta T271a。
+
 * **T273**（本次，两个文件纯追加 +425 行，全量 exit=0、审计 13755）：**两处小余项都落地为定理、零新具名假设**。(a) `T267a` 解除——仿射吸收 `s3Rhs = C₁√S + C₂`，⭐ **ζ 仍不依赖 `τ`**（`τ` 全部落在 `StochDom` 自己的 `N^τ` 上，两次 apriori 各取 `τ/4`），两个失败事件用**现成的** `StochDom.of_subset_union` 并起来、**不是手写并集界**，假设表与原版**逐字相同**。(b) `T273b` 解除——指数账 `m⁻¹R^{+4} ÷ Λ²(=R^8) = (η_t/η_s)^4`，**正是 `hQbd` 的字面形状、没反**；⭐ 顺带把逐点非负与区间可积也证成定理，给出 (d) 的**无 `hQbd` 版**。见证均未退化（(b) 断言 `Q̂^{near}` **逐点严格为正**）。报告 `docs/reports/T273.md`；paper-delta T273a、T273b。
 
 * **T272**（本次，新建 `Gauss/APrimeOneStepSharp.lean` 1032 行/33 条，模块 exit=0、`lake env lean` 输出为空）：第二遍的锐版算术与骨架都做出来了。与第一遍**只差两处**（近场改已积分形；`β`/`γ` 各多付一个幂次，**恰好是 `phi_arith_second_pass` 多付的那两个**），门槛、`cWt` 重标、`δ` 预算、(2.72) 的 30 **全未动**。⭐⭐ **绑定条件又换了一次而且几乎饱和**：仍是远场阈值，但内部绑定分支现在是 **`β`、余量只剩 `R^{0.5}`**（第一遍 `R^{4.5}`）——**将来压阈值第一个撞上 `β`，在 `R^{9.5}`**；两条余量已写成具名引理，下一张单不必重推。见证八条**全严格、无一取等号**。⭐ 它**主动点名 `kappa_le_of_crossTerm` 是刻意无内容的转接**，免得被误当成估计。报告 `docs/reports/T272.md`；paper-delta T272a。
@@ -221,3 +223,7 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * ⭐ **(5.42) 的 `U`-传播**（T269 交出）：从 `E⊗E` 的界重建 `‖Uker (xi2bar) (eeFun)‖` 的界，即把 (5.36)@`u` 变成端点 `t` 处 (5.42) 的那一步。T269 的 `Q^{bd}` 现在是「(5.42) 形状的逐点界 ⟹ 显式包络」，形状的**可居性**由 T262 在 `U = id` 处交割；缺的是**带非平凡核的 `EEUker → Lemma57` 复合**。归 Lemma 5.7 / `Uker` 桥（与 `Gauss/EarlyQVRate.lean` 相邻），**不归算术单**。
 * **`Q → Q̂` 的 hat-归一化**（T268 交出，`T268b`）：`Step2MomentStep.integral_nearInt_le` 给 `(Im m)^{−1}R^4`，而 (d) 要的是 `m⁻¹R^{−4}`，**差一个水平 `Λ² = R^8`**。归做归一化的人（T267/T230 侧）。
 * **把两条重建的桥改接到 `Step2Bootstrap` 的消费者**（T270 与 T272 各交出一次）：`weightedMoment_of_stepBound''`（T270）与 `weightedMoment_of_stepBoundSharp''`（T272）都瞄准带撇/重标后的 `StepSide''`/`StepSideSharp''`，而只读的 `Step2Bootstrap.weightedMoment_of_stepBound(Sharp)` 吃的是未重标版。改接消费者要动 `Gauss/Step2Bootstrap.lean`。归 Step 2 总装线。
+* ⚠⚠ **`APrimeSlot` 在 `J = jSnorm` 处的见证**（T271 交出，**现在是 (A′) 的关键路径**）：它的确定性字段（`Good = {∣‖X‖ ≤ N}` 上的 `modulus`/`mesh_fine`/`card_le`/`levpoly`）**恰好就是 T257 `cutHypEvOn_jSfarSm` 那批数据**，但还没人把它们组装成 `jSnorm` 在 `lev ≡ 1`、`Θ ≡ 1` 处的 `APrimeHypOn`。**在那之前第 2 槽形状对、但无见证。** → T244/T257 线。
+* **`hBbd` 的接线**（T271 交出）：`sum_gvar_crossTerm_le` 界的是固定矩阵处的梯度和，变成 `Bcr u ≤ crossInt κ̂ Q̂ u` 需要 Duhamel 把 `Bcr` 与那个和**认同**——在 (★)/(G) 的展开里 → T272 / Duhamel 文件。
+* **槽算术 `hfit`/`hbudget`**（T271 交出）：两个**显式确定数**之间的不等式（无 `ω`、无 `∃C`，**可核不是 fiat**），但未对具体 `(Ξ,A,ε,q,β,γ,κ,Jv)` 交割；**这正是 T260 点名的 `p`-依赖瓶颈**（`√((2p−1)∫g)` 的 `(2p−1)` 对上不含 `p` 的包络）。
+* **迁移规范总装**（T271 交出）：`Flow/Step345Producer.lean` 里的 `thm221NoEL_of_inputs_mergedOnAll` 仍要 `MomentHypCut`；T271 §7/§9 是结论相同的新总装。**迁移是那个文件里一个假设的改动。**

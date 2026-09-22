@@ -136,13 +136,17 @@ interface step is free and that the two no-gos of §2–§3 do not reach it.
   `APrimeHypOn.of_aprime`, `satAPrimeHypOn`, `sat_stochDom_of_aprimeOn` — **the T249 repair**:
   the modulus asserted only on an event `Good N` (in the application `{‖X‖ ≤ N}`), transferred
   through `RBM.MomentDuhamelCut.onEvent` and routed back at the cost of one `N^{-1}` (§14–§15).
-  ⚠ This is only *half* of what T249 forces; the other half is `0 < s N`, which `APrimeHyp`
-  does **not** imply — see §14.
+  (T249's other half, `0 < s N`, is **not** needed by route (A′) — §18.)
 * `weightedMoment_bound_of_sq`, `weightedMoment_bound_of_oneStep`,
   `weightedMoment_bound_of_oneStepSharp`, `weightedMoment_mono` — the bridge from the one-step
   arithmetic of (5.39)–(5.44) to `WeightedMoment`, i.e. the (A′) counterparts of
-  `RBM.CutHypTheta.condMoment_of_oneStep` (§16).  This is the last interface step on the (A′)
-  side; the estimate itself needs `RBM1D/Gauss/APrimeTestFun.lean` and lives downstream.
+  `RBM.CutHypTheta.condMoment_of_oneStep` (§16).
+* `weightedMoment_of_stepBound`, `weightedMoment_of_stepBoundSharp`, `aprimeHyp_of_stepBound` —
+  **the skeleton**: `WeightedMoment` reduced to "produce a `RBM.CutHypTheta.StepSide` and a
+  one-step moment bound at each net point".  Steps 1–6 of the assembly need
+  `RBM.Gauss.TestFun`, which is downstream of this file; step 7 is done here (§17).
+* `cutNetPt_lt_succ`, `sat_zeroth_cell` — the zeroth cell `w_0 = s_N < w_1` is non-degenerate,
+  and for the witness `s_N = 0`: route (A′) needs **no** positive left endpoint (§18).
 
 ## Non-vacuity (compiled)
 
@@ -1938,13 +1942,13 @@ T249 compiled `RBM.not_cutHypEv_swapSample_of_far`: **no `CutHypEv` at all carri
 functional on a window with `s ≡ 0`**, and the mechanism is the `∀ ω` of `modulus`, not the
 `∀ N`.  Two independent repairs are needed, and route (A′) needs both:
 
-* **the left endpoint must be positive.**  Nothing in `APrimeHyp` forces `0 < s N` — `window`
-  only asks `s N ≤ t N`, and `lev_ge` only compares `lev` to `Θ` — so it is **not** implied,
-  and a producer on the real chain has to supply it.  Route (A′)'s own reduction
-  (`condMoment_of_weightedMoment`) never touches `modulus` and never touches the left
-  endpoint, so the requirement is inherited from the fields `APrimeHyp` shares with
-  `RBM.CutHypTheta.CutHypCondEv`, not created by the weight.  **Starting condition: `s_N > 0`
-  (in the application `s_N ≥ N^{-C}`), plus `J_{s_N} ≺ 1`, which is (2.69).**
+* **~~the left endpoint must be positive~~** — **withdrawn**, see §18.  Nothing in `APrimeHyp`
+  forces `0 < s N` (`window` only asks `s N ≤ t N`, `lev_ge` only compares `lev` to `Θ`), and
+  route (A′)'s own reduction never touches `modulus` or the left endpoint either.  The
+  requirement was inherited from the *satisfiability of `modulus`* for the far functional, and
+  Cowork's ruling D17 removes it: on `Good N` the second resolvent identity gives a
+  Hölder-`1/2` modulus down to `v = 0`.  **Starting condition: `J_{s_N} ≺ 1` — (2.69) — and
+  nothing else** (§18, `sat_zeroth_cell`).
 * **the modulus must be asserted on an event.**  `APrimeHypOn` is `APrimeHyp` with `modulus`
   restricted to `Good N` (in the application `{ω | ‖X(ω)‖ ≤ N}`), exactly as
   `RBM.MomentDuhamelCut.CutHypEvOn` is for `CutHypEv`, and by the same device: the cut-down
@@ -2381,6 +2385,142 @@ theorem weightedMoment_mono [IsFiniteMeasure P] {δ₀ : ℝ} {W' : ℝ → ℕ 
   · exact mul_le_mul_of_nonneg_right (hle δ N k ω) (by positivity)
 
 end OneStep
+
+/-! ### 17. The skeleton of `WeightedMoment`, with the estimate abstracted
+
+`WeightedMoment` is the one field of `APrimeHyp` that is not deterministic, and its proof is
+the seven-step assembly
+
+  `TestFun` → generator identity → expand `∂²_α(W·Ψ)` → Cauchy–Schwarz on the cross term →
+  `∇χ` on the transition band → integrate in `u` → read off the one-step arithmetic.
+
+Only the **last** step can live here: `RBM.Gauss.TestFun`, `RBM.Gauss.BddC2C` and
+`RBM.Gauss.testFun_softW_mul` are in `RBM1D/Gauss/APrimeTestFun.lean`, which **imports this
+file**, so steps 1–6 are necessarily downstream.  What this section supplies is the shape the
+assembly has to hand back, so that the downstream file ends with one application rather than
+with a re-derivation of the accounting:
+
+    produce, at each net point, a `RBM.CutHypTheta.StepSide` and the one-step moment bound
+    `∫ W·|χ(J/θ)J|^{2p} ≤ (stepRhs m x R … / R⁴)^{2p}` with `x = N^{δ/8}`
+
+and `weightedMoment_of_stepBound` turns that into `WeightedMoment` with the honest constant
+`(cStep' m)^{2p}`.  The two bricks the cross term needs are already here:
+`sum_gvar_mul_le_sqrt_quadVar` (§11) splits it into two same-time `RBM.Gauss.quadVar` rates,
+and `abs_le_two_mul_of_softW_ne_zero` (§6) is the a priori bound on the transition band.
+-/
+
+section Skeleton
+
+open MomentDuhamelCut CutHypTheta MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {J : ℕ → ℝ → Ω → ℝ}
+  {s t mesh : ℕ → ℝ} {lev : ℕ → ℝ → ℝ} {Θ : ℕ → ℝ} {W : ℝ → ℕ → ℕ → Ω → ℝ}
+
+/-- **⭐ `WeightedMoment` from the one-step arithmetic, packaged over `δ` and `p`.**
+
+This is the whole of the (A′) moment field that can be proved upstream of
+`RBM1D/Gauss/APrimeTestFun.lean`.  The hypothesis is exactly what the Duhamel/Stein assembly
+delivers at one net point; everything after it — `RBM.Step2MomentStep.phi_arith'`, the
+exponent identity `RBM.CutHypTheta.rpow_sq_pow`, the constant `(cStep' m)^{2p}` — is done
+here. -/
+theorem weightedMoment_of_stepBound {δ₀ m : ℝ} (hm : 0 < m) (hΘ : ∀ N, Θ N = 1)
+    (H : ∀ δ, 0 < δ → δ ≤ δ₀ → ∀ p : ℕ, ∀ᶠ N : ℕ in atTop,
+      ∀ k ≤ cutNetTop s t mesh N, ∃ R Ξ A ε q β γ Jv : ℝ,
+        StepSide ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv ∧
+          ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+              (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+            ≤ (stepRhs m ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv / R ^ 4) ^ (2 * p)) :
+    WeightedMoment P J s t mesh lev Θ δ₀ W :=
+  fun δ hδ0 hδ p => weightedMoment_bound_of_oneStep hδ0.le hm hΘ p (H δ hδ0 hδ p)
+
+/-- The same for the second pass (`RBM.Step2Near47.phi_arith_second_pass`). -/
+theorem weightedMoment_of_stepBoundSharp {δ₀ m : ℝ} (hm : 0 < m) (hΘ : ∀ N, Θ N = 1)
+    (H : ∀ δ, 0 < δ → δ ≤ δ₀ → ∀ p : ℕ, ∀ᶠ N : ℕ in atTop,
+      ∀ k ≤ cutNetTop s t mesh N, ∃ R Ξ A ε qI β γ Jv : ℝ,
+        StepSideSharp m ((N : ℝ) ^ (δ / 8)) R Ξ A ε qI β γ Jv ∧
+          ∫ ω, W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s mesh N k))
+              (J N (cutNetPt s mesh N k) ω)| ^ (2 * p) ∂P
+            ≤ (stepRhsSharp m ((N : ℝ) ^ (δ / 8)) R Ξ A ε qI β γ Jv / R ^ 2) ^ (2 * p)) :
+    WeightedMoment P J s t mesh lev Θ δ₀ W :=
+  fun δ hδ0 hδ p => weightedMoment_bound_of_oneStepSharp hδ0.le hm hΘ p (H δ hδ0 hδ p)
+
+/-- **`APrimeHyp` with the moment field replaced by the one-step hypothesis.**  The form the
+downstream assembly should target: every field but the last is deterministic, and the last is
+what the Duhamel produces at one net point. -/
+noncomputable def aprimeHyp_of_stepBound [IsFiniteMeasure P] {m : ℝ} (hm : 0 < m)
+    (hΘ : ∀ N, Θ N = 1) (H : APrimeHyp P J s t lev Θ)
+    (Hstep : ∀ δ, 0 < δ → δ ≤ H.δ₀ → ∀ p : ℕ, ∀ᶠ N : ℕ in atTop,
+      ∀ k ≤ cutNetTop s t H.mesh N, ∃ R Ξ A ε q β γ Jv : ℝ,
+        StepSide ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv ∧
+          ∫ ω, H.W δ N k ω * |cutTrunc ((N : ℝ) ^ (2 * δ) * lev N (cutNetPt s H.mesh N k))
+              (J N (cutNetPt s H.mesh N k) ω)| ^ (2 * p) ∂P
+            ≤ (stepRhs m ((N : ℝ) ^ (δ / 8)) R Ξ A ε q β γ Jv / R ^ 4) ^ (2 * p)) :
+    APrimeHyp P J s t lev Θ :=
+  { H with weightedMoment := weightedMoment_of_stepBound hm hΘ Hstep }
+
+end Skeleton
+
+/-! ### 18. The zeroth cell, and the exponents are not hard-coded
+
+**Cowork's ruling D17** (2026-09-22): the first cell `s ≡ 0` is not a gap — on
+`Good N = {‖X‖ ≤ N}` the second resolvent identity gives a Hölder-`1/2` modulus *including*
+`v = 0`, so `modulus` at `γ = 1/2` is available there and no positive left endpoint is needed.
+
+**Re-checked against route (A′), and the answer is that (A′) never needed one.**  Reading the
+signatures: `condMoment_of_weightedMoment` takes `hmesh`, `hΘ`, `hwin`, `hlev`, `hJ0`, `hJm`
+and the four weight hypotheses — **no `0 < s N`**; `APrimeHyp.toCutHypCondEv`,
+`APrimeHypOn.toAPrimeHyp` and `stochDom_of_aprimeOn` add none.  The requirement in §14 was
+inherited from the *satisfiability of `modulus`* for the far functional, and D17 removes it.
+So:
+
+**Starting condition of route (A′): `J_{s_N} ≺ 1` — that is (2.69) — and nothing else.**
+
+The witness is already the `s ≡ 0` one: `satAPrimeHyp` and `satAPrimeHypOn` have window
+`[0, 1]` with left endpoint **exactly `0`**, and `sat_zeroth_cell` records that the net there
+really has a zeroth cell `w_0 = 0 < w_1` to step across, so `sat_stochDom_of_aprimeOn` is not
+the degenerate one-point net of `RBM.CutHypTheta.sat_cutNetTop_collapse`.
+
+**Hard-coding audit** (T252 found `RBM.EntryModulusEv` pins `Kmod = 1`, `γ = 1/2` inside the
+`def`, so an honest constant `N^{1+C+D}|v-w|` cannot be written down).  `APrimeHyp` and
+`APrimeHypOn` are **clean**: `Kmod` and `γ` are *fields*, and `modulus`, `mesh_fine` are
+stated against those fields, so `γ = 1` with `Kmod = 1 + C + D` — the shape
+`RBM.norm_lk_sub_le_lip` produces — fits with no change.  The same holds for the interfaces
+this file feeds (`RBM.CutHypTheta.CutHypCondEv`, `RBM.MomentDuhamelCut.CutHypEv`).
+-/
+
+section ZerothCell
+
+open MomentDuhamelCut CutHypTheta
+
+/-- Consecutive net points are distinct: every cell of the net of (5.46) has positive length. -/
+theorem cutNetPt_lt_succ {s mesh : ℕ → ℝ} {N : ℕ} (hm : 0 < mesh N) (k : ℕ) :
+    cutNetPt s mesh N k < cutNetPt s mesh N (k + 1) := by
+  have h : (0 : ℝ) < 1 / mesh N := by positivity
+  simp only [cutNetPt]
+  push_cast
+  rw [add_div]
+  linarith [h, (by norm_num : (1 : ℝ) / mesh N = 1 / mesh N)]
+
+/-- **The zeroth cell of the `s ≡ 0` witness is non-degenerate.**  Its left endpoint is
+exactly `0`, it has positive length, and the net has at least one step — so the bootstrap's
+first move really happens at the left endpoint `0` (contrast
+`RBM.CutHypTheta.sat_cutNetTop_collapse`, where the net is a single point). -/
+theorem sat_zeroth_cell (N : ℕ) :
+    cutNetPt (fun _ => (0 : ℝ)) satMeshEv N 0 = 0 ∧
+      cutNetPt (fun _ => (0 : ℝ)) satMeshEv N 0
+        < cutNetPt (fun _ => (0 : ℝ)) satMeshEv N 1 ∧
+      1 ≤ cutNetTop (fun _ => (0 : ℝ)) (fun _ => (1 : ℝ)) satMeshEv N := by
+  refine ⟨cutNetPt_zero _ _ _, cutNetPt_lt_succ (satMeshEv_pos N) 0, ?_⟩
+  have h1 : (1 : ℝ) ≤ satMeshEv N := by
+    have hb : (1 : ℝ) ≤ (N : ℝ) + 1 := by
+      have : (0 : ℝ) ≤ (N : ℝ) := Nat.cast_nonneg N
+      linarith
+    simpa [satMeshEv] using Real.one_le_rpow hb (by norm_num : (0 : ℝ) ≤ 2)
+  refine Nat.le_floor ?_
+  push_cast
+  linarith
+
+end ZerothCell
 
 end Step2Bootstrap
 

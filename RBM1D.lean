@@ -51,6 +51,7 @@ import RBM1D.Gauss.DriftEnvelope
 import RBM1D.Gauss.FastDecayFlow
 import RBM1D.Gauss.FlowContInt
 import RBM1D.Gauss.APrimeTestFun
+import RBM1D.Gauss.APrimeRatioBdd
 import RBM1D.Gauss.Lemma514NonAlt
 import RBM1D.Gauss.Lemma514QAssembly
 import RBM1D.Gauss.LkGoodMeasurable

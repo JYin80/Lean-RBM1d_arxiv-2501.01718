@@ -93,6 +93,12 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **状态未变的部分**：`MomentHypCutEv.cut` / `MomentHypCut2Ev.cut` 由定理产出；事件限制版 `APrimeHypOn → APrimeHyp(onEvent) → stochDom_of_aprimeOn` 已通；见证 `satAPrimeHyp`（软最大值权重、时间相关 `J`）与 `sat_StepSide_gt_one`（`R > 1`、八条约束全取等号）都在。链上唯一自由项仍是 `WeightedMoment`。起点条件仍是 **`s_N > 0`（应用中 `s_N ≥ N^{−C}`）+ `J_{s_N} ≺ 1`**。
 
 
+**T255 交出的三条阻塞（(A′) 现在卡在这里）**：
+
+1. ⭐⭐ **Ω-桥（结构性，纯接线但跨文件）**：`WeightedMoment P J s t …` 量化在**抽象** `(Ω, MeasurableSpace, P)` 上、`J` 来自 `RBM.Sample B`（`Flow/Hypotheses.lean:225`）；而 `hasDerivAt_integral_Phi` 活在**具体**高斯系综上 `∫ ω, Φ (Hflow d N s ω) ∂(P d)`（`Gauss/Generator.lean:803`）。**全仓没有任何引理把 `X.H N u ω` 与 `Hflow d N u ω` 认同**，也没有把生成元恒等式搬到 `Sample` 上的东西。→ **已开 T259**。
+2. **`J*` 是 `Finset.max` 不是软最大值**（`Hierarchy/Step2.lean:642`）：软最大值只经权重 `W` 进来，而**模型指标集上 `jStar ≤ softMax r S ρ` 的比较全仓没做过**（`le_softMax`/`softMax_le` 只有抽象版）。→ **一并 T259**。
+3. ⚠⚠ **近场 `≲ R^{7/2}/R^8` 与远场 `≲ R·A^{−1/3}R^4` 两个指数：T230 与 T255 两次独立拒绝背书**，都说无法从论文 §5.3 重建出那两个显示式。仓库里唯一产出第 7 步形状的是 `CutHypTheta.sat_oneStep`，那是 `J ≡ Θ ≡ 1` 的**平凡见证**。**这条必须由 Cowork 给出可核实的推导**，否则 (A′) 的最后一步没有落点。
+
 ## 4. 待 Jun 定夺
 
 * ~~**p.24 网格的第一格 `0 → u_1` 是真数学缺口**~~ —— **Cowork 05:40 的 D17 已裁定：不是缺口**（见 §2）。事件限制版的 Hölder-1/2 模包含 `0`，`T251a` 的论文改动**不采纳**，合并总装回到 `Thm221NoEL X κ`。T256 已按新验收四条改向。协调者独立核过那条算术：反例需 `‖X‖ = v^{−1/2} ≤ N` 即 `v ≥ N^{−2}`，此时右端 `N^{Kmod}v^{1/2} ≥ N^{Kmod−1}`，取 `Kmod ≥ D−1` 即压过 `W^{D−2} ≤ N^{D−2}` 的跳跃——**站得住**。
@@ -102,6 +108,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 见 `docs/TASKS.md`（只剩活跃单）。**截至 04:21，六条车道全满**：**T230 (A′)**（最高优先）、**T245**（总装合并 + `modulus` 换 `EntryModulusEv`）、**T246**（`hDec*` 换线）、**T247**（`hcont`/`hintU1`/`hintU2` + 下沉）、**T248**（三处逐字重复上移）、**T249**（`CutHypEv.modulus` 在 `s ≡ 0` 的反例 + 带撇接口）。T217 归 Codex；T159 已认领（等总装）。本轮完成并入库：T232/T235/T236/T237/T240/T241/T242/T243/T244。**T245–T249 的可写文件集两两不相交**，各行「状态」栏已写明认领的文件与隔开方式。
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
+
+* **T255**（本次，新建 `Gauss/APrimeRatioBdd.lean` 516 行/16 条，审计 13081）：(A′) 的分析前提**步 1–4 全部编译**（`hsum`/`hΨ`/`TestFun`/生成元恒等式），步 5 的模型侧输入也有了。⚠ **工单的字面第 1 步是假的，它编译了反驳**：未取幂的 `‖F‖/T` 的 `BddC2C` 可反驳（`z ↦ ‖z‖` 在 `0` 不可微且 `0` 取得到 = `L = K`，**与 T250 反驳乘性导数界同一配置**）——改在 `^(2r)` 层交付，什么都没损失。⭐ 另证**不带 `card`** 的逐点梯度 `norm_fderiv_sum_ratio_pow_le`。**`WeightedMoment` 仍未产出**，三条具名阻塞见 §3。报告 `docs/reports/T255.md`；paper-delta T255a。
 
 * **T252**（本次，新建 `Gauss/LoopLipschitz.lean` 1120 行 + 下沉，全量 exit=0、审计 13057）：⭐ **loop 级时间模做出来了**——`norm_lk_sub_le_lip`，`‖lk_v − lk_w‖ ≤ |v−w|·lkLip`，**对每个 `ω` 成立且完全不需要 `‖X‖` 的界**（`mul_green_smul` 消掉 `X`），**`γ = 1` 不是 1/2**，`Kmod = 1 + C + D`。⭐ **`hsep_exampleGrow`：T249 的否定判决现在对一个真实模型成立**，不再只是条件性的。⚠⚠ **查出一个会挡住所有人的定义缺陷**：`EntryModulusEv` 把 `Kmod = 1`、`γ = 1/2` **硬编码在 `def` 里**，诚实常数 `N^{1+C+D}|v−w|` 在宽度 `≥ N^{−C}` 的窗口上填不进去——**`Kmod`/`γ` 必须参数化**（→ T258）。下沉按裁定做完（四条纯预解式引理进 `Gauss/`，原处留探针 + import，T249 §10 未动）。报告 `docs/reports/T252.md`；paper-delta T252a。
 

@@ -41,7 +41,7 @@ if _nparsed != _nenv:
 # Cowork overrides: nodes whose Lean proof is conditional on a hypothesis still being discharged
 STATUS_OVERRIDE = {
     'thm:fluc-high': ('repl', '旧接口在 B≍Ψ 处不可满足（T171/T172）；已由带基数预算的条件化版取代，(4.12)→Eq45Flow 闭合（T177/T188）'),
-    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init（T241）、meas（T244）已关，modulus 对每个 ω 为假（T244、T249 空真第 11、12 例）→ 窗口左端取 s_N ≥ N^{−C} 并用不依赖 ‖X‖ 的 Lipschitz（T249、T251、T252）；停时的替代 (A′)：cut 已由定理产出（APrimeHyp → MomentHypCutEv），只剩全测度加权矩 WeightedMoment 的 Grönwall 收口（T230、T250）'),
+    'thm:step2': ('repl', '截断矩 Duhamel（T197）；(5.47) 锐化到 (η_s/η_u)²（T207）；(5.48) 漂移钉死（T208）、已从 Theorem 2.21 假设表消失（T239）；(5.48) 数据：init（T241）、meas（T244）已关，时间模改在 {‖X‖ ≤ N} 上取 Hölder-½、指数随 D 参数化（D17；T256、T258、T261）；停时的替代 (A′)：独立审稿判定正确但需修补（V548、D18），cut 已由定理产出，余 WeightedMoment 的 Grönwall 收口 → T260（交叉项）、T262（早时刻 QV 率锐远场）、T263（单步算术）'),
 }
 for _l, (_st, _tk) in STATUS_OVERRIDE.items():
     if _l in NODE:

@@ -98,3 +98,13 @@ T279 的 `no_joint_grid_scales` 是真发现（**空真第 13 例**）：`Gauss/
 3. 联合可满足性见证：`δ_N = N^{τ}Ψ_N`（局部律能给的量级）、`μ_N = N^{−C}`（`C` 大），在 p.24 首格与 `R > 1` 窗口上**同时**满足全部前提，并编译 `¬`（旧的同参数版）与 `✓`（新版）两条对照。
 4. 用新版接第 5 槽：`Eq45FlowInputs` 在合并总装里只剩已有生产者的输入。
 若第 0 步发现某处 `δ` 两种角色真的不可拆（证明本质上要求阈值 ≤ 网距的某个幂），**停下报 Cowork**，写明那一步。
+
+## §7 T278 第三步（Cowork 08:47，读 T278 第二份报告后）
+
+T278 已交：`rhs514QAt_of_kernel_inputs''` / `rhsNonAltAt_of_kernel_inputs''`（`η` 在核参数之前）、`*_of_scaled_family`、`lemma514_of_momentDuhamelQ_of_scaled_families`、系数指数引理 `cKer716_four_le_rpow` / `cKer716Short_le_rpow`。第 4 槽现在精确等于「两条 scaled family 在高斯模型上实例化」。
+
+**下一步先做第 0 步只读，再动手**（Cowork 没有逐条核过这些包络，所以不写成「接线」）：
+1. 对 `''` 生产者的每个输入——`hEnvI/F/C/D/E`、`hMψ`、`hMψE`、`ζ`、`δ'`（`errBudget`）、`cE`、`Msz`、`Pb`、`esz`——列出仓库里已有的**模型层**供给者。先看 T236（`Gauss/Lemma514NonAlt.lean`，报告 `docs/reports/T236.md`：Case 1 的 `hrhsNA` 当时就有生产者和网格见证，常数不含 `N`/`W`/`τ′`/`k`）、T237/T246/T253/T254（Q 侧的事件限制版与 `exists_uniform_errBudget`）、`Gauss/FastDecayFlow.lean`。
+2. 对每个加性误差项（`A_N^m·(errKer716_m + cE_N)`、`A_N^{2m}·(errKer716_{2m} + cE_N)`）写出它的 `W^{−D}` / 指数小因子与多项式因子（`A_N ≤ N^{C}`、`L_N ≤ N`、`(L_N)^k δ_N`）。`δ_N` 来自快衰减，对**每个** `D` 成立，所以 `D` 可在 `m, η` 之后取大——若某项的小因子不是 `W^{−D}` 型，停下报告。
+3. 对 `Phi ≲ c = Λ^{1/2} + Φ` 与 `√PhiE ≲ c`：写明 `ψ`/`ψE` 的矩由 `Lemma514Premises` 的哪几条推出。**这一步是 Lemma 5.14 本身的数学（(5.93)–(5.103)）**，若仓库里没有现成推导，交一页只读分析，Cowork 再开单。
+第 0 步交报告后再实现。可写范围不变（`Lemma514QAssembly.lean`、`Lemma514NonAlt.lean`）。

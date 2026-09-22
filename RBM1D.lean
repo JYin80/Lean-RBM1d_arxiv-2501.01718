@@ -63,6 +63,9 @@ import RBM1D.Gauss.APrimePrior
 import RBM1D.Gauss.APrimeOneStep
 import RBM1D.Gauss.APrimeOneStepSharp
 import RBM1D.Gauss.APrimeModel
+import RBM1D.Gauss.APrimeSlotFields
+import RBM1D.Gauss.APrimeDuhamelModel
+import RBM1D.Gauss.APrimeSlotArith
 import RBM1D.Gauss.Lemma514NonAlt
 import RBM1D.Gauss.Lemma514QAssembly
 import RBM1D.Gauss.LkGoodMeasurable

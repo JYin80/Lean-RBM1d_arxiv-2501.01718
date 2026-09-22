@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.Lemma514Holder
 import RBM1D.Gauss.MomentDuhamelQ
 import RBM1D.Gauss.Lemma514QRoute
+import RBM1D.Gauss.LkGoodMeasurable
 
 /-!
 # Lemma 5.14, the non-alternating charges: (5.20) + (7.16) Case 1 on the moment route (T236)
@@ -51,7 +52,10 @@ since T118, because its `mart` residual is a fiat.  This file redoes it from
   normalisation `A_u^{-m} → A_v^{-m}`, precisely as in Case 2, and the difference to Case 2 is
   only `K^m` in place of `K^{2m}` and a `κ`-dependent constant `cKerShort m √κ` in place of
   `cKerSumZero m`.  `RBM.Gauss.momNorm_Uker_short_scale_le_on_event` is the event-restricted
-  form, for when (7.13) is only available with high probability.
+  form, for when (7.13) is only available with high probability.  §1b — T254 —
+  removes its `MeasurableSet` row (`RBM.Gauss.momNorm_Uker_short_scale_le_on_event'`) and adds
+  the two charge specialisations `RBM.Gauss.momNorm_Uker_short_sigma_le_on_event` and
+  `RBM.Gauss.momNorm_Uker_short_xi2_le_on_event`.
 * §2 — `RBM.Gauss.RhsNonAltAt`, the three right-hand terms of
   `RBM.MomentDuhamel.Hyp.momentDuhamel` **guarded by `NonAlt`**, and
   `RBM.Gauss.stochDom_lkT_nonAlt_of_momentDuhamel`, the guarded consumer: on non-alternating
@@ -61,7 +65,9 @@ since T118, because its `mart` residual is a fiat.  This file redoes it from
   used here.
 * §3 — `RBM.Gauss.rhsNonAltAt_of_kernel_inputs`, the producer of §2's hypothesis out of §1,
   the size envelopes and the (7.13) fast decay; `RBM.Gauss.rhsNonAltAt_of_kernel_inputs_zero_err`
-  with the numeric row discharged.
+  with the numeric row discharged.  §3b — `RBM.Gauss.rhsNonAltAt_of_kernel_inputs'` (T254), the
+  same producer with the size-envelope and (7.13) rows asked **only on an event** `Ξ N` and with
+  no `MeasurableSet` row, §1b's estimates in place of §1's.
 * §4 — `RBM.Gauss.stochDom_lkT_of_qGood_nonAlt'`, §5.5's charge split with the length-`2`
   exception `σ = (-,+)` folded in by rotation (`RBM.SumZeroDyn.lkT_swap2`,
   `RBM.SumZeroDyn.qGood_swap2`).  This is what lets
@@ -75,7 +81,7 @@ since T118, because its `mart` residual is a fiat.  This file redoes it from
 
 ## Deviations from the paper
 
-One, to be recorded in `docs/paper-deltas.md` as **`T236a`**: the `hEnv…`/`hDec…` rows of §3
+One, recorded in `docs/paper-deltas.md` as **`T236a`**: the `hEnv…`/`hDec…` rows of §3
 are quantified over every sample point `ω` (restricted to non-alternating charges and to the
 window), whereas the paper's (7.13) and the a priori bounds behind (7.16) hold on a
 high-probability event.  This is the *same* deviation as T219a on the `Q` side, inherited from
@@ -83,6 +89,13 @@ the shape of T201's `hGM`/`hGd` slots, and the event-restricted replacement rout
 one (`RBM.Gauss.momNorm_le_affine_on_event`).  Nothing else deviates: (7.16) Case 1 is used
 verbatim through `RBM.norm_Uker_fastDecay_le_short`, and the charge classification is
 `RBM.SumZeroDyn.NonAlt` verbatim.
+
+**T254 closes it.**  `RBM.Gauss.rhsNonAltAt_of_kernel_inputs'` (§3b) is the same producer with
+every `hEnv…` and `hDec…` row restricted to `∀ ω ∈ Ξ N` and with **no** `MeasurableSet`
+hypothesis on `Ξ` — §1b takes the measurable core of T237 internally.  §3 is kept, unchanged:
+it is a true theorem with a strictly stronger hypothesis table, and
+`RBM.Gauss.rhsNonAltAt_of_kernel_inputs_zero_err` still consumes it.  The accounting deviation
+T254 introduces in its place is `T254a`, at the end of this file.
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/
@@ -161,11 +174,12 @@ everywhere, and the complement is paid for by Markov, exactly as
 
 This is the shape the project's satisfiability discipline asks for — a deterministic decay
 bound cannot hold at a "large constant times the identity" sample point with a small `δ`, so a
-`∀ ω` decay row is a real strengthening.  It is stated here so that the Case-1 branch has its
-event-restricted form available from the start: §3's producer still takes the `∀ ω` rows (the
-same shape as T201's `hGd`/T219's `hDec…`, paper-delta `T236a`), because rewiring **either**
-half to events needs `MeasurableSet` for the good set, which T220 records as not proved; when
-it is, both halves rewire through this lemma and its Case-2 twin. -/
+`∀ ω` decay row is a real strengthening.
+
+⚠ T254: the `hΞm : MeasurableSet Ξ` row below is **not** needed —
+`RBM.Gauss.momNorm_Uker_short_scale_le_on_event'` of §1b discharges it on the measurable core
+of T237, and §3b's producer `RBM.Gauss.rhsNonAltAt_of_kernel_inputs'` is built on that.  This
+version is kept because the primed one is one `refine` away from it. -/
 theorem momNorm_Uker_short_scale_le_on_event [IsProbabilityMeasure P] (L : ℕ) [NeZero L]
     (hL : 3 ≤ L) {q : ℕ} (hq : q ≠ 0) {m : ℕ}
     {ξ : Fin m → ℂ} (hξ : ∀ i, ‖ξ i‖ ≤ 1) {κg : ℝ} (hκg : 0 < κg)
@@ -263,6 +277,128 @@ theorem momNorm_Uker_short_xi2_le [IsProbabilityMeasure P] (L : ℕ) [NeZero L] 
   exact momNorm_Uker_short_scale_le' L hL hq
     (SumZeroDyn.norm_xi2_le hE σ) (Real.sqrt_pos.2 hκ0) hs0 hsu huv hv1
     (Fin.castAdd (n + 2) k) hκt hκA hK hζ hδ hψ0 hint hGM hGd a
+
+/-! #### §1b  The same three estimates with **no `MeasurableSet` hypothesis** (T254)
+
+`RBM.Gauss.momNorm_Uker_short_scale_le_on_event` above still names `hΞm : MeasurableSet Ξ`.
+It can be discharged once and for all by running the estimate on the **measurable core**
+`RBM.Gauss.measCore B.P Ξ` of T237: the core is measurable
+(`RBM.Gauss.measurableSet_measCore`), it is contained in `Ξ`
+(`RBM.Gauss.measCore_subset`) — so the two event-restricted rows `hGM`/`hGd` transfer to it
+for free — and its complement has **exactly** the same measure
+(`RBM.Gauss.measureReal_compl_measCore`), so the Markov row `hP` transfers verbatim.
+
+Nothing is assumed that was not assumed before, and `Ξ` is now an arbitrary set.  Note that
+the tensor `G` is *not* truncated here, unlike the Case-2 chain of `LkGoodMeasurable.lean`:
+Case 1 restricts only the two hypotheses, and `hZall`/`hZint` speak about the untouched `G`
+already. -/
+
+/-- **(7.16) Case 1 in moment form on a good event, with no measurability hypothesis.**
+
+The `hΞm` row of `RBM.Gauss.momNorm_Uker_short_scale_le_on_event` removed by passing to the
+measurable core; no other hypothesis changes. -/
+theorem momNorm_Uker_short_scale_le_on_event' [IsProbabilityMeasure P] (L : ℕ) [NeZero L]
+    (hL : 3 ≤ L) {q : ℕ} (hq : q ≠ 0) {m : ℕ}
+    {ξ : Fin m → ℂ} (hξ : ∀ i, ‖ξ i‖ ≤ 1) {κg : ℝ} (hκg : 0 < κg)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv1 : v < 1)
+    (i₀ : Fin m) (hκt : κg ≤ ‖1 - (v : ℂ) * ξ i₀‖)
+    {κA : ℝ} (hκA : 0 < κA) {K ζ δ : ℝ} (hK : 1 ≤ K) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
+    {G : Ω → LoopArg L m → ℂ} {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω)
+    (hint : Integrable (fun ω => ψ ω ^ q) P)
+    {Ξ : Set Ω}
+    (hGM : ∀ ω ∈ Ξ, ∀ b, ‖G ω b‖ ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ ω + ζ)
+    (hGd : ∀ ω ∈ Ξ, FastDecay L (ellHat L (u : ℂ) * K) δ (G ω))
+    (a : LoopArg L m) {Env pr : ℝ} (hEnv0 : 0 ≤ Env) (hpr : 0 ≤ pr)
+    (hZint : Integrable (fun ω => ‖Uker L ξ (u : ℂ) (v : ℂ) (G ω) a‖ ^ q) P)
+    (hZall : ∀ ω, ‖Uker L ξ (u : ℂ) (v : ℂ) (G ω) a‖ ≤ Env)
+    (hP : (P Ξᶜ).toReal ≤ pr) :
+    momNorm P q (fun ω => ‖Uker L ξ (u : ℂ) (v : ℂ) (G ω) a‖)
+      ≤ (cKerShort m κg * K ^ m * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * momNorm P q ψ
+          + (cKerShort m κg * K ^ m * ((1 - s) / (1 - v)) ^ m * ζ
+            + ((1 - s) / (1 - v)) ^ m * δ))
+        + Env * pr ^ ((1 : ℝ) / q) := by
+  refine momNorm_Uker_short_scale_le_on_event L hL hq hξ hκg hs0 hsu huv hv1 i₀ hκt hκA hK
+    hζ hδ hψ0 hint (measurableSet_measCore P Ξ)
+    (fun ω hω => hGM ω (measCore_subset P Ξ hω))
+    (fun ω hω => hGd ω (measCore_subset P Ξ hω)) a hEnv0 hpr
+    (by simpa only [abs_norm] using hZint) hZall ?_
+  rw [measureReal_compl_measCore]
+  exact hP
+
+/-- **(7.16) Case 1 in moment form at the paper's charge, on a good event.**
+
+The event-restricted twin of `RBM.Gauss.momNorm_Uker_short_sigma_le`; `Ξ` carries no
+measurability hypothesis. -/
+theorem momNorm_Uker_short_sigma_le_on_event [IsProbabilityMeasure P] (L : ℕ) [NeZero L]
+    (hL : 3 ≤ L) {q : ℕ} (hq : q ≠ 0) {n : ℕ} {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ)
+    {σ : Fin (n + 2) → Bool} {k : Fin (n + 2)} (hk : σ k = σ (k + 1))
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K ζ δ : ℝ} (hK : 1 ≤ K) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
+    {G : Ω → LoopArg L (n + 2) → ℂ} {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω)
+    (hint : Integrable (fun ω => ψ ω ^ q) P)
+    {Ξ : Set Ω}
+    (hGM : ∀ ω ∈ Ξ, ∀ b, ‖G ω b‖
+      ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ ω + ζ)
+    (hGd : ∀ ω ∈ Ξ, FastDecay L (ellHat L (u : ℂ) * K) δ (G ω))
+    (a : LoopArg L (n + 2)) {Env pr : ℝ} (hEnv0 : 0 ≤ Env) (hpr : 0 ≤ pr)
+    (hZint : Integrable (fun ω =>
+      ‖Uker L (xiOf (mSigma E) σ) (u : ℂ) (v : ℂ) (G ω) a‖ ^ q) P)
+    (hZall : ∀ ω, ‖Uker L (xiOf (mSigma E) σ) (u : ℂ) (v : ℂ) (G ω) a‖ ≤ Env)
+    (hP : (P Ξᶜ).toReal ≤ pr) :
+    momNorm P q (fun ω => ‖Uker L (xiOf (mSigma E) σ) (u : ℂ) (v : ℂ) (G ω) a‖)
+      ≤ (cKerShort (n + 2) √κ * K ^ (n + 2)
+            * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * momNorm P q ψ
+          + (cKerShort (n + 2) √κ * K ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2) * ζ
+            + ((1 - s) / (1 - v)) ^ (n + 2) * δ))
+        + Env * pr ^ ((1 : ℝ) / q) := by
+  have hE2 : |E| ≤ 2 := hEκ.trans (by linarith)
+  have hv0 : (0 : ℝ) ≤ v := ((hs0.trans hsu).trans huv)
+  exact momNorm_Uker_short_scale_le_on_event' L hL hq
+    (fun i => (norm_xiOf_mSigma hE2 σ i).le) (Real.sqrt_pos.2 hκ0) hs0 hsu huv hv1 k
+    (sqrt_le_norm_one_sub_xiOf hκ0 hκ1 hEκ hv0 hv1.le hk) hκA hK hζ hδ hψ0 hint hGM hGd a
+    hEnv0 hpr hZint hZall hP
+
+/-- **(7.16) Case 1 in moment form at the doubled charge `RBM.SumZeroDyn.xi2`, on a good
+event.**
+
+The event-restricted twin of `RBM.Gauss.momNorm_Uker_short_xi2_le`; `Ξ` carries no
+measurability hypothesis. -/
+theorem momNorm_Uker_short_xi2_le_on_event [IsProbabilityMeasure P] (L : ℕ) [NeZero L]
+    (hL : 3 ≤ L) {q : ℕ} (hq : q ≠ 0) {n : ℕ} {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ)
+    {σ : Fin (n + 2) → Bool} {k : Fin (n + 2)} (hk : σ k = σ (k + 1))
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K ζ δ : ℝ} (hK : 1 ≤ K) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
+    {G : Ω → LoopArg L ((n + 2) + (n + 2)) → ℂ} {ψ : Ω → ℝ} (hψ0 : ∀ ω, 0 ≤ ψ ω)
+    (hint : Integrable (fun ω => ψ ω ^ q) P)
+    {Ξ : Set Ω}
+    (hGM : ∀ ω ∈ Ξ, ∀ b, ‖G ω b‖
+      ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ ((n + 2) + (n + 2)) * ψ ω + ζ)
+    (hGd : ∀ ω ∈ Ξ, FastDecay L (ellHat L (u : ℂ) * K) δ (G ω))
+    (a : LoopArg L ((n + 2) + (n + 2))) {Env pr : ℝ} (hEnv0 : 0 ≤ Env) (hpr : 0 ≤ pr)
+    (hZint : Integrable (fun ω =>
+      ‖Uker L (SumZeroDyn.xi2 E σ) (u : ℂ) (v : ℂ) (G ω) a‖ ^ q) P)
+    (hZall : ∀ ω, ‖Uker L (SumZeroDyn.xi2 E σ) (u : ℂ) (v : ℂ) (G ω) a‖ ≤ Env)
+    (hP : (P Ξᶜ).toReal ≤ pr) :
+    momNorm P q (fun ω => ‖Uker L (SumZeroDyn.xi2 E σ) (u : ℂ) (v : ℂ) (G ω) a‖)
+      ≤ (cKerShort ((n + 2) + (n + 2)) √κ * K ^ ((n + 2) + (n + 2))
+            * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ ((n + 2) + (n + 2)) * momNorm P q ψ
+          + (cKerShort ((n + 2) + (n + 2)) √κ * K ^ ((n + 2) + (n + 2))
+                * ((1 - s) / (1 - v)) ^ ((n + 2) + (n + 2)) * ζ
+            + ((1 - s) / (1 - v)) ^ ((n + 2) + (n + 2)) * δ))
+        + Env * pr ^ ((1 : ℝ) / q) := by
+  have hE : |E| < 2 := by
+    have : |E| ≤ 2 - κ := hEκ
+    linarith
+  have hv0 : (0 : ℝ) ≤ v := ((hs0.trans hsu).trans huv)
+  have hκt : √κ ≤ ‖1 - (v : ℂ) * SumZeroDyn.xi2 E σ (Fin.castAdd (n + 2) k)‖ := by
+    rw [SumZeroDyn.xi2, Fin.append_left]
+    exact sqrt_le_norm_one_sub_xiOf hκ0 hκ1 hEκ hv0 hv1.le hk
+  exact momNorm_Uker_short_scale_le_on_event' L hL hq
+    (SumZeroDyn.norm_xi2_le hE σ) (Real.sqrt_pos.2 hκ0) hs0 hsu huv hv1
+    (Fin.castAdd (n + 2) k) hκt hκA hK hζ hδ hψ0 hint hGM hGd a
+    hEnv0 hpr hZint hZall hP
 
 end Short716
 
@@ -711,6 +847,356 @@ theorem rhsNonAltAt_of_kernel_inputs {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1
   have hC : (0 : ℝ) ≤ C1 + Csq + 1 := by linarith
   exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hfin hNp0.le) hC
 
+/-! #### §3b  The producer with the (7.13) rows asked **only on an event** (T254)
+
+`RBM.Gauss.rhsNonAltAt_of_kernel_inputs` above quantifies its `hDecI`/`hDecF`/`hDecE` rows
+over **every** sample point.  Read literally that asks the loop `L - K` to be
+`(ℓ_u K, δ)`-fast-decaying at `ω = 0` too — where `H = 0` and `G = -z⁻¹`, so the loop is a
+deterministic non-decaying object — and the project's satisfiability discipline forbids it
+(`docs/paper-deltas.md`, `T219a`/`T236a`; the Case-2 twin was rewired by T246).
+
+`RBM.Gauss.rhsNonAltAt_of_kernel_inputs'` is the same producer with
+
+* `hEnvI`/`hEnvF`/`hEnvE` **and** `hDecI`/`hDecF`/`hDecE` restricted to `∀ ω ∈ Ξ N`;
+* `Ξ` carrying **no** `MeasurableSet` hypothesis — §1b takes the measurable core internally;
+* the price of the split, one extra additive `Env_N · P(Ξᶜ)^{1/q}` per term, folded into the
+  single new row `cE`, whose two smallness hypotheses are stated in the order the moment route
+  needs (`p` first, then `N → ∞`) and are discharged by `RBM.Gauss.eventually_env_mul_lkGood_le`;
+* `Kd`, `ζ`, `δ` promoted from constants to `ℕ → ℝ`, as on the Case-2 side: on the paper's own
+  scaling the radius is `K = W^τ` and the (7.13) budget is `N^{τ₁} N^{-D}`, neither of which is
+  `N`-independent, so constants would only be satisfiable by degenerate choices.
+
+Unlike Case 2 there is **no** `hErr…` row: `RBM.SumZeroDyn.norm_Uker_short_scale_le'` returns
+the input budget `δ` itself, carried across the window by `((1-s)/(1-v))^m`, so the window-level
+`hnum` row already has a single error symbol to work with.  Three terms instead of five.
+
+`RBM.Gauss.rhsNonAltAt_of_kernel_inputs` is kept above, unchanged: it is a true theorem with a
+strictly stronger hypothesis table, and `RBM.Gauss.rhsNonAltAt_of_kernel_inputs_zero_err` still
+consumes it. -/
+
+/-- **The producer of `RBM.Gauss.RhsNonAltAt` with the size envelope and the fast decay (7.13)
+asked only on an event.**
+
+Hypothesis table, with the owner of each row:
+
+| row | what | owner |
+|---|---|---|
+| `hEnvI`, `hEnvF`, `hEnvE` | the size envelope of (7.16), **on `Ξ N`** | Step 2 on the good event |
+| `hDecI`, `hDecF`, `hDecE` | the fast decay (7.13), **on `Ξ N`** | T220 (`FastDecayFlow`) |
+| `hZI`…`hZEint` | a deterministic envelope `Env_N` for the kernel | `‖G‖ ≤ η⁻¹` |
+| `hPr`, `hEnvPr`, `hEnvPrE` | the Markov price of the split | `RBM.HighProb` |
+| `hMψ`, `hMψE` | `‖ψ_u‖_{2p} ≺ Φ` on the window | the drift / `E⊗E` moment bounds |
+| `hnum` | the arithmetic of (5.24) | see §5 |
+
+Every row is restricted to non-alternating charges and every time quantifier is restricted to
+the closed window `[s N, v N] ⊆ [0,1)`.  There is no row quantifying a decay statement over
+all `ω`, and no `MeasurableSet` row. -/
+theorem rhsNonAltAt_of_kernel_inputs' {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    (H : MomentDuhamel.Hyp X E s t n)
+    {v : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hsv : ∀ N, s N ≤ v N) (hvt : ∀ N, v N ≤ t N)
+    (ht1 : ∀ N, t N < 1)
+    {Kd ζ δ : ℕ → ℝ} (hKd : ∀ N, 1 ≤ Kd N) (hζ : ∀ N, 0 ≤ ζ N) (hδ : ∀ N, 0 ≤ δ N)
+    {ψ ψE : ∀ N, ℝ → LoopData (B.L N) (n + 2) → Ω → ℝ}
+    (hψ0 : ∀ N u q ω, 0 ≤ ψ N u q ω) (hψE0 : ∀ N u q ω, 0 ≤ ψE N u q ω)
+    (hψint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψ N u q ω ^ r) B.P)
+    (hψEint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψE N u q ω ^ r) B.P)
+    {Ξ : ℕ → Set Ω}
+    (hEnvI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+      ∀ ω ∈ Ξ N, ∀ b : LoopArg (B.L N) (n + 2),
+      ‖SumZeroDyn.lkT X E N (s N) ω q.1 b‖
+        ≤ (B.scale E N (s N))⁻¹ ^ (n + 2) * ψ N (s N) q ω + ζ N)
+    (hDecI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+      ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((s N : ℝ) : ℂ) * Kd N) (δ N)
+        (SumZeroDyn.lkT X E N (s N) ω q.1))
+    (hEnvF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+      ∀ ω ∈ Ξ N, ∀ b : LoopArg (B.L N) (n + 2),
+      ‖H.F N u (X.H N u ω) q.1 b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hDecF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+      ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N) (H.F N u (X.H N u ω) q.1))
+    (hEnvE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+      ∀ ω ∈ Ξ N, ∀ b : LoopArg (B.L N) ((n + 2) + (n + 2)),
+      ‖eeFun B E N u (X.H N u ω) q.1 b‖
+        ≤ (B.scale E N u)⁻¹ ^ ((n + 2) + (n + 2)) * ψE N u q ω + ζ N)
+    (hDecE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+      ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N)
+        (eeFun B E N u (X.H N u ω) q.1))
+    {Env pr cE : ℕ → ℝ} (hEnv0 : ∀ N, 0 ≤ Env N) (hpr0 : ∀ N, 0 ≤ pr N)
+    (hcE0 : ∀ N, 0 ≤ cE N) (hPr : ∀ N, (B.P (Ξ N)ᶜ).toReal ≤ pr N)
+    (hZI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.lkT X E N (s N) ω q.1) q.2‖ ≤ Env N)
+    (hZIint : ∀ (r N : ℕ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1) q.2‖ ^ r) B.P)
+    (hZF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (H.F N u (X.H N u ω) q.1) q.2‖ ≤ Env N)
+    (hZFint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1) q.2‖ ^ r) B.P)
+    (hZE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖ ≤ Env N)
+    (hZEint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖ ^ r) B.P)
+    (hEnvPr : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((2 * p : ℕ) : ℝ)) ≤ cE N)
+    (hEnvPrE : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((p : ℕ) : ℝ)) ≤ cE N)
+    {Phi PhiE : ∀ N, LoopData (B.L N) (n + 2) → ℝ}
+    (hPhi0 : ∀ N q, 0 ≤ Phi N q) (hPhiE0 : ∀ N q, 0 ≤ PhiE N q)
+    (hMψ : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * Phi N q))
+    (hMψE : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P p (ψE N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * PhiE N q))
+    {c : ℕ → ℝ}
+    (hnum : ∀ᶠ N : ℕ in atTop, ∀ q : LoopData (B.L N) (n + 2),
+      (cKer716Short (n + 2) √κ (Kd N) * (B.scale E N (v N))⁻¹ ^ (n + 2) * Phi N q
+          + (errKer716Short (n + 2) √κ (Kd N) (ζ N) (δ N) (s N) (v N) + cE N))
+            * (1 + 2 * (v N - s N))
+        + ((v N - s N) * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N)
+              * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * PhiE N q
+            + (errKer716Short ((n + 2) + (n + 2)) √κ (Kd N) (ζ N) (δ N) (s N) (v N)
+              + cE N))) ^ ((1 : ℝ) / 2)
+        ≤ c N * (B.scale E N (v N) ^ (n + 2))⁻¹) :
+    RhsNonAltAt H c v := by
+  have hE : |E| < 2 := by linarith
+  have hκg : (0 : ℝ) < √κ := Real.sqrt_pos.2 hκ0
+  intro ε hε p hp
+  obtain ⟨C1, hC10, hA1⟩ := hMψ ε hε p hp
+  obtain ⟨C3, hC30, hA3⟩ := hMψE ε hε p hp
+  have hcMD := H.cMD_nonneg p
+  set Csq : ℝ := (H.cMD p * (C3 + 1)) ^ ((1 : ℝ) / 2) with hCsqdef
+  have hCsq0 : 0 ≤ Csq := Real.rpow_nonneg (by positivity) _
+  refine ⟨C1 + Csq + 1, by positivity, ?_⟩
+  filter_upwards [hA1, hA3, hnum, hEnvPr p hp, hEnvPrE p hp, eventually_ge_atTop 1] with
+    N h1 h3 hnumN hEP hEPE hNge q hna
+  obtain ⟨k, hk⟩ := hna
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hNge
+  have hKd0 : (0 : ℝ) ≤ Kd N := by linarith [hKd N]
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have h2p : 2 * p ≠ 0 := by omega
+  have hp0 : p ≠ 0 := by omega
+  set Np : ℝ := (N : ℝ) ^ (ε / 2) with hNpdef
+  have hNp1 : (1 : ℝ) ≤ Np := Real.one_le_rpow hNge1 (by positivity)
+  have hNp0 : (0 : ℝ) < Np := lt_of_lt_of_le one_pos hNp1
+  have hs0N := hs0 N
+  have hsvN := hsv N
+  have hv1 : v N < 1 := lt_of_le_of_lt (hvt N) (ht1 N)
+  have hv0 : (0 : ℝ) ≤ v N := hs0N.trans hsvN
+  have hκA : (0 : ℝ) < (B.W N : ℝ) * (mE E).im := by
+    have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+    have := mE_im_pos hE
+    positivity
+  have hbr : ∀ w : ℝ, ((B.W N : ℝ) * (mE E).im) * ((1 - w) * ellHat (B.L N) ((w : ℝ) : ℂ))
+      = B.scale E N w := fun w => scale_eq_kappaA B E N w
+  set Av : ℝ := (B.scale E N (v N))⁻¹ ^ (n + 2) with hAvdef
+  set Av2 : ℝ := (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) with hAv2def
+  set Eb : ℝ := errKer716Short (n + 2) √κ (Kd N) (ζ N) (δ N) (s N) (v N) + cE N with hEbdef
+  set Eb2 : ℝ := errKer716Short ((n + 2) + (n + 2)) √κ (Kd N) (ζ N) (δ N) (s N) (v N) + cE N
+    with hEb2def
+  have hEb0 : (0 : ℝ) ≤ Eb := by
+    rw [hEbdef]
+    have := errKer716Short_nonneg (n + 2) hκg hKd0 (hζ N) (hδ N) hsvN hv1
+    have := hcE0 N
+    linarith
+  have hEb20 : (0 : ℝ) ≤ Eb2 := by
+    rw [hEb2def]
+    have := errKer716Short_nonneg ((n + 2) + (n + 2)) hκg hKd0 (hζ N) (hδ N) hsvN hv1
+    have := hcE0 N
+    linarith
+  have hscale : (0 : ℝ) < B.scale E N (v N) := B.scale_pos' hE N hv0 hv1
+  have hAv0 : (0 : ℝ) ≤ Av := by rw [hAvdef]; positivity
+  have hAv20 : (0 : ℝ) ≤ Av2 := by rw [hAv2def]; positivity
+  have hcK0 : (0 : ℝ) ≤ cKer716Short (n + 2) √κ (Kd N) := cKer716Short_nonneg _ hκg hKd0
+  have hcK20 : (0 : ℝ) ≤ cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) :=
+    cKer716Short_nonneg _ hκg hKd0
+  set Kmain : ℝ := cKer716Short (n + 2) √κ (Kd N) * Av * Phi N q + Eb with hKmaindef
+  set K3 : ℝ :=
+    (v N - s N) * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q + Eb2)
+    with hK3def
+  have hKmain0 : (0 : ℝ) ≤ Kmain := by
+    rw [hKmaindef]
+    have := hPhi0 N q
+    have : (0 : ℝ) ≤ cKer716Short (n + 2) √κ (Kd N) * Av * Phi N q := by positivity
+    linarith
+  have hvs : (0 : ℝ) ≤ v N - s N := by linarith
+  have hK30 : (0 : ℝ) ≤ K3 := by
+    rw [hK3def]
+    have hPE := hPhiE0 N q
+    have : (0 : ℝ) ≤ cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q := by
+      positivity
+    exact mul_nonneg hvs (by linarith)
+  set Mb : ℝ := cKer716Short (n + 2) √κ (Kd N) * Av * (C1 * (Np * Phi N q)) + Eb with hMbdef
+  have hMb0 : (0 : ℝ) ≤ Mb := by
+    rw [hMbdef]
+    have := hPhi0 N q
+    have : (0 : ℝ) ≤ cKer716Short (n + 2) √κ (Kd N) * Av * (C1 * (Np * Phi N q)) := by
+      positivity
+    linarith
+  have hMbK : Mb ≤ (C1 + 1) * (Np * Kmain) := by
+    rw [hMbdef, hKmaindef]
+    have e1 : cKer716Short (n + 2) √κ (Kd N) * Av * (C1 * (Np * Phi N q))
+        = C1 * (Np * (cKer716Short (n + 2) √κ (Kd N) * Av * Phi N q)) := by ring
+    rw [e1]
+    exact affine_absorb (mul_nonneg (mul_nonneg hcK0 hAv0) (hPhi0 N q)) hEb0 hC10.le hNp1
+  have hnn : (0 : ℝ) ≤ cKerShort (n + 2) √κ * Kd N ^ (n + 2)
+      * (B.scale E N (v N))⁻¹ ^ (n + 2) :=
+    mul_nonneg (mul_nonneg (SumZeroDyn.cKerShort_nonneg _ hκg) (pow_nonneg hKd0 _))
+      (pow_nonneg (inv_nonneg.2 hscale.le) _)
+  -- Term 1: the initial datum of (5.20)
+  have hT1 : momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N (s N) ω q.1) q.2‖) ≤ Mb := by
+    have key := momNorm_Uker_short_sigma_le_on_event (P := B.P) (B.L N) hL3 h2p hκ0 hκ1 hEκ hk
+      (s := s N) (u := s N) (v := v N) hs0N le_rfl hsvN hv1 hκA (hKd N) (hζ N) (hδ N)
+      (Ξ := Ξ N) (G := fun ω => SumZeroDyn.lkT X E N (s N) ω q.1) (ψ := ψ N (s N) q)
+      (fun ω => hψ0 N (s N) q ω) (hψint (2 * p) N (s N) q)
+      (fun ω hω b => by rw [hbr]; exact hEnvI N q ⟨k, hk⟩ ω hω b)
+      (fun ω hω => hDecI N q ⟨k, hk⟩ ω hω) q.2
+      (hEnv0 N) (hpr0 N) (hZIint (2 * p) N q) (fun ω => hZI N q ω) (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hstep := mul_le_mul_of_nonneg_left (h1 (s N) le_rfl hsvN q) hnn
+    rw [hMbdef, hAvdef, cKer716Short, hEbdef, errKer716Short]
+    linarith [hstep, hEP]
+  -- Term 2: the drift of (5.20)
+  have hI2 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (H.F N u (X.H N u ω) q.1) q.2‖))
+      ≤ (v N - s N) * Mb := by
+    refine intervalIntegral_le_of_le_const hsvN hMb0 fun u hu => ?_
+    have key := momNorm_Uker_short_sigma_le_on_event (P := B.P) (B.L N) hL3 h2p hκ0 hκ1 hEκ hk
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv1 hκA (hKd N) (hζ N) (hδ N)
+      (Ξ := Ξ N) (G := fun ω => H.F N u (X.H N u ω) q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω hω b => by rw [hbr]; exact hEnvF N u hu.1 hu.2 q ⟨k, hk⟩ ω hω b)
+      (fun ω hω => hDecF N u hu.1 hu.2 q ⟨k, hk⟩ ω hω) q.2
+      (hEnv0 N) (hpr0 N) (hZFint (2 * p) N u hu.1 hu.2 q) (fun ω => hZF N u hu.1 hu.2 q ω)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hstep := mul_le_mul_of_nonneg_left (h1 u hu.1 hu.2 q) hnn
+    rw [hMbdef, hAvdef, cKer716Short, hEbdef, errKer716Short]
+    linarith [hstep, hEP]
+  -- Term 3: the `E ⊗ E` term of (5.24), under the square root
+  have hI3nn : (0 : ℝ) ≤ ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖) :=
+    intervalIntegral.integral_nonneg hsvN fun u _ => momNorm_nonneg _ _ _
+  have hI3 : (∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖))
+      ≤ (C3 + 1) * (Np * K3) := by
+    have hconst : ∀ u ∈ Set.Icc (s N) (v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)
+        ≤ cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2 := by
+      intro u hu
+      have key := momNorm_Uker_short_xi2_le_on_event (P := B.P) (B.L N) hL3 hp0 hκ0 hκ1 hEκ hk
+        (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv1 hκA (hKd N) (hζ N) (hδ N)
+        (Ξ := Ξ N) (G := fun ω => eeFun B E N u (X.H N u ω) q.1) (ψ := ψE N u q)
+        (fun ω => hψE0 N u q ω) (hψEint p N u q)
+        (fun ω hω b => by rw [hbr]; exact hEnvE N u hu.1 hu.2 q ⟨k, hk⟩ ω hω b)
+        (fun ω hω => hDecE N u hu.1 hu.2 q ⟨k, hk⟩ ω hω) (Fin.append q.2 q.2)
+        (hEnv0 N) (hpr0 N) (hZEint p N u hu.1 hu.2 q) (fun ω => hZE N u hu.1 hu.2 q ω) (hPr N)
+      rw [hbr (v N)] at key
+      refine key.trans ?_
+      have hnn2 : (0 : ℝ) ≤ cKerShort ((n + 2) + (n + 2)) √κ * Kd N ^ ((n + 2) + (n + 2))
+          * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) :=
+        mul_nonneg (mul_nonneg (SumZeroDyn.cKerShort_nonneg _ hκg) (pow_nonneg hKd0 _))
+          (pow_nonneg (inv_nonneg.2 hscale.le) _)
+      have hstep := mul_le_mul_of_nonneg_left (h3 u hu.1 hu.2 q) hnn2
+      rw [hAv2def, cKer716Short, hEb2def, errKer716Short]
+      linarith [hstep, hEPE]
+    have hbase : (0 : ℝ) ≤ cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q :=
+      mul_nonneg (mul_nonneg hcK20 hAv20) (hPhiE0 N q)
+    have hfac : cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2
+        ≤ (C3 + 1)
+            * (Np * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q + Eb2)) := by
+      have e1 : cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * (C3 * (Np * PhiE N q))
+          = C3 * (Np * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q)) := by
+        ring
+      rw [e1]
+      exact affine_absorb hbase hEb20 hC30.le hNp1
+    have hMnn : (0 : ℝ)
+        ≤ cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2 := by
+      have h0 : (0 : ℝ)
+          ≤ C3 * (Np * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q)) :=
+        mul_nonneg hC30.le (mul_nonneg hNp0.le hbase)
+      have e1 : cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * (C3 * (Np * PhiE N q))
+          = C3 * (Np * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q)) := by
+        ring
+      rw [e1]
+      linarith
+    refine (intervalIntegral_le_of_le_const hsvN hMnn hconst).trans ?_
+    rw [hK3def]
+    calc (v N - s N)
+          * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2)
+        ≤ (v N - s N) * ((C3 + 1)
+            * (Np * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q + Eb2))) :=
+          mul_le_mul_of_nonneg_left hfac hvs
+      _ = (C3 + 1) * (Np * ((v N - s N)
+            * (cKer716Short ((n + 2) + (n + 2)) √κ (Kd N) * Av2 * PhiE N q + Eb2))) := by ring
+  have hT3 : (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+      ≤ Csq * (Np * K3 ^ ((1 : ℝ) / 2)) := by
+    have hstep : (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+          ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+            (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+        ≤ ((H.cMD p * (C3 + 1)) * (Np * K3)) ^ ((1 : ℝ) / 2) := by
+      refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
+      calc H.cMD p * _ ≤ H.cMD p * ((C3 + 1) * (Np * K3)) :=
+            mul_le_mul_of_nonneg_left hI3 hcMD
+        _ = (H.cMD p * (C3 + 1)) * (Np * K3) := by ring
+    refine hstep.trans ?_
+    rw [Real.mul_rpow (by positivity) (by positivity), Real.mul_rpow hNp0.le hK30, ← hCsqdef]
+    have hhalf : Np ^ ((1 : ℝ) / 2) ≤ Np := by
+      calc Np ^ ((1 : ℝ) / 2) ≤ Np ^ (1 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le hNp1 (by norm_num)
+        _ = Np := Real.rpow_one Np
+    have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
+    exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hhalf hK3s) hCsq0
+  -- assemble
+  have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
+  have htwo : Mb + 2 * ((v N - s N) * Mb)
+      ≤ (C1 + 1) * (Np * (Kmain * (1 + 2 * (v N - s N)))) := by
+    have h6 : Mb * (1 + 2 * (v N - s N))
+        ≤ ((C1 + 1) * (Np * Kmain)) * (1 + 2 * (v N - s N)) :=
+      mul_le_mul_of_nonneg_right hMbK (by linarith)
+    linarith [h6]
+  have hmain : Mb + 2 * ((v N - s N) * Mb) + Csq * (Np * K3 ^ ((1 : ℝ) / 2))
+      ≤ (C1 + Csq + 1) * (Np * (Kmain * (1 + 2 * (v N - s N)) + K3 ^ ((1 : ℝ) / 2))) := by
+    have hpos : (0 : ℝ) ≤ Np * (Kmain * (1 + 2 * (v N - s N))) :=
+      mul_nonneg hNp0.le (mul_nonneg hKmain0 (by linarith))
+    have t1 : (0 : ℝ) ≤ Csq * (Np * (Kmain * (1 + 2 * (v N - s N)))) := mul_nonneg hCsq0 hpos
+    have t2 : (0 : ℝ) ≤ (C1 + 1) * (Np * K3 ^ ((1 : ℝ) / 2)) :=
+      mul_nonneg (by linarith) (mul_nonneg hNp0.le hK3s)
+    linarith [htwo, t1, t2]
+  refine le_trans (by linarith [hT1, hI2, hT3]) (hmain.trans ?_)
+  have hfin := hnumN q
+  rw [← hKmaindef, ← hK3def] at hfin
+  have hC : (0 : ℝ) ≤ C1 + Csq + 1 := by linarith
+  exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hfin hNp0.le) hC
+
 end Producer
 
 /-! ### §4  §5.5's charge split, with the `(-,+)` exception folded in
@@ -1071,6 +1557,112 @@ theorem gridS_short_witness [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (hL : 
 
 end GridWitness
 
+section EventRowsWitness
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+variable {B : Band Ω} [IsProbabilityMeasure B.P] {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The rows that `RBM.Gauss.rhsNonAltAt_of_kernel_inputs'` adds on top of §3 are
+simultaneously satisfiable**, at the model's own good event `RBM.FastDecayFlow.lkGood` of
+(5.75), with `pr` taken to be the event's own Markov price and `Kd N = N^τ`, `δ N = N^{τ₁-D₀}`
+the radius and budget that event actually delivers.
+
+The six clauses are, in order, the `hpr0`, `hPr`, `hEnvPr`, `hEnvPrE` rows, the `hDecI` row
+(**the row this ticket rewired** — note that it is now a *theorem* about the event, not an
+assumption about every `ω`), and the anti-vacuity statement that the event is not eventually
+empty.  Nothing is re-proved: the two smallness clauses are
+`RBM.Gauss.eventually_env_mul_lkGood_le`, the decay clause is
+`RBM.FastDecayFlow.fastDecay_lkT_of_mem_lkGood`, and the last is
+`RBM.FastDecayFlow.nonempty_of_highProb`.
+
+**The quantifier order is the one the moment route needs** — `p` fixed, then `N → ∞`, never
+`∀ p N` — which is the discipline `docs/paper-deltas.md` records at T188.  The Case-2 twin is
+`RBM.Gauss.rhs514QAt_event_rows_witness`. -/
+theorem rhsNonAltAt_event_rows_witness (hdec : SumZeroDyn.LKDecay X E s t) {n : ℕ}
+    (hst : ∀ N, s N ≤ t N) {τ τ₁ D₀ : ℝ} (hτ : 0 < τ) (hτ₁ : 0 < τ₁) (hD₀ : 0 < D₀)
+    {Env : ℕ → ℝ} {Cenv : ℝ} (hCenv : 0 ≤ Cenv)
+    (hEnvle : ∀ᶠ N : ℕ in atTop, Env N ≤ (N : ℝ) ^ Cenv) {D : ℝ} (hD : 0 < D) :
+    (∀ N : ℕ, (0 : ℝ) ≤ (B.P (FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N)ᶜ).toReal)
+    ∧ (∀ N : ℕ, (B.P (FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N)ᶜ).toReal
+        ≤ (B.P (FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N)ᶜ).toReal)
+    ∧ (∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+        Env N * (B.P (FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N)ᶜ).toReal
+            ^ ((1 : ℝ) / ((2 * p : ℕ) : ℝ)) ≤ (N : ℝ) ^ (-D))
+    ∧ (∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+        Env N * (B.P (FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N)ᶜ).toReal
+            ^ ((1 : ℝ) / ((p : ℕ) : ℝ)) ≤ (N : ℝ) ^ (-D))
+    ∧ (∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), SumZeroDyn.NonAlt q.1 →
+        ∀ ω ∈ FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N,
+        FastDecay (B.L N) (ellHat (B.L N) ((s N : ℝ) : ℂ) * (N : ℝ) ^ τ)
+          ((N : ℝ) ^ τ₁ * (N : ℝ) ^ (-D₀)) (SumZeroDyn.lkT X E N (s N) ω q.1))
+    ∧ (∀ᶠ N : ℕ in atTop, (FastDecayFlow.lkGood X E s t (n + 2) τ τ₁ D₀ N).Nonempty) :=
+  ⟨fun _ => ENNReal.toReal_nonneg, fun _ => le_rfl,
+    fun p hp => eventually_env_mul_lkGood_le hdec (Nat.le_add_left 1 (n + 1)) hτ hτ₁ hD₀
+      (q := 2 * p) (by omega) hCenv hEnvle hD,
+    fun p hp => eventually_env_mul_lkGood_le hdec (Nat.le_add_left 1 (n + 1)) hτ hτ₁ hD₀
+      (q := p) (by omega) hCenv hEnvle hD,
+    fun N q _ ω hω => FastDecayFlow.fastDecay_lkT_of_mem_lkGood le_rfl (hst N) hω q.1,
+    FastDecayFlow.nonempty_of_highProb
+      (FastDecayFlow.highProb_lkGood hdec (Nat.le_add_left 1 (n + 1)) hτ hτ₁ hD₀)⟩
+
+/-- **The `hPr` row of `RBM.Gauss.rhsNonAltAt_of_kernel_inputs'` cannot be satisfied by making
+the event empty.**  T237's gate, as on the Case-2 side
+(`RBM.Gauss.nonempty_of_hPr`): as soon as the Markov bound is below `1` the event has a point,
+so the "truncate everything to `0`" route to a vacuously true hypothesis table is closed
+syntactically.  (For the conclusion to say anything `pr N` has to be far below `1`.) -/
+theorem nonempty_of_hPr_short {Ξ : ℕ → Set Ω} {pr : ℕ → ℝ}
+    (hPr : ∀ N, (B.P (Ξ N)ᶜ).toReal ≤ pr N) {N : ℕ} (h1 : pr N < 1) : (Ξ N).Nonempty :=
+  nonempty_of_measureReal_compl_lt_one h1 (hPr N)
+
+end EventRowsWitness
+
 end Satisfiability
+
+/-! ### Deviations from the paper introduced by §1b, §3b and §5b (T254)
+
+**`T254a`.**
+
+*Paper location.*  §7, Lemma 7.3, **Case 1** of (7.16), read on the three right-hand terms of
+(5.20) + (5.24) — i.e. (7.13) and (7.16) as they are used at the initial datum, at the drift and
+at the `E ⊗ E` term.
+
+*What deviates.*  Two accounting devices, neither of which changes a paper statement.
+
+1. **The event.**  The paper says (7.13) and the a priori size bounds "hold with high
+   probability" and then works on that event without naming it; §3b names it `Ξ N` and pays for
+   the passage back to the unrestricted moment norm with one extra additive
+   `Env_N · P((Ξ N)ᶜ)^{1/q}` per term, collected into the single row `cE`.  This is strictly
+   *weaker* than what §3 assumed (§3 asked the same bounds at **every** sample point, which at
+   `ω = 0` — `H = 0`, `G = -z⁻¹` — is false; that is `T236a` / `T219a`), so §3b is the honest
+   form and §3 is the one that deviated.  `Ξ` carries no measurability hypothesis: §1b passes
+   to `RBM.Gauss.measCore B.P (Ξ N)`, which is measurable, contained in `Ξ N`, and has a
+   complement of exactly the same measure, so no estimate is weakened by the passage.
+2. **`Kd`, `ζ`, `δ` are `ℕ → ℝ`, not constants.**  On the paper's own scaling the fast-decay
+   radius is `K = W^{τ}` and the (7.13) budget is `N^{τ₁} N^{-D}`, neither of which is
+   `N`-independent; asking for constants would only be satisfiable by degenerate choices.  Same
+   change as T246 made on the Case-2 side, and for the same reason.
+
+There is **no** `hErr…` row here, unlike Case 2: `RBM.SumZeroDyn.norm_Uker_short_scale_le'`
+returns the input budget `δ` itself, carried across the window by `((1-s)/(1-v))^m`, so the
+window-level `hnum` row already has one error symbol to work with.
+
+*Is the paper changed?*  No.  Both items are bookkeeping around statements the paper makes
+verbatim; (7.16) Case 1 is still used through `RBM.norm_Uker_fastDecay_le_short` and the charge
+classification is still `RBM.SumZeroDyn.NonAlt`.
+
+*Line count.*  About 460 lines: §1b (three lemmas), §3b (`RBM.Gauss.rhsNonAltAt_of_kernel_inputs'`)
+and §5b (the two witnesses).
+
+*Renumbering.*  None.  `RBM.Gauss.rhsNonAltAt_of_kernel_inputs`,
+`RBM.Gauss.rhsNonAltAt_of_kernel_inputs_zero_err` and
+`RBM.Gauss.momNorm_Uker_short_scale_le_on_event` keep their statements, their names and their
+consumers; the new declarations are primed or suffixed.
+
+*What is not supplied.*  There is no `…_zero_err'` twin, for the same reason as on the Case-2
+side: `RBM.Gauss.hnum_le_of_zero_err_short` discharges the numeric row by sending the error to
+`0`, and here `cE N = 0` would force `Env N · pr N^{1/q} = 0`, i.e. either a null complement or
+a vanishing kernel.  The `hnum` row of §3b is meant to be discharged asymptotically, with
+`cE N` superpolynomially small (`RBM.Gauss.rhsNonAltAt_event_rows_witness` gives `cE N = N^{-D}`
+for any `D > 0`), not by an exact cancellation. -/
 
 end RBM.Gauss

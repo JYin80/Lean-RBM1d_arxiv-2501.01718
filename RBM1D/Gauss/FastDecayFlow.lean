@@ -1210,5 +1210,351 @@ theorem hGd_Qop_driftF_env (hE : |E| < 2) {n N : ℕ} {u K δ MK MD δF : ℝ} (
 
 end DriftEnvelopeT238
 
-end RBM.FastDecayFlow
+/-! ### §14  The four `hErr*` budgets of `rhs514QAt_of_kernel_inputs'`, uniformly in `u` (T253)
 
+T246 left four **deterministic** obligations open in
+`RBM.Gauss.rhs514QAt_of_kernel_inputs'` (paper-delta `T246a`): a single `δ' : ℕ → ℝ` that
+dominates, uniformly for `u` in the closed window `[s N, v N]`, the four budgets of §3 —
+`qopErr1` (Lemma 5.13, (5.87)), `commErr` ((5.99)), `dotErr` ((5.100)) and `qqErr` ((5.103)).
+No model, no sample point, no event and no probability enter; this is elementary calculus on
+the window.
+
+**No compactness is needed.**  The `u`-dependence of the three `u`-dependent budgets is
+entirely through `(1-u)⁻¹`, which is monotone, and through `ℓ̂_u = ellHat L u`, which enters in
+exactly two ways:
+
+* as `(c₂/ℓ̂_u)^{n+1}`, bounded by `c₂^{n+1}` because `ℓ̂_u ≥ 1`
+  (`RBM.one_le_ellHat_of_nonneg`) — this is where `0 ≤ u` is used;
+* inside the exponentials, always in the combination `c₀·(ℓ̂_u·K)/ℓ̂_u`, i.e. **`ℓ̂_u` cancels
+  exactly**.  The only residues are `±c₀/(2ℓ̂_u)`, again handled by `ℓ̂_u ≥ 1`.
+
+`qqErr` is the one exception: it carries the radius `ℓ̂_u K` also *outside* an exponential, in
+the factor `(2e(R+1))^k` of `RBM.FastDecayFlow.qBlockSize`.  There `ℓ̂_u ≤ L` (`min_le_right`)
+is used instead, which is why `qqErrBd` is stated at radius `L·K` rather than at `ℓ̂_u·K`.
+
+**`δ'` really depends on `N`.**  T246's warning is respected: `commErrBd` carries the explicit
+factor `L`, and `qqErrBd` carries `L^k` and `(2e(L·K+1))^k`, so no constant dominates the four
+once `L N → ∞`.  The budget delivered here is
+`poly(L N, n) · (Pb N + Msz N) · e^{-c₀ Kd N/2}  +  poly(L N, n) · δ N`,
+the second summand coming from the two `δ`-terms of `qBlockErr` that carry no exponential.
+With the intended `Kd N = N^τ` and `δ N = N^{τ₁-D}` this is `≤ N^{-D'}` for every `D'`, `D`
+being free — which is what the `hnum` row of `rhs514QAt_of_kernel_inputs'` consumes. -/
+
+section ErrBudgetT253
+
+open Real
+
+/-- `(c₂/ℓ)^k ≤ c₂^k` for `ℓ ≥ 1`: the only way `ℓ̂_u` enters the budgets outside an
+exponential, apart from the radius of `qqErr`. -/
+theorem cTwo52_div_pow_le (k : ℕ) {ℓr : ℝ} (h : 1 ≤ ℓr) :
+    (cTwo52 / ℓr) ^ k ≤ cTwo52 ^ k := by
+  have h0 : (0 : ℝ) < ℓr := by linarith
+  have := cTwo52_pos
+  gcongr
+  exact div_le_self cTwo52_pos.le h
+
+/-- `qopErr1` is at least its own input error: used to certify that the budget of §14 is
+strictly positive whenever the input decay error is, i.e. that nothing here is closed by
+sending the estimated quantity to `0`. -/
+theorem self_le_qopErr1 (L n : ℕ) {K M δ : ℝ} (hK : 0 ≤ K) (hM : 0 ≤ M) (hδ : 0 ≤ δ) :
+    δ ≤ qopErr1 L n K M δ := by
+  have := cTwo52_pos
+  have h : 0 ≤ ((6 * exp 1 * cTwo52 * K) ^ (n + 1) * M
+      + (2 * cTwo52) ^ (n + 1) * (L : ℝ) ^ (n + 1) * δ) * exp (-(cZero * K / 2)) := by
+    positivity
+  unfold qopErr1
+  linarith
+
+/-- The `u`-free dominant of `RBM.FastDecayFlow.commErr` on `u ≤ v`. -/
+noncomputable def commErrBd (L n : ℕ) (v K Pb : ℝ) : ℝ :=
+  ((n : ℝ) + 2) * (1 - v)⁻¹ * Pb * cTwo52 ^ (n + 1) * (2 + (L : ℝ) * cTwo52)
+    * exp (-(cZero * K / 2))
+
+/-- The `u`-free dominant of `RBM.FastDecayFlow.dotErr` on `u ≤ v`. -/
+noncomputable def dotErrBd (n : ℕ) (v K Pb : ℝ) : ℝ :=
+  Pb * (3 * ((n : ℝ) + 1) * cTwo52 ^ (n + 1) * (1 - v)⁻¹ * exp (cZero / 2))
+    * exp (-(cZero * K / 2))
+
+/-- The `ℓ`-free dominant of `RBM.FastDecayFlow.qBlockSize`, read at radius `R`. -/
+noncomputable def qBlockSizeBd (L k : ℕ) (R e δ : ℝ) : ℝ :=
+  e + ((2 * exp 1 * (R + 1)) ^ k * e + (L : ℝ) ^ k * δ) * cTwo52 ^ k
+
+/-- The `ℓ`-free dominant of `RBM.FastDecayFlow.qBlockErr`, read at radius `R` with the
+exponential already evaluated at `R/ℓ = c`. -/
+noncomputable def qBlockErrBd (L k : ℕ) (R c e δ : ℝ) : ℝ :=
+  δ + ((2 * exp 1 * (R + 1)) ^ k * e + (L : ℝ) ^ k * δ) * cTwo52 ^ k * exp (-(cZero * c))
+    + (L : ℝ) ^ k * δ * cTwo52 ^ k
+
+/-- The `u`-free dominant of `RBM.FastDecayFlow.qqErr`: the two nested blocks of (5.103),
+each read at the widened radius `L·K` and at the *unwidened* exponent `K`. -/
+noncomputable def qqErrBd (L k : ℕ) (K e δ : ℝ) : ℝ :=
+  qBlockErrBd L k (2 * ((L : ℝ) * K)) (2 * K)
+    (qBlockSizeBd L k ((L : ℝ) * K) e δ) (qBlockErrBd L k ((L : ℝ) * K) K e δ)
+
+theorem commErrBd_nonneg (L n : ℕ) {v K Pb : ℝ} (hv : v < 1) (hPb : 0 ≤ Pb) :
+    0 ≤ commErrBd L n v K Pb := by
+  have := cTwo52_pos
+  have h1v : (0 : ℝ) < 1 - v := by linarith
+  unfold commErrBd
+  positivity
+
+theorem dotErrBd_nonneg (n : ℕ) {v K Pb : ℝ} (hv : v < 1) (hPb : 0 ≤ Pb) :
+    0 ≤ dotErrBd n v K Pb := by
+  have := cTwo52_pos
+  have h1v : (0 : ℝ) < 1 - v := by linarith
+  unfold dotErrBd
+  positivity
+
+theorem qBlockSizeBd_nonneg (L k : ℕ) {R e δ : ℝ} (hR : 0 ≤ R) (he : 0 ≤ e) (hδ : 0 ≤ δ) :
+    0 ≤ qBlockSizeBd L k R e δ := by
+  have := cTwo52_pos
+  unfold qBlockSizeBd
+  positivity
+
+theorem qBlockErrBd_nonneg (L k : ℕ) {R c e δ : ℝ} (hR : 0 ≤ R) (he : 0 ≤ e) (hδ : 0 ≤ δ) :
+    0 ≤ qBlockErrBd L k R c e δ := by
+  have := cTwo52_pos
+  unfold qBlockErrBd
+  positivity
+
+theorem qqErrBd_nonneg (L k : ℕ) {K e δ : ℝ} (hK : 0 ≤ K) (he : 0 ≤ e) (hδ : 0 ≤ δ) :
+    0 ≤ qqErrBd L k K e δ :=
+  qBlockErrBd_nonneg L k (by positivity)
+    (qBlockSizeBd_nonneg L k (by positivity) he hδ)
+    (qBlockErrBd_nonneg L k (by positivity) he hδ)
+
+/-- **(5.99) uniformly in `u`.**  `commErr` at any `u ≤ v < 1` and any radius `ℓr ≥ 1` is
+dominated by a quantity free of both. -/
+theorem commErr_le (L n : ℕ) {ℓr u v K Pb : ℝ} (h1l : 1 ≤ ℓr) (huv : u ≤ v) (hv1 : v < 1)
+    (hK : 0 ≤ K) (hPb : 0 ≤ Pb) :
+    commErr L n ℓr u K Pb ≤ commErrBd L n v K Pb := by
+  have hC := cTwo52_pos
+  have hc0 := cZero_pos
+  have hl0 : (0 : ℝ) < ℓr := by linarith
+  have h1v : (0 : ℝ) < 1 - v := by linarith
+  have h1u : (0 : ℝ) < 1 - u := by linarith
+  have e1 : cZero * ((ℓr * K) / 2) / ℓr = cZero * K / 2 := by field_simp
+  have e2 : cZero * (ℓr * K) / ℓr = cZero * K := by field_simp
+  have e3 : cZero * ((2 * (ℓr * K) + 1) / 2) / ℓr = cZero * K + cZero / (2 * ℓr) := by
+    field_simp
+  have hP : (cTwo52 / ℓr) ^ (n + 1) ≤ cTwo52 ^ (n + 1) := cTwo52_div_pow_le _ h1l
+  have hE2 : exp (-(cZero * K)) ≤ exp (-(cZero * K / 2)) := by
+    apply Real.exp_le_exp.2; nlinarith
+  have hE3 : exp (-(cZero * K + cZero / (2 * ℓr))) ≤ exp (-(cZero * K / 2)) := by
+    apply Real.exp_le_exp.2
+    have : 0 ≤ cZero / (2 * ℓr) := by positivity
+    nlinarith
+  have hinv : (1 - u)⁻¹ ≤ (1 - v)⁻¹ := by gcongr
+  have key : commErr L n ℓr u K Pb
+      ≤ (((n + 1 : ℕ) : ℝ) + 1) * ((1 - v)⁻¹ * (Pb * (cTwo52 ^ (n + 1)
+            * exp (-(cZero * K / 2))))
+          + L * (cTwo52 / ((1 - v) * 1) * exp (-(cZero * K / 2))
+            * (Pb * cTwo52 ^ (n + 1))))
+        + (1 + ((n + 1 : ℕ) : ℝ)) * (1 - v)⁻¹ * Pb
+            * (cTwo52 ^ (n + 1) * exp (-(cZero * K / 2))) := by
+    unfold commErr
+    rw [e1, e2, e3]
+    gcongr
+  refine key.trans (le_of_eq ?_)
+  unfold commErrBd
+  push_cast
+  field_simp
+  ring
+
+/-- **(5.100) uniformly in `u`.** -/
+theorem dotErr_le (n : ℕ) {ℓr u v K Pb : ℝ} (h1l : 1 ≤ ℓr) (huv : u ≤ v) (hv1 : v < 1)
+    (hK : 0 ≤ K) (hPb : 0 ≤ Pb) :
+    dotErr n ℓr u K Pb ≤ dotErrBd n v K Pb := by
+  have hC := cTwo52_pos
+  have hc0 := cZero_pos
+  have hl0 : (0 : ℝ) < ℓr := by linarith
+  have h1v : (0 : ℝ) < 1 - v := by linarith
+  have h1u : (0 : ℝ) < 1 - u := by linarith
+  have e4 : cZero * ((ℓr * (4 * K)) / 4 - 1 / 2) / ℓr = cZero * K - cZero / (2 * ℓr) := by
+    field_simp
+  have hP : (cTwo52 / ℓr) ^ (n + 1) ≤ cTwo52 ^ (n + 1) := cTwo52_div_pow_le _ h1l
+  have hinv : (1 - u)⁻¹ ≤ (1 - v)⁻¹ := by gcongr
+  have hE : exp (-(cZero * K - cZero / (2 * ℓr)))
+      ≤ exp (cZero / 2) * exp (-(cZero * K / 2)) := by
+    rw [← Real.exp_add]
+    apply Real.exp_le_exp.2
+    have h1 : cZero / (2 * ℓr) ≤ cZero / 2 := by
+      gcongr
+      linarith
+    nlinarith
+  have key : dotErr n ℓr u K Pb
+      ≤ Pb * (3 * ((n + 1 : ℕ) : ℝ) * cTwo52 ^ (n + 1) * (1 - v)⁻¹
+          * (exp (cZero / 2) * exp (-(cZero * K / 2)))) := by
+    unfold dotErr
+    rw [e4]
+    gcongr
+  refine key.trans (le_of_eq ?_)
+  unfold dotErrBd
+  push_cast
+  ring
+
+/-- One `Q_u` block's size, at the radius `c·(ℓ K)` in which (5.103) reads it, dominated
+free of `ℓ`. -/
+theorem qBlockSize_scaled_le (L k : ℕ) {ℓr c K e δ : ℝ} (h1l : 1 ≤ ℓr) (hlL : ℓr ≤ (L : ℝ))
+    (hc : 0 ≤ c) (hK : 0 ≤ K) (he : 0 ≤ e) (hδ : 0 ≤ δ) :
+    qBlockSize L k ℓr (c * (ℓr * K)) e δ ≤ qBlockSizeBd L k (c * ((L : ℝ) * K)) e δ := by
+  have hC := cTwo52_pos
+  have hl0 : (0 : ℝ) < ℓr := by linarith
+  have hP : (cTwo52 / ℓr) ^ k ≤ cTwo52 ^ k := cTwo52_div_pow_le _ h1l
+  unfold qBlockSize qBlockSizeBd
+  gcongr
+
+/-- One `Q_u` block's error, at the radius `c·(ℓ K)`.  The exponential `exp(-c₀ R/ℓ)` is
+where `ℓ` cancels exactly; the polynomial prefactor is where `ℓ ≤ L` is spent. -/
+theorem qBlockErr_scaled_le (L k : ℕ) {ℓr c K e δ e' δ' : ℝ} (h1l : 1 ≤ ℓr)
+    (hlL : ℓr ≤ (L : ℝ)) (hc : 0 ≤ c) (hK : 0 ≤ K) (he : 0 ≤ e) (hee : e ≤ e')
+    (hδ : 0 ≤ δ) (hδδ : δ ≤ δ') :
+    qBlockErr L k ℓr (c * (ℓr * K)) e δ
+      ≤ qBlockErrBd L k (c * ((L : ℝ) * K)) (c * K) e' δ' := by
+  have hC := cTwo52_pos
+  have hl0 : (0 : ℝ) < ℓr := by linarith
+  have he'0 : 0 ≤ e' := he.trans hee
+  have hδ'0 : 0 ≤ δ' := hδ.trans hδδ
+  have hP : (cTwo52 / ℓr) ^ k ≤ cTwo52 ^ k := cTwo52_div_pow_le _ h1l
+  have he5 : cZero * (c * (ℓr * K)) / ℓr = cZero * (c * K) := by field_simp
+  unfold qBlockErr qBlockErrBd
+  rw [he5]
+  gcongr
+
+/-- **(5.103) uniformly in `u`.** -/
+theorem qqErr_le (L k : ℕ) {ℓr K e δ : ℝ} (h1l : 1 ≤ ℓr) (hlL : ℓr ≤ (L : ℝ))
+    (hK : 0 ≤ K) (he : 0 ≤ e) (hδ : 0 ≤ δ) :
+    qqErr L k ℓr K e δ ≤ qqErrBd L k K e δ := by
+  have hl0 : (0 : ℝ) < ℓr := by linarith
+  unfold qqErr qqErrBd
+  have h1 : qBlockErr L k ℓr (1 * (ℓr * K)) e δ
+      ≤ qBlockErrBd L k (1 * ((L : ℝ) * K)) (1 * K) e δ :=
+    qBlockErr_scaled_le L k h1l hlL zero_le_one hK he le_rfl hδ le_rfl
+  have h2 : qBlockSize L k ℓr (1 * (ℓr * K)) e δ
+      ≤ qBlockSizeBd L k (1 * ((L : ℝ) * K)) e δ :=
+    qBlockSize_scaled_le L k h1l hlL zero_le_one hK he hδ
+  simp only [one_mul] at h1 h2
+  exact qBlockErr_scaled_le (c := 2) L k h1l hlL zero_le_two hK
+    (qBlockSize_nonneg L k hl0 (by positivity) he hδ) h2
+    (qBlockErr_nonneg L k hl0 (by positivity) he hδ) h1
+
+/-- **The single budget that discharges all four `hErr*` rows of
+`RBM.Gauss.rhs514QAt_of_kernel_inputs'`.**  It is the sum of the four dominants, so each of
+them is below it by nonnegativity of the other three. -/
+noncomputable def errBudget (L n : ℕ) (v K M δ Pb e : ℝ) : ℝ :=
+  qopErr1 L n K M δ + commErrBd L n v K Pb + dotErrBd n v K Pb + qqErrBd L (n + 1) K e δ
+
+theorem errBudget_nonneg (L n : ℕ) {v K M δ Pb e : ℝ} (hv : v < 1) (hK : 0 ≤ K)
+    (hM : 0 ≤ M) (hδ : 0 ≤ δ) (hPb : 0 ≤ Pb) (he : 0 ≤ e) :
+    0 ≤ errBudget L n v K M δ Pb e := by
+  have h1 := qopErr1_nonneg L n hK hM hδ
+  have h2 := commErrBd_nonneg L n (K := K) hv hPb
+  have h3 := dotErrBd_nonneg n (K := K) hv hPb
+  have h4 := qqErrBd_nonneg L (n + 1) hK he hδ
+  unfold errBudget
+  linarith
+
+/-- **T253 (paper-delta `T246a`, discharged).**  A single `δ' : ℕ → ℝ` dominating the four
+budgets of Lemma 5.13 / (5.99) / (5.100) / (5.103), uniformly for `u` in the closed window
+`[s N, v N]`.  Instantiate `L := B.L` to feed
+`RBM.Gauss.rhs514QAt_of_kernel_inputs'`'s `hErrQ`, `hErrC`, `hErrD`, `hErrE`.
+
+Entirely deterministic: no model, no sample point, no event, no probability.  The time
+quantifier is confined to the window — at `u ≥ 1` the budgets are not even nonnegative. -/
+theorem exists_uniform_errBudget (n : ℕ) {L : ℕ → ℕ} (hL : ∀ N, 1 ≤ L N)
+    {s v Kd Msz δ Pb esz : ℕ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (hv1 : ∀ N, v N < 1) (hKd : ∀ N, 0 ≤ Kd N)
+    (hMsz : ∀ N, 0 ≤ Msz N) (hδ : ∀ N, 0 ≤ δ N) (hPb : ∀ N, 0 ≤ Pb N)
+    (hesz : ∀ N, 0 ≤ esz N) :
+    ∃ δ' : ℕ → ℝ, (∀ N, 0 ≤ δ' N) ∧
+      (∀ N : ℕ, qopErr1 (L N) n (Kd N) (Msz N) (δ N) ≤ δ' N) ∧
+      (∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+        commErr (L N) n (ellHat (L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N) ≤ δ' N) ∧
+      (∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+        dotErr n (ellHat (L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N) ≤ δ' N) ∧
+      (∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+        qqErr (L N) (n + 1) (ellHat (L N) ((u : ℝ) : ℂ)) (Kd N) (esz N) (δ N) ≤ δ' N) := by
+  refine ⟨fun N => errBudget (L N) n (v N) (Kd N) (Msz N) (δ N) (Pb N) (esz N),
+    fun N => errBudget_nonneg (L N) n (hv1 N) (hKd N) (hMsz N) (hδ N) (hPb N) (hesz N),
+    ?_, ?_, ?_, ?_⟩
+  · intro N
+    have h2 := commErrBd_nonneg (L N) n (K := Kd N) (hv1 N) (hPb N)
+    have h3 := dotErrBd_nonneg n (K := Kd N) (hv1 N) (hPb N)
+    have h4 := qqErrBd_nonneg (L N) (n + 1) (hKd N) (hesz N) (hδ N)
+    unfold errBudget
+    linarith
+  · intro N u hsu huv
+    have hu0 : 0 ≤ u := (hs0 N).trans hsu
+    have h1l : 1 ≤ ellHat (L N) ((u : ℝ) : ℂ) :=
+      one_le_ellHat_of_nonneg (hL N) hu0 (lt_of_le_of_lt huv (hv1 N))
+    have h1 := qopErr1_nonneg (L N) n (hKd N) (hMsz N) (hδ N)
+    have h3 := dotErrBd_nonneg n (K := Kd N) (hv1 N) (hPb N)
+    have h4 := qqErrBd_nonneg (L N) (n + 1) (hKd N) (hesz N) (hδ N)
+    have := commErr_le (L N) n h1l huv (hv1 N) (hKd N) (hPb N)
+    unfold errBudget
+    linarith
+  · intro N u hsu huv
+    have hu0 : 0 ≤ u := (hs0 N).trans hsu
+    have h1l : 1 ≤ ellHat (L N) ((u : ℝ) : ℂ) :=
+      one_le_ellHat_of_nonneg (hL N) hu0 (lt_of_le_of_lt huv (hv1 N))
+    have h1 := qopErr1_nonneg (L N) n (hKd N) (hMsz N) (hδ N)
+    have h2 := commErrBd_nonneg (L N) n (K := Kd N) (hv1 N) (hPb N)
+    have h4 := qqErrBd_nonneg (L N) (n + 1) (hKd N) (hesz N) (hδ N)
+    have := dotErr_le n h1l huv (hv1 N) (hKd N) (hPb N)
+    unfold errBudget
+    linarith
+  · intro N u hsu huv
+    have hu0 : 0 ≤ u := (hs0 N).trans hsu
+    have h1l : 1 ≤ ellHat (L N) ((u : ℝ) : ℂ) :=
+      one_le_ellHat_of_nonneg (hL N) hu0 (lt_of_le_of_lt huv (hv1 N))
+    have hlL : ellHat (L N) ((u : ℝ) : ℂ) ≤ (L N : ℝ) := min_le_right _ _
+    have h1 := qopErr1_nonneg (L N) n (hKd N) (hMsz N) (hδ N)
+    have h2 := commErrBd_nonneg (L N) n (K := Kd N) (hv1 N) (hPb N)
+    have h3 := dotErrBd_nonneg n (K := Kd N) (hv1 N) (hPb N)
+    have := qqErr_le (L N) (n + 1) h1l hlL (hKd N) (hesz N) (hδ N)
+    unfold errBudget
+    linarith
+
+/-- **Satisfiability witness for `exists_uniform_errBudget`** (the discipline of T164/T246).
+
+A fully explicit, **non-degenerate** instance: `s N = 0`, `v N = 1/2`, `Kd N = N`,
+`Msz N = Pb N = esz N = δ N = 1`.  The window `[0, 1/2]` is nonempty, none of the estimated
+quantities is `0` (`Pb N = 1 ≠ 0`, so the degenerate route T246 warns about is closed), and
+the delivered budget is bounded below by `1`, hence strictly positive: nothing is proved by
+sending an error to zero. -/
+theorem exists_uniform_errBudget_witness (n : ℕ) :
+    ∃ δ' : ℕ → ℝ, (∀ N : ℕ, 1 ≤ δ' N) ∧
+      (∀ N : ℕ, qopErr1 (N + 1) n ((N : ℝ) + 1) 1 1 ≤ δ' N) ∧
+      (∀ (N : ℕ) (u : ℝ), 0 ≤ u → u ≤ 1 / 2 →
+        commErr (N + 1) n (ellHat (N + 1) ((u : ℝ) : ℂ)) u ((N : ℝ) + 1) 1 ≤ δ' N) ∧
+      (∀ (N : ℕ) (u : ℝ), 0 ≤ u → u ≤ 1 / 2 →
+        dotErr n (ellHat (N + 1) ((u : ℝ) : ℂ)) u ((N : ℝ) + 1) 1 ≤ δ' N) ∧
+      (∀ (N : ℕ) (u : ℝ), 0 ≤ u → u ≤ 1 / 2 →
+        qqErr (N + 1) (n + 1) (ellHat (N + 1) ((u : ℝ) : ℂ)) ((N : ℝ) + 1) 1 1 ≤ δ' N) := by
+  obtain ⟨δ', -, hQ, hC, hD, hE⟩ :=
+    exists_uniform_errBudget n (L := fun N => N + 1) (fun N => Nat.le_add_left 1 N)
+      (s := fun _ => 0) (v := fun _ => 1 / 2) (Kd := fun N => (N : ℝ) + 1)
+      (Msz := fun _ => 1) (δ := fun _ => 1) (Pb := fun _ => 1) (esz := fun _ => 1)
+      (fun _ => le_rfl) (fun _ => by norm_num) (fun N => by positivity)
+      (fun _ => zero_le_one) (fun _ => zero_le_one) (fun _ => zero_le_one)
+      (fun _ => zero_le_one)
+  refine ⟨δ', fun N => ?_, hQ, hC, hD, hE⟩
+  exact le_trans (self_le_qopErr1 (N + 1) n (by positivity) zero_le_one zero_le_one) (hQ N)
+
+end ErrBudgetT253
+
+/-! ## Deviations from the paper
+
+**`T253a`** — *the uniform error budget of §14 is not in the paper.*
+
+* **Paper location.**  §7, the premise (7.13)/(7.16) of Lemma 7.3, sitting on the budgets of
+  Lemma 5.13 (5.87), (5.99), (5.100) and (5.103).  The paper writes each of those four
+  budgets as `O(W^{-D})` and never names a common dominant; §14 supplies one because
+  `RBM.Gauss.rhs514QAt_of_kernel_inputs'` carries a *single* error slot `δ' N` for all four.
+* **Does the paper change?**  No.  §14 proves a consequence of the paper's own formulas; no
+  statement of the paper is weakened, strengthened or re-read.
+* **Line count.**  About 250 lines (`RBM1D/Gauss/FastDecayFlow.lean`, §14).
+* **Renumbering.**  None.
+-/
+
+end RBM.FastDecayFlow

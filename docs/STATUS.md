@@ -102,6 +102,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
 
+* **T253 / T254**（本次）：⭐ **T253 四条 `hErr*` 全部关掉**（`exists_uniform_errBudget`，接口探针逐字核对，**`T246a` 销掉**），而且**工单预设的紧性路线是不必要的**——`commErr`/`dotErr` 的指数是 `c₀(ℓr·K)/ℓr`，**`ℓr` 精确消掉**。⚠ **它订正了 T246 的一句话**：`δ'` 不是处处超多项式小，`qBlockErr` 自带的 `L^k·δ·(C/ℓr)^k` **没有指数因子**，任何 `δ'` 都至少 `N^{O(n)}·δ N`（不影响能否卸掉，`D` 自由；影响 `hnum` 的记账）。⭐ **T254 Case 1 换线完成**：`hDec*` 三行的 `∀ ω` 与 `hΞm` 都没了（在 `measCore` 处实例化，**一个 `refine`**），**并比要求多做一步**把 `hEnv*` 也移上事件（Case 2 做不到）；确认 **Case 1 不需要 `hErr*`**。两单的旧签名都字节不变。报告 `docs/reports/T253.md`、`T254.md`；paper-delta T253a、T254a（并关闭 `T236a`）。
+
 * **T250**（本次，新建 `Gauss/APrimeTestFun.lean` 714 行/30 条，审计 12934）：⭐ **(A′) 的 `TestFun` 实例造出来了**（`testFun_softW_mul`）；`ContDiff ℝ 2` 查过**确实被用满**，于是证二阶而不是弱化。⚠⚠ **同时编译反驳了 T230 §12 的目标签名**：纯乘性的「对数型」导数界 `‖∂_α lk‖ ≤ Λ‖lk‖` **是假的**——`L = K` 的 Hermitian `M` 处右端为 `0` 而 `∂_α L ≠ 0`，且 `∂K = 0` 让情况**更糟**（`not_coordD1_le_mul_norm`、`not_logDerivBound_of_zero`）。⭐⭐ **更重要的是它纠正了我们对「对数型」价值的误判**：那个 `≺`-内容**从来不是因子 `Λ`，而是「没有 `card`」**——`sum_abs_pow_pred_le` 把朴素路线的 `card·K` 变成 `card^{1/2r}·K ≤ e·K`，**`Λ = 0` 时照样成立**。修复 `abs_deriv_softMax_le_affine` + `abs_coordD1_le_affine` 已交给 T230。报告 `docs/reports/T250.md`；paper-delta T250a。
 
 * **T230 (A′) 中间报告 #3**（`Step2Bootstrap.lean` 1912 → 2242 行 / 79 条，快照入库）：新增 `APrimeHypOn`（事件限制版，照 T249 的 `CutHypEvOn` 装置：`weightOn` 在 `Good` 外取 `1`、`toAPrimeHyp` 走 `onEvent`、`stochDom_of_aprimeOn` 多付 `N^{−1}`）。**明确结论：`s_N > 0` 不被 `APrimeHyp` 任何字段蕴含**（`window`/`lev_ge`/`levpoly`/`card_le` 逐条查过），必须由生产者给；起点条件逐字是「`s_N > 0`（应用中 `s_N ≥ N^{−C}`）+ `J_{s_N} ≺ 1`，没有别的」，且 **(A′) 自己的归约既不碰 `modulus` 也不碰左端点**——T249 的病根在这条链上是**上游继承**。⚠ **踩到并修好一个 `p = 0` 坑**：`weightedMoment` 量化 `∀ p : ℕ` 含 `p = 0`，那里被积函数退化成权重本身、`Good` 外 `weightOn = 1 > W`，逐点压制失效；`toAPrimeHyp` 分了 `p = 0` 一支并把实例要求提到 `IsProbabilityMeasure`。**同型的 `∀ p` 字段别处也有，值得一并查。**
@@ -165,3 +167,4 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **`hsep` 在具体 `Dims` 上的编译验证**（T249 交出）：`12(log W)^{3/2}(1−t₀)^{−1/2} ≤ L/2` 对大 `N`，纯 `log`-vs-幂初等估计，需要一个具体 `Dims` 见证。
 * **`abs_coordD1_lkFun_le` 的重新陈述**（T250 交出）：加性常数要在模型里定死（`lkFun`、`band d`、`η_u`），涉及 `Gauss/MomentDuhamel.lean` / `Flow/Hypotheses.lean`。→ T230 或 Cowork。
 * ⚠ **`∀ p : ℕ` 的字段普遍要查 `p = 0` 那一支**（T230 中间报告 #3 踩到）：`weightedMoment` 在 `p = 0` 处被积函数退化成权重本身，逐点压制失效。**全仓同型字段值得扫一遍**（`grep -rn '∀ p : ℕ' RBM1D/ --include=*.lean`）。
+* **`Q` 路线与矩路线的 `hnum` 算术**（T253、T254 各交出一次）：两边的 `hnum` 都该**渐近**卸掉，而不是靠「把误差送到 0」（那个技巧在两边都退化：`cE N = 0` 逼出 `Env·pr^{1/q} = 0`）。T253 给了量级账本——指数部分 `poly(N)e^{−c₀N^τ/2}` 随便够，**非指数部分 `N^{O(n)}·δ N` 要靠 `D` 自由**（`n`、`τ₁` 在 `D` 之前固定）。归做 `hnum` 算术的人。

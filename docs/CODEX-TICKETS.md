@@ -108,3 +108,14 @@ T278 已交：`rhs514QAt_of_kernel_inputs''` / `rhsNonAltAt_of_kernel_inputs''`�
 2. 对每个加性误差项（`A_N^m·(errKer716_m + cE_N)`、`A_N^{2m}·(errKer716_{2m} + cE_N)`）写出它的 `W^{−D}` / 指数小因子与多项式因子（`A_N ≤ N^{C}`、`L_N ≤ N`、`(L_N)^k δ_N`）。`δ_N` 来自快衰减，对**每个** `D` 成立，所以 `D` 可在 `m, η` 之后取大——若某项的小因子不是 `W^{−D}` 型，停下报告。
 3. 对 `Phi ≲ c = Λ^{1/2} + Φ` 与 `√PhiE ≲ c`：写明 `ψ`/`ψE` 的矩由 `Lemma514Premises` 的哪几条推出。**这一步是 Lemma 5.14 本身的数学（(5.93)–(5.103)）**，若仓库里没有现成推导，交一页只读分析，Cowork 再开单。
 第 0 步交报告后再实现。可写范围不变（`Lemma514QAssembly.lean`、`Lemma514NonAlt.lean`）。
+
+## §8 T278 第四步：包络层（Cowork 09:00，读 T278 第 0 步清单后；Cowork 已核对 `Gauss/Envelope.lean` 与 `Gauss/Domination.lean` 的签名）
+
+T278 的清单准确：卡在 `ζ_N` 与 `ψ/ψE` 的矩包络。**这两处可以一起解开，不需要新的核估计**：
+
+1. **把 `ψ` 取成被界的量本身，`ζ ≡ 0`。** 对 `hEnvI/F/C/D` 取 `ψ N u q ω := scale_u^m · max_b ‖对应张量_b‖`（五行可取各自的 `ψ` 再相加，或取最大者），`hEnvE` 同理取 `ψE := scale_u^{2m}·max_c ‖eeFun_c‖`。于是五行「对所有 ω」的包络**按定义成立**（这不是空真：左端就是右端的一个分量）。清单里的 `ζ` 缺口与账本里 `K_N^{2r}ζ_N` 那一项随之消失。
+2. **矩包络 `hMψ`/`hMψE` = 反向桥。** 仓库已有 `RBM.Gauss.momentDom_of_stochDom_of_nonneg`（`Gauss/Envelope.lean:209`）：非负、可测、各阶可积、**确定性多项式包络** `Y ≤ Env_N ≤ N^{Kenv}`、`Φ ≥ N^{−B}`、再加 `StochDom Y Φ`，就给出 `MomentDom`（`Gauss/Domination.lean:100`：`∀ ε ∀ p ∃ C ∀ᶠ N ∀ u, ∫∣Y∣^{2p} ≤ C·N^{εp}·Φ^{2p}`），**正是** `hMψ` 的形状。参数集 `U N` 取 `TimeIcc s v N × LoopData`，所以对 `u`、`q` 一致。
+   * 确定性包络：`‖G‖ ≤ η_u^{−1}`、`scale_u ≤ N`、`L_N ≤ N` ⇒ `ψ ≤ N^{Kenv}`（`Gauss.scale_le_mul`、`LKDecayQuant.eventually_L_le`，清单里已点名）。
+   * `StochDom ψ Phi`：由 `Lemma514Premises`（`Lemma514Moment.lean:388`）——第 2、4 条管 `lkT`（`hEnvI`、`hEnvC/D` 经 `Qop`/`Psum`/`ϑ` 的确定性算子界），第 3 条管漂移（`hEnvF`，经 `MomentDuhamel.Hyp.F_unique_flow` 与 `DriftDef` 把 `H.F` 写成两条低阶环之积除以 `flowA`，T236 已指明这条路），第 1 条经 `EEDef.norm_eeFun_le_W_sum` 管 `ψE`。`Phi := c = √Λ + Φ`（Case 1 取 `max(…,1)`）。
+3. **加性误差账**：`ζ ≡ 0` 后只剩 `δ'`（`errBudget`，含 `L_N^{2k}δ_N`）与 `cE`。`δ_N` 取两个衰减事件（`lkGood` 的 `N^{τ₁−D}`、G-loop 的 `W·m·L·N^{−D}`）的较大者，`D` 在 `m, η` 之后取；`Msz/Pb/esz` 用同一个确定性多项式包络；`cE ≤ N^{−D_e}` 由 `eventually_env_mul_lkGood_le`（`Env` 多项式）。`R_N` 只在 p.24 网格相邻格上用（那里是 `W` 的幂），在一般终点 `v` 上不要求一致界——把终点限制写进实例化的前提。
+4. **验收**：两条 scaled family 在高斯模型上由 `Lemma514Premises` 实例化，`lemma514_of_momentDuhamelQ_of_scaled_families` 交出 `Step3.Lemma514`，合并总装第 4 槽只剩已有生产者的输入；见证在 p.24 首格与 `R > 1` 窗口上、`Phi > 0`。若第 2 步的某条 `StochDom` 由 `Lemma514Premises` 推不出（例如算子界丢了 `scale` 的幂），**停下写明那一行**。

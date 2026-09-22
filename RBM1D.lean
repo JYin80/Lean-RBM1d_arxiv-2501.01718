@@ -39,6 +39,7 @@ import RBM1D.Gauss.MomentDuhamelTime
 import RBM1D.Gauss.MomentDuhamelCut
 import RBM1D.Hierarchy.Step2Near47
 import RBM1D.Gauss.CutHypTheta
+import RBM1D.Gauss.Step2Bootstrap
 import RBM1D.Gauss.EEUker
 import RBM1D.Hierarchy.Step2FarInputs
 import RBM1D.Hierarchy.Step2FarMart

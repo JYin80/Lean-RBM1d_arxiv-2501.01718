@@ -6490,3 +6490,89 @@ paper-deltas 赋号：T216a → 147、T215a → 148、T215b → 149。
    * **(A)** 把 `StepGlue.localLaw_of_scale_facts` 整段移进 `Hierarchy/Step2.lean`（已核：证明体只用 `Step3.exists_norm_Kval_le`、`Step3.stochDom_mono`、`Band.decayProf`、`Step1.Lemma41Flow`，**全在 `Step2.lean` 已有依赖内**），然后 `Step2.localLaw` 加上原脚本里多出的那一行 `hfacts`（`Step2.lean:1566`）即可。唯一外部消费者 `Gauss/MomentDuhamelCut.lean:1086` 不受影响。
    * **(B)** 把 `StepGlue.aprioriDecay_of_jS_of_cond272` 整段移进 `Hierarchy/Step2Moment.lean`（已核依赖全在内），然后 `aprioriDecay_of_jS` 经 `Step2.cond272_of_strict` 一行导出——原脚本里 `hregS` 的**唯一用处**就是取出 `Cond272`。消费者 `Step2Near47.lean:853`、`MomentDuhamelCut.lean:990/1052`、`Step2Moment.lean:599` 全部不受影响。
    * ⚠ 两处都要配 `rfl` 探针；`StepGlue.lean` 目前**无人认领**，而 `Step45.lean` 在 T228 手上（`StepGlue` import 它）。
+
+## ⭐⭐ T228：D15 → 选项 3 落地，**`M_m` 整条线删掉了**（`Hierarchy/Step45.lean` +195 行纯追加、`Hierarchy/Step2FarMart.lean` 940 → 1620 行，2026-09-21）
+
+### 第 0 步（只读部分）的答案
+
+`Hierarchy/Step45.lean` 里硬编码 `6` 的**全部位置**（T216 给的 :339/:358/:372 已自核，并补上两处它漏掉的）：
+
+| 行（改动前） | 是什么 | 是否是「定义里的 6」 |
+|---|---|---|
+| 313 | `Step45.inv_sq_le_tailT` 的 `hd : d ≤ 6 * ellStar W ℓ` —— `RBM.inv_sq_le_tailT` 的 `C = 6` **特例** | 否，通用版对任意 `C ≥ 0` 已证 |
+| 339 | **`Eq548` 的定义体**（指示函数） | **是，唯一一处** |
+| 358 | `decay_of_split` 证明里 `StochDom.of_unifDetDom` 的 `f :=` 复述定义 | 否 |
+| 372, 373 | `decay_of_split` 证明里 `hmin` 的陈述与 `by_cases` | 否 |
+
+**`FlowEq548` 的全部消费者**：`Step45.decay_of_split`（**唯一真正用到 `6` 的地方**）→ `flow_sharpDecay` → `flow_steps45` → `StepGlue.flow_steps45_glue'`（:577，**全仓唯一调用 `flow_steps45` 的地方**）→ `StepGlue.flow_steps45_glue` → `Step2PP` 的六处、`StepGlue` 的两处，全部只是把 `h548` 原样往下传。
+
+**`6 → 12` 下游吞得下——编译探针**：`Step45.decay_of_split_W`（新增）与 `decay_of_split` 的**结论逐字相同**，只有两处变化：近场分支的阈值 `12`，以及 (5.32) 的损失常数 `e^{√6(log W)^{3/4}} → e^{√12(log W)^{3/4}}`。两者都是自由的，因为 `RBM.inv_sq_le_tailT` 与 `RBM.eventually_exp_mul_log_rpow_le` **本来就带常数参数 `C`**（`Analysis/StretchedExp.lean:367`、`:390`），`Step45.inv_sq_le_tailT` 只是 `C = 6` 的一个别名。`flow_sharpDecay_W` / `flow_steps45_W` 的结论也与不带撇版逐字相同。**没有任何消费者需要恰好 `6`。**
+
+⚠ **唯一需要接线的地方**（本单**不可写**，交给下一单）：`StepGlue.flow_steps45_glue'`（:577）与 `Step2PP` 的六处仍吃不带撇的 `FlowEq548`。把它们改成带撇版是**机械替换**（`FlowEq548 → FlowEq548W … nearChi`、`flow_steps45 → flow_steps45_W`，多传一条 `eventually_nearChi_eq_zero`）。在那之前，本单交的落点是 `Step2FarMart.flow_sharpDecay_of_cutHyp`，它直接产出 `RBM.Steps.sharpDecay` 那个形状。
+
+### 新增声明（52 条，全部单文件 exit=0、`#print axioms` 只有 `propext/Classical.choice/Quot.sound`）
+
+`Step45.lean`（**只追加，旧签名一字未动**，`git diff` 的 `-` 行数 = 0）：
+`Eq548W`、`eq548W_of_eq548`、`decay_of_split_W`、`FlowEq548W`、`flowEq548W_of_flowEq548`、`flow_sharpDecay_W`、`flow_steps45_W`。
+
+`Step2FarMart.lean` §7–§12：
+* §7 光滑阈值：`ellStar_pos_of_two_le`、`nearChi`、`farChi` 与 10 条基本性质、`indicator_le_nearChi`、`abs_cutChi_sub_le`（`|χ(x)−χ(y)| ≤ (15/8)|x−y|`，由 T175 的**锐**导数界经中值不等式）、`abs_nearChi_sub_le`、`abs_farChi_sub_le`；
+* §8 光滑远场泛函：`lkFarSm`、`jSfarSm`、`one_le_jSfarSm`、`norm_lk_eq_near_add_far`（**合并用的恒等式**）、`lkFarSm_le_jSfarSm_mul`、`norm_lk_le_jSfarSm_mul`；
+* §9 生产者：`stochDom_eq548W_of_near_of_jSfarSm`、`flowEq548W_of_jSfarSm`、`eventually_nearChi_eq_zero`、`flow_sharpDecay_of_jSfarSm`；
+* §10 自举可用性：**`continuousOn_farChi`、`continuousOn_jSfarSm`**（整条路线的关键）、`abs_jSfarSm_sub_le`（模的转移：`sup'` 之差 ≤ 逐点差的上界）、`abs_lkFarSm_ratio_sub_le`（逐点模拆成「权重项 ≤ (15/8)·… 」+「无权比值的模」）、`sharp_vs_smooth_at_crossing`（**对照**：穿越处尖指示函数跳 `1`，光滑权重只动 `(15/8)|d/6ℓ*_v − d/6ℓ*_w|`）；
+* §11 接线：`stochDom_jSfarSm_of_cutHyp`、`flowEq548W_of_cutHyp`、`flow_sharpDecay_of_cutHyp`；
+* §12 可满足性：`nearChi_nine_ellStar`（`d = 9ℓ*` 处权重恰为 `1/2` 的数值钉）、`nearChi_antitone`、`nearChi_zero`、`exists_zdist_half`、`exists_farChi_eq_one`、`jSfarSm_ge_of_farChi_eq_one`、`sat_mesh_card_at_one`、`pref_grid_critical`、`smooth_route_nondegenerate`。
+
+### `M_m` 删掉了——`flowEq548W_of_cutHyp` 的完整假设表（`#check` 探针逐字）
+
+1. `hnear : ∀ D > 0, |(L−K)_{u,(+,−),a}| ≺ (η_s/η_u)²·T_{u,D}` —— 锐化的 (5.47)，T207 已交；
+2. `H : ∀ D > 0, MomentDuhamelCut.CutHyp B.P (fun N u ω => jSfarSm X E D N u ω) s t (fun _ => 1)`；
+3. `hinit : ∀ D > 0, jSfarSm(s_N) ≺ 1` —— (2.68)/(2.69)。
+
+**没有 `M_m`、没有 `farMart`、没有 `FarInputs'`、没有鞅、没有漂移包。** `flow_sharpDecay_of_cutHyp` 在此之上再吃 Step 4 的一致界，直接产出 `RBM.Steps.sharpDecay` 的形状。
+
+**为什么 T216 的等价性不再是障碍**：`farMart_far_equiv` 说的是「`M_m ≺ 1` ⟺ **尖**远场半边」——本单换了泛函（`jSfar → jSfarSm`）并换了产出机制（Duhamel 亏量的三角不等式 → 恒等式 `‖lk‖ = χ‖lk‖ + (1−χ)‖lk‖` + 窗口自举），所以那条等价性对本路线不适用。⚠ §3 的否定结论**原样成立**，不要当成被推翻。
+
+### 可满足性见证
+
+* **反 fiat（a）**：`one_le_jSfarSm`（`jSfarSm ≥ 1` 恒成立 → `≺ 1` 是**临界**请求，不能被 `0` 平凡满足）；`exists_zdist_half` + `exists_farChi_eq_one`（环长过 `24ℓ*_u` 时**存在**权重恰为 `1` 的标号）+ `jSfarSm_ge_of_farChi_eq_one`（在那里 `jSfarSm` 压的是**无权**的 `‖lk‖/T`）。**光滑化在过渡窗之外一点没让**。
+* **反空真（b）**：`sat_mesh_card_at_one` —— `mesh_fine` 与 `card_le` 在我们的门槛 `Θ ≡ 1` 上**同一组参数**同时成立（`Kmod = 1`、`γ = 1/2`、`mesh = N²`、`t−s = 1`、`Ccard = 3`，**`mesh_fine` 取等号**），即 T197 `satCutHyp` 的参数。T216 判为不可满足的两条（`modulus`、`ContinuousOn`）由 §10 供给。
+* **临界标度**：`pref_grid_critical` —— 在 T208/T215 的临界点 `1−s_N = 1/(N+1)`、`1−t = (1−s)²` 上，近场前因子是 `(N+1)²`（**不是 1、不是 0**），所以带撇的 (5.48) 不是平凡的 `≺ T_{u,D}`。三条打包成 `smooth_route_nondegenerate`。
+* **量词次序**：`CutHyp.moment` 的 `∀ δ ∀ ε ∀ p, ∀ᶠ N` 原样继承，没有写成 `∀ p ∀ N`。
+* **退化检查**：`nearChi_zero`（对角处权重 `= 1`，近场仍归近场）、`nearChi_antitone`（远离时权重单减，符号没反）、`nearChi_nine_ellStar`（过渡带中点 `= 1/2`，抄错阈值会编译失败）。`ω = 0`：新增声明里没有一条对全体 `ω` 量化，唯一的全 `ω` 语句在 `CutHyp.modulus` 里，那是既有接口（T197/T210 已审）。
+* **漂移**：本路线**根本没有漂移槽**（T208 的 `farDrift_eq_zero_of_farInputs'_zero` 是对 `FarInputs'` 路线的反 fiat 证书，本路线不经过它）——这正是删掉 `M_m` 的意思。
+
+### paper-deltas
+
+`T228a`（阈值 `6 → 12` + 光滑化；论文逐时刻的 (5.48) 不改，跳只是 Lean 一致版的产物；下游代价 `√6 → √12`，仍是 `W^{o(1)}`）、`T228b`（远场半边由 `u` 上自举而非逐时刻 BDG：多要一条 `u` 的模与初值，**换掉整条鞅**）。
+
+## ⚠ 无主的活（T228 交出）
+
+1. **⭐ 把 `StepGlue.flow_steps45_glue'`（:577）与 `Step2PP` 的六处改吃 `FlowEq548W`**（机械替换，见上）。本单可写文件不含这两个文件。做完之后 Steps 4–5 的整条链里就再也没有不带撇的 `FlowEq548`。
+2. **`CutHyp` for `jSfarSm` 的 `modulus` 与 `moment` 两个字段仍无生产者**。`modulus` 已经被 §10 化归到「`|(L−K)_u|/T_{u,D}` 的 Hölder 模」+ `(15/8)` 的权重项（`abs_jSfarSm_sub_le` + `abs_lkFarSm_ratio_sub_le`），**剩下的就是 `xiLK` 那条线上已经在做的同一件事**（T210 已定位 `moment` 的结构性障碍：截断只约束端点，前缀事件第一遍要自举）。⚠ 这不是本单引入的新缺口——它就是近场那一半一直在用的同一个接口。
+3. **T216 §5 的 `FarInputs'` 第四条与 `farInputs_of_farInputs'` 的 `hmartAll` 加 `@[deprecated]`**（工单 (3) 项）：**本单没做**，因为 `Hierarchy/Step2FarInputs.lean` 由 T229 持有、本单只读。同理 `step_bound_far'` 拆两半也没做。交给持有该文件的单。
+4. `continuousOn_jSfarSm` 要一条 `ContinuousOn (fun u => Step2.lk X E N u ω x)` 作为输入——与 `Step2.continuousOn_jS` 完全同形（该条在仓库里也一直是外部输入），**没有新缺口**。
+
+## ⭐ Jun 裁定（2026-09-21）：Theorem 2.2 **彻底脱离 (2.71)**，走 T221 的路线 (a)
+
+Jun 原话「Theorem 2.2 彻底脱离 (2.71)，好的」。**路线由协调者定为 (a)**（CLAUDE.md：路由决策不必请示）：
+
+> 把 `Flow/Thm221NoEL.lean` 的 `BoundsCore_zero` / `BoundsCore.congr` / `BoundsCore_of_Thm221NoEL'` 三条，按 T221 对 `*_of_fields` 的手法改写成**取字段的共享脚本**上移，固定能量版与 `E : ℕ → ℝ` 版都做成它的一行特化；然后给出 `Thm221NoELN'` 与 `BoundsCoreN_of_Thm221NoELN'`，`delocalization_of_Thm221N'` 改吃它。
+
+**不走 (b)**（接受一份重复）：直接在 `EnergyUniform.lean` 里镜像会复制 p.24 归纳的整段脚本，成为**第四份**重复——恰是 T221 刚消灭掉的东西。
+
+**验收**：`delocalization_of_Thm221N'`（Theorem 2.2）的假设表里**无 `Bounds`、无 `expect`、无 (2.71)**；与 `Bounds` 版的结论由 `rfl` 探针证明**一字未改**。**请 Cowork 开单。**
+
+## T224：`hsplit` / `hdiff` 卸掉了——而且更正了一条流传很久的说法（`Gauss/LoopLeibniz.lean`，503 行、29 条，2026-09-21）
+
+**⚠⚠ 更正（本单最重要的一条）**：T224 的工单、`Gauss/DischargeBDG.lean` 的文件头、以及本 STATUS「无主的活」里都写着「仓库缺 `List.foldr` 形式的预解式乘积 Leibniz 法则」。**这句话自 T140 起就是错的**——`RBM.Gauss.hasDerivAt_gprodM`（`Gauss/LoopIto.lean:1204`）**逐字就是它**，形状正是 `gloopProd` 用的 `foldr`。真正缺的是它**下游三步**：① `insB` 乘积经迹轮换写成 `trace (B · loopCut)`；② `loopObs` 的**一阶**坐标导数（仓库只导出了二阶 `coordD2_loopObs_eq`，一阶只是它证明里的局部 `have`）；③ Wirtinger 组合选出 `(j,i)` 分量。这三步就是本单。（Mathlib 的通用版 `HasFDerivAt.list_prod'` 查过但**没用**：`coordD1` 吃的是线上导数，仓库版形状已经对上，用通用版反而要跟 `MulOpposite` 的右作用角力。）
+
+**卸掉的**：`hdiff` → `differentiableAt_loopObs`（**无 Hermitian 要求**，因为 `loopObs` 预合成 `hermCLM`；只用 `ContDiff ℝ 1` 而非 `2`——按「只要实际用到的阶数」）；`hsplit` → `emart_eq_sum_emartEdge`（**多一条 `M.IsHermitian`**，paper-delta T224a）。`quadVarPairs_le_of_split'` / `quadVarPairs_Uker'` / `emart_Uker'` 是填好的版本，**原定理不动**。
+
+**数值自洽检查（本单的关键设计）**：`emart` 是 Fréchet 导数，`norm_num` 算不了——所以把可算的核心抽出来：把 `Gsig M z` 换成**任意族** `g : Bool → Matrix n n ℂ` 后，`trace (gprodG g (insB B k l)) = trace (B * cutG g l k)` 是**纯代数**。取 `n = Fin 2`、两个**不交换**的 `g`、**三条边**的 loop（让 `∏_{i>k}` 与 `∏_{i<k}` **都非平凡**），两侧**各自独立**算出 `63 + 38i`，求值**不用本文件任何定理**。**判别性 `sanity_trace_cut_swapped`**：把两个乘积对调（唯一可能抄反的地方），同一点给出 `27 + 22i`。另有 `sanity_wirt_pick(_wrong)` 证明 Wirtinger 组合取出的是 `R_{ji}` 而**不是** `R_{ij}`——**转置不是装饰**。
+
+**如实报告的一处未被数值锚住**：`∂_M G = −G B G` 的**符号与形状**（没有 `norm_num` 能算 Fréchet 导数）。它来自 T140 已证的 `hasDerivAt_gprodM`，本文件没有重述。
+
+**协调者已接线**：`Gauss/DischargeBDG.lean` 的文件头三处按本单结论改写——`BddC2` 那条「for a general loop observable it is still open」已标过时（`bddC2_loopObs` 早就有）、`hsplit`/`hdiff` 标为已卸、「What is not done」的第一条**删除**，并补上了上面那条更正。
+
+**余**：`Gauss/EEUker.lean` 的四条（`quadVarPairs_Uker_eq_eeRawArg` 等）加带撇版——T224 交了确切实参，**等 T223 交还该文件后由协调者接线**。

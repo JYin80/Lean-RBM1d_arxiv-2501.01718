@@ -102,18 +102,27 @@ are untouched, exactly as the "keep the paper's `≺` interface" rule demands.
 
 * `RBM.Gauss.MatrixStein d` — Cowork's T70, still owed, carried through unchanged.
 * `RBM.Gauss.BddC2 F` — `C²` with globally bounded value and first two derivatives.  T72
-  discharges it for resolvent observables (`bddC2_greenObs`); for a general loop observable it
-  is still open (T76: the `List.foldr` Leibniz rule).
-* `hdrift : 𝓛F = 0` — see obstruction 3 above.
-* `hsplit` in `quadVarPairs_le_of_split` — the chain rule `E(α) = ∑_k E(α,k)` of §5.2, which
-  needs the same Leibniz rule and is not proved here.
-* `hdiff` in `emart_Uker` — differentiability of the loop observable, likewise.
+  discharges it for resolvent observables (`bddC2_greenObs`).  ⚠ **This entry used to add "for a
+  general loop observable it is still open (T76: the `List.foldr` Leibniz rule)".  That is out of
+  date**: `RBM.Gauss.bddC2_loopObs` (`Gauss/LoopC2.lean`, T133) discharges it there too.
+* `hdrift` — see obstruction 3 above.
+* `hsplit` in `quadVarPairs_le_of_split` — the chain rule `E(α) = ∑_k E(α,k)` of §5.2.
+  ⚠ **Discharged by T224**: `RBM.Gauss.emart_eq_sum_emartEdge` (`Gauss/LoopLeibniz.lean`), which
+  asks one hypothesis more than the slot, `M.IsHermitian` (paper-deltas `T224a`).
+* `hdiff` in `emart_Uker` — differentiability of the loop observable.  ⚠ **Discharged by T224**:
+  `RBM.Gauss.differentiableAt_loopObs`, with no Hermitian requirement.
+  `quadVarPairs_le_of_split'`, `quadVarPairs_Uker'` and `emart_Uker'` are the filled versions.
+
+⚠ **A correction worth keeping (T224).**  This header, the T224 ticket and `docs/STATUS.md` all
+used to say the repository lacks a `List.foldr` Leibniz rule for the resolvent product.  **That has
+been false since T140**: `RBM.Gauss.hasDerivAt_gprodM` (`Gauss/LoopIto.lean:1204`) is verbatim that
+rule, in exactly the `foldr` shape `gloopProd` uses.  What was actually missing were its three
+downstream steps — the `insB` product rewritten as `trace (B · loopCut)` by cyclicity, the
+*first*-order coordinate derivative of `loopObs` (the repository exported only the second), and the
+Wirtinger combination that picks the `(j,i)` entry.  Those are what `Gauss/LoopLeibniz.lean` does.
 
 ## What is not done
 
-* `E^{(M)}(α,k)` is *defined* through `RBM.Gauss.loopCut`; that this definition agrees with
-  `∂_{(H)_ij}` acting on the `k`-th edge (the chain rule, and hence `∑_k E(α,k) = E(α)`) is not
-  proved.
 * The glued loop of (5.23) is given as the explicit trace `RBM.Gauss.glueLoop`; that it equals
   `gloop` of a `LoopIdx` of length `2n+2` with the charges and labels displayed in (5.23) is
   not proved (it needs `L_{σ̄,a'} = conj L_{σ,a'}` up to a cyclic reversal).

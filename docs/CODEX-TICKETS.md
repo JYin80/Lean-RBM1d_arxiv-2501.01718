@@ -119,3 +119,22 @@ T278 的清单准确：卡在 `ζ_N` 与 `ψ/ψE` 的矩包络。**这两处可�
    * `StochDom ψ Phi`：由 `Lemma514Premises`（`Lemma514Moment.lean:388`）——第 2、4 条管 `lkT`（`hEnvI`、`hEnvC/D` 经 `Qop`/`Psum`/`ϑ` 的确定性算子界），第 3 条管漂移（`hEnvF`，经 `MomentDuhamel.Hyp.F_unique_flow` 与 `DriftDef` 把 `H.F` 写成两条低阶环之积除以 `flowA`，T236 已指明这条路），第 1 条经 `EEDef.norm_eeFun_le_W_sum` 管 `ψE`。`Phi := c = √Λ + Φ`（Case 1 取 `max(…,1)`）。
 3. **加性误差账**：`ζ ≡ 0` 后只剩 `δ'`（`errBudget`，含 `L_N^{2k}δ_N`）与 `cE`。`δ_N` 取两个衰减事件（`lkGood` 的 `N^{τ₁−D}`、G-loop 的 `W·m·L·N^{−D}`）的较大者，`D` 在 `m, η` 之后取；`Msz/Pb/esz` 用同一个确定性多项式包络；`cE ≤ N^{−D_e}` 由 `eventually_env_mul_lkGood_le`（`Env` 多项式）。`R_N` 只在 p.24 网格相邻格上用（那里是 `W` 的幂），在一般终点 `v` 上不要求一致界——把终点限制写进实例化的前提。
 4. **验收**：两条 scaled family 在高斯模型上由 `Lemma514Premises` 实例化，`lemma514_of_momentDuhamelQ_of_scaled_families` 交出 `Step3.Lemma514`，合并总装第 4 槽只剩已有生产者的输入；见证在 p.24 首格与 `R > 1` 窗口上、`Phi > 0`。若第 2 步的某条 `StochDom` 由 `Lemma514Premises` 推不出（例如算子界丢了 `scale` 的幂），**停下写明那一行**。
+
+## §9 T280：第一遍收口的六个接口决定（Cowork 09:05，D20；读 `docs/reports/T280-step0.md` 后）
+
+T280 第 0 步审计准确：`APrimeSlot'` 的完整见证还导不出，缺口不在数学（审稿 V548 §2a/§5 都有），而在接口。逐条裁定：
+
+1. **权重 `W` 没有 `p` 参数，而估计要 `softW^{2p}`** → 接口权重取 `p` 无关的 `W := χ(J̃/Θ′)`；估计时对每个 `p` 用 `W_p := χ(J̃/(2Θ′))^{2p}`，逐点 `W ≤ W_p`（`J̃ ≤ 2Θ′` 处 `χ(J̃/(2Θ′)) = 1`）。新增引理 `weightedMoment_of_stepBound_mono`：若对每个 `p` 有 `W ≤ W_p` 且 `Hstep` 对 `W_p` 成立，则 `WeightedMoment` 对 `W` 成立。
+2. **`hdom`：`jSnorm` 是 `1 + max_a`，不被单个坐标 `Y_a` 支配** → 用族版：`∣cutTrunc θ J∣^{2p} ≤ 2^{2p−1}(1 + Σ_a ∣Ψ^{(a)}_{u_k}∣^{2p})`（端点处 `U_{t,t} = id`，`Ψ^{(a)}_t = lk_{t,a}/(T R⁴)`）；对每个 `a` 跑一次 (G)，`a` 的求和付 `L² ≤ N²`，`p ≥ 4/δ` 时被 `N^{δp/2}` 吸收，小 `p` 用 Lyapunov（审稿 §5 第 4 步）。
+3. **数值 `hinit`**（加权 `2p` 阶矩的初值）→ 反向桥 `Gauss.momentDom_of_stochDom_of_nonneg` 作用在 (5.39)@`s` 上：`Ψ^{(a)}_s = U_{s,t}(L−K)_s/T_t` 的 `≺` 界由 `BoundsCore X E s`（p.24 归纳在每一格都给）+ Lemma 7.1 给出，确定性包络 `‖G‖ ≤ η⁻¹`；`W ≤ 1` 故加权 ≤ 不加权。**不循环**：只用左端点的 `BoundsCore`，不用 `W_dom`。
+4. **`Good` 固定 vs (S3)/Step 1 事件依赖 `δ`** 与 5. **`hwDoff`** → `APrimeSlot'.Good` **只取** `{‖X‖ ≤ N}`（只为时间模）。(S3)、Step 1 等事件 `E_{δ,p,N}` **只在 `Hstep` 的证明内部**出现，而且**在范数里**拆坏事件：`‖Z‖_{W,2p} ≤ ‖Z·1_E‖_{W,2p} + ‖Z·1_{Eᶜ}‖_{W,2p}`，后者 ≤ 确定性多项式包络 × `P(Eᶜ)^{1/(2p)} ≤ N^{−1}`（`D′` 按 `p` 取）。交叉项用 T265 的**逐点、无事件** (S5) `sum_gvar_crossTerm_le`，事件只在界 `‖√(Q·κ̂)‖_{2p}` 时进来——**不需要 `hwDoff`**，T275 的 `crossPart_le_of_S5` 那条路不走。
+6. **前缀 vs 全网**（T269 的传播对 `netFinset`）→ 出前缀版：`v ∈ [s, u_k]` 由前缀点 `u_j`（`j < k`）经时间模覆盖（`[u_{k−1}, u_k]` 用左端 `u_{k−1}`）。**`W_dom` 对所有 `k`、所有 `N`**：定义 `W δ N k := if k ≤ cutNetTop ∧ N ≥ N₀ then χ(J̃/Θ′) else 1`，界外 `W = 1` 平凡满足，`WeightedMoment` 本来只在 `k ≤ cutNetTop`、`∀ᶠ N` 上要求。
+7. **T276 的 `≺ 1` 前提的实际指数**（T280 点名 `QBd` 含 `Λ³ = N^{6δ}`）→ 要核：远场 `N^{6δ}R^{12}/A_t`，由 (2.72)+论文改动第 16 条 `A_t ≥ N^{c}R^{30}` 得 `≤ N^{6δ−c}R^{−18}`，需 `6δ < c`（T263 是 `5δ < c`）——把 `δ₀` 收紧到 `c/7` 并逐项核其余各项；若某项需要 `δ` 以外的余量，停下报。
+
+**拆单（都是新文件，旧签名不动）**：
+* **T280a**（Codex）：第 1、6 条——`weightedMoment_of_stepBound_mono`、前缀版传播、分段权重 `W` 及其四个字段。文件 `Gauss/APrimeWeight.lean`。
+* **T280b**（Codex）：第 2、3 条——族版 `hdom` 与 `max_a` 求和、Lyapunov 小 `p`；`hinit` 的反向桥。文件 `Gauss/APrimeInit.lean`。
+* **T280c**（Codex）：第 4、5 条——范数内坏事件拆分的通用引理 + `hdrift`/`hqv`/交叉项三处用法（等 T277 的演化版 (5.42)）。文件 `Gauss/APrimeBadSplit.lean`。
+* **T280d**（Codex，纯算术）：第 7 条。文件 `Gauss/APrimeExponents.lean`。
+* **T280e**（最后，谁有空谁做）：把 a–d + T274–T277 组装成 `APrimeSlot'` 在 `jSnorm` 处的见证，第 2 槽由定理产出。
+每单：先 `#check` 核对所用声明的签名；若发现本节某条裁定在 Lean 里不成立，编译成否定结论并停下。

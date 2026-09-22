@@ -8,6 +8,7 @@
 - **路线图**：`docs/PLAN.md` — 阶段划分与每阶段的 Lean 声明清单
 - **当前进度**：`docs/STATUS.md` — **每次会话开始先读它，结束前更新它**
 - **与论文的偏差**：`docs/paper-deltas.md` — 凡 Lean 陈述 ≠ 论文字面陈述，必须在这里记一条
+- **调度交接**：`docs/HANDOVER.md` — Cowork 离线时由 Codex / ChatGPT 接手调度的手册；`AGENTS.md` 是非 Claude agent 的入口；`docs/cowork-*.md` 是 Cowork 侧文档（论文改动清单、Theorem 2.6 分析、调度经验）的仓库内副本
 
 ## 环境
 

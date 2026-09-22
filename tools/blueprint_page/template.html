@@ -1,0 +1,308 @@
+<title>Band Matrix Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg:#f5f7f8; --surface:#ffffff; --border:#dfe4e9; --ink:#141a20; --muted:#6d7883;
+    --accent:#2c4a7c; --done:#1a8a5e; --done-bg:#e3f3ec; --ready:#3d74ad; --ready-bg:#e2edf7;
+    --todo:#8d97a2; --todo-bg:#eceff2; --cited:#9a7328; --cited-bg:#fbf1de;
+    --plate:#f8fafb; --plate-border:#dde3e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#11161b; --surface:#191f26; --border:#2a333c; --ink:#e5e9ed; --muted:#98a3ae;
+      --accent:#8fb4e0; --done:#4bc094; --done-bg:#14302a; --ready:#79a9d8; --ready-bg:#16283a;
+      --todo:#8e99a4; --todo-bg:#222a32; --cited:#d7ab5f; --cited-bg:#2e2617;
+      --plate:#e7ebee; --plate-border:#c7ced4;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#11161b; --surface:#191f26; --border:#2a333c; --ink:#e5e9ed; --muted:#98a3ae;
+    --accent:#8fb4e0; --done:#4bc094; --done-bg:#14302a; --ready:#79a9d8; --ready-bg:#16283a;
+    --todo:#8e99a4; --todo-bg:#222a32; --cited:#d7ab5f; --cited-bg:#2e2617;
+    --plate:#e7ebee; --plate-border:#c7ced4;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding-inline:16px; padding-block:40px 64px; }
+  header { border-bottom:1px solid var(--border); padding-bottom:22px; margin-bottom:28px; }
+  .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; }
+  h1 { font-family:"Newsreader", Georgia, serif; font-weight:600; font-size:clamp(26px,4.4vw,38px);
+        line-height:1.15; margin:0 0 6px; text-wrap:balance; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0; font-size:14px; }
+  .chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+  .chip { display:flex; align-items:baseline; gap:8px; background:var(--surface);
+           border:1px solid var(--border); border-radius:6px; padding:9px 13px; }
+  .chip b { font-size:19px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .chip span { font-size:12.5px; color:var(--muted); }
+  .chip.done b { color:var(--done); } .chip.ready b { color:var(--ready); } .chip.todo b { color:var(--todo); }
+  h2 { font-family:"Newsreader", Georgia, serif; font-weight:600; font-size:21px; margin:38px 0 4px; }
+  h2 + p { margin:0 0 16px; color:var(--muted); font-size:13.5px; }
+  .graph { margin:0; }
+  .gbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+           gap:8px 14px; margin-bottom:8px; }
+  .gbar .gcap { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .gtools { display:flex; align-items:center; gap:6px; }
+  .gtools button { font:inherit; font-size:13px; line-height:1; color:var(--ink);
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:6px 10px; cursor:pointer; }
+  .gtools button:hover { border-color:var(--accent); color:var(--accent); }
+  .gtools button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .gtools .gpct { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;
+    min-width:44px; text-align:right; }
+  .plate { background:var(--plate); border:1px solid var(--plate-border); border-radius:8px;
+            padding:12px; overflow:auto; max-height:86vh; overscroll-behavior:contain;
+            cursor:grab; }
+  .plate.dragging { cursor:grabbing; }
+  .plate .depgraph { display:block; height:auto; max-width:none; width:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; margin-top:14px; font-size:13px; color:var(--muted); }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:7px;
+               vertical-align:-1px; border:1px solid rgba(0,0,0,.18); }
+  ul.rows { list-style:none; margin:0; padding:0; border-top:1px solid var(--border); }
+  .row { display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:space-between; align-items:baseline;
+          padding:11px 2px; border-bottom:1px solid var(--border); }
+  .row-main { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; min-width:0; }
+  .row-name { font-weight:500; }
+  .row-ref { font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .row-side { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; min-width:0; }
+  .pill { font-size:11.5px; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+  .pill.done { color:var(--done); background:var(--done-bg); }
+  .pill.ready { color:var(--ready); background:var(--ready-bg); }
+  .pill.todo { color:var(--todo); background:var(--todo-bg); }
+  .pill.cited { color:var(--cited); background:var(--cited-bg); }
+  code { font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:12px; color:var(--muted);
+          overflow-wrap:anywhere; }
+  .scope { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 18px; }
+  .panel h3 { margin:0 0 10px; font-size:14px; font-weight:600; letter-spacing:.01em; }
+  .panel.in h3 { color:var(--done); }
+  .panel.out h3 { color:var(--muted); }
+  .panel ul { margin:0; padding-left:18px; }
+  .panel li { margin:5px 0; font-size:13.5px; }
+  .panel p { margin:10px 0 0; font-size:12.5px; color:var(--muted); }
+  @media (max-width:640px) { .scope { grid-template-columns:1fr; } }
+  .note { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
+           border-radius:0 6px 6px 0; padding:14px 16px; margin-top:20px; font-size:13.5px; color:var(--muted); }
+  .note strong { color:var(--ink); font-weight:600; }
+  footer { margin-top:34px; font-size:12.5px; color:var(--muted); }
+  footer a { color:var(--accent); }
+  @media (max-width:640px) { .row { flex-direction:column; align-items:flex-start; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Lean 4 · Mathlib · 形式化蓝图</p>
+    <h1>一维随机带矩阵的退局域化</h1>
+    <p class="sub">Horng-Tzer Yau &amp; Jun Yin，<em>Delocalization of One-Dimensional Random Band Matrices</em>（arXiv:2501.01718）· Lean 4.34.0 / Mathlib 5ed2965256 · 2026-09-20</p>
+    <div class="chips">
+      <!--CHIPS-->
+    </div>
+  </header>
+
+<!--PAPERMAP-->
+
+<!--SECTIONS-->
+
+  <h2>范围与边界</h2>
+  <p>这个项目形式化的是论文的<strong>确定性内核</strong>。边界不画在章节上，而画在<strong>「需不需要 Itô」</strong>上：凡是能在固定的一次实现上、用线性代数／组合／实分析说清楚的，都做；只有真正动用随机积分、鞅或高斯分部积分的那几步，才作为显式假设挂起。</p>
+  <div class="scope">
+    <div class="panel in">
+      <h3>✓ 在范围内</h3>
+      <ul>
+        <li>传播子 Θ<sub>ξ</sub> 的全部性质：Lemma 2.14 六条，覆盖整个圆盘 ‖ξ‖&lt;1；附录 B</li>
+        <li>第 3 节的 𝒦 理论：一般 n 的树表示、Ward 恒等式、sum-zero、Lemma 3.11</li>
+        <li>§4 全部：Lemma 4.2 的 minor 公式、Lemma 4.1 的 (4.2)(4.3)(4.5)</li>
+        <li>§5 的确定性骨架：演化核 U<sub>s,t,σ</sub> 与 (5.18)、sum-zero 算子 Q<sub>t</sub> 与 (5.90)(5.104)、
+            (5.12)–(5.15) 的层级重组、Cauchy–Schwarz 劈分 (5.114)–(5.118)、<strong>Step 3、4、5、6</strong></li>
+        <li>§6 全部：确定性骨架与总装，<strong>Lemma 5.1</strong></li>
+        <li>§7.1 全部：Lemma 7.1、7.2、7.3；§7.2 末尾的零模去除</li>
+        <li>附录 A 全部：展开恒等式、Cauchy–Schwarz 梯子、<strong>Lemma A.2</strong></li>
+        <li>流的尺度层与时间网格 (2.72)；(2.67) 的 L<sub>0</sub> = 𝒦<sub>0</sub>；
+            <strong>Lemma 2.18–2.20 由 Theorem 2.21 推出</strong>；<strong>Theorem 2.3、2.4</strong>（固定能量切片）</li>
+        <li>由 local law 推退局域化 (2.10)；半圆律与 z<sub>t</sub> 流，含定量部分 (2.40)</li>
+      </ul>
+    </div>
+    <div class="panel out">
+      <h3>✗ 作为假设挂起</h3>
+      <ul>
+        <li><strong>Itô 那一步本身</strong>：(2.34) 的矩阵布朗运动、(2.45)–(2.47) 的 loop hierarchy、
+            Lemma 5.3 的随机积分那一半、Lemma 5.5 的 BDG 鞅矩估计。
+            <br><b>2026-09-21 盘点</b>：这是<strong>随机层真正剩下的那堵墙</strong>。在 <code>H_u = √u·X</code> 下逐路径的 Duhamel + BDG 不可卸（T74/T76），
+            改走<strong>矩 Duhamel</strong>（T132）：对 <code>|U<sub>u,t</sub>∘(L−K)<sub>u</sub>|<sup>2p</sup></code> 用带显式时间的生成元恒等式，只依赖一时刻律，得 (5.20)+(5.24) 在 <code>L<sup>2p</sup></code> 里的合体；
+            前置零件 T133（loop 的 C² 界）、T134（逐点漂移恒等式）。<strong>图上的「已完成」节点里，Steps 2–6 仍条件于这一层</strong>。</li>
+        <li>高斯分部积分：<s>Stein 恒等式本身</s> —— <strong>2026-09-20 已卸</strong>（<code>RBM.Gauss.matrixStein</code>，T70）；剩下的是 p.50 那个显式式的组装（T83，进行中）与 Lemma 5.15 (5.127)</li>
+        <li>两条外部文献（本项目只用这一篇论文，<strong>正在自证，不重证原定理、只证用得到的那一部分</strong>）：<br>· <strong>[39] Lemma 3.3 的大偏差界 —— <span style="color:var(--done)">已完全自证</span></strong>（T81/T82/T91–T93/T95–T97）：线性、二次、对角三条 LDE 与正混沌矩界全部落地，总装后得到<strong>对高斯流不带 LDE 假设的 Lemma 4.1</strong>；<br>· <strong>[40] (4.11) 的涨落平均</strong> —— 总装已完成，<code>hFA</code> 在原签名下卸掉、(4.5) 已得证（T88）；(4.12) 现在<strong>只余一条具名接口 <code>FlucGain</code></strong>（高阶小行展开，<code>m = 0</code> 与 <code>m = 1</code> 已证，<code>m ≥ 2</code> 待迭代），见下。</li>
+        <li><s>高斯带矩阵的算子范数 <code>‖X‖ ≺ 1</code></s> —— 论文直接使用、未证，是形式化才暴露出来的一条<strong>公开缺口</strong>（paper-deltas #49）。<strong>2026-09-21 已完全补上</strong>：没有走 Wick + 闭走计数，而是用已证的高斯分部积分跑矩递推（<code>traceMomentBound_gauss</code> 对<strong>所有 p</strong> 成立），于是 <code>OpNormBound</code> 成为定理。</li>
+        <li><s>分布相等：(2.39)、(6.1)，以及 1-loop 版的 <code>TransferLoop1</code></s> —— <strong>2026-09-21 已卸</strong>：在 <code>H_u = √u·X</code> 下三条全是<strong>逐点恒等式</strong>，不需要任何分布论证（<code>transfer_gauss</code>、<code>transferLoop1_gauss</code>、<code>loopScaling_gauss</code>）。</li>
+      </ul>
+      <p>这些<strong>全部是 Lean 的显式假设</strong>（<code>structure</code> 字段或定理参数），<strong>没有一条是 <code>axiom</code></strong>——仓库的公理审计 <code>#assert_rbm_axioms</code> 会让任何项目公理直接构建失败。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Itô 边界已经在拆了 —— 矩路线，2026-09-20 起执行。</strong>
+    全文审计发现，论文里真正路径化的只有三处：<b>Lemma 5.3 的随机积分</b>、<b>Lemma 5.5 的 BDG</b>、
+    <b>(5.43) 的那一个停时</b>，外加 Def 2.1(i) 在不可数参数集上取并。
+    全文<strong>没有</strong>域流、Markov 性、两时刻联合律、Doob 不等式。
+    于是把流实现成 <code>H_u = √u · X</code>（<code>X</code> 是固定的高斯带矩阵，一时刻边缘与 (2.34) 完全一致），
+    用<strong>生成元恒等式 + 对矩的 Grönwall</strong> 替掉 Duhamel + BDG，用<strong>连续归纳</strong>替掉停时，
+    用 <code>N^{−C}</code> 时间网加确定性 Lipschitz 替掉不可数并。
+    关键在于生成元恒等式的二阶项 <code>|F|^{2p−2}·Σ_α S_α|∂_α F|²</code>
+    <strong>正好是 (5.25) 已经算出的二次变差</strong>，也就是 BDG 的右端。
+    <br><b>已落地</b>：Stein 分部积分、<code>H_u=√u·X</code> 的模型与 <code>Sample</code> 实例、
+    <strong>生成元恒等式</strong>、矩 ⟹ <code>≺</code> 的 Markov 桥，以及
+    <code>‖G‖ ≤ η⁻¹</code> 与各阶导 <code>k!·η^{−(k+1)}</code> 的<strong>全空间</strong>控制。
+    <br><b>2026-09-20 新增</b>：<code>MatrixStein</code> <strong>正式卸掉</strong>
+    （<code>RBM.Gauss.matrixStein</code>，<code>Gauss/SteinMatrix.lean</code>）——
+    它此前是生成元恒等式唯一剩下的假设字段，所有消费它的定理<strong>签名一字未改</strong>。
+    走的是「重采样」路线而非有限 Fubini：
+    <code>((P d) ⊗ γ_c).map (upd d c) = P d</code>，即用同分布的独立样本换掉一个坐标不改测度，
+    在可测长方体上验证即可，<b>独立性只在这一处用到</b>。
+  </div>
+
+  <div class="note">
+    <strong>一个真实的数学缺口，不是记账问题：(4.12) 还差一个 Ψ。</strong>
+    自证 [40] 的路上，总装那一步（T88）发现：现有的分层矩界给的是
+    <code>E|Σ t<sub>k</sub>Z<sub>k</sub>|<sup>2p</sup> ≤ (2p−1)·ε·B<sup>2p−1</sup> + c<sup>p</sup>p<sup>2p</sup>B<sup>2p</sup></code>，
+    第二项没问题，<b>第一项即便取到理想参数也只有 Ψ<sup>2p+1</sup></b>——p=1 时是 Ψ³，而 (4.12) 要 Ψ⁴。
+    根因是小行替换<strong>只迭代到一阶</strong>，标准证法要迭代到 <code>2p</code> 阶。
+    <br>已经确认<strong>任何 ≺ 或指示函数记账都补不回来</strong>：消失引理依赖
+    <code>E<sub>k</sub>[(1−E<sub>k</sub>)X] = 0</code>，而 <code>1<sub>Ω</sub>·X</code> 破坏它，
+    且 <code>1<sub>Ω</sub></code> 不是 <code>FinDepOffRow</code>、提不出 <code>E<sub>k</sub></code>。
+    <br><b>T94 的结论（同日）</b>：那条被隔离出来的假设 <code>hsmall</code> <strong>按字面是假的</strong>——补的办法不是去证它，而是<strong>换掉分层矩界本身</strong>。现在 (4.12) 只余一条具名接口<code>FlucGain</code>（再作用 <code>m</code> 个 <code>Q</code> 得 <code>ρ^m</code>）：<code>m = 0</code> 与 <code>m = 1</code> 已证，<code>m ≥ 2</code> 就是那个 <code>2p</code> 阶迭代。
+    <br>记在这里是因为它值得单独看见：这是<strong>形式化真正抓出来的东西</strong>，
+    不是 Lean 的技术债，而是证明里一处需要补写的步骤。
+  </div>
+
+  <div class="note">
+    <strong>少了一件替换：Lemma 4.1 沿流的总装<em>根本不需要时间网</em>。</strong>
+    矩路线原本准备了四件替换，其中一件是用 <code>N^{−C}</code> 时间网加确定性 Lipschitz
+    去替 Def 2.1(i) 在不可数参数集上取并。总装时（T108）发现这一件在这里用不上：
+    <code>Lemma41Flow</code> 是两个<strong>本来就时间一致</strong>的支配之间的传递，
+    链条上每一步都是「在单个 <code>N</code>、<code>ω</code> 上关于失败事件的论断 + 对指标集的存在量词」，
+    <strong>对指标集是什么不敏感</strong>——于是把时间直接<strong>放进指标集</strong>就够了。
+    Lean 证实了这一点：对任意 <code>Φ ≥ 0</code> 都通过，不带任何缓变假设。
+    <br>只有当你从<strong>固定时刻</strong>的 (4.2)/(4.3) 出发、事后再去一致化，才真的需要网。
+    缓变版的桥仍然按原计划交付了（<code>stochDom_timeIcc_of_holder_slow_*</code>），
+    目前没有消费者，留作通用工具。paper-deltas #63。
+  </div>
+
+  <div class="note">
+    <strong>论文要改多少：零处陈述改动、零处重新编号。</strong>
+    因为 <b>Lemma 5.5 的陈述 (5.24) 本来就是一条矩不等式</b>——两边都是期望，没有一处轨道陈述；
+    BDG 只出现在它的<em>证明</em>里。所以这是「同一条不等式换个证法」，不是「换一套语言」。
+    最小编辑集只有五处、合计约两页：§2.4 加一条注记（后文只用一时刻边缘律）、
+    §5.2 在 (5.20) 后加一句读法（随机积分按差定义）、<b>Lemma 5.5 的证明</b>换掉约一页、
+    §5.3 的停时段落换成连续归纳（<b>(5.44)–(5.48) 的结论全不变</b>）、Def 2.1(i) 处一条脚注。
+    §3、§4、§6、§7.1、附录 A/B 完全不受影响。
+    <br><b>红线</b>：若 Hölder 记账无法闭合在 Lemma 5.5 的证明内部，逼得要改 (5.36)/(5.77) 的<em>陈述</em>，
+    立刻停下报告，不顺手改。另：审计只核了 Step 2 与 Step 6，
+    <b>Step 1、3、4、5 的矩版本尚未逐条验证</b>；§7.2 的 universality 本轮不碰。
+  </div>
+
+  <div class="note">
+    <strong>形式化过程中发现的论文问题。</strong>
+    <strong>(1)</strong> Figure 6 之后 n=4 显式式的边界因子下标差一——论文自己的 (3.42) 用的是正确下标，
+    有限差分核对是 1e−11 对 1e−2。
+    <strong>(2)</strong> Lemma 4.2 的 (4.8) 少一个负号：按论文全篇的约定 G = (H−z)<sup>−1</sup>，
+    Schur 补给出的是 G<sub>ij</sub> = −G<sub>ii</sub> Σ<sub>k</sub> H<sub>ik</sub> G<sup>(i)</sup><sub>kj</sub>。
+    <strong>(3)</strong> (5.116) 的指标计数不自洽（(n+2) 元的 σ₁ 配 C<sup>(n+1)</sup>）。
+    <strong>(4)</strong> Step 4 的归纳有缺口：(5.125) 的 k = 2 与 k = n 两个二次项含 Ξ<sub>n</sub> 本身，
+    需要先有先验界 Ξ<sup>(L−K)</sup><sub>n</sub> ≺ Wℓη（由 Step 3 得）才能闭合。
+    前两条不影响任何结论（论文只在 |G<sub>ij</sub>| 的形式下用 (4.8)），后两条我们补上了。
+  </div>
+
+  <div class="note">
+    <strong>与论文不同的 41 处，分三类：论文笔误、我们补上的假设、建模取舍。</strong>
+    补上的假设例如：L ≥ 3（否则 S<sup>(B)</sup> 的行和不是 1）；Lemma 3.4 需要长度为 2 的 loop 一致有界
+    （n=2 的 Riccati 型方程做 Grönwall 唯一性所必需）；§7.2 末尾的 |1−ξ| ∼ |1−ξ(1−ζ)| 需要 ζ ≤ |1−ξ|
+    （否则 ξ = 1 时不成立）。建模取舍例如：(2.51) 只能逐项（ℂ 值）陈述，因为 Mathlib 里矩阵的 Pi 拓扑与
+    ℓ<sup>∞</sup> 范数拓扑 defeq 但不语法相等；Lemma 3.2（典范划分 ↔ 无交叉配对）按论文结论直接用作
+    𝒯<sub>SP</sub> 的定义，换来第 3 节其余部分全部可判定（|𝒯<sub>SP</sub>(4)| = 3、11、45 都由 <code>decide</code> 验过）。
+    另有多处我们证得<strong>比论文更强</strong>：Lemma 2.8 (2.40) 的常数与 κ 无关；Lemma 3.11 的 (3.45) 不带 log；
+    Lemma 7.2 换了证法，避免 e<sup>C(log W)^{3/4}</sup> 的损失。逐条记在仓库的 <code>docs/paper-deltas.md</code>。
+  </div>
+
+  <footer>
+    本图由 <code>blueprint/src/content.tex</code> 生成，每个节点都与仓库中的真实 Lean 声明一一对应 ·
+    <a href="https://github.com/JYin80/Lean-RBM1d_arxiv-2501.01718">GitHub 仓库</a> ·
+    <a href="https://arxiv.org/abs/2501.01718">arXiv:2501.01718</a>
+  </footer>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('figure.graph').forEach(function (fig) {
+    var pane = fig.querySelector('.plate');
+    var svg = fig.querySelector('.depgraph');
+    var out = fig.querySelector('.gpct');
+    if (!pane || !svg || !out) return;
+    var baseW = parseFloat(fig.dataset.basew) || 1000;
+    var baseH = parseFloat(fig.dataset.baseh) || 0;
+    var scale = 1, fitMode = true;
+
+    function draw() {
+      svg.style.width = (baseW * scale) + 'px';
+      out.textContent = Math.round(scale * 100) + '%';
+    }
+    function fit() {
+      // Fit the WIDTH and scroll vertically: the graphs are laid out tall and narrow, so
+      // fitting both dimensions would shrink the labels to nothing.
+      var availW = pane.clientWidth - 24;
+      var s = availW / baseW;
+      scale = Math.min(1, Math.max(0.12, s));
+      fitMode = true;
+      draw();
+      pane.scrollLeft = 0;
+      pane.scrollTop = 0;
+    }
+    function zoom(f) {
+      scale = Math.min(3, Math.max(0.2, scale * f));
+      fitMode = false;
+      draw();
+    }
+    fig.querySelectorAll('.gtools button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var a = b.dataset.act;
+        if (a === 'fit') fit();
+        else zoom(a === 'in' ? 1.3 : 1 / 1.3);
+      });
+    });
+    pane.addEventListener('dblclick', function () {
+      if (scale < 0.995) { scale = 1; fitMode = false; draw(); } else fit();
+    });
+
+    var down = false, sx = 0, sy = 0, sl = 0, st = 0;
+    pane.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      down = true; sx = e.clientX; sy = e.clientY;
+      sl = pane.scrollLeft; st = pane.scrollTop;
+      pane.classList.add('dragging');
+      try { pane.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    pane.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      e.preventDefault();
+      pane.scrollLeft = sl - (e.clientX - sx);
+      pane.scrollTop = st - (e.clientY - sy);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+      pane.addEventListener(ev, function () { down = false; pane.classList.remove('dragging'); });
+    });
+
+    var t;
+    window.addEventListener('resize', function () {
+      if (!fitMode) return;
+      clearTimeout(t);
+      t = setTimeout(fit, 120);
+    });
+
+    fit();
+  });
+})();
+</script>

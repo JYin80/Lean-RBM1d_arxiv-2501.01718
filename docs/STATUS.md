@@ -6850,3 +6850,7 @@ T226 **没有** import T225 的 `TestFunQGeneral.lean`（对方文件、仍在�
 `hgc`/`hgb` ← `continuous_uker_QQ_eeFun_omega` / `exists_bdd_uker_QQ_eeFun`；`hG₂c`/`hG₂b` ← `..._commS_lkT_...`；`hG₃c`/`hG₃b` ← `..._PsumVarthetaDot_lkT_...`；`hG₁c`/`hG₁b` ← `..._Qop_driftF_...`（**带 `hFb`**）；`hQV`（`cq = n+2`）← `EEUker.quadVar_qUkerObsT_le_norm_QQ_eeFun'`（对方 `hQV` 左端是 `Hflow d N u ω`，本单是 `M` + `hM`，在 `M := Hflow`、`hM := Hflow_isHermitian` 处 defeq）；连接项 ①②④⑥⑦⑧⑨ ← T226 的表。
 
 **去重（归 T221 那条线）**：`continuousOn_Uker_of_tensor` 是 T212 三条 `continuousOn_uker_{lkFun,driftF,eeFun}_path` 的**共同内核**（三者可各降一行）；`intervalIntegrable_phi'_of_testFunT₁` 是 T212 的 `intervalIntegrable_phi'_gauss` 的抽象版；`continuousOn_vartheta_path` 等与 T225 文件里的 `continuousOn_vartheta_ofReal` **重复**（T226 没 import 对方文件，故各证一遍），**收工后应下沉到 `RBM1D/Defs/`**。
+
+## Cowork 02:50：调度交接手册入库（Jun 要求：「以防你突然断线或额度用满」）
+
+新增 `docs/HANDOVER.md`（接管手册：角色、Jun 的永久规则逐字、文件地图、心跳步骤与脚本、审计清单、决策分流、已定裁定表、当前状态、工人也停时怎么办、蓝图、给 Codex/ChatGPT 的开场 prompt、Claude 回来后的恢复、已知的坑）、`AGENTS.md`（Codex 默认读取的入口）、`docs/cowork-{paper-edit-budget,theorem-2.6-analysis,lessons}.md`（原件只在 Claude 项目里，别的模型读不到）、`tools/blueprint_page/`（蓝图总览网页生成器，python3 + graphviz，已在本机 VM 实跑通过）。`CLAUDE.md`「唯一真相来源」加了一行指针。**约定**：接手者每轮在本文件追加「## 接手者记录（模型，时间）」，Claude 回来据此复核。

@@ -6821,3 +6821,32 @@ T218 的 `pow_card_le_of_norm_Psum_le` 已编译证明：无护栏的槽和界�
 1. **`hDec*` 仍按「对所有 `ω`」量化**——这是可满足性纪律第 1 条禁止的形状（大常数倍单位阵处无小 `δ`）。形状从 T201 的 `hGd` 继承。T220 的 `momNorm_Uker_*_event_le` 是事件限制版替代品，但接进来需要 **`MeasurableSet (Gauss.lkGood …)`，T220 明说未证**（对**不可数** `TimeIcc` 取交）。**这条与 T220 交出的第 1 条是同一件事**，归 T218/T219 那条待办，**目前无主**。
 2. **`hEnv*` 的 `Qop` 半边接线**（现成件 `SumZeroDyn.norm_Qop_le_of_fastDecay`）未做，要连带改生产者形状，与第 1 条同一批。
 3. **drift 项的 `hKd`（环长 `n+2` 上 `K` 的 `LoopDecay`）全仓无生产者**（`exists_loopDecay_Kval` 只到环长 **3**）——**标红，仍无主**（与 T220 交出的第 2 条同一件事；T234 的第 0 步正在查那个衰减率是否过粗）。
+
+## ⭐⭐ T226：`Q` 版二次变差桥**完全做成、无自由假设**；可积性 11 项里关掉 6 项（`Gauss/MomentDuhamelQInt.lean` 665 → 2053 行、85 条，全量绿、审计 11923）
+
+**半成品的处置**：单文件 exit=1，**全文件只有一个错误**在 `:648` 的 `rw [secondOrder_eq_quadVar, hfun]`——`n+2` 与 `n+1+1` 只在 default 透明度下 defeq，而 `rw` 用 `instances` 透明度。**该错误使那条定理的 `:649`–`:660` 全部未被检查。**
+
+⚠ **`:654` 的 `rw [SumZeroDyn.xi2]` 的结论是「从未验证过，且现在不必要」**：那段其实**已经是按 T223 新定义写的**（紧跟着用了 `xiOf_not`，正是 `!∘σ` 与 `conj` 的桥），**不是被 T223 推翻的旧代码**；但它没编译过，且 `rw [xi2] + congr 2` 在 `‖·‖ = ‖·‖` 上很脆。**已换成 T223 自己落地的规范桥 `EEUker.xi2_eq_append_conj`**，一行搞定。继承的 18 条逐条核过，**没有偷偷弱化或加假设**（`Qop` 的时间是传播子的**起始**时间 `s`，与 (5.91) 的 `U_{u,v}∘Q_u` 一致；右端 `QQ` 的时间也是 `s`，与 `momentDuhamelQ` 逐字一致）。
+
+**(2) 二次变差桥：完全做成。** `quadVar_qUkerObsT_le_norm_QQ_eeFun'` 的假设表只有 `|E| < 2`、`0 ≤ u < 1`、`0 ≤ v < 1`、`M.IsHermitian`；右端**逐字**是 `momentDuhamelQ` 的第五项，系数 `(n+2)`。**直接用 T223 修正后的 `xi2`，不再经 `xi2bar`**；`hdiff`/`hsplit` 已由 T224 卸掉。核心新数学是 `sum_Qop_mul_conj_Qop`（(5.104) 反读，靠 `ϑ_u` 在实时间为实）。
+
+**(1) 可积性：11 个连接项里关掉 6 个 + 1 条件版 + 1 抽象版，3 个不归本单**。其中 `intervalIntegrable_momNorm_QQ_eeFun_gauss` **无任何假设，连 `cK` 都不要**；`intervalIntegrable_phi'_of_testFunT₁` 是抽象版（吃 `TestFunT₁`，T225 的 `testFunT₁_qMomentObsT` 正好供）。
+
+**⚠⚠ 更正工单的机制描述（沿 T212 的教训再更正一步）**：工单说漂移那件应「照 T212 用 `uker_driftF_eq` 恒等式」。**在 `Q` 版这条路走不通**——`uker_driftF_eq` 只给 `(U∘F_u)_a` 的界，而 **`Q_u` 通过 `Psum` 把 `F_u` 在 `L^{n+1}` 个别的环参数上读了一遍**，`(U∘Q_uF)_a` **不是任何单个 `(U∘F)_{a′}` 的界的函数，恒等式不传递**。所以 `Q` 版真正需要的是 `driftF` 的**逐点确定性包络**。
+
+**见证**：`sideConditionsQ_gauss_window_zero` 在**全开窗口**（`v` 全称、`0 ≤ v < 1`、**允许 `v ↑ 1`、没有任何靠 `v` 远离 1 的常数**）、**任意 `p`（含 `p = 0, 1`）**上五件同时成立、**无自由数据**。退化检查 `quadVar_qUkerObsT_le_at_zero`（`ω = 0` 处照样成立且有内容）。漂移是钉死的 `DriftDef.driftF`，`hFb` 只是它的**界**不是它本身。
+
+**数值自洽检查 + 两条判别性**（参数：`L = 3`、环长 2、`t = 0`、`x = (0,0)`、`y = (1,1)` 使 (5.104) 的**四项全部出现**）：两侧**各自独立**算出 `18 + 15i`，求值不用本文件任何定理。判别性 ①`sanityQ_cross_term_matters`：**去掉 `P ⊗ P` 交叉项**同一点给 `−19 − 12i`；②`sanityQ_conj_matters`：**`ϑ` 若非实**，真乘积 `7 + i` vs 四项形 `−5 − 5i`——**`conj_vartheta` 是载重的，不是装饰**。
+
+## ⚠⚠ 无主的活：`driftF` 的逐点确定性包络（`hFb`）——**全仓第二次**把同一条当假设收
+
+这是 T226 唯一的真缺口，也是 **`MomentIneqQ` 除 T225 外唯一剩下的实质缺口**。精确短在哪：`driftF = eGterm + ∑_{l_K} couplingLen + primBil`，三块的界 `Decay.norm_eG_le` / `norm_couplingLen_le` / `norm_primBil_sub_le` 都带衰减参数 `Φ·A^{−|J|}` 与 `LoopDecay`；**在 `A = 1`、`δ :=` 平凡上界、`ℓ = 1` 处特化即可得粗界**，另外还差一条「`Band.Kval` 在窗口上对**所有**长度 `≤ n+3` 的 `LoopIdx` 一致有界」（现有 `exists_bdd_Kval_Kprim` 只给定 `σ`、长度 `n+2`）。
+
+⚠ **`Gauss/FastDecayFlow.lean:832` 的 `hGd_Qop_driftF` 也是把它当假设收的**——所以这是**全仓第二次**。**建议开单**（或并入 T220/T215/T229 的漂移线）。
+
+## T226 给协调者的接线清单（`MomentIneqQ` 的总装，几行即可）
+
+T226 **没有** import T225 的 `TestFunQGeneral.lean`（对方文件、仍在改、工单禁止碰），所以总装没做。两边接口 T226 已做成**逐字对齐**：
+`hgc`/`hgb` ← `continuous_uker_QQ_eeFun_omega` / `exists_bdd_uker_QQ_eeFun`；`hG₂c`/`hG₂b` ← `..._commS_lkT_...`；`hG₃c`/`hG₃b` ← `..._PsumVarthetaDot_lkT_...`；`hG₁c`/`hG₁b` ← `..._Qop_driftF_...`（**带 `hFb`**）；`hQV`（`cq = n+2`）← `EEUker.quadVar_qUkerObsT_le_norm_QQ_eeFun'`（对方 `hQV` 左端是 `Hflow d N u ω`，本单是 `M` + `hM`，在 `M := Hflow`、`hM := Hflow_isHermitian` 处 defeq）；连接项 ①②④⑥⑦⑧⑨ ← T226 的表。
+
+**去重（归 T221 那条线）**：`continuousOn_Uker_of_tensor` 是 T212 三条 `continuousOn_uker_{lkFun,driftF,eeFun}_path` 的**共同内核**（三者可各降一行）；`intervalIntegrable_phi'_of_testFunT₁` 是 T212 的 `intervalIntegrable_phi'_gauss` 的抽象版；`continuousOn_vartheta_path` 等与 T225 文件里的 `continuousOn_vartheta_ofReal` **重复**（T226 没 import 对方文件，故各证一遍），**收工后应下沉到 `RBM1D/Defs/`**。

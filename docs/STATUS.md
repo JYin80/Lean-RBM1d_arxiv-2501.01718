@@ -111,6 +111,8 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
 
+* **T272**（本次，新建 `Gauss/APrimeOneStepSharp.lean` 1032 行/33 条，模块 exit=0、`lake env lean` 输出为空）：第二遍的锐版算术与骨架都做出来了。与第一遍**只差两处**（近场改已积分形；`β`/`γ` 各多付一个幂次，**恰好是 `phi_arith_second_pass` 多付的那两个**），门槛、`cWt` 重标、`δ` 预算、(2.72) 的 30 **全未动**。⭐⭐ **绑定条件又换了一次而且几乎饱和**：仍是远场阈值，但内部绑定分支现在是 **`β`、余量只剩 `R^{0.5}`**（第一遍 `R^{4.5}`）——**将来压阈值第一个撞上 `β`，在 `R^{9.5}`**；两条余量已写成具名引理，下一张单不必重推。见证八条**全严格、无一取等号**。⭐ 它**主动点名 `kappa_le_of_crossTerm` 是刻意无内容的转接**，免得被误当成估计。报告 `docs/reports/T272.md`；paper-delta T272a。
+
 * **T268**（本次，新建 `Gauss/APrimeTimeInt.lean` 601 行/17 条，审计 13667、零 lint warning）：四条全证出**外加 `s = 0` 第三区制**；⭐ **零新具名假设**。⭐ **三个区制分界显式，且 `s = 0` 漏不进 `log` 那一支**（`N^{−C₀} ≤ s` 配 `1 ≤ C₀`、`3 ≤ N` **逼出 `s > 0`**）。⭐ (c) 把 A8 的单调性化成**一条** `r^5 ≤ r^14`，**避开半整数幂**。⭐ (d) 里 **(b) 的 `η_s` 与 (c) 的 `η_s^{−1}` 精确抵消**，唯一损失 `N^{(ε−4δ)/2} ≤ N^{ε−2δ}`。见证 `κ̂` 取在**最大化指标 `j = 0`** 处、`∫Q` **取等号**——**(c)、(d) 都是取到的不是松的**。⚠ **第一格 `η_u ≍ 1`，`R^{−2}` 不是增益——那一格的增益只来自 `N^{−2δ}`**。报告 `docs/reports/T268.md`；paper-delta T268a、T268b。
 
 * **本轮小结（Cowork 的三张并行单全部落地）**：**T268 (S6) + T269 包络 + T270 骨架**。T270 的三条假设槽现在的供给情况：`hAbd`/`hgbd` ← **T269**，`hBbd` ← **T265 (S5) + T267 (S3)**，`htime` ← **T268 (S6)**。**(A′) 只剩模型层实例化那一步**（STATUS §7 最末条）。全量审计 13667，blueprint 4624 个 `\lean` 名全部存在。
@@ -216,3 +218,4 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **(A′) 的模型层实例化**（T270 交出）：用 `Gauss.lkFun`/`softW` 定义 `Y`、`Adr`、`Bcr`、`g` 并交割 (G) 的正则性块，再把 T268/T269 的模型层结果接到 T270 的抽象槽上。需要 `Gauss/APrimeTestFun.lean` 的 `TestFun` 实例（该文件 import 了 `Step2Bootstrap`、在下游）。归 T230 / Step 2 总装线。**这是 (A′) 收口的最后一步。**
 * ⭐ **(5.42) 的 `U`-传播**（T269 交出）：从 `E⊗E` 的界重建 `‖Uker (xi2bar) (eeFun)‖` 的界，即把 (5.36)@`u` 变成端点 `t` 处 (5.42) 的那一步。T269 的 `Q^{bd}` 现在是「(5.42) 形状的逐点界 ⟹ 显式包络」，形状的**可居性**由 T262 在 `U = id` 处交割；缺的是**带非平凡核的 `EEUker → Lemma57` 复合**。归 Lemma 5.7 / `Uker` 桥（与 `Gauss/EarlyQVRate.lean` 相邻），**不归算术单**。
 * **`Q → Q̂` 的 hat-归一化**（T268 交出，`T268b`）：`Step2MomentStep.integral_nearInt_le` 给 `(Im m)^{−1}R^4`，而 (d) 要的是 `m⁻¹R^{−4}`，**差一个水平 `Λ² = R^8`**。归做归一化的人（T267/T230 侧）。
+* **把两条重建的桥改接到 `Step2Bootstrap` 的消费者**（T270 与 T272 各交出一次）：`weightedMoment_of_stepBound''`（T270）与 `weightedMoment_of_stepBoundSharp''`（T272）都瞄准带撇/重标后的 `StepSide''`/`StepSideSharp''`，而只读的 `Step2Bootstrap.weightedMoment_of_stepBound(Sharp)` 吃的是未重标版。改接消费者要动 `Gauss/Step2Bootstrap.lean`。归 Step 2 总装线。

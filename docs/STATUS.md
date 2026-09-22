@@ -82,12 +82,15 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 * **见证不是退化的**：`satAPrimeHyp` 用真软最大值权重（不是 `W ≡ 1`），功能 `J_u = 2u⁺` **真随时间变动**（T232 已证没有任何 `∀ N` 接口能承载它），`sat_satWval_eq_zero` 证明权重确会归零，`one_le_satW` 里显式处理了 `N = 0` 且 `δ ≠ 0` 的 `0/0` 支。`R > 1` 的见证仍是 `sat_StepSide_gt_one`（八条约束全取等号），两者互补。
 * **交叉项的 Grönwall 收口只等 T250**：拆分（`sum_gvar_mul_le_sqrt_quadVar`）与导数界（`abs_deriv_softMax_le`）两块砖已备好，装配需要 T250 的 (i) 对数型界 + (ii) `TestFun` 先落地。**T250 是 (A′) 当前的关键路径。**
 
-**T230 中间报告 #4（05:20 UTC， 2242 → 2387 行 / 73 条，模块与  均 exit=0、公理干净，快照已入库）**：
+**T230 中间报告 #4（05:20 UTC，`Step2Bootstrap.lean` 2242 → 2387 行 / 73 条，模块与 `APrimeTestFun` 均 exit=0、公理干净、`sorryAx` = 0，快照已入库）**：
 
-* **§12 已改写，接受 T250 的反驳**。文件里现在明写那条纯乘性目标**被反驳**及其机制（ 处右端为 0 而  无理由为 0； 让情况**更糟**），展示签名换成仿射版； 的 docstring 带 ⚠「语句对但在 loop 上无实例」；⭐ **并把「软最大值买到什么」这句话改对了：不是因子 ，是没有 **—— 给 ，再经  在  处降到 ，** 时照样成立，而模型正好在这一支**。 里原先那句「绝对界严格更弱」**是错的，已删改**。
-* **§16 是 (A′) 侧最后一块接口砖**： /  /  / ，与 T222 的  一一对应，只是把条件积分换成全测度加权积分（两边右端同为 ，故 、 原样可用）；锐版与钝版**同一个损失指数**。
-* **交回的一条（原因是 import 方向不是范围）**：模型级  实例。它验过 （）、、 在  里都 ，而给共享文件加 import 是结构性改动它不自己决定；且常数还要  的东西（反方向）。⚠ **注意  import 了 ，所以 T250 的四条修复件全在 T230 的下游**——装配只能在下游做。→ **已开 T255**。
-* **链上每一环现在都有名字，只差那一个实例**： ←  + ； ← ； ← ； 项 ←  + ；交叉项拆分 ← ；收口 ← 。
+* **§12 已改写，接受 T250 的反驳。** 文件里现在明写那条纯乘性目标**被反驳**及其机制（`L = K` 的 Hermitian `M` 处右端为 `0`，而 `∂_α(L−K) = ∂_α L` 无理由为 `0`；**`∂K = 0` 让情况更糟不是更好**），展示签名换成仿射版；`LogDerivBound` 的 docstring 带 ⚠「语句本身对，但**在 loop 上无实例**，保留只因它是 `abs_deriv_softMax_le` 的字面前件」。
+* ⭐ **并把「软最大值买到什么」这句话改对了：不是因子 `Λ`，是没有 `card`。** 朴素路线给 `card·K`；`sum_abs_pow_pred_le` 给 `card^{1/(2r)}·K`，再经 `rpow_card_le_exp_one` 在 `q ≍ log N` 处降到 `e·K`，**`Λ = 0` 时照样成立——而模型正好落在这一支**。乘积权重做不到（`abs_derivProd_le` 就是一个裸的网格求和）。`logDerivBound_gives_softMax` 里原先那句「绝对界严格更弱」**是错的，已删改**；文件头 Main results 同步标注。
+* **§16 是 (A′) 侧最后一块接口砖**：`weightedMoment_bound_of_sq` / `_of_oneStep` / `_of_oneStepSharp` / `weightedMoment_mono`，与 T222 的 `condMoment_of_oneStep` 一一对应，只是把条件积分换成全测度加权积分（两边右端同为 `C·(N^{δ/2·p}·Θ^{2p})`，故 `rpow_sq_pow`、`stepRhs_div_le` 原样可用）；**锐版与钝版同一个损失指数**。
+* **交回一条，原因是 import 方向不是范围**：模型级 `BddC2C` 实例。T230 验过 `BddC2C`（在 `Gauss/LoopC2.lean`）、`lkFun`、`LoopC2` 在 `Step2Bootstrap.lean` 里都是 `Unknown identifier`，而给共享文件加 import 是结构性改动它不自己决定；且常数还要 `Flow/Hypotheses.lean` 的东西（反方向）。⚠ **注意 `APrimeTestFun.lean` import 了 `Step2Bootstrap.lean`，所以 T250 的四条修复件全在 T230 的下游**——装配只能在下游做。→ **已开 T255**。
+* **链上每一环现在都有名字，只差那一个实例**：`hsum` ← `bddC2C_pow_real` + `bddC2C_sum`；`hΨ` ← `LoopC2`；`TestFun` ← `testFun_softW_mul`；生成元恒等式 ← `hasDerivAt_integral_Phi`；`∇χ` 项 ← `abs_coordD1_le_affine` + `abs_deriv_softMax_le_affine`（`Λ = 0`、`K = a₁‖B_α‖`）；交叉项拆分 ← `sum_gvar_mul_le_sqrt_quadVar`；收口 ← `weightedMoment_bound_of_oneStep`。
+* **状态未变的部分**：`MomentHypCutEv.cut` / `MomentHypCut2Ev.cut` 由定理产出；事件限制版 `APrimeHypOn → APrimeHyp(onEvent) → stochDom_of_aprimeOn` 已通；见证 `satAPrimeHyp`（软最大值权重、时间相关 `J`）与 `sat_StepSide_gt_one`（`R > 1`、八条约束全取等号）都在。链上唯一自由项仍是 `WeightedMoment`。起点条件仍是 **`s_N > 0`（应用中 `s_N ≥ N^{−C}`）+ `J_{s_N} ≺ 1`**。
+
 
 ## 4. 待 Jun 定夺
 

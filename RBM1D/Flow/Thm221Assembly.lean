@@ -1027,4 +1027,204 @@ theorem boundsCore_step_of_inputs_entriesEv_unchanged (X : Sample B) {κ : ℝ} 
 
 end AssemblyEv
 
+/-! ### 9. T251: the entrywise modulus of (5.48) on a high-probability event
+
+T249 proved (`RBM.not_entryModulusEv_swapSample_of_far`) that `RBM.EntryModulusEv` — the
+`modulus` field of `RBM.Eq548EntryDataEv` — is **false** on a window whose left endpoint is
+`0`, for the plain reason that it is a *deterministic* inequality quantified over **every**
+sample point while the Hölder constant of `u ↦ G_u` along `H_u = √u X` is `O(‖X‖/√s)` and
+`‖X‖` is unbounded.  This section is the repair on the `ω` side: the field is asked only for
+`ω ∈ Good N`, with `Good` of high probability.  (The repair on the *time* side — the window's
+left endpoint `s_N ≥ N^{-C}` — is `RBM.WindowLeft` in `Flow/Step345Producer.lean`; T249's
+`⚠` is that neither half works without the other.)
+
+Nothing downstream is reproved.  `RBM.MomentDuhamelCut.CutHypEvOn` (T249丙) transports to the
+unrestricted `RBM.MomentDuhamelCut.CutHypEv` for the *restricted* functional
+`RBM.MomentDuhamelCut.onEvent J Good`, which is `0` off `Good N`, and
+`RBM.MomentDuhamelCut.stochDom_of_cutHypEvOn` pays the exceptional set with one extra `N^{-1}`
+in the union bound.  So the only change here is one extra `intro` after the `filter_upwards`
+of `RBM.cutHypEv_jSfarSm_of_entries`.
+
+`RBM.Eq548EntryDataEv.toEvOn` and `RBM.Eq548EntryDataEv.toEvOn'` are the compiled certificates
+that the event-restricted package is **weaker** (`Good = Set.univ` recovers the old one), so
+the new table cannot be harder to satisfy than T245's. -/
+
+section EntriesEvOn
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E D : ℝ} {s t : ℕ → ℝ}
+variable {Good : ℕ → Set Ω}
+
+/-- **`RBM.EntryModulusEv` with the deterministic inequality asked only on `Good N`.**  The
+body is byte for byte `RBM.EntryModulusEv`'s; the single change is `∀ ω : Ω` ⤳ `∀ ω ∈ Good N`.
+
+This is the shape the satisfiability discipline demands of a deterministic estimate on a
+random model, and T249's `RBM.not_entryModulusEv_swapSample_of_far` is the proof that the
+unrestricted shape is not merely impolite but false. -/
+def EntryModulusEvOn (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D : ℝ) (Good : ℕ → Set Ω) : Prop :=
+  ∀ᶠ N : ℕ in atTop, ∀ ω ∈ Good N, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+    ∀ x : LoopArg (B.L N) 2,
+      15 / 8 * |(zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N v))
+            - (zdist (B.L N) (x 0 - x 1) : ℝ) / (6 * ellStar (B.W N : ℝ) (B.ell N w))|
+          * |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))|
+        + |‖Step2.lk X E N v ω x‖ / tailT (B.W N : ℝ) (B.ell N v) (etaT E v) D
+              (zdist (B.L N) (x 0 - x 1))
+            - ‖Step2.lk X E N w ω x‖ / tailT (B.W N : ℝ) (B.ell N w) (etaT E w) D
+              (zdist (B.L N) (x 0 - x 1))|
+          ≤ (N : ℝ) ^ (1 : ℝ) * |v - w| ^ ((1 : ℝ) / 2)
+
+/-- The restriction really is a weakening: an unrestricted modulus is one on every event. -/
+theorem entryModulusEvOn_of_entryModulusEv (X : Sample B) (h : EntryModulusEv X E s t D)
+    (Good : ℕ → Set Ω) : EntryModulusEvOn X E s t D Good := by
+  filter_upwards [h] with N hN ω _ v hv w hw x using hN ω v hv w hw x
+
+/-- At `Good = Set.univ` the two shapes agree, so nothing was lost in the other direction
+either. -/
+theorem entryModulusEv_of_entryModulusEvOn_univ (X : Sample B)
+    (h : EntryModulusEvOn X E s t D (fun _ => Set.univ)) : EntryModulusEv X E s t D := by
+  filter_upwards [h] with N hN ω v hv w hw x using hN ω (Set.mem_univ ω) v hv w hw x
+
+/-- **`RBM.MomentDuhamelCut.CutHypEvOn` for `J*^{sm}_{u,D}`.**  Field for field
+`RBM.cutHypEv_jSfarSm_of_entries`, with `good_meas` added and one extra `intro` in `modulus`:
+the entrywise estimate is consumed on `Good N` exactly as it was consumed on all of `Ω`. -/
+noncomputable def cutHypEvOn_jSfarSm_of_entries (X : Sample B)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hgm : ∀ N, MeasurableSet (Good N))
+    (hmod : EntryModulusEvOn X E s t D Good)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))) :
+    MomentDuhamelCut.CutHypEvOn B.P (fun N u ω => Step2FarMart.jSfarSm X E D N u ω) s t
+      (fun _ => 1) Good where
+  window := hst
+  δ₀ := 1
+  δ₀_pos := one_pos
+  Θ_pos := fun _ => one_pos
+  J_nonneg := fun _ _ _ => Step2FarMart.jSfarSm_nonneg X
+  meas := fun N u => (measurable_jSfarSm X E D N u).aestronglyMeasurable
+  good_meas := hgm
+  mesh := fun N => ((N : ℝ) + 1) ^ (2 : ℝ)
+  mesh_pos := fun N => Real.rpow_pos_of_pos (by positivity) _
+  Kmod := 1
+  γ := 1 / 2
+  γ_pos := by norm_num
+  modulus := by
+    filter_upwards [hmod] with N hN ω hω v hv w hw
+    exact Step2FarMart.abs_jSfarSm_sub_le X fun x =>
+      (Step2FarMart.abs_lkFarSm_ratio_sub_le X x).trans (hN ω hω v hv w hw x)
+  mesh_fine := Filter.Eventually.of_forall Step2FarMart.mesh_fine_one_at_sq
+  Ccard := 3
+  card_le := Step2FarMart.card_le_one_at_sq hs0 ht1
+  moment := hmoment
+
+/-- **`J*^{sm}_{u,D} ≺ 1` from the event-restricted entrywise data** — verbatim
+`RBM.stochDom_jSfarSm_of_entriesEv` with `RBM.MomentDuhamelCut.stochDom_of_cutHypEvOn` in place
+of `RBM.MomentDuhamelCut.stochDom_of_cutHypEv`.  The conclusion is **unchanged**: it is a
+`StochDom` for the honest, unrestricted functional; the event is paid for inside. -/
+theorem stochDom_jSfarSm_of_entriesEvOn (X : Sample B)
+    (hst : ∀ N, s N ≤ t N) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hgm : ∀ N, MeasurableSet (Good N)) (hgood : HighProb B.P Good)
+    (hmod : EntryModulusEvOn X E s t D Good)
+    (hmoment : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop,
+      ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+        ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+              (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+          ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p)))
+    (hinit : StochDom B.P (fun N (_ : Unit) ω => Step2FarMart.jSfarSm X E D N (s N) ω)
+      (fun _ _ _ => (1 : ℝ))) :
+    StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2FarMart.jSfarSm X E D N (u : ℝ) ω)
+      (fun _ _ _ => (1 : ℝ)) :=
+  letI := B.isProbabilityMeasure
+  MomentDuhamelCut.stochDom_of_cutHypEvOn
+    (cutHypEvOn_jSfarSm_of_entries X hst hs0 ht1 hgm hmod hmoment) hgood
+    (Filter.Eventually.of_forall fun _ => le_rfl) hinit
+
+/-- **The entrywise data of (5.48) with the modulus restricted to `Good`** — `near` and
+`moment` are byte for byte the fields of `RBM.Eq548EntryDataEv`; only `modulus` changed. -/
+structure Eq548EntryDataEvOn (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (Good : ℕ → Set Ω) :
+    Prop where
+  near : ∀ D : ℝ, 0 < D → StochDom B.P
+    (fun N (p : TimeIcc s t N × (ZMod (B.L N) × ZMod (B.L N))) ω =>
+      X.lkErr E N p.1 ω (pmLoop p.2.1 p.2.2))
+    (fun N p _ => (etaT E (s N) / etaT E p.1) ^ 2 *
+      tailT (B.W N : ℝ) (B.ell N p.1) (etaT E p.1) D (zdist (B.L N) (p.2.1 - p.2.2)))
+  modulus : ∀ D : ℝ, 0 < D → EntryModulusEvOn X E s t D Good
+  moment : ∀ D : ℝ, 0 < D → ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+    ∀ᶠ N : ℕ in atTop,
+    ∀ ws ∈ MomentDuhamelCut.netFinset s t (fun N => ((N : ℝ) + 1) ^ (2 : ℝ)) N,
+      ∫ ω, |MomentDuhamelCut.cutTrunc ((N : ℝ) ^ (2 * δ) * 1)
+            (Step2FarMart.jSfarSm X E D N ws ω)| ^ (2 * p) ∂B.P
+        ≤ C * ((N : ℝ) ^ (ε * p) * (1 : ℝ) ^ (2 * p))
+
+/-- **The (5.48) slot at the shape the satisfiability discipline allows**: the event is
+existentially quantified together with its measurability and its high probability, so the slot
+is a `Prop` about `X, E, s, t` alone and can sit in the merged table where
+`RBM.Eq548EntryDataEv` sat. -/
+def Eq548EntryDataEvOn' (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) : Prop :=
+  ∃ Good : ℕ → Set Ω, (∀ N, MeasurableSet (Good N)) ∧ HighProb B.P Good ∧
+    Eq548EntryDataEvOn X E s t Good
+
+/-- `Ω` itself is of high probability. -/
+theorem highProb_univ (P : Measure Ω) : HighProb P (fun _ : ℕ => (Set.univ : Set Ω)) := by
+  intro D _
+  filter_upwards with N
+  simp
+
+/-- **A high-probability event is eventually nonempty** — on a probability space, `HighProb`
+forces `P (Good N) > 0` for large `N`.  This is the anti-vacuity certificate the slot needs:
+`RBM.EntryModulusEvOn` at `Good = ∅` would be trivially true, and it is `HighProb` in
+`RBM.Eq548EntryDataEvOn'` that rules that out. -/
+theorem eventually_nonempty_of_highProb {P : Measure Ω} [IsProbabilityMeasure P]
+    {Good : ℕ → Set Ω} (h : HighProb P Good) : ∀ᶠ N : ℕ in atTop, (Good N).Nonempty := by
+  filter_upwards [h 1 one_pos, Filter.eventually_ge_atTop 2] with N hN hN2
+  rw [Set.nonempty_iff_ne_empty]
+  intro he
+  rw [he, Set.compl_empty, measure_univ] at hN
+  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hx : ((N : ℝ)) ^ (-(1 : ℝ)) ≤ 1 / 2 := by
+    rw [Real.rpow_neg_one]
+    rw [inv_le_iff_one_le_mul₀ (by linarith)]
+    linarith
+  have : ENNReal.ofReal (((N : ℝ)) ^ (-(1 : ℝ))) ≤ ENNReal.ofReal (1 / 2) :=
+    ENNReal.ofReal_le_ofReal hx
+  have hhalf : ENNReal.ofReal ((1 : ℝ) / 2) < 1 := ENNReal.ofReal_lt_one.2 (by norm_num)
+  exact absurd (lt_of_le_of_lt (hN.trans this) hhalf) (lt_irrefl 1)
+
+/-- **The old package is stronger than the new one, at every event** — the field-by-field
+certificate that restricting `modulus` to `Good` costs nothing. -/
+theorem Eq548EntryDataEv.toEvOn {X : Sample B} (H : Eq548EntryDataEv X E s t)
+    (Good : ℕ → Set Ω) : Eq548EntryDataEvOn X E s t Good :=
+  ⟨H.near, fun D hD => entryModulusEvOn_of_entryModulusEv X (H.modulus D hD) Good, H.moment⟩
+
+/-- **The old package is stronger than the slot** — take `Good = Set.univ`. -/
+theorem Eq548EntryDataEv.toEvOn' {X : Sample B} (H : Eq548EntryDataEv X E s t) :
+    Eq548EntryDataEvOn' X E s t :=
+  ⟨fun _ => Set.univ, fun _ => MeasurableSet.univ, highProb_univ B.P, H.toEvOn _⟩
+
+/-- **The slot is not vacuous**: at `Good = Set.univ` it is exactly `RBM.Eq548EntryDataEv`, so
+every witness of the old table is a witness of the new one and conversely at that event. -/
+theorem Eq548EntryDataEvOn.toEv_univ {X : Sample B}
+    (H : Eq548EntryDataEvOn X E s t (fun _ => Set.univ)) : Eq548EntryDataEv X E s t :=
+  ⟨H.near, fun D hD => entryModulusEv_of_entryModulusEvOn_univ X (H.modulus D hD), H.moment⟩
+
+/-- **The (5.48) slot from the event-restricted entrywise data** — verbatim
+`RBM.flowEq548Sm_of_entryDataEv` with `RBM.stochDom_jSfarSm_of_entriesEvOn` in place of
+`RBM.stochDom_jSfarSm_of_entriesEv`.  `init` is still T241's
+`RBM.stochDom_jSfarSm_init_of_boundsCore` and `meas` still T244's theorem. -/
+theorem flowEq548Sm_of_entryDataEvOn (X : Sample B) (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) (hc : Cond272 B E s t)
+    (hB : BoundsCore X E s) (H : Eq548EntryDataEvOn' X E s t) :
+    FlowEq548Sm X E s t := by
+  obtain ⟨Good, hgm, hgood, H⟩ := H
+  exact flowEq548Sm_of_nearChi X ht1
+    (Step2FarMart.flowEq548W_of_jSfarSm X H.near fun D hD =>
+      stochDom_jSfarSm_of_entriesEvOn X hst hs0 ht1 hgm hgood (H.modulus D hD) (H.moment D hD)
+        (stochDom_jSfarSm_init_of_boundsCore X (t := t) hE hst ht1 hc hB D hD))
+
+end EntriesEvOn
+
 end RBM

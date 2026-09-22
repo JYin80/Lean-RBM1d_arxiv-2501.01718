@@ -236,12 +236,22 @@ private theorem firstCell_localLawUnifIcc_of_llMax_sq {τ' : ℝ}
     simpa only [B, band] using hgreen
   exact unifDomIcc_of_stochDom_timeIcc hgreen'
 
-/-- The actual Step-1 source and sharp entry law share one first-cell grid parameter. -/
-theorem firstCell_step1_and_localLaw_same_parameter :
+/-- The raw loop-law interface on one first Gaussian cell. -/
+def firstCellRawLoopDom (τ' : ℝ) (n : ℕ) : Prop :=
+  StochDom (band Dims.exampleGrow).P
+    (fun N (p : TimeIcc (firstCellS τ') (firstCellT τ') N ×
+      LoopData (Dims.exampleGrow.L N) n) ω =>
+      ‖(sample Dims.exampleGrow).Lval 0 N p.1 ω p.2.idx‖)
+    (Step1.aprioriRhs (band Dims.exampleGrow) 0 (firstCellS τ') (firstCellT τ') n)
+
+/-- The actual Step-1 source, sharp entry law, and both source loop lengths
+share one first-cell grid parameter. -/
+theorem firstCell_step1_localLaw_raw46_same_parameter :
     ∃ τ' : ℝ, 0 < τ' ∧
       Step1.Hyp (sample Dims.exampleGrow) 0 (firstCellS τ') (firstCellT τ') ∧
       LocalLawUnifIcc Dims.exampleGrow 0
-        (firstCellS τ') (firstCellT τ') firstCellPsi := by
+        (firstCellS τ') (firstCellT τ') firstCellPsi ∧
+      firstCellRawLoopDom τ' 4 ∧ firstCellRawLoopDom τ' 6 := by
   let d := Dims.exampleGrow
   let B := band d
   have hcap : ∀ᶠ N : ℕ in atTop,
@@ -277,7 +287,20 @@ theorem firstCell_step1_and_localLaw_same_parameter :
     step1Hyp_gauss_of_scale'' d (κ := 1) (by norm_num) (by norm_num)
       hB hs0 hst ht1 hcond.1 hc0 hcond.2
   have hraw := firstCell_llMax_sq_stochDom hc0 hB hs0 hst ht1 hcond.1 hcond.2 h1
-  exact ⟨τ', hτ', h1, firstCell_localLawUnifIcc_of_llMax_sq hraw⟩
+  have hap (n : ℕ) (hn : 1 ≤ n) : firstCellRawLoopDom τ' n := by
+    exact Step1.apriori (sample d) (κ := 1) (by norm_num) (by norm_num)
+      hB hs0 hst ht1 hcond.1 hc0 hcond.2 h1 n hn
+  exact ⟨τ', hτ', h1, firstCell_localLawUnifIcc_of_llMax_sq hraw,
+    hap 4 (by norm_num), hap 6 (by norm_num)⟩
+
+/-- The paired interface used by downstream first-cell arguments. -/
+theorem firstCell_step1_and_localLaw_same_parameter :
+    ∃ τ' : ℝ, 0 < τ' ∧
+      Step1.Hyp (sample Dims.exampleGrow) 0 (firstCellS τ') (firstCellT τ') ∧
+      LocalLawUnifIcc Dims.exampleGrow 0
+        (firstCellS τ') (firstCellT τ') firstCellPsi := by
+  obtain ⟨τ', hτ', h1, hll, _, _⟩ := firstCell_step1_localLaw_raw46_same_parameter
+  exact ⟨τ', hτ', h1, hll⟩
 
 /-- The unchanged first-cell local-law interface. -/
 theorem firstCell_localLawUnifIcc_of_step1 :
@@ -305,6 +328,7 @@ theorem firstCell_step1_localLaw_witness :
 #print axioms firstCell_localLawUnifIcc_of_llMax_sq
 #print axioms firstCell_localLawUnifIcc_of_step1
 #print axioms firstCell_step1_and_localLaw_same_parameter
+#print axioms firstCell_step1_localLaw_raw46_same_parameter
 #print axioms firstCell_step1_localLaw_witness
 
 end RBM.Gauss

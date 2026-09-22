@@ -21,6 +21,7 @@
 
 完整表见 **`docs/HANDOVER.md` §7**（不要重开）。最近几条：
 
+* **D17（Cowork 05:40）：p.24 第一格 `0 → u_1` 不是数学缺口；不削弱结论、不改论文（T251a 的论文改动不采纳）。** T249 的反例只否定了「对**每个** ω」的时间模；它需要 `‖X(ω)‖ = v^{−1/2} → ∞`。限制在 `Good N = {‖X‖ ≤ N}`（`Gauss.exists_highProb_normX`）上，第二预解式恒等式 `G_v − G_w = G_v[(√w−√v)X + (z_v−z_w)]G_w` 直接给出**包含 0 在内**的 Hölder-1/2 模：`‖G_v − G_w‖ ≤ η_v⁻¹η_w⁻¹(N·|v−w|^{1/2} + |z_v−z_w|)`，对 `v, w ∈ [0, t_N]` 一致；loop、`K_u`、`T_{u,D}`、`farChi` 对 `u` 都是多项式常数的 Lipschitz，所以 `J = jSfarSm` 在事件上满足 `|J_v − J_w| ≤ N^{Kmod}|v−w|^{1/2}`（`Kmod` 依赖 `D`，`γ = 1/2`），`mesh_fine`/`card_le` 仍是多项式。T249/T251 的「`{‖X‖ ≤ N}` 仍含 `X = v^{−1/2}A`，事件救不回来」不成立：那只在 `v ≥ N^{−2}` 时发生，此时右端 `N^{Kmod}v^{1/2} ≥ N^{Kmod−1}` 压过包络级的跳跃。这正是论文 (5.46) 默认使用的「高概率连续性」。**做法**：`EntryModulusEvOn`/`CutHypEvOn` 取 `Good = {‖X‖ ≤ N}`、`γ = 1/2`，**不要** `WindowLeft`；合并总装回到 `Thm221NoEL X κ`（不是 `Thm221NoELFrom`）。T256 改为：编译这条 Hölder-1/2 事件模（第 0 格的非退化见证）+ 一条证书说明 T249「事件救不回来」的说法为何不成立；若编译中发现反例，停下报 Cowork。
 * **D16 → (i)**（Cowork）：`NonAlt514` 在矩路线上重证，不引用 `SumZeroDyn.Hierarchy`（其 `mart :=` 残差是 fiat）→ T236。
 * **#155 → `C_{n,p}`**（Cowork）：论文 (5.103) 印有 `C_n`，(5.24) 写作 `C_{n,p}` → T231。
 * **论文改动第 6–17 条全部经 Jun 确认**（`docs/cowork-paper-edit-budget.md`）。

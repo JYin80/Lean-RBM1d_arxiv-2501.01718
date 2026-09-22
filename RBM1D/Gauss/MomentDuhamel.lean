@@ -465,7 +465,68 @@ theorem momentDom_of_momNorm_le [IsProbabilityMeasure (B.P)] {U : ℕ → Type*}
   rw [mul_pow, mul_pow, ← Real.rpow_natCast ((N : ℝ) ^ (ε / 2)) (2 * p),
     ← Real.rpow_mul hNr.le, he]
 
+/-- **The primed consumer, guarded by an arbitrary decidable predicate on charges.**
+
+`RBM.MomentDuhamel.stochDom_of_momentDuhamel` below (`Pr = fun _ _ => True`) and
+`RBM.Gauss.stochDom_lkT_nonAlt_of_momentDuhamel` (`Pr N q = RBM.SumZeroDyn.NonAlt q.1`, with
+the control `c_N A_v^{-(n+2)}`) were two verbatim copies of the six-line script below; this is
+the shared version.  Off the guard the family is `0`, whose every moment norm vanishes, so
+nothing is claimed there and `hrhs` is only asked on `Pr`.
+
+**The guard does not create vacuity.**  For `Pr ≡ fun _ _ => False` the conclusion degenerates to
+`StochDom B.P 0 Φ`, which is true and says nothing — the statement is not vacuously true, its
+content simply scales with `Pr`.  What a *consumer* owes is a witness that its own `Pr` is
+inhabited; for the non-alternating guard that witness is `RBM.Gauss.nonAlt_const`. -/
+theorem stochDom_of_momentDuhamel_guarded [IsProbabilityMeasure (B.P)]
+    {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ} (H : Hyp X E s t n)
+    (Pr : ∀ N, LoopData (B.L N) (n + 2) → Prop) [∀ N q, Decidable (Pr N q)]
+    (v : ℕ → ℝ) (hv1 : ∀ N, s N ≤ v N) (hv2 : ∀ N, v N ≤ t N)
+    {Ccard : ℝ}
+    (hcard : ∀ᶠ N : ℕ in atTop,
+      (Fintype.card (LoopData (B.L N) (n + 2)) : ℝ) ≤ (N : ℝ) ^ Ccard)
+    {Φ : ∀ N, LoopData (B.L N) (n + 2) → ℝ} (hΦ : ∀ N q, 0 < Φ N q)
+    (hrhs : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ q : LoopData (B.L N) (n + 2), Pr N q →
+        momNorm B.P (2 * p) (fun ω =>
+              ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+                (SumZeroDyn.lkT X E N (s N) ω q.1) q.2‖)
+          + 2 * (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+              ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+                (H.F N u (X.H N u ω) q.1) q.2‖))
+          + (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+              ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+                (eeFun B E N u (X.H N u ω) q.1) (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+          ≤ C * ((N : ℝ) ^ (ε / 2) * Φ N q)) :
+    StochDom B.P
+      (fun N (q : LoopData (B.L N) (n + 2)) ω =>
+        if Pr N q then ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖ else 0)
+      (fun N q _ => Φ N q) := by
+  classical
+  refine Gauss.stochDom_of_momentDom hcard hΦ (fun p N q => ?_) ?_
+  · by_cases h : Pr N q
+    · simpa [h] using H.integrable (2 * p) N (v N) (hv1 N) (hv2 N) q.1 q.2
+    · simp [h]
+  refine momentDom_of_momNorm_le (fun N q => (hΦ N q).le) fun ε hε p hp => ?_
+  obtain ⟨C, hC0, hN⟩ := hrhs ε hε p hp
+  refine ⟨C, hC0, ?_⟩
+  filter_upwards [hN] with N hNq q
+  have h2p : (2 * p : ℕ) ≠ 0 := by omega
+  by_cases h : Pr N q
+  · simp only [h, ite_true]
+    exact (H.momentDuhamel p hp N q.1 (v N) (hv1 N) (hv2 N) q.2).trans (hNq q h)
+  · have hzero : momNorm B.P (2 * p) (fun _ : Ω => (0 : ℝ)) = 0 := by
+      have hI : ∫ _ω : Ω, |(0 : ℝ)| ^ (2 * p) ∂B.P = 0 := by simp [zero_pow h2p]
+      rw [momNorm, hI]
+      exact Real.zero_rpow (one_div_ne_zero (Nat.cast_ne_zero.2 h2p))
+    simp only [h, ite_false, hzero]
+    have hNr : (0 : ℝ) ≤ (N : ℝ) ^ (ε / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
+    have h0 := (hΦ N q).le
+    positivity
+
 /-- **The primed consumer, in the shape `RBM.SumZeroDyn.term1M` / `termM` are used in.**
+
+The unguarded instance of `RBM.MomentDuhamel.stochDom_of_momentDuhamel_guarded`
+(`Pr = fun _ _ => True`); the statement is unchanged.
 
 Given the primed interface and a `‖·‖_{2p}` bound on each of the three (resp. five) terms on
 the right of `momentDuhamel`, the loop difference itself is `≺ Φ`.  The hypothesis `hrhs` is
@@ -503,14 +564,11 @@ theorem stochDom_of_momentDuhamel [IsProbabilityMeasure (B.P)]
           ≤ C * ((N : ℝ) ^ (ε / 2) * Φ N q)) :
     StochDom B.P
       (fun N (q : LoopData (B.L N) (n + 2)) ω => ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖)
-      (fun N q _ => Φ N q) := by
-  refine Gauss.stochDom_of_momentDom hcard hΦ (fun p N q => ?_) ?_
-  · exact H.integrable (2 * p) N (v N) (hv1 N) (hv2 N) q.1 q.2
-  refine momentDom_of_momNorm_le (fun N q => (hΦ N q).le) fun ε hε p hp => ?_
-  obtain ⟨C, hC0, hN⟩ := hrhs ε hε p hp
-  refine ⟨C, hC0, ?_⟩
-  filter_upwards [hN] with N hNq q
-  exact (H.momentDuhamel p hp N q.1 (v N) (hv1 N) (hv2 N) q.2).trans (hNq q)
+      (fun N q _ => Φ N q) :=
+  stochDom_of_momentDuhamel_guarded H (fun _ _ => True) v hv1 hv2 hcard hΦ
+    (fun ε hε p hp => by
+      obtain ⟨C, hC0, hN⟩ := hrhs ε hε p hp
+      exact ⟨C, hC0, hN.mono fun N h q _ => h q⟩)
 
 end MomentDuhamel
 

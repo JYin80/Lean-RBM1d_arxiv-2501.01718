@@ -33,6 +33,13 @@ fixed, and the dependence on `N` is carried by the random variables: a family is
   gives the uniform statement if `#U(N) ≤ N^C`.
 * `HighProb.inter`, `HighProb.biInter`: finitely many, resp. polynomially many, w.h.p. events
   hold simultaneously w.h.p.; `StochDom.highProb`: `ξ ≤ N^τ ζ` holds w.h.p.
+* `HighProb.nonempty`: **a w.h.p. family of events is eventually non-empty** — the anti-vacuity
+  lemma that keeps `1_Ξ A`-style statements from being statements about the zero tensor
+  (the T164/T169/T220 defect).  It lives here because it is needed on both sides of the
+  `Gauss/` import order; `RBM.highProb_nonempty` and `RBM.FastDecayFlow.nonempty_of_highProb`
+  are its two one-line re-exports (T247, formerly two verbatim copies).  It asks for
+  `P univ = 1` as a plain hypothesis rather than `IsProbabilityMeasure`, which this file's
+  import set does not reach; the re-exports supply it from the instance.
 * `StochDom.of_add_le`, `StochDom.of_highProb_add_rpow_neg`: **absorption of a
   super-polynomially small additive error** `ξ ≤ N^τ ζ + ε_N` into `ξ ≺ ζ`, given a polynomial
   lower bound `N^{-b} ≤ ζ` on the control.
@@ -319,6 +326,32 @@ theorem biInter {K : ℕ → Type*} [∀ N, Fintype (K N)] {Ξ : ∀ N, K N → 
     _ ≤ ENNReal.ofReal ((N : ℝ) ^ C * (N : ℝ) ^ (-(D + C))) :=
         ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right hcard hp)
     _ = ENNReal.ofReal ((N : ℝ) ^ (-D)) := by rw [rpow_mul_rpow_neg_add hN1]
+
+/-- **A high-probability family of events is eventually non-empty.**
+
+No measurability is needed: if `Ξ N` were empty then `(Ξ N)ᶜ = univ` has measure `1`, while
+`RBM.HighProb` at `D = 1` puts it below `N^{-1} < 1`.
+
+This is the anti-vacuity lemma of T164/T169/T220: a producer whose conclusion is a `HighProb`
+cannot be talking about the empty set, so the statements it feeds (`1_Ξ A` bounds and the good
+sets of Lemma 5.9) are not statements about the zero tensor.
+
+`P univ = 1` is taken as a hypothesis rather than as `MeasureTheory.IsProbabilityMeasure`,
+which this file's import set does not reach; `RBM.highProb_nonempty` (Step 6's copy) and
+`RBM.FastDecayFlow.nonempty_of_highProb` are the instance-flavoured re-exports. -/
+theorem nonempty {Ξ : ℕ → Set Ω} (hP : P Set.univ = 1) (h : HighProb P Ξ) :
+    ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty := by
+  filter_upwards [h 1 one_pos, eventually_ge_atTop 2] with N hN hN2
+  rw [Set.nonempty_iff_ne_empty]
+  intro hemp
+  rw [hemp, Set.compl_empty, hP] at hN
+  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hrw : (N : ℝ) ^ (-(1 : ℝ)) = ((N : ℝ))⁻¹ := by
+    rw [Real.rpow_neg (by linarith), Real.rpow_one]
+  have hlt : (N : ℝ) ^ (-(1 : ℝ)) < 1 := by
+    rw [hrw, inv_lt_one_iff₀]
+    right; linarith
+  exact absurd hN (not_le.2 (ENNReal.ofReal_lt_one.2 hlt))
 
 /-- A w.h.p. event holds w.h.p. in any `Ξ`. -/
 theorem highProbIn {Ω' : ℕ → Set Ω} (h : HighProb P Ω') (Ξ : ℕ → Set Ω) :

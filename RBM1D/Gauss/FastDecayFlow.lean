@@ -705,20 +705,19 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 /-- **A high-probability family of events is eventually non-empty.**
 
 No measurability is needed: if `Ξ N` were empty then `(Ξ N)ᶜ = univ` has measure `1`, while
-`RBM.HighProb` at `D = 1` puts it below `N^{-1} < 1`. -/
+`RBM.HighProb` at `D = 1` puts it below `N^{-1} < 1`.
+
+⚠ T247: the proof has been sunk into `RBM.HighProb.nonempty` (`RBM1D/Defs/StochDom.lean`),
+which this and `RBM.highProb_nonempty` (`RBM1D/Gauss/Step6EnvWindow.lean`) had verbatim.  The
+signature is unchanged — this name is consumed by `RBM.FastDecayFlow.nonempty_lkGood` and by
+`RBM.Gauss.nonempty_measCore` in `RBM1D/Gauss/LkGoodMeasurable.lean`. -/
 theorem nonempty_of_highProb {P : Measure Ω} [IsProbabilityMeasure P] {Ξ : ℕ → Set Ω}
-    (h : HighProb P Ξ) : ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty := by
-  filter_upwards [h 1 one_pos, eventually_ge_atTop 2] with N hN hN2
-  rw [Set.nonempty_iff_ne_empty]
-  intro hemp
-  rw [hemp, Set.compl_empty, measure_univ] at hN
-  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
-  have hrw : (N : ℝ) ^ (-(1 : ℝ)) = ((N : ℝ))⁻¹ := by
-    rw [Real.rpow_neg (by linarith), Real.rpow_one]
-  have hlt : (N : ℝ) ^ (-(1 : ℝ)) < 1 := by
-    rw [hrw, inv_lt_one_iff₀]
-    right; linarith
-  exact absurd hN (not_le.2 (ENNReal.ofReal_lt_one.2 hlt))
+    (h : HighProb P Ξ) : ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty :=
+  h.nonempty measure_univ
+
+/-- T247 probe: the re-export is the shared lemma, not a second proof. -/
+example {P : Measure Ω} [IsProbabilityMeasure P] {Ξ : ℕ → Set Ω} (h : HighProb P Ξ) :
+    nonempty_of_highProb h = h.nonempty measure_univ := rfl
 
 variable {B : Band Ω} {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
 

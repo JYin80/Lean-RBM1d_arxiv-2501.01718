@@ -2261,24 +2261,17 @@ The anti-vacuity statement for §10/§11b: the producers there conclude a `RBM.H
 "the inequality holds at the points of some set", and this turns that into non-emptiness, so
 none of the good sets can be the empty set (the T164/T169/T220 defect).
 
-⚠ This is a **verbatim duplicate** of `RBM.FastDecayFlow.nonempty_of_highProb`
-(`RBM1D/Gauss/FastDecayFlow.lean:708`), which cannot be imported here without inverting the
-dependency (`FastDecayFlow` sits downstream of this file in `RBM1D.lean`).  The right fix is to
-sink that lemma into `RBM1D/Defs/StochDom.lean` and delete both copies; that file is not
-writable under T234. -/
+⚠ T247 carried out T234's recommendation: the proof now lives once, in `RBM.HighProb.nonempty`
+(`RBM1D/Defs/StochDom.lean`), and both this and `RBM.FastDecayFlow.nonempty_of_highProb` — which
+had it verbatim, on the wrong side of the `Gauss/` import order — are one-line re-exports.  The
+signature is unchanged (it is consumed twice in §11b below). -/
 theorem highProb_nonempty {P : Measure Ω} [IsProbabilityMeasure P] {Ξ : ℕ → Set Ω}
-    (h : HighProb P Ξ) : ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty := by
-  filter_upwards [h 1 one_pos, eventually_ge_atTop 2] with N hN hN2
-  rw [Set.nonempty_iff_ne_empty]
-  intro hemp
-  rw [hemp, Set.compl_empty, measure_univ] at hN
-  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
-  have hrw : (N : ℝ) ^ (-(1 : ℝ)) = ((N : ℝ))⁻¹ := by
-    rw [Real.rpow_neg (by linarith), Real.rpow_one]
-  have hlt : (N : ℝ) ^ (-(1 : ℝ)) < 1 := by
-    rw [hrw, inv_lt_one_iff₀]
-    right; linarith
-  exact absurd hN (not_le.2 (ENNReal.ofReal_lt_one.2 hlt))
+    (h : HighProb P Ξ) : ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty :=
+  h.nonempty measure_univ
+
+/-- T247 probe: the re-export is the shared lemma, not a second proof. -/
+example {P : Measure Ω} [IsProbabilityMeasure P] {Ξ : ℕ → Set Ω} (h : HighProb P Ξ) :
+    highProb_nonempty h = h.nonempty measure_univ := rfl
 
 end DriftDecay
 

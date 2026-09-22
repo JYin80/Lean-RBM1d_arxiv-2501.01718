@@ -7,6 +7,7 @@ import RBM1D.Gauss.Lemma514Holder
 import RBM1D.Gauss.MomentDuhamelQ
 import RBM1D.Gauss.Lemma514QRoute
 import RBM1D.Gauss.Lemma514NonAlt
+import RBM1D.Gauss.LkGoodMeasurable
 
 /-!
 # Lemma 5.14 on the `Q_u` route: the assembly (T219)
@@ -86,15 +87,21 @@ the same kind of input as `hrhs` and has both a producer
 
 ## Deviations from the paper
 
-One, to be recorded in `docs/paper-deltas.md` as **`T219a`**: the five `hEnv…`/`hDec…` rows of
+Recorded in `docs/paper-deltas.md` as **`T219a`**: the five `hDec…` rows of
 `RBM.Gauss.rhs514QAt_of_kernel_inputs` are quantified over **every** sample point `ω`, whereas
 the paper's (7.13) and the a priori bounds behind (7.16) hold on a high-probability event.  For
-`hEnv…` this costs nothing — the right-hand side carries the random `ψ_u(ω)` and the strength
-sits in the moment rows `hMψ`/`hMψE` — but for `hDec…` it is a real strengthening: at a sample
-point where the loop does not decay, no small `δ` exists.  The shape is inherited verbatim from
-T201's `hGd` slots; T220's `RBM.Gauss.momNorm_Uker_Qop_event_le` and its siblings are the
-event-restricted replacements, and wiring them in needs `MeasurableSet` for
-`RBM.Gauss.lkGood`, which is not proved.
+the `hEnv…` rows this costs nothing — the right-hand side carries the random `ψ_u(ω)` and the
+strength sits in the moment rows `hMψ`/`hMψE` — but for `hDec…` it is a real strengthening: at
+a sample point where the loop does not decay, no small `δ` exists.
+
+**T246 closes it.**  `RBM.Gauss.rhs514QAt_of_kernel_inputs'` (§5b) is the same producer with
+every `hDec…` row restricted to `∀ ω ∈ Ξ N`, built on T237's
+`RBM.Gauss.momNorm_Uker_Qop_event_untrunc_le` and its three siblings.  `Ξ` carries **no**
+`MeasurableSet` hypothesis — T237 takes the measurable core `RBM.Gauss.measCore` internally
+(`RBM.Gauss.measurableSet_measCore`, `RBM.Gauss.measCore_subset`,
+`RBM.Gauss.measure_compl_measCore`), so `∀ ω ∈ Ξ` and `RBM.HighProb` are inherited verbatim and
+no estimate changes.  `RBM.Gauss.rhs514QAt_of_kernel_inputs` is kept as the `∀ ω` variant: it
+is a true theorem with a strictly stronger hypothesis table, and `…_zero_err` still uses it.
 
 Nothing here is an `axiom` and nothing here is `sorry`.
 -/
@@ -633,10 +640,15 @@ The envelope row reads `‖T‖ ≤ (W ℓ_u η_u)^{-m} ψ_u + ζ` and the decay
 same five tensors.  ⚠ Both are quantified over **every** `ω`; that is the shape T201's
 `hGM`/`hGd` slots have, and for `hGd` it is the pattern the project's satisfiability discipline
 forbids (a deterministic decay bound cannot hold at a "large constant times the identity"
-sample point with a small `δ`).  T220's `RBM.Gauss.momNorm_Uker_Qop_event_le` and its three
-siblings are the event-restricted replacements; rewiring this producer to them needs
-`MeasurableSet (RBM.Gauss.lkGood …)`, which T220 records as **not proved** (the set is an
-intersection over the *uncountable* `RBM.TimeIcc`).  That is the one genuine hole in this row.
+sample point with a small `δ`).
+
+**Use `RBM.Gauss.rhs514QAt_of_kernel_inputs'` of §5b instead** — T246 — whose `hDec…` rows read
+`∀ ω ∈ Ξ N`.  The `MeasurableSet (RBM.Gauss.lkGood …)` that T220 recorded as unproved is **not
+needed**: T237 replaces `Ξ` by its measurable core `RBM.Gauss.measCore` inside the kernel
+estimates (`RBM.Gauss.measurableSet_measCore` / `RBM.Gauss.measurableSet_lkGoodM`), a measurable
+subset of `Ξ` with the same complement measure, so `∀ ω ∈ Ξ` and `RBM.HighProb` are inherited
+verbatim and the estimates do not change.  This theorem is kept because it is true and because
+`RBM.Gauss.rhs514QAt_of_kernel_inputs_zero_err` still consumes it.
 
 `hkerC`/`hker2C` — the (7.1)-tier row sums — are **absent**: that is the whole point of D14.
 The single `ψ` family serves the four `‖·‖_{2p}` terms (take the max of the four envelopes);
@@ -962,6 +974,536 @@ theorem rhs514QAt_of_kernel_inputs (hE : |E| < 2) (H : MomentDuhamel.Hyp X E s t
 
 end Producer
 
+/-! ### §5b  The same producer with (7.13) asked only on an event (T246)
+
+§5 is the (7.16) tier as T201 packaged it: its `hDec…` rows are quantified over **every**
+sample point `ω`.  That is the project's headline defect (`docs/paper-deltas.md` 160): at a
+sample point where the loop does not decay no small `δ` exists, so a literal reading of those
+rows is a statement no model satisfies.  T237 built the replacements —
+`RBM.Gauss.momNorm_Uker_Qop_event_untrunc_le` and its three siblings — whose decay premise is
+`∀ ω ∈ Ξ` for an event `Ξ` carrying **no** measurability hypothesis (the measurable core
+`RBM.Gauss.measCore` is taken inside), and whose conclusion is still about the **untruncated**
+tensor.  This section is the rewiring.
+
+Three things change, and nothing else:
+
+* every `hDec…` row becomes `∀ ω ∈ Ξ N`, and it is now the decay of the *tensor* `A` rather
+  than of the composed `Q_u ∘ A` — which is what the model actually supplies
+  (`RBM.FastDecayFlow.fastDecay_lkT_of_mem_lkGood`);
+* the price of going back from `1_Ξ A` to `A` is one extra additive `Env_N · P(Ξᶜ)^{1/q}` per
+  term.  It is absorbed by the single new row `cE`, whose two smallness hypotheses are stated
+  in the order the moment route needs — `p` first, then `N → ∞` — and are discharged by
+  `RBM.Gauss.eventually_env_mul_lkGood_le`;
+* T237's error budgets are read at the radius `ℓ_u (4K)` for the three terms that go through
+  Lemma 5.13 twice, so the multiplicative constant is `RBM.Gauss.cKer716 m (4 K)` throughout;
+  for the two `Q_u` terms, where the radius is not widened, `K^{2m} ≤ (4K)^{2m}` absorbs the
+  difference.
+
+**No integrability of `u ↦ Env_N · pr_N^{1/(2p)}` is needed**: `Env` and `pr` do not depend on
+`u`, and `RBM.Gauss.intervalIntegral_le_of_le_const` takes no integrability hypothesis at all.
+
+`RBM.Gauss.rhs514QAt_of_kernel_inputs` is kept below it, unchanged: it is a true theorem with a
+strictly stronger hypothesis table, and `RBM.Gauss.rhs514QAt_of_kernel_inputs_zero_err` still
+consumes it. -/
+
+section ProducerEvent
+
+/-- Monotonicity of a four-factor product in its second and fourth factors.  Used five times
+below to trade `K^{2m}` for `(4K)^{2m}` and the term-wise error budget for its uniform
+dominant `δ'`. -/
+theorem mul_four_le_mul_four {Xc a a' Av Mψ Mψ' : ℝ} (hX : 0 ≤ Xc) (ha : 0 ≤ a) (haa : a ≤ a')
+    (hAv : 0 ≤ Av) (hM : 0 ≤ Mψ) (hMM : Mψ ≤ Mψ') :
+    Xc * a * Av * Mψ ≤ Xc * a' * Av * Mψ' := by
+  have ha'0 : (0 : ℝ) ≤ a' := ha.trans haa
+  have h1 : Xc * a * Av ≤ Xc * a' * Av :=
+    mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left haa hX) hAv
+  exact mul_le_mul h1 hMM hM (by positivity)
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+variable {B : Band Ω} [IsProbabilityMeasure B.P] {X : Sample B} {E : ℝ} {s t : ℕ → ℝ} {n : ℕ}
+
+/-- **The producer of `RBM.Gauss.Rhs514QAt` with the fast decay (7.13) asked only on an
+event.**
+
+Hypothesis table, with the owner of each row:
+
+| row | what | owner |
+|---|---|---|
+| `hEnvI`…`hEnvE` | the size envelope of (7.16), `∀ ω` | Step 2's a priori bounds |
+| `hAMI`, `hAMF`, `hPsC`, `hAME` | the a priori sizes, **on `Ξ N`** | Step 2 on the good event |
+| `hDecI`, `hDecF`, `hDecE` | the fast decay (7.13), **on `Ξ N`** | T220 / T237 |
+| `hErrQ`…`hErrE` | one uniform dominant `δ'` for T237's four error budgets | deterministic |
+| `hZI`…`hZEint` | a deterministic envelope `Env_N` for the kernel | `‖G‖ ≤ η⁻¹` |
+| `hPr`, `hEnvPr`, `hEnvPrE` | the Markov price of the split | `RBM.HighProb` |
+| `hMψ`, `hMψE` | `‖ψ_u‖_{2p} ≺ Φ` on the window | the drift / `E⊗E` moment bounds |
+| `hnum` | the arithmetic of (5.24) | see §6 |
+
+`Ξ` carries **no** `MeasurableSet` hypothesis: T237 takes its measurable core internally.
+There is no row quantifying a decay statement over all `ω`, and no row quantifying anything
+over a time outside `[s N, v N]`.
+
+The four `hErr…` rows are deterministic inequalities between explicit elementary functions of
+`u` on the closed window — `RBM.FastDecayFlow.qopErr1` does not depend on `u` at all, and the
+other three depend on it only through `(1-u)⁻¹` and `ℓ̂_u`.  They are what replaces the single
+symbol `δ` of §5: T237's estimates do not return the input error unchanged, they return the
+budget of Lemma 5.13, and that budget is `u`-dependent. -/
+theorem rhs514QAt_of_kernel_inputs' (hE : |E| < 2) (H : MomentDuhamel.Hyp X E s t n)
+    {v : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hsv : ∀ N, s N ≤ v N) (hvt : ∀ N, v N ≤ t N)
+    (ht1 : ∀ N, t N < 1)
+    {Kd ζ δ δ' Msz Pb esz : ℕ → ℝ} (hKd : ∀ N, 1 ≤ Kd N) (hζ : ∀ N, 0 ≤ ζ N)
+    (hδ : ∀ N, 0 ≤ δ N) (hMsz : ∀ N, 0 ≤ Msz N) (hPb : ∀ N, 0 ≤ Pb N)
+    (hesz : ∀ N, 0 ≤ esz N)
+    {ψ ψE : ∀ N, ℝ → LoopData (B.L N) (n + 2) → Ω → ℝ}
+    (hψ0 : ∀ N u q ω, 0 ≤ ψ N u q ω) (hψE0 : ∀ N u q ω, 0 ≤ ψE N u q ω)
+    (hψint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψ N u q ω ^ r) B.P)
+    (hψEint : ∀ (r N : ℕ) (u : ℝ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ψE N u q ω ^ r) B.P)
+    (hEnvI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1) b‖
+        ≤ (B.scale E N (s N))⁻¹ ^ (n + 2) * ψ N (s N) q ω + ζ N)
+    (hEnvF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω) (b : LoopArg (B.L N) (n + 2)),
+      ‖Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+          * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b‖
+        ≤ (B.scale E N u)⁻¹ ^ (n + 2) * ψ N u q ω + ζ N)
+    (hEnvE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω)
+        (b : LoopArg (B.L N) ((n + 2) + (n + 2))),
+      ‖SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1) b‖
+        ≤ (B.scale E N u)⁻¹ ^ ((n + 2) + (n + 2)) * ψE N u q ω + ζ N)
+    {Ξ : ℕ → Set Ω}
+    (hAMI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) (n + 2), ‖SumZeroDyn.lkT X E N (s N) ω q.1 b‖ ≤ Msz N)
+    (hDecI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((s N : ℝ) : ℂ) * Kd N) (δ N)
+        (SumZeroDyn.lkT X E N (s N) ω q.1))
+    (hAMF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) (n + 2), ‖H.F N u (X.H N u ω) q.1 b‖ ≤ Msz N)
+    (hDecF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N) (H.F N u (X.H N u ω) q.1))
+    (hPsC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N, ∀ x,
+      ‖Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) x‖ ≤ Pb N)
+    (hAME : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      ∀ b : LoopArg (B.L N) ((n + 2) + (n + 2)), ‖eeFun B E N u (X.H N u ω) q.1 b‖ ≤ esz N)
+    (hDecE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)), ∀ ω ∈ Ξ N,
+      FastDecay (B.L N) (ellHat (B.L N) ((u : ℝ) : ℂ) * Kd N) (δ N)
+        (eeFun B E N u (X.H N u ω) q.1))
+    (hErrQ : ∀ N : ℕ, FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N) ≤ δ' N)
+    (hErrC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.commErr (B.L N) n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N)
+        ≤ δ' N)
+    (hErrD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.dotErr n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N) ≤ δ' N)
+    (hErrE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      FastDecayFlow.qqErr (B.L N) (n + 1) (ellHat (B.L N) ((u : ℝ) : ℂ)) (Kd N) (esz N) (δ N)
+        ≤ δ' N)
+    {Env pr cE : ℕ → ℝ} (hEnv0 : ∀ N, 0 ≤ Env N) (hpr0 : ∀ N, 0 ≤ pr N)
+    (hcE0 : ∀ N, 0 ≤ cE N) (hPr : ∀ N, (B.P (Ξ N)ᶜ).toReal ≤ pr N)
+    (hZI : ∀ (N : ℕ) (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖ ≤ Env N)
+    (hZIint : ∀ (r N : ℕ) (q : LoopData (B.L N) (n + 2)),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (Qop (B.L N) ((s N : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖ ^ r) B.P)
+    (hZF : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖ ≤ Env N)
+    (hZFint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖ ^ r) B.P)
+    (hZC : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1)) q.2‖ ≤ Env N)
+    (hZCint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+          (SumZeroDyn.lkT X E N u ω q.1)) q.2‖ ^ r) B.P)
+    (hZD : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (fun b : LoopArg (B.L N) (n + 2) =>
+          Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b) q.2‖ ≤ Env N)
+    (hZDint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (fun b : LoopArg (B.L N) (n + 2) =>
+          Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) (n := n + 1) u b) q.2‖ ^ r) B.P)
+    (hZE : ∀ (N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ (q : LoopData (B.L N) (n + 2)) (ω : Ω),
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+        (Fin.append q.2 q.2)‖ ≤ Env N)
+    (hZEint : ∀ (r N : ℕ) (u : ℝ), s N ≤ u → u ≤ v N →
+      ∀ q : LoopData (B.L N) (n + 2),
+      Integrable (fun ω => ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ)
+        ((v N : ℝ) : ℂ) (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ)
+          (eeFun B E N u (X.H N u ω) q.1)) (Fin.append q.2 q.2)‖ ^ r) B.P)
+    (hEnvPr : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((2 * p : ℕ) : ℝ)) ≤ cE N)
+    (hEnvPrE : ∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+      Env N * pr N ^ ((1 : ℝ) / ((p : ℕ) : ℝ)) ≤ cE N)
+    {Phi PhiE : ∀ N, LoopData (B.L N) (n + 2) → ℝ}
+    (hPhi0 : ∀ N q, 0 ≤ Phi N q) (hPhiE0 : ∀ N q, 0 ≤ PhiE N q)
+    (hMψ : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P (2 * p) (ψ N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * Phi N q))
+    (hMψE : ∀ ε > (0 : ℝ), ∀ p : ℕ, 1 ≤ p → ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      ∀ (u : ℝ), s N ≤ u → u ≤ v N → ∀ q : LoopData (B.L N) (n + 2),
+        momNorm B.P p (ψE N u q) ≤ C * ((N : ℝ) ^ (ε / 2) * PhiE N q))
+    {c : ℕ → ℝ}
+    (hnum : ∀ᶠ N : ℕ in atTop, ∀ q : LoopData (B.L N) (n + 2),
+      (cKer716 (n + 2) (4 * Kd N) * (B.scale E N (v N))⁻¹ ^ (n + 2) * Phi N q
+          + (errKer716 (B.L N) (n + 2) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N))
+            * (1 + 6 * (v N - s N))
+        + ((v N - s N) * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N)
+              * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * PhiE N q
+            + (errKer716 (B.L N) ((n + 2) + (n + 2)) (4 * Kd N) (ζ N) (δ' N) (s N) (v N)
+              + cE N)))
+              ^ ((1 : ℝ) / 2)
+        ≤ c N * (B.scale E N (v N) ^ (n + 2))⁻¹) :
+    Rhs514QAt H c v := by
+  intro ε hε p hp
+  obtain ⟨C1, hC10, hA1⟩ := hMψ ε hε p hp
+  obtain ⟨C3, hC30, hA3⟩ := hMψE ε hε p hp
+  have hcMD := H.cMD_nonneg p
+  set Csq : ℝ := (H.cMD p * (C3 + 1)) ^ ((1 : ℝ) / 2) with hCsqdef
+  have hCsq0 : 0 ≤ Csq := Real.rpow_nonneg (by positivity) _
+  refine ⟨C1 + Csq + 1, by positivity, ?_⟩
+  filter_upwards [hA1, hA3, hnum, hEnvPr p hp, hEnvPrE p hp, eventually_ge_atTop 1] with
+    N h1 h3 hnumN hEP hEPE hNge q
+  have hNge1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hNge
+  have hKd0 : (0 : ℝ) ≤ Kd N := by linarith [hKd N]
+  have hKd40 : (0 : ℝ) ≤ 4 * Kd N := by linarith
+  have hδ'0 : (0 : ℝ) ≤ δ' N :=
+    le_trans (FastDecayFlow.qopErr1_nonneg (B.L N) n hKd0 (hMsz N) (hδ N)) (hErrQ N)
+  have hL3 : 3 ≤ B.L N := B.three_le_L N
+  have h2p : 2 * p ≠ 0 := by omega
+  have hp0 : p ≠ 0 := by omega
+  set Np : ℝ := (N : ℝ) ^ (ε / 2) with hNpdef
+  have hNp1 : (1 : ℝ) ≤ Np := Real.one_le_rpow hNge1 (by positivity)
+  have hNp0 : (0 : ℝ) < Np := lt_of_lt_of_le one_pos hNp1
+  have hs0N := hs0 N
+  have hsvN := hsv N
+  have hv1 : v N < 1 := lt_of_le_of_lt (hvt N) (ht1 N)
+  have hv0 : (0 : ℝ) ≤ v N := hs0N.trans hsvN
+  have hκA : (0 : ℝ) < (B.W N : ℝ) * (mE E).im := by
+    have hW : (0 : ℝ) < B.W N := by exact_mod_cast B.W_pos N
+    have := mE_im_pos hE
+    positivity
+  have hbr : ∀ w : ℝ, ((B.W N : ℝ) * (mE E).im) * ((1 - w) * ellHat (B.L N) ((w : ℝ) : ℂ))
+      = B.scale E N w := fun w => scale_eq_kappaA B E N w
+  have hell : ∀ u : ℝ, s N ≤ u → u ≤ v N → (0 : ℝ) < ellHat (B.L N) ((u : ℝ) : ℂ) := by
+    intro u hua hub
+    have := half_le_ellHat_real (B.L N) hL3 (hs0N.trans hua) (lt_of_le_of_lt hub hv1)
+    linarith
+  have h1s : (0 : ℝ) < 1 - s N := by linarith
+  have h1v : (0 : ℝ) < 1 - v N := by linarith
+  have hrat : (0 : ℝ) ≤ (1 - s N) / (1 - v N) := (div_pos h1s h1v).le
+  have hrm : (0 : ℝ) ≤ ((1 - s N) / (1 - v N)) ^ (n + 2) := pow_nonneg hrat _
+  have hrm2 : (0 : ℝ) ≤ ((1 - s N) / (1 - v N)) ^ ((n + 2) + (n + 2)) := pow_nonneg hrat _
+  have hscale : (0 : ℝ) < B.scale E N (v N) := B.scale_pos' hE N hv0 hv1
+  -- the two normalizations and the two errors, now carrying the Markov price `cE N`
+  set Av : ℝ := (B.scale E N (v N))⁻¹ ^ (n + 2) with hAvdef
+  set Av2 : ℝ := (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) with hAv2def
+  set Eb : ℝ := errKer716 (B.L N) (n + 2) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N with hEbdef
+  set Eb2 : ℝ := errKer716 (B.L N) ((n + 2) + (n + 2)) (4 * Kd N) (ζ N) (δ' N) (s N) (v N) + cE N
+    with hEb2def
+  have hEb0 : (0 : ℝ) ≤ Eb := by
+    rw [hEbdef]
+    have := errKer716_nonneg (B.L N) (n + 2) hKd40 (hζ N) hδ'0 hsvN hv1
+    have := hcE0 N
+    linarith
+  have hEb20 : (0 : ℝ) ≤ Eb2 := by
+    rw [hEb2def]
+    have := errKer716_nonneg (B.L N) ((n + 2) + (n + 2)) hKd40 (hζ N) hδ'0 hsvN hv1
+    have := hcE0 N
+    linarith
+  have hAv0 : (0 : ℝ) ≤ Av := by rw [hAvdef]; positivity
+  have hAv20 : (0 : ℝ) ≤ Av2 := by rw [hAv2def]; positivity
+  have hcK0 : (0 : ℝ) ≤ cKer716 (n + 2) (4 * Kd N) := cKer716_nonneg _ hKd40
+  have hcK20 : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) := cKer716_nonneg _ hKd40
+  set Kmain : ℝ := cKer716 (n + 2) (4 * Kd N) * Av * Phi N q + Eb with hKmaindef
+  set K3 : ℝ := (v N - s N) * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2)
+    with hK3def
+  have hKmain0 : (0 : ℝ) ≤ Kmain := by
+    rw [hKmaindef]
+    have := hPhi0 N q
+    have : (0 : ℝ) ≤ cKer716 (n + 2) (4 * Kd N) * Av * Phi N q := by positivity
+    linarith
+  have hvs : (0 : ℝ) ≤ v N - s N := by linarith
+  have hK30 : (0 : ℝ) ≤ K3 := by
+    rw [hK3def]
+    have hPE := hPhiE0 N q
+    have : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q := by positivity
+    exact mul_nonneg hvs (by linarith)
+  set Mb : ℝ := cKer716 (n + 2) (4 * Kd N) * Av * (C1 * (Np * Phi N q)) + Eb with hMbdef
+  have hMb0 : (0 : ℝ) ≤ Mb := by
+    rw [hMbdef]
+    have := hPhi0 N q
+    have : (0 : ℝ) ≤ cKer716 (n + 2) (4 * Kd N) * Av * (C1 * (Np * Phi N q)) := by positivity
+    linarith
+  have hMbK : Mb ≤ (C1 + 1) * (Np * Kmain) := by
+    rw [hMbdef, hKmaindef]
+    have e1 : cKer716 (n + 2) (4 * Kd N) * Av * (C1 * (Np * Phi N q))
+        = C1 * (Np * (cKer716 (n + 2) (4 * Kd N) * Av * Phi N q)) := by ring
+    rw [e1]
+    exact affine_absorb (mul_nonneg (mul_nonneg hcK0 hAv0) (hPhi0 N q)) hEb0 hC10.le hNp1
+  -- the shared comparison behind the four `‖·‖_{2p}` terms, in raw form
+  have hcmp : ∀ a Mψ eT : ℝ, 0 ≤ a → a ≤ (4 * Kd N) ^ (2 * (n + 2)) →
+      0 ≤ Mψ → Mψ ≤ C1 * (Np * Phi N q) → 0 ≤ eT → eT ≤ δ' N →
+      cKerSumZero (n + 2) * a * (B.scale E N (v N))⁻¹ ^ (n + 2) * Mψ
+        + (cKerSumZero (n + 2) * a * ((1 - s N) / (1 - v N)) ^ (n + 2) * ζ N
+          + cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+              * ((1 - s N) / (1 - v N)) ^ (n + 2) * eT)
+        ≤ cKerSumZero (n + 2) * (4 * Kd N) ^ (2 * (n + 2))
+              * (B.scale E N (v N))⁻¹ ^ (n + 2) * (C1 * (Np * Phi N q))
+          + (cKerSumZero (n + 2) * (4 * Kd N) ^ (2 * (n + 2))
+                * ((1 - s N) / (1 - v N)) ^ (n + 2) * ζ N
+            + cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+                * ((1 - s N) / (1 - v N)) ^ (n + 2) * δ' N) := by
+    intro a Mψ eT ha haa hM0 hMle he0 hele
+    have hinv : (0 : ℝ) ≤ (B.scale E N (v N))⁻¹ ^ (n + 2) := by positivity
+    have p1 := mul_four_le_mul_four (SumZeroDyn.cKerSumZero_nonneg (n + 2)) ha haa hinv hM0 hMle
+    have p2 := mul_four_le_mul_four (SumZeroDyn.cKerSumZero_nonneg (n + 2)) ha haa hrm (hζ N)
+      (le_refl (ζ N))
+    have p3 : cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+          * ((1 - s N) / (1 - v N)) ^ (n + 2) * eT
+        ≤ cKerSumZeroErr (n + 2) * (B.L N : ℝ) ^ (n + 2)
+          * ((1 - s N) / (1 - v N)) ^ (n + 2) * δ' N :=
+      mul_four_le_mul_four (SumZeroDyn.cKerSumZeroErr_nonneg (n + 2)) (by positivity) le_rfl
+        hrm he0 hele
+    linarith
+  -- Term 1: the initial datum of (5.91)
+  have hT1 : momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((s N : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (Qop (B.L N) ((s N : ℝ) : ℂ) (SumZeroDyn.lkT X E N (s N) ω q.1)) q.2‖) ≤ Mb := by
+    have key := momNorm_Uker_Qop_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := s N) (v := v N) hs0N le_rfl hsvN hv0 hv1 hκA (hKd N) (hMsz N) (hζ N) (hδ N)
+      (Ξ := Ξ N) (A := fun ω => SumZeroDyn.lkT X E N (s N) ω q.1) (ψ := ψ N (s N) q)
+      (fun ω => hψ0 N (s N) q ω) (hψint (2 * p) N (s N) q)
+      (fun ω b => by rw [hbr]; exact hEnvI N q ω b)
+      (fun ω hω => hAMI N q ω hω) (fun ω hω => hDecI N q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZI N q ω) (hZIint (2 * p) N q) (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp (Kd N ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N (s N) q))
+      (FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N)) (by positivity)
+      (pow_le_pow_left₀ hKd0 (by linarith) _) (momNorm_nonneg _ _ _) (h1 (s N) le_rfl hsvN q)
+      (FastDecayFlow.qopErr1_nonneg (B.L N) n hKd0 (hMsz N) (hδ N)) (hErrQ N)
+    rw [hMbdef, hAvdef, hEbdef, cKer716, errKer716]
+    linarith
+  -- Terms 2–4: the three time integrals of (5.91)
+  have hI2 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (Qop (B.L N) ((u : ℝ) : ℂ) (H.F N u (X.H N u ω) q.1)) q.2‖))
+      ≤ (v N - s N) * Mb := by
+    refine intervalIntegral_le_of_le_const hsvN hMb0 fun u hu => ?_
+    have key := momNorm_Uker_Qop_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hMsz N) (hζ N) (hδ N)
+      (Ξ := Ξ N) (A := fun ω => H.F N u (X.H N u ω) q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω b => by rw [hbr]; exact hEnvF N u hu.1 hu.2 q ω b)
+      (fun ω hω => hAMF N u hu.1 hu.2 q ω hω) (fun ω hω => hDecF N u hu.1 hu.2 q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZF N u hu.1 hu.2 q ω) (hZFint (2 * p) N u hu.1 hu.2 q)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp (Kd N ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N u q))
+      (FastDecayFlow.qopErr1 (B.L N) n (Kd N) (Msz N) (δ N)) (by positivity)
+      (pow_le_pow_left₀ hKd0 (by linarith) _) (momNorm_nonneg _ _ _) (h1 u hu.1 hu.2 q)
+      (FastDecayFlow.qopErr1_nonneg (B.L N) n hKd0 (hMsz N) (hδ N)) (hErrQ N)
+    rw [hMbdef, hAvdef, hEbdef, cKer716, errKer716]
+    linarith
+  have hI3 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.commS (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ)
+            (SumZeroDyn.lkT X E N u ω q.1)) q.2‖))
+      ≤ (v N - s N) * Mb := by
+    refine intervalIntegral_le_of_le_const hsvN hMb0 fun u hu => ?_
+    have key := momNorm_Uker_commS_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hζ N) (hPb N)
+      (Ξ := Ξ N) (A := fun ω => SumZeroDyn.lkT X E N u ω q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω b => by rw [hbr]; exact hEnvC N u hu.1 hu.2 q ω b)
+      (fun ω hω => hPsC N u hu.1 hu.2 q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZC N u hu.1 hu.2 q ω) (hZCint (2 * p) N u hu.1 hu.2 q)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp ((4 * Kd N) ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N u q))
+      (FastDecayFlow.commErr (B.L N) n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N))
+      (by positivity) le_rfl (momNorm_nonneg _ _ _) (h1 u hu.1 hu.2 q)
+      (FastDecayFlow.commErr_nonneg (B.L N) n (hell u hu.1 hu.2)
+        (lt_of_le_of_lt hu.2 hv1) hKd0 (hPb N))
+      (hErrC N u hu.1 hu.2)
+    rw [hMbdef, hAvdef, hEbdef, cKer716, errKer716]
+    linarith
+  have hI4 : (∫ u in (s N)..(v N), momNorm B.P (2 * p) (fun ω =>
+        ‖Uker (B.L N) (xiOf (mSigma E) q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (fun b => Psum (B.L N) (SumZeroDyn.lkT X E N u ω q.1) (b 0)
+            * SumZeroDyn.varthetaDot (B.L N) u b) q.2‖))
+      ≤ (v N - s N) * Mb := by
+    refine intervalIntegral_le_of_le_const hsvN hMb0 fun u hu => ?_
+    have key := momNorm_Uker_dot_event_untrunc_le (P := B.P) (B.L N) hL3 h2p hE.le q.1
+      (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hζ N) (hPb N)
+      (Ξ := Ξ N) (A := fun ω => SumZeroDyn.lkT X E N u ω q.1) (ψ := ψ N u q)
+      (fun ω => hψ0 N u q ω) (hψint (2 * p) N u q)
+      (fun ω b => by rw [hbr]; exact hEnvD N u hu.1 hu.2 q ω b)
+      (fun ω hω => hPsC N u hu.1 hu.2 q ω hω) q.2
+      (hEnv0 N) (hpr0 N) (fun ω => hZD N u hu.1 hu.2 q ω) (hZDint (2 * p) N u hu.1 hu.2 q)
+      (hPr N)
+    rw [hbr (v N)] at key
+    refine key.trans ?_
+    have hle := hcmp ((4 * Kd N) ^ (2 * (n + 2))) (momNorm B.P (2 * p) (ψ N u q))
+      (FastDecayFlow.dotErr n (ellHat (B.L N) ((u : ℝ) : ℂ)) u (Kd N) (Pb N))
+      (by positivity) le_rfl (momNorm_nonneg _ _ _) (h1 u hu.1 hu.2 q)
+      (FastDecayFlow.dotErr_nonneg n (hell u hu.1 hu.2)
+        (lt_of_le_of_lt hu.2 hv1) (hPb N))
+      (hErrD N u hu.1 hu.2)
+    rw [hMbdef, hAvdef, hEbdef, cKer716, errKer716]
+    linarith
+  -- Term 5: the `(Q ⊗ Q)(E ⊗ E)` term of (5.103), under the square root
+  have hI5nn : (0 : ℝ) ≤ ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+      ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+        (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+        (Fin.append q.2 q.2)‖) :=
+    intervalIntegral.integral_nonneg hsvN fun u _ => momNorm_nonneg _ _ _
+  have hI5 : (∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+          (Fin.append q.2 q.2)‖))
+      ≤ (C3 + 1) * (Np * K3) := by
+    have hconst : ∀ u ∈ Set.Icc (s N) (v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+          (Fin.append q.2 q.2)‖)
+        ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2 := by
+      intro u hu
+      have key := momNorm_Uker_QQ_event_untrunc_le (P := B.P) (B.L N) hL3 hp0 hE q.1
+        (s := s N) (u := u) (v := v N) hs0N hu.1 hu.2 hv0 hv1 hκA (hKd N) (hζ N) (hesz N) (hδ N)
+        (Ξ := Ξ N) (A := fun ω => eeFun B E N u (X.H N u ω) q.1) (ψ := ψE N u q)
+        (fun ω => hψE0 N u q ω) (hψEint p N u q)
+        (fun ω b => by rw [hbr]; exact hEnvE N u hu.1 hu.2 q ω b)
+        (fun ω hω => hAME N u hu.1 hu.2 q ω hω) (fun ω hω => hDecE N u hu.1 hu.2 q ω hω)
+        (Fin.append q.2 q.2)
+        (hEnv0 N) (hpr0 N) (fun ω => hZE N u hu.1 hu.2 q ω) (hZEint p N u hu.1 hu.2 q)
+        (hPr N)
+      rw [hbr (v N)] at key
+      refine key.trans ?_
+      have hinv2 : (0 : ℝ) ≤ (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) := by positivity
+      have p1 : cKerSumZero ((n + 2) + (n + 2)) * (4 * Kd N) ^ (2 * ((n + 2) + (n + 2)))
+            * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * momNorm B.P p (ψE N u q)
+          ≤ cKerSumZero ((n + 2) + (n + 2)) * (4 * Kd N) ^ (2 * ((n + 2) + (n + 2)))
+            * (B.scale E N (v N))⁻¹ ^ ((n + 2) + (n + 2)) * (C3 * (Np * PhiE N q)) :=
+        mul_four_le_mul_four (SumZeroDyn.cKerSumZero_nonneg ((n + 2) + (n + 2)))
+          (by positivity) le_rfl hinv2 (momNorm_nonneg _ _ _) (h3 u hu.1 hu.2 q)
+      have p3 : cKerSumZeroErr ((n + 2) + (n + 2)) * (B.L N : ℝ) ^ ((n + 2) + (n + 2))
+            * ((1 - s N) / (1 - v N)) ^ ((n + 2) + (n + 2))
+            * FastDecayFlow.qqErr (B.L N) (n + 1) (ellHat (B.L N) ((u : ℝ) : ℂ)) (Kd N)
+                (esz N) (δ N)
+          ≤ cKerSumZeroErr ((n + 2) + (n + 2)) * (B.L N : ℝ) ^ ((n + 2) + (n + 2))
+            * ((1 - s N) / (1 - v N)) ^ ((n + 2) + (n + 2)) * δ' N :=
+        mul_four_le_mul_four (SumZeroDyn.cKerSumZeroErr_nonneg ((n + 2) + (n + 2)))
+          (by positivity) le_rfl hrm2
+          (FastDecayFlow.qqErr_nonneg (B.L N) (n + 1) (hell u hu.1 hu.2) hKd0 (hesz N) (hδ N))
+          (hErrE N u hu.1 hu.2)
+      rw [hAv2def, hEb2def, cKer716, errKer716]
+      linarith
+    have hbase : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q :=
+      mul_nonneg (mul_nonneg hcK20 hAv20) (hPhiE0 N q)
+    have hfac : cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2
+        ≤ (C3 + 1) * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2)) := by
+      have e1 : cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q))
+          = C3 * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q)) := by ring
+      rw [e1]
+      exact affine_absorb hbase hEb20 hC30.le hNp1
+    have hMnn : (0 : ℝ) ≤ cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q))
+        + Eb2 := by
+      have h0 : (0 : ℝ) ≤ C3 * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q)) :=
+        mul_nonneg hC30.le (mul_nonneg hNp0.le hbase)
+      have e1 : cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q))
+          = C3 * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q)) := by ring
+      rw [e1]
+      linarith
+    refine (intervalIntegral_le_of_le_const hsvN hMnn hconst).trans ?_
+    rw [hK3def]
+    calc (v N - s N)
+          * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * (C3 * (Np * PhiE N q)) + Eb2)
+        ≤ (v N - s N) * ((C3 + 1)
+            * (Np * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2))) :=
+          mul_le_mul_of_nonneg_left hfac hvs
+      _ = (C3 + 1) * (Np * ((v N - s N)
+            * (cKer716 ((n + 2) + (n + 2)) (4 * Kd N) * Av2 * PhiE N q + Eb2))) := by ring
+  have hT5 : (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+        ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+          (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+          (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+      ≤ Csq * (Np * K3 ^ ((1 : ℝ) / 2)) := by
+    have hstep : (H.cMD p * ∫ u in (s N)..(v N), momNorm B.P p (fun ω =>
+          ‖Uker (B.L N) (SumZeroDyn.xi2 E q.1) ((u : ℝ) : ℂ) ((v N : ℝ) : ℂ)
+            (SumZeroDyn.QQ (B.L N) ((u : ℝ) : ℂ) (eeFun B E N u (X.H N u ω) q.1))
+            (Fin.append q.2 q.2)‖)) ^ ((1 : ℝ) / 2)
+        ≤ ((H.cMD p * (C3 + 1)) * (Np * K3)) ^ ((1 : ℝ) / 2) := by
+      refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
+      calc H.cMD p * _ ≤ H.cMD p * ((C3 + 1) * (Np * K3)) :=
+            mul_le_mul_of_nonneg_left hI5 hcMD
+        _ = (H.cMD p * (C3 + 1)) * (Np * K3) := by ring
+    refine hstep.trans ?_
+    rw [Real.mul_rpow (by positivity) (by positivity), Real.mul_rpow hNp0.le hK30, ← hCsqdef]
+    have hhalf : Np ^ ((1 : ℝ) / 2) ≤ Np := by
+      calc Np ^ ((1 : ℝ) / 2) ≤ Np ^ (1 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le hNp1 (by norm_num)
+        _ = Np := Real.rpow_one Np
+    have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
+    exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hhalf hK3s) hCsq0
+  -- assemble
+  have hK3s : (0 : ℝ) ≤ K3 ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hK30 _
+  have hfour : Mb + 2 * ((v N - s N) * Mb) + 2 * ((v N - s N) * Mb) + 2 * ((v N - s N) * Mb)
+      ≤ (C1 + 1) * (Np * (Kmain * (1 + 6 * (v N - s N)))) := by
+    have h6 : Mb * (1 + 6 * (v N - s N))
+        ≤ ((C1 + 1) * (Np * Kmain)) * (1 + 6 * (v N - s N)) :=
+      mul_le_mul_of_nonneg_right hMbK (by linarith)
+    linarith [h6]
+  have hmain : Mb + 2 * ((v N - s N) * Mb) + 2 * ((v N - s N) * Mb) + 2 * ((v N - s N) * Mb)
+        + Csq * (Np * K3 ^ ((1 : ℝ) / 2))
+      ≤ (C1 + Csq + 1) * (Np * (Kmain * (1 + 6 * (v N - s N)) + K3 ^ ((1 : ℝ) / 2))) := by
+    have hpos : (0 : ℝ) ≤ Np * (Kmain * (1 + 6 * (v N - s N))) :=
+      mul_nonneg hNp0.le (mul_nonneg hKmain0 (by linarith))
+    have t1 : (0 : ℝ) ≤ Csq * (Np * (Kmain * (1 + 6 * (v N - s N)))) := mul_nonneg hCsq0 hpos
+    have t2 : (0 : ℝ) ≤ (C1 + 1) * (Np * K3 ^ ((1 : ℝ) / 2)) :=
+      mul_nonneg (by linarith) (mul_nonneg hNp0.le hK3s)
+    linarith [hfour, t1, t2]
+  refine le_trans (by linarith [hT1, hI2, hI3, hI4, hT5]) (hmain.trans ?_)
+  have hfin := hnumN q
+  rw [← hKmaindef, ← hK3def] at hfin
+  have hC : (0 : ℝ) ≤ C1 + Csq + 1 := by linarith
+  exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hfin hNp0.le) hC
+
+end ProducerEvent
+
 /-! ### §6  Satisfiability on the paper's own grid
 
 Three things have to be checked of a `Q`-route hypothesis bundle, and all three are checked
@@ -1172,6 +1714,89 @@ theorem gridS_Q716_nondegenerate [IsProbabilityMeasure P] (L : ℕ) [NeZero L] (
 
 end GridWitness
 
+section EventRowsWitness
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+variable {B : Band Ω} [IsProbabilityMeasure B.P] {X : Sample B} {E : ℝ} {s t : ℕ → ℝ}
+
+/-- **The rows that `RBM.Gauss.rhs514QAt_of_kernel_inputs'` adds on top of §5 are
+simultaneously satisfiable**, at the model's own good event `RBM.FastDecayFlow.lkGood` of
+(5.75) and with `pr` taken to be the event's own Markov price.
+
+The five clauses are, in order, the `hpr0`, `hPr`, `hEnvPr`, `hEnvPrE` rows and the anti-vacuity
+statement that the event is not eventually empty.  Nothing is re-proved: the two smallness
+clauses are `RBM.Gauss.eventually_env_mul_lkGood_le` (T237, itself T218's
+`RBM.Gauss.eventually_env_mul_prob_rpow_le` applied to `RBM.FastDecayFlow.highProb_lkGood`), and
+the last is `RBM.FastDecayFlow.nonempty_of_highProb`.
+
+**The quantifier order is the one the moment route needs** — `p` fixed, then `N → ∞`, never
+`∀ p N` — which is the discipline `docs/paper-deltas.md` records at T188. -/
+theorem rhs514QAt_event_rows_witness (hdec : SumZeroDyn.LKDecay X E s t) {m : ℕ} (hm : 1 ≤ m)
+    {τ τ₁ D₀ : ℝ} (hτ : 0 < τ) (hτ₁ : 0 < τ₁) (hD₀ : 0 < D₀)
+    {Env : ℕ → ℝ} {Cenv : ℝ} (hCenv : 0 ≤ Cenv)
+    (hEnvle : ∀ᶠ N : ℕ in atTop, Env N ≤ (N : ℝ) ^ Cenv) {D : ℝ} (hD : 0 < D) :
+    (∀ N : ℕ, (0 : ℝ) ≤ (B.P (FastDecayFlow.lkGood X E s t m τ τ₁ D₀ N)ᶜ).toReal)
+    ∧ (∀ N : ℕ, (B.P (FastDecayFlow.lkGood X E s t m τ τ₁ D₀ N)ᶜ).toReal
+        ≤ (B.P (FastDecayFlow.lkGood X E s t m τ τ₁ D₀ N)ᶜ).toReal)
+    ∧ (∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+        Env N * (B.P (FastDecayFlow.lkGood X E s t m τ τ₁ D₀ N)ᶜ).toReal
+            ^ ((1 : ℝ) / ((2 * p : ℕ) : ℝ)) ≤ (N : ℝ) ^ (-D))
+    ∧ (∀ p : ℕ, 1 ≤ p → ∀ᶠ N : ℕ in atTop,
+        Env N * (B.P (FastDecayFlow.lkGood X E s t m τ τ₁ D₀ N)ᶜ).toReal
+            ^ ((1 : ℝ) / ((p : ℕ) : ℝ)) ≤ (N : ℝ) ^ (-D))
+    ∧ (∀ᶠ N : ℕ in atTop, (FastDecayFlow.lkGood X E s t m τ τ₁ D₀ N).Nonempty) :=
+  ⟨fun _ => ENNReal.toReal_nonneg, fun _ => le_rfl,
+    fun p hp => eventually_env_mul_lkGood_le hdec hm hτ hτ₁ hD₀ (q := 2 * p) (by omega)
+      hCenv hEnvle hD,
+    fun p hp => eventually_env_mul_lkGood_le hdec hm hτ hτ₁ hD₀ (q := p) (by omega)
+      hCenv hEnvle hD,
+    FastDecayFlow.nonempty_of_highProb (FastDecayFlow.highProb_lkGood hdec hm hτ hτ₁ hD₀)⟩
+
+/-- **The `hPr` row of `RBM.Gauss.rhs514QAt_of_kernel_inputs'` cannot be satisfied by making
+the event empty.**  T237's gate: as soon as the Markov bound is below `1` the event has a
+point, so the "truncate everything to `0`" route to a vacuously true hypothesis table is closed
+syntactically.  (For the conclusion to say anything `pr N` has to be far below `1`.) -/
+theorem nonempty_of_hPr {Ξ : ℕ → Set Ω} {pr : ℕ → ℝ}
+    (hPr : ∀ N, (B.P (Ξ N)ᶜ).toReal ≤ pr N) {N : ℕ} (h1 : pr N < 1) : (Ξ N).Nonempty :=
+  nonempty_of_measureReal_compl_lt_one h1 (hPr N)
+
+end EventRowsWitness
+
 end Satisfiability
+
+/-! ### Deviations from the paper introduced by §5b (T246)
+
+**`T246a`.**
+
+*Paper location.*  §7, (7.13) and (7.16); the five terms are (5.91), (5.99), (5.100), (5.103).
+
+*What deviates.*  The paper states (7.16) with a single error symbol: the input tensor is
+`(ℓ_u K, δ)`-fast-decaying and the conclusion carries `δ` again.  The formal chain does not:
+`RBM.SumZeroDyn.norm_Qop_le_of_fastDecay` (Lemma 5.13) and its `commS` / `ϑ̇` / `Q ⊗ Q`
+analogues return the tensor's *own* budget — `RBM.FastDecayFlow.qopErr1`,
+`RBM.FastDecayFlow.commErr`, `RBM.FastDecayFlow.dotErr`, `RBM.FastDecayFlow.qqErr` — and three
+of those four depend on the time `u` (through `(1-u)⁻¹` and `ℓ̂_u`) as well as on `L` and on the
+a priori sizes.  `RBM.Gauss.Rhs514QAt` is a *window*-level statement, so its `hnum` row needs
+one number; §5b therefore asks for a dominating `δ' N`, in the four rows `hErrQ`, `hErrC`,
+`hErrD`, `hErrE`.  Those four rows are **deterministic** inequalities between explicit
+elementary functions on the closed window `[s N, v N] ⊆ [0,1)`; they are not model input, and
+they are not quantified over `ω`.
+
+*Is the paper changed?*  No.  This is an accounting device: on the paper's own scaling
+`K = W^{τ}` all four budgets are `O(e^{-c K})` times a polynomial in `L` and in the a priori
+sizes, so a `δ' N` below any `N^{-D}` exists; the paper simply never names it.
+
+*Line count.*  About 430 lines (`RBM.Gauss.rhs514QAt_of_kernel_inputs'` and the two witnesses).
+
+*Renumbering.*  None.  `RBM.Gauss.rhs514QAt_of_kernel_inputs` keeps its statement, its name and
+its consumer `RBM.Gauss.rhs514QAt_of_kernel_inputs_zero_err`.
+
+*What is not supplied.*  There is no `…_zero_err'` twin.  `RBM.Gauss.hnum_le_of_zero_err`
+works by sending the error to `0`, and on this route `δ' N = 0` would force `Msz N = 0` — i.e.
+the loop vanishing on the event — so the zero-error trick is degenerate here and was not
+transplanted.  The `hnum` row of §5b is meant to be discharged asymptotically, with `δ' N`
+superpolynomially small, not by an exact cancellation.  A uniform-in-`u` bound on the three
+`u`-dependent budgets (compactness of the window plus monotonicity of `ℓ̂`) is likewise left
+open; it is deterministic work in `RBM1D/Gauss/FastDecayFlow.lean`, not in this file. -/
 
 end RBM.Gauss

@@ -36,7 +36,7 @@ prefactor depending on `η_s/η_t`** — which is exactly what (5.92) asserts.
   thing.  Obtained from T146's lemma by rescaling to unit moment norm.
 * §3 — `RBM.Gauss.momNorm_Uker_sumZero_scale_le`: **(7.16) Case 2 in moment form**, the
   replacement for `RBM.Gauss.momNorm_Uker_apply_le`.  §3b gives the arbitrary-`ξ` version
-  (`RBM.Gauss.norm_Uker_sumZero_scale_le'`, `RBM.Gauss.momNorm_Uker_sumZero_scale_le'`), needed
+  (`RBM.SumZeroDyn.norm_Uker_sumZero_scale_le'`, `RBM.Gauss.momNorm_Uker_sumZero_scale_le'`), needed
   because the `E ⊗ E` charge `RBM.SumZeroDyn.xi2` is a `Fin.append` and not a `xiOf`.
 * §4 — `RBM.Gauss.momNorm_le_affine_on_event`: the good-event split, because (7.13) holds only
   with high probability.
@@ -387,48 +387,10 @@ seam).  Since Case 2 of (7.16) (`RBM.norm_Uker_fastDecay_le_sumZero`) needs only
 
 section General716
 
-/-- **(5.93)/(7.16) Case 2, for an arbitrary edge parameter** — the primed form of
-`RBM.SumZeroDyn.norm_Uker_sumZero_scale_le`.  The main term carries no `(η_u/η_v)` factor:
-the `r^m` of (7.16) has been absorbed by the change of normalisation `A_u^{-m} → A_v^{-m}`. -/
-theorem norm_Uker_sumZero_scale_le' (L : ℕ) [NeZero L] (hL : 3 ≤ L) {m : ℕ} (hm : 2 ≤ m)
-    {ξ : Fin m → ℂ} (hξ0 : ∀ i, ξ i ≠ 0) (hξ : ∀ i, ‖ξ i‖ ≤ 1)
-    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
-    {κA : ℝ} (hκA : 0 < κA) {K ψ ζ δ : ℝ} (hK : 1 ≤ K) (hψ : 0 ≤ ψ) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
-    {G : LoopArg L m → ℂ}
-    (hGM : ∀ b, ‖G b‖ ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ)
-    (hG : FastDecay L (ellHat L (u : ℂ) * K) δ G) {j : Fin m} (hz : SumZeroAt L j G)
-    (a : LoopArg L m) :
-    ‖Uker L ξ (u : ℂ) (v : ℂ) G a‖
-      ≤ cKerSumZero m * K ^ (2 * m) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * ψ
-        + (cKerSumZero m * K ^ (2 * m) * ((1 - s) / (1 - v)) ^ m * ζ
-          + cKerSumZeroErr m * (L : ℝ) ^ m * ((1 - s) / (1 - v)) ^ m * δ) := by
-  have hu0 : 0 ≤ u := hs0.trans hsu
-  have hu1 : u < 1 := huv.trans_lt hv1
-  have hℓu := SumZeroDyn.ellHat_real_pos' L hL hu0 hu1
-  have hℓv := SumZeroDyn.ellHat_real_pos' L hL (hu0.trans huv) hv1
-  have h1u : (0 : ℝ) < 1 - u := by linarith
-  have h1v : (0 : ℝ) < 1 - v := by linarith
-  have hM0 : 0 ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ := by positivity
-  have key := norm_Uker_fastDecay_le_sumZero L hm hL hu0 huv hv0 hv1 hξ0 hξ hK hM0 hδ hGM hG hz a
-  refine key.trans ?_
-  set r := (1 - u) * ellHat L (u : ℂ) / ((1 - v) * ellHat L (v : ℂ)) with hr
-  have hr0 : 0 ≤ r := by positivity
-  have hrρ : r ≤ (1 - s) / (1 - v) := SumZeroDyn.ratio_le L hL hs0 hsu huv hv1
-  have hcancel : r ^ m * (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m
-      = (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m := by
-    rw [← mul_pow]; congr 1; rw [hr]; field_simp
-  have hc := SumZeroDyn.cKerSumZero_nonneg m
-  have hc' := SumZeroDyn.cKerSumZeroErr_nonneg m
-  have hK0 : (0 : ℝ) ≤ K ^ (2 * m) := by positivity
-  have e1 : cKerSumZero m * K ^ (2 * m) * r ^ m
-      * ((κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ)
-      = cKerSumZero m * K ^ (2 * m) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * ψ
-        + cKerSumZero m * K ^ (2 * m) * r ^ m * ζ := by
-    rw [← hcancel]; ring
-  rw [e1, add_assoc]
-  refine add_le_add le_rfl (add_le_add ?_ ?_)
-  · gcongr
-  · gcongr
+/- **上移（T248）**：`norm_Uker_sumZero_scale_le'` 曾在本文件里重证一遍（T201 留下的），
+与上游的 `RBM.SumZeroDyn.norm_Uker_sumZero_scale_le'`（`RBM1D/Hierarchy/SumZeroDyn.lean`，
+section `KernelTerms`）逐字同义（`rfl` 探针在案），本文件的调用已直接走上游版本。 -/
+
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
@@ -465,7 +427,7 @@ theorem momNorm_Uker_sumZero_scale_le' [IsProbabilityMeasure P] (L : ℕ) [NeZer
       + cKerSumZeroErr m * (L : ℝ) ^ m * ρ ^ m * δ := by positivity
   refine momNorm_le_affine hq hψ0 hint hmain0 herr0 (fun ω => ?_)
   rw [abs_of_nonneg (norm_nonneg _)]
-  have hpt := norm_Uker_sumZero_scale_le' L hL hm hξ0 hξ hs0 hsu huv hv0 hv1 hκA hK
+  have hpt := SumZeroDyn.norm_Uker_sumZero_scale_le' L hL hm hξ0 hξ hs0 hsu huv hv0 hv1 hκA hK
     (hψ0 ω) hζ hδ (hGM ω) (hGd ω) (hGz ω) a
   refine hpt.trans (le_of_eq ?_)
   rw [hρdef]

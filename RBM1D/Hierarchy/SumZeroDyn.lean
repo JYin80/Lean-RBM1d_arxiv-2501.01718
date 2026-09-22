@@ -1245,6 +1245,56 @@ theorem one_sub_div_le {s u v : ℝ} (hsu : s ≤ u) (hv1 : v < 1) :
     (1 - u) / (1 - v) ≤ (1 - s) / (1 - v) :=
   div_le_div_of_nonneg_right (by linarith) (by linarith)
 
+/-- **(5.93)/(7.16) Case 2, for an arbitrary edge parameter.**
+
+The shared engine behind `RBM.SumZeroDyn.norm_Uker_sumZero_scale_le` (the paper's charge
+`ξ = (m(σᵢ)m(σᵢ₊₁))ᵢ` of Definition 5.2) and the `RBM.SumZeroDyn.xi2` charge of the `E ⊗ E` term
+of (5.24), which is a `Fin.append` of two such families and therefore *not* of that form (the
+cyclic pairing differs at the seam).  Case 2 of (7.16)
+(`RBM.norm_Uker_fastDecay_le_sumZero`) needs only `0 < ‖ξᵢ‖ ≤ 1`, so one statement covers both.
+
+The main term carries no `(η_u/η_v)` factor: the `r^m` of (7.16) has been absorbed by the change
+of normalisation `A_u^{-m} → A_v^{-m}`. -/
+theorem norm_Uker_sumZero_scale_le' (hL : 3 ≤ L) {m : ℕ} (hm : 2 ≤ m)
+    {ξ : Fin m → ℂ} (hξ0 : ∀ i, ξ i ≠ 0) (hξ : ∀ i, ‖ξ i‖ ≤ 1)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv0 : 0 ≤ v) (hv1 : v < 1)
+    {κA : ℝ} (hκA : 0 < κA) {K ψ ζ δ : ℝ} (hK : 1 ≤ K) (hψ : 0 ≤ ψ) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
+    {G : LoopArg L m → ℂ}
+    (hGM : ∀ b, ‖G b‖ ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ)
+    (hG : FastDecay L (ellHat L (u : ℂ) * K) δ G) {j : Fin m} (hz : SumZeroAt L j G)
+    (a : LoopArg L m) :
+    ‖Uker L ξ (u : ℂ) (v : ℂ) G a‖
+      ≤ cKerSumZero m * K ^ (2 * m) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * ψ
+        + (cKerSumZero m * K ^ (2 * m) * ((1 - s) / (1 - v)) ^ m * ζ
+          + cKerSumZeroErr m * (L : ℝ) ^ m * ((1 - s) / (1 - v)) ^ m * δ) := by
+  have hu0 : 0 ≤ u := hs0.trans hsu
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓu := ellHat_real_pos' L hL hu0 hu1
+  have hℓv := ellHat_real_pos' L hL (hu0.trans huv) hv1
+  have h1u : (0 : ℝ) < 1 - u := by linarith
+  have h1v : (0 : ℝ) < 1 - v := by linarith
+  have hM0 : 0 ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ := by positivity
+  have key := norm_Uker_fastDecay_le_sumZero L hm hL hu0 huv hv0 hv1 hξ0 hξ hK hM0 hδ hGM hG hz a
+  refine key.trans ?_
+  set r := (1 - u) * ellHat L (u : ℂ) / ((1 - v) * ellHat L (v : ℂ)) with hr
+  have hr0 : 0 ≤ r := by positivity
+  have hrρ : r ≤ (1 - s) / (1 - v) := ratio_le L hL hs0 hsu huv hv1
+  have hcancel : r ^ m * (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m
+      = (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m := by
+    rw [← mul_pow]; congr 1; rw [hr]; field_simp
+  have hc := cKerSumZero_nonneg m
+  have hc' := cKerSumZeroErr_nonneg m
+  have hK0 : (0 : ℝ) ≤ K ^ (2 * m) := by positivity
+  have e1 : cKerSumZero m * K ^ (2 * m) * r ^ m
+      * ((κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ)
+      = cKerSumZero m * K ^ (2 * m) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * ψ
+        + cKerSumZero m * K ^ (2 * m) * r ^ m * ζ := by
+    rw [← hcancel]; ring
+  rw [e1, add_assoc]
+  refine add_le_add le_rfl (add_le_add ?_ ?_)
+  · gcongr
+  · gcongr
+
 /-- **(5.93) on one term**, Case 2 of (7.16): for a sum-zero `(ℓ_u K, δ)`-fast-decaying tensor
 bounded by `A_u^{-m} ψ' + ζ` (`A_u = c (1-u) ℓ_u`, the scale `W ℓ_u η_u`),
 `|U_{u,v,σ} ∘ G| ≤ C_m K^{2m} A_v^{-m} ψ' + C_m K^{2m} ρ^m ζ + C'_m L^m ρ^m δ`,
@@ -1258,36 +1308,10 @@ theorem norm_Uker_sumZero_scale_le (hL : 3 ≤ L) {n : ℕ} {E : ℝ} (hE : |E| 
     ‖Uker L (xiOf (mSigma E) σ) (u : ℂ) (v : ℂ) G a‖
       ≤ cKerSumZero (n + 2) * K ^ (2 * (n + 2)) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * ψ
         + (cKerSumZero (n + 2) * K ^ (2 * (n + 2)) * ((1 - s) / (1 - v)) ^ (n + 2) * ζ
-          + cKerSumZeroErr (n + 2) * (L : ℝ) ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2) * δ) := by
-  have hu0 : 0 ≤ u := hs0.trans hsu
-  have hu1 : u < 1 := huv.trans_lt hv1
-  have hℓu := ellHat_real_pos' L hL hu0 hu1
-  have hℓv := ellHat_real_pos' L hL (hu0.trans huv) hv1
-  have h1u : 0 < 1 - u := by linarith
-  have h1v : 0 < 1 - v := by linarith
-  have hM0 : 0 ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ + ζ := by positivity
-  have key := norm_Uker_fastDecay_le_sumZero_sigma L (n := n + 2) (by omega) hL hE σ hu0 huv
-    hv0 hv1 hK hM0 hδ hGM hG (sumZeroAt_zero_of_sumZero L hz) a
-  · refine key.trans ?_
-    set r := (1 - u) * ellHat L (u : ℂ) / ((1 - v) * ellHat L (v : ℂ)) with hr
-    have hr0 : 0 ≤ r := by positivity
-    have hrρ : r ≤ (1 - s) / (1 - v) := ratio_le L hL hs0 hsu huv hv1
-    have hq : (1 - u) / (1 - v) ≤ (1 - s) / (1 - v) := one_sub_div_le hsu hv1
-    have hcancel : r ^ (n + 2) * (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2)
-        = (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) := by
-      rw [← mul_pow]; congr 1; rw [hr]; field_simp
-    have hc := cKerSumZero_nonneg (n + 2)
-    have hc' := cKerSumZeroErr_nonneg (n + 2)
-    have hK0 : 0 ≤ K ^ (2 * (n + 2)) := by positivity
-    have e1 : cKerSumZero (n + 2) * K ^ (2 * (n + 2)) * r ^ (n + 2)
-        * ((κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ + ζ)
-        = cKerSumZero (n + 2) * K ^ (2 * (n + 2)) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * ψ
-          + cKerSumZero (n + 2) * K ^ (2 * (n + 2)) * r ^ (n + 2) * ζ := by
-      rw [← hcancel]; ring
-    rw [e1, add_assoc]
-    refine add_le_add le_rfl (add_le_add ?_ ?_)
-    · gcongr
-    · gcongr
+          + cKerSumZeroErr (n + 2) * (L : ℝ) ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2) * δ) :=
+  norm_Uker_sumZero_scale_le' L hL (m := n + 2) (by omega) (xiOf_mSigma_ne_zero hE σ)
+    (fun i => (norm_xiOf_mSigma hE σ i).le) hs0 hsu huv hv0 hv1 hκA hK hψ hζ hδ hGM hG
+    (sumZeroAt_zero_of_sumZero L hz) a
 
 end KernelTerms
 
@@ -4226,6 +4250,56 @@ section Short
 
 variable (L : ℕ) [NeZero L]
 
+/-- **(7.16) Case 1 on one term, for an arbitrary edge parameter**, in the scale form.
+
+The shared engine behind `RBM.SumZeroDyn.norm_Uker_short_scale_le` (the paper's charge
+`ξ = (m(σᵢ)m(σᵢ₊₁))ᵢ` of Definition 5.2) and the `RBM.SumZeroDyn.xi2` charge of the `E ⊗ E` term
+of (5.24).  Case 1 of (7.16) (`RBM.norm_Uker_fastDecay_le_short`) needs only `‖ξᵢ‖ ≤ 1` and one
+**short** edge `κg ≤ ‖1 - v ξ_{i₀}‖`, so one statement covers both.
+
+`κg` is the gap of the short edge at the *terminal* time `v` (for the paper's charge it is `√κ`,
+`RBM.sqrt_le_norm_one_sub_xiOf`).  The main term carries no `(η_u/η_v)` factor: the `r^m` of
+(7.14) has been absorbed by the change of normalisation `A_u^{-m} → A_v^{-m}`. -/
+theorem norm_Uker_short_scale_le' (hL : 3 ≤ L) {m : ℕ}
+    {ξ : Fin m → ℂ} (hξ : ∀ i, ‖ξ i‖ ≤ 1) {κg : ℝ} (hκg : 0 < κg)
+    {s u v : ℝ} (hs0 : 0 ≤ s) (hsu : s ≤ u) (huv : u ≤ v) (hv1 : v < 1)
+    (i₀ : Fin m) (hκt : κg ≤ ‖1 - (v : ℂ) * ξ i₀‖)
+    {κA : ℝ} (hκA : 0 < κA) {K ψ ζ δ : ℝ} (hK : 1 ≤ K) (hψ : 0 ≤ ψ) (hζ : 0 ≤ ζ) (hδ : 0 ≤ δ)
+    {G : LoopArg L m → ℂ}
+    (hGM : ∀ b, ‖G b‖ ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ)
+    (hG : FastDecay L (ellHat L (u : ℂ) * K) δ G) (a : LoopArg L m) :
+    ‖Uker L ξ (u : ℂ) (v : ℂ) G a‖
+      ≤ cKerShort m κg * K ^ m * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * ψ
+        + (cKerShort m κg * K ^ m * ((1 - s) / (1 - v)) ^ m * ζ
+          + ((1 - s) / (1 - v)) ^ m * δ) := by
+  have hu0 : 0 ≤ u := hs0.trans hsu
+  have hu1 : u < 1 := huv.trans_lt hv1
+  have hℓu := ellHat_real_pos' L hL hu0 hu1
+  have hℓv := ellHat_real_pos' L hL (hu0.trans huv) hv1
+  have h1u : (0 : ℝ) < 1 - u := by linarith
+  have h1v : (0 : ℝ) < 1 - v := by linarith
+  have hM0 : 0 ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ := by positivity
+  have key := norm_Uker_fastDecay_le_short L hL hu0 huv hv1 hξ hκg i₀ hκt hK hM0 hδ hGM hG a
+  refine key.trans ?_
+  set r := (1 - u) * ellHat L (u : ℂ) / ((1 - v) * ellHat L (v : ℂ)) with hr
+  have hr0 : 0 ≤ r := by positivity
+  have hrρ : r ≤ (1 - s) / (1 - v) := ratio_le L hL hs0 hsu huv hv1
+  have hq : (1 - u) / (1 - v) ≤ (1 - s) / (1 - v) := one_sub_div_le hsu hv1
+  have hcancel : r ^ m * (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m
+      = (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m := by
+    rw [← mul_pow]; congr 1; rw [hr]; field_simp
+  have hc := cKerShort_nonneg m hκg
+  have hK0 : (0 : ℝ) ≤ K ^ m := by positivity
+  have e1 : cKerShort m κg * K ^ m * r ^ m
+      * ((κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ m * ψ + ζ)
+      = cKerShort m κg * K ^ m * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ m * ψ
+        + cKerShort m κg * K ^ m * r ^ m * ζ := by
+    rw [← hcancel]; ring
+  rw [e1, add_assoc]
+  refine add_le_add le_rfl (add_le_add ?_ ?_)
+  · gcongr
+  · gcongr
+
 /-- **(7.16) Case 1 on one term** (a short edge `σ_k = σ_{k+1}`), in the scale form:
 for a `(ℓ_u K, δ)`-fast-decaying tensor bounded by `A_u^{-m} ψ + ζ`,
 `|U_{u,v,σ} ∘ G| ≤ C K^m A_v^{-m} ψ + C K^m ρ^m ζ + ρ^m δ`. -/
@@ -4238,33 +4312,12 @@ theorem norm_Uker_short_scale_le (hL : 3 ≤ L) {n : ℕ} {E κ : ℝ} (hκ0 : 0
     ‖Uker L (xiOf (mSigma E) σ) (u : ℂ) (v : ℂ) G a‖
       ≤ cKerShort (n + 2) √κ * K ^ (n + 2) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * ψ
         + (cKerShort (n + 2) √κ * K ^ (n + 2) * ((1 - s) / (1 - v)) ^ (n + 2) * ζ
-          + ((1 - s) / (1 - v)) ^ (n + 2) * δ) := by
-  have hu0 : 0 ≤ u := hs0.trans hsu
-  have hu1 : u < 1 := huv.trans_lt hv1
-  have hℓu := ellHat_real_pos' L hL hu0 hu1
-  have hℓv := ellHat_real_pos' L hL (hu0.trans huv) hv1
-  have h1u : 0 < 1 - u := by linarith
-  have h1v : 0 < 1 - v := by linarith
-  have hM0 : 0 ≤ (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ + ζ := by positivity
-  have key := norm_Uker_fastDecay_le_of_eq L hL hκ0 hκ1 hE hk hu0 huv hv1 hK hM0 hδ hGM hG a
-  refine key.trans ?_
-  set r := (1 - u) * ellHat L (u : ℂ) / ((1 - v) * ellHat L (v : ℂ)) with hr
-  have hr0 : 0 ≤ r := by positivity
-  have hrρ : r ≤ (1 - s) / (1 - v) := ratio_le L hL hs0 hsu huv hv1
-  have hq : (1 - u) / (1 - v) ≤ (1 - s) / (1 - v) := one_sub_div_le hsu hv1
-  have hcancel : r ^ (n + 2) * (κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2)
-      = (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) := by
-    rw [← mul_pow]; congr 1; rw [hr]; field_simp
-  have hc := cKerShort_nonneg (n + 2) (Real.sqrt_pos.2 hκ0)
-  have e1 : cKerShort (n + 2) √κ * K ^ (n + 2) * r ^ (n + 2)
-      * ((κA * ((1 - u) * ellHat L (u : ℂ)))⁻¹ ^ (n + 2) * ψ + ζ)
-      = cKerShort (n + 2) √κ * K ^ (n + 2) * (κA * ((1 - v) * ellHat L (v : ℂ)))⁻¹ ^ (n + 2) * ψ
-        + cKerShort (n + 2) √κ * K ^ (n + 2) * r ^ (n + 2) * ζ := by
-    rw [← hcancel]; ring
-  rw [e1, add_assoc]
-  refine add_le_add le_rfl (add_le_add ?_ ?_)
-  · gcongr
-  · gcongr
+          + ((1 - s) / (1 - v)) ^ (n + 2) * δ) :=
+  have hE2 : |E| ≤ 2 := hE.trans (by linarith)
+  norm_Uker_short_scale_le' L hL (m := n + 2) (fun i => (norm_xiOf_mSigma hE2 σ i).le)
+    (Real.sqrt_pos.2 hκ0) hs0 hsu huv hv1 k
+    (sqrt_le_norm_one_sub_xiOf hκ0 hκ1 hE ((hs0.trans hsu).trans huv) hv1.le hk)
+    hκA hK hψ hζ hδ hGM hG a
 
 /-- The time integrals of (5.84) (Case 1 of (7.16)). -/
 theorem integral_term_short_le (hL : 3 ≤ L) {n : ℕ} {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)

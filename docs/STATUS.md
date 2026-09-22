@@ -6576,3 +6576,27 @@ Jun 原话「Theorem 2.2 彻底脱离 (2.71)，好的」。**路线由协调者�
 **协调者已接线**：`Gauss/DischargeBDG.lean` 的文件头三处按本单结论改写——`BddC2` 那条「for a general loop observable it is still open」已标过时（`bddC2_loopObs` 早就有）、`hsplit`/`hdiff` 标为已卸、「What is not done」的第一条**删除**，并补上了上面那条更正。
 
 **余**：`Gauss/EEUker.lean` 的四条（`quadVarPairs_Uker_eq_eeRawArg` 等）加带撇版——T224 交了确切实参，**等 T223 交还该文件后由协调者接线**。
+
+## ⚠ 十一张单被中断并重派（协调者，2026-09-21）
+
+T217–T220、T222、T223、T225–T229 的 agent **全部非正常结束**：T217/T225/T227 撞 HTTP 529，其余八个随上一个会话进程退出而停。**它们的工作树半成品仍在**，逐一记明（重派的 agent 要先核，不要当成已完成的东西继承）：
+
+| 单 | 文件 | 状态 |
+|---|---|---|
+| T217 | `docs/REPORT.md` | **一字未落地**（工作树干净） |
+| T218 | `Gauss/Lemma514QRoute.lean` | 未跟踪新文件，半成品，**未验证** |
+| T219 | `Gauss/Lemma514QAssembly.lean` | 未跟踪新文件，半成品，**未验证** |
+| T220 | `Gauss/FastDecayFlow.lean` | 未跟踪新文件，半成品，**未验证** |
+| T222 | `Gauss/CutHypTheta.lean` | 已改，**已知编译红**：`:1191` `Unknown identifier mesh`、`:1434` type mismatch |
+| T223 | `Hierarchy/SumZeroDyn.lean`、`Gauss/EEUker.lean`、`Lemma514Holder.lean`、`Lemma514Q716.lean` | 四个文件已改，**未验证**（`xi2` 的定义修正做到哪一步不明） |
+| T225 | `Gauss/TestFunQGeneral.lean` | 未跟踪新文件，**中断在刚要写核心定义时**，基本等于空 |
+| T226 | `Gauss/MomentDuhamelQInt.lean` | 未跟踪新文件，半成品，**未验证** |
+| T227 | `Gauss/Step6EnvWindow.lean` | 未跟踪新文件，半成品，**未验证** |
+| T228 | `Hierarchy/Step2FarMart.lean`、`Step45.lean` | 已改，**已知编译红**：`Step2FarMart.lean:1514` `Real.le.le` 无效字段 + `linarith failed` |
+| T229 | `Hierarchy/Step2FarInputs.lean` | **一字未落地**（工作树干净） |
+
+**因此全量 `lake build RBM1D` 现在是红的**，红点在 T222 与 T228 的文件上。HEAD 本身是绿的（`697585c`，审计 11182 条）——红只在工作树。
+
+**重派的纪律**：每个 agent 先 `lake env lean` 自己那个文件，**编不过就自己判断是推翻重写还是接着修**，不许把半成品当既成事实往上叠。中断的 agent 的完整 transcript 都在 `/private/tmp/claude-501/.../tasks/*.output`，但**不要去读**（是 JSONL 全文，会炸上下文）。
+
+**教训（已进 playbook 候选）**：并发 13 个 opus agent 会撞 529；**同时在飞的 agent 数应该压到 6–8**。

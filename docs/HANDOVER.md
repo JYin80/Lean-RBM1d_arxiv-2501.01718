@@ -46,8 +46,10 @@
 |---|---|---|
 | `CLAUDE.md` | 仓库规则（构建、硬规则、可满足性纪律、外部输入边界、构建陷阱） | 调度 + 工人 |
 | `AGENTS.md` | 给 Codex 等非 Claude agent 的入口，指向本文件与 `CLAUDE.md` | 调度 |
-| `docs/TASKS.md` | 工单表。每行 `\| Txxx \| 描述 \| 文件 \| 负责人 \| 状态 \|`；**第 3 行**是优先级横幅 | 调度开单；工人改状态栏 |
-| `docs/STATUS.md` | 追加式日志：每张单的完成报告、审计、裁定、「无主的活」、「待定夺」。**只追加，不改旧节** | 两边 |
+| `docs/TASKS.md` | **只放活跃单**。每行 `\| Txxx \| 描述 \| 文件 \| 负责人 \| 状态 \|`；**第 3 行**是优先级横幅；完成的行用 `scripts/archive_done_tasks.py --apply` 移进 `docs/archive/TASKS-done.md` | 调度开单；工人改状态栏 |
+| `docs/STATUS.md` | **≤ 400 行的当前摘要**（§1 状态、§2 裁定、§3 当前最高风险、§4 待 Jun 定夺、§5 在飞、§6 最近完成 ≤ 8 行/单、§7 无主的活）。超长时把 §6 较早条目移进 `docs/archive/` | 两边 |
+| `docs/reports/Txxx.md` | 每张单的完成报告全文 | 工人 |
+| `docs/archive/` | 历史全文（`STATUS-2026-09-19_22.md` 6900 行、`TASKS-2026-09-19_22.md`、`TASKS-done.md`）。**只 grep，不整份读** | 调度 |
 | `docs/paper-deltas.md` | Lean 与论文的偏差表；`#` 栏由调度赋数字号 | 工人写临时号，调度赋号 |
 | `docs/REPORT.md` | 最终 Lean 报告（活文档；§9 是 R1–R5 裁定） | T217 在改 |
 | `docs/agent-playbook.md` | 工人侧的并行 agent 手册（派单 prompt 骨架、空真九例表） | 工人 |
@@ -92,6 +94,7 @@ grep -nE '^\| *T[0-9]+[a-z] *\|' docs/paper-deltas.md   # 待赋号的临时号
    ```
    若同一条偏差既有数字号初稿、又有临时号终版，用终版内容覆盖该数字号并删掉临时号那行（先例：#151/#152）。
 4. **队列深度**：未认领 ≥ 3。不够就从审计出的余项开单。
+   **瘦身**：每轮跑 `python3 scripts/archive_done_tasks.py --apply` 把完成的行移出 TASKS；STATUS 超过 400 行就把 §6 较早条目移进 `docs/archive/STATUS-<日期>.md`。审计时读 `docs/reports/Txxx.md` 与提交信息，**不要整份读 archive**。
 5. **开单**：用 python 按唯一锚点插行（`split('\n')` → 插入 → `'\n'.join`，**断言行数只增不减**；终端侧曾把 TASKS 从 2695 行截成 4 行）。新单号 = 现有最大号 + 1。每张单写清：来源、论文位置（公式编号）、要交付的声明名、**验收标准**（通常是「某探针的假设表里不再有 X」+ 公理干净 + **非退化**可满足性见证）、禁止事项、「第 0 步只读先交判断」（高风险单）。
 6. **提交**：只提交具体文档文件：`git add docs/TASKS.md docs/STATUS.md && git commit -m "心跳 HH:MM：…" -- docs/TASKS.md docs/STATUS.md`。**不 push**（由终端协调者推）。
 7. **汇报 Jun**：一小段话；只有需要他定的事才问，一次一件，给出倾向。

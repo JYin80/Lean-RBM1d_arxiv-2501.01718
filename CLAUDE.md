@@ -9,6 +9,7 @@
 - **当前进度**：`docs/STATUS.md` — **每次会话开始先读它，结束前更新它**
 - **与论文的偏差**：`docs/paper-deltas.md` — 凡 Lean 陈述 ≠ 论文字面陈述，必须在这里记一条
 - **调度交接**：`docs/HANDOVER.md` — Cowork 离线时由 Codex / ChatGPT 接手调度的手册；`AGENTS.md` 是非 Claude agent 的入口；`docs/cowork-*.md` 是 Cowork 侧文档（论文改动清单、Theorem 2.6 分析、调度经验）的仓库内副本
+- **⚠ 读文档的纪律（2026-09-22，Jun：「STATUS + TASKS 文件太大了」）**：`docs/STATUS.md` 是 ≤ 400 行的当前摘要，`docs/TASKS.md` 只放活跃单——**用 `grep -n '^| T230 |' docs/TASKS.md` 取你那一行，不要整份读**。历史全文在 `docs/archive/`（**永远只 grep，不整份读**）。完成报告全文写 `docs/reports/Txxx.md`，STATUS §6 只追加 ≤ 8 行摘要；无主/待定夺写 STATUS §4/§7。派单 prompt 里贴相关节正文，明禁子 agent 读整份文档。
 
 ## 环境
 

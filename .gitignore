@@ -14,3 +14,5 @@ blueprint/web/
 blueprint/preview.html
 docs/*
 !docs/*.md
+!docs/archive/
+!docs/reports/

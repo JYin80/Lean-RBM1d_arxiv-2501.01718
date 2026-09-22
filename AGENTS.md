@@ -5,6 +5,8 @@
 * **做 Lean 工单（工人）**：读 `CLAUDE.md`、`docs/TASKS.md` 里你认领的那一行、`docs/STATUS.md` 里相关的节。
 * **接手调度（Cowork 离线时）**：读 **`docs/HANDOVER.md`**，按它的 §4 做心跳、§5 做审计、§6 分流决策。
 
+**读文档**：`docs/STATUS.md`（摘要）可以读全；`docs/TASKS.md` 用 `grep -n '^| Txxx |'` 只取你那一行；`docs/archive/` 下的文件永远只 grep，不整份读（原 STATUS+TASKS 整份约 25 万 token）。完成报告写 `docs/reports/Txxx.md`。
+
 硬规则摘要（完整版见 `CLAUDE.md`）：
 
 1. 不留 `sorry`，不写 `axiom`；`#print axioms` 只允许 `propext` / `Classical.choice` / `Quot.sound`。

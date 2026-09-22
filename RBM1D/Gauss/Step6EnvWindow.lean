@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.Step6Sample
+import RBM1D.Hierarchy.LKDecayQuant
 
 /-!
 # T227: Step 6's envelope hypotheses, quantified over the window
@@ -68,14 +69,27 @@ hypotheses for the Gaussian model, so that the family is no longer vacuous.
 half met.  What §8 leaves open, and nothing else:
 
 * `hin59`, `hinQ`, `hinG` — the `HighProb` producers of `RBM.FDInputs`, `RBM.QuadInputs`,
-  `RBM.EGInputs` (T205's list, item 2; explicitly out of T227's scope);
+  `RBM.EGInputs` (T205's list, item 2; explicitly out of T227's scope).
+  **⚠ CORRECTED by T234, §10:** these are produced there, from
+  `RBM.LKDecayQuant.FlowInputs` (Steps 1–2) plus `Ξ^{(L-K)} ≺ 1` (Steps 3–5), plus a
+  deterministic bound for `RBM.FDInputs`' third clause.
 * `hlk`, `hKd` — the quantitative half of Lemma 5.9: `RBM.exists_loopDecay_Kval` gives the decay
   of `K` at every radius, but with `δ = C(1-v) e^{-c(1-v) ℓ}`, and turning that into `N^{-D}` at
   radius `ℓ_v N^τ` needs `c(1-v) ℓ_v N^τ ≳ D log N`, which is the `RBM.DriftBound.DriftInputs`
-  estimate — genuinely missing mathematics, not a quantifier;
+  estimate — genuinely missing mathematics, not a quantifier.
+  **⚠⚠ WRONG, CORRECTED by T234, §9 and §11.**  The rate of Corollary 3.5 is
+  `RBM.cor35Rate δ = c₀ √δ / 4`, *square-root* in the gap, so the decay length of `K` is
+  `(1-v)^{-1/2} = ℓ̂_v` and the exponent at the radius `ℓ_v N^τ` is `c₀ N^τ / 4`
+  (`RBM.cor35Rate_mul_ell_mul`), with nothing to beat.  `RBM.loopDecay_Kval_quant` proves `hKd`
+  **unconditionally, at every loop length**, and `RBM.Gauss.hlk_gauss` proves `hlk`.
 * `hcont`, `hintU1`, `hintU2` — continuity in the time of `E L - K`, and interval integrability
-  of `U` against the two drift tensors;
-* `hlmk` — (2.68) uniformly on the window, which Steps 1–5 produce.
+  of `U` against the two drift tensors.  **Still open** (T205's item 4).
+* `hlmk` — (2.68) uniformly on the window, which Steps 1–5 produce.  **Still open.**
+
+**T234's net effect** (§9–§13, appended at the end of this file): the residual list of
+`RBM.Gauss.bounds_step_gauss_window` drops from ten items to seven in
+`RBM.Gauss.bounds_step_gauss_window'`.  `RBM.Bounds` at `s > 0` is **still not inhabited** —
+what remains is `hcont`/`hintU1`/`hintU2`, `hlmk`, and the induction data `hc`/`hη`/`hBC`/`hB`.
 
 So the (2.71) step theorem exists, and is not vacuous, but it is a *step theorem with named
 hypotheses* rather than a discharge.  No hypothesis of this file is known to be unsatisfiable —
@@ -1669,9 +1683,14 @@ What is left is exactly the mathematics that is still missing, and nothing else:
 * `hcont`, `hintU1`, `hintU2` — continuity in the time of `E L - K` and interval integrability
   of `U` against the two drift tensors;
 * `hlk`, `hKd` — the *quantitative* half of Lemma 5.9 (`RBM.exists_loopDecay_Kval` gives the
-  decay of `K` at every radius, but with `δ = C(1-v) e^{-c(1-v) ℓ}`, not `N^{-D}`);
+  decay of `K` at every radius, but with `δ = C(1-v) e^{-c(1-v) ℓ}`, not `N^{-D}`).
+  **⚠⚠ T234 refutes the reading of this as a gap**: `RBM.cor35Rate δ = c₀ √δ / 4`, so the decay
+  length is `ℓ̂_v` and `RBM.loopDecay_Kval_quant` (§9) proves `hKd` with no hypotheses at all;
+  `RBM.Gauss.hlk_gauss` (§12) proves `hlk`.  Both are discharged in
+  `RBM.Gauss.bounds_step_gauss_window'`.
 * `hin59`, `hinQ`, `hinG` — the `HighProb` producers of `RBM.FDInputs`, `RBM.QuadInputs`,
-  `RBM.EGInputs`;
+  `RBM.EGInputs`.  **Produced in T234's §10**; discharged in
+  `RBM.Gauss.bounds_step_gauss_window'`.
 * `hlmk` — (2.68) uniformly on the window (Steps 1–5 output);
 * `hc`, `hη` — the window's own regularity, and `hBC`/`hB`, which are the induction data.
 
@@ -1744,5 +1763,783 @@ theorem bounds_step_gauss_side_conditions_grid :
   ⟨envWinS_pos, one_pos, le_rfl, by norm_num, fun N => (envWinS_pos N).le,
     fun N => (envWinS_lt_envWinT N).le, envWinT_lt_one, by norm_num,
     eventually_rpow_le_etaT_window⟩
+
+end RBM.Gauss
+
+namespace RBM
+
+open Real
+
+/-! ### §9  T234: the quantitative half of Lemma 5.9 on the `K` side
+
+The residual-hypothesis list of §8 records `hKd` as "genuinely missing mathematics": the only
+producer of the decay of `K`, `RBM.exists_loopDecay_Kval`, delivers
+`δ = C_m(1-v) e^{-c(1-v) ℓ}`, and turning that into `N^{-D}` at the radius `ℓ_v N^τ` was read as
+needing `c(1-v) · ℓ_v N^τ ≳ D log N`, which fails badly when `1 - v ≍ N^{-1}` and
+`ℓ_v ≍ N^{1/2}`.
+
+**That reading is wrong, and the correction is a one-line unfolding.**  The rate of
+Corollary 3.5 is `RBM.cor35Rate δ = c₀ √δ / 4` (`RBM1D/Loop/Cor35.lean:366`) — it is
+*square-root* in the gap, not linear.  So the decay length of `K` is `δ^{-1/2}`, which at
+`δ = 1 - v` is exactly `RBM.ellHat`'s first branch `ℓ̂_v = (1-v)^{-1/2}`; this is the same
+sharpened decay length as (2.52), whose `1 - |ξ|` versus `|1 - ξ|` distinction Phase 1 already
+settled.  Consequently
+
+  `cor35Rate (1-v) · (ℓ_v · N^τ) = (c₀/4) · N^τ`   (`RBM.cor35Rate_mul_ell_mul`)
+
+whenever the cut-off in `ℓ̂` is inactive (`1 ≤ L √(1-v)`), so the exponential is `e^{-cN^τ}`,
+super-polynomially small — there is no `log N` threshold to beat.  In the complementary regime
+`L √(1-v) < 1` one has `ℓ_v = L`, so the radius `ℓ_v N^τ` already exceeds the diameter `L/2` of
+the ring and the decay statement is vacuous (`RBM.LKDecayQuant.loopDecay_of_half_lt`).
+
+`RBM.loopDecay_Kval_quant` is therefore **unconditional** — no good event, no `FlowInputs`, no
+side condition on the scale — and holds at **every** loop length `m`, not only at `m = 3`.  That
+discharges `hKd` of §8, the `hKd` of `RBM.unifDetDom_driftEG'`, and the first conjunct of
+`RBM.DriftBound.DriftInputs` at loop length `n + 2` (the item T220 handed over).
+
+The arithmetic that turns `C_m(δ) e^{-c₀√δ ℓ/4}` into `N^{-D}` is T126's
+`RBM.LKDecayQuant.term2_le`, which is reused verbatim; the only new ingredient is the
+identity `RBM.cor35Rate_mul_ell_mul` and the case split on the two branches of `ℓ̂`. -/
+
+section KQuant
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **The rate of Corollary 3.5 is `c₀/4` per unit of `N^τ` on the radius `ℓ_v N^τ`.**
+
+`cor35Rate δ = c₀ √δ / 4` and `ℓ̂_v √(1-v) = 1` in the regime where the cut-off in `ℓ̂` is
+inactive, so `cor35Rate (1-v) * (ℓ̂_v * A) = (c₀/4) A` — the gap cancels exactly.  This is the
+statement that `ℓ̂_v`, not `(1-v)^{-1}`, is the decay length of `K`. -/
+theorem cor35Rate_mul_ell_mul (L : ℕ) {u : ℝ} (hu1 : u < 1)
+    (h : 1 ≤ (L : ℝ) * Real.sqrt (1 - u)) (A : ℝ) :
+    cor35Rate (1 - u) * (ellHat L (u : ℂ) * A) = cZero / 4 * A := by
+  have he := LKDecayQuant.ellHat_mul_sqrt_eq_one L hu1 h
+  have hid : cor35Rate (1 - u) * (ellHat L (u : ℂ) * A)
+      = cZero / 4 * A * (ellHat L (u : ℂ) * Real.sqrt (1 - u)) := by
+    unfold cor35Rate; ring
+  rw [hid, he, mul_one]
+
+/-- **The `(ℓ_v N^τ, N^{-D})` decay of `K`, uniformly on the window, at every loop length.**
+
+This is the quantitative half of Lemma 5.9 on the `K` side, in exactly the shape `hKd` of
+`RBM.unifDetDom_driftEG'` and of `RBM.Gauss.bounds_step_gauss_window` asks for, and at the
+general loop length `m` that `RBM.DriftBound.DriftInputs` asks for at `m = n + 2`.
+
+It is *deterministic*: `K` is the tree representation `RBM.Kgen`, a function of `(E, N, v)`
+only, so no event and no sample enter.  The quantifier order is the paper's,
+`∀ τ, ∀ D, ∀ᶠ N`. -/
+theorem loopDecay_Kval_quant (B : Band Ω) {E : ℝ} (hE : |E| ≤ 2) {s t : ℕ → ℝ}
+    (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1) (m : ℕ) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ v : TimeIcc s t N,
+      Decay.LoopDecay (B.L N) m (B.ell N (v : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+        (B.Kval E N (v : ℝ)) := by
+  intro τ hτ D hD
+  have hc0 := cZero_pos
+  have hexp := SumZeroDyn.eventually_exp_small (2 * LKDecayQuant.cKbound m)
+    (((2 * LKDecayQuant.cKexp m : ℕ) : ℝ) + D) (cZero / 2) (by linarith)
+    (show (0 : ℝ) < τ / 2 by linarith)
+  have h2 : ∀ᶠ N : ℕ in atTop, (2 : ℝ) * (N : ℝ) ^ (τ / 2) ≤ (N : ℝ) ^ τ :=
+    SumZeroDyn.eventually_const_mul_rpow_le 2 (show τ / 2 < τ by linarith)
+  filter_upwards [LKDecayQuant.eventually_L_le (B := B), hexp, h2, eventually_ge_atTop 1]
+    with N hLN hexpN h2N hN1
+  intro v
+  have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+  have hNr1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  set uu : ℝ := (v : ℝ) with huu
+  have hu0 : 0 ≤ uu := (hs0 N).trans v.2.1
+  have hu1 : uu < 1 := v.2.2.trans_lt (ht1 N)
+  have hv0 : (0 : ℝ) < 1 - uu := by linarith
+  have hv1 : (1 : ℝ) - uu ≤ 1 := by linarith
+  have hell1 : (1 : ℝ) ≤ B.ell N uu :=
+    one_le_ellHat (B.L N) (B.three_le_L N) hu0 hu1
+  have hNt : (1 : ℝ) ≤ (N : ℝ) ^ τ := by
+    calc (1 : ℝ) = (N : ℝ) ^ (0 : ℝ) := (Real.rpow_zero _).symm
+      _ ≤ (N : ℝ) ^ τ := Real.rpow_le_rpow_of_exponent_le hNr1 hτ.le
+  have hrad0 : (0 : ℝ) < B.ell N uu * (N : ℝ) ^ τ := by nlinarith
+  by_cases hcut : 1 ≤ (B.L N : ℝ) * Real.sqrt (1 - uu)
+  · -- the cut-off in `ℓ̂` is inactive: the rate is `c₀/4` per unit of `N^τ`
+    have hsqN : 1 / (N : ℝ) ≤ Real.sqrt (1 - uu) := by
+      rw [div_le_iff₀ hN0]
+      nlinarith [mul_le_mul_of_nonneg_left hLN (Real.sqrt_nonneg (1 - uu))]
+    have hvN : 1 / (1 - uu) ≤ (N : ℝ) ^ 2 := by
+      have hsq : Real.sqrt (1 - uu) * Real.sqrt (1 - uu) = 1 - uu :=
+        Real.mul_self_sqrt (by linarith)
+      have hm2 : 1 / (N : ℝ) * (1 / (N : ℝ)) ≤ 1 - uu := by
+        rw [← hsq]
+        exact mul_le_mul hsqN hsqN (by positivity) (Real.sqrt_nonneg _)
+      rw [div_le_iff₀ hv0]
+      calc (1 : ℝ) = (N : ℝ) ^ 2 * (1 / (N : ℝ) * (1 / (N : ℝ))) := by field_simp
+        _ ≤ (N : ℝ) ^ 2 * (1 - uu) := mul_le_mul_of_nonneg_left hm2 (by positivity)
+    have hm1 : ∀ σ, ‖mSigma E σ‖ ≤ 1 := fun σ => le_of_eq (norm_mSigma hE σ)
+    have hgap : ∀ σ σ', 1 - uu ≤ ‖1 - (uu : ℂ) * (mSigma E σ * mSigma E σ')‖ := by
+      intro σ σ'
+      refine one_sub_le_norm_one_sub_mul hu0 ?_
+      rw [norm_mul, norm_mSigma hE, norm_mSigma hE, mul_one]
+    have hK := Decay.loopDecay_Kgen (B.L N) (B.three_le_L N) (B.W N) hm1 hu0 hu1 hv0 hgap m
+      hrad0
+    have hexpo : cZero / 2 * (N : ℝ) ^ (τ / 2)
+        ≤ cor35Rate (1 - uu) * (B.ell N uu * (N : ℝ) ^ τ) := by
+      rw [show B.ell N uu = ellHat (B.L N) (uu : ℂ) from rfl,
+        cor35Rate_mul_ell_mul (B.L N) hu1 hcut]
+      nlinarith
+    have hterm2 := LKDecayQuant.term2_le (m := m) (D := D) (τ := τ) hN0 hv0 hv1 hvN hexpo hexpN
+    have hrp : (0 : ℝ) ≤ (N : ℝ) ^ (-D) := Real.rpow_nonneg hN0.le _
+    exact hK.mono (B.L N) le_rfl le_rfl (by linarith)
+  · -- the cut-off is active: `ℓ_v = L`, and the radius already exceeds the diameter `L/2`
+    push Not at hcut
+    have hellL : B.ell N uu = (B.L N : ℝ) := LKDecayQuant.ellHat_eq_L _ hu1 hcut
+    have hhalf : (B.L N : ℝ) / 2 < B.ell N uu * (N : ℝ) ^ τ := by
+      have hL0 : (0 : ℝ) < (B.L N : ℝ) := by
+        exact_mod_cast (by have := B.three_le_L N; omega : 0 < B.L N)
+      rw [hellL]; nlinarith
+    exact LKDecayQuant.loopDecay_of_half_lt hhalf _
+
+end KQuant
+
+end RBM
+
+namespace RBM
+
+open Real
+
+/-! ### §10  T234: the `HighProb` producers of the three good sets of §8
+
+§8 lists `hin59`, `hinQ`, `hinG` — the good sets `RBM.FDInputs`, `RBM.QuadInputs`,
+`RBM.EGInputs` — as having no producer at all.  Each of them is a conjunction of two kinds of
+clause, and T205's analysis of the split is confirmed here:
+
+* the **`RBM.Decay.LoopDecay` clauses** are Lemma 5.9 for `L` and for `L - K`, which is T126's
+  `RBM.LKDecayQuant.highProb_loopDecay_pair`.  It is stated in the `RBM.Sample.Lval` vocabulary;
+  `RBM.highProb_loopDecay_lkPath` reads it in the `RBM.lkPath`/`RBM.gloop` vocabulary the good
+  sets use (the two are definitionally equal — `lkPath = gloop - Kval` and
+  `Lval = gloop` — so nothing is reshaped).  Its one hypothesis,
+  `RBM.LKDecayQuant.FlowInputs`, is the Lemma 4.1 event together with (2.76), and it has its own
+  producer `RBM.LKDecayQuant.flowInputs_of_inputs` out of Steps 1–2's deliverables; it is *not*
+  a new axiom-shaped assumption.
+* the **`Ξ^{(L-K)}_{u,m} ≤ Ψ` clauses** are (5.76)/(2.78), i.e. `Ξ^{(L-K)}_{u,m} ≺ 1`, which is
+  Steps 3–5's output in the shape `StochDom P (RBM.Step3.flowXiLK X E s t m) 1`
+  (`RBM.StepGlue.flow_hs1` at `m = 1`, `RBM.StepGlue.flow_xiLK_two_le` /
+  `RBM.Gauss.xiLK_two_stochDom_of_cutHyp` at `m = 2`, Step 4's iteration above).  The passage to
+  a good set is mechanical: `RBM.highProb_flowXiLK_le` is literally the complement of the
+  `RBM.badSet` of that domination at the exponent `τ`.
+
+**Non-vacuity discipline.**  Each producer concludes a `RBM.HighProb` (or, for `hin59`, the
+`ENNReal.toReal` form that §8 asks for), never "the inequality holds at the points of some set":
+the latter is satisfied by the empty set and would be the T164/T169/T220 defect.  No hypothesis
+below is an `ω`-quantified pointwise inequality, and the time quantifier is `RBM.TimeIcc s t N`
+throughout, as T205/T227 require.
+
+**The third clause of `RBM.FDInputs`** is deterministic and is discharged outright:
+`RBM.exists_norm_lkPath_le_rpow` bounds `|L - K|` at loop lengths `≤ 2` on the window by
+`N^{2 + 3c}`.  Loop length `0` has to be treated separately — `RBM.lkPath_nil` computes it
+exactly, `(L-K)_∅ = L W` (the trace of the identity, since `RBM.Kgen` vanishes at length `0`),
+which is `≤ N` by `RBM.Band.dim` — because the `1 ≤ |J|` hypothesis of
+`RBM.norm_gloop_flow_le_envFloor` genuinely excludes it.
+
+**Radius bookkeeping.**  `hinQ`/`hinG` want the radius `ℓ_u N^τ` and get it verbatim;
+`hin59` wants `ℓ_u W^τ`, which is *smaller*, hence a stronger demand.  It is met by running
+Lemma 5.9 at `τ/4` and using (2.2): `W ≥ N^{1/2 + c}` gives `W^τ ≥ N^{(1/2+c)τ} ≥ N^{τ/4}`. -/
+
+section GoodSets
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+theorem highProb_flowXiLK_le (X : Sample B) {E : ℝ} {s t : ℕ → ℝ} {m : ℕ}
+    (h : StochDom B.P (Step3.flowXiLK X E s t m) fun _ _ _ => (1 : ℝ))
+    {τ : ℝ} (hτ : 0 < τ) :
+    HighProb B.P (fun N =>
+      {ω | ∀ u : TimeIcc s t N, X.xiLK E N (u : ℝ) ω m ≤ (N : ℝ) ^ τ}) := by
+  intro D hD
+  filter_upwards [h τ hτ D hD] with N hN
+  refine le_trans (measure_mono ?_) hN
+  intro ω hω
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall, not_le] at hω
+  obtain ⟨u, hu⟩ := hω
+  exact ⟨u, by simpa only [Step3.flowXiLK, mul_one] using hu⟩
+
+theorem highProb_loopDecay_lkPath (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hFI : LKDecayQuant.FlowInputs X E s t) {m : ℕ} (hm : 1 ≤ m) {τ D : ℝ}
+    (hτ : 0 < τ) (hD : 0 < D) :
+    HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N,
+      Decay.LoopDecay (B.L N) m (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+        (lkPath X E N (u : ℝ) ω)
+      ∧ Decay.LoopDecay (B.L N) m (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+        (gloop (B.L N) (B.W N) (X.H N (u : ℝ) ω) (zt E (u : ℝ)))}) :=
+  (LKDecayQuant.highProb_loopDecay_pair hE hs0 ht1 hFI hm hτ hD).mono
+    (Eventually.of_forall fun _ _ hω u => ⟨(hω u).2, (hω u).1⟩)
+
+/-- **`RBM.QuadInputs` holds with high probability.** -/
+theorem highProb_quadInputs (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hFI : LKDecayQuant.FlowInputs X E s t)
+    (hxi2 : StochDom B.P (Step3.flowXiLK X E s t 2) fun _ _ _ => (1 : ℝ)) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), HighProb B.P (fun N =>
+      QuadInputs X E s t N ((N : ℝ) ^ τ) ((N : ℝ) ^ (-D)) ((N : ℝ) ^ τ)) := by
+  intro τ hτ D hD
+  refine ((highProb_loopDecay_lkPath X hE hs0 ht1 hFI (m := 2) (by norm_num) hτ hD).inter
+    (highProb_flowXiLK_le X hxi2 hτ)).mono (Eventually.of_forall fun N ω hω u => ?_)
+  exact ⟨(hω.1 u).1, hω.2 u⟩
+
+/-- **`RBM.EGInputs` holds with high probability.** -/
+theorem highProb_egInputs (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hFI : LKDecayQuant.FlowInputs X E s t)
+    (hxi1 : StochDom B.P (Step3.flowXiLK X E s t 1) fun _ _ _ => (1 : ℝ))
+    (hxi3 : StochDom B.P (Step3.flowXiLK X E s t 3) fun _ _ _ => (1 : ℝ)) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), HighProb B.P (fun N =>
+      EGInputs X E s t N ((N : ℝ) ^ τ) ((N : ℝ) ^ (-D)) ((N : ℝ) ^ τ)) := by
+  intro τ hτ D hD
+  refine (((highProb_loopDecay_lkPath X hE hs0 ht1 hFI (m := 3) (by norm_num) hτ hD).inter
+    (highProb_flowXiLK_le X hxi1 hτ)).inter
+    (highProb_flowXiLK_le X hxi3 hτ)).mono (Eventually.of_forall fun N ω hω u => ?_)
+  exact ⟨(hω.1.1 u).1, hω.1.2 u, hω.2 u⟩
+
+
+theorem loopIdx_eq_nil {α : Type*} {J : LoopIdx α} (hJ : J.WF) (h : J.length = 0) :
+    J = ⟨[], []⟩ := by
+  obtain ⟨σ, a⟩ := J
+  simp only [LoopIdx.length, LoopIdx.WF] at hJ h
+  have ha : a = [] := List.eq_nil_of_length_eq_zero h
+  have hs : σ = [] := List.eq_nil_of_length_eq_zero (by rw [hJ, h])
+  subst ha; subst hs; rfl
+
+theorem lkPath_nil (X : Sample B) (E : ℝ) (N : ℕ) (v : ℝ) (ω : Ω) :
+    lkPath X E N v ω ⟨[], []⟩ = ((B.L N * B.W N : ℕ) : ℂ) := by
+  change gloop (B.L N) (B.W N) (X.H N v ω) (zt E v) ⟨[], []⟩ - B.Kval E N v ⟨[], []⟩ = _
+  rw [show B.Kval E N v (⟨[], []⟩ : LoopIdx (ZMod (B.L N))) = 0 from rfl]
+  change Matrix.trace (gloopProd (B.L N) (B.W N) (X.H N v ω) (zt E v) ⟨[], []⟩) - 0 = _
+  rw [gloopProd_nil, Matrix.trace_one, sub_zero]
+  simp
+
+theorem exists_norm_lkPath_le_rpow (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-c) ≤ etaT E (t N)) :
+    ∃ KM : ℝ, 0 ≤ KM ∧ ∀ᶠ N : ℕ in atTop, ∀ (v : TimeIcc s t N) (ω : Ω)
+      (J : LoopIdx (ZMod (B.L N))), J.WF → J.length ≤ 2 →
+        ‖lkPath X E N (v : ℝ) ω J‖ ≤ (N : ℝ) ^ KM := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  obtain ⟨C, hC0, hC⟩ := exists_norm_Kval_le_envFloor B hκ0 hκ1 hEκ hs0 ht1
+  refine ⟨2 + 3 * c, by linarith, ?_⟩
+  filter_upwards [hη, B.dim, eventually_ge_atTop 1,
+    SumZeroDyn.eventually_const_mul_rpow_le (2 + C)
+      (show 1 + 3 * c < 2 + 3 * c by linarith)] with N hηN hdimN hN1 hfinN
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  set A : ℝ := (N : ℝ) ^ c with hAdef
+  have hA1 : (1 : ℝ) ≤ A := Real.one_le_rpow hN1' hc0
+  have hηt : 0 < etaT E (t N) := etaT_pos hE (ht1 N)
+  have hRA : envFloor E t N ≤ A := by
+    refine max_le hA1 ?_
+    have hpos : (0 : ℝ) < (N : ℝ) ^ (-c) := Real.rpow_pos_of_pos hN0 _
+    have := inv_anti₀ hpos hηN
+    rwa [Real.rpow_neg hN0.le, inv_inv] at this
+  have hR0 : 0 ≤ envFloor E t N := envFloor_nonneg E t N
+  -- `R_N^3 ≤ N^{3c} ≤ N^{1 + 3c}`
+  have hA3 : A ^ 3 = (N : ℝ) ^ (3 * c) := by
+    rw [hAdef, ← Real.rpow_natCast ((N : ℝ) ^ c) 3, ← Real.rpow_mul hN0.le]
+    norm_num; ring_nf
+  have hcube : envFloor E t N ^ 3 ≤ (N : ℝ) ^ (1 + 3 * c) := by
+    refine le_trans (pow_le_pow_left₀ hR0 hRA 3) ?_
+    rw [hA3]
+    exact Real.rpow_le_rpow_of_exponent_le hN1' (by linarith)
+  -- `L W ≤ N ≤ N^{1 + 3c}`
+  have hLW : ((B.L N * B.W N : ℕ) : ℝ) ≤ (N : ℝ) ^ (1 + 3 * c) := by
+    have h1 : ((B.L N * B.W N : ℕ) : ℝ) ≤ (N : ℝ) := by
+      have h0 : B.W N * B.L N ≤ N := hdimN.1
+      have h1 : B.L N * B.W N ≤ N := by rw [Nat.mul_comm]; exact h0
+      exact_mod_cast h1
+    refine h1.trans ?_
+    calc (N : ℝ) = (N : ℝ) ^ (1 : ℝ) := (Real.rpow_one _).symm
+      _ ≤ (N : ℝ) ^ (1 + 3 * c) := Real.rpow_le_rpow_of_exponent_le hN1' (by linarith)
+  intro v ω J hJ h2
+  have hbound : ‖lkPath X E N (v : ℝ) ω J‖ ≤ (2 + C) * (N : ℝ) ^ (1 + 3 * c) := by
+    rcases Nat.eq_zero_or_pos J.length with h0 | h1
+    · rw [loopIdx_eq_nil hJ h0, lkPath_nil]
+      rw [Complex.norm_natCast]
+      nlinarith [Real.rpow_nonneg hN0.le (1 + 3 * c)]
+    · have hg := norm_gloop_flow_le_envFloor X hE ht1 N v ω J hJ h1 (by omega)
+      have hk := hC N v J hJ h1 (by omega)
+      have hsum : ‖lkPath X E N (v : ℝ) ω J‖ ≤ envFloor E t N ^ 3 + C * envFloor E t N ^ 3 :=
+        le_trans (norm_sub_le _ _) (add_le_add hg hk)
+      nlinarith [Real.rpow_nonneg hN0.le (1 + 3 * c)]
+  exact hbound.trans hfinN
+
+theorem exists_fdInputs_highProb (X : Sample B) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-c) ≤ etaT E (t N))
+    (hFI : LKDecayQuant.FlowInputs X E s t) :
+    ∃ KM : ℝ, 0 ≤ KM ∧ ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+      (B.P (FDInputs X E s t N ((B.W N : ℝ) ^ τ) ((N : ℝ) ^ (-D)) ((N : ℝ) ^ KM))ᶜ).toReal
+        ≤ (N : ℝ) ^ (-D) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  obtain ⟨KM, hKM0, hM⟩ := exists_norm_lkPath_le_rpow X hκ0 hκ1 hEκ hs0 ht1 hc0 hη
+  refine ⟨KM, hKM0, fun τ hτ D hD => ?_⟩
+  have hdec := highProb_loopDecay_lkPath X hE hs0 ht1 hFI (m := 3) (by norm_num)
+    (show (0 : ℝ) < τ / 4 by linarith) hD D hD
+  filter_upwards [hdec, hM, B.bandwidth, eventually_ge_atTop 1] with N hdN hMN hbwN hN1
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hnn : (0 : ℝ) ≤ (N : ℝ) ^ (-D) := Real.rpow_nonneg hN0.le _
+  have hWt : (N : ℝ) ^ (τ / 4) ≤ (B.W N : ℝ) ^ τ := by
+    have h1 : (N : ℝ) ^ ((1 / 2 + B.c) * τ) ≤ (B.W N : ℝ) ^ τ := by
+      rw [Real.rpow_mul hN0.le]
+      exact Real.rpow_le_rpow (Real.rpow_nonneg hN0.le _) hbwN hτ.le
+    refine le_trans (Real.rpow_le_rpow_of_exponent_le hN1' ?_) h1
+    have := B.c_pos
+    nlinarith
+  refine ENNReal.toReal_le_of_le_ofReal hnn (le_trans (measure_mono ?_) hdN)
+  refine Set.compl_subset_compl.2 fun ω hω v => ?_
+  have hell0 : (0 : ℝ) ≤ B.ell N (v : ℝ) :=
+    le_trans zero_le_one (one_le_ellHat (B.L N) (B.three_le_L N)
+      ((hs0 N).trans v.2.1) (v.2.2.trans_lt (ht1 N)))
+  have hrad : B.ell N (v : ℝ) * (N : ℝ) ^ (τ / 4)
+      ≤ B.ell N (v : ℝ) * (B.W N : ℝ) ^ τ := mul_le_mul_of_nonneg_left hWt hell0
+  exact ⟨(hω v).1.mono (B.L N) (by norm_num) hrad le_rfl,
+    (hω v).2.mono (B.L N) le_rfl hrad le_rfl,
+    fun J hJ h2 => hMN v ω J hJ h2⟩
+
+end GoodSets
+
+end RBM
+
+namespace RBM
+
+open Real
+
+/-! ### §11  T234: `hlk` — Lemma 5.9 for the *expectation* `E(L - K)` at the initial time
+
+`hlk` of §8 is the fast decay (7.13) of the tensor `RBM.Step6.lkT X E N (s N) σ`, i.e. of
+`E(L-K)_{s_N,σ,·}` — an expectation, not a pathwise quantity, so Lemma 5.9's high-probability
+conclusion has to be integrated.  T173's `RBM.fastDecay_integral_of_highProb` is exactly that
+step, and it charges `Env · P(Gᶜ)` for the complement; with the deterministic envelope
+`N^{2+3c}` of §10 and the good set of §10 taken at the error exponent `D + KM + 1`, that charge
+is `N^{-(D+1)}`, so the total is `2N^{-(D+1)} ≤ N^{-D} ≤ W^{-D}` (the last step because `W ≤ N`
+and the exponent is negative — the paper's `W^{-D}` is the *weaker* of the two).
+
+`RBM.integral_lkPath_eq_lkT` is the identification `∫ (L - K) = E L - K`, which needs only the
+integrability of `L` (the `K` term is deterministic and `P` is a probability measure). -/
+
+section LkExpect
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+theorem integral_lkPath_eq_lkT (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ)
+    (σ : Fin 2 → Bool)
+    (hint : ∀ J : LoopIdx (ZMod (B.L N)), J.WF → 1 ≤ J.length →
+      Integrable (fun ω => X.Lval E N u ω J) B.P) :
+    (fun b : LoopArg (B.L N) 2 => ∫ ω, lkPath X E N u ω (LoopData.idx (σ, b)) ∂B.P)
+      = Step6.lkT X E N u σ := by
+  have hP := B.isProbabilityMeasure
+  funext b
+  change ∫ ω, (X.Lval E N u ω (LoopData.idx (σ, b)) - B.Kval E N u (LoopData.idx (σ, b))) ∂B.P
+      = X.ELval E N u (LoopData.idx (σ, b)) - B.Kval E N u (LoopData.idx (σ, b))
+  rw [integral_sub (hint _ (LoopData.idx_wf _) (by simp)) (integrable_const _),
+    integral_const, probReal_univ, one_smul]
+  rfl
+
+theorem fastDecay_lkT_of_flowInputs (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    (hFI : LKDecayQuant.FlowInputs X E s t)
+    {KM : ℝ} (hKM0 : 0 ≤ KM)
+    (hM : ∀ᶠ N : ℕ in atTop, ∀ (v : TimeIcc s t N) (ω : Ω) (J : LoopIdx (ZMod (B.L N))),
+      J.WF → J.length ≤ 2 → ‖lkPath X E N (v : ℝ) ω J‖ ≤ (N : ℝ) ^ KM)
+    (hmeas : ∀ (N : ℕ) (J : LoopIdx (ZMod (B.L N))),
+      AEStronglyMeasurable (fun ω => lkPath X E N (s N) ω J) B.P)
+    (hint : ∀ (N : ℕ) (J : LoopIdx (ZMod (B.L N))), J.WF → 1 ≤ J.length →
+      Integrable (fun ω => X.Lval E N (s N) ω J) B.P) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ σ : Fin 2 → Bool,
+      FastDecay (B.L N) (B.ell N (s N) * (B.W N : ℝ) ^ τ) ((B.W N : ℝ) ^ (-D))
+        (Step6.lkT X E N (s N) σ) := by
+  intro τ hτ D hD
+  have hP := B.isProbabilityMeasure
+  have hdec := highProb_loopDecay_lkPath X hE hs0 ht1 hFI (m := 2) (by norm_num)
+    (show (0 : ℝ) < τ / 4 by linarith) (show (0 : ℝ) < D + 1 by linarith)
+  filter_upwards [hdec (D + KM + 1) (by linarith), hM, B.bandwidth, B.dim,
+    eventually_ge_atTop 1,
+    SumZeroDyn.eventually_const_mul_rpow_le 2 (show -(D + 1) < -D by linarith)] with
+    N hpN hMN hbwN hdimN hN1 htwoN
+  have hN1' : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hW1 : (1 : ℝ) ≤ (B.W N : ℝ) := by exact_mod_cast B.W_pos N
+  have hWN : (B.W N : ℝ) ≤ (N : ℝ) := by
+    have h1 : B.W N ≤ B.W N * B.L N :=
+      Nat.le_mul_of_pos_right _ (by have := B.three_le_L N; omega)
+    exact_mod_cast h1.trans hdimN.1
+  have hWt : (N : ℝ) ^ (τ / 4) ≤ (B.W N : ℝ) ^ τ := by
+    have h1 : (N : ℝ) ^ ((1 / 2 + B.c) * τ) ≤ (B.W N : ℝ) ^ τ := by
+      rw [Real.rpow_mul hN0.le]
+      exact Real.rpow_le_rpow (Real.rpow_nonneg hN0.le _) hbwN hτ.le
+    refine le_trans (Real.rpow_le_rpow_of_exponent_le hN1' ?_) h1
+    have := B.c_pos
+    nlinarith
+  have hWD : (N : ℝ) ^ (-D) ≤ (B.W N : ℝ) ^ (-D) := by
+    rw [Real.rpow_neg (by positivity), Real.rpow_neg (by positivity)]
+    exact inv_anti₀ (Real.rpow_pos_of_pos (by linarith) D)
+      (Real.rpow_le_rpow (by linarith) hWN hD.le)
+  intro σ
+  set G : Set Ω := {ω | ∀ u : TimeIcc s t N,
+      Decay.LoopDecay (B.L N) 2 (B.ell N (u : ℝ) * (N : ℝ) ^ (τ / 4)) ((N : ℝ) ^ (-(D + 1)))
+        (lkPath X E N (u : ℝ) ω)
+      ∧ Decay.LoopDecay (B.L N) 2 (B.ell N (u : ℝ) * (N : ℝ) ^ (τ / 4)) ((N : ℝ) ^ (-(D + 1)))
+        (gloop (B.L N) (B.W N) (X.H N (u : ℝ) ω) (zt E (u : ℝ)))} with hGdef
+  have hgood : ∀ ω ∈ G, FastDecay (B.L N) (B.ell N (s N) * (N : ℝ) ^ (τ / 4))
+      ((N : ℝ) ^ (-(D + 1)))
+      (fun b : LoopArg (B.L N) 2 => lkPath X E N (s N) ω (LoopData.idx (σ, b))) := by
+    intro ω hω
+    exact ((hω ⟨s N, le_rfl, hst N⟩).1).fastDecay (B.L N) (List.ofFn σ) (by simp)
+  have hFD := fastDecay_integral_of_highProb (P := B.P) (L := B.L N) (n := 2)
+    (δ := (N : ℝ) ^ (-(D + 1))) (Env := (N : ℝ) ^ KM)
+    (A := fun ω (b : LoopArg (B.L N) 2) => lkPath X E N (s N) ω (LoopData.idx (σ, b)))
+    (G := G) (Real.rpow_nonneg hN0.le _)
+    (fun b => hmeas N (LoopData.idx (σ, b))) hgood
+    (fun ω b => hMN ⟨s N, le_rfl, hst N⟩ ω (LoopData.idx (σ, b)) (LoopData.idx_wf _) (by simp))
+  rw [integral_lkPath_eq_lkT X E N (s N) σ (hint N)] at hFD
+  refine SumZeroDyn.FastDecay.mono (B.L N) hFD ?_ ?_
+  · have hell0 : (0 : ℝ) ≤ B.ell N (s N) :=
+      le_trans zero_le_one (one_le_ellHat (B.L N) (B.three_le_L N) (hs0 N)
+        ((hst N).trans_lt (ht1 N)))
+    exact mul_le_mul_of_nonneg_left hWt hell0
+  · have hq : (B.P Gᶜ).toReal ≤ (N : ℝ) ^ (-(D + KM + 1)) :=
+      ENNReal.toReal_le_of_le_ofReal (Real.rpow_nonneg hN0.le _) hpN
+    have hKM : (0 : ℝ) ≤ (N : ℝ) ^ KM := Real.rpow_nonneg hN0.le _
+    have hmul : (N : ℝ) ^ KM * (B.P Gᶜ).toReal ≤ (N : ℝ) ^ (-(D + 1)) := by
+      refine le_trans (mul_le_mul_of_nonneg_left hq hKM) (le_of_eq ?_)
+      rw [← Real.rpow_add hN0]; congr 1; ring
+    linarith [hWD]
+end LkExpect
+
+end RBM
+
+namespace RBM
+
+/-! ### §11b  T234: `RBM.DriftBound.DriftInputs`, the three decay clauses
+
+T220 handed over "the `RBM.Decay.LoopDecay` of `K` at loop length `n + 2`", observing that the
+only producer in the tree, `RBM.exists_loopDecay_Kval`, is at length `3`.  §9 supplies it at
+every length, so all three decay clauses of `RBM.DriftBound.DriftInputs` — the decay of `K`, of
+`L - K` at length `n + 2`, and of `L` at length `n + 3` — are available together.
+
+What is **not** produced here are the three counting clauses `Ξ^{rhs}_{u,n+2} ≤ Ψ`,
+`Ξ^{sum}_{u,n+2} ≤ Ψ` and `Ξ^{(L-K)}_{u,1} ≤ C₁` at the budget
+`Ψ = N^τ (2n+3) Φ_N` that `RBM.DriftBound.stochDom_norm_driftF` uses: those are sums of
+`Ξ^{(L-K)}_{u,k}` and `Ξ^{(L)}_{u,n+3}` against a budget carrying the free polynomial `Φ`, and
+turning Steps 3–5's `Ξ ≺ 1` into them is bookkeeping this ticket did not do. -/
+
+section DriftDecay
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **The three `RBM.Decay.LoopDecay` clauses of `RBM.DriftBound.DriftInputs`, with high
+probability, at every `n`.**  The `K` clause is §9 (deterministic, so it enters through
+`RBM.HighProb.of_eventually_univ`); the other two are T126's pair at loop length `n + 3`. -/
+theorem highProb_driftInputs_decay (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)
+    (hFI : LKDecayQuant.FlowInputs X E s t) (n : ℕ) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), HighProb B.P (fun N => {ω | ∀ u : TimeIcc s t N,
+        Decay.LoopDecay (B.L N) (n + 2) (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+          (B.Kval E N (u : ℝ))
+      ∧ Decay.LoopDecay (B.L N) (n + 2) (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+          (gloop (B.L N) (B.W N) (X.H N (u : ℝ) ω) (zt E (u : ℝ)) - B.Kval E N (u : ℝ))
+      ∧ Decay.LoopDecay (B.L N) (n + 3) (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+          (gloop (B.L N) (B.W N) (X.H N (u : ℝ) ω) (zt E (u : ℝ)))}) := by
+  intro τ hτ D hD
+  refine ((highProb_loopDecay_lkPath X hE hs0 ht1 hFI (m := n + 3) (by omega) hτ hD).inter
+    (HighProb.of_eventually_univ (P := B.P)
+      (Ξ := fun N => {ω : Ω | ∀ u : TimeIcc s t N,
+        Decay.LoopDecay (B.L N) (n + 2) (B.ell N (u : ℝ) * (N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+          (B.Kval E N (u : ℝ))}) ?_)).mono (Eventually.of_forall fun N ω hω u => ?_)
+  · filter_upwards [loopDecay_Kval_quant B hE.le hs0 ht1 (n + 2) τ hτ D hD] with N hN ω
+    exact hN
+  · exact ⟨hω.2 u, (hω.1 u).1.mono (B.L N) (by omega) le_rfl le_rfl, (hω.1 u).2⟩
+
+/-- **A `RBM.HighProb` event is eventually non-empty.**
+
+The anti-vacuity statement for §10/§11b: the producers there conclude a `RBM.HighProb`, never
+"the inequality holds at the points of some set", and this turns that into non-emptiness, so
+none of the good sets can be the empty set (the T164/T169/T220 defect).
+
+⚠ This is a **verbatim duplicate** of `RBM.FastDecayFlow.nonempty_of_highProb`
+(`RBM1D/Gauss/FastDecayFlow.lean:708`), which cannot be imported here without inverting the
+dependency (`FastDecayFlow` sits downstream of this file in `RBM1D.lean`).  The right fix is to
+sink that lemma into `RBM1D/Defs/StochDom.lean` and delete both copies; that file is not
+writable under T234. -/
+theorem highProb_nonempty {P : Measure Ω} [IsProbabilityMeasure P] {Ξ : ℕ → Set Ω}
+    (h : HighProb P Ξ) : ∀ᶠ N : ℕ in atTop, (Ξ N).Nonempty := by
+  filter_upwards [h 1 one_pos, eventually_ge_atTop 2] with N hN hN2
+  rw [Set.nonempty_iff_ne_empty]
+  intro hemp
+  rw [hemp, Set.compl_empty, measure_univ] at hN
+  have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hrw : (N : ℝ) ^ (-(1 : ℝ)) = ((N : ℝ))⁻¹ := by
+    rw [Real.rpow_neg (by linarith), Real.rpow_one]
+  have hlt : (N : ℝ) ^ (-(1 : ℝ)) < 1 := by
+    rw [hrw, inv_lt_one_iff₀]
+    right; linarith
+  exact absurd hN (not_le.2 (ENNReal.ofReal_lt_one.2 hlt))
+
+end DriftDecay
+
+end RBM
+
+namespace RBM.Gauss
+
+open RBM
+
+/-! ### §12  T234: the Gaussian producers, and §8 with five more slots discharged
+
+`RBM.Gauss.bounds_step_gauss_window'` is §8's step theorem with `hKd` (§9), `hin59`, `hinQ`,
+`hinG` (§10) and `hlk` (§11) plugged in.  What replaces them is **not** new mathematics:
+
+* `RBM.LKDecayQuant.FlowInputs` — the Lemma 4.1 event (4.4) plus the large deviations (4.2)
+  plus (2.76), with its own producer `RBM.LKDecayQuant.flowInputs_of_inputs` out of Steps 1–2;
+* `StochDom P (RBM.Step3.flowXiLK X E s t m) 1` for `m = 1, 2, 3` — (5.76)/(2.78), Steps 3–5's
+  own deliverable (`RBM.StepGlue.flow_hs1`, `RBM.StepGlue.flow_xiLK_two_le`, Step 4's
+  iteration).
+
+**What is still open**, and nothing else: `hcont`, `hintU1`, `hintU2` (continuity in the time of
+`E L - K`, and interval integrability of `U` against the two drift tensors — T205's item 4,
+pure analysis), `hlmk` (2.68 on the window, Steps 1–5), and the induction data `hc`, `hη`,
+`hBC`, `hB`.  **`RBM.Bounds` therefore still has no inhabitant at `s > 0`**: this file reduces
+the residual list from ten items to seven, it does not close it. -/
+
+section GaussProducers
+
+/-- **`hlk` of §8 for the Gaussian model.**  §11 with the two analytic slots filled by
+`RBM.Gauss.continuous_lkPath_gauss` (measurability) and `RBM.Gauss.integrable_sample_Lval`
+(integrability of `L` at the initial time), and the envelope by §10. -/
+theorem hlk_gauss (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) (hEκ : |E| ≤ 2 - κ)
+    {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-c) ≤ etaT E (t N))
+    (hFI : LKDecayQuant.FlowInputs (sample d) E s t) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ σ : Fin 2 → Bool,
+      FastDecay ((band d).L N) ((band d).ell N (s N) * ((band d).W N : ℝ) ^ τ)
+        (((band d).W N : ℝ) ^ (-D)) (Step6.lkT (sample d) E N (s N) σ) := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  obtain ⟨KM, hKM0, hM⟩ := exists_norm_lkPath_le_rpow (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hη
+  refine fastDecay_lkT_of_flowInputs (sample d) hE hs0 hst ht1 hFI hKM0 hM ?_ ?_
+  · intro N J
+    exact (continuous_lkPath_gauss d N hE ((hst N).trans_lt (ht1 N)) J).aestronglyMeasurable
+  · intro N J hJ hn
+    exact integrable_sample_Lval (etaT_pos_of_lt_one hE ((hst N).trans_lt (ht1 N)))
+      (abs_im_zt E hE ((hst N).trans_lt (ht1 N))).ge J hJ hn
+
+/-- **The (2.71) half of the induction step for the Gaussian model, with `hKd`, `hlk`, `hin59`,
+`hinQ` and `hinG` discharged.**
+
+Compare `RBM.Gauss.bounds_step_gauss_window`: five of its residual hypotheses are gone, and the
+four that replace them (`hFI`, `hxi1`, `hxi2`, `hxi3`) are Steps 1–5's own outputs.  The
+hypothesis list of this theorem **is** the remaining gap, as the elaborator sees it. -/
+theorem bounds_step_gauss_window' (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 (band d) E s t)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hcont : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (b : LoopArg ((band d).L N) 2),
+      ContinuousOn (fun q : ℝ => Step6.lkT (sample d) E N q σ b) (Set.Icc (s N) ((u : ℝ))))
+    (hintU1 : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (a : LoopArg ((band d).L N) 2),
+      IntervalIntegrable (fun v : ℝ => Uker ((band d).L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (((u : ℝ)) : ℂ) (driftELK (sample d) E N v σ) a) volume (s N) (u : ℝ))
+    (hintU2 : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (a : LoopArg ((band d).L N) 2),
+      IntervalIntegrable (fun v : ℝ => Uker ((band d).L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (((u : ℝ)) : ℂ) (driftEG (sample d) E N v σ) a) volume (s N) (u : ℝ))
+    (hFI : LKDecayQuant.FlowInputs (sample d) E s t)
+    (hxi1 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 1) fun _ _ _ => (1 : ℝ))
+    (hxi2 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 2) fun _ _ _ => (1 : ℝ))
+    (hxi3 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 3) fun _ _ _ => (1 : ℝ))
+    (hlmk : SharpLmKFlow (sample d) E s t)
+    (hBC : BoundsCore (sample d) E t) (hB : Bounds (sample d) E s) :
+    Bounds (sample d) E t := by
+  have hE : |E| < 2 := by linarith [abs_nonneg E]
+  have hηt : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ (-c) ≤ etaT E (t N) := by
+    filter_upwards [hη] with N hN
+    exact hN ⟨t N, hst N, le_rfl⟩
+  obtain ⟨KM, hKM0, hin59⟩ :=
+    exists_fdInputs_highProb (sample d) hκ0 hκ1 hEκ hs0 ht1 hc0 hηt hFI
+  exact bounds_step_gauss_window d hκ0 hκ1 hEκ hs0 hst ht1 hc hc0 hη hcont hintU1 hintU2
+    hKM0 (hlk_gauss d hκ0 hκ1 hEκ hs0 hst ht1 hc0 hηt hFI) hin59
+    (highProb_quadInputs (sample d) hE hs0 ht1 hFI hxi2)
+    (highProb_egInputs (sample d) hE hs0 ht1 hFI hxi1 hxi3)
+    (loopDecay_Kval_quant (band d) hE.le hs0 ht1 3) hlmk hBC hB
+
+end GaussProducers
+
+/-! ### §13  T234: the new producers are non-degenerate
+
+Two directions, both on the **non-degenerate** grid window `[1 - 1/(N+2), 1 - 1/(N+3)]` of §4
+(`s_N > 0`, `1 - t_N ≍ N^{-1}`, the hardest end of Theorem 2.21's range), at `E = 0` — the very
+energy at which `RBM.Gauss.not_exists_env_eG` refutes the `ℝ`-quantified envelope:
+
+* `RBM.Gauss.nonempty_goodSets_grid` — the two good sets produced in §10 are **eventually
+  non-empty**, proved (not assumed) from their `RBM.HighProb`;
+* `RBM.Gauss.loopDecay_Kval_grid` — `hKd` on that window is a *theorem with no hypotheses at
+  all* beyond the window itself, which is the content of §9: at `1 - u ≍ N^{-1}` the decay
+  length is `ℓ̂_u ≍ N^{1/2}` and the exponent is `c₀N^τ/4`, not `c₀N^{-1+1/2+τ}`. -/
+
+section Witness
+
+/-- **`hKd` on the grid window is unconditional.**  `s_N = 1 - 1/(N+2) > 0` and
+`1 - t_N = 1/(N+3)`, so `ℓ̂_u ≍ N^{1/2}` and the cut-off in `ℓ̂` is inactive; there is no side
+condition, no good event and no scale hypothesis. -/
+theorem loopDecay_Kval_grid (d : Dims) (m : ℕ) :
+    ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop, ∀ v : TimeIcc envWinS envWinT N,
+      Decay.LoopDecay ((band d).L N) m ((band d).ell N (v : ℝ) * (N : ℝ) ^ τ)
+        ((N : ℝ) ^ (-D)) ((band d).Kval 0 N (v : ℝ)) :=
+  loopDecay_Kval_quant (band d) (by norm_num) (fun N => (envWinS_pos N).le) envWinT_lt_one m
+
+/-- **The good sets of §10 are eventually non-empty**, on the grid window at `E = 0`.  The
+non-emptiness is *derived* from the `RBM.HighProb`, not assumed: this is the check that T220's
+`Ξ = ∅` defect (and T164/T169's before it) is not being repeated. -/
+theorem nonempty_goodSets_grid (d : Dims)
+    (hFI : LKDecayQuant.FlowInputs (sample d) 0 envWinS envWinT)
+    (hxi1 : StochDom (band d).P (Step3.flowXiLK (sample d) 0 envWinS envWinT 1)
+      fun _ _ _ => (1 : ℝ))
+    (hxi2 : StochDom (band d).P (Step3.flowXiLK (sample d) 0 envWinS envWinT 2)
+      fun _ _ _ => (1 : ℝ))
+    (hxi3 : StochDom (band d).P (Step3.flowXiLK (sample d) 0 envWinS envWinT 3)
+      fun _ _ _ => (1 : ℝ))
+    {τ D : ℝ} (hτ : 0 < τ) (hD : 0 < D) :
+    (∀ᶠ N : ℕ in atTop, (QuadInputs (sample d) 0 envWinS envWinT N ((N : ℝ) ^ τ)
+        ((N : ℝ) ^ (-D)) ((N : ℝ) ^ τ)).Nonempty) ∧
+      ∀ᶠ N : ℕ in atTop, (EGInputs (sample d) 0 envWinS envWinT N ((N : ℝ) ^ τ)
+        ((N : ℝ) ^ (-D)) ((N : ℝ) ^ τ)).Nonempty := by
+  have hP := (band d).isProbabilityMeasure
+  have hE : |(0 : ℝ)| < 2 := by norm_num
+  have hs0 : ∀ N, (0 : ℝ) ≤ envWinS N := fun N => (envWinS_pos N).le
+  exact ⟨highProb_nonempty
+      (highProb_quadInputs (sample d) hE hs0 envWinT_lt_one hFI hxi2 τ hτ D hD),
+    highProb_nonempty
+      (highProb_egInputs (sample d) hE hs0 envWinT_lt_one hFI hxi1 hxi3 τ hτ D hD)⟩
+
+end Witness
+
+end RBM.Gauss
+
+namespace RBM
+
+/-! ### §14  T234: the three `Ξ^{(L-K)} ≺ 1` slots of §10 are Steps 3–4's own output
+
+§10/§12 take `StochDom P (RBM.Step3.flowXiLK X E s t m) 1` for `m = 1, 2, 3` as hypotheses.
+This section records — as a compiled fact rather than a claim in a comment — that a producer
+for **every** `m ≥ 1` is already in the tree: `RBM.Step45.xiLK_le_one_of_hyp`, Step 4's
+iteration, out of Step 3's `RBM.Step3.Hyp`/`RBM.Step3.S`, Lemma 5.14 at `n = 2`, and the two
+base cases `Ξ^{(L-K)}_{u,1} ≺ 1` (`RBM.StepGlue.flow_hs1`, from (4.5)) and
+`Ξ^{(L-K)}_{u,2} ≺ (W ℓ_u η_u)^{1/4}` (`RBM.StepGlue.flow_hs2`, from (2.76) and (2.72)).
+
+So the four hypotheses that replace §8's five discharged slots really are Steps 1–5's
+deliverables, and none of them is new mathematics. -/
+
+section Steps34
+
+variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
+
+/-- **`Ξ^{(L-K)}_{u,n} ≺ 1` at every `n ≥ 1` from Step 3's data** — `RBM.Step45.xiLK_le_one_of_hyp`
+read at the flow's families, which is the shape §10 consumes. -/
+theorem xiLK_le_one_of_steps34 (X : Sample B) {E : ℝ} {s t : ℕ → ℝ}
+    (H : Step3.Hyp B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowAs B E s) (Step3.flowR B s t) (Step3.flowA B E s t))
+    (h0 : ∀ m, 1 ≤ m → Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s)
+      (Step3.flowR B s t) (Step3.flowA B E s t) m 0)
+    (h12 : ∀ m l, 1 ≤ m → m ≤ 2 → Step3.S B.P (Step3.flowXiLK X E s t) (Step3.flowAs B E s)
+      (Step3.flowR B s t) (Step3.flowA B E s t) m l)
+    (h514 : Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
+      (Step3.flowA B E s t) 2)
+    (h1 : StochDom B.P (Step3.flowXiLK X E s t 1) fun _ _ _ => (1 : ℝ))
+    (h2 : StochDom B.P (Step3.flowXiLK X E s t 2)
+      fun N u _ => Step3.flowA B E s t N u ^ ((1 : ℝ) / 4)) :
+    ∀ n, 1 ≤ n → StochDom B.P (Step3.flowXiLK X E s t n) fun _ _ _ => (1 : ℝ) :=
+  Step45.xiLK_le_one_of_hyp H h0 h12 h514 h1 h2
+
+end Steps34
+
+end RBM
+
+namespace RBM.Gauss
+
+open RBM
+
+/-! ### §15  T234: §12 with the three `Ξ ≺ 1` slots replaced by Step 3–4's data -/
+
+section StepsAssembly
+
+/-- **`RBM.Gauss.bounds_step_gauss_window'` with `hxi1`/`hxi2`/`hxi3` traced back to Steps 3–4.**
+
+Every hypothesis here is either Steps 1–5's own deliverable (`hFI`, `H`, `h0`, `h12`, `h514`,
+`h1`, `h2`, `hlmk`), the induction data (`hc`, `hη`, `hBC`, `hB`), or one of the three analytic
+slots T234 did not do (`hcont`, `hintU1`, `hintU2`).  In particular **no hypothesis of this
+theorem is about Lemma 5.9, about `K`'s decay, or about the four good sets** — that was T234's
+target, and this is the check that it was met. -/
+theorem bounds_step_gauss_window'' (d : Dims) {E κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1)
+    (hEκ : |E| ≤ 2 - κ) {s t : ℕ → ℝ} (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
+    (ht1 : ∀ N, t N < 1) (hc : Cond272 (band d) E s t)
+    {c : ℝ} (hc0 : 0 ≤ c)
+    (hη : ∀ᶠ N : ℕ in atTop, ∀ u : TimeIcc s t N, (N : ℝ) ^ (-c) ≤ etaT E u)
+    (hcont : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (b : LoopArg ((band d).L N) 2),
+      ContinuousOn (fun q : ℝ => Step6.lkT (sample d) E N q σ b) (Set.Icc (s N) ((u : ℝ))))
+    (hintU1 : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (a : LoopArg ((band d).L N) 2),
+      IntervalIntegrable (fun v : ℝ => Uker ((band d).L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (((u : ℝ)) : ℂ) (driftELK (sample d) E N v σ) a) volume (s N) (u : ℝ))
+    (hintU2 : ∀ N (u : TimeIcc s t N) (σ : Fin 2 → Bool) (a : LoopArg ((band d).L N) 2),
+      IntervalIntegrable (fun v : ℝ => Uker ((band d).L N) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
+        (((u : ℝ)) : ℂ) (driftEG (sample d) E N v σ) a) volume (s N) (u : ℝ))
+    (hFI : LKDecayQuant.FlowInputs (sample d) E s t)
+    (H : Step3.Hyp (band d).P (Step3.flowXiLK (sample d) E s t)
+      (Step3.flowXiL (sample d) E s t) (Step3.flowAs (band d) E s) (Step3.flowR (band d) s t)
+      (Step3.flowA (band d) E s t))
+    (h0 : ∀ m, 1 ≤ m → Step3.S (band d).P (Step3.flowXiLK (sample d) E s t)
+      (Step3.flowAs (band d) E s) (Step3.flowR (band d) s t) (Step3.flowA (band d) E s t) m 0)
+    (h12 : ∀ m l, 1 ≤ m → m ≤ 2 → Step3.S (band d).P (Step3.flowXiLK (sample d) E s t)
+      (Step3.flowAs (band d) E s) (Step3.flowR (band d) s t) (Step3.flowA (band d) E s t) m l)
+    (h514 : Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
+      (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) 2)
+    (h1 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 1) fun _ _ _ => (1 : ℝ))
+    (h2 : StochDom (band d).P (Step3.flowXiLK (sample d) E s t 2)
+      fun N u _ => Step3.flowA (band d) E s t N u ^ ((1 : ℝ) / 4))
+    (hlmk : SharpLmKFlow (sample d) E s t)
+    (hBC : BoundsCore (sample d) E t) (hB : Bounds (sample d) E s) :
+    Bounds (sample d) E t := by
+  have hxi := xiLK_le_one_of_steps34 (sample d) H h0 h12 h514 h1 h2
+  exact bounds_step_gauss_window' d hκ0 hκ1 hEκ hs0 hst ht1 hc hc0 hη hcont hintU1 hintU2 hFI
+    (hxi 1 le_rfl) (hxi 2 (by norm_num)) (hxi 3 (by norm_num)) hlmk hBC hB
+end StepsAssembly
+
+end RBM.Gauss
+
+namespace RBM.Gauss
+
+open RBM
+
+/-! ### §16  T234: `RBM.FDInputs` too is eventually non-empty
+
+`RBM.exists_fdInputs_highProb` delivers §8's `ENNReal.toReal` shape rather than a
+`RBM.HighProb`, so `RBM.highProb_nonempty` does not apply to it directly.  The same argument
+does: if the good set were empty its complement would be everything, of measure `1`, while the
+bound puts it below `N^{-D} < 1`.  With §13 this covers **all three** good sets of §10. -/
+
+section FdWitness
+
+theorem nonempty_fdInputs_grid (d : Dims)
+    (hFI : LKDecayQuant.FlowInputs (sample d) 0 envWinS envWinT) {τ D : ℝ}
+    (hτ : 0 < τ) (hD : 0 < D) :
+    ∃ KM : ℝ, 0 ≤ KM ∧ ∀ᶠ N : ℕ in atTop,
+      (FDInputs (sample d) 0 envWinS envWinT N (((band d).W N : ℝ) ^ τ) ((N : ℝ) ^ (-D))
+        ((N : ℝ) ^ KM)).Nonempty := by
+  have hP := (band d).isProbabilityMeasure
+  obtain ⟨KM, hKM0, hin⟩ := exists_fdInputs_highProb (sample d) (κ := 1) one_pos le_rfl
+    (by norm_num) (fun N => (envWinS_pos N).le) envWinT_lt_one (c := 2) (by norm_num)
+    eventually_rpow_le_etaT_envWinT hFI
+  refine ⟨KM, hKM0, ?_⟩
+  filter_upwards [hin τ hτ D hD, eventually_ge_atTop 2] with N hN hN2
+  rw [Set.nonempty_iff_ne_empty]
+  intro hemp
+  rw [hemp, Set.compl_empty, measure_univ, ENNReal.toReal_one] at hN
+  have hN2' : (1 : ℝ) < (N : ℝ) := by exact_mod_cast (by omega : 1 < N)
+  exact absurd hN (not_le.2 (Real.rpow_lt_one_of_one_lt_of_neg hN2' (by linarith)))
+
+
+end FdWitness
 
 end RBM.Gauss

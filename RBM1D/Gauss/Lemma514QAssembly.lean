@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.Lemma514Holder
 import RBM1D.Gauss.MomentDuhamelQ
 import RBM1D.Gauss.Lemma514QRoute
+import RBM1D.Gauss.Lemma514NonAlt
 
 /-!
 # Lemma 5.14 on the `Q_u` route: the assembly (T219)
@@ -67,16 +68,21 @@ splits along §5.5's own charge classification:
   `RBM.Gauss.pow_card_le_of_norm_Psum_le` proves that an unguarded slot-sum bound costs `L^n`
   and that this is attained, while the shared normalisation `A_v^{-(n+2)}` carries no positive
   power of `L`.  Those charges are non-alternating
-  (`RBM.SumZeroDyn.eq_zero_of_not_nonAlt_not_qGood`) and go through (5.20) with (7.16) Case 1 —
-  `RBM.SumZeroDyn.bound_nonAlt` — which is the named slot `RBM.Gauss.NonAlt514`.
+  (`RBM.SumZeroDyn.eq_zero_of_not_nonAlt_not_qGood`) and go through (5.20) with (7.16) Case 1,
+  which **T236** supplies from the unprojected `RBM.MomentDuhamel.Hyp.momentDuhamel` in
+  `RBM1D/Gauss/Lemma514NonAlt.lean` (`RBM.Gauss.stochDom_lkT_nonAlt_of_momentDuhamel`, fed by
+  `RBM.Gauss.RhsNonAltAt`).
 
-## The hypothesis that is nobody's yet
+## What used to be nobody's, and is not any more (T236)
 
-**`hNonAlt`** (`RBM.Gauss.NonAlt514`).  The non-alternating branch exists in the repository
-only inside `RBM.SumZeroDyn.lemma514_flow`, whose inputs are `RBM.SumZeroDyn.Hierarchy` and
-`RBM.SumZeroDyn.Lemma510` — the package the moment route is not allowed to instantiate.  So the
-`Q` route reaches `RBM.Step3.Lemma514` modulo exactly this one branch, and it is a genuine
-statement about a pinned object, not an empty hypothesis.
+The slot `RBM.Gauss.NonAlt514` — the `¬ QGood` branch whose only producer in the repository was
+`RBM.SumZeroDyn.bound_nonAlt`, inside the forbidden `RBM.SumZeroDyn.Hierarchy` +
+`RBM.SumZeroDyn.Lemma510` package — is **gone**.  `lemma514_of_momentDuhamelQ` now takes
+`hrhsNA`, the (7.16) **Case 1** kernel-tier right-hand side `RBM.Gauss.RhsNonAltAt`, which is
+the same kind of input as `hrhs` and has both a producer
+(`RBM.Gauss.rhsNonAltAt_of_kernel_inputs`) and a satisfiability witness on the paper's grid
+(`RBM.Gauss.gridS_short_witness`).  Neither `RBM.SumZeroDyn.Hierarchy` nor
+`RBM.SumZeroDyn.Lemma510` occurs anywhere in this file's hypothesis lists.
 
 ## Deviations from the paper
 
@@ -179,7 +185,8 @@ here it is pushed through `RBM.StochDom.add` and `RBM.StochDom.of_le_left`.
 constant tensor; the normalisation `A_v^{-(n+2)}` that the two halves of (5.101) share carries
 no positive power of `L`, so an unguarded `P`-half is **unsatisfiable**.  (This corrects the
 unguarded `PHalf514` of the first draft of this file.)  Off `QGood` the assembly therefore does
-**not** use (5.101) at all — see `RBM.Gauss.NonAlt514`.
+**not** use (5.101) at all — it uses (5.20) + (7.16) Case 1, i.e. T236's
+`RBM.Gauss.stochDom_lkT_nonAlt_of_momentDuhamel`.
 
 The `Q`-half stays unguarded, because `RBM.MomentDuhamel.Hyp.momentDuhamelQ` is quantified over
 every charge; guarding it only weakens it, which is the first `split_ifs` branch below. -/
@@ -279,27 +286,21 @@ theorem pHalf514_of_wardP (hE : |E| < 2) (hs0 : ∀ N, 0 < s N) (hst : ∀ N, s 
   exact stochDom_Psum_vartheta_qGood X hE hs0 hst ht1 hcond hW hdec hΛ0 hΦ0 hΛ1
     (hprem.2.1 (n + 1) (by omega) (by omega)) v hv
 
-/-- **The non-alternating charges, the half of §5.5 that (5.101) does not reach.**
+/-! **The non-alternating charges, the half of §5.5 that (5.101) does not reach.**
 
-`RBM.SumZeroDyn.eq_zero_of_not_nonAlt_not_qGood` says that for `n ≥ 1` every charge that is not
-`QGood` is non-alternating, and for those the paper does **not** use sum-zero, `Q_u`, Ward or
-(5.101) at all: it uses (5.20) with (7.16) Case 1 directly, which is
-`RBM.SumZeroDyn.bound_nonAlt` (the `¬ QGood` branch of `RBM.SumZeroDyn.lemma514_flow`).
+`RBM.Gauss.NonAlt514` — the `¬ QGood` slot this file used to carry, whose only producer was
+`RBM.SumZeroDyn.bound_nonAlt` inside the forbidden `RBM.SumZeroDyn.Hierarchy` package — is
+**gone** (T236).  In its place `lemma514_of_momentDuhamelQ` takes `hrhsNA`, the (7.16) **Case 1**
+right-hand side `RBM.Gauss.RhsNonAltAt` of `RBM1D/Gauss/Lemma514NonAlt.lean`, which is the same
+*kind* of input as `hrhs`: a kernel-tier estimate with a producer
+(`RBM.Gauss.rhsNonAltAt_of_kernel_inputs`) and a satisfiability witness
+(`RBM.Gauss.gridS_short_witness`).  The `≡` for the non-alternating charges is then the theorem
+`RBM.Gauss.stochDom_lkT_nonAlt_of_momentDuhamel`, which uses only the **unprojected** field
+`RBM.MomentDuhamel.Hyp.momentDuhamel`.
 
-This slot is therefore **not** a defect of the `Q` route; it is the other branch of the same
-charge split, and it is the one input of the assembly that has no producer outside the
-`RBM.SumZeroDyn.Hierarchy` package (which the moment route is not allowed to instantiate).
-The length-`2` exception `σ = (-,+)` — neither `QGood` nor non-alternating — is folded in here
-too; in `RBM.SumZeroDyn.lemma514_flow` it is handled by `RBM.SumZeroDyn.lkT_swap2`. -/
-def NonAlt514 (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) : Prop :=
-  ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) → (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) →
-    Lemma514Premises X E s t (n + 2) Λ Φ →
-    ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
-      StochDom B.P
-        (fun N (q : LoopData (B.L N) (n + 2)) ω =>
-          if SumZeroDyn.QGood q.1 then 0
-          else ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖)
-        (fun N _ _ => (Λ N ^ ((1 : ℝ) / 2) + Φ N) * (B.scale E N (v N) ^ (n + 2))⁻¹)
+The length-`2` exception `σ = (-,+)` — neither `QGood` nor non-alternating — is folded in by
+`RBM.Gauss.stochDom_lkT_of_qGood_nonAlt'`, exactly as `RBM.SumZeroDyn.lemma514_flow` folds it
+in, through `RBM.SumZeroDyn.lkT_swap2` and `RBM.SumZeroDyn.qGood_swap2`. -/
 
 /-- **`RBM.Step3.Lemma514` from `RBM.MomentDuhamel.Hyp.momentDuhamelQ`.**
 
@@ -310,14 +311,19 @@ The `Q`-route twin of `RBM.Gauss.lemma514_of_momentDuhamel`.  Three things diffe
   proved have no `N`-independent constant on the paper's grid, do not appear;
 * one new hypothesis, `RBM.MomentDuhamel.QIntegrable`, which on the Gaussian model is the
   theorem `RBM.MomentDuhamel.qIntegrable_gauss` (paper-delta T214a);
-* two new hypotheses, `RBM.Gauss.PHalf514` and `RBM.Gauss.NonAlt514`, because (5.91) bounds
-  `Q_v ∘ (L-K)_v` and the conclusion is about `(L-K)_v`.  The first is **a theorem**
-  (`RBM.Gauss.pHalf514_of_wardP`, from T218); the second is the non-alternating branch of
-  §5.5's charge split, which has no producer outside `RBM.SumZeroDyn.Hierarchy`.
+* two new hypotheses, `RBM.Gauss.PHalf514` and `hrhsNA`, because (5.91) bounds `Q_v ∘ (L-K)_v`
+  and the conclusion is about `(L-K)_v`.  The first is **a theorem**
+  (`RBM.Gauss.pHalf514_of_wardP`, from T218); the second is the (7.16) **Case 1** right-hand
+  side `RBM.Gauss.RhsNonAltAt` of `RBM1D/Gauss/Lemma514NonAlt.lean` (T236), the non-alternating
+  branch of §5.5's charge split — a kernel-tier slot with a producer and a grid witness, **not**
+  the old `RBM.Gauss.NonAlt514`, and in particular **not**
+  `RBM.SumZeroDyn.Hierarchy`/`Lemma510`.
 
 The control is raised to `max (Λ^{1/2} + Φ) 1` inside the proof for the same reason as in the
-plain route; the two halves of (5.101) double it on `QGood` charges and the non-alternating
-branch adds one more, whence `C = 3` in the final `RBM.Step3.stochDom_mono`. -/
+plain route.  The two halves of (5.101) double it on `QGood` charges, the `(-,+)` exception
+doubles that again (`RBM.Gauss.stochDom_lkT_of_qGood_nonAlt'` reuses the `QGood` control at the
+rotated charge), and the non-alternating branch adds one more, whence `C = 5` in the final
+`RBM.Step3.stochDom_mono`. -/
 theorem lemma514_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
     (ht1 : ∀ N, t N < 1)
     (H : MomentDuhamel.Hyp X E s t n) (hQint : MomentDuhamel.QIntegrable X E s t n)
@@ -334,13 +340,17 @@ theorem lemma514_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst 
       Lemma514Premises X E s t (n + 2) Λ Φ →
       ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
         Rhs514QAt H (fun N => Λ N ^ ((1 : ℝ) / 2) + Φ N) v)
-    (hPhalf : PHalf514 X E s t n) (hNonAlt : NonAlt514 X E s t n) :
+    (hPhalf : PHalf514 X E s t n)
+    (hrhsNA : ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) → (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) →
+      Lemma514Premises X E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+        RhsNonAltAt H (fun N => max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1) v) :
     Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) (n + 2) := by
   classical
   intro Λ Φ hΛ0 hΦ0 hΛ1 hY hX1 hX2 hY1
   have hc1 : ∀ N : ℕ, (1 : ℝ) ≤ max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1 := fun N => le_max_right _ _
-  have hc0 : ∀ N : ℕ, (0 : ℝ) ≤ 3 * max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1 := fun N => by
+  have hc0 : ∀ N : ℕ, (0 : ℝ) ≤ 5 * max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1 := fun N => by
     have := hc1 N; linarith
   have hscale : ∀ (N : ℕ) (w : ℝ), w ∈ Set.Icc (s N) (t N) →
       0 < B.scale E N w ^ (n + 2) := fun N w hw =>
@@ -348,7 +358,7 @@ theorem lemma514_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst 
   have hseq : ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
       StochDom B.P
         (fun N (q : LoopData (B.L N) (n + 2)) ω => ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖)
-        (fun N _ _ => 3 * max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1
+        (fun N _ _ => 5 * max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1
           * (B.scale E N (v N) ^ (n + 2))⁻¹) := by
     intro v hv
     -- the `Q`-half, from (5.91)
@@ -398,17 +408,19 @@ theorem lemma514_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst 
           * (B.scale E N (v N) ^ (n + 2))⁻¹) :=
       Step3.stochDom_mono (fun N _ _ => hcpos N) 1
         (Eventually.of_forall fun N _ _ => hmaxle N) hP
-    -- the non-alternating charges (5.20): `RBM.Gauss.NonAlt514`
-    have hNA := hNonAlt Λ Φ hΛ0 hΦ0 hΛ1 ⟨hY, hX1, hX2, hY1⟩ v hv
+    -- the non-alternating charges: (5.20) + (7.16) Case 1, T236
     have hNAle : StochDom B.P
         (fun N (q : LoopData (B.L N) (n + 2)) ω =>
-          if SumZeroDyn.QGood q.1 then 0
-          else ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖)
+          if SumZeroDyn.NonAlt q.1 then ‖SumZeroDyn.lkT X E N (v N) ω q.1 q.2‖ else 0)
         (fun N _ _ => max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1
           * (B.scale E N (v N) ^ (n + 2))⁻¹) :=
-      Step3.stochDom_mono (fun N _ _ => hcpos N) 1
-        (Eventually.of_forall fun N _ _ => hmaxle N) hNA
-    have hsum := stochDom_lkT_of_qGood_nonAlt (stochDom_lkT_qGood_of_Qhalf_Phalf hQ hPle) hNAle
+      stochDom_lkT_nonAlt_of_momentDuhamel hE hs0 ht1 H hcard
+        (c := fun N => max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1)
+        (fun N => lt_of_lt_of_le one_pos (hc1 N)) v hv
+        (hrhsNA Λ Φ hΛ0 hΦ0 hΛ1 ⟨hY, hX1, hX2, hY1⟩ v hv)
+    have hsum := stochDom_lkT_of_qGood_nonAlt' (X := X) hE
+      (fun N => (hs0 N).trans (hv N).1) (fun N => ((hv N).2).trans_lt (ht1 N))
+      (stochDom_lkT_qGood_of_Qhalf_Phalf hQ hPle) hNAle
     refine Step3.stochDom_mono (fun N _ _ => ?_) 1 (Eventually.of_forall fun N _ _ => ?_) hsum
     · have hsc : (0 : ℝ) < B.scale E N (v N) ^ (n + 2) := hscale N (v N) (hv N)
       have := hc1 N
@@ -418,7 +430,7 @@ theorem lemma514_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst 
       exact le_rfl
   have hmain := stochDom_flowXiLK_of_seq X hE hs0 hst ht1 hcard hK hγ hΞ hc0
     (Eventually.of_forall fun N => by have := hc1 N; linarith) hHol hseq
-  refine Step3.stochDom_mono (fun N _ _ => ?_) 3 ?_ hmain
+  refine Step3.stochDom_mono (fun N _ _ => ?_) 5 ?_ hmain
   · have h1 : (0 : ℝ) ≤ Λ N ^ ((1 : ℝ) / 2) := Real.rpow_nonneg (hΛ0 N) _
     have := hΦ0 N
     linarith
@@ -445,13 +457,17 @@ theorem lemma514_forall_of_momentDuhamelQ (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N
       (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises X E s t (n + 2) Λ Φ →
       ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
         Rhs514QAt (H n) (fun N => Λ N ^ ((1 : ℝ) / 2) + Φ N) v)
-    (hPhalf : ∀ n : ℕ, PHalf514 X E s t n) (hNonAlt : ∀ n : ℕ, NonAlt514 X E s t n) :
+    (hPhalf : ∀ n : ℕ, PHalf514 X E s t n)
+    (hrhsNA : ∀ n : ℕ, ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
+      (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises X E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+        RhsNonAltAt (H n) (fun N => max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1) v) :
     ∀ m, 2 ≤ m → Step3.Lemma514 B.P (Step3.flowXiLK X E s t) (Step3.flowXiL X E s t)
       (Step3.flowA B E s t) m := by
   intro m hm
   obtain ⟨n, rfl⟩ : ∃ n, m = n + 2 := ⟨m - 2, by omega⟩
   exact lemma514_of_momentDuhamelQ hE hs0 hst ht1 (H n) (hQint n) (card_loopData_le (n + 2))
-    hK hγ hΞ (hHol (n + 2)) (hrhs n) (hPhalf n) (hNonAlt n)
+    hK hγ hΞ (hHol (n + 2)) (hrhs n) (hPhalf n) (hrhsNA n)
 
 end Assembly
 
@@ -482,7 +498,10 @@ theorem lemma514Q_forall_of_hHol_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {s t :
       ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
         Rhs514QAt (H n) (fun N => Λ N ^ ((1 : ℝ) / 2) + Φ N) v)
     (hPhalf : ∀ n : ℕ, PHalf514 (sample d) E s t n)
-    (hNonAlt : ∀ n : ℕ, NonAlt514 (sample d) E s t n) :
+    (hrhsNA : ∀ n : ℕ, ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
+      (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises (sample d) E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+        RhsNonAltAt (H n) (fun N => max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1) v) :
     ∀ m, 2 ≤ m → Step3.Lemma514 (band d).P (Step3.flowXiLK (sample d) E s t)
       (Step3.flowXiL (sample d) E s t) (Step3.flowA (band d) E s t) m := by
   have := (band d).isProbabilityMeasure
@@ -502,7 +521,7 @@ theorem lemma514Q_forall_of_hHol_flow (d : Dims) {E : ℝ} (hE : |E| < 2) {s t :
     (by nlinarith) (by norm_num) hΞ
     (hHol_flow d hE hs0 ht1 hc1' (show 1 ≤ n + 2 by omega)
       (eventually_le_rpow_mono hcc hreg) hXΞ'
-      (hKb_flow (band d) hE ht1 hc0 (n + 2) hreg)) (hrhs n) (hPhalf n) (hNonAlt n)
+      (hKb_flow (band d) hE ht1 hc0 (n + 2) hreg)) (hrhs n) (hPhalf n) (hrhsNA n)
 
 /-- **End-to-end probe on the `Q` route: Step 4's (2.78) with `hHol`, `hKb`, `hkerC` and
 `hker2C` all gone.**
@@ -523,7 +542,10 @@ theorem flow_sharpLmK_Q_of_hHol_flow (d : Dims) {E : ℝ} {κ : ℝ} (hκ0 : 0 <
       ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
         Rhs514QAt (H n) (fun N => Λ N ^ ((1 : ℝ) / 2) + Φ N) v)
     (hPhalf : ∀ n : ℕ, PHalf514 (sample d) E s t n)
-    (hNonAlt : ∀ n : ℕ, NonAlt514 (sample d) E s t n)
+    (hrhsNA : ∀ n : ℕ, ∀ Λ Φ : ℕ → ℝ, (∀ N, 0 ≤ Λ N) → (∀ N, 0 ≤ Φ N) →
+      (∀ᶠ N : ℕ in atTop, 1 ≤ Λ N) → Lemma514Premises (sample d) E s t (n + 2) Λ Φ →
+      ∀ v : ℕ → ℝ, (∀ N, v N ∈ Set.Icc (s N) (t N)) →
+        RhsNonAltAt (H n) (fun N => max (Λ N ^ ((1 : ℝ) / 2) + Φ N) 1) v)
     (h0 : ∀ m, 1 ≤ m → Step3.S (band d).P (Step3.flowXiLK (sample d) E s t)
       (Step3.flowAs (band d) E s) (Step3.flowR (band d) s t)
       (Step3.flowA (band d) E s t) m 0)
@@ -539,7 +561,7 @@ theorem flow_sharpLmK_Q_of_hHol_flow (d : Dims) {E : ℝ} {κ : ℝ} (hκ0 : 0 <
       (fun N p _ => ((band d).scale E N p.1)⁻¹ ^ n) :=
   Step45.flow_sharpLmK (sample d) hκ0 hκ1 hEκ hs0 hst ht1 hcond
     (lemma514Q_forall_of_hHol_flow d (by linarith) hs0 hst ht1 H hQint hΞ hc1 hreg hXΞ
-      hrhs hPhalf hNonAlt)
+      hrhs hPhalf hrhsNA)
     h0 h12 h1 h2
 
 end Flow
@@ -592,24 +614,9 @@ theorem errKer716_nonneg (L m : ℕ) {Kd ζ δ s v : ℝ} (hKd : 0 ≤ Kd) (hζ 
   unfold errKer716
   linarith
 
-/-- `C M a + e ≤ (C+1) M (a+e)` for `M ≥ 1`: the additive error of (7.16) is absorbed into
-the same constant as the main term, without touching the `N^{ε/2}` factor. -/
-theorem affine_absorb {a e C M : ℝ} (ha : 0 ≤ a) (he : 0 ≤ e) (hC : 0 ≤ C) (hM : 1 ≤ M) :
-    C * (M * a) + e ≤ (C + 1) * (M * (a + e)) := by
-  have hM0 : (0 : ℝ) ≤ M := by linarith
-  have h1 : (0 : ℝ) ≤ M * a := mul_nonneg hM0 ha
-  have hCM : (1 : ℝ) ≤ (C + 1) * M := by nlinarith
-  have h2 : 1 * e ≤ ((C + 1) * M) * e := mul_le_mul_of_nonneg_right hCM he
-  linarith [h1, h2]
-
-/-- **`κ_A (1-w) ℓ̂_w = W ℓ_w η_w`.**  The free constant `κ_A` of (7.16) is fixed once and for
-all to `W Im m^{(E)}`, and then the normalization of (7.16) is *literally* the scale
-`RBM.Band.scale` of Lemmas 2.18–2.20.  Nothing is lost or gained: `η_w = (1-w) Im m^{(E)}`. -/
-theorem scale_eq_kappaA (B : Band Ω) (E : ℝ) (N : ℕ) (w : ℝ) :
-    ((B.W N : ℝ) * (mE E).im) * ((1 - w) * ellHat (B.L N) ((w : ℝ) : ℂ))
-      = B.scale E N w := by
-  simp only [Band.scale, Band.ell, etaT]
-  ring
+/-! `RBM.Gauss.affine_absorb` and `RBM.Gauss.scale_eq_kappaA` used to live here.  T236 needs
+them verbatim for the Case-1 producer of `RBM1D/Gauss/Lemma514NonAlt.lean`, so they were
+**moved** into that file (which this one imports) rather than copied. -/
 
 /-- **The producer of `RBM.Gauss.Rhs514QAt` out of T201's five kernel estimates.**
 
@@ -1035,21 +1042,24 @@ theorem hnum_le_of_zero_err (L m : ℕ) {Kd A Phi PhiE s v : ℝ} (hKd : 0 ≤ K
         + ((v - s) * (cKer716 (m + m) Kd * A⁻¹ ^ (m + m) * PhiE
             + errKer716 L (m + m) Kd 0 0 s v)) ^ ((1 : ℝ) / 2)
       ≤ cNum716 m Kd Phi PhiE s v * (A ^ m)⁻¹ := by
+  -- the algebra is `RBM.Gauss.num_zero_err_aux`, shared with Case 1 (T236): only the constant
+  -- and the window weight `1 + 6(v-s)` differ.
   have herr : ∀ j : ℕ, errKer716 L j Kd 0 0 s v = 0 := by intro j; simp [errKer716]
-  rw [herr, herr, add_zero, add_zero, cNum716]
-  have hz : (0 : ℝ) ≤ A⁻¹ ^ m := by positivity
   have hvs : (0 : ℝ) ≤ v - s := by linarith
-  have hy : (0 : ℝ) ≤ (v - s) * (cKer716 (m + m) Kd * PhiE) :=
-    mul_nonneg hvs (mul_nonneg (cKer716_nonneg (m + m) hKd) hPhiE)
-  have hsplit : (v - s) * (cKer716 (m + m) Kd * A⁻¹ ^ (m + m) * PhiE)
-      = ((v - s) * (cKer716 (m + m) Kd * PhiE)) * (A⁻¹ ^ m) ^ 2 := by
-    rw [pow_add]; ring
-  have hsq : ((A⁻¹ ^ m) ^ 2) ^ ((1 : ℝ) / 2) = A⁻¹ ^ m := by
-    rw [← Real.rpow_natCast (A⁻¹ ^ m) 2, ← Real.rpow_mul hz]
-    norm_num
-  rw [hsplit, Real.mul_rpow hy (by positivity), hsq, inv_pow]
-  ring_nf
-  exact le_rfl
+  have hre : (v - s) * (cKer716 (m + m) Kd * A⁻¹ ^ (m + m) * PhiE)
+      = cKer716 (m + m) Kd * A⁻¹ ^ (m + m) * ((v - s) * PhiE) := by ring
+  have hre2 : (v - s) * (cKer716 (m + m) Kd * PhiE)
+      = cKer716 (m + m) Kd * ((v - s) * PhiE) := by ring
+  rw [herr, herr, add_zero, add_zero, hre, cNum716, hre2]
+  have key := num_zero_err_aux m (cK := cKer716 m Kd) (cK2 := cKer716 (m + m) Kd)
+    (A := A) (Phi := Phi) (PhiE := (v - s) * PhiE) (w := 1 + 6 * (v - s))
+    (cKer716_nonneg (m + m) hKd) hA (mul_nonneg hvs hPhiE)
+  calc (cKer716 m Kd * A⁻¹ ^ m * Phi) * (1 + 6 * (v - s))
+        + (cKer716 (m + m) Kd * A⁻¹ ^ (m + m) * ((v - s) * PhiE)) ^ ((1 : ℝ) / 2)
+      = cKer716 m Kd * A⁻¹ ^ m * Phi * (1 + 6 * (v - s))
+        + (cKer716 (m + m) Kd * A⁻¹ ^ (m + m) * ((v - s) * PhiE)) ^ ((1 : ℝ) / 2) := by
+        ring_nf
+    _ ≤ _ := key
 
 section WitnessModel
 

@@ -14,7 +14,7 @@
 * **目标**：六步循环（Theorem 2.21 + Lemmas 2.18–2.20）正确无误 → T159 端到端核对 → Theorem 2.6（Jun：其余无高风险项后再开）→ 最终报告。
 * **Theorem 2.21 第一遍**（不含 (2.71)）：`thm221NoEL_of_inputs(_W)` 已有；(5.48) 一项由 `FlowEq548W` 供给（T233），但 `FlowEq548Sm` 生产者与它还没接线（→ T239）；Step 2 的 `MomentHypCut.cut` 仍卡在第一遍自举（→ T230）。
 * **(2.71) 第二遍**：量词已修（T227）；余四个好集的 `HighProb` 与 `K` 的衰减率（→ T234）。
-* **Lemma 5.14（`Q` 路线）**：`hkerC` 已从假设表消失（T219）；余非交替电荷 `NonAlt514`（→ T236）、`lkGood` 可测性（→ T237）、`driftF` 包络（→ T238）。
+* **Lemma 5.14（`Q` 路线）**：`hkerC`（T219）、`NonAlt514`（T236）、`driftF` 包络（T238）已从假设表消失；`lkGood` 可测性绕过（T237 的可测核，`hΞm` 彻底消除）。**余一处**：`rhs514QAt_of_kernel_inputs` 的 `hDec*` 五行换成事件限制版（替代品已编译，换线未做，裁定走原地改 `Lemma514QAssembly.lean`）。
 * **最高风险**：**T230**——Step 2 第一遍自举。见 §3。
 
 ## 2. 已定的裁定
@@ -62,9 +62,11 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 ## 5. 在飞与排队
 
-见 `docs/TASKS.md`（只剩活跃单）。截至 03:05：T230（(A′)）、T231、T232（范围扩到三个结构六处字段）、T234、T235、T217（Codex）进行中；T236、T237、T238、T239 未认领；T159 已认领（等总装）。
+见 `docs/TASKS.md`（只剩活跃单）。截至 04:20：T230（(A′)）、T235、T217（Codex）进行中；T241–T244（T239 假设表逐槽）未派；T159 已认领（等总装）。T232/T236/T237 本轮完成并入库。
 
 ## 6. 最近完成（每条 ≤ 8 行；完整报告在 `docs/reports/` 或 `docs/archive/STATUS-2026-09-19_22.md`）
+
+* **T236 / T237 / T232**（本次）：⭐ **`NonAlt514` 从全仓删除**——(7.16) Case 1 在矩路线上重证（`Gauss/Lemma514NonAlt.lean`，27 条），`flow_sharpLmK_Q_of_hHol_flow` 的 `NonAlt514`+`h0`+`h12`+`h1`+`h2` **五项换一项** `hrhsNA`，且有生产者 + 网格见证（`gridS` 上常数**不含** `N`/`W`/`τ'`/`k`）；代价只有 `C = 3 → 5`。⭐ **`MeasurableSet (lkGood …)` 不必证**——T237 取**可测核** `(toMeasurable P Ξᶜ)ᶜ`（等测度 + 子集，故估计零变化），`momNorm_norm_lkT_le_of_event(_of_hyp)` 的 `hΞm` **彻底消除**，`hDec*` 的事件限制替代品四条编译在案（`Gauss/LkGoodMeasurable.lean`，35 条）。⭐ **T232 把「接口过强」证成定理**：对真随时间变动的 `J_u = 2u⁺`，`CutHyp.modulus` 的 `∀ N` 形式对**任何** `Kmod, γ` 都假（`N = 0` 处右端为 `0`），故 `¬ Nonempty (CutHyp …)`——`∀ᶠ N` 的弱化是**严格**的，小 `N` 特例本来就不存在；原结构未动（`Step2FarMart.lean:1782` 在消费它），新增 `CutHypEv/CutHypEv'/CutHypCondEv` 共 67 条。报告 `docs/reports/T236.md`、`T237.md`、`T232.md`；paper-deltas T232a/T236a/T237a。
 
 * **T239**（本次）：**(5.48) 从 `Thm221NoEL` 的假设表里整条消失**（`Flow/Thm221Assembly.lean`，新的下游总装文件解决「两个 import 叶子谁都放不下那条桥」）。⭐ 交出**完整假设表 + 每条归谁**（见 `docs/reports/T239.md`，后续派单请照它写）。`CutHyp` 的 `mesh_fine`/`card_le` 由 `cutHyp_jSfarSm_of_entries` **证出来不是假设**，故那对拉扯条件**不可能联合不可满足**。⚠ 查出 `Eq548EntryData.init` 是**结构性多余**——它是 (2.68)/(2.69) 在 `u = s_N` 的推论、**只有拿到 `hB` 才能证**，而上游 `thm221NoEL_of_inputs_W` **没把已在作用域内的 `hB` 透给 (5.48) 槽**；加 `BoundsCore X E s →` 前件是**免费的加强**。
 * **T238**（本次）：`driftF` 的逐点确定性包络——**`hFb` 与 `hGd_Qop_driftF` 两处由同一条定理供给**；`momentIneqQ` 的 11 项从「5 项无条件」到**只剩 3 项有条件**。⭐ **工单假设的「缺 `Kval` 一致有界」其实仓库已有**（T203 的 `exists_norm_Kval_le_upto`），**只读文件零改动**；另删掉自己重复写的 `one_le_inv_etaT`。⚠ 如实：包络**是粗的**（`η_v^{−O(n)}`），**够可积性但不能做定量估计**。paper-delta T238a。
@@ -86,9 +88,13 @@ STATUS 的「T227 无主项 2」、T205 无主项 3、TASKS 的 T234 行都把 `
 
 （全部已开单。T239 的主链假设表逐槽分派：第 1 槽 `Step1.Hyp` → T242；第 2 槽 `MomentHypCut` → T230 (A′)/T232；第 3、5 槽 `hΘ`/`Eq45Flow` → T243；第 4 槽 `Lemma514` → T236；第 6 槽 `Eq548EntryData`：`init` → T241，`near`/`meas`/`modulus` → T244，`moment` → T230。新的无主项写在这里，调度下一轮开单。）
 
-* **⭐ `hinit` 可免费消除**（T239 交出）：给 `thm221NoEL_of_inputs_W` 的各槽加 `BoundsCore X E s →` 前件（`hB` 已在作用域内），`Eq548EntryData.init` 即可由 (2.68)/(2.69) 在 `u = s_N` 推出。**全仓没有任何 `hinit` 的生产者。** 这是假设表里唯一结构性多余的一条。
+* **⭐ `hinit` 可免费消除**（T239 交出，**已开 T241**）：给 `thm221NoEL_of_inputs_W` 的各槽加 `BoundsCore X E s →` 前件（`hB` 已在作用域内），`Eq548EntryData.init` 即可由 (2.68)/(2.69) 在 `u = s_N` 推出。**全仓没有任何 `hinit` 的生产者。** 这是假设表里唯一结构性多余的一条。
 * **`Step2FarMart` 的 `meas`/`modulus`/`moment` 三条生产者**（T239 交出）；⚠ 其中 **`.modulus` 对尖锐 `jSfar` 为假**，只对平滑版有希望。
 * **`hcont`/`hintU1`/`hintU2`**（T234 交出）：`E(L−K)` 的时间连续性 + `U` 对两个漂移张量的区间可积性。**纯分析，无主**——这是 `Bounds` 在 `s > 0` 处余下 7 项里唯一不属 Steps 1–5 主线或总装线的。
 * **`nonempty_of_highProb` 重复两份**（T234 交出）：`FastDecayFlow.nonempty_of_highProb`(:708) 与 `Step6EnvWindow.highProb_nonempty` **逐字相同**，而前者在后者**下游、无法 import**。**建议下沉 `Defs/StochDom.lean` 并删两份。**
-* **plain 的 `hQV` 接线**（T231 交出）：`momentIneq_gauss_cMDval'_bridge` 的 `hQV` 槽与 `EEUker.quadVarPairs_Uker_le_norm_eeFun_xi2'` 的结论**形状同义但签名对不上**（参数次序与显隐性）。⚠ 协调者已实测「加一行 `import` + 一行 `exact`」**不成立**，需要一条桥引理。**这是 plain 路线 `MomentIneq` 唯一剩下的缺口。**
 * **两条 `attribute [deprecated]` 的落地时机**（T231 交出，→ Cowork）：`momentIneq_of_derivBound` / `momentIneqQ_of_derivBound`——等 T226 的后继换完带撇版，还是现在加并接受 `MomentDuhamelQInt` 里的一片 warning。确切语句见 `docs/reports/T231.md`。
+* **`Rhs514QAt` 的事件限制版生产者**（T237 交出，**裁定 (b)**）：在 `Gauss/Lemma514QAssembly.lean` **原地**把 `rhs514QAt_of_kernel_inputs` 的五处 `momNorm_Uker_*_le` 换成 T237 的 `…_event_untrunc_le`，`hDec*` 改 `∀ ω ∈ Ξ N`，`hnum` 多吃一项 `Env·pr^{1/(2p)}`（`eventually_env_mul_lkGood_le` 已备好，难点是把「先定 `p`、再 `N→∞`」穿过 `∃ C`）。短的是区间可积性接线，**不是数学缺口**，估 200–300 行。顺带把该文件第 92、617 行「`MeasurableSet (lkGood …)` 未证」的注释改为指向 `measCore`/`measurableSet_lkGoodM`。
+* **Case 1/Case 2 的三处逐字重复应上移**（T236 交出）：(1) `SumZeroDyn.norm_Uker_short_scale_le`（`Hierarchy/SumZeroDyn.lean:4232`）是新 `Gauss.norm_Uker_short_scale_le'` 的特例，一般版应上移、旧版改一行推论；(2) 同型存量重复 `Gauss.norm_Uker_sumZero_scale_le'`（`Lemma514Q716.lean:393`）；(3) `MomentDuhamel.stochDom_of_momentDuhamel`（`Gauss/MomentDuhamel.lean:485`）应一般化成「对任意可判定谓词守卫」，`NonAlt` 版成为实例。
+* **`hEnvF` 不能直接吃 T238 的包络**（T236 交出）：包络界 `DriftDef.driftF`，那一行界 `H.F`，中间要 `F_unique_flow`（`Gauss/MomentDuhamelHyp.lean`），且 `cF` 依赖 `N`，只能吃成 `hMψ` 的一条真实矩界。
+* **`bootPP_of_net_ev` 与 `MomentHypCut2Ev`**（T232 交出）：前者要改 `Hierarchy/Step2MomentStep.lean`（T232 只读），后者是 `MomentHypCut2` 的 `∀ᶠ N` 版（本轮只做到 `MomentHypCutEv`）。
+* **`Step2Moment.MomentHyp.env`/`env_le` 的量词**（T232 交出）：文件当时由 T235 持有，未动。

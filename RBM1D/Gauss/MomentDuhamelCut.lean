@@ -387,6 +387,36 @@ theorem continuousOn_of_modulus {a b C γ : ℝ} (hγ : 0 < γ) {Y : ℝ → ℝ
         rwa [hpow] at hlt
     _ = ε := by field_simp
 
+/-- **The deterministic half of the bootstrap, at one `N` and one `ω`.**
+
+Given the Hölder modulus and the fineness of the net *at that single `N`*, every time of the
+window has a net point to its left at which the functional is smaller by at most `Θ`.  This is
+the body of `CutHyp.hclose`, `RBM.CutHypTheta.CutHyp'.hclose` and
+`RBM.CutHypTheta.CutHypCond.hclose`, extracted so that those three read it off a `∀ N` field
+while their `∀ᶠ N` counterparts (`CutHypEv.hclose_ev` and friends, T232) read it off an
+`∀ᶠ N` one.  Nothing here is quantified over `N`. -/
+theorem hclose_of_modulus {s t mesh : ℕ → ℝ} {Kmod γ Θ : ℝ} (hγ : 0 < γ) {N : ℕ}
+    (hm : 0 < mesh N) {Y : ℝ → ℝ}
+    (hmod : ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+      |Y v - Y w| ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ)
+    (hfine : (N : ℝ) ^ Kmod * (1 / mesh N) ^ γ ≤ Θ) :
+    ∀ v ∈ Set.Icc (s N) (t N), ∃ ws ∈ (↑(netFinset s t mesh N) : Set ℝ),
+      ws ∈ Set.Icc (s N) v ∧ Y v ≤ Y ws + Θ := by
+  intro v hv
+  obtain ⟨ws, hwsF, hwsIcc, hgap⟩ := exists_mem_netFinset (t := t) hm hv
+  refine ⟨ws, Finset.mem_coe.2 hwsF, hwsIcc, ?_⟩
+  have hwsb : ws ∈ Set.Icc (s N) (t N) := ⟨hwsIcc.1, hwsIcc.2.trans hv.2⟩
+  have habs : |v - ws| ≤ 1 / mesh N := by
+    rw [abs_of_nonneg (by linarith [hwsIcc.2])]
+    exact hgap
+  have h1 : |v - ws| ^ γ ≤ (1 / mesh N) ^ γ :=
+    Real.rpow_le_rpow (abs_nonneg _) habs hγ.le
+  have hK : (0 : ℝ) ≤ (N : ℝ) ^ Kmod := Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have h2 : (N : ℝ) ^ Kmod * |v - ws| ^ γ ≤ Θ :=
+    le_trans (mul_le_mul_of_nonneg_left h1 hK) hfine
+  have h3 := (le_abs_self _).trans ((hmod v hv ws hwsb).trans h2)
+  linarith
+
 end Net
 
 /-! ### 4. The truncated moment Duhamel interface -/
@@ -487,23 +517,106 @@ theorem continuousOn (H : CutHyp P J s t Θ) (N : ℕ) (ω : Ω) :
 window has a net point to its left at which the functional is smaller by at most `Θ_N`. -/
 theorem hclose (H : CutHyp P J s t Θ) (N : ℕ) (ω : Ω) :
     ∀ v ∈ Set.Icc (s N) (t N), ∃ ws ∈ (↑(netFinset s t H.mesh N) : Set ℝ),
-      ws ∈ Set.Icc (s N) v ∧ J N v ω ≤ J N ws ω + Θ N := by
-  intro v hv
-  obtain ⟨ws, hwsF, hwsIcc, hgap⟩ := exists_mem_netFinset (t := t) (H.mesh_pos N) hv
-  refine ⟨ws, Finset.mem_coe.2 hwsF, hwsIcc, ?_⟩
-  have hwsb : ws ∈ Set.Icc (s N) (t N) := ⟨hwsIcc.1, hwsIcc.2.trans hv.2⟩
-  have habs : |v - ws| ≤ 1 / H.mesh N := by
-    rw [abs_of_nonneg (by linarith [hwsIcc.2])]
-    exact hgap
-  have h1 : |v - ws| ^ H.γ ≤ (1 / H.mesh N) ^ H.γ :=
-    Real.rpow_le_rpow (abs_nonneg _) habs H.γ_pos.le
-  have hK : (0 : ℝ) ≤ (N : ℝ) ^ H.Kmod := Real.rpow_nonneg (Nat.cast_nonneg N) _
-  have h2 : (N : ℝ) ^ H.Kmod * |v - ws| ^ H.γ ≤ Θ N :=
-    le_trans (mul_le_mul_of_nonneg_left h1 hK) (H.mesh_fine N)
-  have h3 := (le_abs_self _).trans ((H.modulus N ω v hv ws hwsb).trans h2)
-  linarith
+      ws ∈ Set.Icc (s N) v ∧ J N v ω ≤ J N ws ω + Θ N :=
+  hclose_of_modulus H.γ_pos (H.mesh_pos N) (H.modulus N ω) (H.mesh_fine N)
 
 end CutHyp
+
+/-! #### T232: the same interface with the two deterministic fields asymptotic
+
+`CutHyp.modulus` and `CutHyp.mesh_fine` are quantified over **every** `N`, `N = 0` included.
+There `(0 : ℝ)^Kmod = 0` for `Kmod ≠ 0`, so `modulus` degenerates to
+`|J 0 v ω - J 0 w ω| ≤ 0`: the interface *forces the functional to be constant in time at
+`N = 0`*, and at `N = 1` (where `(1 : ℝ)^Kmod = 1`) it forces the modulus with constant `1`.
+Neither has anything to do with the `≺` the interface exists to produce, whose every clause is
+`∀ᶠ N in atTop`; a producer at a non-degenerate scaling has to patch the small `N` by hand.
+
+`CutHypEv` is `CutHyp` with those two fields — and only those two — read at `∀ᶠ N in atTop`.
+Every other field is verbatim.  `CutHypEv.of_cutHyp` specializes the old interface into the
+new one, and the whole downstream chain that used to go through `CutHyp` is reproved for
+`CutHypEv`: `hev_of_cutHypEv`, `stochDom_of_cutHypEv`, and (through `CutHypTheta`)
+`cutHypEv_of_condMomentEv`.
+
+That the weakening is *strict* — i.e. that it buys something — is `satCutHypEv` together with
+`sat_modulus_not_forall`: the witness `J N u ω = max u 0` at the critical scaling `Θ ≡ 1`
+satisfies `CutHypEv` and **fails** `CutHyp.modulus` at `N = 0`.
+-/
+
+/-- **`CutHyp` with `modulus` and `mesh_fine` asymptotic** (T232).  See the section note. -/
+structure CutHypEv (P : Measure Ω) (J : ℕ → ℝ → Ω → ℝ) (s t Θ : ℕ → ℝ) where
+  /-- The window is non-degenerate. -/
+  window : ∀ N, s N ≤ t N
+  /-- The range `0 < δ ≤ δ₀` of bootstrap margins, as in `RBM.Step2PP.BootPP.δ₀`. -/
+  δ₀ : ℝ
+  δ₀_pos : 0 < δ₀
+  Θ_pos : ∀ N, 0 < Θ N
+  /-- The state functional is nonnegative. -/
+  J_nonneg : ∀ N u ω, 0 ≤ J N u ω
+  meas : ∀ (N : ℕ) (u : ℝ), AEStronglyMeasurable (fun ω => J N u ω) P
+  /-- The mesh of the net of (5.46). -/
+  mesh : ℕ → ℝ
+  mesh_pos : ∀ N, 0 < mesh N
+  /-- The exponent of the deterministic modulus of continuity. -/
+  Kmod : ℝ
+  /-- Its Hölder exponent. -/
+  γ : ℝ
+  γ_pos : 0 < γ
+  /-- **The deterministic modulus of continuity, for every `ω` and for large `N`.**  The only
+  change from `CutHyp.modulus`: `∀ᶠ N in atTop` in place of `∀ N`. -/
+  modulus : ∀ᶠ N : ℕ in atTop, ∀ ω : Ω, ∀ v ∈ Set.Icc (s N) (t N), ∀ w ∈ Set.Icc (s N) (t N),
+    |J N v ω - J N w ω| ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ
+  /-- **The net is fine enough, for large `N`.**  The only change from `CutHyp.mesh_fine`. -/
+  mesh_fine : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ Kmod * (1 / mesh N) ^ γ ≤ Θ N
+  /-- The exponent of the net's cardinality. -/
+  Ccard : ℝ
+  /-- The net is polynomially large, so the union bound is a `≺`-loss. -/
+  card_le : ∀ᶠ N : ℕ in atTop, (t N - s N) * mesh N + 2 ≤ (N : ℝ) ^ Ccard
+  /-- **The truncated one-step moment bound at the net points.** -/
+  moment : ∀ δ, 0 < δ → δ ≤ δ₀ → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
+    ∀ ws ∈ netFinset s t mesh N,
+      ∫ ω, |cutTrunc ((N : ℝ) ^ (2 * δ) * Θ N) (J N ws ω)| ^ (2 * p) ∂P
+        ≤ C * ((N : ℝ) ^ (ε * p) * Θ N ^ (2 * p))
+
+namespace CutHypEv
+
+variable {P : Measure Ω} {J : ℕ → ℝ → Ω → ℝ} {s t Θ : ℕ → ℝ}
+
+/-- **The old interface is the new one** — the specialization `∀ N → ∀ᶠ N` of the two
+fields, every other field verbatim. -/
+def of_cutHyp (H : CutHyp P J s t Θ) : CutHypEv P J s t Θ where
+  window := H.window
+  δ₀ := H.δ₀
+  δ₀_pos := H.δ₀_pos
+  Θ_pos := H.Θ_pos
+  J_nonneg := H.J_nonneg
+  meas := H.meas
+  mesh := H.mesh
+  mesh_pos := H.mesh_pos
+  Kmod := H.Kmod
+  γ := H.γ
+  γ_pos := H.γ_pos
+  modulus := Filter.Eventually.of_forall fun N => H.modulus N
+  mesh_fine := Filter.Eventually.of_forall H.mesh_fine
+  Ccard := H.Ccard
+  card_le := H.card_le
+  moment := H.moment
+
+/-- The paths are continuous for large `N`, by the modulus. -/
+theorem continuousOn_ev (H : CutHypEv P J s t Θ) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω : Ω,
+      ContinuousOn (fun u => J N u ω) (Set.Icc (s N) (t N)) := by
+  filter_upwards [H.modulus] with N hmodN ω
+  exact continuousOn_of_modulus H.γ_pos (hmodN ω)
+
+/-- **`hclose` for large `N`**, from `hclose_of_modulus`. -/
+theorem hclose_ev (H : CutHypEv P J s t Θ) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω : Ω,
+      ∀ v ∈ Set.Icc (s N) (t N), ∃ ws ∈ (↑(netFinset s t H.mesh N) : Set ℝ),
+        ws ∈ Set.Icc (s N) v ∧ J N v ω ≤ J N ws ω + Θ N := by
+  filter_upwards [H.modulus, H.mesh_fine] with N hmodN hfineN ω
+  exact hclose_of_modulus H.γ_pos (H.mesh_pos N) (hmodN ω) hfineN
+
+end CutHypEv
 
 end Interface
 
@@ -532,26 +645,39 @@ multiplying the order by `(K + δ)/δ`.
 **The cost is one union bound over the net**, `RBM.MomentDuhamelCut.netFinset_card_le`, which
 is `N^{Ccard}` — a fixed power of `N`, absorbed by taking the order `p` large.  This is the
 step that `RBM.Step2Moment.MomentHyp.step` cannot afford: `bnd_poly` pins `bnd` to `N^{o(1)}`
-at *every* order (`RBM.Step2MomentStep.bnd_poly_excludes_pow`). -/
-theorem hev_of_cutHyp [IsProbabilityMeasure P] (H : CutHyp P J s t Θ)
-    {δ : ℝ} (hδ0 : 0 < δ) (hδ : δ ≤ H.δ₀) :
-    HighProb P fun N => {ω | ∀ ws ∈ (↑(netFinset s t H.mesh N) : Set ℝ),
+at *every* order (`RBM.Step2MomentStep.bnd_poly_excludes_pow`).
+
+**Unbundled (T232).**  Every input is passed explicitly, and **neither `CutHyp.modulus` nor
+`CutHyp.mesh_fine` appears** — the Markov-plus-union-bound argument never touches them.  That
+is what lets the `∀ᶠ N` interface `CutHypEv` reach the same conclusion
+(`hev_of_cutHypEv`). -/
+theorem hev_of_moment [IsProbabilityMeasure P] {mesh : ℕ → ℝ} {δ₀ Ccard : ℝ}
+    (hst : ∀ N, s N ≤ t N) (hΘ0 : ∀ N, 0 < Θ N) (hJ0 : ∀ N u ω, 0 ≤ J N u ω)
+    (hmeas : ∀ (N : ℕ) (u : ℝ), AEStronglyMeasurable (fun ω => J N u ω) P)
+    (hmesh : ∀ N, 0 < mesh N)
+    (hcard_le : ∀ᶠ N : ℕ in atTop, (t N - s N) * mesh N + 2 ≤ (N : ℝ) ^ Ccard)
+    (hmom : ∀ δ, 0 < δ → δ ≤ δ₀ → ∀ ε > (0 : ℝ), ∀ p : ℕ, ∃ C > (0 : ℝ),
+      ∀ᶠ N : ℕ in atTop, ∀ ws ∈ netFinset s t mesh N,
+        ∫ ω, |cutTrunc ((N : ℝ) ^ (2 * δ) * Θ N) (J N ws ω)| ^ (2 * p) ∂P
+          ≤ C * ((N : ℝ) ^ (ε * p) * Θ N ^ (2 * p)))
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ : δ ≤ δ₀) :
+    HighProb P fun N => {ω | ∀ ws ∈ (↑(netFinset s t mesh N) : Set ℝ),
       ws ∈ Set.Icc (s N) (t N) →
       (∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N) →
         J N ws ω ≤ ((N : ℝ) ^ δ - 1) * Θ N} := by
   intro D hD
   -- the order: `δ p / 2` has to beat the net's cardinality exponent, the target decay, and `C`
-  obtain ⟨p, hp⟩ := exists_nat_ge ((D + H.Ccard + 1) * 2 / δ)
-  have hpδ : D + H.Ccard + 1 ≤ δ / 2 * p := by
+  obtain ⟨p, hp⟩ := exists_nat_ge ((D + Ccard + 1) * 2 / δ)
+  have hpδ : D + Ccard + 1 ≤ δ / 2 * p := by
     rw [div_le_iff₀ hδ0] at hp
     nlinarith
-  have hexp : 0 < δ / 2 * (p : ℝ) - H.Ccard - D := by linarith
-  obtain ⟨C, hC0, hCN⟩ := H.moment δ hδ0 hδ (δ / 2) (by positivity) p
-  filter_upwards [hCN, H.card_le, eventually_ge_atTop 2, eventually_le_rpow C hexp,
+  have hexp : 0 < δ / 2 * (p : ℝ) - Ccard - D := by linarith
+  obtain ⟨C, hC0, hCN⟩ := hmom δ hδ0 hδ (δ / 2) (by positivity) p
+  filter_upwards [hCN, hcard_le, eventually_ge_atTop 2, eventually_le_rpow C hexp,
     eventually_le_rpow (2 : ℝ) (half_pos hδ0)] with N hmomN hcardN hN2 hCle hhalf
   have hNR : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
   have hN0 : (0 : ℝ) < N := by linarith
-  have hΘ0 := H.Θ_pos N
+  have hΘ0 := hΘ0 N
   set a : ℝ := (N : ℝ) ^ (δ / 2) with ha_def
   -- `N^δ - 1 ≥ N^{δ/2} ≥ 2`, so the improved level is positive
   have haa : (N : ℝ) ^ δ = a * a := by
@@ -564,13 +690,13 @@ theorem hev_of_cutHyp [IsProbabilityMeasure P] (H : CutHyp P J s t Θ)
     have : (0 : ℝ) < (N : ℝ) ^ (2 * δ) := Real.rpow_pos_of_pos hN0 _
     positivity
   -- Markov at a single net point
-  have hpoint : ∀ ws ∈ netFinset s t H.mesh N,
+  have hpoint : ∀ ws ∈ netFinset s t mesh N,
       P {ω | ((N : ℝ) ^ δ - 1) * Θ N <
           cutTrunc ((N : ℝ) ^ (2 * δ) * Θ N) (J N ws ω)}
-        ≤ ENNReal.ofReal ((N : ℝ) ^ (-D) / (N : ℝ) ^ H.Ccard) := by
+        ≤ ENNReal.ofReal ((N : ℝ) ^ (-D) / (N : ℝ) ^ Ccard) := by
     intro ws hws
-    have hint := integrable_cutTrunc_pow (P := P) hθ0 (fun ω => H.J_nonneg N ws ω)
-      (H.meas N ws) (2 * p)
+    have hint := integrable_cutTrunc_pow (P := P) hθ0 (fun ω => hJ0 N ws ω)
+      (hmeas N ws) (2 * p)
     refine (Gauss.meas_gt_le_of_moment P hlev0 hint (hmomN ws hws)).trans
       (ENNReal.ofReal_le_ofReal ?_)
     -- the exponent bookkeeping
@@ -581,33 +707,33 @@ theorem hev_of_cutHyp [IsProbabilityMeasure P] (H : CutHyp P J s t Θ)
         congr 1; push_cast; ring
       rw [← h2]
       exact pow_le_pow_left₀ (by positivity) hda (2 * p)
-    have hkey : C * (N : ℝ) ^ (δ / 2 * (p : ℝ)) ≤ (N : ℝ) ^ (δ * (p : ℝ) - D - H.Ccard) := by
+    have hkey : C * (N : ℝ) ^ (δ / 2 * (p : ℝ)) ≤ (N : ℝ) ^ (δ * (p : ℝ) - D - Ccard) := by
       calc C * (N : ℝ) ^ (δ / 2 * (p : ℝ))
-          ≤ (N : ℝ) ^ (δ / 2 * (p : ℝ) - H.Ccard - D) * (N : ℝ) ^ (δ / 2 * (p : ℝ)) := by
+          ≤ (N : ℝ) ^ (δ / 2 * (p : ℝ) - Ccard - D) * (N : ℝ) ^ (δ / 2 * (p : ℝ)) := by
             gcongr
-        _ = (N : ℝ) ^ (δ * (p : ℝ) - D - H.Ccard) := by
+        _ = (N : ℝ) ^ (δ * (p : ℝ) - D - Ccard) := by
             rw [← Real.rpow_add hN0]; congr 1; ring
     rw [div_le_iff₀ (by positivity)]
     have hexpand : (((N : ℝ) ^ δ - 1) * Θ N) ^ (2 * p)
         = ((N : ℝ) ^ δ - 1) ^ (2 * p) * Θ N ^ (2 * p) := mul_pow _ _ _
-    have hsplit : (N : ℝ) ^ (-D) / (N : ℝ) ^ H.Ccard = (N : ℝ) ^ (-D - H.Ccard) := by
+    have hsplit : (N : ℝ) ^ (-D) / (N : ℝ) ^ Ccard = (N : ℝ) ^ (-D - Ccard) := by
       rw [Real.rpow_sub hN0]
     rw [hexpand, hsplit]
-    have hpos : (0 : ℝ) < (N : ℝ) ^ (-D - H.Ccard) := Real.rpow_pos_of_pos hN0 _
+    have hpos : (0 : ℝ) < (N : ℝ) ^ (-D - Ccard) := Real.rpow_pos_of_pos hN0 _
     calc C * ((N : ℝ) ^ (δ / 2 * (p : ℝ)) * Θ N ^ (2 * p))
         = (C * (N : ℝ) ^ (δ / 2 * (p : ℝ))) * Θ N ^ (2 * p) := by ring
-      _ ≤ (N : ℝ) ^ (δ * (p : ℝ) - D - H.Ccard) * Θ N ^ (2 * p) := by
+      _ ≤ (N : ℝ) ^ (δ * (p : ℝ) - D - Ccard) * Θ N ^ (2 * p) := by
           exact mul_le_mul_of_nonneg_right hkey hQ.le
-      _ = (N : ℝ) ^ (-D - H.Ccard) * (N : ℝ) ^ (δ * (p : ℝ)) * Θ N ^ (2 * p) := by
+      _ = (N : ℝ) ^ (-D - Ccard) * (N : ℝ) ^ (δ * (p : ℝ)) * Θ N ^ (2 * p) := by
           rw [← Real.rpow_add hN0]; congr 2; ring
-      _ ≤ (N : ℝ) ^ (-D - H.Ccard) * ((N : ℝ) ^ δ - 1) ^ (2 * p) * Θ N ^ (2 * p) := by
+      _ ≤ (N : ℝ) ^ (-D - Ccard) * ((N : ℝ) ^ δ - 1) ^ (2 * p) * Θ N ^ (2 * p) := by
           gcongr
-      _ = (N : ℝ) ^ (-D - H.Ccard) * (((N : ℝ) ^ δ - 1) ^ (2 * p) * Θ N ^ (2 * p)) := by ring
+      _ = (N : ℝ) ^ (-D - Ccard) * (((N : ℝ) ^ δ - 1) ^ (2 * p) * Θ N ^ (2 * p)) := by ring
   -- the failure event sits inside the union of the Markov events
-  have hsub : ({ω | ∀ ws ∈ (↑(netFinset s t H.mesh N) : Set ℝ), ws ∈ Set.Icc (s N) (t N) →
+  have hsub : ({ω | ∀ ws ∈ (↑(netFinset s t mesh N) : Set ℝ), ws ∈ Set.Icc (s N) (t N) →
         (∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N) →
           J N ws ω ≤ ((N : ℝ) ^ δ - 1) * Θ N})ᶜ
-      ⊆ ⋃ ws ∈ netFinset s t H.mesh N,
+      ⊆ ⋃ ws ∈ netFinset s t mesh N,
           {ω | ((N : ℝ) ^ δ - 1) * Θ N <
             cutTrunc ((N : ℝ) ^ (2 * δ) * Θ N) (J N ws ω)} := by
     intro ω hω
@@ -621,16 +747,38 @@ theorem hev_of_cutHyp [IsProbabilityMeasure P] (H : CutHyp P J s t Θ)
   refine le_trans (measure_mono hsub) ?_
   refine le_trans (measure_biUnion_finset_le _ _) ?_
   refine le_trans (Finset.sum_le_card_nsmul _ _ _ hpoint) ?_
-  have hr0 : (0 : ℝ) ≤ (N : ℝ) ^ (-D) / (N : ℝ) ^ H.Ccard := by positivity
-  have hcard : ((netFinset s t H.mesh N).card : ℝ) ≤ (N : ℝ) ^ H.Ccard :=
-    (netFinset_card_le (H.window N) (H.mesh_pos N)).trans hcardN
+  have hr0 : (0 : ℝ) ≤ (N : ℝ) ^ (-D) / (N : ℝ) ^ Ccard := by positivity
+  have hcard : ((netFinset s t mesh N).card : ℝ) ≤ (N : ℝ) ^ Ccard :=
+    (netFinset_card_le (hst N) (hmesh N)).trans hcardN
   rw [nsmul_eq_mul, ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]
   refine ENNReal.ofReal_le_ofReal ?_
-  calc ((netFinset s t H.mesh N).card : ℝ) * ((N : ℝ) ^ (-D) / (N : ℝ) ^ H.Ccard)
-      ≤ (N : ℝ) ^ H.Ccard * ((N : ℝ) ^ (-D) / (N : ℝ) ^ H.Ccard) :=
+  calc ((netFinset s t mesh N).card : ℝ) * ((N : ℝ) ^ (-D) / (N : ℝ) ^ Ccard)
+      ≤ (N : ℝ) ^ Ccard * ((N : ℝ) ^ (-D) / (N : ℝ) ^ Ccard) :=
         mul_le_mul_of_nonneg_right hcard hr0
     _ = (N : ℝ) ^ (-D) := by
         field_simp
+
+
+/-- **The heart of the truncated route**, read off `CutHyp`: `hev_of_moment` with the
+deterministic inputs taken from the interface.  Statement unchanged (T232). -/
+theorem hev_of_cutHyp [IsProbabilityMeasure P] (H : CutHyp P J s t Θ)
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ : δ ≤ H.δ₀) :
+    HighProb P fun N => {ω | ∀ ws ∈ (↑(netFinset s t H.mesh N) : Set ℝ),
+      ws ∈ Set.Icc (s N) (t N) →
+      (∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N) →
+        J N ws ω ≤ ((N : ℝ) ^ δ - 1) * Θ N} :=
+  hev_of_moment H.window H.Θ_pos H.J_nonneg H.meas H.mesh_pos H.card_le H.moment hδ0 hδ
+
+/-- **The same `hev`, from the asymptotic interface `CutHypEv`** (T232).  Identical proof:
+`hev_of_moment` never looks at `modulus` or `mesh_fine`, so nothing is lost by weakening
+them. -/
+theorem hev_of_cutHypEv [IsProbabilityMeasure P] (H : CutHypEv P J s t Θ)
+    {δ : ℝ} (hδ0 : 0 < δ) (hδ : δ ≤ H.δ₀) :
+    HighProb P fun N => {ω | ∀ ws ∈ (↑(netFinset s t H.mesh N) : Set ℝ),
+      ws ∈ Set.Icc (s N) (t N) →
+      (∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N) →
+        J N ws ω ≤ ((N : ℝ) ^ δ - 1) * Θ N} :=
+  hev_of_moment H.window H.Θ_pos H.J_nonneg H.meas H.mesh_pos H.card_le H.moment hδ0 hδ
 
 end Hev
 
@@ -650,11 +798,12 @@ give the continuum improvement, and continuous induction
 `RBM.Step2MomentStep.bootPP_step_of_net` is the `Ξ^{(L-K)}_{·,2}` instance of the first half;
 it cannot be reused here because it is phrased for that functional, and
 `RBM1D/Hierarchy/Step2MomentStep.lean` is frozen. -/
-theorem stochDom_of_net [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ} {Θ : ℕ → ℝ}
+theorem stochDom_of_net_ev [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ} {Θ : ℕ → ℝ}
     {S : ℕ → Set ℝ} {δ₀ : ℝ} (hδ₀ : 0 < δ₀) (hst : ∀ N, s N ≤ t N)
     (hΘ0 : ∀ N, 0 < Θ N) (hΘ1 : ∀ᶠ N : ℕ in atTop, 1 ≤ Θ N)
-    (hcont : ∀ (N : ℕ) (ω : Ω), ContinuousOn (fun u => J N u ω) (Set.Icc (s N) (t N)))
-    (hclose : ∀ (N : ℕ) (ω : Ω), ∀ v ∈ Set.Icc (s N) (t N), ∃ ws ∈ S N,
+    (hcont : ∀ᶠ N : ℕ in atTop, ∀ ω : Ω,
+      ContinuousOn (fun u => J N u ω) (Set.Icc (s N) (t N)))
+    (hclose : ∀ᶠ N : ℕ in atTop, ∀ ω : Ω, ∀ v ∈ Set.Icc (s N) (t N), ∃ ws ∈ S N,
       ws ∈ Set.Icc (s N) v ∧ J N v ω ≤ J N ws ω + Θ N)
     (hev : ∀ δ, 0 < δ → δ ≤ δ₀ → HighProb P fun N => {ω | ∀ ws ∈ S N,
       ws ∈ Set.Icc (s N) (t N) →
@@ -667,7 +816,8 @@ theorem stochDom_of_net [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ
   have hδ : (0 : ℝ) < δ := lt_min (half_pos hτ) hδ₀
   have hδτ : δ ≤ τ / 2 := min_le_left _ _
   filter_upwards [hev δ hδ (min_le_right _ _) (D + 1) (by linarith),
-    hinit δ hδ (D + 1) (by linarith), hΘ1, eventually_ge_atTop 2] with N hA hB htgt hN2
+    hinit δ hδ (D + 1) (by linarith), hΘ1, eventually_ge_atTop 2, hcont, hclose] with
+    N hA hB htgt hN2 hcontN hcloseN
   have hN2' : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
   have hN1 : (1 : ℝ) < (N : ℝ) := by linarith
   have hT0 : 0 < Θ N := hΘ0 N
@@ -696,7 +846,7 @@ theorem stochDom_of_net [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ
         (∀ u ∈ Set.Icc (s N) v, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N) →
           J N v ω ≤ (N : ℝ) ^ δ * Θ N := by
       intro v hv hprefix
-      obtain ⟨ws, hwsS, hwsIcc, hwY⟩ := hclose N ω v hv
+      obtain ⟨ws, hwsS, hwsIcc, hwY⟩ := hcloseN ω v hv
       have hwsb : ws ∈ Set.Icc (s N) (t N) := ⟨hwsIcc.1, hwsIcc.2.trans hv.2⟩
       have hpre : ∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N :=
         fun u hu => hprefix u ⟨hu.1, hu.2.trans hwsIcc.2⟩
@@ -705,7 +855,7 @@ theorem stochDom_of_net [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ
         _ ≤ ((N : ℝ) ^ δ - 1) * Θ N + Θ N := by linarith
         _ = (N : ℝ) ^ δ * Θ N := by ring
     have hkey : ∀ v ∈ Set.Icc (s N) (t N), J N v ω ≤ (N : ℝ) ^ δ * Θ N := by
-      refine le_of_bootstrap_prefix (C := (N : ℝ) ^ (2 * δ) * Θ N) (hst N) (hcont N ω) ?_ ?_ ?_
+      refine le_of_bootstrap_prefix (C := (N : ℝ) ^ (2 * δ) * Θ N) (hst N) (hcontN ω) ?_ ?_ ?_
       · exact mul_lt_mul_of_pos_right
           ((Real.rpow_lt_rpow_left_iff hN1).2 (by linarith)) hT0
       · calc J N (s N) ω ≤ (N : ℝ) ^ δ * 1 := hs2
@@ -732,6 +882,25 @@ theorem stochDom_of_net [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ
 
 variable {B : Band Ω} {E : ℝ}
 
+
+/-- **The pathwise bootstrap with `hcont`/`hclose` for every `N`** — `stochDom_of_net_ev`
+specialized.  Statement unchanged (T232). -/
+theorem stochDom_of_net [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ} {Θ : ℕ → ℝ}
+    {S : ℕ → Set ℝ} {δ₀ : ℝ} (hδ₀ : 0 < δ₀) (hst : ∀ N, s N ≤ t N)
+    (hΘ0 : ∀ N, 0 < Θ N) (hΘ1 : ∀ᶠ N : ℕ in atTop, 1 ≤ Θ N)
+    (hcont : ∀ (N : ℕ) (ω : Ω), ContinuousOn (fun u => J N u ω) (Set.Icc (s N) (t N)))
+    (hclose : ∀ (N : ℕ) (ω : Ω), ∀ v ∈ Set.Icc (s N) (t N), ∃ ws ∈ S N,
+      ws ∈ Set.Icc (s N) v ∧ J N v ω ≤ J N ws ω + Θ N)
+    (hev : ∀ δ, 0 < δ → δ ≤ δ₀ → HighProb P fun N => {ω | ∀ ws ∈ S N,
+      ws ∈ Set.Icc (s N) (t N) →
+      (∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ (N : ℝ) ^ (2 * δ) * Θ N) →
+        J N ws ω ≤ ((N : ℝ) ^ δ - 1) * Θ N})
+    (hinit : StochDom P (fun N (_ : Unit) ω => J N (s N) ω) (fun _ _ _ => (1 : ℝ))) :
+    StochDom P (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) :=
+  stochDom_of_net_ev hδ₀ hst hΘ0 hΘ1 (Filter.Eventually.of_forall hcont)
+    (Filter.Eventually.of_forall hclose) hev hinit
+
+
 /-- **`J ≺ Θ` from the truncated interface**: `stochDom_of_net` with every deterministic
 input read off `CutHyp`.  The only hypotheses left are `Θ ≥ 1` (so that the initial `≺ 1`
 implies `≺ Θ`) and the initial bound at `u = s_N`, which is (2.68)/(2.69). -/
@@ -741,6 +910,17 @@ theorem stochDom_of_cutHyp [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → 
     StochDom P (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) :=
   stochDom_of_net H.δ₀_pos H.window H.Θ_pos hΘ1 H.continuousOn H.hclose
     (fun _δ hδ0 hδ => hev_of_cutHyp H hδ0 hδ) hinit
+
+/-- **`J ≺ Θ` from the asymptotic interface `CutHypEv`** (T232) — the conclusion of
+`stochDom_of_cutHyp`, word for word, with `modulus`/`mesh_fine` only asymptotic.  The two
+fields enter exclusively through `stochDom_of_net_ev`'s `hcont`/`hclose`, both of which that
+theorem consumes inside its own `filter_upwards`. -/
+theorem stochDom_of_cutHypEv [IsProbabilityMeasure P] {J : ℕ → ℝ → Ω → ℝ} {Θ : ℕ → ℝ}
+    (H : CutHypEv P J s t Θ) (hΘ1 : ∀ᶠ N : ℕ in atTop, 1 ≤ Θ N)
+    (hinit : StochDom P (fun N (_ : Unit) ω => J N (s N) ω) (fun _ _ _ => (1 : ℝ))) :
+    StochDom P (fun N (u : TimeIcc s t N) ω => J N (u : ℝ) ω) (fun N _ _ => Θ N) :=
+  stochDom_of_net_ev H.δ₀_pos H.window H.Θ_pos hΘ1 H.continuousOn_ev H.hclose_ev
+    (fun _δ hδ0 hδ => hev_of_cutHypEv H hδ0 hδ) hinit
 
 /-- **`RBM.Step2PP.BootPP` from the truncated interface** — the `(+,+)` bootstrap structure,
 whose only non-routine field `step` is discharged by `hev_of_cutHyp` through T132c's
@@ -801,6 +981,46 @@ theorem jS_stochDom_cut {X : Sample B} {D : ℝ} (Hy : MomentHypCut X E s t D) (
     StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N (u : ℝ) ω)
       (fun N u _ => (etaT E (s N) / etaT E (u : ℝ)) ^ 4) := by
   refine StochDom.of_subset (stochDom_jSnorm_cut Hy) fun τ hτ => ⟨τ, hτ, ?_⟩
+  refine Filter.Eventually.of_forall fun N ω hω => ?_
+  obtain ⟨u, hu⟩ := hω
+  refine ⟨u, ?_⟩
+  have hs1 : s N < 1 := (hst N).trans_lt (ht1 N)
+  have hR : 0 < Step2Moment.ratR E s N (u : ℝ) ^ 4 :=
+    pow_pos (Step2Moment.ratR_pos hE hs1 (u.2.2.trans_lt (ht1 N))) 4
+  show (N : ℝ) ^ τ * 1 < Step2.jS X E D N (u : ℝ) ω / Step2Moment.ratR E s N (u : ℝ) ^ 4
+  rw [mul_one, lt_div_iff₀ hR]
+  exact hu
+
+/-- **`MomentHypCut` with the two deterministic fields asymptotic** (T232).  Field for field
+`MomentHypCut`, with `CutHyp` replaced by `CutHypEv`. -/
+structure MomentHypCutEv (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D : ℝ) where
+  /-- The truncated moment Duhamel for the normalized `J*_{u,D}`, with threshold `1`. -/
+  cut : CutHypEv B.P (fun N u ω => Step2Moment.jSnorm X E D s N u ω) s t (fun _ => 1)
+  /-- **(2.69)**: the initial bound `J*_{s,D} ≺ 1`. -/
+  init : StochDom B.P (fun N (_ : Unit) ω => Step2Moment.jSnorm X E D s N (s N) ω)
+    (fun _ _ _ => (1 : ℝ))
+
+/-- `MomentHypCut` is `MomentHypCutEv`. -/
+noncomputable def MomentHypCutEv.of_momentHypCut {X : Sample B} {D : ℝ}
+    (Hy : MomentHypCut X E s t D) :
+    MomentHypCutEv X E s t D where
+  cut := CutHypEv.of_cutHyp Hy.cut
+  init := Hy.init
+
+/-- `stochDom_jSnorm_cut` from the asymptotic interface. -/
+theorem stochDom_jSnorm_cutEv {X : Sample B} {D : ℝ} (Hy : MomentHypCutEv X E s t D) :
+    StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2Moment.jSnorm X E D s N (u : ℝ) ω)
+      (fun _ _ _ => (1 : ℝ)) := by
+  have := B.isProbabilityMeasure
+  exact stochDom_of_cutHypEv Hy.cut (Filter.Eventually.of_forall fun _ => le_rfl) Hy.init
+
+/-- **(5.47)** from the asymptotic interface — the conclusion of `jS_stochDom_cut`, word for
+word. -/
+theorem jS_stochDom_cutEv {X : Sample B} {D : ℝ} (Hy : MomentHypCutEv X E s t D) (hE : |E| < 2)
+    (hst : ∀ N, s N ≤ t N) (ht1 : ∀ N, t N < 1) :
+    StochDom B.P (fun N (u : TimeIcc s t N) ω => Step2.jS X E D N (u : ℝ) ω)
+      (fun N u _ => (etaT E (s N) / etaT E (u : ℝ)) ^ 4) := by
+  refine StochDom.of_subset (stochDom_jSnorm_cutEv Hy) fun τ hτ => ⟨τ, hτ, ?_⟩
   refine Filter.Eventually.of_forall fun N ω hω => ?_
   obtain ⟨u, hu⟩ := hω
   refine ⟨u, ?_⟩
@@ -963,6 +1183,170 @@ theorem sat_stochDom_of_cutHyp (P : Measure Ω) [IsProbabilityMeasure P] :
       (fun N (_ : TimeIcc (fun _ => (0 : ℝ)) (fun _ => (1 : ℝ)) N) (_ : Ω) => (1 : ℝ))
       (fun _ _ _ => (1 : ℝ)) :=
   stochDom_of_cutHyp (satCutHyp P) (Filter.Eventually.of_forall fun _ => le_rfl) (sat_init P)
+
+/-! #### T232: the asymptotic interface `CutHypEv` is **strictly** weaker
+
+`satCutHyp` above has `J ≡ Θ` constant in time, so it feels nothing of the `N = 0` clause of
+`CutHyp.modulus`.  The witness below is genuinely time-dependent — `J_u = 2u⁺` on the window
+`[0, 1]`, at the control `Θ ≡ 1` — and for it the `∀ N` field is **unsatisfiable for every
+choice of the exponents** (`sat_modulus_not_forall`, `sat_no_cutHyp`) while the `∀ᶠ N` field
+holds at the flow's own `Kmod = 1`, `γ = 1/2` (`satCutHypEv`).  So the weakening buys
+something, and no small-`N` special case is needed anywhere in `satCutHypEv`. -/
+
+/-- The witness's mesh, at the flow's own scaling `m_N ≍ N²`. -/
+noncomputable def satMeshEv (N : ℕ) : ℝ := ((N : ℝ) + 1) ^ (2 : ℝ)
+
+theorem satMeshEv_pos (N : ℕ) : 0 < satMeshEv N := Real.rpow_pos_of_pos (by positivity) _
+
+/-- `mesh_fine` for `satMeshEv` at `Kmod = 1`, `γ = 1/2`, `Θ ≡ 1`: it reduces to
+`N/(N+1) ≤ 1`.  It happens to hold for *every* `N` — the small-`N` obstruction of T232 is in
+`modulus`, not here. -/
+theorem satMeshEv_fine (N : ℕ) :
+    (N : ℝ) ^ (1 : ℝ) * (1 / satMeshEv N) ^ ((1 : ℝ) / 2) ≤ 1 := by
+  have ha : (0 : ℝ) < (N : ℝ) + 1 := by positivity
+  have h1 : (1 / ((N : ℝ) + 1) ^ (2 : ℝ)) = ((N : ℝ) + 1) ^ (-(2 : ℝ)) := by
+    rw [Real.rpow_neg ha.le, one_div]
+  have h2 : (-(2 : ℝ)) * ((1 : ℝ) / 2) = -1 := by norm_num
+  simp only [satMeshEv]
+  rw [h1, ← Real.rpow_mul ha.le, h2, Real.rpow_neg ha.le, Real.rpow_one, Real.rpow_one,
+    ← div_eq_mul_inv, div_le_one ha]
+  linarith
+
+/-- **`CutHyp.modulus` is unsatisfiable for `J_u = 2u⁺` on `[0, 1]`, whatever `Kmod` and `γ`
+are.**  At `N = 0` the right-hand side is `(0 : ℝ)^Kmod · 1^γ ≤ 1` (it is `0` for `Kmod ≠ 0`
+and `1` for `Kmod = 0`), while at `v = 1`, `w = 0` the left-hand side is `2`.  This is the
+`∀ N` clause that T232 removes. -/
+theorem sat_modulus_not_forall (Kmod γ : ℝ) :
+    ¬ (∀ (N : ℕ), ∀ v ∈ Set.Icc (0 : ℝ) 1, ∀ w ∈ Set.Icc (0 : ℝ) 1,
+        |2 * max v 0 - 2 * max w 0| ≤ (N : ℝ) ^ Kmod * |v - w| ^ γ) := by
+  intro h
+  have h0 := h 0 1 ⟨zero_le_one, le_rfl⟩ 0 ⟨le_rfl, zero_le_one⟩
+  have hz : ((0 : ℕ) : ℝ) ^ Kmod ≤ 1 := by
+    rcases eq_or_ne Kmod 0 with rfl | hK
+    · norm_num
+    · rw [Nat.cast_zero, Real.zero_rpow hK]; norm_num
+  rw [Nat.cast_zero] at h0 hz
+  have h1 : |(1 : ℝ) - 0| ^ γ = 1 := by norm_num [Real.one_rpow]
+  rw [h1, mul_one] at h0
+  rw [show max (1 : ℝ) 0 = 1 by norm_num, show max (0 : ℝ) 0 = 0 by norm_num] at h0
+  norm_num at h0
+  linarith
+
+/-- **No `CutHyp` at all carries `J_u = 2u⁺` on `[0, 1]` at `Θ ≡ 1`** — the structural form of
+`sat_modulus_not_forall`.  Compare `satCutHypEv`, which does. -/
+theorem sat_no_cutHyp (P : Measure Ω) [Nonempty Ω] :
+    ¬ Nonempty (CutHyp P (fun _ u (_ : Ω) => 2 * max u 0) (fun _ => 0) (fun _ => 1)
+      (fun _ => 1)) := by
+  rintro ⟨H⟩
+  exact sat_modulus_not_forall H.Kmod H.γ fun N v hv w hw =>
+    H.modulus N (Classical.arbitrary Ω) v hv w hw
+
+/-- **A compiled `CutHypEv` at the critical scale, with a genuinely time-dependent `J`.**
+
+`J_u = 2u⁺` on the window `[0, 1]`, control `Θ ≡ 1`, mesh `m_N = (N+1)²`, `Kmod = 1`,
+`γ = 1/2`, `Ccard = 3`.  `mesh_fine` (net fine) and `card_le` (net coarse) are met by the
+*same* mesh, as in `sat_mesh_card`.  **No field is patched at small `N`**: `modulus` is the
+only one that could not hold there, and it is now `∀ᶠ N` — which is the whole point of
+T232 (`sat_no_cutHyp`). -/
+noncomputable def satCutHypEv (P : Measure Ω) [IsProbabilityMeasure P] :
+    CutHypEv P (fun _ u _ => 2 * max u 0) (fun _ => 0) (fun _ => 1) (fun _ => 1) where
+  window := fun _ => zero_le_one
+  δ₀ := 1
+  δ₀_pos := one_pos
+  Θ_pos := fun _ => one_pos
+  J_nonneg := fun _ u _ => by positivity
+  meas := fun _ _ => aestronglyMeasurable_const
+  mesh := satMeshEv
+  mesh_pos := satMeshEv_pos
+  Kmod := 1
+  γ := 1 / 2
+  γ_pos := by norm_num
+  modulus := by
+    filter_upwards [eventually_ge_atTop 2] with N hN _ v hv w hw
+    have hN1 : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+    rw [max_eq_left hv.1, max_eq_left hw.1, Real.rpow_one]
+    have hx0 : (0 : ℝ) ≤ |v - w| := abs_nonneg _
+    have hx1 : |v - w| ≤ 1 := by
+      rw [abs_le]; constructor <;> [linarith [hv.1, hw.2]; linarith [hv.2, hw.1]]
+    have h3 : |2 * v - 2 * w| = 2 * |v - w| := by
+      rw [show 2 * v - 2 * w = 2 * (v - w) by ring, abs_mul]; norm_num
+    rw [h3]
+    rcases eq_or_lt_of_le hx0 with h | h
+    · have hvw : v = w := by
+        have := abs_eq_zero.1 h.symm; linarith
+      subst hvw
+      simp
+    · have h1 : |v - w| ^ (1 : ℝ) ≤ |v - w| ^ ((1 : ℝ) / 2) :=
+        Real.rpow_le_rpow_of_exponent_ge h hx1 (by norm_num)
+      rw [Real.rpow_one] at h1
+      have h2 : (0 : ℝ) ≤ |v - w| ^ ((1 : ℝ) / 2) := Real.rpow_nonneg hx0 _
+      nlinarith
+  mesh_fine := Filter.Eventually.of_forall satMeshEv_fine
+  Ccard := 3
+  card_le := by
+    filter_upwards [eventually_ge_atTop 4] with N hN
+    have hNR : (4 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+    have ha : (0 : ℝ) < (N : ℝ) + 1 := by positivity
+    have h2 : ((N : ℝ) + 1) ^ (2 : ℝ) = ((N : ℝ) + 1) ^ (2 : ℕ) := by
+      rw [← Real.rpow_natCast ((N : ℝ) + 1) 2]; norm_num
+    have h3 : (N : ℝ) ^ (3 : ℝ) = (N : ℝ) ^ (3 : ℕ) := by
+      rw [← Real.rpow_natCast (N : ℝ) 3]; norm_num
+    simp only [satMeshEv]
+    rw [h2, h3]
+    nlinarith
+  moment := by
+    intro δ hδ0 _ ε _ p
+    refine ⟨2 ^ (2 * p) + 1, by positivity, ?_⟩
+    filter_upwards [eventually_ge_atTop 1,
+      eventually_le_rpow (2 : ℝ) (by positivity : (0 : ℝ) < 2 * δ)] with N hN hN2 ws hws
+    have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+    have hwsIcc : ws ∈ Set.Icc (0 : ℝ) 1 :=
+      netFinset_subset_Icc (by norm_num) (satMeshEv_pos N) ws hws
+    have hmax : max ws 0 = ws := max_eq_left hwsIcc.1
+    have hlev : 2 * max ws 0 ≤ (N : ℝ) ^ (2 * δ) * 1 := by
+      rw [hmax, mul_one]; linarith [hwsIcc.2]
+    have hlev0 : (0 : ℝ) < (N : ℝ) ^ (2 * δ) * 1 := by
+      rw [mul_one]; linarith
+    rw [cutTrunc_eq_self hlev0 hlev, hmax]
+    have hεp : (1 : ℝ) ≤ (N : ℝ) ^ (ε * p) := Real.one_le_rpow hN1 (by positivity)
+    have hb : |2 * ws| ^ (2 * p) ≤ 2 ^ (2 * p) := by
+      refine pow_le_pow_left₀ (abs_nonneg _) ?_ _
+      rw [abs_of_nonneg (by linarith [hwsIcc.1])]
+      linarith [hwsIcc.2]
+    rw [MeasureTheory.integral_const, probReal_univ, one_smul]
+    simp only [one_pow, mul_one]
+    nlinarith [pow_pos (two_pos (α := ℝ)) (2 * p)]
+
+/-- The initial bound for `satCutHypEv`: `J_0 = 0 ≺ 1`. -/
+theorem sat_init_ev (P : Measure Ω) :
+    StochDom P (fun (_ : ℕ) (_ : Unit) (_ : Ω) => 2 * max (0 : ℝ) 0)
+      (fun _ _ _ => (1 : ℝ)) := by
+  intro τ hτ D hD
+  filter_upwards [eventually_ge_atTop 1] with N hN
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hsub : badSet (fun (_ : ℕ) (_ : Unit) (_ : Ω) => 2 * max (0 : ℝ) 0)
+      (fun _ _ _ => (1 : ℝ)) τ N ⊆ (∅ : Set Ω) := by
+    rintro ω ⟨_, hu⟩
+    refine absurd hu (not_lt.2 ?_)
+    have : (1 : ℝ) ≤ (N : ℝ) ^ τ := Real.one_le_rpow hN1 hτ.le
+    simp only [max_self, mul_zero]
+    linarith
+  calc P (badSet (fun (_ : ℕ) (_ : Unit) (_ : Ω) => 2 * max (0 : ℝ) 0)
+        (fun _ _ _ => (1 : ℝ)) τ N)
+      ≤ P (∅ : Set Ω) := measure_mono hsub
+    _ = 0 := measure_empty
+    _ ≤ _ := bot_le
+
+/-- **The asymptotic chain is non-vacuous end to end**: `satCutHypEv` feeds
+`stochDom_of_cutHypEv` and a `≺` over a non-degenerate window comes out — for a `J` that no
+`CutHyp` can carry (`sat_no_cutHyp`). -/
+theorem sat_stochDom_of_cutHypEv (P : Measure Ω) [IsProbabilityMeasure P] :
+    StochDom P
+      (fun N (u : TimeIcc (fun _ => (0 : ℝ)) (fun _ => (1 : ℝ)) N) (_ : Ω) =>
+        2 * max (u : ℝ) 0)
+      (fun _ _ _ => (1 : ℝ)) :=
+  stochDom_of_cutHypEv (satCutHypEv P) (Filter.Eventually.of_forall fun _ => le_rfl)
+    (sat_init_ev P)
 
 end Sat
 

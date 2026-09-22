@@ -386,7 +386,14 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 side) gives the decay of `K` at every radius `ℓ > 0`, with the gap `δ = 1 - v`; so the
 hypothesis `hKd` of `RBM.unifDetDom_driftEG` — the only deterministic decay demand of this
 file — is not vacuous.  Turning this into the `(ℓ_v N^τ, N^{-D})` form that the flow needs is
-the quantitative part of Lemma 5.9, which lives with `RBM.DriftBound.DriftInputs`. -/
+the quantitative part of Lemma 5.9, which lives with `RBM.DriftBound.DriftInputs`.
+
+**⚠ T234: that last sentence made the conversion sound like open mathematics; it is not.**
+`RBM.cor35Rate δ = c₀ √δ / 4` (`RBM1D/Loop/Cor35.lean:366`) is *square-root* in the gap, so the
+decay length of `K` is `(1-v)^{-1/2} = ℓ̂_v`, and at the radius `ℓ_v N^τ` the exponent is
+`c₀ N^τ / 4` — super-polynomially small, with no `D log N` threshold to beat.
+`RBM.loopDecay_Kval_quant` (`RBM1D/Gauss/Step6EnvWindow.lean`, §9) is `hKd` proved
+**unconditionally and at every loop length** on that basis; use it rather than this witness. -/
 theorem exists_loopDecay_Kval (B : Band Ω) {E : ℝ} (hE : |E| ≤ 2) (N : ℕ) {v : ℝ}
     (hv0 : 0 ≤ v) (hv1 : v < 1) {ℓ : ℝ} (hℓ : 0 < ℓ) :
     ∃ δ : ℝ, 0 ≤ δ ∧ Decay.LoopDecay (B.L N) 3 ℓ δ (B.Kval E N v) := by

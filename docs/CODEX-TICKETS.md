@@ -178,3 +178,19 @@ T280e 停下的两条（`first_pass_D20_obstructions`）正是 §9(2)、§9(7)�
 
 T277 交出 `APrimeQVEndpoint.sqrt_evolvedQV_le_endpoint`（演化版 (5.42)，逐 `(u,ω)`，端点指示 `6ℓ*_v`、`(η_u/η_v)⁴`、锐 `(J*)²` 远场 + `(J*)³` 项 + `256e³W^{−D}T` 泄漏；确定性条件 `A_u ≥ 1`、`log W ≥ (4D)²`，见证 `endpoint_scale_witness`），并由 `quadVar_ukerObsT_eq_evolved_loopObs` 认同为 T275 `qvRateEvolved` 所界之量。
 **T280e 重跑时加一步**：由它在事件 `E`（Step 1 事件，逐点前提在那里成立）上交割 T275 的 `EvolvedQVBound … E … Qev`，`Qev` 取端点界的平方；再按 T269 的 `qvShape` 归一化（`(T_t R⁴)²`）出 `QBd` 形的预算——T269 的 `div_le_QBd_of_le_qvShape` 是对未演化率写的，**另写演化版**，不要硬套。两个确定性条件 `A_u ≥ 1`、`log W ≥ (4D)²` 由 (2.72)/`Cond272Reg` 与 `D ≥ 60`、`W ≥ N^{1/2}` 最终成立给出。
+
+## §14 T280d、T278 的下一步（Cowork 09:35）
+
+**T280d（`δ₀ = c/11` 已证，四行 margin 全过）→ 余下的 `QBd` 各项有现成供给者，出 `4R⁴G ≺ 1` 与 `fitLhs ≺ 1`**：
+* 近场 `cNear2·r⁵` 项：**T273 已证** `integral_inv_sqrt_mul_sqrt_kappa_qHatNear_le` / `qHatNear` 的积分界 `∫_s^t Q̂^{near} ≤ (Im m)⁻¹(η_t/η_s)⁴`（`APrimeTimeInt.lean` §(e)），`cNear2 = W^{o(1)}`（`Lemma57.cNear2`，`log` 的幂）。
+* 二次远场 `A_u·√Smax`：**T273 的 `sMax_le`**（`EarlyQVRateEv.lean` §8）给 `Smax ≤ K′·(ℓ_u/ℓ_s)³A_u^{−3}`，所以 `A_u√Smax ≲ r^{3/2}A_u^{−1/2}`——与 `StepSide''.β_le` 同一行 `(4, 11/2)`，已在你的表里。
+* `ρfar`：它就是 `h564` 的水平，由 (2.73) 在 `n = 6` 给 `ρ ≲ r⁵A_u^{−3}`（T267 `h564` 由 `h273` 导出），比三次远场小。
+* `W^{−D}` 尾项：`D` 在 `δ, p` 之后取，`W ≥ N^{1/2}`（`Band.bandwidth`）。
+* `η_u^{−1}`、`T_{u}/T_t`、时间积分、`cWt³`：用 T268 的时间积分（`integral_inv_sqrt_mul_sqrt_kappa_le`，首格走 `integral_early_le_budget`）与 `(5.32)` 的 `T_u ≤ T_t`（`tailT_sub_le`）。
+可写 `Gauss/APrimeExponents.lean`（续）。若某项的 `N` 幂在 `δ₀ = c/11` 下仍不够，编译出该行并停下。
+
+**T278（`'''` 生产者与 `∫η⁻¹ ≤ log N` 已证）→ `Qop` 投影漂移的 `StochDom`，不许用 `hgood_QF`**：
+* ⚠ `SumZeroDyn.hgood_QF` 吃 `SumZeroDyn.Hierarchy`，而 **D16 规定不引用它**（其 `mart :=` 残差是 fiat）。它要的 `Lemma510.F_decay` 也挂在那个结构上。
+* 走确定性算子界：`norm_Qop_apply_le`（`Hierarchy/SumZero.lean:112`）给 `‖Qop F‖ ≤ ‖F‖ + ‖Psum F‖·‖ϑ_u‖`；`norm_vartheta_le`（`:99`）在实 `u ∈ [0,1)` 给 `‖ϑ_u‖ ≤ ∣1−u∣ⁿ(1−u)^{−n} = 1`。所以只剩 `‖Psum(H.F)_x‖`。
+* **第 0 步（只读）**：`Psum` 是对一个指标求和（`L` 项）。先看它有没有**不付 `L` 的**界：(a) Ward 恒等式（Lemma 3.6 / `Hierarchy/Ward*`）把 `Σ_a` 环化成 `η⁻¹·低阶环`；(b) 漂移的快衰减 `FastDecayFlow.fastDecay_driftF_window`（`:453`）、`DriftDef.fastDecay_driftF`（`:430`）把求和截在 `ℓ_u N^τ` 内——这会付 `ℓ_u N^τ`，要核它能否被 `η_u`/`scale` 的幂抵消（论文 (5.99)–(5.103) 就是做这件事）。报告里写清哪条路不付正幂；若两条都付，精确写出多出的因子并停下。
+* 那条 `ψ` 行的额外加性误差用 `ζ`（`'''` 生产者有 `ζ` 槽）或 T280c 的 `weighted_norm_le_of_event` 付。

@@ -645,7 +645,16 @@ Main results:
 * `RBM.Gauss.sqrt_quadVar_softW_pow_le` — the same for the weight `W = χ(J̃/Θ)^{2p}`, with
   `|χ'| ≤ 15/8` (`RBM.Cutoff.abs_cutChiD_le`); at `Y = 0` the weight is locally constant `1`
   and both sides vanish, so no hypothesis excludes the configuration `L = K`.
+* `RBM.Gauss.sqrt_quadVar_norm_pow_le` — the moment factor's own rate,
+  `√(quadVar |Ψ|^{2p}) ≤ 2p‖Ψ‖^{2p-1}√(quadVar Ψ)`.
+* `RBM.Gauss.quadVar_softW_pow_eq_zero_of_outside_band` — the `1_{S′}` of (S5): off the
+  transition band `Θ ≤ J̃ ≤ 2Θ` the weight's rate is exactly `0`, because the chain rule's
+  factor is `χ'(J̃/Θ)`.
 * `RBM.Gauss.sum_gvar_crossTerm_le` — **(S5)**, the cross term's pointwise bound.
+* `RBM.Gauss.satLk`, `RBM.Gauss.exists_bddC2C_satLk`,
+  `RBM.Gauss.sat_sum_gvar_crossTerm_le` — a compiled satisfiability witness: every hypothesis
+  of (S5) holds simultaneously on `RBM.Gauss.Dims.exampleGrow` at the genuine two-edge `(+,−)`
+  loop family, for **every** `r, p ≥ 1`, every `Θ > 0` and every `M` — including `L = K`.
 
 **Both gradients are taken in the same matrix variable `M`.**  Every statement below is a
 pointwise inequality at one `M : Matrix (d.Idx N) (d.Idx N) ℂ`, and `coordD1 d N · M q` is
@@ -1011,6 +1020,276 @@ theorem sqrt_quadVar_softMax_le (S : Finset ι)
 
 end S2
 
+section S5
+
+variable {d : Dims} {N : ℕ} {ι : Type*}
+
+/-- A vanishing differential makes the quadratic-variation rate vanish. -/
+theorem quadVar_eq_zero_of_fderiv_eq_zero {F : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ}
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ} (h : fderiv ℝ F M = 0) : quadVar d N F M = 0 := by
+  rw [quadVar]
+  refine Finset.sum_eq_zero fun q _ => ?_
+  have hz : coordD1 d N F M q = 0 := by
+    change fderiv ℝ F M (Bmat d N q.1 q.2.1 q.2.2) = 0
+    rw [h]; rfl
+  rw [hz]; simp
+
+/-- `‖Ψ‖^{2p}` is `C¹` whenever `Ψ` is. -/
+theorem contDiff_norm_pow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Ψ : E → ℂ} (hΨ : ContDiff ℝ 1 Ψ) (p : ℕ) :
+    ContDiff ℝ 1 (fun M => ‖Ψ M‖ ^ (2 * p)) := by
+  have h := contDiff_ratio_pow hΨ 1 p
+  simpa using h
+
+/-- The moment factor's quadratic-variation rate. -/
+theorem sqrt_quadVar_norm_pow_le {Ψ : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ}
+    (hΨ : ContDiff ℝ 1 Ψ) {p : ℕ} (hp : 1 ≤ p) (M : Matrix (d.Idx N) (d.Idx N) ℂ) :
+    √(quadVar d N (fun M => ((‖Ψ M‖ ^ (2 * p) : ℝ) : ℂ)) M)
+      ≤ ((2 * p : ℕ) : ℝ) * ‖Ψ M‖ ^ (2 * p - 1) * √(quadVar d N Ψ M) := by
+  have hd : DifferentiableAt ℝ (fun M => ‖Ψ M‖ ^ (2 * p)) M :=
+    (contDiff_norm_pow hΨ p).differentiable one_ne_zero M
+  refine sqrt_quadVar_le_of_apply_le (by positivity) fun q _ => ?_
+  rw [norm_coordD1_ofReal hd q]
+  exact abs_fderiv_norm_pow_apply_le hΨ hp M _
+
+section Weight
+
+variable {f : ι → Matrix (d.Idx N) (d.Idx N) ℂ → ℂ} {c : ι → ℝ} {r p : ℕ} {Θ K : ℝ}
+
+/-- Where the soft maximum vanishes the weight is locally constant `1`, so its differential
+vanishes: the configuration `L = K` (`Y = 0`) is **not** excluded by any hypothesis below. -/
+theorem fderiv_softW_pow_eq_zero_of_sum_eq_zero (S : Finset ι) (hΘ : 0 < Θ) (hr : 1 ≤ r)
+    (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i))
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ}
+    (hY : ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r) = 0) (p : ℕ) :
+    fderiv ℝ (fun M => (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ)) M = 0 := by
+  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  have hn0 : (0 : ℝ) < 2 * (r : ℝ) := by linarith
+  set a : ℝ := (1 : ℝ) / (2 * (r : ℝ)) with ha
+  have ha0 : (0 : ℝ) < a := by rw [ha]; positivity
+  set Y : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ :=
+    fun M => ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r) with hYdef
+  set σm : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ :=
+    fun M => softMax r S (fun i => ‖f i M‖ / c i) with hσdef
+  have hYc : ContDiff ℝ 1 Y :=
+    ContDiff.sum (fun i hi => contDiff_ratio_pow (hf i hi) (c i) r)
+  have hYM : Y M = 0 := hY
+  have hσeq : σm M = Y M ^ a := rfl
+  have hσ0 : σm M = 0 := by rw [hσeq, hYM, Real.zero_rpow ha0.ne']
+  have hcont : ContinuousAt σm M := by
+    have h1 : ContinuousAt Y M := hYc.continuous.continuousAt
+    have h2 : ContinuousAt (fun y : ℝ => y ^ a) (Y M) :=
+      Real.continuousAt_rpow_const _ _ (Or.inr ha0.le)
+    exact h2.comp h1
+  have hnb : ∀ᶠ M' in nhds M, σm M' < Θ :=
+    hcont (Iio_mem_nhds (by rw [hσ0]; exact hΘ))
+  have heq : (fun M' => (((softW r S (fun i => ‖f i M'‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ))
+      =ᶠ[nhds M] fun _ => (1 : ℂ) := by
+    filter_upwards [hnb] with M' hM'
+    rw [softW, cutChi_eq_one ((div_le_one hΘ).2 hM'.le)]
+    simp
+  rw [heq.fderiv_eq]
+  simp
+
+/-- **⭐ The weight's quadratic-variation rate**, from (S2) and `|χ'| ≤ 15/8`. -/
+theorem sqrt_quadVar_softW_pow_le (S : Finset ι) (hr : 1 ≤ r) (hp : 1 ≤ p) (hΘ : 0 < Θ)
+    (hK0 : 0 ≤ K) (hc : ∀ i ∈ S, 0 < c i) (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i))
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ)
+    (hK : ∀ i ∈ S, √(quadVar d N (f i) M) / c i ≤ K) :
+    √(quadVar d N
+        (fun M => (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ)) M)
+      ≤ ((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1)
+          * ((15 / 8) / Θ) * ((S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) * K) := by
+  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  have hn0 : (0 : ℝ) < 2 * (r : ℝ) := by linarith
+  set a : ℝ := (1 : ℝ) / (2 * (r : ℝ)) with ha
+  have ha0 : (0 : ℝ) < a := by rw [ha]; positivity
+  set Y : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ :=
+    fun M => ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r) with hYdef
+  set σm : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ :=
+    fun M => softMax r S (fun i => ‖f i M‖ / c i) with hσdef
+  have hcard : (0 : ℝ) ≤ (S.card : ℝ) ^ a := Real.rpow_nonneg (Nat.cast_nonneg _) _
+  have hrhs0 : (0 : ℝ) ≤ ((2 * p : ℕ) : ℝ) *
+      (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) * ((15 / 8) / Θ) *
+      ((S.card : ℝ) ^ a * K) := by
+    have h1 : (0 : ℝ) ≤ softW r S (fun i => ‖f i M‖ / c i) Θ := softW_nonneg _ _ _ _
+    have h2 : (0 : ℝ) ≤ (15 / 8) / Θ := by positivity
+    positivity
+  rcases eq_or_lt_of_le (sum_even_pow_nonneg S (fun i => ‖f i M‖ / c i) r) with hY0 | hY
+  · -- `Y M = 0`: the weight is locally constant `1`.
+    have hzero := fderiv_softW_pow_eq_zero_of_sum_eq_zero S hΘ hr hf hY0.symm p
+    rw [quadVar_eq_zero_of_fderiv_eq_zero hzero, Real.sqrt_zero]
+    exact hrhs0
+  · -- `Y M > 0`: the chain rule.
+    have hYc : ContDiff ℝ 1 Y :=
+      ContDiff.sum (fun i hi => contDiff_ratio_pow (hf i hi) (c i) r)
+    have hd : HasFDerivAt Y (fderiv ℝ Y M) M :=
+      (hYc.differentiable one_ne_zero M).hasFDerivAt
+    have hσd : HasFDerivAt σm ((a * Y M ^ (a - 1)) • fderiv ℝ Y M) M :=
+      hd.rpow_const (Or.inl hY.ne')
+    have hdiv : HasFDerivAt (fun M' => σm M' / Θ)
+        (Θ⁻¹ • ((a * Y M ^ (a - 1)) • fderiv ℝ Y M)) M := by
+      have := hσd.const_mul (Θ⁻¹ : ℝ)
+      simpa [div_eq_inv_mul] using this
+    have hchain := (hasDerivAt_cutChi (σm M / Θ)).comp_hasFDerivAt M hdiv
+    have hsw : HasFDerivAt (fun M' => softW r S (fun i => ‖f i M'‖ / c i) Θ)
+        (cutChiD (σm M / Θ) • (Θ⁻¹ • ((a * Y M ^ (a - 1)) • fderiv ℝ Y M))) M := hchain
+    have hWp := hsw.pow (2 * p)
+    have hJd : DifferentiableAt ℝ σm M := hσd.differentiableAt
+    set L : ℝ := ((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1)
+        * ((15 / 8) / Θ) with hL
+    have hsw0 : (0 : ℝ) ≤ softW r S (fun i => ‖f i M‖ / c i) Θ := softW_nonneg _ _ _ _
+    have hL0 : (0 : ℝ) ≤ L := by
+      rw [hL]
+      have h2 : (0 : ℝ) ≤ (15 / 8) / Θ := by positivity
+      positivity
+    have hWd : DifferentiableAt ℝ
+        (fun M' => (softW r S (fun i => ‖f i M'‖ / c i) Θ) ^ (2 * p)) M := hWp.differentiableAt
+    have hWfd : ∀ B, |fderiv ℝ (fun M' => (softW r S (fun i => ‖f i M'‖ / c i) Θ) ^ (2 * p)) M B|
+        ≤ L * |fderiv ℝ σm M B| := by
+      intro B
+      have hval : fderiv ℝ (fun M' => (softW r S (fun i => ‖f i M'‖ / c i) Θ) ^ (2 * p)) M B
+          = ((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1)
+            * (cutChiD (σm M / Θ) * (Θ⁻¹ * fderiv ℝ σm M B)) := by
+        rw [hWp.fderiv, hσd.fderiv]
+        simp [nsmul_eq_mul]
+      rw [hval]
+      simp only [abs_mul]
+      rw [Nat.abs_cast, abs_of_nonneg (pow_nonneg hsw0 _), abs_of_pos (inv_pos.2 hΘ)]
+      have hchi := abs_cutChiD_le (σm M / Θ)
+      have h0 : (0 : ℝ) ≤ ((2 * p : ℕ) : ℝ) *
+          (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) := by positivity
+      calc ((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) *
+            (|cutChiD (σm M / Θ)| * (Θ⁻¹ * |fderiv ℝ σm M B|))
+          ≤ ((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) *
+            ((15 / 8) * (Θ⁻¹ * |fderiv ℝ σm M B|)) := by
+            refine mul_le_mul_of_nonneg_left ?_ h0
+            exact mul_le_mul_of_nonneg_right hchi (by positivity)
+        _ = L * |fderiv ℝ σm M B| := by rw [hL, div_eq_mul_inv]; ring
+    have hcmp : ∀ q ∈ usedCoord d N,
+        ‖coordD1 d N
+            (fun M => (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ)) M q‖
+          ≤ L * ‖coordD1 d N (fun M => ((σm M : ℝ) : ℂ)) M q‖ := by
+      intro q _
+      rw [norm_coordD1_ofReal hWd q, norm_coordD1_ofReal hJd q]
+      exact hWfd _
+    have hstep := sqrt_quadVar_le_of_apply_le (F := fun M =>
+        (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ))
+      (G := fun M => ((σm M : ℝ) : ℂ)) hL0 hcmp
+    have hS2 := sqrt_quadVar_softMax_le S hr hc hf M hY hK
+    refine hstep.trans ?_
+    calc L * √(quadVar d N (fun M => ((σm M : ℝ) : ℂ)) M)
+        ≤ L * ((S.card : ℝ) ^ a * K) := mul_le_mul_of_nonneg_left hS2 hL0
+      _ = ((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1)
+            * ((15 / 8) / Θ) * ((S.card : ℝ) ^ a * K) := by rw [hL]
+
+/-- **The `1_{S′}` of (S5)**: off the transition band `Θ ≤ J̃ ≤ 2Θ` the weight's
+quadratic-variation rate vanishes, because the chain rule's factor is `χ'(J̃/Θ)`
+(`RBM.Cutoff.cutChiD_eq_zero_left` / `RBM.Cutoff.cutChiD_eq_zero_right`).  The band is not
+empty: `J̃` is continuous and `RBM.Gauss.softRootProfile_ne_const` shows the cutoff really
+cuts. -/
+theorem quadVar_softW_pow_eq_zero_of_outside_band (S : Finset ι) (hΘ : 0 < Θ) (hr : 1 ≤ r)
+    (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i)) {M : Matrix (d.Idx N) (d.Idx N) ℂ}
+    (hband : softMax r S (fun i => ‖f i M‖ / c i) ≤ Θ ∨
+      2 * Θ ≤ softMax r S (fun i => ‖f i M‖ / c i)) (p : ℕ) :
+    quadVar d N
+        (fun M => (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ)) M = 0 := by
+  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
+  have hn0 : (0 : ℝ) < 2 * (r : ℝ) := by linarith
+  set a : ℝ := (1 : ℝ) / (2 * (r : ℝ)) with ha
+  set Y : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ :=
+    fun M => ∑ i ∈ S, (‖f i M‖ / c i) ^ (2 * r) with hYdef
+  set σm : Matrix (d.Idx N) (d.Idx N) ℂ → ℝ :=
+    fun M => softMax r S (fun i => ‖f i M‖ / c i) with hσdef
+  refine quadVar_eq_zero_of_fderiv_eq_zero ?_
+  rcases eq_or_lt_of_le (sum_even_pow_nonneg S (fun i => ‖f i M‖ / c i) r) with hY0 | hY
+  · exact fderiv_softW_pow_eq_zero_of_sum_eq_zero S hΘ hr hf hY0.symm p
+  · have hYc : ContDiff ℝ 1 Y :=
+      ContDiff.sum (fun i hi => contDiff_ratio_pow (hf i hi) (c i) r)
+    have hd : HasFDerivAt Y (fderiv ℝ Y M) M :=
+      (hYc.differentiable one_ne_zero M).hasFDerivAt
+    have hσd : HasFDerivAt σm ((a * Y M ^ (a - 1)) • fderiv ℝ Y M) M :=
+      hd.rpow_const (Or.inl hY.ne')
+    have hdiv : HasFDerivAt (fun M' => σm M' / Θ)
+        (Θ⁻¹ • ((a * Y M ^ (a - 1)) • fderiv ℝ Y M)) M := by
+      have := hσd.const_mul (Θ⁻¹ : ℝ)
+      simpa [div_eq_inv_mul] using this
+    have hchain := (hasDerivAt_cutChi (σm M / Θ)).comp_hasFDerivAt M hdiv
+    have hsw : HasFDerivAt (fun M' => softW r S (fun i => ‖f i M'‖ / c i) Θ)
+        (cutChiD (σm M / Θ) • (Θ⁻¹ • ((a * Y M ^ (a - 1)) • fderiv ℝ Y M))) M := hchain
+    have hchi0 : cutChiD (σm M / Θ) = 0 := by
+      rcases hband with h | h
+      · exact cutChiD_eq_zero_left ((div_le_one hΘ).2 h)
+      · refine cutChiD_eq_zero_right ?_
+        rw [le_div_iff₀ hΘ]
+        linarith
+    have hWp := hsw.pow (2 * p)
+    have hofr : HasFDerivAt
+        (fun M' => (((softW r S (fun i => ‖f i M'‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ))
+        (Complex.ofRealCLM.comp
+          (((2 * p) • (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1)) •
+            (cutChiD (σm M / Θ) • (Θ⁻¹ • ((a * Y M ^ (a - 1)) • fderiv ℝ Y M))))) M :=
+      Complex.ofRealCLM.hasFDerivAt.comp M hWp
+    rw [hofr.fderiv, hchi0]
+    simp
+
+end Weight
+
+/-! #### 8.4 (S5): the cross term -/
+
+section Cross
+
+variable {f : ι → Matrix (d.Idx N) (d.Idx N) ℂ → ℂ} {c : ι → ℝ} {r p : ℕ} {Θ K : ℝ}
+
+/-- **⭐⭐ (S5): the cross term's pointwise bound.**
+
+`∑_q gvar q · ‖∂_q W‖ · ‖∂_q |Ψ|^{2p}‖ ≤ (2p)² · (W|Ψ|^{2p})^{1−1/(2p)} · (15/8)/Θ ·
+card^{1/(2r)} · K · √(quadVar Ψ)`, where `W = χ(J̃/Θ)^{2p}` and
+`(W|Ψ|^{2p})^{1−1/(2p)} = χ(J̃/Θ)^{2p−1}·‖Ψ‖^{2p−1}` is written in the natural-power form.
+
+**Both gradients are `RBM.Gauss.coordD1 d N · M q` at the same `M`.**  `K` is the random
+same-time rate of (S2), never a deterministic derivative bound; and
+`RBM.Gauss.quadVar_softW_pow_eq_zero_of_outside_band` supplies the `1_{S′}` factor. -/
+theorem sum_gvar_crossTerm_le (S : Finset ι) {Ψ : Matrix (d.Idx N) (d.Idx N) ℂ → ℂ}
+    (hr : 1 ≤ r) (hp : 1 ≤ p) (hΘ : 0 < Θ) (hK0 : 0 ≤ K) (hc : ∀ i ∈ S, 0 < c i)
+    (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i)) (hΨ : ContDiff ℝ 1 Ψ)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ)
+    (hK : ∀ i ∈ S, √(quadVar d N (f i) M) / c i ≤ K) :
+    ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ) *
+        (‖coordD1 d N
+            (fun M => (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ)) M q‖
+          * ‖coordD1 d N (fun M => ((‖Ψ M‖ ^ (2 * p) : ℝ) : ℂ)) M q‖)
+      ≤ (((2 * p : ℕ) : ℝ) * ((2 * p : ℕ) : ℝ))
+          * ((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) * ‖Ψ M‖ ^ (2 * p - 1))
+          * (((15 / 8) / Θ) * ((S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) * K))
+          * √(quadVar d N Ψ M) := by
+  refine (Step2Bootstrap.sum_gvar_mul_le_sqrt_quadVar d N _ _ M).trans ?_
+  have h1 := sqrt_quadVar_softW_pow_le S hr hp hΘ hK0 hc hf M hK
+  have h2 := sqrt_quadVar_norm_pow_le hΨ hp M
+  have hsw0 : (0 : ℝ) ≤ softW r S (fun i => ‖f i M‖ / c i) Θ := softW_nonneg _ _ _ _
+  have hcard : (0 : ℝ) ≤ (S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) :=
+    Real.rpow_nonneg (Nat.cast_nonneg _) _
+  have hb1 : (0 : ℝ) ≤ ((2 * p : ℕ) : ℝ) *
+      (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) * ((15 / 8) / Θ) *
+      ((S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) * K) := by
+    have h2' : (0 : ℝ) ≤ (15 / 8) / Θ := by positivity
+    positivity
+  calc √(quadVar d N
+        (fun M => (((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p) : ℝ) : ℂ)) M) *
+        √(quadVar d N (fun M => ((‖Ψ M‖ ^ (2 * p) : ℝ) : ℂ)) M)
+      ≤ (((2 * p : ℕ) : ℝ) * (softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1)
+            * ((15 / 8) / Θ) * ((S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) * K)) *
+          (((2 * p : ℕ) : ℝ) * ‖Ψ M‖ ^ (2 * p - 1) * √(quadVar d N Ψ M)) :=
+        mul_le_mul h1 h2 (Real.sqrt_nonneg _) hb1
+    _ = (((2 * p : ℕ) : ℝ) * ((2 * p : ℕ) : ℝ))
+          * ((softW r S (fun i => ‖f i M‖ / c i) Θ) ^ (2 * p - 1) * ‖Ψ M‖ ^ (2 * p - 1))
+          * (((15 / 8) / Θ) * ((S.card : ℝ) ^ ((1 : ℝ) / (2 * (r : ℝ))) * K))
+          * √(quadVar d N Ψ M) := by ring
+
+end Cross
+
+end S5
+
 /-! ### 9. Compiled satisfiability witnesses -/
 
 section Sat
@@ -1081,6 +1360,104 @@ theorem sat_quadVar_loopObs_sub (N : ℕ) (a : LoopArg (Dims.exampleGrow.L N) 2)
       (LoopData.idx ((Step2.sigPM, a) : LoopData (Dims.exampleGrow.L N) 2)))
   exact ⟨_, hbdd.nonneg₁, quadVar_le_of_bddC2C hbdd M⟩
 
+
+/-- The `(+,−)` loop error of (5.29) on `RBM.Gauss.Dims.exampleGrow`, read as a function of the
+matrix: the numerator family route (A′) feeds to (S2)/(S5). -/
+noncomputable def satLk (N : ℕ) (a : LoopArg (Dims.exampleGrow.L N) 2) :
+    Matrix (Dims.exampleGrow.Idx N) (Dims.exampleGrow.Idx N) ℂ → ℂ :=
+  fun M => loopObs Dims.exampleGrow N (zt 0 (1 / 2))
+      (LoopData.idx ((Step2.sigPM, a) : LoopData (Dims.exampleGrow.L N) 2)) M
+    - (band Dims.exampleGrow).Kval 0 N (1 / 2)
+        (LoopData.idx ((Step2.sigPM, a) : LoopData (Dims.exampleGrow.L N) 2))
+
+/-- Constants for the whole family at once: the loop length is `2` for every `a`, so
+`RBM.Gauss.bddC2C_loopObs_sub` gives one triple that works uniformly. -/
+theorem exists_bddC2C_satLk (N : ℕ) :
+    ∃ b₁ : ℝ, 0 ≤ b₁ ∧
+      ∀ a : LoopArg (Dims.exampleGrow.L N) 2, ∃ b₀ b₂ : ℝ, BddC2C (satLk N a) b₀ b₁ b₂ := by
+  have hE : |(0 : ℝ)| < 2 := by norm_num
+  have hη : (0 : ℝ) < etaT 0 (1 / 2) := etaT_pos' hE (by norm_num)
+  have hz : (zt 0 (1 / 2 : ℝ)).im ≠ 0 := by rw [← etaT_eq_zt_im]; exact hη.ne'
+  have hzη : etaT 0 (1 / 2) ≤ |(zt 0 (1 / 2 : ℝ)).im| := by
+    rw [← etaT_eq_zt_im, abs_of_pos hη]
+  have hx0 : (0 : ℝ) < (etaT 0 (1 / 2))⁻¹ := by positivity
+  have key : ∀ x : ℝ, 0 < x →
+      x ≤ 2 * (1 + x) ^ 3 ∧ x * x ≤ 2 * (1 + x) ^ 3 ∧ 2 * (x * x * x) ≤ 2 * (1 + x) ^ 3 := by
+    intro x hx
+    refine ⟨by nlinarith [sq_nonneg x, hx.le], by nlinarith [sq_nonneg x, hx.le],
+      by nlinarith [sq_nonneg x, hx.le]⟩
+  obtain ⟨hBa, hBb, hBc⟩ := key _ hx0
+  have hbdd : ∀ a : LoopArg (Dims.exampleGrow.L N) 2, BddC2C (satLk N a) _ _ _ := fun a =>
+    bddC2C_loopObs_sub (d := Dims.exampleGrow) (N := N) hz hη hzη hBa hBb hBc
+      (LoopData.idx_wf ((Step2.sigPM, a) : LoopData (Dims.exampleGrow.L N) 2))
+      ((band Dims.exampleGrow).Kval 0 N (1 / 2)
+        (LoopData.idx ((Step2.sigPM, a) : LoopData (Dims.exampleGrow.L N) 2)))
+  have hlen : ∀ a : LoopArg (Dims.exampleGrow.L N) 2,
+      (LoopData.idx ((Step2.sigPM, a) : LoopData (Dims.exampleGrow.L N) 2)).a.length = 2 :=
+    fun a => LoopData.idx_length _
+  refine ⟨(Fintype.card (Dims.exampleGrow.Idx N) : ℝ) *
+      (((2 : ℕ) : ℝ) * (2 * (1 + (etaT 0 (1 / 2))⁻¹) ^ 3) ^ (2 : ℕ)) + 0, by positivity,
+    fun a => ?_⟩
+  have h := hbdd a
+  rw [hlen a] at h
+  exact ⟨_, _, h⟩
+
+/-- **⭐⭐ A compiled satisfiability witness for (S2) and (S5).**
+
+Every hypothesis of `RBM.Gauss.sum_gvar_crossTerm_le` holds simultaneously on the concrete
+model `RBM.Gauss.Dims.exampleGrow`, at the genuine two-edge `(+,−)` loop family of (5.29), for
+**every** `r, p ≥ 1`, every `Θ > 0` and every matrix `M` — in particular at `L = K`, where
+`Y = 0`: `RBM.Gauss.sum_gvar_crossTerm_le` needs no positivity hypothesis on `Y`, because
+`RBM.Gauss.fderiv_softW_pow_eq_zero_of_sum_eq_zero` disposes of that point.
+
+The witness's `K` is a crude deterministic majorant (`b₁ √(coordWeight)`), enough to show the
+hypotheses are jointly satisfiable; the `K` the argument is *meant* to be used with is the
+random same-time rate of (S3), `RBM.EarlyQVRate.quadVar_lkFun_le_ee_sym`. -/
+theorem sat_sum_gvar_crossTerm_le (N : ℕ) {r p : ℕ} (hr : 1 ≤ r) (hp : 1 ≤ p)
+    {Θ : ℝ} (hΘ : 0 < Θ) (a₀ : LoopArg (Dims.exampleGrow.L N) 2)
+    (M : Matrix (Dims.exampleGrow.Idx N) (Dims.exampleGrow.Idx N) ℂ) :
+    ∃ K : ℝ, 0 ≤ K ∧
+      (∀ a ∈ (Finset.univ : Finset (LoopArg (Dims.exampleGrow.L N) 2)),
+          √(quadVar Dims.exampleGrow N (satLk N a) M) / 1 ≤ K) ∧
+      ∑ q ∈ usedCoord Dims.exampleGrow N,
+          (gvar Dims.exampleGrow (crd Dims.exampleGrow N q) : ℝ) *
+            (‖coordD1 Dims.exampleGrow N (fun M =>
+                (((softW r (Finset.univ : Finset (LoopArg (Dims.exampleGrow.L N) 2))
+                    (fun a => ‖satLk N a M‖ / 1) Θ) ^ (2 * p) : ℝ) : ℂ)) M q‖
+              * ‖coordD1 Dims.exampleGrow N
+                  (fun M => ((‖satLk N a₀ M‖ ^ (2 * p) : ℝ) : ℂ)) M q‖)
+        ≤ (((2 * p : ℕ) : ℝ) * ((2 * p : ℕ) : ℝ))
+            * ((softW r (Finset.univ : Finset (LoopArg (Dims.exampleGrow.L N) 2))
+                  (fun a => ‖satLk N a M‖ / 1) Θ) ^ (2 * p - 1)
+                * ‖satLk N a₀ M‖ ^ (2 * p - 1))
+            * (((15 / 8) / Θ) *
+                (((Finset.univ : Finset (LoopArg (Dims.exampleGrow.L N) 2)).card : ℝ)
+                  ^ ((1 : ℝ) / (2 * (r : ℝ))) * K))
+            * √(quadVar Dims.exampleGrow N (satLk N a₀) M) := by
+  obtain ⟨b₁, hb₁, hbdd⟩ := exists_bddC2C_satLk N
+  refine ⟨b₁ * √(coordWeight Dims.exampleGrow N), by positivity, ?_, ?_⟩
+  · intro a _
+    rw [div_one]
+    obtain ⟨_, _, hba⟩ := hbdd a
+    have hq := quadVar_le_of_bddC2C hba M
+    calc √(quadVar Dims.exampleGrow N (satLk N a) M)
+        ≤ √(b₁ ^ 2 * coordWeight Dims.exampleGrow N) := Real.sqrt_le_sqrt hq
+      _ = b₁ * √(coordWeight Dims.exampleGrow N) := by
+          rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hb₁]
+  · have hcd : ∀ a : LoopArg (Dims.exampleGrow.L N) 2, ContDiff ℝ 1 (satLk N a) := by
+      intro a
+      obtain ⟨_, _, hba⟩ := hbdd a
+      exact hba.contDiff.of_le (by norm_num)
+    refine sum_gvar_crossTerm_le _ hr hp hΘ (by positivity) (fun a _ => one_pos)
+      (fun a _ => hcd a) (hcd a₀) M (fun a _ => ?_)
+    rw [div_one]
+    obtain ⟨_, _, hba⟩ := hbdd a
+    have hq := quadVar_le_of_bddC2C hba M
+    calc √(quadVar Dims.exampleGrow N (satLk N a) M)
+        ≤ √(b₁ ^ 2 * coordWeight Dims.exampleGrow N) := Real.sqrt_le_sqrt hq
+      _ = b₁ * √(coordWeight Dims.exampleGrow N) := by
+          rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hb₁]
+
 end Sat
 
 end Gauss
@@ -1112,4 +1489,32 @@ end RBM
    lemma (the second-derivative analogue of `RBM.Gauss.norm_fderiv_sum_ratio_pow_le`), not a
    change to the paper.  Affects nothing in the text.  ~0 lines of paper change.  No
    renumbering.
+
+   **Superseded (T265, after the V548 ruling).**  The main estimate no longer goes through the
+   global `C²` mean-value closure, so `∇²χ` does not occur in it at all: the Stein identity
+   (★) lets `∇²` act only on the resolvent factor.  §5–§6 above are kept as regularity tools;
+   §8 is the route actually used.
+
+**T265a** (§5.2–§5.3, the vector bound (S2) and the cross term (S5) of the Stein route).
+
+1. *(S2) is stated with an upper bound `K` in place of the maximum.*  The referee's statement
+   is `√(quadVar J̃) ≤ card^{1/(2r)}·max_{i∈S} √(quadVar f_i)/c_i`;
+   `RBM.Gauss.sqrt_quadVar_softMax_le` quantifies over any `K` with
+   `√(quadVar f_i)/c_i ≤ K` for all `i ∈ S`.  The maximum is the least such `K`, so the two
+   are equivalent, and the `K`-form is what the caller (which carries a `≺`-type bound, not a
+   pointwise maximum) can supply.  No paper change.  No renumbering.
+2. *(S5) writes `χ(J̃/Θ)^{2p-1}·‖Ψ‖^{2p-1}` where the referee writes
+   `(W|Ψ|^{2p})^{1-1/(2p)}`.*  The two agree because both bases are non-negative; the
+   natural-power form avoids an `rpow`/`pow` conversion in every downstream call.  Likewise
+   the indicator `1_{S′}` is not a multiplicative factor of
+   `RBM.Gauss.sum_gvar_crossTerm_le` but a separate statement,
+   `RBM.Gauss.quadVar_softW_pow_eq_zero_of_outside_band`, which says the left-hand side is
+   `0` off the band; multiplying the two gives the referee's shape.  No paper change.  No
+   renumbering.
+3. *The scalars `(2√u)^{-1}` and `√(u_j/u)` of (S5) are not in the Lean statement.*  Every
+   statement of §8 is a pointwise inequality at one matrix `M`, with **both** gradients taken
+   as `RBM.Gauss.coordD1 d N · M q` at that same `M`.  The rescaling `M ↦ f_i(√(u_j/u)·M)`
+   that this forces on the earlier-time loops, and the constants `√u_j ≤ 1` and `u^{-1/2}` its
+   `coordD1` produces, are the caller's: they belong to (S3) and to the time integral (S6)
+   respectively.  Nothing here mixes two matrix variables.  No paper change.  No renumbering.
 -/

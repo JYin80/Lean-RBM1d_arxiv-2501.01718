@@ -109,11 +109,15 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T653 | Independently accepted: 12 clean finite-support/local-retention declarations, including zero-variance fixing and nondegenerate singleton witness; root rebuild is blocked only by unrelated T659-owned compatibility work |
 | T654 | Stopped with corrected namespace core/facades; final validation is folded into T659 because T652 changed `Step2.lk` in the shared `Eq548Producer` consumer |
 | T655 | Delivered; independent audit running on the literal carrier-cylinder boundary and proposed clean predicate extraction; implementation waits for T659 |
-| T656 | Running: corrected conditional arbitrary-charge QV/moment-core preflight; no production or closure claim |
-| T657 | Running: read-only ownership/build audit for one fresh repair of the entangled T651/T652/T654 partials |
-| T658 | Running: exact Gaussian-coordinate encoding audit for the T643 coupled-block deterministic center |
+| T656 | Delivered: conditional arbitrary-charge QV scratch card passes after an assumed profile-preserving MomNormDom, but claims the exact window lacks a polynomial endpoint envelope; T662 is independently auditing that obstruction before acceptance |
+| T657 | Delivered: identifies three body-sensitive `Step2.lk` repairs, frozen `ε`/`hε` named-argument restoration, and one coordinated T659 acceptance bundle; T663 is independently auditing the specification before acceptance |
+| T658 | Delivered: coordinate encoding audit claims exact Hermitian readback and corrected off-diagonal variance `1/(6W)`; T661 is independently auditing the carrier-margin and first-missing-producer conclusions before acceptance |
 | T659 | Running: coordinated completion of T651/T652/T654 plus the one known definitional compatibility unfold; no new mathematics |
-| T660 | Running: scratch-prototype the exact carrier/transition definition core and facade compatibility before any implementation |
+| T660 | Delivered with corrections: future predicate core needs clean `DimsExample`, exactly 21 moved names, `measurableSet_measCore` retained in its facade, and a jG upper-semicontinuity/majorant argument; T664 is independently auditing before acceptance |
+| T661 | Running: fresh read-only independent audit of T658; no implementation or closure claim |
+| T662 | Running: fresh read-only independent audit of T656's exact card and endpoint-scale obstruction; no implementation or closure claim |
+| T663 | Running: fresh read-only independent audit of T657's repair specification; T651/T652/T654 remain excluded pending T659 and later acceptance |
+| T664 | Running: fresh read-only independent audit of T660; carrier-core implementation remains blocked on T659 acceptance |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

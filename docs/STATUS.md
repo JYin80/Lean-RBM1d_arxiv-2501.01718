@@ -40,6 +40,8 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T599 is independently accepted: positive literal smooth weight at `δWeight` implies positive canonical widened weight at `δWeight+ξ`, uniformly over all active `k` including `k=0`, with sole loss `N^(2ξ)` and no event. The false same-`δ` reverse implication remains rejected; T603 uses only the buffered direction.
 - T598 is independently accepted: on the identical T579 common-event sample and positive widened support, the full positive-cell `driftAt` profile has exact `xiK·R_u⁻²R_v⁻²`, retains T586's near/far/residual coefficients and the literal (5.34) `Step2.jS²` row, and covers both time endpoints. It is pointwise only; T604 audits the integration step.
 - T600 is independently accepted: one uniform constant-one use of T488 followed by weight monotonicity supplies the literal target-net actual-smooth initial budget for every active `k`, including `k=0`, with exact `N^(5δ/32)R_v⁻²` and no extra loss. It is only the initial term; T605 audits its consumer seam.
+- T601 is independently accepted as the post-T597 cross preflight. T606 is the smallest thin transition-to-buffered-QV adapter. A full `crossPart_active_le_jointEvent` specialization still lacks the general-moving favorable `prefixGradient`, five-field regularity and global joint envelope; T607 audits the first of these.
+- T603's main bridge compiles and its exponent/event ledger is correct, but acceptance is blocked: the delivered witness does not realize an active `k≥1`, one common-event resident, and positive actual smooth weight simultaneously. A fresh repair ticket must add that same-resident witness before T603 can be archived or committed.
 
 ## 3. Running work
 
@@ -47,12 +49,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T601 | Delivered: scheduler audit pending |
-| T602 | Running: post-T596 Duhamel-family absorption preflight |
-| T603 | Running: buffered actual-smooth QV bridge |
+| T602 | Delivered: scheduler audit pending |
+| T603 | Delivered theorem; repair required before acceptance |
 | T604 | Running: post-T598 drift-integration preflight |
 | T605 | Running: post-T600 initial-flow seam audit |
 | T606 | Running: transition-to-buffered-QV adapter |
+| T607 | Running: general-moving prefix-gradient preflight |
+| T608 | Running: arbitrary-charge transported-initial row |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

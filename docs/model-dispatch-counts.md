@@ -10,5 +10,8 @@ Count starts at 2026-09-23 16:48:14 UTC, when Jun requested tracking. T669 was d
 | T673 | GPT-6 Luna | High | Read-only finite-permutation probability API/import probe for the missing Fourier-tail lemma |
 | T674 | GPT-6 Sol | High | Independent Lean/mathematical acceptance of the 21-name carrier-core extraction |
 | T675 | GPT-6 Sol | High | Nontrivial clean Lean extraction of the doubled-argument E⊗E adapter |
+| T676 | GPT-6 Sol | High | Pure Lean proof of exact finite Fourier swap sensitivity and sharp witness |
+| T677 | GPT-6 Sol | High | Substantive pure topological Lean proof for closed hard-cutoff upper semicontinuity |
+| T678 | GPT-6 Sol | High | Clean Lean continuity proof for the literal ellStar hard-cutoff threshold |
 
-Current total: GPT-6 Luna 2, GPT-6 Sol 4. Ratio Luna:Sol = 2:4 (33.3%:66.7%).
+Current total: GPT-6 Luna 2, GPT-6 Sol 7. Ratio Luna:Sol = 2:7 (22.2%:77.8%).

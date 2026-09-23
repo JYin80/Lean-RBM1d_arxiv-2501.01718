@@ -104,7 +104,7 @@
 
 ## 6. Recent acceptance and repository state
 
-- Commits `44e1278` and `000b576` pushed T512–T523 with their reports and scheduling archive. T524–T526 are independently accepted and will be the next narrow commit. Leave unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, and blueprint artifacts unstaged.
+- Commits `44e1278`, `000b576`, and `40da2d0` pushed T512–T526 with their reports and scheduling archive. T527–T529 are active in three disjoint new modules. Leave unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, and blueprint artifacts unstaged.
 
 ## 7. Maintenance on every heartbeat
 

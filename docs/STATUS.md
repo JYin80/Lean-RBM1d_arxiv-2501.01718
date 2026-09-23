@@ -118,10 +118,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T662 | Delivered PASS WITH CORRECTIONS: `t_N<1` alone lacks a polynomial envelope, but retaining the producer's literal `Cond272` gives `N⁻²≤η_u`; the claimed clean QV roots nevertheless reach `Hierarchy.Step3`. T667 independently audits the corrected clean-extraction boundary before any implementation |
 | T663 | Delivered PASS for the repair specification only; T651/T652/T654 remain excluded pending T665's implementation acceptance |
 | T664 | Delivered PASS: the corrected 21-name/two-import predicate-core design and jG upper-semicontinuity route pass; implementation remains blocked on T665 acceptance |
-| T665 | Running: fresh independent full acceptance audit of the T651/T652/T654/T659 integration bundle |
-| T666 | Running: bounded generic Hermitian band-coordinate encoder in `Gauss.Generator`; no carrier/resident/closure claim |
+| T665 | Independently accepted and pushed as `6e92b71`: T651/T652/T654/T659 14-file bundle preserves frozen APIs, exact powers, nondegenerate same-window witness and clean cores; targeted consumers/root build (4051 jobs), 62-name axiom audit allowed only standard three |
+| T666 | Delivered: generic exact Hermitian encoder with full-product zero-variance compatibility and nonzero band-supported witness; T670 independently audits before staging |
 | T667 | Running: fresh audit of the retained-`Cond272` QV envelope and genuine Step3 import paths; no QV implementation |
-| T668 | Running: mathematical preflight of the uniform semicircle-quantile/Fourier-permutation carrier input; later prefix/cylinder steps remain separate |
+| T668 | Delivered: zero-mode quadrature O(1/W) and nonzero-mode permutation concentration ledger identify one missing finite lemma; T671 independently audits constants and feasibility before any positive theorem ticket |
+| T669 | Running: exact 21-name carrier/transition predicate extraction after T665 acceptance; jG topology and resident remain separate obligations |
+| T670 | Running: independent T666 encoder acceptance audit; no encoder staging yet |
+| T671 | Running: independent audit of T668's Fourier concentration claim; no carrier or prefix closure |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

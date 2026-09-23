@@ -1140,6 +1140,244 @@ theorem hasDerivAt_integral_Phi_pairs (hst : MatrixStein d) (h : TestFun d N Φ)
 
 end Wirtinger
 
+/-! ### Encoding a finite Hermitian band matrix as one sample
+
+The sample below writes the real and imaginary parts of the `idxKey`-upper triangle into
+`usedCoord` and sets every other coordinate of the full product to zero.  In particular, the
+encoding does not rescale by the coordinate variance. -/
+
+/-- A finite matrix is supported on the same and adjacent physical blocks. -/
+def HermitianBandSupported {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) : Prop :=
+  ∀ i j, i.1 - j.1 ∉ sbSupport (d.L N) → M i j = 0
+
+/-- The real value stored in a used coordinate: `true` selects the real part and `false`
+selects the imaginary part. -/
+noncomputable def hermitianCoordValue {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ)
+    (p : d.Idx N × d.Idx N × Bool) : ℝ :=
+  if p.2.2 then (M p.1 p.2.1).re else (M p.1 p.2.1).im
+
+/-- The full sample encoding a finite matrix at size `N`.  All unused coordinates and all
+coordinates belonging to a different size are zero. -/
+noncomputable def omegaOfHermitian (d : Dims) (N : ℕ)
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) : Ω d :=
+  ∑ p ∈ usedCoord d N,
+    Pi.single (crd d N p) (hermitianCoordValue M p)
+
+/-- Evaluation of the encoded sample at any used coordinate. -/
+theorem omegaOfHermitian_crd_of_mem {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ)
+    {p : d.Idx N × d.Idx N × Bool} (hp : p ∈ usedCoord d N) :
+    omegaOfHermitian d N M (crd d N p) = hermitianCoordValue M p := by
+  classical
+  rw [omegaOfHermitian, Finset.sum_apply, Finset.sum_eq_single p]
+  · simp
+  · intro q hq hqp
+    rw [Pi.single_apply]
+    split
+    · rename_i hcrd
+      exact (hqp ((crd_injective d N hcrd).symm)).elim
+    · rfl
+  · exact fun h => (h hp).elim
+
+/-- Every unused coordinate at the encoded size is set to zero. -/
+theorem omegaOfHermitian_crd_eq_zero_of_not_mem {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ)
+    {p : d.Idx N × d.Idx N × Bool} (hp : p ∉ usedCoord d N) :
+    omegaOfHermitian d N M (crd d N p) = 0 := by
+  classical
+  rw [omegaOfHermitian, Finset.sum_apply]
+  apply Finset.sum_eq_zero
+  intro q hq
+  rw [Pi.single_apply]
+  split
+  · rename_i hcrd
+    exact (hp ((crd_injective d N hcrd).symm ▸ hq)).elim
+  · rfl
+
+/-- Every coordinate belonging to a size other than the encoded size is set to zero. -/
+theorem omegaOfHermitian_eq_zero_of_size_ne {d : Dims} {N N' : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) (hNN : N' ≠ N)
+    (p : d.Idx N' × d.Idx N' × Bool) :
+    omegaOfHermitian d N M (crd d N' p) = 0 := by
+  classical
+  rw [omegaOfHermitian, Finset.sum_apply]
+  apply Finset.sum_eq_zero
+  intro q hq
+  rw [Pi.single_apply]
+  split
+  · rename_i hcrd
+    have hsize : N' = N := by simpa using congrArg Sigma.fst hcrd
+    exact (hNN hsize).elim
+  · rfl
+
+/-- The upper-triangular real coordinate is the real part of the matrix entry. -/
+theorem omegaOfHermitian_crd_true_of_lt {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) {i j : d.Idx N}
+    (hij : idxKey d N i < idxKey d N j) :
+    omegaOfHermitian d N M (crd d N (i, j, true)) = (M i j).re := by
+  rw [omegaOfHermitian_crd_of_mem M (mem_usedCoord.2 (Or.inl hij))]
+  rfl
+
+/-- The upper-triangular imaginary coordinate is the imaginary part of the matrix entry. -/
+theorem omegaOfHermitian_crd_false_of_lt {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) {i j : d.Idx N}
+    (hij : idxKey d N i < idxKey d N j) :
+    omegaOfHermitian d N M (crd d N (i, j, false)) = (M i j).im := by
+  rw [omegaOfHermitian_crd_of_mem M (mem_usedCoord.2 (Or.inl hij))]
+  rfl
+
+/-- The used diagonal coordinate is the real part of the diagonal entry. -/
+theorem omegaOfHermitian_crd_diag {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) (i : d.Idx N) :
+    omegaOfHermitian d N M (crd d N (i, i, true)) = (M i i).re := by
+  rw [omegaOfHermitian_crd_of_mem M (mem_usedCoord.2 (Or.inr ⟨rfl, rfl⟩))]
+  rfl
+
+/-- Exact readback: the finite-sample encoder reconstructs every Hermitian matrix, without
+variance rescaling and without an almost-everywhere qualification. -/
+theorem Xmat_omegaOfHermitian {d : Dims} {N : ℕ}
+    (M : Matrix (d.Idx N) (d.Idx N) ℂ) (hM : M.IsHermitian) :
+    Xmat d N (omegaOfHermitian d N M) = M := by
+  classical
+  ext i j
+  rw [Xmat_apply, Xentry]
+  rcases idxKey_lt_or_eq_or_lt d N i j with hij | rfl | hji
+  · rw [ite_eq_left hij, omegaOfHermitian_crd_true_of_lt M hij,
+      omegaOfHermitian_crd_false_of_lt M hij]
+    rw [mul_comm]
+    exact Complex.re_add_im _
+  · simp only [lt_self_iff_false, ↓reduceIte]
+    rw [omegaOfHermitian_crd_diag]
+    exact hM.coe_re_apply_self i
+  · rw [ite_eq_right (not_lt_of_ge (Nat.le_of_lt hji)), ite_eq_left hji,
+      omegaOfHermitian_crd_true_of_lt M hji,
+      omegaOfHermitian_crd_false_of_lt M hji]
+    calc
+      ((M j i).re : ℂ) - Complex.I * ((M j i).im : ℂ) = star (M j i) := by
+        apply Complex.ext <;> simp
+      _ = M i j := hM.apply i j
+
+/-- On its physical-block support, `Sblk` has the exact value `1 / (3W)`. -/
+theorem Sblk_eq_of_mem {L W : ℕ} [NeZero W] (i j : ZMod L × Fin W)
+    (hmem : i.1 - j.1 ∈ sbSupport L) :
+    Sblk L W i j = 1 / (3 * (W : ℝ)) := by
+  simp only [Sblk, sbKre, hmem, ↓reduceIte]
+  have hW : (W : ℝ) ≠ 0 := by exact_mod_cast (Nat.pos_of_ne_zero (NeZero.ne W)).ne'
+  field_simp
+
+/-- Off its physical-block support, `Sblk` is zero. -/
+theorem Sblk_eq_zero_of_not_mem {L W : ℕ} [NeZero W] (i j : ZMod L × Fin W)
+    (hmem : i.1 - j.1 ∉ sbSupport L) :
+    Sblk L W i j = 0 := by
+  simp [Sblk, sbKre, hmem]
+
+/-- Positivity of `Sblk` is exactly membership in the same/adjacent-block support. -/
+theorem Sblk_pos_iff_mem {L W : ℕ} [NeZero W] (i j : ZMod L × Fin W) :
+    0 < Sblk L W i j ↔ i.1 - j.1 ∈ sbSupport L := by
+  constructor
+  · intro h
+    by_contra hmem
+    rw [Sblk_eq_zero_of_not_mem i j hmem] at h
+    exact lt_irrefl 0 h
+  · intro hmem
+    rw [Sblk_eq_of_mem i j hmem]
+    have hW : (0 : ℝ) < W := by
+      exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne W)
+    exact one_div_pos.mpr (mul_pos (by norm_num) hW)
+
+/-- Every diagonal coordinate, including the unused imaginary tag, has variance `1/(3W)`. -/
+theorem gvar_crd_diag_exact (d : Dims) (N : ℕ) (i : d.Idx N) (b : Bool) :
+    (gvar d (crd d N (i, i, b)) : ℝ) = 1 / (3 * (d.W N : ℝ)) := by
+  rw [gvar_diag]
+  exact Sblk_eq_of_mem i i (by simp [sbSupport])
+
+/-- Every off-diagonal coordinate on the same or an adjacent physical block, for either tag,
+has variance `1/(6W)`. -/
+theorem gvar_crd_offDiag_exact {d : Dims} {N : ℕ} {i j : d.Idx N}
+    (hij : i ≠ j) (hmem : i.1 - j.1 ∈ sbSupport (d.L N)) (b : Bool) :
+    (gvar d (crd d N (i, j, b)) : ℝ) = 1 / (6 * (d.W N : ℝ)) := by
+  rw [gvar_offDiag d N i j b hij, Sblk_eq_of_mem i j hmem]
+  have hW : (d.W N : ℝ) ≠ 0 := by exact_mod_cast (d.W_pos N).ne'
+  field_simp
+  norm_num
+
+/-- Every coordinate whose physical-block difference lies off the band has zero variance. -/
+theorem gvar_crd_eq_zero_of_not_mem {d : Dims} {N : ℕ} {i j : d.Idx N}
+    (hmem : i.1 - j.1 ∉ sbSupport (d.L N)) (b : Bool) :
+    (gvar d (crd d N (i, j, b)) : ℝ) = 0 := by
+  rw [gvar_crd, Sblk_eq_zero_of_not_mem i j hmem]
+  split <;> simp
+
+/-- A coordinate has positive variance exactly when its physical-block difference lies on
+the band.  This statement includes unused reverse and diagonal-imaginary coordinates. -/
+theorem gvar_crd_pos_iff_mem (d : Dims) (N : ℕ)
+    (p : d.Idx N × d.Idx N × Bool) :
+    0 < (gvar d (crd d N p) : ℝ) ↔
+      p.1.1 - p.2.1.1 ∈ sbSupport (d.L N) := by
+  rw [gvar_crd]
+  by_cases hij : p.1 = p.2.1
+  · rw [ite_eq_left hij]
+    exact Sblk_pos_iff_mem p.1 p.2.1
+  · rw [ite_eq_right hij]
+    constructor
+    · intro h
+      apply (Sblk_pos_iff_mem p.1 p.2.1).1
+      linarith
+    · intro h
+      have hs : 0 < Sblk (d.L N) (d.W N) p.1 p.2.1 :=
+        (Sblk_pos_iff_mem p.1 p.2.1).2 h
+      positivity
+
+private theorem hermitianCoordValue_eq_zero_of_gvar_eq_zero {d : Dims} {N : ℕ}
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ} (hband : HermitianBandSupported M)
+    (p : d.Idx N × d.Idx N × Bool)
+    (hg : (gvar d (crd d N p) : ℝ) = 0) :
+    hermitianCoordValue M p = 0 := by
+  have hnot : p.1.1 - p.2.1.1 ∉ sbSupport (d.L N) := by
+    intro hmem
+    exact ((gvar_crd_pos_iff_mem d N p).2 hmem).ne' hg
+  have hM : M p.1 p.2.1 = 0 := hband p.1 p.2.1 hnot
+  simp [hermitianCoordValue, hM]
+
+/-- Full-product compatibility with the degenerate Gaussian coordinates.  For a band-supported
+matrix the encoded sample is zero at every zero-variance coordinate, including coordinates at
+other sizes and unused coordinates at the encoded size. -/
+theorem omegaOfHermitian_eq_zero_of_gvar_eq_zero {d : Dims} {N : ℕ}
+    {M : Matrix (d.Idx N) (d.Idx N) ℂ} (hband : HermitianBandSupported M)
+    (c : Coord d) (hg : (gvar d c : ℝ) = 0) :
+    omegaOfHermitian d N M c = 0 := by
+  classical
+  rw [omegaOfHermitian, Finset.sum_apply]
+  apply Finset.sum_eq_zero
+  intro p hp
+  by_cases hc : crd d N p = c
+  · subst c
+    simp [hermitianCoordValue_eq_zero_of_gvar_eq_zero hband p hg]
+  · simp [hc]
+
+/-- The band-support hypothesis is non-vacuous: at every size there is an explicit nonzero
+Hermitian diagonal matrix satisfying it. -/
+theorem exists_nonzero_hermitianBandSupported (d : Dims) (N : ℕ) :
+    ∃ M : Matrix (d.Idx N) (d.Idx N) ℂ,
+      M.IsHermitian ∧ HermitianBandSupported M ∧ M ≠ 0 := by
+  let i₀ : d.Idx N := (0, ⟨0, d.W_pos N⟩)
+  let M : Matrix (d.Idx N) (d.Idx N) ℂ :=
+    Matrix.of fun i j => if i = i₀ ∧ j = i₀ then 1 else 0
+  refine ⟨M, ?_, ?_, ?_⟩
+  · ext i j
+    simp only [M, Matrix.conjTranspose_apply, Matrix.of_apply]
+    by_cases hi : i = i₀ <;> by_cases hj : j = i₀ <;> simp [hi, hj]
+  · intro i j hnot
+    simp only [M, Matrix.of_apply]
+    rw [ite_eq_right]
+    rintro ⟨rfl, rfl⟩
+    exact hnot (by simp [sbSupport])
+  · intro hzero
+    have hii := congrFun (congrFun hzero i₀) i₀
+    simpa [M] using hii
+
 /-! ### The Hermitian projection
 
 `TestFun` asks for `Φ` to be `C²` and bounded on the **whole** matrix space, while the `Φ` of
@@ -1188,5 +1426,3 @@ end HermProj
 
 
 end RBM.Gauss
-
-

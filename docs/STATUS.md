@@ -92,7 +92,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T634 | Independently accepted: six declarations preserved in two clean cores; root validation 4042 jobs; no closure claim |
 | T635 | Audit failed on quantifiers: boundary split is valid and assigned as T642, but the conditional QV card must require `s_N≤u≤v≤t_N` (current target also has net membership) |
 | T636 | Independently accepted: eight public interfaces preserved in clean drift-time/QV-rate cores; no sharp profile or cross closure claim |
-| T638 | Delivered: a non-scalar block-circulant transition passes goodSetFlow but fails centeredEvent by an exact exponent mismatch; independent audit pending |
+| T638 | Independently accepted as blocked: block-circulant class passes goodSetFlow but cannot meet centeredEvent; T643 tests the general spatial case |
 | T639 | Delivered: complete support-producer boundary corrected; zero-project-import target-mesh core selected; independent audit pending |
 | T640 | Running: correct T625 witness provenance/minimality while preserving the T630 core result |
 | T641 | Running: repair the frozen first-cell theorem proof after definitionally expanding `driftScale` in T636 |

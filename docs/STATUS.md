@@ -100,13 +100,14 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T644 | Independently accepted: eight mesh declarations moved verbatim to a zero-project-import core; `targetMesh 60 N=N^258` remains eventual and exact |
 | T645 | Independently accepted: clean coordinate-weight and QV global-polynomial cores preserve all nine interfaces and exact polynomial powers |
 | T646 | Independently accepted: the clean first-grid witness is noncircular and nondegenerate, with `s_N=0`, eventual `t_N=1/2`, and unchanged (2.72) powers; T651 implements it |
-| T647 | Delivered; independent audit running on the two-import smooth-prefix/canonical core selected as T652 |
+| T647 | Independently accepted: the 49-declaration two-import smooth-prefix/canonical design preserves literal prefix semantics; T652 implements it |
 | T648 | Delivered; independent audit running on finite effective-coordinate Gaussian support and local `measCore` retention |
 | T649 | Running: verbatim clean extraction of the two (2.73) `Step2PP` conversion declarations |
-| T650 | Running: corrected post-T642 dependency and quantifier audit for the conditional (5.42) route |
+| T650 | Delivered; independent audit running on the corrected conditional (5.42) card and exact time-net extraction selected as T654 |
 | T651 | Running: clean `Cond272Reg` placement and nondegenerate first-grid initial-window witness |
 | T652 | Running: exact smooth-prefix/canonical declarations in a clean core with six compatibility facades |
 | T653 | Running: clean finite Gaussian support cylinder and local retention core |
+| T654 | Running: zero-project-import exact `meshK`/`netFinset` core; no QV theorem |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

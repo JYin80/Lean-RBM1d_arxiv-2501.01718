@@ -1,6 +1,6 @@
 # STATUS — current project state
 
-> Updated 2026-09-23 04:07 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
+> Updated 2026-09-23 04:30 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
 
 ## 1. Objective and proof boundary
 
@@ -20,7 +20,7 @@
 
 ## 3. Active work and ready queue
 
-- This task now owns scheduling; the obsolete `rbm1d` heartbeat in the prior task is paused. T512, T513, T515–T538 are independently accepted. T539–T543 are preflighted as five pairwise file-disjoint variable-δ leaves. These remain first-cell producers or analytic interfaces. General-window `hfamily`, general-window `APrimeSlot'`, the six-step assembly and the whole-paper chain remain open.
+- This task now owns scheduling; the obsolete `rbm1d` heartbeat in the prior task is paused. T512, T513, T515–T543 are independently accepted. T544–T548 are preflighted as five pairwise file-disjoint variable-δ leaves. These remain first-cell producers or analytic interfaces. General-window `hfamily`, general-window `APrimeSlot'`, the six-step assembly and the whole-paper chain remain open.
 - T287 (`fitLhs.Qb` has no actual small producer) and T295 (separate nonempty Good and soft-support events do not give a common sample) failed positive-theorem preflight. Revisit T287/T295 only after their missing inputs are established. T281/T282 depend on full T280; T283 follows the production chain. T217 is the final-report lane, and T159 must be reconciled with T283.
 
 ## 4. Mathematical preflight before dispatch (2026-09-22)
@@ -103,6 +103,9 @@
 - T539/T540 — **preflight passed, file-disjoint**: the literal T464 producer already gives the same-event transition estimate with `bSharp≤(16√3/e)√v N^(ν/2-2δ)` once T537 supplies `storedBracket δ≤3`; k=0/k=1 remain zero and the k=2 witness is geometric only, so no transition inhabitance or weight claim is permitted. Independently, T465's pointwise square-root algebra consumes T537's `currentBracket δ≤3` and keeps exactly `384√3 N^(ν/2)η_r^(-1/2)R_v^(-2)`, all active positive-support samples and r endpoints; k=0 is separate and the positive resident's weight is m=N support weight. Both source existential theorems already choose one τ′ before all `0<δ≤1/100,ν>0`; there is no added W/time/ratio power or cycle.
 - T541 — **preflight passed, independent drift lane**: T470's only frozen arithmetic is `2^7N^(4δ-1/2)≤1`; `δ≤1/100` leaves exponent at most `-23/50`, so eventual absorption is strict. The source is accepted T538 plus deterministic scale floors, and the target remains exactly `C(√2+1)N^(2ν)R_v^(-2)`, pointwise and after interval integration, for all active k/r with exact k=0 and a same-event positive k=2 resident. The resident stays labelled m=N support weight. No QV/cross or next-cell input enters.
 - T542/T543 — **preflight passed, separate weight/analytic interfaces**: T520's `exampleGrow_firstCell_cross_order` and positive k=2 resident are already δ-parametric, while T467 supplies a single-τ′ canonical plateau for every `0<δ≤1/100`; hence T542 may define `P=max(p,⌈20/δ⌉₊)`, prove `p≤P`, coefficient-one target/canonical domination, exact k=0 weights and a same-event resident with both weights one, but no moment estimate. T543 separately reuses T521's generic continuity/integrability and `APrimeInit.momNormW_le_momNormW_of_exponent_le` with a δ-dependent canonical high weight; it must keep the measure and weight identical and coefficient one for `1≤p≤P`. Its family high-order bound is deliberately absent. These modules neither depend on each other nor establish hfamily.
+- T539–T543 — **independently accepted**: T539 gives the literal `16√3/e` prefix bound with exponent `ν/2−2δ`, exact k=0/k=1 and same-event positive k=2 geometry but deliberately no transition inhabitance. T540 gives the exact `384√3N^(ν/2)η_r^-1/2R_v^-2` current-QV root for every r endpoint and keeps the resident weight at m=N. T541 retains `C(√2+1)N^(2α)R_v^-2`, the strict gap `1/2−4δ≥23/50`, pointwise/integrated forms and the m=N resident. T542 defines `P=max(p,⌈20/δ⌉₊)`, coefficient-one target/canonical domination and a common-event k=2 sample with both weights one. T543 proves same-measure, same-weight coefficient-one Lyapunov lowering without assuming a family high bound. Independent builds are 3943, 3943, 3947, 3990 and 3989 jobs; all 46 theorem axiom checks contain only the allowed three axioms.
+- T544–T546 — **preflight passed against paper (5.43)–(5.47) and actual producers**: T539 times T540 gives favorable cross power `N^(α−2δ)R_v^-2`; T463 already pays the literal same-event complement at exactly that rate, and `∫₀ᵛr^-1/2dr=2√v` yields T544 with only a p-dependent constant and the known `2p` corrected envelope. Separately, T487's all-sample `2^21N^136` QV envelope and weighted-event split are δ-parametric once its weight/rate aliases use T537; integration keeps `442368N^αR_v^-4+vN^-β` and its stated square root. T546 is the deterministic T498 integration of T541, using `v≤1/2` to obtain `2∫A≤absorbedRate+N^-β`. Each route preserves one literal event, exact k=0 and a positive k=2 witness, with no W/time-net/measure switch or dependency cycle.
+- T547/T548 — **preflight passed against (2.76), (5.28)–(5.29)**: `APrimeGeneralMovingInitialHinit.eventually_initial_hinit` already accepts arbitrary positive δ, and domination by the δ-dependent canonical weight costs coefficient one, leaving exactly `N^(5δ/32)R_v^-2`; T467/T542 can supply the same-event positive k=2 plateau after one τ′ is fixed. Independently, T512 gives `card≤N²`; for `P=max(p,⌈20/δ⌉₊)` and δ>0, `1/P≤δ/20`, hence the exact root cost is `N^(δ/20)` and combines with the future coordinate rate `N^(δ/5)` to `N^(δ/4)`. T548 is pure arithmetic and asserts no moment estimate.
 
 ## 5. Decisions that still constrain work
 
@@ -115,7 +118,7 @@
 
 ## 6. Recent acceptance and repository state
 
-- Commit `ab48d55` pushed the accepted T536 audit after the earlier T512–T535 integrations. T537–T538 are independently accepted and are the only Lean deliverables in the present narrow integration; T539–T543 are the dispatched variable-δ leaves. Leave unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, blueprint artifacts, and all in-flight worker files unstaged.
+- Commits `26c643e` and `fa2c4fb` pushed accepted T537–T538 and the corrected T543 worker assignment. T539–T543 are independently accepted and are the only Lean deliverables in the present narrow integration; T544–T548 are the next preflighted leaves. Leave unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, blueprint artifacts, and all in-flight worker files unstaged.
 
 ## 7. Maintenance on every heartbeat
 

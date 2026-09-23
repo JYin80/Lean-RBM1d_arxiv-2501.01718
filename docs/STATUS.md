@@ -84,15 +84,16 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T626 | Failed independent audit: omitted genuine `LKDecayQuant/EEBridge → SumZeroDyn → Step3` producer paths; Core A remains only a bounded Step45-edge extraction |
 | T627 | Independently accepted as blocked: both proposed import branches still reach Step45; no code retained |
 | T628 | Independently accepted as blocked: literal `k=2` scalar crossing lies outside `‖Xmat‖≤N`; T633 tests later prefixes |
-| T629 | Delivered: clean QV-rate and coordinate-weight/global-poly splits prototype-check; independent audit pending |
+| T629 | Independently accepted: clean QV-rate and coordinate-weight/global-poly split designs compile; T636 implements the first slice |
 | T630 | Delivered: clean scalar consumer/slot cores and facades build; independent audit pending |
 | T631 | Audit failed: Core A itself passes, but root build exposes `Step6EnvWindow`'s missing direct Step45 import; accept only with compatibility repair |
 | T632 | Independently accepted as blocked: omitted `Sample.xiL` dependency identified; prototype reverted; T634 is the corrected extraction |
-| T633 | Running: later-prefix same-sample support audit after the fixed-`k=2` obstruction in T628 |
+| T633 | Delivered: later scalar prefix fixes the norm row but fails `goodSetFlow` exactly at the closed endpoint; independent audit pending |
 | T634 | Running: corrected Core B adds the omitted clean `Sample.xiL` dependency before extracting flow families |
 | T635 | Running: corrected `SumZeroDyn → Step3` boundary audit for the floored/QV route after T626 failure |
 | T636 | Running: first T629 implementation slice, clean drift-time/QV-rate cores only |
 | T637 | Running: one-import compatibility repair required before T631 can be accepted with a green root build |
+| T638 | Running: genuinely non-scalar same-sample support feasibility after T633's endpoint obstruction |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

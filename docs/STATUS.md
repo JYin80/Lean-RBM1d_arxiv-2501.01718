@@ -1,6 +1,6 @@
 # STATUS — current project state
 
-> Updated 2026-09-23 02:38 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
+> Updated 2026-09-23 03:08 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
 
 ## 1. Objective and proof boundary
 
@@ -20,7 +20,7 @@
 
 ## 3. Active work and ready queue
 
-- This task now owns scheduling; the obsolete `rbm1d` heartbeat in the prior task is paused. T512, T513, T515–T523 are independently accepted. Three file-disjoint Lean writers have T524–T526: widened-weight first-cell family moments, same-high-weight lower endpoint moments, and a sharper deterministic exponent absorption. These are local producers only. General-window `hfamily`, general-window `APrimeSlot'`, the six-step assembly and the whole-paper chain remain open.
+- This task now owns scheduling; the obsolete `rbm1d` heartbeat in the prior task is paused. T512, T513, T515–T526 are independently accepted. Three file-disjoint Lean writers have T527–T529: the sharp actual first-cell coordinate moment, the first-cell widened-weight endpoint moment, and the sharp finite-family arithmetic. These remain local first-cell or deterministic producers. General-window `hfamily`, general-window `APrimeSlot'`, the six-step assembly and the whole-paper chain remain open.
 - T287 (`fitLhs.Qb` has no actual small producer) and T295 (separate nonempty Good and soft-support events do not give a common sample) failed positive-theorem preflight. Revisit T287/T295 only after their missing inputs are established. T281/T282 depend on full T280; T283 follows the production chain. T217 is the final-report lane, and T159 must be reconciled with T283.
 
 ## 4. Mathematical preflight before dispatch (2026-09-22)
@@ -90,7 +90,8 @@
 
 - T518/T520/T521/T522/T523 — **independently accepted**: T518 applies the exact time-net theorem to the actual plus centered trace on the genuine moving `TimeIcc × ZMod` index with control `2qExt`, K=6, B=1, γ=1/2, Δ=N⁻¹⁶, and one T516 positive-length current-window witness. T520 proves pointwise `widenedW_p≤canonicalWeight_P` and a same-event positive k=2 plateau. T521 proves same-canonical-weight high-to-low family moments; T522 proves the coefficient-one actual endpoint `jSnorm` bound. T523 transfers T518 to both charges by T511's pointwise norm identity, with the identical control and one T518 witness; independent build 3885 and both axiom lists pass. None supplies general moving `hfamily` or the next-cell `BoundsCore`.
 
-- T524/T525/T526 — **preflight passed, local first-cell scope only**: T524 uses T520's pointwise `targetWeight_p≤weight_P`, T521's same-weight order-p family estimate, and integral/rpow monotonicity to transfer the family bound to the literal widened target weight. The same sharp-event resident has both weights one; no measure switch occurs inside Lyapunov. T525 keeps `weight_P` fixed and combines T521's lower family moment with T522's coefficient-one baseline Minkowski and endpoint identity, giving the lower-order endpoint `jSnorm` bound without changing weights. T526 observes that every exponent in T503's ledger is strictly below `δ/5`: `5δ/32<δ/5`, `δ/8<δ/5`, `-31δ/16<δ/5`, `δ/32<δ/5`, `-1/2<δ/5`, `-1<δ/5`. Thus the identical six-term absorption works with target `N^(δ/5)R^-2`, fixed p before N and uniformly for `1≤R≤2`. This creates the strict margin later needed to pay a finite-family cardinality. None of these tickets claims the required `N^(δ/4)` widened endpoint moment, `WeightedMoment`, general-window `hfamily`, or A′ closure.
+- T524/T525/T526 — **independently accepted, local first-cell scope only**: a joint independent build completed 3997 jobs. Every printed export uses only `propext`, `Classical.choice`, `Quot.sound`; no `sorry`, new axiom, frozen-signature edit or shared-file edit was found. T524's pointwise target-weight transfer keeps coefficient one and one sharp-event resident with both weights one. T525 keeps the order-P canonical weight fixed through the lower endpoint Minkowski estimate, including k=0 and the same positive k=2 resident. T526 proves the six literal T503 exponents are absorbed at `δ/5`, uniformly for `1≤R≤2` and fixed p before N, reusing T503's same-event witness. The output sizes are still respectively `N^(δ/2)` for the family/endpoint lanes and deterministic `N^(δ/5)` for the ledger; none is the required general moving hfamily or A′ closure.
+- T527/T528/T529 — **preflight passed and dispatched after direct paper/signature check**: paper (2.76) keeps the actual two-loop decay uniform in `s≤u≤t`, while the stopped Duhamel/martingale mechanism (5.43)–(5.47) carries the endpoint ratio without an extra W or time-net loss. T527 reuses T509's public exact ledger assembly from T500/T506 and substitutes only T526's sharper `δ/5` absorption; p remains fixed before eventual N, all active k/output and k=0 are covered, and the literal sharp event/resident is unchanged. T528 applies T522's exact endpoint identity and coefficient-one Minkowski to T524 under the same widened target weight; it remains at `N^(δ/2)` and is explicitly not hfamily. T529 is independent arithmetic: `card=L_N²≤N²`, hence the root costs `N^(1/P)`; `P≥40000` gives `1/P≤δ/20`, and `δ/20+δ/5=δ/4`. It assumes no T527 output and must include explicit admissible numerical witnesses. The three files are disjoint and the dependency graph is acyclic.
 
 ## 5. Decisions that still constrain work
 
@@ -103,7 +104,7 @@
 
 ## 6. Recent acceptance and repository state
 
-- Commit `44e1278` pushed T512–T522 with the task/status archive. T523 is independently accepted but remains uncommitted pending the next acceptance batch. Leave unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, and blueprint artifacts unstaged.
+- Commits `44e1278` and `000b576` pushed T512–T523 with their reports and scheduling archive. T524–T526 are independently accepted and will be the next narrow commit. Leave unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, and blueprint artifacts unstaged.
 
 ## 7. Maintenance on every heartbeat
 

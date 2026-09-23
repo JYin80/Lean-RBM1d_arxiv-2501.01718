@@ -97,7 +97,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T641 | Independently accepted: one-proof `Step2.tT` compatibility repair; root validation 4046 jobs |
 | T642 | Independently accepted: two actual Step-3 producers isolated downstream; audited upstream closures no longer reach them |
 | T643 | Independently accepted: Ward controls only signed row sums; a coupled-block ansatz passes the deterministic carrier rows, while positive Gaussian support and `measCore` retention remain open |
-| T644 | Delivered; independent audit running on the eight-declaration zero-project-import mesh core |
+| T644 | Independently accepted: eight mesh declarations moved verbatim to a zero-project-import core; `targetMesh 60 N=N^258` remains eventual and exact |
 | T645 | Delivered; independent audit running on the clean coordinate-weight/QV-global-polynomial cores |
 | T646 | Delivered; independent audit running on the clean positive-length first-grid-window design selected as T651 |
 | T647 | Running: audit a clean literal smooth-prefix/canonical producer boundary after T627/T639 |

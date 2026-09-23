@@ -90,7 +90,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T632 | Independently accepted as blocked: omitted `Sample.xiL` dependency identified; prototype reverted; T634 is the corrected extraction |
 | T633 | Audit failed on dependencies: scalar mathematics and endpoint obstruction pass, but cited producer surfaces are not clean; T639 corrects the boundary |
 | T634 | Independently accepted: six declarations preserved in two clean cores; root validation 4042 jobs; no closure claim |
-| T635 | Delivered: exact `SumZeroDyn → Step3` boundary isolated; two-producer split selected; independent audit pending |
+| T635 | Audit failed on quantifiers: boundary split is valid and assigned as T642, but the conditional QV card must require `s_N≤u≤v≤t_N` (current target also has net membership) |
 | T636 | Delivered: clean drift-time/QV-rate cores and facades build; root and global axiom audit pass; independent audit pending |
 | T638 | Running: genuinely non-scalar same-sample support feasibility after T633's endpoint obstruction |
 | T639 | Running: correct T633's false clean-producer classification before any support implementation |

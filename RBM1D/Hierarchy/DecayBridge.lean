@@ -5,7 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.Decay
 import RBM1D.Hierarchy.SumZeroDyn
-import RBM1D.Hierarchy.Step1
+import RBM1D.Defs.StochDomHighProb
 
 /-!
 # T118: the bridge between Lemma 5.9 (T59) and `RBM.SumZeroDyn.LKDecay` (T60)

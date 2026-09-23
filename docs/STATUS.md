@@ -86,17 +86,17 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T628 | Independently accepted as blocked: literal `k=2` scalar crossing lies outside `‖Xmat‖≤N`; T633 tests later prefixes |
 | T629 | Independently accepted: clean QV-rate and coordinate-weight/global-poly split designs compile; T636 implements the first slice |
 | T630 | Independently accepted: 15 declarations preserved in three clean cores; root validation 4037 jobs; no downstream claim |
-| T631 | Audit failed: Core A itself passes, but root build exposes `Step6EnvWindow`'s missing direct Step45 import; accept only with compatibility repair |
+| T631/T637 | Independently accepted together: generic high-probability core extracted and missing Step6EnvWindow direct import restored; no Step3/QV closure claim |
 | T632 | Independently accepted as blocked: omitted `Sample.xiL` dependency identified; prototype reverted; T634 is the corrected extraction |
 | T633 | Audit failed on dependencies: scalar mathematics and endpoint obstruction pass, but cited producer surfaces are not clean; T639 corrects the boundary |
 | T634 | Independently accepted: six declarations preserved in two clean cores; root validation 4042 jobs; no closure claim |
 | T635 | Delivered: exact `SumZeroDyn → Step3` boundary isolated; two-producer split selected; independent audit pending |
-| T636 | Running: first T629 implementation slice, clean drift-time/QV-rate cores only |
-| T637 | Delivered: direct Step45 import repair builds; root advances to the T636-induced first-cell compatibility seam; independent audit pending |
+| T636 | Delivered: clean drift-time/QV-rate cores and facades build; root and global axiom audit pass; independent audit pending |
 | T638 | Running: genuinely non-scalar same-sample support feasibility after T633's endpoint obstruction |
 | T639 | Running: correct T633's false clean-producer classification before any support implementation |
 | T640 | Running: correct T625 witness provenance/minimality while preserving the T630 core result |
 | T641 | Running: repair the frozen first-cell theorem proof after definitionally expanding `driftScale` in T636 |
+| T642 | Running: isolate the two actual Step-3 flow producers downstream of the elementary `Step3` interface |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

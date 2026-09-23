@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.Step45
 import RBM1D.Loop.ContinuityAssembly
+import RBM1D.Defs.StochDomHighProb
 
 /-!
 # Step 1 of the proof of Theorem 2.21: (2.73) and (2.74)
@@ -180,18 +181,6 @@ theorem bootstrap {M : ∀ _ : ℕ, ℝ → Ω → ℝ} {a b : ∀ _ : ℕ, ℝ 
   · have := hab ⟨v, hv⟩
     simp only at h this
     exact (lt_of_le_of_lt this h).ne'
-
-/-- **High probability gives `≺`**: if `ξ ≤ ζ` for all `u` w.h.p. (`ζ ≥ 0`), then `ξ ≺ ζ`. -/
-theorem stochDom_of_highProb {ξ ζ : ∀ N, U N → Ω → ℝ} (hζ : ∀ N u ω, 0 ≤ ζ N u ω)
-    (h : HighProb P (fun N => {ω | ∀ u, ξ N u ω ≤ ζ N u ω})) : StochDom P ξ ζ := by
-  intro τ hτ D hD
-  filter_upwards [h D hD, eventually_ge_atTop 1] with N hN hN1
-  refine (measure_mono ?_).trans hN
-  rintro ω ⟨u, hu⟩ hω
-  simp only [Set.mem_ofPred_eq] at hω
-  have h1 : (1 : ℝ) ≤ (N : ℝ) ^ τ := Real.one_le_rpow (by exact_mod_cast hN1) hτ.le
-  have := hω u
-  nlinarith [hζ N u ω]
 
 /-- **Removing a parameter-dependent indicator.**  If `1_{Ω(N,u)} ξ ≺ ζ` and the events
 `Ω(N,u)` hold for all `u` simultaneously with high probability, then `ξ ≺ ζ`. -/

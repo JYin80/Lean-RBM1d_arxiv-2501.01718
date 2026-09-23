@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.Step6Sample
+import RBM1D.Hierarchy.Step45
 import RBM1D.Hierarchy.LKDecayQuant
 
 /-!

@@ -86,10 +86,11 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T628 | Delivered: literal `k=2` scalar crossing exists but lies outside `‖Xmat‖≤N`; independent audit pending |
 | T629 | Running: corrected QV-rate/coordinate-weight core-extraction audit after T622 |
 | T630 | Running: clean scalar consumer/slot core extraction selected by T625 |
-| T631 | Running with corrected scope: extract the generic helper and remove one Step45 edge; do not claim full pre-Step3 cleanliness |
-| T632 | Blocked: verbatim `flowXiL` needs later `Sample.xiL`; prototype reverted; independent audit pending |
+| T631 | Delivered: bounded Core A builds and removes the Step1/Step45 edge; remaining Step3 ancestry recorded; independent audit pending |
+| T632 | Independently accepted as blocked: omitted `Sample.xiL` dependency identified; prototype reverted; T634 is the corrected extraction |
 | T633 | Running: later-prefix same-sample support audit after the fixed-`k=2` obstruction in T628 |
 | T634 | Running: corrected Core B adds the omitted clean `Sample.xiL` dependency before extracting flow families |
+| T635 | Running: corrected `SumZeroDyn → Step3` boundary audit for the floored/QV route after T626 failure |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

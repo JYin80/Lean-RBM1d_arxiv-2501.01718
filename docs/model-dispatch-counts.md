@@ -13,5 +13,9 @@ Count starts at 2026-09-23 16:48:14 UTC, when Jun requested tracking. T669 was d
 | T676 | GPT-6 Sol | High | Pure Lean proof of exact finite Fourier swap sensitivity and sharp witness |
 | T677 | GPT-6 Sol | High | Substantive pure topological Lean proof for closed hard-cutoff upper semicontinuity |
 | T678 | GPT-6 Sol | High | Clean Lean continuity proof for the literal ellStar hard-cutoff threshold |
+| T679 | GPT-6 Sol | High | Independent acceptance audit of the clean doubled-argument EEBridge extraction |
+| T680 | GPT-6 Sol | High | Independent acceptance audit of the Fourier swap bound and sharp witness |
+| T681 | GPT-6 Sol | High | Independent acceptance audit of the closed-cutoff upper-semicontinuity proof |
+| T682 | GPT-6 Sol | High | Independent acceptance audit of the clean ellStar cutoff continuity proof |
 
-Current total: GPT-6 Luna 2, GPT-6 Sol 7. Ratio Luna:Sol = 2:7 (22.2%:77.8%).
+Current total: GPT-6 Luna 2, GPT-6 Sol 11. Ratio Luna:Sol = 2:11 (15.4%:84.6%).

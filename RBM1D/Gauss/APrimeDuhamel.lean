@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.SampleFlowBridge
+import RBM1D.Gauss.APrimeCoordWeightCore
 
 /-!
 # The `∇χ` term and the same-time quadratic-variation rates (T260)
@@ -338,14 +339,6 @@ end Band
 section QuadVar
 
 variable {d : Dims} {N : ℕ}
-
-/-- The model's coordinate weight `∑_α S_α ‖B_α‖²`: a deterministic constant of the band
-model, carrying no dependence on the observable. -/
-noncomputable def coordWeight (d : Dims) (N : ℕ) : ℝ :=
-  ∑ q ∈ usedCoord d N, (gvar d (crd d N q) : ℝ) * ‖Bmat d N q.1 q.2.1 q.2.2‖ ^ 2
-
-theorem coordWeight_nonneg (d : Dims) (N : ℕ) : 0 ≤ coordWeight d N :=
-  Finset.sum_nonneg fun q _ => mul_nonneg (gvar d (crd d N q)).2 (by positivity)
 
 /-- **⭐ The same-time quadratic-variation rate of a quantitative `C²` observable.**
 `quadVar = ∑_α S_α ‖∂_α F‖²` and `‖∂_α F‖ ≤ b₁‖B_α‖`, so the rate is `b₁²` times the model

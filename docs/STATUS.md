@@ -98,14 +98,15 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T642 | Independently accepted: two actual Step-3 producers isolated downstream; audited upstream closures no longer reach them |
 | T643 | Independently accepted: Ward controls only signed row sums; a coupled-block ansatz passes the deterministic carrier rows, while positive Gaussian support and `measCore` retention remain open |
 | T644 | Independently accepted: eight mesh declarations moved verbatim to a zero-project-import core; `targetMesh 60 N=N^258` remains eventual and exact |
-| T645 | Delivered; independent audit running on the clean coordinate-weight/QV-global-polynomial cores |
+| T645 | Independently accepted: clean coordinate-weight and QV global-polynomial cores preserve all nine interfaces and exact polynomial powers |
 | T646 | Independently accepted: the clean first-grid witness is noncircular and nondegenerate, with `s_N=0`, eventual `t_N=1/2`, and unchanged (2.72) powers; T651 implements it |
 | T647 | Delivered; independent audit running on the two-import smooth-prefix/canonical core selected as T652 |
-| T648 | Running: finite positive-variance Gaussian support and measurable-cylinder retention after T643 |
+| T648 | Delivered; independent audit running on finite effective-coordinate Gaussian support and local `measCore` retention |
 | T649 | Running: verbatim clean extraction of the two (2.73) `Step2PP` conversion declarations |
 | T650 | Running: corrected post-T642 dependency and quantifier audit for the conditional (5.42) route |
 | T651 | Running: clean `Cond272Reg` placement and nondegenerate first-grid initial-window witness |
 | T652 | Running: exact smooth-prefix/canonical declarations in a clean core with six compatibility facades |
+| T653 | Running: clean finite Gaussian support cylinder and local retention core |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

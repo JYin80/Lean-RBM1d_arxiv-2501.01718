@@ -35,8 +35,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | Ticket | State |
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
-| T588 | Delivered; independent audit pending |
-| T589 | Delivered; scheduler audit pending |
+| T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
 | T590 | Running: exact deterministic (5.42) absorption |
 | T591 | Delivered; independent audit pending |
 | T592 | Running: exact general-moving cross-term bridge preflight |
@@ -48,7 +47,9 @@ Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and
 
 T582 is accepted as a scope audit: the fixed `E=0,D=60` first-cell slot cannot satisfy the merged consumer's `∀ E,s,t,c,D≥60` table. After T579 acceptance, its selected next theorem is exactly T584; the other five merged inputs remain sibling obligations.
 
-T583's classifications are provisionally useful, but its proposed theorem is not accepted: it incorrectly used scalar `s,t`, `Cond272Reg (sample d)`, a spurious `c` argument in `Step1.Hyp`, and `d : Data`. T588 must restore the literal consumer signature before any cut-package dispatch.
+T583 is rejected for using scalar `s,t`, `Cond272Reg (sample d)`, a spurious `c` argument in `Step1.Hyp`, and `d : Data`. T588 corrected those signatures but is also rejected because it overstated the existential Eq548 failure and put `Kmod` outside the required `D` dependence. T589 supersedes both for the cut-slot branch.
+
+T589 is accepted as the corrected cut-slot preflight. The first exact analytic blocker is the arbitrary-moving-window truncated `2p`-moment family for the actual all-charge `xiLK … 2`, especially the independent `(+,+)` charge, at threshold `N^(2δ)·flowAs^(1/2)`. The event modulus, mesh and cardinality fields have noncircular sources (`Kmod=21`, `γ=1/2`, `Ccard=43`); no A′/`jSnorm` result supplies this all-charge moment.
 
 ## 4. Exact open blockers
 

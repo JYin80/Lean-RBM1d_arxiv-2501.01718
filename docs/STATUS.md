@@ -106,13 +106,14 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T650 | Independent audit failed only on frozen namespace exactness: the QV card passes, but `netFinset*` lives in `RBM.MomentDuhamelCut`; T654 already uses the corrected names |
 | T651 | Delivered locally; its clean core and signatures pass, but final facade/root validation waits for coordinated repair of T652's `Step2.lk` compatibility break |
 | T652 | Blocked after core/facade extraction: `Eq548Producer` needs one compatibility unfold edit, but T654 currently owns that file; partial work remains excluded until a fresh post-T654 repair |
-| T653 | Delivered; independent audit running on the clean finite Gaussian support/local-retention core; root validation waits for the unrelated Eq548 compatibility repair |
+| T653 | Independently accepted: 12 clean finite-support/local-retention declarations, including zero-variance fixing and nondegenerate singleton witness; root rebuild is blocked only by unrelated T659-owned compatibility work |
 | T654 | Stopped with corrected namespace core/facades; final validation is folded into T659 because T652 changed `Step2.lk` in the shared `Eq548Producer` consumer |
-| T655 | Running: audit the next clean same-sample carrier-cylinder producer boundary after T643/T648 |
+| T655 | Delivered; independent audit running on the literal carrier-cylinder boundary and proposed clean predicate extraction; implementation waits for T659 |
 | T656 | Running: corrected conditional arbitrary-charge QV/moment-core preflight; no production or closure claim |
 | T657 | Running: read-only ownership/build audit for one fresh repair of the entangled T651/T652/T654 partials |
 | T658 | Running: exact Gaussian-coordinate encoding audit for the T643 coupled-block deterministic center |
 | T659 | Running: coordinated completion of T651/T652/T654 plus the one known definitional compatibility unfold; no new mathematics |
+| T660 | Running: scratch-prototype the exact carrier/transition definition core and facade compatibility before any implementation |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

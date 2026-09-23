@@ -110,6 +110,7 @@ import RBM1D.Gauss.EntryBoundGauss
 import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.FlowHolder
 import RBM1D.Gauss.Generator
+import RBM1D.Gauss.FiniteSupportCore
 import RBM1D.Gauss.IBP
 import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.MomentGronwall

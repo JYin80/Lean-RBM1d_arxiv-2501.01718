@@ -17,5 +17,19 @@ Count starts at 2026-09-23 16:48:14 UTC, when Jun requested tracking. T669 was d
 | T680 | GPT-6 Sol | High | Independent acceptance audit of the Fourier swap bound and sharp witness |
 | T681 | GPT-6 Sol | High | Independent acceptance audit of the closed-cutoff upper-semicontinuity proof |
 | T682 | GPT-6 Sol | High | Independent acceptance audit of the clean ellStar cutoff continuity proof |
+| T683 | GPT-6 Sol | High | Nontrivial dependency preflight for clean eeFun and Band.toDims extraction |
+| T684 | GPT-6 Sol | High | Pure Lean finite-permutation counting mean-zero theorem for Fourier sum |
+| T685 | GPT-6 Luna | High | Mechanical three-import root integration of independently audited pure helper modules |
+| T686 | GPT-6 Sol | High | Pure Lean proof of nonempty finite upper-semicontinuous supremum |
+| T687 | GPT-6 Luna | High | Read-only finite Fourier-character Mathlib API/import inventory, no mathematical acceptance judgment |
+| T688 | GPT-6 Sol | High | Independent mathematical/Lean acceptance audit of T684 finite permutation mean |
+| T689 | GPT-6 Sol | High | Independent acceptance audit of T685 root-import integration |
+| T690 | GPT-6 Sol | High | Independent Lean/mathematical acceptance audit of T686 finite USC supremum |
+| T691 | GPT-6 Luna | High | Mechanical five-declaration source move after accepted dependency preflight |
+| T692 | GPT-6 Sol | High | Substantive Lean proof of nonzero Fourier-character orthogonality and mean |
+| T693 | GPT-6 Luna | High | Mechanical two-import root integration of independently audited pure helpers |
+| T694 | GPT-6 Sol | High | Substantive finite-permutation prefix-fiber bijection proof toward conditional exposure |
 
-Current total: GPT-6 Luna 2, GPT-6 Sol 11. Ratio Luna:Sol = 2:11 (15.4%:84.6%).
+Current total: GPT-6 Luna 6, GPT-6 Sol 19. Ratio Luna:Sol = 6:19 (24.0%:76.0%).
+
+Prospective target from Jun's 2026-09-23 17:35 UTC request: aim for about 50% Luna among newly created tickets **when genuinely useful, simple, tightly scoped, low-risk work exists**. Do not relabel substantive proofs, mathematical preflights, nontrivial integration, satisfiability checks, or independent acceptance audits to improve the fraction, and do not create filler tickets. Preserve the cumulative count above and separately report the post-request count. Post-request Luna 3, Sol 5; ratio 3:5 (37.5%:62.5%).

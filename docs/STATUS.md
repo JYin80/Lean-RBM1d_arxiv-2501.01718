@@ -31,13 +31,15 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 
 | Ticket | State |
 |---|---|
-| T582 | Running: fixed-first-cell versus universal-slot boundary |
 | T583 | Running: remaining five universal merged inputs |
 | T584 | Running: exact positive-cell general-moving QV profile |
 | T585 | Running: deterministic (5.42) absorption audit |
 | T586 | Running: exact general-moving (5.35) drift source assembly |
+| T587 | Running: post-QV integration/net boundary audit |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
+
+T582 is accepted as a scope audit: the fixed `E=0,D=60` first-cell slot cannot satisfy the merged consumer's `∀ E,s,t,c,D≥60` table. After T579 acceptance, its selected next theorem is exactly T584; the other five merged inputs remain sibling obligations.
 
 ## 4. Exact open blockers
 

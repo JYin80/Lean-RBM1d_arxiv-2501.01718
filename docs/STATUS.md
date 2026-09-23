@@ -88,12 +88,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T630 | Delivered: clean scalar consumer/slot cores and facades build; independent audit pending |
 | T631 | Audit failed: Core A itself passes, but root build exposes `Step6EnvWindow`'s missing direct Step45 import; accept only with compatibility repair |
 | T632 | Independently accepted as blocked: omitted `Sample.xiL` dependency identified; prototype reverted; T634 is the corrected extraction |
-| T633 | Delivered: later scalar prefix fixes the norm row but fails `goodSetFlow` exactly at the closed endpoint; independent audit pending |
-| T634 | Running: corrected Core B adds the omitted clean `Sample.xiL` dependency before extracting flow families |
+| T633 | Audit failed on dependencies: scalar mathematics and endpoint obstruction pass, but cited producer surfaces are not clean; T639 corrects the boundary |
+| T634 | Delivered: corrected Core B and facades build; root awaits T637 compatibility repair; independent audit pending |
 | T635 | Running: corrected `SumZeroDyn → Step3` boundary audit for the floored/QV route after T626 failure |
 | T636 | Running: first T629 implementation slice, clean drift-time/QV-rate cores only |
 | T637 | Running: one-import compatibility repair required before T631 can be accepted with a green root build |
 | T638 | Running: genuinely non-scalar same-sample support feasibility after T633's endpoint obstruction |
+| T639 | Running: correct T633's false clean-producer classification before any support implementation |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

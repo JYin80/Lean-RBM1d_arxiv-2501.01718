@@ -372,6 +372,19 @@ theorem Cond272'.toCond272 {s t : ℕ → ℝ} (hE : |E| < 2) (hst : ∀ N, s N 
   calc (B.scale E N (t N))⁻¹ ≤ (((1 - s N) / (1 - t N)) ^ 30)⁻¹ := inv_anti₀ hpos h1
     _ = ((1 - t N) / (1 - s N)) ^ 30 := by rw [← inv_pow, inv_div]
 
+/-- **(2.72) exactly as printed, together with the regime bound `N^c ≤ W ℓ_t η_t`.**
+
+The first component is `RBM.Cond272`, verbatim the paper's (2.72).  The second is the
+hypothesis `hreg` that `RBM.eventually_scale_facts` and `RBM.weakLaw_highProb` already take
+(Step 1, p. 52); on the grid of p. 24 it is free, because there `η_s/η_t = W^{τ'}` is itself a
+positive power of `W` and (2.72) then forces `W ℓ_t η_t ≥ W^{30τ'}`.
+
+This is strictly weaker than `RBM.Cond272'` (`RBM.Cond272'.toCond272Reg`) and strictly stronger
+than `RBM.Cond272` (`RBM.Cond272Reg.toCond272`; the converse fails,
+`RBM.exists_cond272_not_rpow_le_scale`). -/
+def Cond272Reg (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (c : ℝ) : Prop :=
+  Cond272 B E s t ∧ ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N)
+
 /-- **Theorem 2.21 implies its gained form** (T179): `RBM.Thm221'` is the weaker statement, so
 nothing downstream of `RBM.Thm221` is lost by moving to `RBM.Thm221'`. -/
 theorem Thm221.toThm221' {X : Sample B} {κ : ℝ} (hκ : 0 < κ) (hT : Thm221 X κ) :

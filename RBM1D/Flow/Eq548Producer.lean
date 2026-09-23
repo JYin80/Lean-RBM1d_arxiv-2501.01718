@@ -3,6 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
+import RBM1D.Defs.TimeNetCore
 import RBM1D.Hierarchy.Step2FarMart
 import RBM1D.Hierarchy.Step2Near47
 import RBM1D.Defs.MatrixMeasurable
@@ -582,7 +583,7 @@ variable (X : Sample B)
 
 theorem lk_zero (hE : |E| ≤ 2) (N : ℕ) (ω : Ω) (a : LoopArg (B.L N) 2) :
     Step2.lk X E N 0 ω a = 0 := by
-  unfold Step2.lk SumZeroDyn.lkT
+  unfold Step2.lk
   have hwf : (LoopData.idx (Step2.sigPM, a)).WF := LoopData.idx_wf _
   have hlen : (LoopData.idx (Step2.sigPM, a)).length = 2 := LoopData.idx_length _
   have h1 : X.Lval E N 0 ω (LoopData.idx (Step2.sigPM, a))
@@ -1351,13 +1352,6 @@ theorem entryModulusEvK_of_entryModulusEv (h : EntryModulusEv X E s t D) :
 
 theorem entryModulusEv_of_entryModulusEvK (h : EntryModulusEvK X E s t D 1 (1 / 2)) :
     EntryModulusEv X E s t D := h
-
-/-- **The mesh that matches the pair `(Kmod, γ)`**: `m_N = (N+1)^{Kmod/γ}`.  At `(1, 1/2)` this
-is the `(N+1)²` of `RBM.Step2FarMart.mesh_fine_one_at_sq`. -/
-noncomputable def meshK (Kmod γ : ℝ) : ℕ → ℝ := fun N => ((N : ℝ) + 1) ^ (Kmod / γ)
-
-theorem meshK_pos (Kmod γ : ℝ) (N : ℕ) : 0 < meshK Kmod γ N :=
-  Real.rpow_pos_of_pos (by positivity) _
 
 /-- At the flow's own pair the mesh is the old one, byte for byte. -/
 theorem meshK_one_half : meshK 1 (1 / 2) = fun N : ℕ => ((N : ℝ) + 1) ^ (2 : ℝ) := by

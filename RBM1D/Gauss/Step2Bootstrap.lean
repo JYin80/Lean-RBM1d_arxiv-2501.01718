@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.CutHypTheta
 import RBM1D.Gauss.Step6Hyp
+import RBM1D.Gauss.APrimeSmoothPrefixCanonicalCore
 
 /-!
 # Step 2's first pass: the deterministic envelope, and why the unconditional walk cannot close
@@ -928,59 +929,6 @@ Three facts make this the right object, and all three are compiled below.
 section SoftMax
 
 variable {ι : Type*}
-
-/-- **The ℓ^q soft maximum**, at the even order `q = 2r` (so that `x ↦ x^q` is a polynomial and
-no absolute value is differentiated). -/
-noncomputable def softMax (r : ℕ) (S : Finset ι) (ρ : ι → ℝ) : ℝ :=
-  (∑ i ∈ S, ρ i ^ (2 * r)) ^ ((1 : ℝ) / (2 * (r : ℝ)))
-
-theorem even_pow_nonneg (x : ℝ) (r : ℕ) : 0 ≤ x ^ (2 * r) := by
-  rw [pow_mul]; positivity
-
-theorem sum_even_pow_nonneg (S : Finset ι) (ρ : ι → ℝ) (r : ℕ) :
-    0 ≤ ∑ i ∈ S, ρ i ^ (2 * r) :=
-  Finset.sum_nonneg fun _ _ => even_pow_nonneg _ _
-
-theorem softMax_nonneg (r : ℕ) (S : Finset ι) (ρ : ι → ℝ) : 0 ≤ softMax r S ρ :=
-  Real.rpow_nonneg (sum_even_pow_nonneg _ _ _) _
-
-theorem abs_even_pow (x : ℝ) (r : ℕ) : |x| ^ (2 * r) = x ^ (2 * r) := by
-  rw [← abs_pow, abs_of_nonneg (even_pow_nonneg x r)]
-
-/-- `(|x|^{2r})^{1/(2r)} = |x|`. -/
-theorem rpow_inv_even_pow {r : ℕ} (hr : 1 ≤ r) (x : ℝ) :
-    ((|x| ^ (2 * r) : ℝ)) ^ ((1 : ℝ) / (2 * (r : ℝ))) = |x| := by
-  have hr1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
-  have hr0 : (0 : ℝ) < 2 * (r : ℝ) := by linarith
-  rw [← Real.rpow_natCast |x| (2 * r), ← Real.rpow_mul (abs_nonneg x)]
-  push_cast
-  rw [mul_one_div, div_self hr0.ne', Real.rpow_one]
-
-/-- **The soft maximum dominates the maximum.** -/
-theorem le_softMax {r : ℕ} (hr : 1 ≤ r) {S : Finset ι} {ρ : ι → ℝ} {i : ι} (hi : i ∈ S) :
-    |ρ i| ≤ softMax r S ρ := by
-  have h1 : |ρ i| ^ (2 * r) ≤ ∑ j ∈ S, ρ j ^ (2 * r) := by
-    rw [abs_even_pow]
-    exact Finset.single_le_sum (fun j _ => even_pow_nonneg _ _) hi
-  have h2 := Real.rpow_le_rpow (even_pow_nonneg |ρ i| r) h1
-    (by positivity : (0 : ℝ) ≤ (1 : ℝ) / (2 * (r : ℝ)))
-  rwa [rpow_inv_even_pow hr] at h2
-
-/-- **The soft maximum is the maximum up to `(card)^{1/q}`.** -/
-theorem softMax_le {r : ℕ} (hr : 1 ≤ r) {S : Finset ι} {ρ : ι → ℝ} {M : ℝ} (hM : 0 ≤ M)
-    (h : ∀ i ∈ S, |ρ i| ≤ M) :
-    softMax r S ρ ≤ ((S.card : ℝ)) ^ ((1 : ℝ) / (2 * (r : ℝ))) * M := by
-  have hsum : ∑ i ∈ S, ρ i ^ (2 * r) ≤ (S.card : ℝ) * M ^ (2 * r) := by
-    have := Finset.sum_le_card_nsmul S (fun i => ρ i ^ (2 * r)) (M ^ (2 * r)) fun i hi => by
-      rw [← abs_even_pow]
-      exact pow_le_pow_left₀ (abs_nonneg _) (h i hi) _
-    simpa [nsmul_eq_mul] using this
-  have h2 := Real.rpow_le_rpow (sum_even_pow_nonneg S ρ r) hsum
-    (by positivity : (0 : ℝ) ≤ (1 : ℝ) / (2 * (r : ℝ)))
-  refine h2.trans (le_of_eq ?_)
-  rw [Real.mul_rpow (by positivity) (even_pow_nonneg M r)]
-  congr 1
-  rw [← abs_of_nonneg hM, rpow_inv_even_pow hr, abs_of_nonneg hM]
 
 /-- **The calibration `q ≍ log N`.**  If the family has at most `N^A` members then the loss
 `(card)^{1/q}` of `softMax_le` is at most `e` as soon as `q ≥ A log N`.  So the soft maximum

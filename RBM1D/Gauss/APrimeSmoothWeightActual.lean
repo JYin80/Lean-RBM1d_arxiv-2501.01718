@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.APrimeSmoothPrefix
+import RBM1D.Gauss.APrimeSmoothPrefixCanonicalCore
 import RBM1D.Gauss.APrimeWeight
 import RBM1D.Gauss.APrimeDuhamel
 
@@ -333,23 +334,6 @@ private theorem norm_fderiv_smoothMaxOf_le {V ι : Type*}
     (mul_nonneg hC0 (norm_nonneg _)) hK
   simpa only [Finset.card_univ, mul_assoc] using h
 
-noncomputable def epsilon (d : Gauss.Dims) (D : ℝ) (N : ℕ) : ℝ :=
-  (d.W N : ℝ) ^ (-D) * (N : ℝ) ^ (-(10 : ℝ))
-
-noncomputable def threshold (δ : ℝ) (N : ℕ) : ℝ :=
-  8 * (Real.exp 1) ^ 2 * (N : ℝ) ^ (2 * δ)
-
-/-- The actual prefix, expressed as a function of the common base matrix. -/
-noncomputable def prefixMatrix (d : Gauss.Dims) (E D : ℝ) (s mesh : ℕ → ℝ)
-    (N k m : ℕ) (M : Matrix (d.Idx N) (d.Idx N) ℂ) : ℝ :=
-  softMax m (Finset.range k) (fun j =>
-    APrimeSmoothPrefix.smoothJSMatrix d E D s N
-      (cutNetPt s mesh N j) (epsilon d D N) m
-      ((Real.sqrt (cutNetPt s mesh N j) : ℂ) • M))
-
-noncomputable def prefixSample (d : Gauss.Dims) (E D : ℝ) (s mesh : ℕ → ℝ)
-    (N k m : ℕ) (ω : Gauss.Ω d) : ℝ :=
-  prefixMatrix d E D s mesh N k m (Gauss.Xmat d N ω)
 
 noncomputable def cutoff (d : Gauss.Dims) (E D δ : ℝ) (s mesh : ℕ → ℝ)
     (N k m : ℕ) (ω : Gauss.Ω d) : ℝ :=
@@ -381,12 +365,6 @@ theorem weight_eq_matrix (d : Gauss.Dims) (E D δ : ℝ) (s t mesh : ℕ → ℝ
     (N₀ p N k m : ℕ) (ω : Gauss.Ω d) :
     weight d E D δ s t mesh N₀ p N k m ω =
       weightMatrix d E D δ s t mesh N₀ p N k m (Gauss.Xmat d N ω) := rfl
-
-theorem epsilon_pos (d : Gauss.Dims) (D : ℝ) {N : ℕ} (hN : 0 < N) :
-    0 < epsilon d D N := by
-  unfold epsilon
-  exact mul_pos (Real.rpow_pos_of_pos (by exact_mod_cast (Gauss.band d).W_pos N) _)
-    (Real.rpow_pos_of_pos (by exact_mod_cast hN) _)
 
 theorem threshold_pos {δ : ℝ} {N : ℕ} (hN : 0 < N) :
     0 < threshold δ N := by
@@ -424,78 +402,6 @@ theorem weight_le_one (d : Gauss.Dims) (E D δ : ℝ) (s t mesh : ℕ → ℝ)
   split_ifs
   · exact pow_le_one₀ (cutChi_nonneg _) (cutChi_le_one _)
   · norm_num
-
-private theorem contDiff_softMax_of_pos {ι V : Type*}
-    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
-    (S : Finset ι) (hS : S.Nonempty) (m : ℕ) (hm : 1 ≤ m)
-    (f : ι → V → ℝ) (hf : ∀ i ∈ S, ContDiff ℝ 1 (f i))
-    (hpos : ∀ i ∈ S, ∀ x, 0 < f i x) :
-    ContDiff ℝ 1 (fun x => softMax m S (fun i => f i x)) := by
-  classical
-  let A : V → ℝ := fun x => ∑ i ∈ S, f i x ^ (2 * m)
-  have hA : ContDiff ℝ 1 A := by
-    exact ContDiff.sum (fun i hi => (hf i hi).pow (2 * m))
-  have hApos : ∀ x, 0 < A x := by
-    intro x
-    obtain ⟨i, hi⟩ := hS
-    have hterm : 0 < f i x ^ (2 * m) := pow_pos (hpos i hi x) _
-    have hsum : f i x ^ (2 * m) ≤ A x :=
-      Finset.single_le_sum (fun j hj => pow_nonneg (hpos j hj x).le _) hi
-    exact lt_of_lt_of_le hterm hsum
-  change ContDiff ℝ 1 (fun x => A x ^ ((1 : ℝ) / (2 * (m : ℝ))))
-  exact hA.rpow_const_of_ne (fun x => (hApos x).ne')
-
-theorem contDiff_prefixMatrix (d : Gauss.Dims) {E D : ℝ} {s mesh : ℕ → ℝ}
-    {N k m : ℕ} (hE : |E| < 2) (hs : s N < 1)
-    (hN : 0 < N) (hm : 1 ≤ m)
-    (hu : ∀ j < k, cutNetPt s mesh N j < 1) :
-    ContDiff ℝ 1 (prefixMatrix d E D s mesh N k m) := by
-  classical
-  by_cases hk : k = 0
-  · subst hk
-    have hzero : prefixMatrix d E D s mesh N 0 m = fun _ => (0 : ℝ) := by
-      funext M
-      simp only [prefixMatrix, softMax, Finset.range_zero, Finset.sum_empty]
-      have hm0 : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
-      exact Real.zero_rpow (ne_of_gt (by positivity : (0 : ℝ) < 1 / (2 * (m : ℝ))))
-    rw [hzero]
-    exact contDiff_const
-  · have hnonempty : (Finset.range k).Nonempty := by
-      exact ⟨0, Finset.mem_range.mpr (Nat.pos_of_ne_zero hk)⟩
-    let f : ℕ → Matrix (d.Idx N) (d.Idx N) ℂ → ℝ := fun j M =>
-      APrimeSmoothPrefix.smoothJSMatrix d E D s N
-        (cutNetPt s mesh N j) (epsilon d D N) m
-        ((Real.sqrt (cutNetPt s mesh N j) : ℂ) • M)
-    have hf : ∀ j ∈ Finset.range k, ContDiff ℝ 1 (f j) := by
-      intro j hj
-      have hbase := APrimeSmoothPrefix.contDiff_smoothJSMatrix d
-        (E := E) (D := D) (u := cutNetPt s mesh N j)
-        (ε := epsilon d D N) (s := s) (N := N) (m := m)
-        hE hs (hu j (Finset.mem_range.mp hj)) (epsilon_pos d D hN) hm
-      have hline : ContDiff ℝ 1
-          (fun M : Matrix (d.Idx N) (d.Idx N) ℂ =>
-            (Real.sqrt (cutNetPt s mesh N j) : ℂ) • M) := by
-        have hc : ContDiff ℝ 1
-            (fun _ : Matrix (d.Idx N) (d.Idx N) ℂ =>
-              Real.sqrt (cutNetPt s mesh N j)) := contDiff_const
-        have hi : ContDiff ℝ 1
-            (fun M : Matrix (d.Idx N) (d.Idx N) ℂ => M) := contDiff_id
-        convert (hc.smul hi) using 1
-      exact hbase.comp hline
-    have hpos : ∀ j ∈ Finset.range k, ∀ M, 0 < f j M := by
-      intro j hj M
-      have hR : 0 < (Step2Moment.ratR E s N (cutNetPt s mesh N j)) ^ 4 :=
-        pow_pos (Step2Moment.ratR_pos hE hs (hu j (Finset.mem_range.mp hj))) _
-      have hsoft : 0 ≤ APrimeSmoothPrefix.smoothMaxOf m
-          (APrimeSmoothPrefix.coordFun d E N (cutNetPt s mesh N j))
-          (fun a : LoopArg (d.L N) 2 =>
-            Step2.tT (Gauss.band d) E N D (cutNetPt s mesh N j)
-              (zdist (d.L N) (a 0 - a 1))) (epsilon d D N)
-          ((Real.sqrt (cutNetPt s mesh N j) : ℂ) • M) :=
-        softMax_nonneg _ _ _
-      exact div_pos (by linarith) hR
-    change ContDiff ℝ 1 (fun M => softMax m (Finset.range k) (fun j => f j M))
-    exact contDiff_softMax_of_pos _ hnonempty m hm f hf hpos
 
 private theorem smoothJSMatrix_pos (d : Gauss.Dims) {E D u ε : ℝ}
     {s : ℕ → ℝ} {N m : ℕ} (hE : |E| < 2) (hs : s N < 1)
@@ -1228,166 +1134,6 @@ theorem weightC1 (d : Gauss.Dims) {E D δ : ℝ} {s t mesh : ℕ → ℝ}
     (fun q ω => fderiv ℝ F (Gauss.Xmat d N ω)
       (Gauss.Bmat d N q.1 q.2.1 q.2.2))
   exact weightC1_of_matrix d N F hF hval hbd
-
-/-- The inner regularized maximum is controlled by the actual normalized hard
-observable, with only its label-cardinality factor and the explicit smoothing
-error. -/
-theorem smoothJS_le_card_mul_jSnorm_add (d : Gauss.Dims)
-    {E D u : ℝ} {s : ℕ → ℝ} {N m : ℕ}
-    (hE : |E| < 2) (hsu : s N ≤ u) (hu : u < 1)
-    (hN : 0 < N) (hm : 1 ≤ m) (ω : Gauss.Ω d) :
-    APrimeSmoothPrefix.smoothJS d E D s N u (epsilon d D N) m ω ≤
-      ((Fintype.card (LoopArg (d.L N) 2) : ℝ) ^
-        ((1 : ℝ) / (2 * (m : ℝ)))) *
-      (Step2Moment.jSnorm (Gauss.sample d) E D s N u ω +
-        (N : ℝ) ^ (-(10 : ℝ))) := by
-  let A : ℝ := (Fintype.card (LoopArg (d.L N) 2) : ℝ) ^
-    ((1 : ℝ) / (2 * (m : ℝ)))
-  let R : ℝ := (Step2Moment.ratR E s N u) ^ 4
-  let H : ℝ := (Finset.univ : Finset (LoopArg (d.L N) 2)).sup'
-    Finset.univ_nonempty (fun a =>
-      ‖Step2.lk (Gauss.sample d) E N u ω a‖ /
-        Step2.tT (Gauss.band d) E N D u (zdist (d.L N) (a 0 - a 1)))
-  have hR1 : 1 ≤ R := one_le_pow₀ (Step2Moment.one_le_ratR hE hsu hu)
-  have hR0 : 0 < R := by linarith
-  have hA1 : 1 ≤ A := by
-    have hcard : (1 : ℝ) ≤ Fintype.card (LoopArg (d.L N) 2) := by
-      exact_mod_cast Fintype.card_pos_iff.mpr inferInstance
-    exact Real.one_le_rpow hcard (by positivity)
-  have hW : 0 < (d.W N : ℝ) := by exact_mod_cast (Gauss.band d).W_pos N
-  have hH0 : 0 ≤ H := by
-    let a : LoopArg (d.L N) 2 := Classical.choice inferInstance
-    have hc : 0 < Step2.tT (Gauss.band d) E N D u
-        (zdist (d.L N) (a 0 - a 1)) := tailT_pos hW _
-    have ht : 0 ≤ ‖Step2.lk (Gauss.sample d) E N u ω a‖ /
-        Step2.tT (Gauss.band d) E N D u (zdist (d.L N) (a 0 - a 1)) :=
-      div_nonneg (norm_nonneg _) hc.le
-    exact ht.trans (by simpa only [H] using (Finset.le_sup'
-      (fun b : LoopArg (d.L N) 2 =>
-        ‖Step2.lk (Gauss.sample d) E N u ω b‖ /
-          Step2.tT (Gauss.band d) E N D u (zdist (d.L N) (b 0 - b 1)))
-      (Finset.mem_univ a)))
-  have hJ : Step2Moment.jSnorm (Gauss.sample d) E D s N u ω = (H + 1) / R := by
-    change Step2.jS (Gauss.sample d) E D N u ω / R = _
-    congr 1
-  have hε : 0 < epsilon d D N := epsilon_pos d D hN
-  have hεratio : epsilon d D N / (d.W N : ℝ) ^ (-D) =
-      (N : ℝ) ^ (-(10 : ℝ)) := by
-    unfold epsilon
-    field_simp [ne_of_gt (Real.rpow_pos_of_pos hW _)]
-  have hsm := APrimeSmoothPrefix.smoothJS_le_hard d
-    (E := E) (D := D) (u := u) (ε := epsilon d D N) (s := s) (N := N) (m := m)
-    hE (hsu.trans_lt hu) hu hε.le hm ω
-  rw [hεratio] at hsm
-  have hsm' : APrimeSmoothPrefix.smoothJS d E D s N u (epsilon d D N) m ω ≤
-      (1 + A * (H + (N : ℝ) ^ (-(10 : ℝ)))) / R := by
-    simpa only [A, R, H, Finset.card_univ] using hsm
-  have hn10 : 0 ≤ (N : ℝ) ^ (-(10 : ℝ)) := by positivity
-  have hn10R : (N : ℝ) ^ (-(10 : ℝ)) / R ≤ (N : ℝ) ^ (-(10 : ℝ)) := by
-    apply (div_le_iff₀ hR0).2
-    nlinarith [mul_nonneg hn10 (sub_nonneg.mpr hR1)]
-  rw [hJ]
-  change APrimeSmoothPrefix.smoothJS d E D s N u (epsilon d D N) m ω ≤
-    A * ((H + 1) / R + (N : ℝ) ^ (-(10 : ℝ)))
-  calc
-    _ ≤ (1 + A * (H + (N : ℝ) ^ (-(10 : ℝ)))) / R := hsm'
-    _ ≤ (A * (1 + H + (N : ℝ) ^ (-(10 : ℝ)))) / R := by
-      apply div_le_div_of_nonneg_right _ hR0.le
-      nlinarith
-    _ = A * ((H + 1) / R + (N : ℝ) ^ (-(10 : ℝ)) / R) := by ring
-    _ ≤ A * ((H + 1) / R + (N : ℝ) ^ (-(10 : ℝ))) := by gcongr
-
-/-- Two calibrated smooth maxima cost one combined cardinal factor. -/
-theorem prefixSample_le_of_jSnorm_bound (d : Gauss.Dims)
-    {E D B : ℝ} {s t mesh : ℕ → ℝ} {N k m : ℕ}
-    (hE : |E| < 2) (hst : s N ≤ t N) (ht : t N < 1)
-    (hmesh : 0 < mesh N) (hN : 0 < N) (hm : 1 ≤ m)
-    (hk : k ≤ cutNetTop s t mesh N) (hB0 : 0 ≤ B)
-    (ω : Gauss.Ω d)
-    (hJ : ∀ j < k, Step2Moment.jSnorm (Gauss.sample d) E D s N
-      (cutNetPt s mesh N j) ω ≤ B) :
-    prefixSample d E D s mesh N k m ω ≤
-      (((k * Fintype.card (LoopArg (d.L N) 2) : ℕ) : ℝ) ^
-        ((1 : ℝ) / (2 * (m : ℝ)))) *
-      (B + (N : ℝ) ^ (-(10 : ℝ))) := by
-  classical
-  let A : ℝ := (Fintype.card (LoopArg (d.L N) 2) : ℝ) ^
-    ((1 : ℝ) / (2 * (m : ℝ)))
-  have hA0 : 0 ≤ A := by positivity
-  have hJsm : ∀ j ∈ Finset.range k,
-      APrimeSmoothPrefix.smoothJS d E D s N (cutNetPt s mesh N j)
-        (epsilon d D N) m ω ≤ A * (B + (N : ℝ) ^ (-(10 : ℝ))) := by
-    intro j hj
-    have hjk := Finset.mem_range.mp hj
-    have huIcc : cutNetPt s mesh N j ∈ Set.Icc (s N) (t N) :=
-      netFinset_subset_Icc hst hmesh _
-        (cutNetPt_mem_netFinset (hjk.le.trans hk))
-    have hinner := smoothJS_le_card_mul_jSnorm_add d
-      (E := E) (D := D) (u := cutNetPt s mesh N j) (s := s) (N := N) (m := m)
-      hE huIcc.1 (huIcc.2.trans_lt ht) hN hm ω
-    calc
-      _ ≤ A * (Step2Moment.jSnorm (Gauss.sample d) E D s N
-          (cutNetPt s mesh N j) ω + (N : ℝ) ^ (-(10 : ℝ))) := hinner
-      _ ≤ A * (B + (N : ℝ) ^ (-(10 : ℝ))) :=
-        mul_le_mul_of_nonneg_left (by simpa only [add_comm] using
-          (add_le_add_right (hJ j hjk) ((N : ℝ) ^ (-(10 : ℝ))))) hA0
-  have hM0 : 0 ≤ A * (B + (N : ℝ) ^ (-(10 : ℝ))) := by positivity
-  have heq : prefixSample d E D s mesh N k m ω =
-      softMax m (Finset.range k) (fun j =>
-        APrimeSmoothPrefix.smoothJS d E D s N (cutNetPt s mesh N j)
-          (epsilon d D N) m ω) := by
-    change softMax m (Finset.range k) (fun j =>
-      APrimeSmoothPrefix.smoothJSMatrix d E D s N (cutNetPt s mesh N j)
-        (epsilon d D N) m
-        ((Real.sqrt (cutNetPt s mesh N j) : ℂ) • Gauss.Xmat d N ω)) = _
-    apply congrArg (fun f : ℕ → ℝ => softMax m (Finset.range k) f)
-    funext j
-    have hflow := APrimeSmoothPrefix.smoothJSMatrix_flow d E D s N
-      (cutNetPt s mesh N j) (epsilon d D N) m ω
-    rw [Gauss.Hflow_eq_realSmul] at hflow
-    exact hflow
-  rw [heq]
-  have houter := softMax_le hm hM0 (S := Finset.range k)
-    (ρ := fun j => APrimeSmoothPrefix.smoothJS d E D s N
-      (cutNetPt s mesh N j) (epsilon d D N) m ω) (M := A * (B + (N : ℝ) ^ (-(10 : ℝ))))
-    (by
-      intro j hj
-      have huIcc : cutNetPt s mesh N j ∈ Set.Icc (s N) (t N) :=
-        netFinset_subset_Icc hst hmesh _
-          (cutNetPt_mem_netFinset ((Finset.mem_range.mp hj).le.trans hk))
-      rw [abs_of_pos (APrimeSmoothPrefix.smoothJS_pos d hE
-        (huIcc.1.trans_lt (huIcc.2.trans_lt ht)) (huIcc.2.trans_lt ht)
-        m ω)]
-      exact hJsm j hj)
-  calc
-    _ ≤ (k : ℝ) ^ ((1 : ℝ) / (2 * (m : ℝ))) *
-        (A * (B + (N : ℝ) ^ (-(10 : ℝ)))) := by
-          simpa only [Finset.card_range] using houter
-    _ = (((k * Fintype.card (LoopArg (d.L N) 2) : ℕ) : ℝ) ^
-          ((1 : ℝ) / (2 * (m : ℝ)))) *
-          (B + (N : ℝ) ^ (-(10 : ℝ))) := by
-            rw [Nat.cast_mul, Real.mul_rpow (Nat.cast_nonneg _) (Nat.cast_nonneg _)]
-            ring
-
-/-- A finite explicit smoothing order satisfies the joint net/label calibration
-for every prefix of this net. -/
-noncomputable def canonicalM (d : Gauss.Dims) (s t mesh : ℕ → ℝ) (N : ℕ) : ℕ :=
-  cutNetTop s t mesh N * Fintype.card (LoopArg (d.L N) 2) + 1
-
-theorem canonicalM_pos (d : Gauss.Dims) (s t mesh : ℕ → ℝ) (N : ℕ) :
-    1 ≤ canonicalM d s t mesh N := by
-  unfold canonicalM
-  omega
-
-theorem canonicalM_calibration (d : Gauss.Dims) (s t mesh : ℕ → ℝ)
-    (N k : ℕ) (hk : k ≤ cutNetTop s t mesh N) :
-    (((k * Fintype.card (LoopArg (d.L N) 2) : ℕ) : ℝ) ^
-      ((1 : ℝ) / (2 * (canonicalM d s t mesh N : ℝ)))) ≤ Real.exp 1 := by
-  unfold canonicalM
-  exact APrimeWeight.card_calib_top
-    (cutNetTop s t mesh N * Fintype.card (LoopArg (d.L N) 2))
-    (k * Fintype.card (LoopArg (d.L N) 2))
-    (Nat.mul_le_mul_right _ hk)
 
 /-- The literal widened old prefix weight is pointwise bounded by the actual
 smooth Gaussian weight at the enlarged threshold `8e²N^(2δ)`. All branches,

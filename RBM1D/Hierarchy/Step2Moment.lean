@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Hierarchy.Step2
 import RBM1D.Analysis.Bootstrap
 import RBM1D.Gauss.Envelope
+import RBM1D.Gauss.APrimeSmoothPrefixCanonicalCore
 
 /-!
 # Step 2 without the stopping time: the moment route
@@ -132,23 +133,11 @@ section Phi
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
 
-/-- The weight `(η_s/η_u)^4` of the threshold (5.43): `R_u = η_s/η_u ≥ 1`. -/
-noncomputable def ratR (E : ℝ) (s : ℕ → ℝ) (N : ℕ) (u : ℝ) : ℝ := etaT E (s N) / etaT E u
-
-theorem ratR_pos {E : ℝ} (hE : |E| < 2) {s : ℕ → ℝ} {N : ℕ} (hs : s N < 1) {u : ℝ}
-    (hu : u < 1) : 0 < ratR E s N u :=
-  div_pos (Step2.etaT_pos' hE hs) (Step2.etaT_pos' hE hu)
-
 theorem continuousOn_ratR {E : ℝ} (hE : |E| < 2) (s : ℕ → ℝ) (N : ℕ) {a b : ℝ} (hb : b < 1) :
     ContinuousOn (ratR E s N) (Set.Icc a b) := by
   unfold ratR
   refine ContinuousOn.div continuousOn_const (by unfold etaT; fun_prop) fun u hu => ?_
   exact (Step2.etaT_pos' hE (hu.2.trans_lt hb)).ne'
-
-/-- `J*_{u,D}` normalized by the weight of the threshold: `J*_{u,D} / (η_s/η_u)^4`.  The
-bootstrap is run on this, so that the threshold becomes a constant. -/
-noncomputable def jSnorm (X : Sample B) (E D : ℝ) (s : ℕ → ℝ) (N : ℕ) (u : ℝ) (ω : Ω) : ℝ :=
-  Step2.jS X E D N u ω / ratR E s N u ^ 4
 
 /-- **The bootstrapped quantity of the moment route**: `φ_q(u) = E[(J*_{u,D})^q]`.  Unlike the
 path `u ↦ J*_{u,D}` this is a deterministic function of `u`. -/
@@ -409,13 +398,6 @@ structure MomentHyp (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (D : ℝ) where
     bnd (2 * p) N ≤ C * (N : ℝ) ^ (ε * p)
 
 variable (X : Sample B) {E D : ℝ} {s t : ℕ → ℝ}
-
-/-- `1 ≤ (η_s/η_u)^4` for `s ≤ u < 1`: the weight of the threshold is at least one. -/
-theorem one_le_ratR (hE : |E| < 2) {N : ℕ} {u : ℝ} (hsu : s N ≤ u) (hu : u < 1) :
-    1 ≤ ratR E s N u := by
-  have h1u : 0 < 1 - u := by linarith
-  rw [ratR, Step2.etaT_ratio hE, le_div_iff₀ h1u]
-  linarith
 
 /-- On `[s, t]` the normalized `J*` is controlled by the deterministic envelope of `J*`. -/
 theorem jSnorm_le_env (Hy : MomentHyp X E s t D) (hE : |E| < 2) {N : ℕ} (ht1 : t N < 1)

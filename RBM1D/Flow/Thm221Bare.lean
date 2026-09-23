@@ -113,19 +113,6 @@ section Cond
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} {E : ℝ} {s t : ℕ → ℝ}
 
-/-- **(2.72) exactly as printed, together with the regime bound `N^c ≤ W ℓ_t η_t`.**
-
-The first component is `RBM.Cond272`, verbatim the paper's (2.72).  The second is the
-hypothesis `hreg` that `RBM.eventually_scale_facts` and `RBM.weakLaw_highProb` already take
-(Step 1, p. 52); on the grid of p. 24 it is free, because there `η_s/η_t = W^{τ'}` is itself a
-positive power of `W` and (2.72) then forces `W ℓ_t η_t ≥ W^{30τ'}`.
-
-This is strictly weaker than `RBM.Cond272'` (`RBM.Cond272'.toCond272Reg`) and strictly stronger
-than `RBM.Cond272` (`RBM.Cond272Reg.toCond272`; the converse fails,
-`RBM.exists_cond272_not_rpow_le_scale`). -/
-def Cond272Reg (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (c : ℝ) : Prop :=
-  Cond272 B E s t ∧ ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ c ≤ B.scale E N (t N)
-
 theorem Cond272Reg.toCond272 {c : ℝ} (h : Cond272Reg B E s t c) : Cond272 B E s t := h.1
 
 /-- The gained (2.72) gives (2.72) plus the regime bound: `(η_s/η_t)^30 ≥ 1` is thrown away. -/

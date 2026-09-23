@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.Step2Near47
+import RBM1D.Gauss.APrimeSmoothPrefixCanonicalCore
 
 /-!
 # A `u`-dependent truncation level for the truncated moment Duhamel (T210)
@@ -1475,14 +1476,6 @@ def prefixEvent (J : ℕ → ℝ → Ω → ℝ) (s : ℕ → ℝ) (Λ : ℕ →
 omit [MeasurableSpace Ω] in
 theorem mem_prefixEvent {Λ : ℕ → ℝ → ℝ} {N : ℕ} {ws : ℝ} {ω : Ω} :
     ω ∈ prefixEvent J s Λ N ws ↔ ∀ u ∈ Set.Icc (s N) ws, J N u ω ≤ Λ N u := Iff.rfl
-
-/-- The `k`-th point of the net of (5.46).  `RBM.MomentDuhamelCut.netFinset` is the image of
-`Finset.range (cutNetTop + 1)` under this map (`netFinset_eq_image`), so the net can be walked
-in order. -/
-noncomputable def cutNetPt (s mesh : ℕ → ℝ) (N k : ℕ) : ℝ := s N + (k : ℝ) / mesh N
-
-/-- The index of the last net point. -/
-noncomputable def cutNetTop (s t mesh : ℕ → ℝ) (N : ℕ) : ℕ := ⌊(t N - s N) * mesh N⌋₊
 
 theorem netFinset_eq_image (s t mesh : ℕ → ℝ) (N : ℕ) :
     netFinset s t mesh N

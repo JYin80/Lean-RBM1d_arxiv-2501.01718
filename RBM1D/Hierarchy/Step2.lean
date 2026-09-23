@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.SumZeroDyn
 import RBM1D.Hierarchy.Step1
+import RBM1D.Gauss.APrimeSmoothPrefixCanonicalCore
 
 /-!
 # Step 2 of the proof of Theorem 2.21: (2.75) and (2.76)
@@ -107,12 +108,6 @@ set is `0`. -/
 noncomputable def tailLK (f : LoopArg L 2 → ℝ) (ℓ : ℝ) : ℝ :=
   Finset.univ.sup' Finset.univ_nonempty
     (fun a => if ℓ ≤ (zdist L (a 0 - a 1) : ℝ) then f a else 0)
-
-/-- **(5.29)** `J*_{u,D} = max_{a} f(a) / T_{u,D}(‖a₁ - a₂‖) + 1`.  By `isGreatest_jStar` this
-is the maximum over `ℓ` of `J_{u,D}(ℓ) = T^{(L-K)}_u(ℓ)/T_{u,D}(ℓ) + 1` (5.28). -/
-noncomputable def jStar (f : LoopArg L 2 → ℝ) (W ℓu ηu D : ℝ) : ℝ :=
-  Finset.univ.sup' Finset.univ_nonempty
-    (fun a => f a / tailT W ℓu ηu D (zdist L (a 0 - a 1))) + 1
 
 variable {L}
 variable {f : LoopArg L 2 → ℝ}
@@ -625,22 +620,6 @@ end Kernel
 section FlowDefs
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
-
-/-- The charges `σ = (+, -)` of Step 2. -/
-def sigPM : Fin 2 → Bool := ![true, false]
-
-/-- `(L - K)_{u,(+,-),a}`, `a = (a₁, a₂)`. -/
-noncomputable def lk (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) :
-    LoopArg (B.L N) 2 → ℂ :=
-  SumZeroDyn.lkT X E N u ω sigPM
-
-/-- **(5.27)** along the flow: `T_{u,D}(ℓ) = (W ℓ_u η_u)^{-2} e^{-(ℓ/ℓ_u)^{1/2}} + W^{-D}`. -/
-noncomputable def tT (B : Band Ω) (E : ℝ) (N : ℕ) (D u ℓ : ℝ) : ℝ :=
-  tailT (B.W N) (B.ell N u) (etaT E u) D ℓ
-
-/-- **(5.29)** along the flow: `J*_{u,D}` for `(L - K)_{u,(+,-)}`. -/
-noncomputable def jS (X : Sample B) (E D : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) : ℝ :=
-  jStar (B.L N) (fun a => ‖lk X E N u ω a‖) (B.W N) (B.ell N u) (etaT E u) D
 
 /-- The threshold of the stopping time: `Λ(u) = N^δ (η_s/η_u)^4` (the paper's `(η_s/η_t)^4`,
 see *Deviations*). -/
@@ -1234,7 +1213,8 @@ theorem idx_sigPM {L : ℕ} (b : LoopArg L 2) : LoopData.idx (sigPM, b) = pmLoop
 
 theorem norm_lk_eq (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω) (b : LoopArg (B.L N) 2) :
     ‖lk X E N u ω b‖ = X.lkErr E N u ω (pmLoop (b 0) (b 1)) := by
-  rw [lk, SumZeroDyn.norm_lkT, idx_sigPM]
+  unfold lk Sample.lkErr
+  rw [idx_sigPM]
 
 /-- **The random-layer inputs of Step 2** (CLAUDE.md rule 6: hypotheses, never axioms).
 
@@ -2031,9 +2011,11 @@ theorem eq531 (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (hst : ∀ N, s N ≤ t N)
   have e2 : (fun i : Fin 2 => (![a, b] : Fin 2 → ZMod (B.L N)) (i + 1)) = ![b, a] := by
     funext i; fin_cases i <;> rfl
   rw [e1, e2] at hswap
+  unfold SumZeroDyn.lkT at hswap
   have hL : X.Lval E N u ω ⟨[false, true], [a, b]⟩
       = lk X E N u ω ![b, a] + B.Kval E N u ⟨[false, true], [a, b]⟩ := by
-    rw [lk, ← hswap, SumZeroDyn.lkT, hidx]; ring
+    rw [lk, ← hswap, hidx]
+    ring
   have hlk : ‖lk X E N u ω ![b, a]‖ ≤
       (jS X E D N u ω - 1) * tT B E N D u (zdist (B.L N) (a - b)) := by
     have := le_jStar_sub_one_mul (f := fun c => ‖lk X E N u ω c‖) (ℓu := B.ell N u)

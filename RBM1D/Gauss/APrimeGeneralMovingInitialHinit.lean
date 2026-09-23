@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.APrimeAssembly
 import RBM1D.Gauss.APrimeGeneralMovingDetFields
+import RBM1D.Gauss.APrimeGeneralMovingInitialWitnessCore
 
 /-!
 # T488: initial A-prime moment on a general moving window
@@ -220,58 +221,6 @@ theorem eventually_initial_hinit {E D c δ : ℝ}
     (R := etaT E (s N) / etaT E va.1) hN1 hR
   rw [hscale]
   exact hN va
-
-/-! A positive-length first cell supplies a simultaneous nondegenerate witness. -/
-
-private theorem eventual_cap :
-    ∀ᶠ N : ℕ in atTop,
-      (N : ℝ) ^ (-1 + (1 : ℝ) / 2) ≤ 1 - (1 / 2 : ℝ) := by
-  filter_upwards [eventually_le_rpow 2 (by norm_num : (0 : ℝ) < 1 / 2),
-    eventually_ge_atTop 1] with N hNpow hN
-  have hN0 : (0 : ℝ) ≤ N := Nat.cast_nonneg _
-  have hEq : (N : ℝ) ^ (-1 + (1 : ℝ) / 2) =
-      ((N : ℝ) ^ ((1 : ℝ) / 2))⁻¹ := by
-    rw [show -1 + (1 : ℝ) / 2 = -((1 : ℝ) / 2) by ring,
-      Real.rpow_neg hN0]
-  rw [hEq]
-  have hInv : ((N : ℝ) ^ ((1 : ℝ) / 2))⁻¹ ≤ (2 : ℝ)⁻¹ := by
-    simpa only [one_div] using
-      (one_div_le_one_div_of_le (by norm_num : (0 : ℝ) < 2) hNpow)
-  norm_num at hInv ⊢
-  exact hInv
-
-/-- A genuine positive-length window with `s=0`, `BoundsCore_zero`, and the
-moving initial estimate for the constant weight. -/
-theorem positive_length_hinit_witness :
-    ∃ τ' : ℝ, 0 < τ' ∧ ∃ c : ℝ, 0 < c ∧
-      let s := fun N => gridT ((B.W N : ℝ)) τ' (1 / 2 : ℝ) 0
-      let t := fun N => gridT ((B.W N : ℝ)) τ' (1 / 2 : ℝ) 1
-      (∀ N, s N = 0) ∧ (∀ N, 0 ≤ s N) ∧ (∀ N, s N ≤ t N) ∧
-      (∀ N, t N < 1) ∧ Cond272Reg B 0 s t c ∧
-      BoundsCore (sample d) 0 s ∧ (∀ᶠ N : ℕ in atTop, s N < t N) := by
-  obtain ⟨τ', hτ', c, hc, _n₀, hgrid⟩ :=
-    cond272Reg_grid_step_domain B (κ := 1) (τ := (1 : ℝ) / 2)
-      (by norm_num) (by norm_num)
-  obtain ⟨_, hsteps⟩ := hgrid 0 (by norm_num)
-    (fun _ => (1 / 2 : ℝ)) (fun _ => by norm_num) eventual_cap
-  obtain ⟨hs0, hst, ht1, hreg⟩ := hsteps 0
-  let s : ℕ → ℝ := fun N => gridT ((B.W N : ℝ)) τ' (1 / 2 : ℝ) 0
-  let t : ℕ → ℝ := fun N => gridT ((B.W N : ℝ)) τ' (1 / 2 : ℝ) 1
-  change (∀ N, 0 ≤ s N) at hs0
-  change (∀ N, s N ≤ t N) at hst
-  change (∀ N, t N < 1) at ht1
-  change Cond272Reg B 0 s t c at hreg
-  have hsEq : ∀ N, s N = 0 := by
-    intro N
-    change gridT ((B.W N : ℝ)) τ' (1 / 2 : ℝ) 0 = 0
-    exact gridT_zero (by norm_num)
-  have hB : BoundsCore (sample d) 0 s :=
-    (BoundsCore_zero (sample d) (by norm_num : |(0 : ℝ)| ≤ 2)).congr
-      (sample d) (Eventually.of_forall fun N => (hsEq N).symm)
-  have hpos := eventually_gridT_zero_lt_gridT_one B hτ'
-    (Eventually.of_forall fun _ => by norm_num : ∀ᶠ N : ℕ in atTop, 0 < (1 / 2 : ℝ))
-  change ∀ᶠ N : ℕ in atTop, s N < t N at hpos
-  exact ⟨τ', hτ', c, hc, hsEq, hs0, hst, ht1, hreg, hB, hpos⟩
 
 #print axioms eventually_eta_window
 #print axioms eventually_initial_phi_lower

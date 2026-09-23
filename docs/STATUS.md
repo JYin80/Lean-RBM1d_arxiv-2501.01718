@@ -29,6 +29,9 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T584 is independently accepted: the general-moving positive-cell evolved-QV profile is compiled on T579's literal common event, with exact `Jbar`, `ratR^4`, repaired `2W⁻¹`, both leakage mechanisms and endpoint ratios; it is pointwise and requires `k≥1`.
 - T585 and T587 are accepted as preflights. T590 implements the exact deterministic `1200=16+1152+32` absorption, while T591 implements the all-`k` widened-weight QV integral budget with the zero cell handled only by zero-length integration. Neither report supplies a moment family or stopping/BDG theorem.
 - T586 is independently accepted: the general-moving drift source is compiled on the same common event, with exact centered coefficient `4N^ζr_u`, raw three-loop source, `flowDelta+W⁻¹`, literal `Jbar`, separate near/far branches and closed-prefix endpoints. It is pointwise only; the paper's integrated (5.35)/(5.41) consequence remains open.
+- T590 is independently accepted: the exact deterministic QV absorption keeps `1200=16+1152+32`, literal `sourceC4`, `R_u⁻²R_v⁻²`, repaired `2W⁻¹`, both `W⁻ᴰ` leakages and the square of the full root sum; it remains pointwise on `k≥1`.
+- T591 is independently accepted: the all-`k` widened-weight QV integral budget keeps T584's exact profile, pays the common-event complement from the literal `2²¹N^(2D+16)` envelope, and handles `k=0` only by equal-endpoint integration. The smooth/widened support mismatch remains open.
+- T592 is accepted as the cross-bridge preflight. Its selected next theorem is T597's same-sample running `jSnorm` cap on `commonEvent ∩ smooth transition`; it does not reverse `widenedW≤smoothWeight` or claim a cross budget.
 
 ## 3. Running work
 
@@ -36,13 +39,11 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T590 | Delivered; independent audit pending |
-| T591 | Delivered; independent audit pending |
-| T592 | Running: exact general-moving cross-term bridge preflight |
 | T593 | Running: exact general-moving drift integral preflight |
 | T594 | Running: smooth/widened support-bridge preflight |
 | T595 | Running: general-moving initial-term compatibility audit |
 | T596 | Running: actual all-charge `xiLK … 2` cutoff-moment producer |
+| T597 | Running: smooth-transition running-cap bridge |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 
@@ -64,7 +65,7 @@ Named remaining leaves include Lemma 5.14 slot 4 (`flowXiLK_1≺1`, actual `xiRh
 
 ## 5. Repository and acceptance discipline
 
-- Latest pushed commit before this integration: `16a28c9`.
+- Latest pushed commit before this integration: `e805bea`.
 - Never stage unrelated or in-flight files. In particular exclude `RBM1D/Gauss/APrimeNearRem.lean`, T280 reports, `Claude outputs/`, blueprint artifacts, and every unaudited worker file.
 - A completion requires exact statement/quantifier/exponent review, boundary and common-event checks, acyclicity, nondegenerate satisfiability, full module build, and public axiom audit.
 - Allowed printed axioms: `propext`, `Classical.choice`, `Quot.sound` only.

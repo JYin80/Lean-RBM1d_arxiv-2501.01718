@@ -35,11 +35,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T586 | Delivered; independent audit pending |
-| T588 | Running: corrected exact-signature five-slot audit |
-| T589 | Running: actual `CutHypEvOnSlot` producer decomposition |
+| T588 | Delivered; independent audit pending |
+| T589 | Delivered; scheduler audit pending |
 | T590 | Running: exact deterministic (5.42) absorption |
 | T591 | Running: all-`k` widened-weight QV integral budget |
 | T592 | Running: exact general-moving cross-term bridge preflight |
+| T593 | Running: exact general-moving drift integral preflight |
+| T594 | Running: smooth/widened support-bridge preflight |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

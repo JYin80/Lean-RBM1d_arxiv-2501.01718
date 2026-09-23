@@ -43,7 +43,9 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T601 is independently accepted as the post-T597 cross preflight. T606 is the smallest thin transition-to-buffered-QV adapter. A full `crossPart_active_le_jointEvent` specialization still lacks the general-moving favorable `prefixGradient`, five-field regularity and global joint envelope; T607 audits the first of these.
 - T603/T609 are independently accepted: the buffered actual-smooth QV bridge keeps `δWeight` distinct from `δCap=δWeight+ξ`, the identical target mesh/sample/common event and T590's complete absorbed profile. The repaired witness realizes one common-event resident, active `k=1`, widened weight one and positive actual smooth weight simultaneously. This remains a positive-cell conditional bridge, not a QV integral, cross closure, or general A-prime result.
 - T606 is independently accepted only as a conditional transition-to-buffered-QV adapter: on the same resident of `commonEvent ∩ transition`, it retains `δWeight`, `δCap=δWeight+ξ`, the complete (5.42) profile and closed positive-cell endpoints. No producer yet proves that intersection inhabited, so no cross estimate or downstream closure is claimed.
+- T617 is the selected file-disjoint leaf from T612: an event-free all-sample envelope for the literal `prefixGradient·sqrt(qvAt)`, with root factors `2^15·N^(D+8)` and `2^11·N^(D+8)`, product `2^26·N^(2D+16)`, and separate payment adapter `N^(2D+17)`. It must cover `k=0`, both closed endpoints, arbitrary two-charge word and the same sample, and must not import favorable-event or first-cell packages.
 - T602 is accepted after independent correction: the first noncircular post-T596 analytic row is the arbitrary-charge transported initial estimate T608. The raw drift route is circular through `A_u⁻³η_u⁻¹·xiLK₂²`; the domain/index witness at `s_N=0` is explicitly a zero transported-initial probe, not a nonzero-value witness.
+- T608 is independently accepted: the transported-initial ratio has exact moment order `2P`, loss `N^(ε/4)`, endpoint normalization `A_v²`, kernel factor `R_{s_N,v}²`, and source `A_{s_N}⁻²`, uniformly over all two-charge words including `(+,+)` and `v=s_N`. Its positive-grid witness is a domain/index witness whose transported value is zero at `s_N=0`; no full T596 family absorption or (2.77) closure is claimed.
 - T616 is the selected post-T608 design line for the arbitrary-charge QV ingredient of (2.77): it must preserve the exact (5.42) kernel factor `R_{u,v}^4` and source scale `A_u⁻⁴η_u⁻¹Ψ_E`, derive `Ψ_E` only from the pre-Step-3 `xiL_6` input, cover `v=s_N` and positive mesh points under the same sample, and exclude (2.77), all-charge Step-3 packages, `hfamily`, `APrimeSlot'`, and every first-cell shortcut.
 - T604 is independently accepted: full actual-smooth drift integration must first obtain a general-moving all-sample polynomial envelope. The next exact theorem is the fixed-`Dims.exampleGrow`, `sigPM` bound `|driftAt|≤N^(D+8)` for every sample, active cell (including `k=0`) and closed running time; it is not yet the drift integral.
 - T611 is independently accepted: for fixed `Dims.exampleGrow` and `sigPM`, `|driftAt|≤N^(D+8)` holds for every sample, every active cell including `k=0`, every output and both closed running-time endpoints. It is only the conservative all-sample pointwise envelope feeding T615, not a drift integral or A-prime closure.
@@ -56,12 +58,12 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
 | T607 | Delivered: scheduler audit pending |
-| T608 | Delivered: arbitrary-charge transported-initial row pending independent audit |
-| T612 | Running: general-moving cross regularity/envelope preflight |
+| T612 | Delivered: general-moving cross regularity/envelope preflight pending independent audit |
 | T613 | Running: same-time raw-QV favorable prefix-gradient producer |
 | T614 | Running: cutoff-aware all-charge drift preflight |
 | T615 | Running: actual-smooth general-moving drift integral budget |
 | T616 | Running: arbitrary-charge QV preflight after T608 |
+| T617 | Running: all-sample general-moving joint envelope selected by T612 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

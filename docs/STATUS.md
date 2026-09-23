@@ -95,12 +95,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T638 | Independently accepted as blocked: block-circulant class passes goodSetFlow but cannot meet centeredEvent; T643 tests the general spatial case |
 | T639 | Independently accepted: corrected support boundary and selected the minimal target-mesh seam now implemented by T644 |
 | T641 | Independently accepted: one-proof `Step2.tT` compatibility repair; root validation 4046 jobs |
-| T642 | Delivered: two actual Step-3 producers moved downstream; upstream closures no longer reach them; independent audit pending |
-| T643 | Running: test whether goodSetFlow plus centeredEvent makes transition impossible, or permits genuine spatial redistribution |
+| T642 | Independently accepted: two actual Step-3 producers isolated downstream; audited upstream closures no longer reach them |
+| T643 | Delivered: universal impossibility is false; coupled-block redistribution passes every deterministic carrier row; independent audit pending |
 | T644 | Running: first T639 implementation slice, eight-declaration clean target-mesh core only |
 | T645 | Running: second accepted T629 slice, clean coordinate-weight/QV-global-polynomial cores |
 | T646 | Running: audit the next support seam, a clean positive-length initial-window witness below assembly surfaces |
 | T647 | Running: audit a clean literal smooth-prefix/canonical producer boundary after T627/T639 |
+| T648 | Running: finite positive-variance Gaussian support and measurable-cylinder retention after T643 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

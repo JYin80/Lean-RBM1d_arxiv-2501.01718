@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Green.EntryBound
 import RBM1D.Hierarchy.Step2
 import RBM1D.Hierarchy.Step2Moment
+import RBM1D.Hierarchy.Step3FlowSharp
 import RBM1D.Hierarchy.Step45
 
 /-!

@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Hierarchy.ChargeReduce
 import RBM1D.Hierarchy.Step2Moment
+import RBM1D.Hierarchy.Step3FlowSharp
 
 /-!
 # The constant charge `(+,+)`: Lemma 5.11 at `n = 2` and the bootstrap (T122)

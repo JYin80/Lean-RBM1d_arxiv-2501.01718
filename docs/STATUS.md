@@ -111,13 +111,15 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T655 | Delivered; independent audit running on the literal carrier-cylinder boundary and proposed clean predicate extraction; implementation waits for T659 |
 | T656 | Delivered: conditional arbitrary-charge QV scratch card passes after an assumed profile-preserving MomNormDom, but claims the exact window lacks a polynomial endpoint envelope; T662 is independently auditing that obstruction before acceptance |
 | T657 | Delivered: identifies three body-sensitive `Step2.lk` repairs, frozen `ε`/`hε` named-argument restoration, and one coordinated T659 acceptance bundle; T663 is independently auditing the specification before acceptance |
-| T658 | Delivered: coordinate encoding audit claims exact Hermitian readback and corrected off-diagonal variance `1/(6W)`; T661 is independently auditing the carrier-margin and first-missing-producer conclusions before acceptance |
-| T659 | Running: coordinated completion of T651/T652/T654 plus the one known definitional compatibility unfold; no new mathematics |
+| T658/T661 | Independent audit passes the exact Hermitian encoder with corrections: used-coordinate variance is `1/(3W)` diagonal and `1/(6W)` off-diagonal, unused coordinates may still have positive variance, and raw/jG margins are only the exact first-cell conditional statements. T666 implements only this bounded encoder; the first missing carrier input remains the uniform semicircle-quantile/Fourier-permutation producer, followed separately by the prefix estimate |
+| T659 | Delivered with all specified builds and allowed-axiom checks claimed; T665 is independently rebuilding the full T651/T652/T654/T659 bundle before any acceptance or staging |
 | T660 | Delivered with corrections: future predicate core needs clean `DimsExample`, exactly 21 moved names, `measurableSet_measCore` retained in its facade, and a jG upper-semicontinuity/majorant argument; T664 is independently auditing before acceptance |
-| T661 | Running: fresh read-only independent audit of T658; no implementation or closure claim |
+| T661 | Delivered PASS WITH CORRECTIONS; scheduler acceptance and T666 implementation remain bounded as above |
 | T662 | Running: fresh read-only independent audit of T656's exact card and endpoint-scale obstruction; no implementation or closure claim |
 | T663 | Running: fresh read-only independent audit of T657's repair specification; T651/T652/T654 remain excluded pending T659 and later acceptance |
 | T664 | Running: fresh read-only independent audit of T660; carrier-core implementation remains blocked on T659 acceptance |
+| T665 | Running: fresh independent full acceptance audit of the T651/T652/T654/T659 integration bundle |
+| T666 | Running: bounded generic Hermitian band-coordinate encoder in `Gauss.Generator`; no carrier/resident/closure claim |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

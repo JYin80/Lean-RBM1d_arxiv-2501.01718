@@ -31,6 +31,7 @@ import RBM1D.Gauss.LoopLeibniz
 import RBM1D.Gauss.CutoffBounds
 import RBM1D.Gauss.CutoffChi
 import RBM1D.Gauss.LoopIto
+import RBM1D.Gauss.MomentDuhamelEEFunCore
 import RBM1D.Gauss.MomentDuhamel
 import RBM1D.Gauss.MomentDuhamelRhs
 import RBM1D.Gauss.MomentDuhamelGauss
@@ -111,6 +112,13 @@ import RBM1D.Gauss.Envelope
 import RBM1D.Gauss.FlowHolder
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.FiniteSupportCore
+import RBM1D.Gauss.PermutationFourierSwap
+import RBM1D.Gauss.PermutationFourierMean
+import RBM1D.Gauss.PermutationFourierCharacter
+import RBM1D.Gauss.PermutationFiberSwap
+import RBM1D.Gauss.FiniteSupUpperSemicontinuous
+import RBM1D.Gauss.ClosedCutoffUpperSemicontinuous
+import RBM1D.Gauss.CarrierCutoffTimeContinuity
 import RBM1D.Gauss.IBP
 import RBM1D.Gauss.Hierarchy
 import RBM1D.Gauss.MomentGronwall

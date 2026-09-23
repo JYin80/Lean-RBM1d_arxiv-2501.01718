@@ -47,6 +47,8 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T607 is independently accepted after fixing its API scope to private `d=Dims.exampleGrow`, `B=band d`: the first noncircular favorable-prefix producer uses same-time raw coordinate QV, every stored `j<k` including `j=0`, and the exact T333 normalization. It remains conditional on `commonEvent ∩ transition`, whose inhabitance is not proved; T613 implements only this localization.
 - T618 is the preflighted file-disjoint regularity leaf for the (5.42) cross route: it generalizes only the public continuity/measurability arguments behind the first-cell module, at private `Dims.exampleGrow`, target mesh and canonical smoothing order. It must cover `k=0`, every active prefix, arbitrary two-charge word, both closed time endpoints and the same sample; it proves no transition inhabitance, integrability, cross bound or closure.
 - T612 is independently accepted: the first missing cross-complement leaf is T617's event-free all-sample `prefixGradient·sqrt(qvAt)` envelope with exact exponents `D+8`, `D+8`, `2D+16`, and payment `2D+17`. The five-field regularity package remains downstream; T618 splits off only its dependency-free measurability layer. Neither result proves (5.42) or the cross budget.
+- T619 is the selected first noncircular repair of T596's raw-drift obstruction toward (2.77): a same-sample all-charge smooth-prefix localizer over `(j,q)` with separate smooth-max order `r` and moment order `P`, exact terminal `twoCutLevel`, `WeightC1`, plateau, and both ordinary/derivative support caps `(4e+2)·twoCutLevel`. Terminal `cutTrunc≤self` alone is insufficient; no weighted drift absorption, cross-term budget, all-charge moment or Step-3 closure is claimed.
+- T613 is independently accepted only as a conditional favorable-prefix localization: at private `Dims.exampleGrow`/`band d`, every stored `j<k` including `j=0` uses the same-time raw coordinate QV with exact `ratR⁻⁴·tT⁻¹·threshold⁻¹` normalization on the identical sample in `commonEvent∩transition`. The intersection's inhabitance, the cross estimate and all downstream closures remain open.
 - T602 is accepted after independent correction: the first noncircular post-T596 analytic row is the arbitrary-charge transported initial estimate T608. The raw drift route is circular through `A_u⁻³η_u⁻¹·xiLK₂²`; the domain/index witness at `s_N=0` is explicitly a zero transported-initial probe, not a nonzero-value witness.
 - T608 is independently accepted: the transported-initial ratio has exact moment order `2P`, loss `N^(ε/4)`, endpoint normalization `A_v²`, kernel factor `R_{s_N,v}²`, and source `A_{s_N}⁻²`, uniformly over all two-charge words including `(+,+)` and `v=s_N`. Its positive-grid witness is a domain/index witness whose transported value is zero at `s_N=0`; no full T596 family absorption or (2.77) closure is claimed.
 - T616 is the selected post-T608 design line for the arbitrary-charge QV ingredient of (2.77): it must preserve the exact (5.42) kernel factor `R_{u,v}^4` and source scale `A_u⁻⁴η_u⁻¹Ψ_E`, derive `Ψ_E` only from the pre-Step-3 `xiL_6` input, cover `v=s_N` and positive mesh points under the same sample, and exclude (2.77), all-charge Step-3 packages, `hfamily`, `APrimeSlot'`, and every first-cell shortcut.
@@ -60,12 +62,12 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T613 | Running: same-time raw-QV favorable prefix-gradient producer |
-| T614 | Running: cutoff-aware all-charge drift preflight |
+| T614 | Delivered: cutoff-aware all-charge drift preflight pending independent audit |
 | T615 | Running: actual-smooth general-moving drift integral budget |
 | T616 | Running: arbitrary-charge QV preflight after T608 |
 | T617 | Running: all-sample general-moving joint envelope selected by T612 |
 | T618 | Running: general-moving prefix/transition/joint measurability |
+| T619 | Running: all-charge smooth-prefix WeightC1 localizer selected by T614 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

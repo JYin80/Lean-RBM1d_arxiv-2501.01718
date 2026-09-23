@@ -53,10 +53,11 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T620 is independently accepted only as a corrected blocked ledger: the sharp direct integration is sound, but a future fixed-`sigPM` consumer must bound `profile+N⁻ᵝ` before deriving the `g` corollary, prove the needed `c≤1`, and wait for T625 to remove the `Flow.Step345Producer` import path. It closes no drift slot or downstream A-prime result.
 - T624 was withdrawn before acceptance: the proposed imports are transitively downstream through `APrimeSlotArith→APrimeModel→Flow.Step345Producer`, so the half-drift-slot theorem is not yet a noncircular pre-Step-3 leaf even though T620's exponent ledger may remain useful.
 - T625 is the replacement dependency-boundary audit: trace the exact imports and theorem ownership needed for T620's sharp drift integration and slot arithmetic, then select the smallest signature-preserving upstream core extraction. It is read-only and may not classify the half-slot theorem as dispatchable until the Step345Producer path is removed.
-- T616's mathematical ledger for the arbitrary-charge QV row `R_{u,v}^4 A_u⁻⁴η_u⁻¹ flowR^5` is conditionally accepted, but implementation is doubly blocked: T621 found no simultaneous same-window `hEE`/`hapriori` witness, and the proposed module imports reach Step45/Step6/FirstCell. T626 audits a clean upstream extraction; no conditional theorem is treated as closing the all-charge QV row.
+- T616 is independently accepted only as a conditional mathematical ledger for the arbitrary-charge QV row `R_{u,v}^4 A_u⁻⁴η_u⁻¹ flowR^5`. Implementation is doubly blocked: T621 found no simultaneous same-window `hEE`/`hapriori` witness, and the proposed module imports reach Step45/Step6/FirstCell. T626 audits a clean upstream extraction; no conditional theorem is treated as closing the all-charge QV row.
 - T621 is delivered for audit: it confirms the floored same-window `hEE` chain and isolates a missing flexible `FlowInputs'` adapter, but no simultaneous Gaussian `(2.75),(2.76)` witness exists. Personal preflight also found that the current `LKDecayQuant`/Step2PP import closure reaches Step45, so T626 must first identify a genuinely upstream core split; neither `hEE` nor `XiLKTwoCutQV` is dispatchable.
 - T626 is the file-disjoint read-only dependency audit for the T621/T616 line: preserve the flexible floored exponents and exact `A_u⁻⁴η_u⁻¹xiL₆` target while locating the smallest signature-preserving extraction below Step45/Step6/FirstCell.
 - T622 audits the literal five measurable/integrable fields for `crossPart_active_le_jointEvent`, using T617's event-free product envelope but not rejected T618. It must identify a genuinely upstream measurability/core split, keep `p≥1` fixed before eventual `N`, exclude first-cell/downstream packages, leave `commonEvent∩transition` inhabitance unresolved, and make no cross-budget or closure claim.
+- T622 is delivered for independent audit and identifies a seven-stage signature-preserving core split before the five-field theorem. T627 is the first bounded, file-disjoint extraction step: remove the unused `APrimeWeight` import from `APrimeSmoothPrefix` and replace it only with clean lower Gaussian/flow imports, without changing any declaration or proof.
 - T615 is independently accepted: the actual-smooth weighted drift norm is integrated on every active target cell with `deltaWeight` distinct from `deltaCap`, T598's full near/far/residual and endpoint powers unchanged, the actual `Step2.jS` cap supplied by T579, and T611 used only for the all-sample complement envelope. `k=0` is handled solely by zero-length integration. This is not yet the deterministic profile absorption or drift slot.
 - T619 received a dispatch-critical dependency correction from the T614 audit: it must not import `APrimeSmoothPrefix`, whose transitive chain reaches downstream `Flow.Step345Producer`; the needed regularized soft-max/ContDiff facts must be local/lower-level. Any later drift event must also include the pre-Step-3 Lemma-5.9 `LoopDecay` input, not only the norm event.
 - T623 is the preflighted nonvacuity line for the conditional T606/T613 cross route: audit the literal fixed-model `commonEvent∩transition` using Gaussian support, continuity and anti-concentration at the target mesh/canonical smoothing order. A first-cell resident or separate nonempty witnesses cannot be reused; absent a same-sample theorem, it must isolate the first honest missing producer rather than declare the cross branch inhabited.
@@ -73,15 +74,15 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T616 | Conditional preflight only: QV ledger accepted; blocked on simultaneous producer/witness and T626 upstream extraction |
 | T618 | Rejected: statements correct but transitive imports are downstream/cyclic; upstream core extraction required |
 | T619 | Running: all-charge smooth-prefix WeightC1 localizer selected by T614 |
 | T621 | Delivered: floored `hEE` producer/nondegeneracy preflight pending independent audit |
-| T622 | Running: five-field regularity preflight, corrected not to use rejected T618 |
+| T622 | Delivered: five-field regularity/core-extraction preflight pending independent audit |
 | T623 | Running: same-resident general-moving commonEvent/transition preflight |
 | T624 | Withdrawn: proposed import surface reaches Step345Producer transitively |
 | T625 | Running: upstream core-extraction preflight for the T620/T624 drift-slot route |
 | T626 | Running: upstream core-extraction preflight for the T621/T616 floored-flow route |
+| T627 | Running: clean `APrimeSmoothPrefix` import extraction, first step selected by T622 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

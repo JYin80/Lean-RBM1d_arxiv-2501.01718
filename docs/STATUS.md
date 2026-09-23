@@ -35,10 +35,11 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T584 | Delivered; independent audit pending |
 | T585 | Delivered; scheduler audit pending |
 | T586 | Running: exact general-moving (5.35) drift source assembly |
-| T587 | Running: post-QV integration/net boundary audit |
+| T587 | Delivered; scheduler audit pending |
 | T588 | Running: corrected exact-signature five-slot audit |
 | T589 | Running: actual `CutHypEvOnSlot` producer decomposition |
 | T590 | Running: exact deterministic (5.42) absorption |
+| T591 | Running: all-`k` widened-weight QV integral budget |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

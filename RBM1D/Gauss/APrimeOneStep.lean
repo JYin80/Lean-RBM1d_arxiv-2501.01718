@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.Step2Bootstrap
 import RBM1D.Gauss.StepSideAPrime
+import RBM1D.Gauss.APrimeOneStepTerms
 import RBM1D.Gauss.APrimeGronwall
 import RBM1D.Gauss.APrimeDuhamel
 
@@ -210,19 +211,6 @@ section Chain
 open StepSideAPrime
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-
-/-- (5.39): the initial datum slot of `RBM.StepSideAPrime.stepRhs''`. -/
-noncomputable def initTerm (x R Ξ : ℝ) : ℝ := x * R ^ 2 * Ξ
-
-/-- (5.40)+(5.41)+(5.42): the drift and quadratic-variation slots of
-`RBM.StepSideAPrime.stepRhs''`. -/
-noncomputable def driftTerm (m x R Ξ A ε q β γ Jv : ℝ) : ℝ :=
-  Ξ * (exp 1 * (cWt * x ^ 16 * R ^ 4) ^ 2 * (36 * m⁻¹ * R ^ 2 * A⁻¹ + R ^ 2 * ε)
-    + x * m⁻¹ * R ^ 2 * (q + β * Jv + γ * (Jv * √Jv)))
-
-/-- The cross-term slot `κ` of the fixed-`ω` generator identity, plus the constant slots that
-pay for the bad event, the `max_a` union and the Lyapunov `+1`. -/
-noncomputable def tailTerm (x R κ : ℝ) : ℝ := x * R ^ 2 * κ + (x * (R ^ 2 + 1) + 1)
 
 /-- The three slot groups add up to `RBM.StepSideAPrime.stepRhs''` **exactly**: the split is an
 identity, not an estimate, so nothing is lost in the bookkeeping. -/

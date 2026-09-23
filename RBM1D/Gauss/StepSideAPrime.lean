@@ -3,6 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
+import RBM1D.Gauss.StepSideAPrimeCore
 import RBM1D.Hierarchy.Step2MomentStep
 
 /-!
@@ -59,16 +60,7 @@ namespace StepSideAPrime
 
 open Real
 
-/-! ### 1. The weight-support constant `cWt = 4e + 2` -/
-
-/-- The constant of the a priori level on the support of the soft-max cutoff weight:
-`4e` is the prior bound (`prefNet`'s `N^{2δ}`, times `e` for the soft maximum, times `2` for
-the widened weight `χ(·/(2Θ′))`), and the extra `2` is the margin. -/
-noncomputable def cWt : ℝ := 4 * exp 1 + 2
-
-theorem cWt_pos : 0 < cWt := by
-  have : (0 : ℝ) < exp 1 := exp_pos 1
-  unfold cWt; positivity
+/-! ### 1. Elementary bounds for the weight-support constant -/
 
 theorem one_le_cWt : 1 ≤ cWt := by
   have : (1 : ℝ) ≤ exp 1 := one_le_exp (by norm_num)

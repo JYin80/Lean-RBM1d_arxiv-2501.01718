@@ -10,11 +10,12 @@ Workers edit only their owned files, do not commit, and must finish with a modul
 |---|---|---|---|
 | T583 | Read-only audit of the other five universal merged inputs against paper (2.73)–(2.80). | Codex `01a0cd3f-a1db-7422-8a02-c701fbae27b4` | Delivered; material signature correction required (T588) |
 | T584 | Implement the positive-cell general-moving evolved-QV profile from T580, on T579's literal common event with exact `Jbar`, `ratR^4`, repaired `W⁻¹`, and no paper-level simplification. | Codex `01a0cd4d-49d8-7e21-ba9d-59e188be790c` | Delivered; independent audit pending |
-| T585 | Read-only audit of the deterministic absorption from T584's exact root profile toward paper (5.42), retaining quadratic-source and leakage rows. | Codex `01a0cd4d-3943-7470-9db1-aa1b8683a3d4` | Running |
+| T585 | Read-only audit of the deterministic absorption from T584's exact root profile toward paper (5.42), retaining quadratic-source and leakage rows. | Codex `01a0cd4d-3943-7470-9db1-aa1b8683a3d4` | Delivered; scheduler audit pending |
 | T586 | Implement the general-moving pointwise drift source assembly for paper (5.35), using T579's same event, exact centered coefficient `4N^ζ r_u`, raw C3, `flowDelta+W⁻¹`, and actual `Jbar`. | Codex `01a0cd4d-5636-7ab2-acbd-ae4bad6ebe23` | Running |
 | T587 | Read-only audit of the first honest integration/net step after T584: compare the paper stopping route (5.43)–(5.47) with the repository moment route, isolate the exact `k=0` and martingale/net obligations, and select one dispatch-ready theorem. | Codex `01a0cd4f-841f-7533-b780-e3ab150b2427` | Running |
 | T588 | Re-audit T583 with literal Lean signatures and deliver a corrected five-slot report; exact `s,t : ℕ→ℝ`, band-valued `Cond272Reg`, `Step1.Hyp` without `c`, and `d : Dims`. | Codex `01a0cd5f-68cd-7513-bc94-c0d44c23706e` | Running |
 | T589 | Read-only decomposition of the missing actual Gaussian `CutHypEvOnSlot`: locate the first noncircular producer for the `xiLK ... 2` event modulus and truncated moment family at `Theta=flowAs^(1/2)`. | Codex `01a0cd5f-57f0-7360-95b1-ecffaa5c5178` | Running |
+| T590 | Implement T585's deterministic QV absorption: prove the exact `1200=16+1152+32` far-rate bound and endpoint-normalized root-profile corollary with both leakage mechanisms and `R_u⁻²R_v⁻²`. | Codex `01a0cd61-23a0-7c92-885e-91a5dbb15f8a` | Running |
 
 ## Parked or dependency-blocked
 

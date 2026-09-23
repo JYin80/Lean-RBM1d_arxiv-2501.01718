@@ -1,6 +1,6 @@
 # STATUS — current project state
 
-> Updated 2026-09-23 01:52 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
+> Updated 2026-09-23 02:05 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
 
 ## 1. Objective and proof boundary
 
@@ -20,7 +20,7 @@
 
 ## 3. Active work and ready queue
 
-- The 12-minute heartbeat remains active. T503–T506 are independently accepted and archived. Five file-disjoint Lean writers have T507–T511: fixed-selector averaging, norm Hölder, full first-cell coordinate moment, time-net numerics, and charge transfer. General-window hfamily and the whole-paper chain remain open.
+- The 12-minute heartbeat remains active. T508–T511 are independently accepted, and five file-disjoint Lean writers have T507 and T512–T515: fixed-selector averaging, first-cell high-order family maximum, moving control floor/slow variation, exact selector control, and first-cell endpoint observable. General-window hfamily and the whole-paper chain remain open.
 - T287 (`fitLhs.Qb` has no actual small producer) and T295 (separate nonempty Good and soft-support events do not give a common sample) failed positive-theorem preflight. Revisit T287/T295 only after their missing inputs are established. T281/T282 depend on full T280; T283 follows the production chain. T217 is the final-report lane, and T159 must be reconciled with T283.
 
 ## 4. Mathematical preflight before dispatch (2026-09-22)
@@ -80,9 +80,11 @@
 
 - T507 — **fixed-selector averaging preflight passed**: for κ=(2−|E|)/2>0, T495 supplies the exact singleton local-law scale Ψ, spectral floor η≥N⁻², lower bound W⁻¹/² and polynomial Ψ upper bound required by `Gauss.detAvgIBP_stochDom_of_localLaw_complete`. Its conclusion is centered plus-charge block trace `≺Ψ²`; T495 `W⁻¹≤q` gives `Ψ²=q+W⁻¹≤2q`. Selector precedes N and the same T495 positive-length tuple is retained; no time union or next-cell BoundsCore is used.
 
-- T508/T510/T511 — **moving-window time-net leaves preflight passed**: T508 uses reverse triangle on T501’s two-charge `2N⁵√|u−v|` modulus, then 2N⁵≤N⁶ for N≥2, on its *one* Good. T510 plugs K=6,B=1,γ=1/2,T=1,Δ=N⁻¹⁶ into the exact consumer: `(K+B+1)/γ=16` so hδ is equality; `card(ZMod L_N)≤N` and `0≤t−s≤1`. T511 uses T501’s all-sample plus/minus norm identity, hence identical bad sets and no probability or N/W/time loss. These are leaves, not the all-time theorem; final assembly still needs T507’s selector bound and T495’s same-parameter witness.
+- T508/T510/T511 — **accepted moving-window time-net leaves**: T508 proves on T501’s one Good the real norm Hölder modulus `N⁶|u−v|^(1/2)` for both charges (independent build 3853, three axiom checks). T510 supplies the exact numerical consumer fields with K=6,B=1,γ=1/2,T=1,Δ=N⁻¹⁶ and `(K+B+1)/γ=16` (build 3828, ten checks). T511 proves all-sample plus/minus norm equality and exact selector, UnifDomIcc, TimeIcc StochDom transfer with the same control (build 3856, six checks). Each has a positive-length witness but none proves the plus all-time estimate.
 
-- T509 — **first-cell full quantitative moment preflight passed**: T506 retains precisely T500’s initial weighted moment at the same moving v,k,a,τ′,p; T500 substitutes `N^(5δ/32)R_v⁻²`. Set α=δ/16,β=1: T506’s remaining powers become δ/8,−31δ/16,δ/32,−1/2,−1; `v≤1/2` and `1≤R_v≤2` identify T503’s exact RHS and give its coefficient-one `N^(δ/4)R_v⁻²`. Fixed p precedes N; T506’s literal sharpCommonEvent resident and canonical plateau must be used together. This is a coordinate moment on the first cell, not a family sum or general-window hfamily.
+- T509 — **accepted full actual first-cell coordinate moment**: T500+T506 match in the literal canonical weight and moving v,k,a,τ′,p; α=δ/16,β=1 gives the T503 ledger powers δ/8,−31δ/16,δ/32,−1/2,−1. The compiled result is `momNormW(P,w,p,Y(v))≤N^(δ/4)R_v⁻²` with coefficient one, fixed p before all active k/a and eventual N. k=0 and the *same* sharpCommonEvent weight-one positive k=2 resident are explicit. Independent build 3986 and seven axiom checks pass. No family sum or general hfamily is inferred.
+
+- T512–T515 — **next Lean preflights passed**: T512 keeps T509’s *same* weight at fixed high P and uses `card(LoopArg L_N 2)=L_N²≤N²`: max^(2P)≤Σ_a|Y_a|^(2P), so family norm costs N^(1/P); for P≥8000, `δ=1/2000` gives `1/P≤δ/4` and target N^(δ/2)R_v⁻². T513 uses T504 qExt factor-2 comparison and W⁻¹≤q, W≤N to supply ζ=2qExt globally nonnegative, at least N⁻¹ on-window, and ζ(v)≤N^εζ(u) for fixed ε>0 at Δ=N⁻¹⁶. T514 is the definitional identity selectorQ=qExt on-window with T495’s *same* positive tuple. T515 identifies T509’s Y(v)=‖coordAt(v)‖ and T425’s jSnorm endpoint maximum. None claims general-window hfamily or a next-cell BoundsCore.
 
 ## 5. Decisions that still constrain work
 

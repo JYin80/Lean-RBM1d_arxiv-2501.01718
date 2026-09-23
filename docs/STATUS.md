@@ -94,11 +94,12 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T636 | Independently accepted: eight public interfaces preserved in clean drift-time/QV-rate cores; no sharp profile or cross closure claim |
 | T638 | Independently accepted as blocked: block-circulant class passes goodSetFlow but cannot meet centeredEvent; T643 tests the general spatial case |
 | T639 | Delivered: complete support-producer boundary corrected; zero-project-import target-mesh core selected; independent audit pending |
-| T640 | Running: correct T625 witness provenance/minimality while preserving the T630 core result |
+| T640 | Delivered: corrected T625 witness provenance and bounded/cohesive wording; independent audit pending |
 | T641 | Running: repair the frozen first-cell theorem proof after definitionally expanding `driftScale` in T636 |
 | T642 | Running: isolate the two actual Step-3 flow producers downstream of the elementary `Step3` interface |
 | T643 | Running: test whether goodSetFlow plus centeredEvent makes transition impossible, or permits genuine spatial redistribution |
 | T644 | Running: first T639 implementation slice, eight-declaration clean target-mesh core only |
+| T645 | Running: second accepted T629 slice, clean coordinate-weight/QV-global-polynomial cores |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

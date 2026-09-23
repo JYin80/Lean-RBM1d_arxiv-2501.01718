@@ -49,6 +49,11 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T612 is independently accepted: the first missing cross-complement leaf is T617's event-free all-sample `prefixGradient·sqrt(qvAt)` envelope with exact exponents `D+8`, `D+8`, `2D+16`, and payment `2D+17`. The five-field regularity package remains downstream; T618 splits off only its dependency-free measurability layer. Neither result proves (5.42) or the cross budget.
 - T619 is the selected first noncircular repair of T596's raw-drift obstruction toward (2.77): a same-sample all-charge smooth-prefix localizer over `(j,q)` with separate smooth-max order `r` and moment order `P`, exact terminal `twoCutLevel`, `WeightC1`, plateau, and both ordinary/derivative support caps `(4e+2)·twoCutLevel`. Terminal `cutTrunc≤self` alone is insufficient; no weighted drift absorption, cross-term budget, all-charge moment or Step-3 closure is claimed.
 - T613 is independently accepted only as a conditional favorable-prefix localization: at private `Dims.exampleGrow`/`band d`, every stored `j<k` including `j=0` uses the same-time raw coordinate QV with exact `ratR⁻⁴·tT⁻¹·threshold⁻¹` normalization on the identical sample in `commonEvent∩transition`. The intersection's inhabitance, the cross estimate and all downstream closures remain open.
+- T620 is the selected post-T615 read-only seam audit: it must integrate the literal sharp Lean profile for (5.40)–(5.41), preserve `deltaWeight` versus `deltaCap`, endpoint ratios and near/far/residual powers, test the actual direct-integral `APrimeOneStep` consumer, and reject any small-integral-to-supremum shortcut. It may select a drift-slot theorem only; cross, QV, `hfamily`, `APrimeSlot'` and closure remain out of scope.
+- T616 identifies the profile-preserving arbitrary-charge QV row `R_{u,v}^4 A_u⁻⁴η_u⁻¹ flowR^5`, but its proposed theorem has a genuine `hEE` stochastic-domination premise. Under the repository's nondegeneracy rule, implementation waits for T621 to verify the same-window floored-LDE/(2.76) producer chain and a simultaneous witness; no conditional theorem is treated as the all-charge QV row closed.
+- T622 is the preflighted post-T617/T618 seam: audit only the literal five measurable/integrable fields for `crossPart_active_le_jointEvent`, using T617's event-free product envelope and T618's general-moving measurability, with `p≥1` fixed before eventual `N`. It must exclude first-cell packages, keep `commonEvent∩transition` inhabitance unresolved, and make no cross-budget or closure claim.
+- T615 is independently accepted: the actual-smooth weighted drift norm is integrated on every active target cell with `deltaWeight` distinct from `deltaCap`, T598's full near/far/residual and endpoint powers unchanged, the actual `Step2.jS` cap supplied by T579, and T611 used only for the all-sample complement envelope. `k=0` is handled solely by zero-length integration. This is not yet the deterministic profile absorption or drift slot.
+- T619 received a dispatch-critical dependency correction from the T614 audit: it must not import `APrimeSmoothPrefix`, whose transitive chain reaches downstream `Flow.Step345Producer`; the needed regularized soft-max/ContDiff facts must be local/lower-level. Any later drift event must also include the pre-Step-3 Lemma-5.9 `LoopDecay` input, not only the norm event.
 - T602 is accepted after independent correction: the first noncircular post-T596 analytic row is the arbitrary-charge transported initial estimate T608. The raw drift route is circular through `A_u⁻³η_u⁻¹·xiLK₂²`; the domain/index witness at `s_N=0` is explicitly a zero transported-initial probe, not a nonzero-value witness.
 - T608 is independently accepted: the transported-initial ratio has exact moment order `2P`, loss `N^(ε/4)`, endpoint normalization `A_v²`, kernel factor `R_{s_N,v}²`, and source `A_{s_N}⁻²`, uniformly over all two-charge words including `(+,+)` and `v=s_N`. Its positive-grid witness is a domain/index witness whose transported value is zero at `s_N=0`; no full T596 family absorption or (2.77) closure is claimed.
 - T616 is the selected post-T608 design line for the arbitrary-charge QV ingredient of (2.77): it must preserve the exact (5.42) kernel factor `R_{u,v}^4` and source scale `A_u⁻⁴η_u⁻¹Ψ_E`, derive `Ψ_E` only from the pre-Step-3 `xiL_6` input, cover `v=s_N` and positive mesh points under the same sample, and exclude (2.77), all-charge Step-3 packages, `hfamily`, `APrimeSlot'`, and every first-cell shortcut.
@@ -63,11 +68,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
 | T614 | Delivered: cutoff-aware all-charge drift preflight pending independent audit |
-| T615 | Running: actual-smooth general-moving drift integral budget |
-| T616 | Running: arbitrary-charge QV preflight after T608 |
-| T617 | Running: all-sample general-moving joint envelope selected by T612 |
+| T616 | Delivered: arbitrary-charge QV preflight after T608 pending independent audit |
+| T617 | Delivered: all-sample general-moving joint envelope pending independent audit |
 | T618 | Running: general-moving prefix/transition/joint measurability |
 | T619 | Running: all-charge smooth-prefix WeightC1 localizer selected by T614 |
+| T620 | Running: post-T615 deterministic drift integration/consumer preflight |
+| T621 | Running: T616 `hEE` producer/nondegeneracy preflight |
+| T622 | Running: post-T617/T618 five-field regularity preflight |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

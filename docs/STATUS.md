@@ -102,13 +102,17 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T646 | Independently accepted: the clean first-grid witness is noncircular and nondegenerate, with `s_N=0`, eventual `t_N=1/2`, and unchanged (2.72) powers; T651 implements it |
 | T647 | Independently accepted: the 49-declaration two-import smooth-prefix/canonical design preserves literal prefix semantics; T652 implements it |
 | T648 | Independently accepted: finite nonzero-variance Gaussian cylinders have positive mass, zero-variance coordinates require `zeroFix`, and measurable `U⊆R` retains mass in `U∩measCore`; the global null-difference claim remains false |
-| T649 | Running: verbatim clean extraction of the two (2.73) `Step2PP` conversion declarations |
-| T650 | Delivered; independent audit running on the corrected conditional (5.42) card and exact time-net extraction selected as T654 |
-| T651 | Running: clean `Cond272Reg` placement and nondegenerate first-grid initial-window witness |
+| T649 | Independently accepted: the two (2.73) `Step2PP` declarations moved verbatim to a 46-module clean core with exact all-charge closed-window powers |
+| T650 | Independent audit failed only on frozen namespace exactness: the QV card passes, but `netFinset*` lives in `RBM.MomentDuhamelCut`; T654 already uses the corrected names |
+| T651 | Delivered locally; its clean core and signatures pass, but final facade/root validation waits for coordinated repair of T652's `Step2.lk` compatibility break |
 | T652 | Blocked after core/facade extraction: `Eq548Producer` needs one compatibility unfold edit, but T654 currently owns that file; partial work remains excluded until a fresh post-T654 repair |
-| T653 | Running: clean finite Gaussian support cylinder and local retention core |
-| T654 | Running: zero-project-import exact `meshK`/`netFinset` core; no QV theorem |
+| T653 | Delivered; independent audit running on the clean finite Gaussian support/local-retention core; root validation waits for the unrelated Eq548 compatibility repair |
+| T654 | Stopped with corrected namespace core/facades; final validation is folded into T659 because T652 changed `Step2.lk` in the shared `Eq548Producer` consumer |
 | T655 | Running: audit the next clean same-sample carrier-cylinder producer boundary after T643/T648 |
+| T656 | Running: corrected conditional arbitrary-charge QV/moment-core preflight; no production or closure claim |
+| T657 | Running: read-only ownership/build audit for one fresh repair of the entangled T651/T652/T654 partials |
+| T658 | Running: exact Gaussian-coordinate encoding audit for the T643 coupled-block deterministic center |
+| T659 | Running: coordinated completion of T651/T652/T654 plus the one known definitional compatibility unfold; no new mathematics |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

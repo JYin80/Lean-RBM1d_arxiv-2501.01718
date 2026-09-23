@@ -3,6 +3,7 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
+import RBM1D.Gauss.APrimeDriftTimeFamilyCore
 import RBM1D.Gauss.APrimeRateRegularity
 import RBM1D.Gauss.TestFunQGeneral
 
@@ -27,6 +28,12 @@ namespace RBM.APrimeDriftTimeFamily
 open MeasureTheory Set
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
+
+/-- Compatibility unfolding for downstream proofs written against the former
+`Step2.tT` presentation of `driftScale`. -/
+@[simp] theorem step2_tT_eq_tailT {B : Band Ω} (E : ℝ) (N : ℕ) (D u ell : ℝ) :
+    Step2.tT B E N D u ell =
+      tailT (B.W N) (B.ell N u) (etaT E u) D ell := rfl
 
 /-- Fixed sample weights preserve time continuity of finite-size bounded
 moment norms.  This uses dominated convergence in time, not pointwise
@@ -59,42 +66,12 @@ theorem continuousOn_momNormW_of_envelope {S : Set ℝ}
   exact (Real.continuous_rpow_const (by positivity : (0 : ℝ) ≤ 1 / (2 * (p : ℝ))))
     |>.comp_continuousOn hI
 
-/-- The plain evolved-coordinate drift, pinned to the Gaussian `driftF`
-and the same propagator row as `ukerObsT`.  The denominator is the fixed
-right-endpoint normalization of the A′ slot. -/
-noncomputable def driftScale (d : Gauss.Dims) (E D : ℝ) (N : ℕ)
-    (a : LoopArg (d.L N) 2) (s v : ℝ) : ℝ :=
-  Step2.tT (Gauss.band d) E N D v (zdist (d.L N) (a 0 - a 1)) *
-    (etaT E s / etaT E v) ^ 4
-
-theorem driftScale_pos (d : Gauss.Dims) {E D s v : ℝ} (hE : |E| < 2)
-    (hsv : s ≤ v) (hv1 : v < 1) (N : ℕ) (a : LoopArg (d.L N) 2) :
-    0 < driftScale d E D N a s v := by
-  have hs1 : s < 1 := hsv.trans_lt hv1
-  have hR : 0 < etaT E s / etaT E v :=
-    div_pos (Step2.etaT_pos' hE hs1) (Step2.etaT_pos' hE hv1)
-  have hW : 0 < ((Gauss.band d).W N : ℝ) := by
-    exact_mod_cast (Gauss.band d).W_pos N
-  have hT : 0 < Step2.tT (Gauss.band d) E N D v
-      (zdist (d.L N) (a 0 - a 1)) := by
-    dsimp [Step2.tT]
-    exact tailT_pos hW _
-  exact mul_pos hT (pow_pos hR _)
-
 noncomputable def driftAt (d : Gauss.Dims) (E D : ℝ) (N : ℕ)
     (σ : Fin 2 → Bool) (a : LoopArg (d.L N) 2) (s v r : ℝ)
     (ω : Gauss.Ω d) : ℝ :=
   ‖Uker (d.L N) (xiOf (mSigma E) σ) ((r : ℝ) : ℂ) ((v : ℝ) : ℂ)
     (DriftDef.driftF (Gauss.band d) E N r ((Gauss.sample d).H N r ω) σ) a‖ /
       driftScale d E D N a s v
-
-/-- The endpoint-normalized evolved coordinate at an arbitrary matrix. -/
-noncomputable def coordAt (d : Gauss.Dims) (E D : ℝ) (N : ℕ)
-    (σ : Fin 2 → Bool) (a : LoopArg (d.L N) 2) (s v r : ℝ)
-    (M : Matrix (d.Idx N) (d.Idx N) ℂ) : ℂ :=
-  Gauss.ukerObsT d N E (List.ofFn σ) (xiOf (mSigma E) σ) ((v : ℝ) : ℂ)
-    (fun u b => (Gauss.band d).Kval E N u (LoopData.idx (σ, b))) a r M /
-      ((driftScale d E D N a s v : ℝ) : ℂ)
 
 /-- The actual moment test function built from the normalized coordinate. -/
 noncomputable def momentAt (d : Gauss.Dims) (E D : ℝ) (N p : ℕ)
@@ -128,13 +105,6 @@ theorem flowY_coordAt (d : Gauss.Dims) (E D : ℝ) (N : ℕ)
   simp only [APrimeDuhamelModel.flowY, coordAt, norm_div, Complex.norm_real,
     Real.norm_eq_abs, abs_of_pos hscale]
   rw [hbr]
-
-/-- The model-pinned quadratic-variation rate for the same normalized
-coordinate.  Its time regularity belongs to T294. -/
-noncomputable def qvAt (d : Gauss.Dims) (E D : ℝ) (N : ℕ)
-    (σ : Fin 2 → Bool) (a : LoopArg (d.L N) 2) (s v r : ℝ)
-    (ω : Gauss.Ω d) : ℝ :=
-  Gauss.quadVar d N (coordAt d E D N σ a s v r) (Gauss.Hflow d N r ω)
 
 theorem qvAt_eq_evolved (d : Gauss.Dims) (E D : ℝ) (N : ℕ)
     (σ : Fin 2 → Bool) (a : LoopArg (d.L N) 2) (s v r : ℝ)

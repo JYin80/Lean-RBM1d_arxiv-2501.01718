@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.APrimeGeneralMovingTraceModulus
 import RBM1D.Gauss.APrimeTwoChargeOneLoop
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T501: two-charge centered block-trace modulus
@@ -22,12 +23,6 @@ noncomputable section
 private noncomputable abbrev d : Dims := Dims.exampleGrow
 private noncomputable abbrev B : Band (Ω d) := band d
 
-/-- The centered block trace at either resolvent charge. -/
-noncomputable def centeredTrace (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω d)
-    (σ : Bool) (b : ZMod (d.L N)) : ℂ :=
-  Matrix.trace ((Gsig (Hflow d N u ω) (zt E u) σ
-    - mSigma E σ • (1 : Matrix (d.Idx N) (d.Idx N) ℂ)) *
-      Eblk (d.L N) (d.W N) b)
 
 /-- The plus-charge definition is exactly T496's centered trace. -/
 theorem centeredTrace_true_eq (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω d)

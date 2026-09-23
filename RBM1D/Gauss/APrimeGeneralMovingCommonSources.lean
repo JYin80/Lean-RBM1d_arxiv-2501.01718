@@ -9,6 +9,7 @@ import RBM1D.Gauss.APrimeGeneralMovingRawSources
 import RBM1D.Gauss.APrimeGeneralMovingTwoChargeAllTimeOneLoop
 import RBM1D.Gauss.APrimeJG
 import RBM1D.Gauss.LkGoodMeasurable
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T579: one common event for the general-moving sources
@@ -28,40 +29,9 @@ noncomputable section
 private noncomputable abbrev d : Dims := Dims.exampleGrow
 private noncomputable abbrev B : Band (Ω d) := band d
 
-/-- The two centered charges, with one fixed loss, on the whole moving window. -/
-def centeredEvent (E : Real) (s t : Nat -> Real) (zetaCtr : Real)
-    (N : Nat) : Set (Ω d) :=
-  {omega | forall sigma : Bool,
-    forall p : TimeIcc s t N × ZMod (d.L N),
-      norm (APrimeGeneralMovingTwoChargeModulus.centeredTrace
-        E N (p.1 : Real) omega sigma p.2) <=
-      (N : Real)^zetaCtr *
-        (2 * APrimeGeneralMovingControlExtension.qExt
-          E s t N (p.1 : Real))}
 
-/-- The all-time block-resolved Green event supplied by `APrimeJG`. -/
-def blockEvent (E D : Real) (s t : Nat -> Real) (tauG : Real)
-    (N : Nat) : Set (Ω d) :=
-  {omega | forall u : TimeIcc s t N,
-    APrimeJG.jG (Gauss.sample d) E N (u : Real) omega
-      (B.ell N (u : Real)) (etaT E (u : Real)) D <=
-    1 + (N : Real)^tauG *
-      (9 * Real.exp (Real.sqrt 3) *
-        Step2.jS (Gauss.sample d) E D N (u : Real) omega + 2)}
 
-/-- The literal intersection of the four source events. -/
-def rawCarrier (E D : Real) (s t : Nat -> Real)
-    (zetaSrc zetaCtr tauG : Real) (N : Nat) : Set (Ω d) :=
-  APrimeGeneralMovingRawSources.sourceGood E s t zetaSrc N ∩
-  Gauss.goodSetFlow d E s t (Gauss.flowDelta d E t) N ∩
-  centeredEvent E s t zetaCtr N ∩
-  blockEvent E D s t tauG N
 
-/-- A measurable subset of the literal carrier with the same complement measure. -/
-noncomputable def commonEvent (E D : Real) (s t : Nat -> Real)
-    (zetaSrc zetaCtr tauG : Real) (N : Nat) : Set (Ω d) :=
-  Gauss.measCore (Gauss.P d)
-    (rawCarrier E D s t zetaSrc zetaCtr tauG N)
 
 theorem measurableSet_commonEvent (E D : Real) (s t : Nat -> Real)
     (zetaSrc zetaCtr tauG : Real) (N : Nat) :

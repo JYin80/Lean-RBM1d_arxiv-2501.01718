@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Hierarchy.Step45
 import RBM1D.Loop.ContinuityAssembly
 import RBM1D.Defs.StochDomHighProb
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # Step 1 of the proof of Theorem 2.21: (2.73) and (2.74)
@@ -499,10 +500,6 @@ noncomputable def loopInd (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ)
     ∀ N, TimeIcc s t N × LoopData (B.L N) n → Ω → ℝ :=
   fun N p ω => (gEv X E N p.1).indicator (fun ω => ‖X.Lval E N p.1 ω p.2.idx‖) ω
 
-/-- The right side of (2.73) and (5.8): `(ℓ_u/ℓ_s)^{n-1} (W ℓ_u η_u)^{-n+1}`. -/
-noncomputable def aprioriRhs (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) (n : ℕ) :
-    ∀ N, TimeIcc s t N × LoopData (B.L N) n → Ω → ℝ :=
-  fun N p _ => (B.ell N p.1 / B.ell N (s N)) ^ (n - 1) * (B.scale E N p.1)⁻¹ ^ (n - 1)
 
 /-- **(5.8)** uniformly in `u ∈ [s, t]` (all three cases at once):
 `1(‖G_u‖_max ≤ 2) max_{σ,a} |L_{u,σ,a}| ≺ (ℓ_u/ℓ_s)^{n-1} (W ℓ_u η_u)^{-n+1}`. -/

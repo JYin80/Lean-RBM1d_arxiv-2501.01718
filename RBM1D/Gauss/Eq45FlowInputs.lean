@@ -9,6 +9,7 @@ import RBM1D.Gauss.CondStableInst
 import RBM1D.Gauss.FlowHolder
 import RBM1D.Gauss.TraceMoment
 import RBM1D.Gauss.FlucIter
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # The three time-indexed inputs of (4.5) — T124
@@ -269,14 +270,6 @@ open scoped Matrix.Norms.L2Operator
 
 variable {d : Dims} {E : ℝ} {s t : ℕ → ℝ} {δ : ℕ → ℝ} {N : ℕ}
 
-/-- **The good event (4.1) uniformly in `u ∈ [s_N, t_N]`.**
-
-`RBM.goodSet` pins one time in the matrix *and* in the spectral parameter; the `hΩ` that T119
-leaves open is that set's `HighProb`.  Along the flow both times move together and the event
-must hold at every `u` simultaneously — this is the flow analogue, and it is what the net lift
-of the three (4.5) inputs consumes. -/
-def goodSetFlow (d : Dims) (E : ℝ) (s t : ℕ → ℝ) (δ : ℕ → ℝ) (N : ℕ) : Set (Ω d) :=
-  {ω | ∀ u ∈ Set.Icc (s N) (t N), GoodEvent (green (Hflow d N u ω) (zt E u)) (mE E) (δ N)}
 
 /-- **`W⁻¹ ≤ 4 L^max_u` at every time of the flow interval.**  This is `RBM.inv_W_le_Lmax` —
 the *lower* half of T119's sandwich, the half that does not cost a power of `η⁻¹`. -/

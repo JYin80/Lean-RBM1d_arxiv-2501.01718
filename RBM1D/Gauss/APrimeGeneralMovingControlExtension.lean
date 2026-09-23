@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.APrimeGeneralMovingWindowFloor
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T504: global extension of the moving one-loop control
@@ -24,17 +25,8 @@ noncomputable section
 private noncomputable abbrev d : Dims := Dims.exampleGrow
 private noncomputable abbrev B : Band (Ω d) := band d
 
-/-- The original moving-window one-loop control. -/
-def q (E : ℝ) (s : ℕ → ℝ) (N : ℕ) (u : ℝ) : ℝ :=
-  (B.ell N u / B.ell N (s N)) / B.scale E N u
 
-/-- Clamp an arbitrary real time to the moving window. -/
-def clampTime (s t : ℕ → ℝ) (N : ℕ) (u : ℝ) : ℝ :=
-  max (s N) (min (t N) u)
 
-/-- A global extension of `q` using only deterministic clamping. -/
-def qExt (E : ℝ) (s t : ℕ → ℝ) (N : ℕ) (u : ℝ) : ℝ :=
-  q E s N (clampTime s t N u)
 
 theorem clampTime_mem {s t : ℕ → ℝ} {N : ℕ}
     (hst : s N ≤ t N) (u : ℝ) :

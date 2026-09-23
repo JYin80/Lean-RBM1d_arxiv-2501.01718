@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
 import RBM1D.Gauss.Lemma41Glue
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # `RBM.Step1.Lemma41Flow` for the Gaussian model — T108
@@ -138,11 +139,6 @@ end Mono
 
 /-! ### The threshold `δ_N` and the good events -/
 
-/-- The time-independent threshold `δ_N = (W ℓ_{t_N} η_{t_N})^{-1/6}` of (4.1) used along the
-whole flow interval `[s_N, t_N]`.  `RBM.flowScale` is antitone in the time, so this dominates
-the `u`-dependent threshold `(W ℓ_u η_u)^{-1/6}` of `RBM.Step1.goodEv` for every `u ≤ t_N`. -/
-noncomputable def flowDelta (d : Dims) (E : ℝ) (t : ℕ → ℝ) (N : ℕ) : ℝ :=
-  ((band d).scale E N (t N))⁻¹ ^ ((1 : ℝ) / 6)
 
 /-- The `u`-threshold of `RBM.Step1.goodEv` is at most `δ_N`, for `u ∈ [s_N, t_N]`. -/
 theorem scale_rpow_le_flowDelta (hE : |E| < 2) (hs0 : ∀ N, 0 ≤ s N) (ht1 : ∀ N, t N < 1)

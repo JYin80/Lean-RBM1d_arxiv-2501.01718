@@ -7,6 +7,7 @@ import RBM1D.Gauss.APrimeSmoothWeightActual
 import RBM1D.Gauss.APrimeDriftTimeFamily
 import RBM1D.Gauss.APrimeNormalizedTestFun
 import RBM1D.Gauss.APrimeBadSplit
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-! The actual smooth-prefix covariance cross term. -/
 
@@ -16,12 +17,6 @@ open MeasureTheory Real RBM.Gauss RBM.APrimeDuhamelModel
 open scoped Matrix.Norms.L2Operator
 
 
-noncomputable def transition (d : Gauss.Dims) (E D δ : ℝ)
-    (s mesh : ℕ → ℝ) (N k m : ℕ) : Set (Gauss.Ω d) :=
-  {ω | 1 < APrimeSmoothWeightActual.prefixSample d E D s mesh N k m ω /
-    APrimeSmoothWeightActual.threshold δ N ∧
-    APrimeSmoothWeightActual.prefixSample d E D s mesh N k m ω /
-    APrimeSmoothWeightActual.threshold δ N < 2}
 
 noncomputable def prefixGradient (d : Gauss.Dims) (E D δ : ℝ)
     (s mesh : ℕ → ℝ) (N k m : ℕ) (ω : Gauss.Ω d) : ℝ :=

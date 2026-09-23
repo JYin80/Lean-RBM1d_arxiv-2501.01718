@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.APrimeGeneralMovingMesh
 import RBM1D.Gauss.APrimeGeneralMovingWindowFloor
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T478: concrete norm event and mesh package on moving windows
@@ -19,11 +20,6 @@ open Filter MeasureTheory Set Gauss
 
 open scoped Matrix.Norms.L2Operator
 
-/-- The fixed norm event, independent of every window and bootstrap
-parameter. -/
-def good (N : ℕ) : Set (Ω Dims.exampleGrow) :=
-  {ω : Ω Dims.exampleGrow |
-    ‖Xmat Dims.exampleGrow N ω‖ ≤ (N : ℝ)}
 
 theorem measurableSet_good (N : ℕ) : MeasurableSet (good N) := by
   simpa only [good] using

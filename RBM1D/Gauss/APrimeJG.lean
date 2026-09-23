@@ -8,6 +8,7 @@ import RBM1D.Gauss.EntryBoundTime
 import RBM1D.Gauss.GoodSetFlow
 import RBM1D.Gauss.EarlyQVRateEv
 import RBM1D.Hierarchy.Step2FarInputs
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T280f: block-resolved Green control for (5.42)
@@ -24,30 +25,8 @@ open scoped Matrix.Norms.L2Operator
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω}
 
-/-- Maximum Green entry between two physical blocks, over both charges. -/
-noncomputable def gmBlk (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
-    (x y : ZMod (B.L N)) : ℝ :=
-  (Finset.univ : Finset (Bool × Fin (B.W N) × Fin (B.W N))).sup'
-    ⟨(true, ⟨0, B.W_pos N⟩, ⟨0, B.W_pos N⟩), Finset.mem_univ _⟩
-    (fun z => ‖Gsig (X.H N u ω) (zt E u) z.1 (x, z.2.1) (y, z.2.2)‖)
 
-/-- Squared block control that retains the neighbour in the row of `SB`. -/
-noncomputable def gsqBlk (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
-    (x y : ZMod (B.L N)) : ℝ :=
-  (Finset.univ : Finset (ZMod (B.L N))).sup'
-    ⟨0, Finset.mem_univ _⟩
-    (fun x' => if SB (B.L N) x x' ≠ 0 then
-      gmBlk X E N u ω y x' * gmBlk X E N u ω x' y else 0)
 
-/-- The block-level `J` in (5.42), normalized only over far block pairs. -/
-noncomputable def jG (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)
-    (ℓu ηu D : ℝ) : ℝ :=
-  1 + (Finset.univ : Finset (ZMod (B.L N) × ZMod (B.L N))).sup'
-    ⟨(0, 0), Finset.mem_univ _⟩
-    (fun p => if ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (p.1 - p.2) : ℝ)
-      then gsqBlk X E N u ω p.1 p.2 /
-        tailT (B.W N : ℝ) ℓu ηu D (zdist (B.L N) (p.1 - p.2))
-      else 0)
 
 /-- `hGm`: a Green entry is bounded by its block maximum. -/
 theorem norm_Gsig_le_gmBlk (X : Sample B) (E : ℝ) (N : ℕ) (u : ℝ) (ω : Ω)

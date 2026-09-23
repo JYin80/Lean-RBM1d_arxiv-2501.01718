@@ -6,6 +6,7 @@ Authors: Jun Yin
 import RBM1D.Gauss.APrimeGeneralMovingPrefixSupport
 import RBM1D.Gauss.APrimeFullQV
 import RBM1D.Gauss.APrimeFirstCellNearSources
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T491: raw Step-1 sources on a general moving window
@@ -44,18 +45,7 @@ noncomputable def sourceC6 (E : ℝ) (s : ℕ → ℝ)
   (N : ℝ) ^ ζ * (B.ell N u / B.ell N (s N)) ^ (5 : ℕ) *
     (B.scale E N u)⁻¹ ^ (5 : ℕ)
 
-def rawEvent (E : ℝ) (s t : ℕ → ℝ) (ζ : ℝ)
-    (n N : ℕ) : Set (Ω d) :=
-  {ω | ∀ p : TimeIcc s t N × LoopData (d.L N) n,
-    ‖(sample d).Lval E N p.1 ω p.2.idx‖ ≤
-      (N : ℝ) ^ ζ * Step1.aprioriRhs B E s t n N p ω}
 
-def sourceGood (E : ℝ) (s t : ℕ → ℝ) (ζ : ℝ)
-    (N : ℕ) : Set (Ω d) :=
-  APrimeGeneralMovingGoodMesh.good N ∩
-    rawEvent E s t ζ 3 N ∩
-    rawEvent E s t ζ 4 N ∩
-    rawEvent E s t ζ 6 N
 
 theorem sourceGood_subset_good (E : ℝ) (s t : ℕ → ℝ) (ζ : ℝ) (N : ℕ) :
     sourceGood E s t ζ N ⊆ APrimeGeneralMovingGoodMesh.good N :=

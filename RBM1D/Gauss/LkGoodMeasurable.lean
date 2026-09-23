@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.FastDecayFlow
 import RBM1D.Gauss.Lemma514QRoute
+import RBM1D.Gauss.APrimeGeneralMovingCarrierCore
 
 /-!
 # T237: the measurable core of the good events, and the event-restricted kernel estimates
@@ -75,27 +76,12 @@ section Core
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
-/-- **The measurable core of `Ξ`**: the complement of a measurable hull of `Ξᶜ`.
-
-It is a measurable subset of `Ξ` whose complement has the same outer measure as `Ξᶜ`.  Every
-hypothesis of the form `∀ ω ∈ Ξ, …` therefore holds on it, and `RBM.HighProb` transports to
-it unchanged. -/
-noncomputable def measCore (P : Measure Ω) (Ξ : Set Ω) : Set Ω := (toMeasurable P Ξᶜ)ᶜ
 
 theorem measurableSet_measCore (P : Measure Ω) (Ξ : Set Ω) :
     MeasurableSet (measCore P Ξ) :=
   (measurableSet_toMeasurable P Ξᶜ).compl
 
-theorem measCore_subset (P : Measure Ω) (Ξ : Set Ω) : measCore P Ξ ⊆ Ξ := by
-  intro ω hω
-  by_contra h
-  exact hω (subset_toMeasurable P Ξᶜ h)
 
-/-- **The core costs nothing**: its complement has the same measure as `Ξᶜ`. -/
-theorem measure_compl_measCore (P : Measure Ω) (Ξ : Set Ω) :
-    P (measCore P Ξ)ᶜ = P Ξᶜ := by
-  rw [measCore, compl_compl]
-  exact measure_toMeasurable Ξᶜ
 
 theorem measureReal_compl_measCore (P : Measure Ω) (Ξ : Set Ω) :
     (P (measCore P Ξ)ᶜ).toReal = (P Ξᶜ).toReal := by

@@ -20,9 +20,10 @@ Workers edit only their owned files, do not commit, and must finish with a modul
 | T649 | Extract `Step2PP.stochDom_flowXiL` and `flow_xiL_apriori_le'` verbatim into a clean core below Step 3, preserving the exact all-charge, closed-window (2.73) conversion and facade compatibility. | Codex `01a0cec0-92db-7e30-b90f-173bbc0cd8f3` | Running |
 | T650 | Correct T635's conditional (5.42) claim card and recompute the post-T642 dependency boundary, with exact `s_N≤u≤v≤t_N`, net membership, common sample and ratio-four profile. | Codex `01a0cec0-7a6a-7601-9abd-8b55b9a4291d` | Delivered; independent audit running |
 | T651 | Move `Cond272Reg` to its elementary iteration layer and reprove the first-grid positive-window/zero-time `BoundsCore` witness in a clean two-import core, preserving the frozen public signature. | Codex `01a0cec2-d622-79c0-8ac6-9fb00cbd13c0` | Running |
-| T652 | Extract the exact smooth-prefix/canonical surface into a two-import clean core and retain six compatibility facades, preserving threshold, prefix, `k=0`, same-sample and calibration semantics. | Codex `01a0cecc-2750-79a3-8576-25cb4e3a40d9` | Running |
+| T652 | Extract the exact smooth-prefix/canonical surface into a two-import clean core and retain six compatibility facades, preserving threshold, prefix, `k=0`, same-sample and calibration semantics. | Codex `01a0cecc-2750-79a3-8576-25cb4e3a40d9` | Blocked: one required `Eq548Producer` compatibility edit conflicts with active T654 ownership; partial files excluded pending fresh repair after T654 |
 | T653 | Implement a clean finite Gaussian effective-support and local measurable-core retention module, including zero-variance coordinate fixing and excluding the false global null-difference claim. | Codex `01a0cece-70b2-7a50-8f76-407b74dff405` | Running |
 | T654 | Extract `meshK`, `meshK_pos`, `netFinset`, and `netFinset_subset_Icc` verbatim into a zero-project-import exact time-net core, keeping both old modules as facades. | Codex `01a0ced5-c226-7583-8c0f-4a75473383c9` | Running |
+| T655 | Read-only audit of the clean literal carrier-cylinder boundary joining T643 deterministic margins with T648 finite support/local retention, preserving same-sample and effective-coordinate semantics. | Codex `01a0ced7-b6be-7c10-a26a-6abcd50f3196` | Running |
 
 ## Parked or dependency-blocked
 

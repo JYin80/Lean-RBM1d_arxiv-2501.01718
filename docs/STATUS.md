@@ -105,9 +105,10 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T649 | Running: verbatim clean extraction of the two (2.73) `Step2PP` conversion declarations |
 | T650 | Delivered; independent audit running on the corrected conditional (5.42) card and exact time-net extraction selected as T654 |
 | T651 | Running: clean `Cond272Reg` placement and nondegenerate first-grid initial-window witness |
-| T652 | Running: exact smooth-prefix/canonical declarations in a clean core with six compatibility facades |
+| T652 | Blocked after core/facade extraction: `Eq548Producer` needs one compatibility unfold edit, but T654 currently owns that file; partial work remains excluded until a fresh post-T654 repair |
 | T653 | Running: clean finite Gaussian support cylinder and local retention core |
 | T654 | Running: zero-project-import exact `meshK`/`netFinset` core; no QV theorem |
+| T655 | Running: audit the next clean same-sample carrier-cylinder producer boundary after T643/T648 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

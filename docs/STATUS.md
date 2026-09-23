@@ -80,15 +80,16 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T618 | Rejected: statements correct but transitive imports are downstream/cyclic; upstream core extraction required |
 | T619 | Rejected: compiled theorem is mathematically correct but module imports Step45/Step3/Step6; upstream extraction required |
 | T624 | Withdrawn: proposed import surface reaches Step345Producer transitively |
-| T625 | Delivered: drift-slot dependency/core-extraction preflight pending independent audit |
-| T626 | Delivered: conditional route and first clean extraction identified; independent audit pending |
+| T625 | Conditional audit: mathematical ledger passes; witness provenance and “minimal” wording require correction |
+| T626 | Failed independent audit: omitted genuine `LKDecayQuant/EEBridge → SumZeroDyn → Step3` producer paths; Core A remains only a bounded Step45-edge extraction |
 | T627 | Independently accepted as blocked: both proposed import branches still reach Step45; no code retained |
 | T628 | Delivered: literal `k=2` scalar crossing exists but lies outside `‖Xmat‖≤N`; independent audit pending |
 | T629 | Running: corrected QV-rate/coordinate-weight core-extraction audit after T622 |
 | T630 | Running: clean scalar consumer/slot core extraction selected by T625 |
-| T631 | Running: T626 Core A only, extracting the generic high-probability stochastic-domination helper below Step45 |
-| T632 | Running: T626 Core B only, extracting elementary flow families and stochastic-domination monotonicity below Step3 |
+| T631 | Running with corrected scope: extract the generic helper and remove one Step45 edge; do not claim full pre-Step3 cleanliness |
+| T632 | Blocked: verbatim `flowXiL` needs later `Sample.xiL`; prototype reverted; independent audit pending |
 | T633 | Running: later-prefix same-sample support audit after the fixed-`k=2` obstruction in T628 |
+| T634 | Running: corrected Core B adds the omitted clean `Sample.xiL` dependency before extracting flow families |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

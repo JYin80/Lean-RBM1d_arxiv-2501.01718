@@ -115,11 +115,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T659 | Delivered with all specified builds and allowed-axiom checks claimed; T665 is independently rebuilding the full T651/T652/T654/T659 bundle before any acceptance or staging |
 | T660 | Delivered with corrections: future predicate core needs clean `DimsExample`, exactly 21 moved names, `measurableSet_measCore` retained in its facade, and a jG upper-semicontinuity/majorant argument; T664 is independently auditing before acceptance |
 | T661 | Delivered PASS WITH CORRECTIONS; scheduler acceptance and T666 implementation remain bounded as above |
-| T662 | Running: fresh read-only independent audit of T656's exact card and endpoint-scale obstruction; no implementation or closure claim |
-| T663 | Running: fresh read-only independent audit of T657's repair specification; T651/T652/T654 remain excluded pending T659 and later acceptance |
-| T664 | Running: fresh read-only independent audit of T660; carrier-core implementation remains blocked on T659 acceptance |
+| T662 | Delivered PASS WITH CORRECTIONS: `t_N<1` alone lacks a polynomial envelope, but retaining the producer's literal `Cond272` gives `N⁻²≤η_u`; the claimed clean QV roots nevertheless reach `Hierarchy.Step3`. T667 independently audits the corrected clean-extraction boundary before any implementation |
+| T663 | Delivered PASS for the repair specification only; T651/T652/T654 remain excluded pending T665's implementation acceptance |
+| T664 | Delivered PASS: the corrected 21-name/two-import predicate-core design and jG upper-semicontinuity route pass; implementation remains blocked on T665 acceptance |
 | T665 | Running: fresh independent full acceptance audit of the T651/T652/T654/T659 integration bundle |
 | T666 | Running: bounded generic Hermitian band-coordinate encoder in `Gauss.Generator`; no carrier/resident/closure claim |
+| T667 | Running: fresh audit of the retained-`Cond272` QV envelope and genuine Step3 import paths; no QV implementation |
+| T668 | Running: mathematical preflight of the uniform semicircle-quantile/Fourier-permutation carrier input; later prefix/cylinder steps remain separate |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

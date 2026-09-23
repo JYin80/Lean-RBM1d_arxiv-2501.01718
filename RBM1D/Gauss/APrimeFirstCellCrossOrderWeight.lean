@@ -5,6 +5,7 @@ Authors: Jun Yin
 -/
 import RBM1D.Gauss.APrimeFirstCellTargetWeightWitness
 import RBM1D.Gauss.APrimeSupportRunning
+import RBM1D.Gauss.APrimeFirstCellQuantMoment
 
 /-!
 # T444: positive-order cross-order smooth-weight domination
@@ -115,5 +116,180 @@ theorem eventually_positive_k2_resident {τ δ : ℝ}
 #print axioms widenedW_le_actualWeight_cross_order
 #print axioms exampleGrow_firstCell_cross_order
 #print axioms eventually_positive_k2_resident
+
+/-! ## T520: literal quantitative-moment weight and its same-event resident -/
+
+open MeasureTheory Set Step2Bootstrap
+open scoped Matrix.Norms.L2Operator
+
+noncomputable section
+
+private noncomputable abbrev d : Dims := Dims.exampleGrow
+
+/-- The literal target widened weight at the fixed first-cell parameters. -/
+def targetWeight (τ' : ℝ) (p N k : ℕ) : Ω d → ℝ :=
+  APrimeWeight.widenedW
+    (APrimeWeight.canonicalR (fun _ => 0) (firstCellT τ')
+      APrimeSmoothTransition.transitionMesh) 1
+    (fun N u ω => Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N u ω)
+    (fun _ => 0) (firstCellT τ') APrimeSmoothTransition.transitionMesh
+    (1 / 2000) p N k
+
+theorem minkowski_delta_eq : APrimeFirstCellMinkowskiExact.delta = 1 / 2000 := rfl
+
+/-- Exact specialization to T494's public actual canonical weight, for all
+sizes, indices, and samples. The comparison has the requested direction. -/
+theorem widenedW_le_minkowskiWeight {τ' : ℝ} (hτ' : 0 < τ')
+    (N p P k : ℕ) (ω : Ω d) (hp : 1 ≤ p) (hpP : p ≤ P) :
+    APrimeWeight.widenedW
+        (APrimeWeight.canonicalR (fun _ => 0) (firstCellT τ')
+          APrimeSmoothTransition.transitionMesh) 1
+        (fun N u ω => Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N u ω)
+        (fun _ => 0) (firstCellT τ') APrimeSmoothTransition.transitionMesh
+        (1 / 2000) p N k ω ≤
+      APrimeFirstCellMinkowskiExact.weight τ' P N k ω := by
+  simpa only [APrimeFirstCellMinkowskiExact.weight,
+    APrimeFirstCellMinkowskiExact.canonicalM, minkowski_delta_eq] using
+    exampleGrow_firstCell_cross_order hτ' (by norm_num : (0 : ℝ) ≤ 1 / 2000)
+      N p P k ω hp (hp.trans hpP)
+
+/-- Positive target support forces the actual weight to one at every
+moment order, by the order-independent cutoff plateau. -/
+theorem minkowskiWeight_eq_one_of_targetWeight_pos {τ' : ℝ} (hτ' : 0 < τ')
+    {p N k : ℕ} (P : ℕ) (ω : Ω d) (hp : 1 ≤ p)
+    (hpos : 0 < targetWeight τ' p N k ω) :
+    APrimeFirstCellMinkowskiExact.weight τ' P N k ω = 1 := by
+  have hone := APrimeFirstCellHigherMomentCutoff.weight_eq_one_of_widenedW_pos
+    d (by norm_num : |(0 : ℝ)| < 2) (by norm_num : (0 : ℝ) ≤ 1 / 2000)
+    ω (APrimeSupportRunning.firstT_bounds hτ' N).1
+    ((APrimeSupportRunning.firstT_bounds hτ' N).2.trans_lt (by norm_num))
+    (APrimeSupportRunning.mesh_pos N) hp P hpos
+  simpa only [APrimeFirstCellMinkowskiExact.weight,
+    APrimeFirstCellMinkowskiExact.canonicalM, minkowski_delta_eq] using hone
+
+/-- The empty-prefix branch of the literal actual weight is one. -/
+theorem minkowskiWeight_k_zero (τ' : ℝ) (P N : ℕ) (ω : Ω d) :
+    APrimeFirstCellMinkowskiExact.weight τ' P N 0 ω = 1 := by
+  exact APrimeSmoothWeightActual.weight_zero_prefix d 0 60
+    APrimeFirstCellMinkowskiExact.delta (fun _ => 0) (firstCellT τ')
+    APrimeSmoothTransition.transitionMesh 2 P N
+    (APrimeFirstCellMinkowskiExact.canonicalM τ' N)
+    (APrimeSmoothWeightActual.canonicalM_pos d (fun _ => 0) (firstCellT τ')
+      APrimeSmoothTransition.transitionMesh N) ω
+
+/-- Sizes below two are in the literal actual weight-one branch. -/
+theorem minkowskiWeight_of_lt_two (τ' : ℝ) (P N k : ℕ) (ω : Ω d)
+    (hN : N < 2) : APrimeFirstCellMinkowskiExact.weight τ' P N k ω = 1 := by
+  simp only [APrimeFirstCellMinkowskiExact.weight, APrimeSmoothWeightActual.weight,
+    show ¬ 2 ≤ N by omega, and_false, ↓reduceIte]
+
+/-- On the very same sharp common event used by T509, both prefix values
+lie in the ordinary target plateau. Hence every widened target order is one. -/
+theorem eventually_targetWeight_two_one_on_sharpCommonEvent (τ' : ℝ) :
+    ∀ᶠ N : ℕ in atTop, ∀ ω ∈
+      APrimeFirstCellSharpCommonEvent.sharpCommonEvent τ'
+        APrimeFirstCellQuantMoment.delta APrimeFirstCellQuantMoment.alpha N,
+      ∀ p : ℕ, targetWeight τ' p N 2 ω = 1 := by
+  filter_upwards [APrimeFirstCellCommon.eventually_norm_F₂
+    (2 * (1 / 2000)) (by norm_num)] with N hprefix ω hω p
+  have hcommon : ω ∈ APrimeFirstCellMovingSupport.commonEvent τ'
+      (APrimeFirstCellEGAllOutputRunning.sourceLoss APrimeFirstCellQuantMoment.alpha)
+      (APrimeFirstCellEGAllOutputRunning.sourceLoss APrimeFirstCellQuantMoment.alpha)
+      (APrimeFirstCellQuantMoment.delta / 16) N := hω.2
+  have hdyn := APrimeFirstCellMovingSupport.commonEvent_to_dynamic_support hcommon
+  have hraw := APrimeSupportRunning.good_subset τ'
+    (APrimeFirstCellQuantMoment.delta / 16) N hdyn
+  have hvalues := hprefix ω hraw.1.1.1
+  change
+    Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N 0 ω ≤
+        (N : ℝ) ^ (2 * (1 / 2000 : ℝ)) ∧
+      Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N
+          (APrimeSmoothTransition.transitionMesh N)⁻¹ ω ≤
+        (N : ℝ) ^ (2 * (1 / 2000 : ℝ)) at hvalues
+  have hpref : ω ∈ prefNet
+      (fun N u ω => Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N u ω)
+      (fun _ => 0) APrimeSmoothTransition.transitionMesh
+      (fun N _ => (N : ℝ) ^ (2 * (1 / 2000 : ℝ)) * 1) N 2 := by
+    intro j hj
+    interval_cases j
+    · simpa only [cutNetPt, Nat.cast_zero, zero_div, add_zero, mul_one] using hvalues.1
+    · simpa only [cutNetPt, Nat.cast_one, zero_add, one_div, mul_one] using hvalues.2
+  have hpiece := APrimeWeight.piecewiseW_dom_canonical
+    (t := firstCellT τ')
+    (fun N u ω => APrimeFirstCellTargetWeightWitness.jSnorm_nonneg_all_time
+      d 0 60 (fun _ => 0) N u ω) (1 / 2000) N 2 ω hpref
+  have hwide := APrimeWeight.piecewiseW_le_widenedW
+    (r := APrimeWeight.canonicalR (fun _ => 0) (firstCellT τ')
+      APrimeSmoothTransition.transitionMesh)
+    (J := fun N u ω => Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N u ω)
+    (s := fun _ => 0) (t := firstCellT τ')
+    (mesh := APrimeSmoothTransition.transitionMesh)
+    (by norm_num : 1 ≤ (1 : ℕ)) (1 / 2000) p N 2 ω
+  exact le_antisymm
+    (APrimeWeight.widenedW_le_one
+      (APrimeWeight.canonicalR (fun _ => 0) (firstCellT τ')
+        APrimeSmoothTransition.transitionMesh) 1
+      (fun N u ω => Step2Moment.jSnorm (sample d) 0 60 (fun _ => 0) N u ω)
+      (fun _ => 0) (firstCellT τ') APrimeSmoothTransition.transitionMesh
+      (1 / 2000) p N 2 ω)
+    (hpiece.trans hwide)
+
+/-- A T509 resident carrying both target and actual weights equal to one
+on its original event, sample, and positive endpoint. -/
+def positiveTwoCrossOrderResident (τ' : ℝ) (p P : ℕ) : Prop :=
+  ∀ᶠ N : ℕ in atTop, ∃ ω ∈
+      APrimeFirstCellSharpCommonEvent.sharpCommonEvent τ'
+        APrimeFirstCellQuantMoment.delta APrimeFirstCellQuantMoment.alpha N,
+    2 ≤ cutNetTop (fun _ => 0) (firstCellT τ')
+      APrimeSmoothTransition.transitionMesh N ∧
+    0 < APrimeFirstCellMinkowskiExact.endpoint N 2 ∧
+    APrimeFirstCellMinkowskiExact.endpoint N 2 ≤ firstCellT τ' N ∧
+    targetWeight τ' p N 2 ω = 1 ∧
+    APrimeFirstCellMinkowskiExact.weight τ' P N 2 ω = 1 ∧
+    ∀ a : LoopArg (d.L N) 2, APrimeFirstCellQuantMoment.quantMomentAt τ' P N 2 a
+
+theorem positiveTwoCrossOrderResident_of_quant {τ' : ℝ} (p : ℕ) {P : ℕ}
+    (hresident : APrimeFirstCellQuantMoment.positiveTwoQuantMomentResident τ' P) :
+    positiveTwoCrossOrderResident τ' p P := by
+  filter_upwards [hresident, eventually_targetWeight_two_one_on_sharpCommonEvent τ']
+    with N hresidentN htarget
+  obtain ⟨ω, hω, hk, hvpos, hvle, hweight, hquant⟩ := hresidentN
+  exact ⟨ω, hω, hk, hvpos, hvle, htarget ω hω p, hweight, hquant⟩
+
+/-- T509's single parameter and sharp common event supply the actual
+cross-order comparison and a nonempty target plateau at every fixed pair
+of positive moment orders in the requested range. -/
+theorem exists_cross_order_with_quantMoment_resident :
+    ∃ τ' : ℝ, 0 < τ' ∧ ∀ p P : ℕ, 1 ≤ p → p ≤ P →
+      (∀ N k ω, targetWeight τ' p N k ω ≤
+        APrimeFirstCellMinkowskiExact.weight τ' P N k ω) ∧
+      (∀ N, MeasurableSet
+        (APrimeFirstCellSharpCommonEvent.sharpCommonEvent τ'
+          APrimeFirstCellQuantMoment.delta APrimeFirstCellQuantMoment.alpha N)) ∧
+      HighProb (Gauss.P d) (APrimeFirstCellSharpCommonEvent.sharpCommonEvent τ'
+        APrimeFirstCellQuantMoment.delta APrimeFirstCellQuantMoment.alpha) ∧
+      (∀ᶠ N : ℕ in atTop,
+        (APrimeFirstCellSharpCommonEvent.sharpCommonEvent τ'
+          APrimeFirstCellQuantMoment.delta APrimeFirstCellQuantMoment.alpha N).Nonempty) ∧
+      APrimeFirstCellQuantMoment.actualQuantMoment τ' P ∧
+      APrimeFirstCellQuantMoment.kZeroQuantMoment τ' P ∧
+      positiveTwoCrossOrderResident τ' p P := by
+  obtain ⟨τ', hτ', hall⟩ := APrimeFirstCellQuantMoment.exists_quantMoment_with_resident
+  refine ⟨τ', hτ', ?_⟩
+  intro p P hp hpP
+  obtain ⟨hmeas, hprob, hne, hquant, hzero, hresident⟩ := hall P (hp.trans hpP)
+  exact ⟨fun N k ω => widenedW_le_minkowskiWeight hτ' N p P k ω hp hpP,
+    hmeas, hprob, hne, hquant, hzero, positiveTwoCrossOrderResident_of_quant p hresident⟩
+
+#print axioms minkowski_delta_eq
+#print axioms widenedW_le_minkowskiWeight
+#print axioms minkowskiWeight_eq_one_of_targetWeight_pos
+#print axioms minkowskiWeight_k_zero
+#print axioms minkowskiWeight_of_lt_two
+#print axioms eventually_targetWeight_two_one_on_sharpCommonEvent
+#print axioms positiveTwoCrossOrderResident_of_quant
+#print axioms exists_cross_order_with_quantMoment_resident
+
+end
 
 end RBM.APrimeFirstCellCrossOrderWeight

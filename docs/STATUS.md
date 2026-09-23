@@ -1,6 +1,6 @@
 # STATUS — current project state
 
-> Updated 2026-09-23 02:05 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
+> Updated 2026-09-23 02:31 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
 
 ## 1. Objective and proof boundary
 
@@ -20,7 +20,7 @@
 
 ## 3. Active work and ready queue
 
-- The 12-minute heartbeat remains active. T507 and T514 are independently accepted. Five file-disjoint Lean writers have T512, T513, T515, T516, T517: first-cell high-order family maximum, moving control floor/slow variation, first-cell endpoint observable, same-parameter net base, and actual UnifDomIcc. General-window hfamily and the whole-paper chain remain open.
+- Jun has stopped further dispatch from this conversation. T512, T513, T515–T522 are independently accepted; their concrete results are recorded below and in ticket reports. T523 was stopped before full-module build and remains an unaccepted, unstaged draft for a later conversation. General-window `hfamily`, general-window `APrimeSlot'`, the six-step assembly and the whole-paper chain remain open.
 - T287 (`fitLhs.Qb` has no actual small producer) and T295 (separate nonempty Good and soft-support events do not give a common sample) failed positive-theorem preflight. Revisit T287/T295 only after their missing inputs are established. T281/T282 depend on full T280; T283 follows the production chain. T217 is the final-report lane, and T159 must be reconciled with T283.
 
 ## 4. Mathematical preflight before dispatch (2026-09-22)
@@ -84,9 +84,11 @@
 
 - T509 — **accepted full actual first-cell coordinate moment**: T500+T506 match in the literal canonical weight and moving v,k,a,τ′,p; α=δ/16,β=1 gives the T503 ledger powers δ/8,−31δ/16,δ/32,−1/2,−1. The compiled result is `momNormW(P,w,p,Y(v))≤N^(δ/4)R_v⁻²` with coefficient one, fixed p before all active k/a and eventual N. k=0 and the *same* sharpCommonEvent weight-one positive k=2 resident are explicit. Independent build 3986 and seven axiom checks pass. No family sum or general hfamily is inferred.
 
-- T512/T513/T515 — **independent leaves preflight passed**: T512 keeps T509’s *same* weight at fixed high P and uses `card(LoopArg L_N 2)=L_N²≤N²`: max^(2P)≤Σ_a|Y_a|^(2P), so family norm costs N^(1/P); for P≥8000, `δ=1/2000` gives `1/P≤δ/4` and target N^(δ/2)R_v⁻². T513 uses T504 qExt factor-2 comparison and W⁻¹≤q, W≤N to supply ζ=2qExt globally nonnegative, at least N⁻¹ on-window, and ζ(v)≤N^εζ(u) for fixed ε>0 at Δ=N⁻¹⁶. T515 identifies T509’s Y(v)=‖coordAt(v)‖ and T425’s jSnorm endpoint maximum. None claims general-window hfamily or a next-cell BoundsCore.
+- T512/T513/T515 — **independently accepted**: T512 keeps T509’s *same* weight at fixed high P and uses `card(LoopArg L_N 2)=L_N²≤N²`: max^(2P)≤Σ_a|Y_a|^(2P), so family norm costs N^(1/P); for P≥8000, `δ=1/2000` gives `1/P≤δ/4` and target N^(δ/2)R_v⁻². T513 supplies ζ=2qExt globally nonnegative, at least N⁻¹ on-window, and slowly varying at Δ=N⁻¹⁶. T515 identifies T509’s Y(v)=‖coordAt(v)‖ and T425’s jSnorm endpoint maximum. Independent full-module builds and printed axioms pass. None claims general-window hfamily or a next-cell BoundsCore.
 
-- T514/T516/T517 — **selector control accepted; exact next consumers preflight passed**: T514 proves pointwise `selectorQ=qExt` and `2selectorQ=2qExt` on every selector, with T495’s *same* positive-length BoundsCore/Step1 tuple (independent build 3862, three axiom checks). T516 now combines T495’s one tuple with universal T504 qExt, T508 Holder, T510 net numerics and the single norm Good; this prevents splicing unrelated existential witnesses. T517 now applies `unifDomIcc_of_forall_stochDom` to T507’s actual selector theorem using T514’s exact control identity; selector-wise eventual N precedes the interval-uniform conclusion, with no uncountable union. Neither T516 nor T517 asserts the full time-net conclusion.
+- T514/T516/T517/T519 — **independently accepted moving-window chain through two-charge `UnifDomIcc`**: T514 proves `selectorQ=qExt`; T516 packages the one same-parameter Good event, Holder bound and exact net numerics; T517 applies `unifDomIcc_of_forall_stochDom` to the actual selector theorem. T519 then uses T511's all-sample equality of the plus/minus norms to transfer the identical control and bad sets to every `σ : Bool`, with no event union or N/W/time loss. T519's witness retains one positive-length T517 tuple with the original current-window `BoundsCore` and `Step1.Hyp`; independent build 3880 and both axiom lists pass. This is fixed-time-uniform, not yet `TimeIcc`, `hfamily`, or A′ closure.
+
+- T518/T520/T521/T522 — **independently accepted**: T518 applies the exact time-net theorem to the actual plus centered trace on the genuine moving `TimeIcc × ZMod` index with control `2qExt`, K=6, B=1, γ=1/2, Δ=N⁻¹⁶, and one T516 positive-length current-window witness. T520 proves the pointwise widenedW_p ≤ canonical weight_P comparison at all N,k,ω and a same-event positive k=2 plateau for both weights. T521 proves same-canonical-weight high-to-low finite-family moments with fixed 1≤p≤P, P≥8000, including k=0 and the same resident. T522 uses coefficient-one weighted Minkowski and the endpoint identity to bound actual first-cell `jSnorm` by R_v⁻⁴+N^(δ/2)R_v⁻² under the same weight_P. The five-module joint build completed (4008 jobs), with only the three allowed axioms in all printed lists. None supplies general moving `hfamily` or the next-cell `BoundsCore`. T523 passed mathematical preflight but was stopped at Jun's request before acceptance.
 
 ## 5. Decisions that still constrain work
 
@@ -99,7 +101,7 @@
 
 ## 6. Recent acceptance and repository state
 
-- T470, T473 and T474 were independently rebuilt (`lake build` exit 0); their 21 printed axiom lists contain only `propext`, `Classical.choice`, `Quot.sound`. T472’s report-only audit corrected the `Bc` interpretation. T475–T478 have exclusive files; unfinished worker files and unrelated shared-root edits remain unstaged.
+- T512, T513, T515–T522 are accepted with independent or joint full-module builds and allowed axiom sets only. Commit only these accepted files and reports plus the task/status archive; leave T523 drafts, unrelated `APrimeNearRem.lean`, T280 reports, `Claude outputs/`, and blueprint artifacts unstaged.
 
 ## 7. Maintenance on every heartbeat
 

@@ -41,9 +41,12 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T598 is independently accepted: on the identical T579 common-event sample and positive widened support, the full positive-cell `driftAt` profile has exact `xiK·R_u⁻²R_v⁻²`, retains T586's near/far/residual coefficients and the literal (5.34) `Step2.jS²` row, and covers both time endpoints. It is pointwise only; T604 audits the integration step.
 - T600 is independently accepted: one uniform constant-one use of T488 followed by weight monotonicity supplies the literal target-net actual-smooth initial budget for every active `k`, including `k=0`, with exact `N^(5δ/32)R_v⁻²` and no extra loss. It is only the initial term; T605 audits its consumer seam.
 - T601 is independently accepted as the post-T597 cross preflight. T606 is the smallest thin transition-to-buffered-QV adapter. A full `crossPart_active_le_jointEvent` specialization still lacks the general-moving favorable `prefixGradient`, five-field regularity and global joint envelope; T607 audits the first of these.
-- T603's main bridge compiles and its exponent/event ledger is correct, but acceptance is blocked: the delivered witness does not realize an active `k≥1`, one common-event resident, and positive actual smooth weight simultaneously. A fresh repair ticket must add that same-resident witness before T603 can be archived or committed.
+- T603/T609 are independently accepted: the buffered actual-smooth QV bridge keeps `δWeight` distinct from `δCap=δWeight+ξ`, the identical target mesh/sample/common event and T590's complete absorbed profile. The repaired witness realizes one common-event resident, active `k=1`, widened weight one and positive actual smooth weight simultaneously. This remains a positive-cell conditional bridge, not a QV integral, cross closure, or general A-prime result.
+- T606 is independently accepted only as a conditional transition-to-buffered-QV adapter: on the same resident of `commonEvent ∩ transition`, it retains `δWeight`, `δCap=δWeight+ξ`, the complete (5.42) profile and closed positive-cell endpoints. No producer yet proves that intersection inhabited, so no cross estimate or downstream closure is claimed.
 - T602 is accepted after independent correction: the first noncircular post-T596 analytic row is the arbitrary-charge transported initial estimate T608. The raw drift route is circular through `A_u⁻³η_u⁻¹·xiLK₂²`; the domain/index witness at `s_N=0` is explicitly a zero transported-initial probe, not a nonzero-value witness.
+- T616 is the selected post-T608 design line for the arbitrary-charge QV ingredient of (2.77): it must preserve the exact (5.42) kernel factor `R_{u,v}^4` and source scale `A_u⁻⁴η_u⁻¹Ψ_E`, derive `Ψ_E` only from the pre-Step-3 `xiL_6` input, cover `v=s_N` and positive mesh points under the same sample, and exclude (2.77), all-charge Step-3 packages, `hfamily`, `APrimeSlot'`, and every first-cell shortcut.
 - T604 is independently accepted: full actual-smooth drift integration must first obtain a general-moving all-sample polynomial envelope. The next exact theorem is the fixed-`Dims.exampleGrow`, `sigPM` bound `|driftAt|≤N^(D+8)` for every sample, active cell (including `k=0`) and closed running time; it is not yet the drift integral.
+- T611 is independently accepted: for fixed `Dims.exampleGrow` and `sigPM`, `|driftAt|≤N^(D+8)` holds for every sample, every active cell including `k=0`, every output and both closed running-time endpoints. It is only the conservative all-sample pointwise envelope feeding T615, not a drift integral or A-prime closure.
 - T605 is rejected after independent audit: the alleged initial-flow seam is already a definitional equality by bare `rfl`, for arbitrary `Dims` and without `hE`/`ht1`. T610 was stopped; no connector file or root import is needed or accepted.
 
 ## 3. Running work
@@ -52,13 +55,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T603 | Delivered theorem; repair required before acceptance |
-| T606 | Delivered: independent audit pending after T603 witness repair |
-| T607 | Running: general-moving prefix-gradient preflight |
-| T608 | Running: arbitrary-charge transported-initial row |
-| T609 | Running: T603 same-resident positive-cell witness repair |
-| T611 | Running: general-moving all-sample drift envelope |
+| T607 | Delivered: scheduler audit pending |
+| T608 | Delivered: arbitrary-charge transported-initial row pending independent audit |
 | T612 | Running: general-moving cross regularity/envelope preflight |
+| T613 | Running: same-time raw-QV favorable prefix-gradient producer |
+| T614 | Running: cutoff-aware all-charge drift preflight |
+| T615 | Running: actual-smooth general-moving drift integral budget |
+| T616 | Running: arbitrary-charge QV preflight after T608 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

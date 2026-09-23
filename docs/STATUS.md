@@ -96,12 +96,15 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T639 | Independently accepted: corrected support boundary and selected the minimal target-mesh seam now implemented by T644 |
 | T641 | Independently accepted: one-proof `Step2.tT` compatibility repair; root validation 4046 jobs |
 | T642 | Independently accepted: two actual Step-3 producers isolated downstream; audited upstream closures no longer reach them |
-| T643 | Delivered: universal impossibility is false; coupled-block redistribution passes every deterministic carrier row; independent audit pending |
-| T644 | Running: first T639 implementation slice, eight-declaration clean target-mesh core only |
-| T645 | Running: second accepted T629 slice, clean coordinate-weight/QV-global-polynomial cores |
-| T646 | Running: audit the next support seam, a clean positive-length initial-window witness below assembly surfaces |
+| T643 | Independently accepted: Ward controls only signed row sums; a coupled-block ansatz passes the deterministic carrier rows, while positive Gaussian support and `measCore` retention remain open |
+| T644 | Delivered; independent audit running on the eight-declaration zero-project-import mesh core |
+| T645 | Delivered; independent audit running on the clean coordinate-weight/QV-global-polynomial cores |
+| T646 | Delivered; independent audit running on the clean positive-length first-grid-window design selected as T651 |
 | T647 | Running: audit a clean literal smooth-prefix/canonical producer boundary after T627/T639 |
 | T648 | Running: finite positive-variance Gaussian support and measurable-cylinder retention after T643 |
+| T649 | Running: verbatim clean extraction of the two (2.73) `Step2PP` conversion declarations |
+| T650 | Running: corrected post-T642 dependency and quantifier audit for the conditional (5.42) route |
+| T651 | Running: clean `Cond272Reg` placement and nondegenerate first-grid initial-window witness |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

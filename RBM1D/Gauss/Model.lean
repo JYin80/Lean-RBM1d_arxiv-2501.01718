@@ -496,3 +496,36 @@ theorem abs_sqrt_sub_sqrt_le (u u' : ℝ) :
 
 end RBM.Gauss
 
+namespace RBM
+
+/-! ### (c) `Band → Dims` -/
+
+namespace Band
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- **The `Band → Dims` coercion.**  `RBM.Gauss.Dims` is `RBM.Band` with the probability
+measure removed; the fields are copied one for one.  Every transfer of a `RBM1D/Gauss/`
+result to a `RBM.Band` goes through this. -/
+def toDims (B : Band Ω) : Gauss.Dims where
+  W := B.W
+  L := B.L
+  W_pos := B.W_pos
+  three_le_L := B.three_le_L
+  dim := B.dim
+  c := B.c
+  c_pos := B.c_pos
+  bandwidth := B.bandwidth
+
+@[simp] theorem toDims_W (B : Band Ω) (N : ℕ) : B.toDims.W N = B.W N := rfl
+
+@[simp] theorem toDims_L (B : Band Ω) (N : ℕ) : B.toDims.L N = B.L N := rfl
+
+@[simp] theorem toDims_c (B : Band Ω) : B.toDims.c = B.c := rfl
+
+/-- The index types agree definitionally. -/
+theorem toDims_Idx (B : Band Ω) (N : ℕ) : B.toDims.Idx N = B.Idx N := rfl
+
+end Band
+
+end RBM

@@ -26,20 +26,20 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T575 is accepted: the actual Gaussian Step-1 inputs produce one `HighProb goodSetFlow` event for arbitrary fixed moving `(E,s,t)`, with the exact `flowDelta=(Wℓ_tη_t)^(-1/6)` threshold and no exponent loss.
 - T579 is accepted: one measurable common event carries T491 raw sources, T575 `goodSetFlow`, T523 centered two-charge input, and block `jG` on the same sample, retaining both endpoints, three losses and exact support-local `ratR^4`.
 - T580 is accepted as the next-step audit: the first honest post-T579 theorem is the positive-cell exact evolved-QV profile behind (5.42), before deterministic simplification. It keeps `ratR^4`, repaired `W⁻¹`, quadratic-source and leakage rows, and treats `k=0` only after time integration.
+- T584 is independently accepted: the general-moving positive-cell evolved-QV profile is compiled on T579's literal common event, with exact `Jbar`, `ratR^4`, repaired `2W⁻¹`, both leakage mechanisms and endpoint ratios; it is pointwise and requires `k≥1`.
+- T585 and T587 are accepted as preflights. T590 implements the exact deterministic `1200=16+1152+32` absorption, while T591 implements the all-`k` widened-weight QV integral budget with the zero cell handled only by zero-length integration. Neither report supplies a moment family or stopping/BDG theorem.
 
 ## 3. Running work
 
 | Ticket | State |
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
-| T584 | Delivered; independent audit pending |
-| T585 | Delivered; scheduler audit pending |
-| T586 | Running: exact general-moving (5.35) drift source assembly |
-| T587 | Delivered; scheduler audit pending |
+| T586 | Delivered; independent audit pending |
 | T588 | Running: corrected exact-signature five-slot audit |
 | T589 | Running: actual `CutHypEvOnSlot` producer decomposition |
 | T590 | Running: exact deterministic (5.42) absorption |
 | T591 | Running: all-`k` widened-weight QV integral budget |
+| T592 | Running: exact general-moving cross-term bridge preflight |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 
@@ -59,7 +59,7 @@ Named remaining leaves include Lemma 5.14 slot 4 (`flowXiLK_1≺1`, actual `xiRh
 
 ## 5. Repository and acceptance discipline
 
-- Latest pushed commit before this integration: `22caffd`.
+- Latest pushed commit before this integration: `bc33509`.
 - Never stage unrelated or in-flight files. In particular exclude `RBM1D/Gauss/APrimeNearRem.lean`, T280 reports, `Claude outputs/`, blueprint artifacts, and every unaudited worker file.
 - A completion requires exact statement/quantifier/exponent review, boundary and common-event checks, acyclicity, nondegenerate satisfiability, full module build, and public axiom audit.
 - Allowed printed axioms: `propext`, `Classical.choice`, `Quot.sound` only.

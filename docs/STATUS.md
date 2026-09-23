@@ -1,6 +1,6 @@
 # STATUS — current project state
 
-> Updated 2026-09-23 01:42 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
+> Updated 2026-09-23 01:52 UTC. This file holds current decisions and blockers. Completed tickets are archived; full evidence is in `docs/reports/Txxx.md`.
 
 ## 1. Objective and proof boundary
 
@@ -20,7 +20,7 @@
 
 ## 3. Active work and ready queue
 
-- The 12-minute heartbeat remains active. T491–T502 are independently accepted. Five file-disjoint Lean workers are active: T503 exponent absorption, T504 moving q-control extension, T505 Minkowski with initial paid, T506 Minkowski with drift/cross/QV paid, and T507 fixed-selector centered one-loop. General-window hfamily and the whole-paper chain remain open.
+- The 12-minute heartbeat remains active. T503–T506 are independently accepted and archived. Five file-disjoint Lean writers have T507–T511: fixed-selector averaging, norm Hölder, full first-cell coordinate moment, time-net numerics, and charge transfer. General-window hfamily and the whole-paper chain remain open.
 - T287 (`fitLhs.Qb` has no actual small producer) and T295 (separate nonempty Good and soft-support events do not give a common sample) failed positive-theorem preflight. Revisit T287/T295 only after their missing inputs are established. T281/T282 depend on full T280; T283 follows the production chain. T217 is the final-report lane, and T159 must be reconciled with T283.
 
 ## 4. Mathematical preflight before dispatch (2026-09-22)
@@ -70,15 +70,19 @@
 
 - T499/T500 — **accepted exact cross/QV and initial budgets**: T499 builds the literal T494 `2∫B+sqrt((2p−1)∫g)` bound from T469/T487 on one sharpCommonEvent, without extra 2p; k=0 is zero and positive k=2 has weight one (build 3971, ten axiom checks). T500 independently proves for every active first-cell k including 0 and output a the *same actual canonical weight* initial moment `≤N^(5δ/32)R_v⁻²`, fixing p before N and using T488 once with constant weight 1, so the eventual threshold is uniform in k,a. It retains T494’s exact τ′, measurable HighProb nonempty sharp event and positive weight-one k=2 witness (build 3978, nine axiom checks).
 
-- T503 — **deterministic exponent preflight passed**: at δ=1/2000, α=δ/16, β=1, fixed p before N, the first-cell initial/drift/cross/QV leading powers are `5δ/32`, `δ/8`, `−31δ/16`, `δ/32`, each strictly below target `δ/4`; public T469/T470 coefficients are fixed in N and `1≤R_v≤2` pays additive N⁻¹ and N⁻¹/². T503 formalizes only the uniform numerical absorption with an actual positive k=2 scale witness, not an integrated moment or hfamily.
+- T503 — **accepted deterministic exponent absorption**: at δ=1/2000, α=δ/16, β=1, fixed p before N, the first-cell powers `5δ/32`, `δ/8`, `−31δ/16`, `δ/32`, `−1/2`, `−1` are strictly below `δ/4`. The actual positive k=2 same-event witness has `1≤R_v≤2`, giving `R_v⁻²≥1/4`; the coefficient-one RHS bound is uniform in R. Independent build 3964 and axioms pass. This is numerical, not yet an integrated moment.
 
-- T497/T504 — **exact time-net interface audited; deterministic control leaf running**: T497 identifies `unifDomIcc_of_forall_stochDom` followed by `stochDom_timeIcc_of_unifDom`, not the moment-based DominationHolder route. With γ=1/2, K=6, B=1 the net spacing is N⁻¹⁶ and T496/T501 give `2N⁵√Δ=2N⁻³`; q≥W⁻¹≥N⁻¹ pays interpolation. The consumer requires control globally nonnegative and symmetric slow variation. Raw q is negative past u=1, so T504 constructs a safe window-equal extension and both-way comparison using T473 `1−t_N≥N⁻¹`. T495 still must supply the selector local law and the final assembler must use T495’s *same* positive-length parameter tuple; two separate witnesses do not suffice.
+- T497/T504 — **accepted exact time-net interface and q-control**: T497 identifies `unifDomIcc_of_forall_stochDom` then `stochDom_timeIcc_of_unifDom`. At γ=1/2, K=6, B=1 the spacing is N⁻¹⁶ and T501 modulus pays `2N⁵√Δ=2N⁻³`, below q≥W⁻¹≥N⁻¹. T504’s clamped qExt is globally positive, equals q on the window, and has symmetric factor-2 comparison at N⁻¹⁶ by T473 `1−t_N≥N⁻¹`; independent build 3828 and 12 axiom checks pass. Its separate T473 witness cannot replace T495’s parameter tuple in the final assembler.
 
-- T505 — **initial substitution preflight passed**: T500’s exact `N^(5δ/32)R_v⁻²` initial bound and T494’s canonical-weight Minkowski inequality have identical p,k,a,τ′ and weight; substituting it adds no N/W/time factor. T505 keeps drift, full-cross and uncut QV integrals literal and retains the same event and positive k=2 resident. It is not yet a coordinate-family moment or hfamily.
+- T505 — **accepted actual initial substitution**: T500’s exact `N^(5δ/32)R_v⁻²` initial bound substitutes into T494’s same-weight, same-endpoint Minkowski inequality uniformly in positive k and a after fixed p. The two integrals and QV remain literal; k=0 and one same-event weight-one k=2 resident are proved. Independent build 3979 and seven axiom checks pass.
 
-- T506 — **cross/QV substitution preflight passed**: T502’s residual `2∫B+sqrt((2p−1)∫g)` is literally T499’s left side for the same T494 B,g and weight; T502’s one sharpCommonEvent HighProb supplies T499’s only probability premise at the same τ′. T506 replaces it by the exact `2C_pN^(α−2δ)R_v⁻²+sqrt(2p−1)(384sqrt(3)N^(α/2)R_v⁻²+sqrt(v)N^(−β/2))`, leaving the initial moment symbolic, p/α/β fixed before N, and k=0/k=2 separate.
+- T506 — **accepted actual drift/cross/QV substitution**: T502’s residual `2∫B+sqrt((2p−1)∫g)` is exactly T499’s left side on the same sharpCommonEvent. The output has `C_dN^(2α)R_v⁻²+N⁻β+2C_pN^(α−2δ)R_v⁻²+sqrt(2p−1)(384sqrt(3)N^(α/2)R_v⁻²+sqrt(v)N^(−β/2))`, leaving only the literal initial moment. Fixed p/α/β precede N; k=0 and positive k=2 are separate. Independent build 3976 and eight axiom checks pass.
 
 - T507 — **fixed-selector averaging preflight passed**: for κ=(2−|E|)/2>0, T495 supplies the exact singleton local-law scale Ψ, spectral floor η≥N⁻², lower bound W⁻¹/² and polynomial Ψ upper bound required by `Gauss.detAvgIBP_stochDom_of_localLaw_complete`. Its conclusion is centered plus-charge block trace `≺Ψ²`; T495 `W⁻¹≤q` gives `Ψ²=q+W⁻¹≤2q`. Selector precedes N and the same T495 positive-length tuple is retained; no time union or next-cell BoundsCore is used.
+
+- T508/T510/T511 — **moving-window time-net leaves preflight passed**: T508 uses reverse triangle on T501’s two-charge `2N⁵√|u−v|` modulus, then 2N⁵≤N⁶ for N≥2, on its *one* Good. T510 plugs K=6,B=1,γ=1/2,T=1,Δ=N⁻¹⁶ into the exact consumer: `(K+B+1)/γ=16` so hδ is equality; `card(ZMod L_N)≤N` and `0≤t−s≤1`. T511 uses T501’s all-sample plus/minus norm identity, hence identical bad sets and no probability or N/W/time loss. These are leaves, not the all-time theorem; final assembly still needs T507’s selector bound and T495’s same-parameter witness.
+
+- T509 — **first-cell full quantitative moment preflight passed**: T506 retains precisely T500’s initial weighted moment at the same moving v,k,a,τ′,p; T500 substitutes `N^(5δ/32)R_v⁻²`. Set α=δ/16,β=1: T506’s remaining powers become δ/8,−31δ/16,δ/32,−1/2,−1; `v≤1/2` and `1≤R_v≤2` identify T503’s exact RHS and give its coefficient-one `N^(δ/4)R_v⁻²`. Fixed p precedes N; T506’s literal sharpCommonEvent resident and canonical plateau must be used together. This is a coordinate moment on the first cell, not a family sum or general-window hfamily.
 
 ## 5. Decisions that still constrain work
 

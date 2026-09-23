@@ -38,6 +38,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T597 is independently accepted: on the identical sample in T579's `commonEvent` and the literal smooth transition, the closed positive prefix has the exact cap `(16·exp(1)^2+1)N^(2δ)`, with both endpoints and no widened/smooth reversal. It does not prove that the event/transition intersection is inhabited or supply a cross budget.
 - T596 is independently accepted only as a partial positive-grid reduction: the actual all-charge `xiLK … 2` cutoff moment is reduced with coefficient one to the explicit `4L_N²` Duhamel family, including the independent `(+,+)` sector. The uniform family absorption and the `v=s_N` endpoint branch remain open; T602 audits the next analytic step.
 - T599 is independently accepted: positive literal smooth weight at `δWeight` implies positive canonical widened weight at `δWeight+ξ`, uniformly over all active `k` including `k=0`, with sole loss `N^(2ξ)` and no event. The false same-`δ` reverse implication remains rejected; T603 uses only the buffered direction.
+- T598 is independently accepted: on the identical T579 common-event sample and positive widened support, the full positive-cell `driftAt` profile has exact `xiK·R_u⁻²R_v⁻²`, retains T586's near/far/residual coefficients and the literal (5.34) `Step2.jS²` row, and covers both time endpoints. It is pointwise only; T604 audits the integration step.
 
 ## 3. Running work
 
@@ -45,7 +46,6 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T598 | Delivered: independent audit pending |
 | T600 | Running: general-moving initial-budget adapter |
 | T601 | Running: post-T597 cross-seam preflight |
 | T602 | Running: post-T596 Duhamel-family absorption preflight |

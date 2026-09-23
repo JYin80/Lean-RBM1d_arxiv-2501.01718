@@ -101,7 +101,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T645 | Independently accepted: clean coordinate-weight and QV global-polynomial cores preserve all nine interfaces and exact polynomial powers |
 | T646 | Independently accepted: the clean first-grid witness is noncircular and nondegenerate, with `s_N=0`, eventual `t_N=1/2`, and unchanged (2.72) powers; T651 implements it |
 | T647 | Independently accepted: the 49-declaration two-import smooth-prefix/canonical design preserves literal prefix semantics; T652 implements it |
-| T648 | Delivered; independent audit running on finite effective-coordinate Gaussian support and local `measCore` retention |
+| T648 | Independently accepted: finite nonzero-variance Gaussian cylinders have positive mass, zero-variance coordinates require `zeroFix`, and measurable `U⊆R` retains mass in `U∩measCore`; the global null-difference claim remains false |
 | T649 | Running: verbatim clean extraction of the two (2.73) `Step2PP` conversion declarations |
 | T650 | Delivered; independent audit running on the corrected conditional (5.42) card and exact time-net extraction selected as T654 |
 | T651 | Running: clean `Cond272Reg` placement and nondegenerate first-grid initial-window witness |

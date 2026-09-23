@@ -31,7 +31,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 
 | Ticket | State |
 |---|---|
-| T583 | Running: remaining five universal merged inputs |
+| T583 | Delivered; exact-signature audit pending |
 | T584 | Running: exact positive-cell general-moving QV profile |
 | T585 | Running: deterministic (5.42) absorption audit |
 | T586 | Running: exact general-moving (5.35) drift source assembly |

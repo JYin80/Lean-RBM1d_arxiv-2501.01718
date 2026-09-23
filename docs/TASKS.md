@@ -8,7 +8,7 @@ Workers edit only their owned files, do not commit, and must finish with a modul
 
 | Ticket | Deliverable | Owner | Status |
 |---|---|---|---|
-| T583 | Read-only audit of the other five universal merged inputs against paper (2.73)–(2.80). | Codex `01a0cd3f-a1db-7422-8a02-c701fbae27b4` | Running |
+| T583 | Read-only audit of the other five universal merged inputs against paper (2.73)–(2.80). | Codex `01a0cd3f-a1db-7422-8a02-c701fbae27b4` | Delivered; exact-signature audit pending |
 | T584 | Implement the positive-cell general-moving evolved-QV profile from T580, on T579's literal common event with exact `Jbar`, `ratR^4`, repaired `W⁻¹`, and no paper-level simplification. | Codex `01a0cd4d-49d8-7e21-ba9d-59e188be790c` | Running |
 | T585 | Read-only audit of the deterministic absorption from T584's exact root profile toward paper (5.42), retaining quadratic-source and leakage rows. | Codex `01a0cd4d-3943-7470-9db1-aa1b8683a3d4` | Running |
 | T586 | Implement the general-moving pointwise drift source assembly for paper (5.35), using T579's same event, exact centered coefficient `4N^ζ r_u`, raw C3, `flowDelta+W⁻¹`, and actual `Jbar`. | Codex `01a0cd4d-5636-7ab2-acbd-ae4bad6ebe23` | Running |

@@ -80,7 +80,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T618 | Rejected: statements correct but transitive imports are downstream/cyclic; upstream core extraction required |
 | T619 | Rejected: compiled theorem is mathematically correct but module imports Step45/Step3/Step6; upstream extraction required |
 | T624 | Withdrawn: proposed import surface reaches Step345Producer transitively |
-| T625 | Conditional audit: mathematical ledger passes; witness provenance and “minimal” wording require correction |
+| T625/T640 | Independently accepted after correction: nondegenerate witness provenance repaired; T630 classified as bounded/cohesive, not declaration-minimal |
 | T626 | Failed independent audit: omitted genuine `LKDecayQuant/EEBridge → SumZeroDyn → Step3` producer paths; Core A remains only a bounded Step45-edge extraction |
 | T627 | Independently accepted as blocked: both proposed import branches still reach Step45; no code retained |
 | T628 | Independently accepted as blocked: literal `k=2` scalar crossing lies outside `‖Xmat‖≤N`; T633 tests later prefixes |
@@ -94,13 +94,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T636 | Independently accepted: eight public interfaces preserved in clean drift-time/QV-rate cores; no sharp profile or cross closure claim |
 | T638 | Independently accepted as blocked: block-circulant class passes goodSetFlow but cannot meet centeredEvent; T643 tests the general spatial case |
 | T639 | Independently accepted: corrected support boundary and selected the minimal target-mesh seam now implemented by T644 |
-| T640 | Delivered: corrected T625 witness provenance and bounded/cohesive wording; independent audit pending |
-| T641 | Delivered: one-proof compatibility repair builds with root 4042 jobs; independent audit pending |
-| T642 | Running: isolate the two actual Step-3 flow producers downstream of the elementary `Step3` interface |
+| T641 | Independently accepted: one-proof `Step2.tT` compatibility repair; root validation 4046 jobs |
+| T642 | Delivered: two actual Step-3 producers moved downstream; upstream closures no longer reach them; independent audit pending |
 | T643 | Running: test whether goodSetFlow plus centeredEvent makes transition impossible, or permits genuine spatial redistribution |
 | T644 | Running: first T639 implementation slice, eight-declaration clean target-mesh core only |
 | T645 | Running: second accepted T629 slice, clean coordinate-weight/QV-global-polynomial cores |
 | T646 | Running: audit the next support seam, a clean positive-length initial-window witness below assembly surfaces |
+| T647 | Running: audit a clean literal smooth-prefix/canonical producer boundary after T627/T639 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

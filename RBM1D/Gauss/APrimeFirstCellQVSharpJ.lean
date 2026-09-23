@@ -133,7 +133,8 @@ theorem rootProfile_le_sharp (N : ℕ) (u ellSource J S : ℝ)
 theorem driftScale_eq_sixteen (N : ℕ) (a : LoopArg (d.L N) 2) :
     APrimeDriftTimeFamily.driftScale d 0 60 N a 0 (1 / 2) =
       16 * Step2.tT B 0 N 60 (1 / 2) (zdist (d.L N) (a 0 - a 1)) := by
-  rw [APrimeDriftTimeFamily.driftScale, Step2.etaT_ratio (by norm_num : |(0 : ℝ)| < 2)]
+  rw [APrimeDriftTimeFamily.driftScale, Step2.tT,
+    Step2.etaT_ratio (by norm_num : |(0 : ℝ)| < 2)]
   norm_num
   ring
 

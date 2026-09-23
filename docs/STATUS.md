@@ -31,15 +31,19 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 
 | Ticket | State |
 |---|---|
-| T583 | Delivered; exact-signature audit pending |
-| T584 | Running: exact positive-cell general-moving QV profile |
+| T583 | Delivered; rejected pending T588 signature correction |
+| T584 | Delivered; independent audit pending |
 | T585 | Running: deterministic (5.42) absorption audit |
 | T586 | Running: exact general-moving (5.35) drift source assembly |
 | T587 | Running: post-QV integration/net boundary audit |
+| T588 | Running: corrected exact-signature five-slot audit |
+| T589 | Running: actual `CutHypEvOnSlot` producer decomposition |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 
 T582 is accepted as a scope audit: the fixed `E=0,D=60` first-cell slot cannot satisfy the merged consumer's `∀ E,s,t,c,D≥60` table. After T579 acceptance, its selected next theorem is exactly T584; the other five merged inputs remain sibling obligations.
+
+T583's classifications are provisionally useful, but its proposed theorem is not accepted: it incorrectly used scalar `s,t`, `Cond272Reg (sample d)`, a spurious `c` argument in `Step1.Hyp`, and `d : Data`. T588 must restore the literal consumer signature before any cut-package dispatch.
 
 ## 4. Exact open blockers
 

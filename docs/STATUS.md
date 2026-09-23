@@ -24,17 +24,18 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 ### General moving window
 
 - T575 is accepted: the actual Gaussian Step-1 inputs produce one `HighProb goodSetFlow` event for arbitrary fixed moving `(E,s,t)`, with the exact `flowDelta=(Wℓ_tη_t)^(-1/6)` threshold and no exponent loss.
-- T579 is delivered and awaiting independent audit. It claims one measurable common event for T491 raw sources, T575 `goodSetFlow`, T523 centered two-charge input, and block `jG`, retaining both endpoints, three independent losses, and the exact support-local `ratR^4` factor.
-- T580 is determining the first honest post-T579 drift/QV statement. No integration or moment conclusion is assumed.
+- T579 is accepted: one measurable common event carries T491 raw sources, T575 `goodSetFlow`, T523 centered two-charge input, and block `jG` on the same sample, retaining both endpoints, three losses and exact support-local `ratR^4`.
+- T580 is accepted as the next-step audit: the first honest post-T579 theorem is the positive-cell exact evolved-QV profile behind (5.42), before deterministic simplification. It keeps `ratR^4`, repaired `W⁻¹`, quadratic-source and leakage rows, and treats `k=0` only after time integration.
 
 ## 3. Running work
 
 | Ticket | State |
 |---|---|
-| T579 | Delivered; audit pending |
-| T580 | Running: post-source exponent/producer audit |
 | T582 | Running: fixed-first-cell versus universal-slot boundary |
 | T583 | Running: remaining five universal merged inputs |
+| T584 | Running: exact positive-cell general-moving QV profile |
+| T585 | Running: deterministic (5.42) absorption audit |
+| T586 | Running: exact general-moving (5.35) drift source assembly |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 
@@ -46,14 +47,17 @@ Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and
 4. Supply the other five universal inputs of `thm221NoEL_of_inputs_mergedOnAll_aprime'`.
 5. Only then run the six-step and whole-paper acceptance audits.
 
+Named remaining leaves include Lemma 5.14 slot 4 (`flowXiLK_1≺1`, actual `xiRhs≺1`, `hnum`, Case 1) and the slot-5 Eq. (4.5) boundary: T326 closes only the sharp first cell, while later cells/gain inputs remain open.
+
 ## 5. Repository and acceptance discipline
 
-- Latest pushed commit: `e9a3f83`.
-- T578 and T581 are independently accepted but not yet integrated in the pushed branch.
+- Latest pushed commit before this integration: `22caffd`.
 - Never stage unrelated or in-flight files. In particular exclude `RBM1D/Gauss/APrimeNearRem.lean`, T280 reports, `Claude outputs/`, blueprint artifacts, and every unaudited worker file.
 - A completion requires exact statement/quantifier/exponent review, boundary and common-event checks, acyclicity, nondegenerate satisfiability, full module build, and public axiom audit.
 - Allowed printed axioms: `propext`, `Classical.choice`, `Quot.sound` only.
 - The scheduler does not write Lean proofs. New Codex work uses fresh task threads. No reset credit may be used without Jun’s explicit approval.
+- Theorem 2.6 work starts only after the other high-risk blocks. Blueprint/Pages work remains paused.
+- Keep only the current `rbm1d-lean` heartbeat active; do not revive the old `rbm1d` automation or duplicate scheduling.
 
 ## 6. Where history lives
 

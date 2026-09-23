@@ -3,10 +3,9 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Hypotheses
+import RBM1D.Defs.StochDomMono
+import RBM1D.Flow.FlowFamiliesCore
 import RBM1D.Flow.Iteration
-import RBM1D.Flow.Scales
-import RBM1D.Loop.Split
 
 /-!
 # Step 3 of the proof of Theorem 2.21: the sharp loop bound (2.77)
@@ -335,23 +334,6 @@ end Psi
 section Abstract
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {U : ℕ → Type*}
-
-/-- `ξ ≺ ζ` and `ζ ≤ C ζ'` (eventually, pointwise) give `ξ ≺ ζ'`. -/
-theorem stochDom_mono {ξ ζ ζ' : ∀ N, U N → Ω → ℝ} (hζ' : ∀ N u ω, 0 ≤ ζ' N u ω) (C : ℝ)
-    (hle : ∀ᶠ N : ℕ in atTop, ∀ u ω, ζ N u ω ≤ C * ζ' N u ω) (h : StochDom P ξ ζ) :
-    StochDom P ξ ζ' := by
-  refine StochDom.of_subset h fun τ hτ => ⟨τ / 2, half_pos hτ, ?_⟩
-  filter_upwards [hle, eventually_le_rpow C (half_pos hτ)] with N hN hC
-  intro ω hω
-  obtain ⟨u, hu⟩ := hω
-  refine ⟨u, ?_⟩
-  have hpos : 0 ≤ (N : ℝ) ^ (τ / 2) := Real.rpow_nonneg (Nat.cast_nonneg N) _
-  calc (N : ℝ) ^ (τ / 2) * ζ N u ω ≤ (N : ℝ) ^ (τ / 2) * (C * ζ' N u ω) :=
-        mul_le_mul_of_nonneg_left (hN u ω) hpos
-    _ ≤ (N : ℝ) ^ (τ / 2) * ((N : ℝ) ^ (τ / 2) * ζ' N u ω) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hC (hζ' N u ω)) hpos
-    _ = (N : ℝ) ^ τ * ζ' N u ω := by rw [← mul_assoc, UnifDetDom.rpow_half_mul_rpow_half N hτ]
-    _ < ξ N u ω := hu
 
 /-- `ξ ≺ ζ` gives `1 + A⁻¹ ξ ≺ 1 + A⁻¹ ζ` for a deterministic `A > 0`. -/
 theorem stochDom_one_add_inv_mul {A : ∀ N, U N → ℝ} (hA : ∀ N u, 0 < A N u)
@@ -684,18 +666,6 @@ section Flow
 
 variable {W : ℝ} {L : ℕ} {E s u t : ℝ}
 
-theorem ellHat_pos_of_lt_one (hL : 1 ≤ L) {x : ℝ} (hx : x < 1) : 0 < ellHat L (x : ℂ) := by
-  rw [ellHat_ofReal L hx]
-  have : (0 : ℝ) < L := by exact_mod_cast hL
-  have : 0 < Real.sqrt (1 - x) := Real.sqrt_pos.2 (by linarith)
-  exact lt_min (by positivity) (by assumption)
-
-theorem ellHat_mono (hst : s ≤ t) (ht1 : t < 1) : ellHat L (s : ℂ) ≤ ellHat L (t : ℂ) := by
-  rw [ellHat_ofReal L (hst.trans_lt ht1), ellHat_ofReal L ht1]
-  refine min_le_min ?_ le_rfl
-  exact one_div_le_one_div_of_le (Real.sqrt_pos.2 (by linarith))
-    (Real.sqrt_le_sqrt (by linarith))
-
 /-- `ℓ_t ≤ ((1-s)/(1-t))^{1/2} ℓ_s`. -/
 theorem ellHat_le_sqrt_mul (hst : s ≤ t) (ht1 : t < 1) :
     ellHat L (t : ℂ) ≤ Real.sqrt ((1 - s) / (1 - t)) * ellHat L (s : ℂ) := by
@@ -807,11 +777,6 @@ namespace Sample
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B)
 
-/-- **(5.76)** `Ξ^{(L)}_{t,m} = max_{σ,a} |L_{t,σ,a}| · (W ℓ_t η_t)^{m-1}`, the maximum over
-`σ ∈ {+,-}^m`, `a ∈ ℤ_L^m` (`RBM.loopXi` of `Loop/Split.lean` at `H = H_t`, `z = z_t`). -/
-noncomputable def xiL (E : ℝ) (N : ℕ) (t : ℝ) (ω : Ω) (m : ℕ) : ℝ :=
-  loopXi (B.L N) (B.W N) (X.H N t ω) (zt E t) (B.scale E N t) m
-
 /-- `max_{σ,a} |L_{t,σ,a} - K_{t,σ,a}|` over loops of length `m`. -/
 noncomputable def lkMax (E : ℝ) (N : ℕ) (t : ℝ) (ω : Ω) (m : ℕ) : ℝ :=
   ⨆ u : LoopData (B.L N) m, X.lkErr E N t ω u.idx
@@ -899,21 +864,12 @@ noncomputable def flowXiLK (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) :
     ℕ → ∀ N, TimeIcc s t N → Ω → ℝ :=
   fun n N u ω => X.xiLK E N u ω n
 
-/-- `Ξ^{(L)}_{u,n}` for `u ∈ [s,t]`. -/
-noncomputable def flowXiL (X : Sample B) (E : ℝ) (s t : ℕ → ℝ) :
-    ℕ → ∀ N, TimeIcc s t N → Ω → ℝ :=
-  fun n N u ω => X.xiL E N u ω n
-
 /-- `A N u = W ℓ_u η_u` for `u ∈ [s,t]`. -/
 noncomputable def flowA (B : Band Ω) (E : ℝ) (s t : ℕ → ℝ) : ∀ N, TimeIcc s t N → ℝ :=
   fun N u => B.scale E N u
 
 /-- `As N = W ℓ_s η_s`. -/
 noncomputable def flowAs (B : Band Ω) (E : ℝ) (s : ℕ → ℝ) : ℕ → ℝ := fun N => B.scale E N (s N)
-
-/-- `R N = ℓ_t/ℓ_s`. -/
-noncomputable def flowR (B : Band Ω) (s t : ℕ → ℝ) : ℕ → ℝ :=
-  fun N => B.ell N (t N) / B.ell N (s N)
 
 variable {E : ℝ} {s t : ℕ → ℝ}
 

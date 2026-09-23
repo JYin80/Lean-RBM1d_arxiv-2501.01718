@@ -89,7 +89,7 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T631 | Audit failed: Core A itself passes, but root build exposes `Step6EnvWindow`'s missing direct Step45 import; accept only with compatibility repair |
 | T632 | Independently accepted as blocked: omitted `Sample.xiL` dependency identified; prototype reverted; T634 is the corrected extraction |
 | T633 | Audit failed on dependencies: scalar mathematics and endpoint obstruction pass, but cited producer surfaces are not clean; T639 corrects the boundary |
-| T634 | Delivered: corrected Core B and facades build; root awaits T637 compatibility repair; independent audit pending |
+| T634 | Independently accepted: six declarations preserved in two clean cores; root validation 4042 jobs; no closure claim |
 | T635 | Delivered: exact `SumZeroDyn → Step3` boundary isolated; two-producer split selected; independent audit pending |
 | T636 | Running: first T629 implementation slice, clean drift-time/QV-rate cores only |
 | T637 | Delivered: direct Step45 import repair builds; root advances to the T636-induced first-cell compatibility seam; independent audit pending |

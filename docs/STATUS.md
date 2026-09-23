@@ -32,6 +32,8 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 - T590 is independently accepted: the exact deterministic QV absorption keeps `1200=16+1152+32`, literal `sourceC4`, `R_u⁻²R_v⁻²`, repaired `2W⁻¹`, both `W⁻ᴰ` leakages and the square of the full root sum; it remains pointwise on `k≥1`.
 - T591 is independently accepted: the all-`k` widened-weight QV integral budget keeps T584's exact profile, pays the common-event complement from the literal `2²¹N^(2D+16)` envelope, and handles `k=0` only by equal-endpoint integration. The smooth/widened support mismatch remains open.
 - T592 is accepted as the cross-bridge preflight. Its selected next theorem is T597's same-sample running `jSnorm` cap on `commonEvent ∩ smooth transition`; it does not reverse `widenedW≤smoothWeight` or claim a cross budget.
+- T593 is accepted as the drift-integral preflight. The first missing implication is upstream of integration: T598 must connect T586's linear source, the exact (5.34) quadratic gluing row, `Uker` propagation and literal `driftScale`, producing a fixed-`Dims.exampleGrow` pointwise `driftAt` profile with `R_u⁻²R_v⁻²`.
+- T594 is accepted as the support-mismatch preflight. The same-`δ` reverse implication is false; T599 instead proves the buffered deterministic bridge `actualWeight(δ)>0 → widenedW(δ+ξ)>0`, with the sole new loss `N^(2ξ)` and no event hypothesis.
 
 ## 3. Running work
 
@@ -39,11 +41,11 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T593 | Running: exact general-moving drift integral preflight |
-| T594 | Running: smooth/widened support-bridge preflight |
 | T595 | Running: general-moving initial-term compatibility audit |
 | T596 | Running: actual all-charge `xiLK … 2` cutoff-moment producer |
 | T597 | Running: smooth-transition running-cap bridge |
+| T598 | Running: full general-moving pointwise `driftAt` profile |
+| T599 | Running: buffered smooth-to-widened support bridge |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 
@@ -65,7 +67,7 @@ Named remaining leaves include Lemma 5.14 slot 4 (`flowXiLK_1≺1`, actual `xiRh
 
 ## 5. Repository and acceptance discipline
 
-- Latest pushed commit before this integration: `e805bea`.
+- Latest pushed commit before this integration: `73a92d8`.
 - Never stage unrelated or in-flight files. In particular exclude `RBM1D/Gauss/APrimeNearRem.lean`, T280 reports, `Claude outputs/`, blueprint artifacts, and every unaudited worker file.
 - A completion requires exact statement/quantifier/exponent review, boundary and common-event checks, acyclicity, nondegenerate satisfiability, full module build, and public axiom audit.
 - Allowed printed axioms: `propext`, `Classical.choice`, `Quot.sound` only.

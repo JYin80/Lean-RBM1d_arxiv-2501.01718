@@ -36,12 +36,13 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 |---|---|
 | T583 | Delivered; rejected pending T588 signature correction |
 | T588 | Rejected: Eq548 existential scope and `D/Kmod` quantifier order are overstated |
-| T590 | Running: exact deterministic (5.42) absorption |
+| T590 | Delivered; independent audit pending |
 | T591 | Delivered; independent audit pending |
 | T592 | Running: exact general-moving cross-term bridge preflight |
 | T593 | Running: exact general-moving drift integral preflight |
 | T594 | Running: smooth/widened support-bridge preflight |
 | T595 | Running: general-moving initial-term compatibility audit |
+| T596 | Running: actual all-charge `xiLK … 2` cutoff-moment producer |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

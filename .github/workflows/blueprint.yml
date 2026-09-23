@@ -6,11 +6,9 @@ name: Compile blueprint
 # used to cancel doc-gen4 runs before the Mathlib documentation cache was saved.
 # Only changes to the blueprint source or this workflow trigger an extra run.
 #
-# docgen-action only uploads and deploys when github.event_name == 'push', and it
-# also skips the API docs and the Jekyll build on other events.  So this workflow
-# uses docgen-action only for the blueprint (web + PDF) and the checkdecls check,
-# which are not push-gated, and runs the push-gated steps itself: API docs (same
-# script as docgen-action, same Mathlib doc cache), Jekyll, upload, deploy.
+# Build the blueprint directly so this step cannot also build API docs or Jekyll.
+# The later steps build API docs (using docgen-action's script and Mathlib cache),
+# Jekyll, and deploy on every trigger, including workflow_dispatch.
 # "Run workflow" (workflow_dispatch) now publishes too.
 on:
   schedule:
@@ -65,14 +63,28 @@ jobs:
           lint: false
           mk_all-check: false
 
-      - name: Compile blueprint (web + PDF) and check declarations
-        uses: leanprover-community/docgen-action@deed0cdc44dd8e5de07a300773eb751d33e32fc8 # 2025-10-26
+      - name: Compile blueprint (web + PDF)
+        uses: xu-cheng/texlive-action@f886de8159e5952a131848a5fa9c3196a2132b5d # v2
         with:
-          blueprint: true
-          api-docs: false
-          build-page: false
-          homepage: home_page
-          deploy: false
+          docker_image: ghcr.io/xu-cheng/texlive-full:20250401
+          run: |
+            apk update
+            apk add --update make py3-pip git pkgconfig graphviz graphviz-dev gcc musl-dev
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
+            git config --global --add safe.directory "$(pwd)"
+            python3 -m venv env
+            source env/bin/activate
+            pip install --upgrade pip requests wheel
+            pip install pygraphviz --config-settings="--global-option=build_ext" --config-settings="--global-option=-L/usr/lib/graphviz/" --config-settings="--global-option=-R/usr/lib/graphviz/"
+            pip install leanblueprint
+            leanblueprint pdf
+            mkdir -p home_page
+            cp blueprint/print/print.pdf home_page/blueprint.pdf
+            leanblueprint web
+            cp -r blueprint/web home_page/blueprint
+
+      - name: Check blueprint declarations
+        run: ~/.elan/bin/lake exe checkdecls blueprint/lean_decls
 
       - name: Restore the Mathlib API doc cache
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3

@@ -92,11 +92,12 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T634 | Independently accepted: six declarations preserved in two clean cores; root validation 4042 jobs; no closure claim |
 | T635 | Audit failed on quantifiers: boundary split is valid and assigned as T642, but the conditional QV card must require `s_N≤u≤v≤t_N` (current target also has net membership) |
 | T636 | Delivered: clean drift-time/QV-rate cores and facades build; root and global axiom audit pass; independent audit pending |
-| T638 | Running: genuinely non-scalar same-sample support feasibility after T633's endpoint obstruction |
+| T638 | Delivered: a non-scalar block-circulant transition passes goodSetFlow but fails centeredEvent by an exact exponent mismatch; independent audit pending |
 | T639 | Running: correct T633's false clean-producer classification before any support implementation |
 | T640 | Running: correct T625 witness provenance/minimality while preserving the T630 core result |
 | T641 | Running: repair the frozen first-cell theorem proof after definitionally expanding `driftScale` in T636 |
 | T642 | Running: isolate the two actual Step-3 flow producers downstream of the elementary `Step3` interface |
+| T643 | Running: test whether goodSetFlow plus centeredEvent makes transition impossible, or permits genuine spatial redistribution |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

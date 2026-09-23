@@ -81,11 +81,14 @@ T578 and T581 were independently rebuilt (4025 jobs each). Their public declarat
 | T619 | Rejected: compiled theorem is mathematically correct but module imports Step45/Step3/Step6; upstream extraction required |
 | T624 | Withdrawn: proposed import surface reaches Step345Producer transitively |
 | T625 | Delivered: drift-slot dependency/core-extraction preflight pending independent audit |
-| T626 | Running: upstream core-extraction preflight for the T621/T616 floored-flow route |
-| T627 | Running: clean `APrimeSmoothPrefix` import extraction, first step selected by T622 |
-| T628 | Running: target/canonical joint-support cylinder feasibility audit selected by T623 |
+| T626 | Delivered: conditional route and first clean extraction identified; independent audit pending |
+| T627 | Independently accepted as blocked: both proposed import branches still reach Step45; no code retained |
+| T628 | Delivered: literal `k=2` scalar crossing exists but lies outside `‖Xmat‖≤N`; independent audit pending |
 | T629 | Running: corrected QV-rate/coordinate-weight core-extraction audit after T622 |
 | T630 | Running: clean scalar consumer/slot core extraction selected by T625 |
+| T631 | Running: T626 Core A only, extracting the generic high-probability stochastic-domination helper below Step45 |
+| T632 | Running: T626 Core B only, extracting elementary flow families and stochastic-domination monotonicity below Step3 |
+| T633 | Running: later-prefix same-sample support audit after the fixed-`k=2` obstruction in T628 |
 
 Full ticket text is intentionally kept out of this file; see `docs/TASKS.md` and `docs/reports/`.
 

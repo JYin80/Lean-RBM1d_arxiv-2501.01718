@@ -113,6 +113,7 @@ import RBM1D.Gauss.FlowHolder
 import RBM1D.Gauss.Generator
 import RBM1D.Gauss.FiniteSupportCore
 import RBM1D.Gauss.PermutationFourierSwap
+import RBM1D.Gauss.PermutationFourierExampleGrowFlowCarrier
 import RBM1D.Gauss.PermutationFourierMean
 import RBM1D.Gauss.PermutationFourierCharacter
 import RBM1D.Gauss.PermutationFiberSwap

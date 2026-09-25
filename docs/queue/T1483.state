@@ -1,0 +1,4 @@
+state: audit-pass
+reason: workflow wf_d2d81646-31d — prove: PASS (docs/reports/T1483-prove.md, lake build RBM1D.Gauss.GridStop succeeded, 2987 jobs); gate: independently re-verified PASS; audit: PASS (docs/reports/T1483-audit.md). Awaiting a merge instruction (not decided by the hub).
+updated: 2026-09-25 (see docs/queue/HUB.alive for exact time)
+report: docs/reports/T1483-prove.md, docs/reports/T1483-audit.md

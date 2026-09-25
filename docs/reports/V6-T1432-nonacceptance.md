@@ -1,0 +1,5 @@
+# V6 scheduler disposition of T1432/T1433
+
+T1432 returned final **INCOMPLETE**. `RBM1D/Gauss/FiniteCubeIteratedFTC.lean` builds at SHA-256 `9fc8b051c653b3d652fb71966c8804ce40b50877a92a8c0e2456c52715c42139` and proves the `r=0/1` cases and a nonzero one-dimensional witness. It does not prove the arbitrary-r repeated FTC identity or the all-shifted-face multiaffine derivative formula; it cannot compose into T1424's corrected abstract formula (D). `docs/reports/T1432.md` states the exact gap. T1433 closed **GATE-ONLY / NOT RELEASED** (`docs/reports/T1433.md`), so no theorem audit or acceptance occurred. The partial source is not imported into `RBM1D.lean`.
+
+The two missing Lean arrows are mathematically independent and have been source/paper/nondegeneracy-preflighted in `docs/reports/V6-cube-ftc-face-split-preflight.md`. T1438 targets only the generic repeated box FTC; T1440 targets only the all-shifted-face interpolation derivative/convex bound. Neither imports T1432, and both need their own independent final PASS before acceptance. The original T1432 INCOMPLETE and T1433 gate-only verdicts remain.

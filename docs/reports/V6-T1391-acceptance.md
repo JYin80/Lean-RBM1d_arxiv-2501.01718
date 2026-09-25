@@ -1,0 +1,9 @@
+# V6 acceptance: T1391/T1392 first-half QV-envelope moments
+
+T1391 delivered final worker PASS in `docs/reports/T1391.md`; T1392 delivered independent final PASS in `docs/reports/T1392.md`. The accepted source is `RBM1D/Gauss/Lemma514FirstHalfQVMoments.lean`, SHA-256 `35ad7bf4f364debc702d6db8541e9c0d927e723ad8aa6cdcf4ee60f8253d28ca`; the worker report SHA-256 is `da3c8a68133a620e39447054cdde0da39d5cbb97e042e9a35cedb486a0ded6fb`.
+
+The scheduler reviewed the exact first-half `exampleGrow`, `E=0` source, paper Lemma 5.14 formulas (5.92), (5.103), (5.105), and the direct `Rhs514QAt`/`QQ` consumer. The module bounds the actual doubled-tensor QV envelope on the same measurable first-half high-probability event, checks the two projection costs and scale cancellation, and proves that for each fixed charge length `n`, moment order `p≥1`, and requested `ε>0`, a constant uniform in time and charge gives an eventual `N^ε` moment bound. The moment order and requested loss precede the eventual `N`. A previously compiled same-event sample has nonzero actual Gaussian matrix and separated two-loop labels at positive time; no nonzero QV integrand is imposed for this upper bound.
+
+This is a pre-transport first-half QV prerequisite only. It does not prove the `U⊗U` propagation, time integral, BDG argument, moving-window estimate (5.92), or full Lemma 5.14. Historical T1387 INCOMPLETE and T1388 gate-only verdicts remain.
+
+Scheduler replay passed `lake build RBM1D.Gauss.Lemma514FirstHalfQVMoments` (3,874 jobs), point-imported the module into `RBM1D.lean`, and passed imported-root `lake build RBM1D` (9,605 jobs). The six public `#print axioms` outputs and root `#assert_rbm_axioms` audit of 20,119 `RBM` declarations list only `propext`, `Classical.choice`, and `Quot.sound`. The reviewed source contains no `sorry`, `admit`, or declared axiom. No commit or push is claimed.

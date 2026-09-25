@@ -1,0 +1,19 @@
+# V6 existing-proof gate: generic Gaussian raw-source carrier
+
+2026-09-24. Scope: the first actual-model producer needed before attempting arbitrary-`Dims` T615 drift/QV/cross estimates. Sole paper: `paper/250520-YinJun-v2.pdf`, (2.2), (2.73), and (5.8). This is a mathematical/source preflight, not a Lean theorem or an acceptance verdict.
+
+## Exact consumer and existing inventory
+
+`APrimeGeneralMovingCommonSources.commonEvent` consumes `APrimeGeneralMovingRawSources.sourceGood`; the latter intersects the Gaussian norm event with raw orders 3, 4, and 6 on **one sample and every running time**. `APrimeGeneralMovingRawSources.general_moving_raw_sources` supplies high probability, measurability, norm-event inclusion, actual `APrimeFullQV.SourceEvent` from orders 4/6, and the order-3 bound. Both event definitions in `APrimeGeneralMovingCarrierCore.lean:27-51` and this theorem in `APrimeGeneralMovingRawSources.lean:161-184` fix `Dims.exampleGrow`. The accepted common-event and T615 source chain do likewise.
+
+The needed generic ingredients already exist: `Gauss.measurableSet_normX_le d`, `Gauss.highProb_norm_Xmat_le d` in `Step1Hyp.lean:197`, generic `Step1.apriori (sample d)` in `Step1Hyp.lean`, generic `Gauss.step1Hyp_gauss_of_scale''` in `EntryBoundTime.lean:654-677`, and generic `APrimeFullQV.sourceEvent_of_step1` in `APrimeFullQV.lean:37`. The fixed proof supplies the exact closed-event, source-level identity and high-probability-intersection pattern; reuse it. Targeted search of the generic first-cell and moving source modules found no existing arbitrary-`Dims` raw 3/4/6 *moving-window* event with these five outputs. Existing `blockCap`/`generalMovingBlockCap` are irrelevant and must not be copied.
+
+## Proposed narrowly scoped prerequisite
+
+In a new file, define `normGood d`, `rawEvent d E s t ζ n`, `sourceGood d E s t ζ` and source coefficients from `band d` (do not alter the frozen `exampleGrow` definitions). Prove the analogue of `general_moving_raw_sources` for every `d : Dims` with exactly its current hypotheses: `|E|<2`, `0≤s≤t<1`, positive regime margin `c`, `Cond272Reg (band d) E s t c`, `BoundsCore (sample d) E s`, and `Step1.Hyp (sample d) E s t`. The conclusion must use `P d`, `Ω d` and `sample d` throughout; give one measurable high-probability event, its norm inclusion, and simultaneous all-time raw-three and actual `SourceEvent` statements at the same `ω`. Include `u=s_N` and a positive-window resident. The latter must not be obtained by combining residents from different events. A direct specialization to `Dims.exampleGrow` should recover the old raw-source fields or prove their event equality.
+
+The theorem is **conditional on Step 1**, as is the paper's use of (2.73)/(5.8) in subsequent steps. `EntryBoundTime.step1Hyp_gauss_of_scale''` is the already compiled Gaussian construction under the incoming `BoundsCore` and regime inputs; the ticket should derive the same-input closed wrapper if needed. Do not claim this closes generic T615, the centered/common event, a stopped-path estimate, or an induction step. A nonvacuity check should exhibit an admissible positive window and a same-event sample at least at `Dims.exampleGrow` using the accepted first-cell source witness, and if claiming every-`Dims` nonvacuity must build the corresponding actual Gaussian/regime inputs rather than assume them.
+
+## Mathematical decision
+
+The deterministic formula and high-probability intersection appear proof-ready from existing generic declarations. The first genuinely missing arrow is an actual Gaussian *shared* generic raw-source carrier, not another scalar T615 formula. This is one prerequisite direction. Other generic actual-model tickets remain failed or under corrected preflight; no capacity claim counts them as completed proofs. Release this target only with its own exact ticket, file ownership, silent worker, PASS-gated independent audit and standard module/root/axiom acceptance.

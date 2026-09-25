@@ -1,0 +1,17 @@
+# V6 preflight — arbitrary-Dims actual all-time Green good event
+
+2026-09-24. Sole paper source: `paper/250520-YinJun-v2.pdf`, (2.73), (4.1), (5.8). Paper Lemma 4.1 defines the pointwise event `Ω(t,c)={‖G_t-m‖_max≤W^{-c}}` in (4.1). The existing Lean flow event `Gauss.goodSetFlow d E s t (Gauss.flowDelta d E t)` in `APrimeGeneralMovingCarrierCore.lean:72` instead holds at every `u∈[s_N,t_N]` with terminal threshold `δ_N=A_{t_N}^{-1/6}`. It is an internal prerequisite for the `commonEvent` source chain, not a claim that paper (4.1) is a pathwise stopped-process theorem.
+
+## Exact consumer and existing-proof inventory
+
+`APrimeGeneralMovingCommonSources.highProb_commonEvent` consumes `highProb_goodSetFlow` at its second intersection factor. Its exact event definition `goodSetFlow d` is already generic, as are `Gauss.flowDelta d`, `Step1.apriori (sample d)`, `Step1.eq58`, `Step1.weakLaw_highProb`, `Step1.eventually_scale_facts`, `Gauss.goodEv_subset_goodSet_flow`, `Gauss.step1Hyp_gauss_of_scale''`, and `Gauss.continuous_Hflow`/`continuous_green_comp`. The accepted fixed producer `APrimeGeneralMovingGoodSetFlowActual.lean:28-170` proves measurability, high probability under incoming `BoundsCore` and `Cond272Reg`, and eventual nonemptiness only for `Dims.exampleGrow`. Targeted search found no corresponding arbitrary-`Dims` all-time actual Gaussian theorem. The first missing arrow is therefore this generic probability/event producer, not another scalar T615 estimate. The generic raw 3/4/6 carrier T1367 is already accepted separately; centered and full common-event sources remain missing.
+
+## Exact proposed output and limits
+
+In a new file, prove arbitrary-`d : Dims` analogues of fixed `measurableSet_goodSetFlow`, `highProb_goodSetFlow_of_step1`, `highProb_goodSetFlow`, and `eventually_goodSetFlow_nonempty`, with the **same** `Ω d`, `P d`, `sample d`, `goodSetFlow d`, terminal `flowDelta d`, and existing hypotheses: `|E|<2`, `0≤s≤t<1`, `c>0`, `Cond272Reg (band d) E s t c`, incoming `BoundsCore (sample d) E s`, and (for the exposed variant) `Step1.Hyp (sample d) E s t`. Keep the high-probability quantifier outside the all-time and matrix-index quantifiers. The theorem must construct Step 1 from the same tuple in its closed wrapper. Do not alter fixed definitions or frozen signatures.
+
+The already compiled `APrimeGeneralMovingGoodSetFlowActual.positive_length_same_parameter_witness` supplies, at `d=exampleGrow`, a single positive `[s_N,t_N]`, incoming `BoundsCore` and Step 1, measurable event, high probability, and eventual nonempty event on the **same sample**. Use this as nonvacuity evidence; do not invent a generic all-`Dims` positive-window resident or a disconnected witness. A direct specialization of the new generic theorem should be statement-identical to the accepted fixed event. No centered trace, block Green event, commonEvent, T615, nonlinear cutoff, or stopped Brownian identity is part of this ticket.
+
+## Release decision
+
+This narrowly scoped actual Gaussian producer is necessary for the arbitrary-`Dims` common-event chain and follows a previously compiled fixed proof whose direct inputs are already generic. Its proof route is source-faithful and independently checkable. Release one file-disjoint combined preflight/proof attempt and one PASS-gated independent audit. Acceptance remains conditional on their actual final verdicts and scheduler source/module/imported-root/axiom replay.

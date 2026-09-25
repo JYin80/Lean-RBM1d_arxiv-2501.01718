@@ -1,0 +1,7 @@
+# T1399/T1400 scheduler acceptance — 2026-09-25
+
+T1399 worker final PASS and T1400 independent final PASS are recorded in `docs/reports/T1399.md` and `docs/reports/T1400.md`. The accepted source is `RBM1D/Gauss/APrimeGeneralMovingNearFarSupportGeneralDims.lean`, SHA-256 `2b4a1b9e0aaa1a2ff420db35d50359dfc9e64ddde232b24d629ddb028efb26ae`.
+
+The scheduler reviewed the arbitrary-`Dims` source transport from accepted T1389 pointwise near/far estimates and T1383's running `jSnorm` cap on the **same** `commonEvent` sample. Its pathwise assumption is bare manuscript (2.72); the stronger regularity and `BoundsCore` conditions occur only in the separate existing high-probability event producer. The first-cell `exampleGrow` witness chooses a common-event resident and proves positive widened weight on that very resident. Paper (5.35) is the pointwise source, while (5.41) additionally propagates it by `U`; this ticket proves neither that propagation nor T615, stopped transport, one-step or paper closure.
+
+Scheduler replay passed `lake build RBM1D.Gauss.APrimeGeneralMovingNearFarSupportGeneralDims` (3,945 jobs), point-imported the module, and passed `lake build RBM1D` (9,600 jobs). The root `#assert_rbm_axioms` checked 20,009 `RBM` declarations within `propext`, `Classical.choice`, `Quot.sound`; the module's three public `#print axioms` outputs list only those axioms. No `sorry`, `admit`, declared axiom or frozen-signature edit occurs in the reviewed source. Historical generic-T615 FAILs remain unchanged.

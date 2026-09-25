@@ -1,0 +1,7 @@
+# T1393/T1394 scheduler acceptance — 2026-09-25
+
+T1393 worker final PASS and T1394 independent final PASS are recorded in `docs/reports/T1393.md` and `docs/reports/T1394.md`. The accepted theorem is `RBM.Gauss.momentIneqQ_gauss_cMDval'_closed` in `RBM1D/Gauss/MomentDuhamelQActual.lean`, SHA-256 `f311a34a2f00fa653e5807d2dd1a7289a39ca2cc654760f7c02462f08cf24f8c`.
+
+The scheduler checked the theorem statement against the direct `MomentDuhamel.MomentIneqQ` consumer, the paper's projected terms (5.91), QV tensor (5.103)–(5.105), and coefficient `C_{n,p}=(n+2)(2p-1)`. The source reuses compiled Q derivative, QV, window and integrability producers; it has arbitrary `Dims`, `|E|<2`, nonnegative starts, terminal times below one, and the original order of moment, size, charge, endpoint and loop quantifiers. Its `exampleGrow` window `[0,1/2]` and same-sample witness include `N=0`. This is an actual Gaussian projected moment-inequality producer only; it does not close all-order Lemma 5.14, induction, or the paper.
+
+Scheduler replay passed `lake build RBM1D.Gauss.MomentDuhamelQActual` (3,802 jobs), point-imported the module, and passed `lake build RBM1D` (9,599 jobs). The root `#assert_rbm_axioms` checked 20,005 `RBM` declarations within `propext`, `Classical.choice`, `Quot.sound`; the module's three public `#print axioms` outputs list exactly those three. No `sorry`, `admit`, declared axiom or frozen-signature edit occurs in the reviewed source. The historical T1387 INCOMPLETE and other FAILs remain unchanged.

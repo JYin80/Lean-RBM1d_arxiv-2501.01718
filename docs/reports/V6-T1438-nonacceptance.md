@@ -1,0 +1,5 @@
+# V6 scheduler closeout — T1438/T1439 (2026-09-25)
+
+T1438 delivered final **INCOMPLETE** (`docs/reports/T1438.md`). Its compiled partial source `RBM1D/Gauss/FiniteCubeRepeatedFTC.lean` has SHA-256 `c4ec26ebb8224a18d7eb78c4647a3e037968f435bbbcfc08c2c4aed2c7a5a50b` and proves the all-finite-`r` alternating-vertex/repeated FTC identity only under **global** `ContDiff ℝ r f`, plus a nonzero coordinate-product witness. The exact T1424 §3.3 consumer and assigned ticket require `C^r` only on an open neighborhood of the cube. Thus the source is a narrower stronger-hypothesis theorem, **unaccepted and not root-imported**; the local-regularity mismatch is a Lean interface gap, not a mathematical contradiction or paper (4.12) proof.
+
+T1439 delivered final **GATE-ONLY / NOT RELEASED** (`docs/reports/T1439.md`) because no T1438 worker PASS occurred; it performed no independent theorem audit or PASS/FAIL verdict. A file-disjoint local-neighborhood successor is specified in `docs/V6-T1446-T1447-TICKET-SPECS.md`, with joint review of the unaccepted T1438 dependency required before any acceptance. Historical T1438/T1439 outcomes remain unchanged.

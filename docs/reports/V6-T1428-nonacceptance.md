@@ -1,0 +1,7 @@
+# T1428/T1429 nonacceptance — corrected abstract smooth cube
+
+T1428 Luna XHigh delivered final **INCOMPLETE** in `docs/reports/T1428.md`. The worker created no `RBM1D/Gauss/RandomLmaxSmoothNormCubeBounds.lean` source and no public theorem. The remaining formalization is a zero-coordinate-valid all-order smooth `q`-norm/reciprocal derivative estimate and the multiaffine finite-cube fundamental-theorem-of-calculus identity retaining every shifted face. There is no module build or axiom output to review. The corrected mathematical statement remains justified only at the paper-and-derivation level by T1424; no actual Gaussian `Pr`, `Yr`, or (4.12) producer follows.
+
+T1429 Sol High correctly returned final **GATE-ONLY** in `docs/reports/T1429.md` because T1428 never delivered a worker final PASS. It did not independently audit a theorem or source and gives no acceptance. The original T1422 false-target INCOMPLETE and T1423 gate-only records remain separate and unchanged. T1428's failure is a Lean implementation gap, not a new counterexample to the corrected abstract theorem; no new mathematical-Astra gate is triggered solely by this report. A future scoped successor must first inventory existing finite-dimensional derivative and cube-integration theorems rather than rename the failed all-order target.
+
+No T1428/T1429 source is imported into `RBM1D.lean`; neither ticket is accepted. Full later-cell random-scale (4.12)/(4.5), actual `Pr`/`Yr`, cutoff, T615 and the paper remain HOLD. The historical reports and exact task specifications are preserved.

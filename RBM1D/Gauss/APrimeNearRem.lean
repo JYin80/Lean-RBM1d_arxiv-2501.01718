@@ -587,6 +587,62 @@ theorem eeL6_near_remainder (X : Sample B) (E : ℝ) (N : ℕ)
     (by exact_mod_cast (lt_of_lt_of_le (by norm_num : 0 < 3) (B.three_le_L N)))
     hℓu hηu (by linarith) hnear hcore
 
+/-- The endpoint logarithmic window simultaneously supplies the explicit
+`log W ≥ 4` input to the near remainder producer and to the epsilon estimate.
+This is the §18 interface between parts (c), (d), and the primed endpoint. -/
+theorem nearPackage_of_endpoint_hlog (X : Sample B) (E : ℝ) (N : ℕ)
+    (u : ℝ) (ω : Ω) (σ : Fin 2 → Bool)
+    {ℓu ηu D J k : ℝ}
+    (hW : Real.exp 1 ≤ (B.W N : ℝ))
+    (hℓu : 0 < ℓu) (hηu : 0 < ηu) (hJ : 1 ≤ J)
+    (hD1 : 1 ≤ D) (hlog : (4 * D) ^ 2 ≤ Real.log (B.W N : ℝ))
+    (hN : 1 ≤ (N : ℝ)) (hk : 0 ≤ k) (hD : 2 * k + 14 ≤ D)
+    (hη : (N : ℝ)⁻¹ ≤ ηu)
+    (hA : 1 ≤ (B.W N : ℝ) * ℓu * ηu)
+    (hAN : (B.W N : ℝ) * ℓu * ηu ≤ (N : ℝ))
+    (hWL : (B.W N : ℝ) * (B.L N : ℝ) ≤ (N : ℝ))
+    (hNW : (N : ℝ) ≤ (B.W N : ℝ) ^ 2)
+    (hJN : J ≤ (N : ℝ) ^ k)
+    {Gm Gsq : ZMod (B.L N) → ZMod (B.L N) → ℝ}
+    (hGm0 : ∀ x y, 0 ≤ Gm x y)
+    (hGm : ∀ (s : Bool) (x y : ZMod (B.L N))
+        (p q : ZMod (B.L N) × Fin (B.W N)),
+      p.1 = x → q.1 = y → ‖Gsig (X.H N u ω) (zt E u) s p q‖ ≤ Gm x y)
+    (hGsq2 : ∀ x y, Gm x y * Gm y x ≤ Gsq x y)
+    (hrow : ∀ x bb bb' : ZMod (B.L N), SB (B.L N) bb bb' ≠ 0 →
+      Gm x bb' * Gm bb' x ≤ Gsq bb x)
+    (h42sq : ∀ x y : ZMod (B.L N),
+      ellStar (B.W N : ℝ) ℓu / 2 ≤ (zdist (B.L N) (x - y) : ℝ) →
+      Gsq x y ≤ J * tailT (B.W N : ℝ) ℓu ηu D
+        (zdist (B.L N) (x - y)))
+    (hGsq_eta : ∀ x y, Gsq x y ≤ ηu⁻¹ ^ 2) :
+    0 ≤ nearEpsilon (B.W N : ℝ) (B.L N : ℝ) ℓu ηu D J ∧
+      (∀ c : LoopArg (B.L N) 2,
+        (zdist (B.L N) (c 0 - c 1) : ℝ) ≤
+            4 * ellStar (B.W N : ℝ) ℓu →
+          ∀ b, Lemma57.ellStarStar (B.W N : ℝ) ℓu <
+              (zdist (B.L N) (c 0 - b) : ℝ) →
+            eeL6 X E N u ω σ (Fin.append c c) b ≤
+              nearEpsilon (B.W N : ℝ) (B.L N : ℝ) ℓu ηu D J *
+                tailT (B.W N : ℝ) ℓu ηu D
+                  (zdist (B.L N) (c 0 - c 1)) ^ 2 /
+                ((B.W N : ℝ) * (B.L N : ℝ))) ∧
+      nearEpsilon (B.W N : ℝ) (B.L N : ℝ) ℓu ηu D J ≤
+        (B.W N : ℝ)⁻¹ := by
+  have hlog16 : 16 ≤ Real.log (B.W N : ℝ) :=
+    sixteen_le_log_of_one_le_D hD1 hlog
+  have hlog4 : 4 ≤ Real.log (B.W N : ℝ) := by linarith
+  have hL : 0 < (B.L N : ℝ) := by
+    exact_mod_cast (lt_of_lt_of_le (by norm_num : 0 < 3) (B.three_le_L N))
+  refine ⟨?_, ?_, ?_⟩
+  · unfold nearEpsilon
+    positivity
+  · intro c
+    exact eeL6_near_remainder X E N u ω σ hℓu hηu hJ hlog4
+      hGm0 hGm hGsq2 hrow h42sq hGsq_eta c
+  · exact nearEpsilon_le_inv hW hL hℓu hηu hN hk (by linarith) hD
+      hη hA hAN hWL hNW hJN hlog4 hlog
+
 theorem ee_le_EEpath_sym' (X : Sample B) (E : ℝ) {N : ℕ} (u : ℝ) (ω : Ω)
     (σ : Fin (0 + 2) → Bool) (c : LoopArg (B.L N) ((0 + 2) + (0 + 2)))
     {ℓu ℓs ηu D J : ℝ} (hℓu : 1 ≤ ℓu) (hℓs : 0 < ℓs) (hηu : 0 < ηu) (hJ : 1 ≤ J)

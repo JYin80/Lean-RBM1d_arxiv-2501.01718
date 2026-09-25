@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "interval_hours": 2,
+  "initialized_at": "2026-09-24T21:27:50.746649+00:00",
+  "last_completed_at": "2026-09-25T09:58:24.657463+00:00",
+  "next_due_at": "2026-09-25T11:58:24.657463+00:00",
+  "execution": "Two-hour due-time gate inside the existing five-minute rbm1d-lean heartbeat; the app rejects a second heartbeat on the same task.",
+  "scope": [
+    "TASKS.md and actual docs equivalent",
+    "STATUS.md and actual docs equivalent",
+    "DECISIONS.md if present",
+    "HANDOFF.md or current HANDOVER equivalent",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/CODEX-TICKETS.md"
+  ],
+  "last_result": "Completed: archived 09:52 pre-maintenance STATUS and PLAN; compacted live STATUS/PLAN while preserving effective decisions, full-paper gates, historical reports and FAILs. T1463/T1464 narrow acceptance and T1461 corrected-SHA pending T1462 audit reconciled across live TASKS, STATUS, HANDOVER, PLAN and counts. One productive Luna group T1472; seven slots open. Effective AGENTS/CLAUDE/CODEX-TICKETS unchanged; DECISIONS/HANDOFF intentionally absent. Validated current links, ownership/counts, dated archives and git diff --check; no worker-owned files edited by scheduler."
+}

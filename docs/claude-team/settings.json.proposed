@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lake build*)",
+      "Bash(lake env lean *)",
+      "Bash(lake exe cache get*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git worktree *)",
+      "Bash(git branch *)",
+      "Bash(git switch *)",
+      "Bash(git checkout *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(mkdir *)",
+      "Bash(cp -c -R .lake/build *)",
+      "Bash(ln -s *)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .)",
+      "Bash(git checkout .)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "workflowSizeGuideline": "medium"
+}

@@ -16,3 +16,9 @@ docs/*
 !docs/*.md
 !docs/archive/
 !docs/reports/
+# Claude team (2026-09-25): tickets, control, supervisor verdicts and team charter are versioned
+!docs/claude-team/
+!docs/queue/
+!docs/tickets/
+!docs/supervisor/
+docs/queue/HUB.alive

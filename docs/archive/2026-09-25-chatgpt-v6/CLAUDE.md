@@ -1,0 +1,27 @@
+# RBM1D — current project rules (2026-09-24)
+
+These rules apply to all agents. The sole manuscript is `paper/250520-YinJun-v2.pdf`. The objective is a source-faithful Lean proof of its Theorems 2.2–2.6 and required internal results; T230A′ is only one subroute. `docs/PLAN.md` is the live dependency plan, `docs/STATUS.md` the current state, and targeted rows of `docs/TASKS.md` the ownership ledger. The full former rulebook is preserved at `docs/archive/CLAUDE-2026-09-24-2330-pre-maintenance.md`; consult it only by targeted search for historical evidence. Current instructions supersede its old T149 priority, old full-read onboarding, and proposed random-layer axioms.
+
+## Scope, reading, and communication
+
+The scheduler owns live planning, task/status/count records, acceptance, and point imports in `RBM1D.lean`; it writes no Lean proofs. Before every major direction, inspect the final consumer, its direct upstream producers and accepted reports, the compiled theorem statements, manuscript formula, exact hypotheses, losses, quantifier order, and a same-event nondegenerate witness. Mark each dependency proved, conditional, narrower, missing, or contradicted. Do not dispatch a renamed duplicate. Give each worker an exact missing arrow, file-disjoint ownership, relevant existing-proof list, and applicable rules in the assignment.
+
+The prescribed manuscript proof is the default route into Lean. Classify each difficulty before escalation: an existing paper/prior-Lean argument to formalize; a Lean model, signature, or quantifier mismatch to repair; or a genuinely missing analytic justification. Do not present a formalization mismatch or an unnecessarily strengthened witness as a new mathematical obstruction. A paper upper bound need not have a nonzero integrand witness unless that is a hypothesis of its actual consumer.
+
+Proof, repair, mathematical preflight, and independent-audit agents work silently: no opening narration, routine updates, or tool-use commentary. Report substantive mathematical FAIL or a scheduler-actionable blocker immediately; otherwise deliver one final result. They read only the assigned ticket row and its relevant rules, source, reports, and evidence. Do not routinely reread full `CLAUDE.md`, `docs/CODEX-TICKETS.md`, handovers, or archives; archives are targeted-search only. Write source and reports in English; discussion with Jun may be in Chinese.
+
+If a mathematical arrow, loss exponent, or simultaneous witness is unclear, the scheduler promptly delegates that precise issue to a read-only mathematical agent and continues independent work. It does not repeatedly guess at the unresolved proof. Critical FAILs or mismatches follow the single-Astra review rule in the current handoff; the scheduler reconciles findings before a positive Lean ticket. Route investigations are not counted as proof groups.
+
+## Mathematical and Lean gates
+
+1. No `sorry`, `admit`, or declared `axiom`. Only `propext`, `Classical.choice`, and `Quot.sound` may appear in public `#print axioms`. Do not change a frozen signature; add a primed successor if required. A conditional or finite-example theorem is not the unconditional paper statement.
+2. The paper retains its Brownian model. The radial Lean flow `H_u = sqrt(u) X` has the same one-time Gaussian law but is not identified pathwise with stopped Brownian motion. Prove the exact marginal transfer for static conclusions and any required pathwise result in a law-correct flow. A smooth-prefix local result does not close the full paper.
+3. Preserve exact parameter and eventual-quantifier order, sharp losses, all required windows/charges/energies/dimensions, and a nondegenerate simultaneous witness for every new assumption package. Check the actual Gaussian source and same event; avoid vacuous `N=0`, empty index sets, and collapsed time windows.
+4. Build each new module with `lake build RBM1D.<Module>`; `lake env lean` alone does not suffice. Independent final PASS, source SHA/report review, scheduler root import and `lake build RBM1D`, plus public/root axiom replay are required before acceptance. A worker PASS alone changes no verdict.
+5. Record any Lean/paper statement difference in `docs/paper-deltas.md`, using a temporary ticket tag until a number is allocated. Cite the prescribed PDF by formula number. Do not alter the manuscript statement or renumber it without Jun's direction.
+
+## External input and git boundary
+
+The **sole** authorized external mathematical input is the complex-Hermitian version of [51, Theorem 2.2] for Theorem 2.6 Step 1, with the original theorem's hypotheses and conclusion shape and GOE/GUE replacement only. [51]'s numbered statement is real-symmetric; its abstract mentions the complex case. State this qualification in the final Universality report and check the input's exact applicability. No other paper dependency, including Theorem 2.6 Steps 2–3, Green comparison or §7.2, may be made an external axiom. `docs/paper-deltas.md` #114 preserves the detailed decision.
+
+Do not use `git add -A`; stage only reviewed named files. No unreviewed commit or push. Do not edit another agent's assigned source/report, rejected or in-flight source, `APrimeNearRem`, T280, Claude outputs, blueprint, or workflows. Only the scheduler point-imports accepted modules into the root. Historical verdicts and process remain in `docs/reports/` and dated `docs/archive/` snapshots.

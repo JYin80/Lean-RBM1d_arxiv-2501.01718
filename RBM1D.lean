@@ -508,6 +508,7 @@ import RBM1D.Propagator.SymbolBound
 import RBM1D.Gauss.GridStop
 import RBM1D.Gauss.GridDuhamel
 import RBM1D.Gauss.GridAzuma
+import RBM1D.Gauss.GridPath
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

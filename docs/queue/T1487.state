@@ -1,0 +1,4 @@
+state: audit-pass
+reason: workflow wf_b900efd9-a84 — prove PASS, gate PASS, audit PASS (docs/reports/T1487-audit.md, auditor model claude-opus-5-5[1m], branch t/T1487 head a34ca1f). H10 standing auto-merge in progress: diff scope verified (only GridDriftLip.lean), file brought in, root import appended, build running.
+updated: 2026-09-25 (see docs/queue/HUB.alive for exact time)
+report: docs/reports/T1487-prove.md, docs/reports/T1487-audit.md

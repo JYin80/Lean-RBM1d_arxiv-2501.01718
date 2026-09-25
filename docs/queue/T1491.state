@@ -1,0 +1,4 @@
+state: audit-pass
+reason: workflow wf_338cde89-b80 — prove: PASS; gate: PASS; audit: PASS (docs/reports/T1491-audit.md, auditor model claude-opus-5-5). Branch t/T1491 head e8ec942. Awaiting a merge instruction (not decided by the hub).
+updated: 2026-09-25 (see docs/queue/HUB.alive for exact time)
+report: docs/reports/T1491-prove.md, docs/reports/T1491-audit.md

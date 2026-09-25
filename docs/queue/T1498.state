@@ -1,0 +1,4 @@
+state: merged
+reason: H10 standing auto-merge. Audit report first line "Auditor model: claude-opus-5-5[1m]" confirmed. git diff main...t/T1498 touched only RBM1D/Gauss/EEOffDiagBound.lean (its sole writable file). Merged that file from t/T1498 (53e6498, byte-diff verified); root import added to RBM1D.lean (M7b off-diagonal (5.36) bound, RBM.Gauss.norm_EEpath_offDiag_le). lake build RBM1D 9648/9648 PASS; root axiom audit PASS (20730 decls).
+updated: 2026-09-25 20:38:46 UTC
+report: docs/reports/T1498-prove.md, docs/reports/T1498-audit.md

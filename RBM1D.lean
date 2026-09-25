@@ -517,6 +517,7 @@ import RBM1D.Gauss.GridOneStepVar
 import RBM1D.Hierarchy.EEReduced
 import RBM1D.Hierarchy.Step2Init
 import RBM1D.Gauss.EEOffDiag
+import RBM1D.Hierarchy.Rhs535Scale
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

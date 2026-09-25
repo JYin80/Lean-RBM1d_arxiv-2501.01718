@@ -1,0 +1,4 @@
+state: auditing
+reason: workflow wf_2dbb4d6a-241 — prove: (T1) rhs535_div_le PASS; (T2) reported BLOCKED with a precise h560-unsatisfiability account (an alternative the ticket's own acceptance criteria explicitly permit, not a false claim). gate: independently re-verified PASS. Audit stage running now.
+updated: 2026-09-25 19:43:55 UTC
+report: docs/reports/T1496-prove.md

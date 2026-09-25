@@ -1,0 +1,4 @@
+state: auditing
+reason: workflow wf_b951a5c4-469 — prove: PASS (docs/reports/T1490-prove.md, lake build RBM1D.Gauss.GridOneStepVar succeeded, 3706 jobs); gate: independently re-verified PASS. Audit stage running now.
+updated: 2026-09-25 19:13:55 UTC
+report: docs/reports/T1490-prove.md

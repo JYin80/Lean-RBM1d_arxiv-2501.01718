@@ -1,0 +1,4 @@
+state: auditing
+reason: workflow wf_1001e6bc-727 — prove: PASS (docs/reports/T1500-prove.md, lake build RBM1D.Hierarchy.UkerBackBound succeeded, 3703 jobs; T1-T3 declarations confirmed present). gate: independently re-verified PASS. Audit stage running now.
+updated: 2026-09-25 20:23:53 UTC
+report: docs/reports/T1500-prove.md

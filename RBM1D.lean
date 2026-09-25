@@ -528,6 +528,7 @@ import RBM1D.Hierarchy.Step2FarInputsJG
 import RBM1D.Gauss.Step2JGle
 import RBM1D.Gauss.GridLoopStep
 import RBM1D.Gauss.GridJStar
+import RBM1D.Gauss.GridDuhamelTail
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

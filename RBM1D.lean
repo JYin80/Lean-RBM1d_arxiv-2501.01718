@@ -519,6 +519,7 @@ import RBM1D.Hierarchy.Step2Init
 import RBM1D.Gauss.EEOffDiag
 import RBM1D.Hierarchy.Rhs535Scale
 import RBM1D.Gauss.GridMarkov
+import RBM1D.Gauss.Step2Eq557
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

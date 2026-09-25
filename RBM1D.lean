@@ -514,6 +514,8 @@ import RBM1D.Gauss.GridStopFilt
 import RBM1D.Hierarchy.Lemma57Reduced
 import RBM1D.Gauss.GridDriftLip
 import RBM1D.Gauss.GridOneStepVar
+import RBM1D.Hierarchy.EEReduced
+import RBM1D.Hierarchy.Step2Init
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

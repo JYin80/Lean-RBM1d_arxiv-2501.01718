@@ -10,16 +10,18 @@
 ## 团队与模型（Jun 2026-09-25 定）
 6. ChatGPT/Codex 团队于 2026-09-25 停止，其规则与记录归档在 `docs/archive/2026-09-25-chatgpt-v6/`。Codex 暂不使用。
 7. 分工：总调度 = Cowork 会话；独立数学监督 = Cowork 定时任务（事件触发，另有每天一次兜底）；执行中枢 = Mac 上常驻的 Claude Code 会话；写 Lean 的 agent 全在 Claude Code。章程见 `docs/claude-team/TEAM.md`。
-8. 模型映射：低级 = Sonnet（`prover` 用 high，`prover-hard` 用 xhigh）；高级 = Opus（总调度、监督、`auditor`、`repairer`）；最高级 = Fable（总调度在 Cowork 调用的强力论证子代理，推理强度 max）。
+8. 模型映射（2026-09-25 Jun：auditor、repairer 锁定 `claude-opus-5-5`，不用别名 `opus`）：低级 = Sonnet（`prover` 用 high，`prover-hard` 用 xhigh）；高级 = Opus（总调度、监督、`auditor`、`repairer`）；最高级 = Fable（总调度在 Cowork 调用的强力论证子代理，推理强度 max）。
 9a. **省额度的三条（Jun 2026-09-25）**：
     - 执行中枢用 Sonnet，`/loop 10m`；没有新事时只更新在线信号，不输出文字。
     - 总调度的空闲心跳从简：先看信箱文件的修改时间，没有变化就只排下一次心跳。
     - 验收用 Opus 的 high（不用 xhigh），只看分支相对 main 的改动、目标声明和所用声明的签名，不通读依赖文件。
-9. git：不用 `git add -A`/`git add .`；只提交指名文件；不经 Jun 不 push；Cowork 一侧（总调度、监督、论证 agent）不执行任何 git 写操作，查 git 用 `git --no-optional-locks`。
+9b. **总调度必须跑在 Opus 5.5**（Jun 2026-09-25）：会话的模型会在上下文续接后退回 Sonnet。每次心跳第一步先查自己的模型；不是 `claude-opus-5-5` 就先提醒 Jun 运行 `/model claude-opus-5-5`，切回来之前只做空闲检查，不写工单规格，不做数学或路线判断，不改 mode。执行中枢（Sonnet）和各 agent（`.claude/agents/*.md` 里写死）的模型不受影响。
+9. git：不用 `git add -A`/`git add .`；只提交指名文件；push 规则（Jun 2026-09-25 更新）：main 上每次按 Approved instruction 提交后，执行中枢紧接着 `git push origin main`，只推 main，禁止 force；被拒（非快进、鉴权失败等）就停下报告，不重试、不 rebase；其他分支不推；Cowork 一侧（总调度、监督、论证 agent）不执行任何 git 写操作，查 git 用 `git --no-optional-locks`。
 
-## 待决（需 Jun）
-10. **Step 2 的路线**：继续 A′ 光滑前缀权重（目前 HOLD），还是改走真路径（离散网格高斯游走，照论文 (5.43) 用停时）。Cowork 已给出工作量对比，建议先做 10–20 张单的真路径试点。批准前 `docs/queue/CONTROL.md` 保持 HOLD。
-11. **T0 集成提交**：把前一团队已验收但未提交的成果提交入库（见 `docs/HANDOFF.md`）。须 Jun 看过文件清单后批准。
+## 路线（2026-09-25 Jun 批准）
+10. **Step 2 路线：真路径试点**（Jun 2026-09-25 批准）。试点期间所有新证明单只投真路径（离散网格高斯游走，照论文 §5.3 用停时）；A′ 冻结（HOLD，不派新单，不删代码），是否正式放弃待试点结果再定。试点通过标准：P1–P5 在约 20 张证明单内编译并通过独立验收；失败信号：P4 或 P5 需要事先没有预见的新数学，出现时停下做数学评审。
+10a. **开工顺序**（Jun 2026-09-25）：先由总调度完成 P4（停止过程矩不等式）和 P5（停时越过阈值一步的控制）的纸面论证，写入 `docs/claude-team/pilot-P4P5-paper.md`，确认不需要预料之外的新数学后，再发布 T1481–T1485 的改写规格并解除 HOLD。**2026-09-25 纸面论证完成**：经 Fable 独立复核，结论为不需要预料之外的新数学（P4 用 Mathlib 的 Azuma–Hoeffding 加 Doob，不需要 BDG；P5 越过阈值不需单独控制）。**2026-09-25 16:25 UTC Jun 批准**：改写规格 amend-1 发布，CONTROL 转为 RUN，A′ 仍冻结（不释放任何 A′ 工单）。首批工单 T1481–T1485 的原规格有缺陷，已在开工前撤回。
+11. **T0 集成提交**：完成。H0 = 47dffbc；H1b = ab96505（1152 个文件；`lake build RBM1D` 通过，根公理审计通过）。
 
 ## 历史裁定索引
 - D12–D22 与 Cowork 的工单节（§1–§19）：`docs/archive/2026-09-25-chatgpt-v6/CODEX-TICKETS.md` 及更早的 `docs/archive/` 快照。

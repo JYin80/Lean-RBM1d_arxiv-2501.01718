@@ -524,6 +524,8 @@ import RBM1D.Hierarchy.UkerBackBound
 import RBM1D.Gauss.EEOffDiagBound
 import RBM1D.Hierarchy.H560Check
 import RBM1D.Gauss.Step2QVEvent
+import RBM1D.Hierarchy.Step2FarInputsJG
+import RBM1D.Gauss.Step2JGle
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

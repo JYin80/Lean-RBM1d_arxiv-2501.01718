@@ -1,0 +1,4 @@
+state: merged
+reason: H10 standing auto-merge (per H14 item 1: audit-pass at 20:58 UTC, state stale). Audit report first line "Auditor model: claude-opus-5-5[1m]" confirmed; verdict PASS (T1). git diff main...t/T1502 touched only RBM1D/Gauss/Step2JGle.lean (its sole writable file). Merged that file from t/T1502 (c035b85, byte-diff verified against git show). Root import added to RBM1D.lean (highProb_jG_le_jS: jG ≤ N^{2ε}·jS with high probability). lake build RBM1D 9652/9652 PASS; root axiom audit PASS (20760 decls). Committed together with T1501 in one commit since both root imports landed in the same lake build (same pattern as H5's T1483+T1485, H10's T1493+T1495).
+updated: 2026-09-25 21:26:47 UTC
+report: docs/reports/T1502-prove.md, docs/reports/T1502-audit.md

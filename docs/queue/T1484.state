@@ -1,0 +1,4 @@
+state: audit-pass
+reason: workflow wf_d2d81646-31d — prove: PASS (docs/reports/T1484-prove.md, lake build RBM1D.Gauss.GridAzuma succeeded, 3203 jobs, all 5 targets T1-T5 PASS); gate: independently re-verified PASS; audit: PASS (docs/reports/T1484-audit.md, auditor model claude-opus-5-5). Awaiting a merge instruction (not decided by the hub).
+updated: 2026-09-25 (see docs/queue/HUB.alive for exact time)
+report: docs/reports/T1484-prove.md, docs/reports/T1484-audit.md

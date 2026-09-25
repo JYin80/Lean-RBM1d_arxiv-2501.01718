@@ -1,7 +1,7 @@
 ---
 name: auditor
 description: Independent final audit of one RBM1D ticket's delivery. Read-only on sources; checks out the ticket branch in its own worktree and rebuilds. Never the same agent that wrote or repaired the code.
-model: opus
+model: claude-opus-5-5
 effort: high
 tools: Read, Grep, Glob, Bash
 ---

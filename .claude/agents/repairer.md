@@ -1,7 +1,7 @@
 ---
 name: repairer
 description: Repair of a delivery that an independent audit returned (RETURN/FAIL). Takes over file ownership from the original writer; same rules as prover. Reads the audit report and the existing code first.
-model: opus
+model: claude-opus-5-5
 effort: high
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---

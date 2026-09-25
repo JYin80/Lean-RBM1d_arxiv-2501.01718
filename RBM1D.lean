@@ -210,6 +210,12 @@ import RBM1D.Flow.Eq548Producer
 import RBM1D.Flow.Universality
 import RBM1D.Gauss.Stein
 import RBM1D.Gauss.SteinMatrix
+import RBM1D.Gauss.APrimeRawSourcesGeneralDims
+import RBM1D.Gauss.APrimeGoodSetFlowGeneralDims
+import RBM1D.Gauss.APrimeSingletonLocalLawGeneralDims
+import RBM1D.Gauss.APrimeFixedOneLoopGeneralDims
+import RBM1D.Gauss.APrimeCenteredModulusGeneralDims
+import RBM1D.Gauss.APrimeAllTimeOneLoopGeneralDims
 import RBM1D.Propagator.Basic
 import RBM1D.Propagator.Contour
 import RBM1D.Propagator.Bounds

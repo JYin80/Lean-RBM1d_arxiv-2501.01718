@@ -510,6 +510,7 @@ import RBM1D.Gauss.GridDuhamel
 import RBM1D.Gauss.GridAzuma
 import RBM1D.Gauss.GridPath
 import RBM1D.Gauss.GridOneStep
+import RBM1D.Gauss.GridStopFilt
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

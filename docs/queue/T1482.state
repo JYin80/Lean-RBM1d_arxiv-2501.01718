@@ -1,0 +1,4 @@
+state: audit-pass
+reason: Continuation pass complete: (T1) condExp_freeze, (T2) hasCondSubgaussianMGF_linear, (T3) condExp_linear_eq_zero all PASS (docs/reports/T1482-audit.md, auditor model claude-opus-5-5[1m], branch t/T1482 head d5a5741). H10 standing auto-merge in progress: diff scope verified (only GridMarkov.lean), file brought in, root import appended, build running.
+updated: 2026-09-25 19:56:52 UTC
+report: docs/reports/T1482-prove.md, docs/reports/T1482-audit.md

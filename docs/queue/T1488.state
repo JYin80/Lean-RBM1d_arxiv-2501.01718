@@ -1,0 +1,4 @@
+state: audit-pass
+reason: H8 part B / H9 (docs/queue/CONTROL.md, approved by Jun 2026-09-25). Report-only ticket, two repair cycles: cycle 1 fixed D1,D3-D6; cycle 2 fixed D7,D8. Final re-audit (auditor model claude-opus-5-5[1m]): PASS — D7/D8 fixed, no regressions, and the auditor confirmed its own earlier note on ℓ*_t vs ℓ*_u was backwards (the repairer's correction was right). Release condition for this ticket is a complete report (no module to build), so nothing to merge — this is the terminal state.
+updated: 2026-09-25 (see docs/queue/HUB.alive for exact time)
+report: docs/reports/T1488-prove.md, docs/reports/T1488-audit.md

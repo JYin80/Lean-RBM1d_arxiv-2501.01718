@@ -548,6 +548,7 @@ import RBM1D.Gauss.Q716Pointwise
 import RBM1D.Gauss.GridGoodEvent
 import RBM1D.Gauss.Step2Close
 import RBM1D.Gauss.GridHierarchyN
+import RBM1D.Gauss.OneLoopSharpGrid
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

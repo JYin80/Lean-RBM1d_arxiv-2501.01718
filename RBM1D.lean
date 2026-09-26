@@ -538,6 +538,7 @@ import RBM1D.Gauss.GridQVForm
 import RBM1D.Gauss.GridNetLift
 import RBM1D.Gauss.GridGoodSet
 import RBM1D.Gauss.GridQVStep
+import RBM1D.Gauss.GridExpansion
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

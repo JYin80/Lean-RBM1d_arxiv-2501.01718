@@ -531,6 +531,7 @@ import RBM1D.Gauss.GridJStar
 import RBM1D.Gauss.GridDuhamelTail
 import RBM1D.Gauss.GridDriftSum
 import RBM1D.Gauss.GridQVConv
+import RBM1D.Gauss.GridDriftAlgebra
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

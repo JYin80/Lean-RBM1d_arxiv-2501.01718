@@ -542,6 +542,7 @@ import RBM1D.Gauss.GridExpansion
 import RBM1D.Gauss.Step2Gauss
 import RBM1D.Gauss.Steps12Gauss
 import RBM1D.Gauss.GridStepBound
+import RBM1D.Gauss.GridBootstrap
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

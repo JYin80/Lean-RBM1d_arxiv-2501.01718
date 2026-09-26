@@ -1,0 +1,4 @@
+state: merged
+reason: H10 standing auto-merge. Audit report round 2 (repair against amend note) first line "Auditor model: claude-opus-5-5" confirmed; verdict PASS (GridPointwise', hpt_of_gridPointwise', step2_gauss_of_gridPointwise', endpoint_of_bootstrap' all match the amend note; nonvacuity instance compiled from Step 2's (5.47)). git diff main...t/T1520 touched only RBM1D/Gauss/GridBootstrap.lean (its sole writable file; +466 lines). Merged that file from t/T1520 (0fc3fd3, byte-diff verified against git show). Root import RBM1D.Gauss.GridBootstrap added before RBM1D.Test.Axioms. lake build RBM1D 9669/9669 PASS; root axiom audit PASS (21183 decls, propext/Classical.choice/Quot.sound only). (T4') uses the min of two firstHits, matching T1519's gridTau by a rfl scratch check.
+updated: 2026-09-26 11:13:28 UTC
+report: docs/reports/T1520-prove.md, docs/reports/T1520-audit.md

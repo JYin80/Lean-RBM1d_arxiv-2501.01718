@@ -1,0 +1,4 @@
+state: merged
+reason: H10 standing auto-merge. Audit report first line "Auditor model: claude-opus-5-5" confirmed; verdict PASS on all three targets: primRhs_split (T1, [K∼D]^2 literally ThetaOp for general n), K_step_n/Uker_step_n (T2, general-n derivative/kernel one-step bounds), discrete_hierarchy_step_n (T3, general n >= 2, no n=3 fallback needed -- delivered in full). Auditor independently compiled an n=3 non-alternating witness for discrete_hierarchy_step_n. git diff main...t/T1523 touched only RBM1D/Gauss/GridHierarchyN.lean (its sole writable file, +1235 lines, new module). Merged that file from t/T1523 (byte-diff verified against git show). Root import RBM1D.Gauss.GridHierarchyN added before RBM1D.Test.Axioms. lake build RBM1D 9674/9674 PASS; root axiom audit PASS (21500 decls, propext/Classical.choice/Quot.sound only).
+updated: 2026-09-26 15:15:29 UTC
+report: docs/reports/T1523-prove.md, docs/reports/T1523-audit.md

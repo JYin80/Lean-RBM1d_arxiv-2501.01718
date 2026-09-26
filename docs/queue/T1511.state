@@ -1,0 +1,4 @@
+state: merged
+reason: H10 standing auto-merge. Audit report first line "Auditor model: claude-opus-5-5[1m]" confirmed; verdict PASS (T1, T2). git diff (merge-base b74a55e) t/T1511 touched only RBM1D/Gauss/GridNetLift.lean (its sole writable file). Merged that file from t/T1511 (34bb90f, byte-diff verified against git show). Root import added to RBM1D.lean (grid to continuum, uniformly in u: etaT_inv_le_of_hreg, h276_of_pointwise, the deterministic net lift of h276 via Step1Hyp.netLift_of_relaxed). lake build RBM1D 9662/9662 PASS; root axiom audit PASS (20990 decls). Auditor confirmed (T2)'s conclusion type-checks as step2's second conjunct (the only difference, P d vs (band d).P, is rfl-equal), the step2 -> hpt witness compiles, and A=4D+40, B0=D+2 are fixed per D with no hidden N-dependence.
+updated: 2026-09-26 01:36:03 UTC
+report: docs/reports/T1511-prove.md, docs/reports/T1511-audit.md

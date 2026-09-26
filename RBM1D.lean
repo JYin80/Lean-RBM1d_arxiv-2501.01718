@@ -533,6 +533,7 @@ import RBM1D.Gauss.GridDriftSum
 import RBM1D.Gauss.GridQVConv
 import RBM1D.Gauss.GridDriftAlgebra
 import RBM1D.Gauss.GridStepDecomp
+import RBM1D.Gauss.GridQVSum
 import RBM1D.Test.Axioms
 import RBM1D.Test.Layers
 import RBM1D.Test.Numeric

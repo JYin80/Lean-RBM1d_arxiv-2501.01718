@@ -1,0 +1,4 @@
+state: merged
+reason: H10 standing auto-merge. Audit report first line "Auditor model: claude-opus-5-5[1m]" confirmed; verdict PASS (T1, T2). git diff (merge-base ab0763d) t/T1509 touched only RBM1D/Gauss/GridQVConv.lean (its sole writable file). Merged that file from t/T1509 (40fb9f2, byte-diff verified against git show). Root import added to RBM1D.lean ((5.42) via M7a plus convolution: Uker_one_nonneg, qv_conv_le -- the lossless weighted variance bound through Uker, no e^lambda, no widened indicator, uses only M7a not M7b). lake build RBM1D 9657/9657 PASS; root axiom audit PASS (20833 decls).
+updated: 2026-09-26 00:30:24 UTC
+report: docs/reports/T1509-prove.md, docs/reports/T1509-audit.md

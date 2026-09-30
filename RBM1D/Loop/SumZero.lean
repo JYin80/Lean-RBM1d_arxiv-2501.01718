@@ -1,0 +1,1001 @@
+/-
+Copyright (c) 2026 Jun Yin. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Jun Yin
+-/
+import RBM1D.Loop.Layer
+import RBM1D.Loop.WardKgen
+
+/-!
+# Lemma 3.10: symmetry and the sum-zero property of the self-energy
+
+Paper, Lemma 3.10 and its proof (§3.3–§3.4).
+
+**Lemma 3.10 (1)**: `Σ^(∅)(t, σ^(alt), d)` is translation invariant and even in `d`.  The
+paper calls this a simple consequence of the explicit expression; here it is proved for
+**every** `σ` and every layer `π` (`SigmaPi_add_const`, `SigmaPi_neg`).
+
+**Lemma 3.10 (2)**, (3.44): `L^{-1} ∑_d Σ^(∅)(t, σ^(alt), d) = O(η_t)` (`sum_zero`).
+
+## The proof: closed forms of fully summed trees
+
+If every edge weight of a tree has constant column sums `r_e`, peeling childless vertices gives
+`∑_b ∏_e E_e(b_e, b_{par e}) = L ∏_e r_e` (`treeZ_eq`, via `sum_out`).  Hence
+`L^{-1} ∑_a K^(π)(t,σ,a) = A(σ,π) := ∏_v (1-ξ_v)^{-1} · Q(σ,π)` with
+`Q(σ,π) = ∑_{F ∈ T_SP(σ,π)} ∏_{e∈F} ((1-ξ_e)^{-1} - 1)` (`sum_Kpi_closed`), independent of `L`
+and `W`; and `L^{-1} ∑_d Σ^(π)(t,σ,d) = Q(σ,π)` (`sum_SigmaPi`).  The steps of §3.4 become:
+
+* (3.47)–(3.48): `sum_Kpi_eq`, `sum_Kpi_closed`;
+* (3.49): `norm_sum_Alayer_le`, from Corollary 3.7 (`cor37_bulk`) with (3.41);
+* (3.52)–(3.64): at an innermost long edge `J` of `π` the inside of `J` is one molecule
+  (`Qlayer_cut`, using the cut bijection `sum_cut` of Lemma 3.4, `prod_cut`,
+  `Flong_eq_iff_cut`, `prod_leaves_cut`), and `A(σ,π) = ξ_J(1-ξ_J) A(σ_in, ∅) A(σ_out, π∖J)`
+  with `ξ_J = t` (`Alayer_cut`) — the closed form of the paper's `f*(c₁)` argument;
+* (3.50), (3.65): `norm_Alayer_le`, by induction on `n`;
+* (3.51): for alternating `σ` every boundary edge is long, `Q = (1-t)^n A = O(η_t)`.
+-/
+namespace RBM
+
+open Finset
+
+section Symmetry
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- If every edge weight is translation invariant, so is the self-energy. -/
+theorem selfW_add_const (F : Finset (Fin n × Fin n)) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ)
+    (hE : ∀ e x y c, E e (x + c) (y + c) = E e x y) (d : Fin n → ZMod L) (c : ZMod L) :
+    selfW L F E (fun v => d v + c) = selfW L F E d := by
+  unfold selfW
+  rw [← Equiv.sum_comp (Equiv.addRight (fun _ : ↥(nodes F) => c))]
+  refine sum_congr rfl fun b _ => ?_
+  simp only [Equiv.coe_addRight, Pi.add_apply, add_left_inj, hE]
+
+/-- If every edge weight satisfies `E(-x,-y) = E(x,y)`, the self-energy is even. -/
+theorem selfW_neg (F : Finset (Fin n × Fin n)) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ)
+    (hE : ∀ e x y, E e (-x) (-y) = E e x y) (d : Fin n → ZMod L) :
+    selfW L F E (fun v => -d v) = selfW L F E d := by
+  unfold selfW
+  rw [← Equiv.sum_comp (Equiv.neg (↥(nodes F) → ZMod L))]
+  refine sum_congr rfl fun b _ => ?_
+  simp only [Equiv.neg_apply, Pi.neg_apply, neg_inj, hE]
+
+omit [NeZero n] in
+theorem Theta_sub_one_add_const (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (x y c : ZMod L) :
+    (Theta L ξ - 1) (x + c) (y + c) = (Theta L ξ - 1) x y := by
+  simp only [Matrix.sub_apply, Matrix.one_apply, add_left_inj, Theta_apply_add_right L hL hξ]
+
+omit [NeZero n] in
+theorem Theta_sub_one_neg (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (x y : ZMod L) :
+    (Theta L ξ - 1) (-x) (-y) = (Theta L ξ - 1) x y := by
+  have h1 : Theta L ξ (-x) (-y) = Theta L ξ x y := by
+    have := Theta_apply_add_right L hL hξ (-x) (-y) (x + y)
+    rw [show -x + (x + y) = y by ring, show -y + (x + y) = x by ring] at this
+    rw [← this]
+    exact congrFun (congrFun (Theta_transpose L hL hξ) x) y
+  simp only [Matrix.sub_apply, Matrix.one_apply, neg_inj, h1]
+
+variable (m : Bool → ℂ) {t : ℝ} (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hm
+
+/-- **Lemma 3.10 (1), translation invariance**, for every `σ` and `π`:
+`Σ^(π)(t,σ,d + c) = Σ^(π)(t,σ,d)`. -/
+theorem SigmaPi_add_const (hL : 3 ≤ L) (σ : Fin n → Bool) (π : Finset (Fin n × Fin n))
+    (d : Fin n → ZMod L) (c : ZMod L) :
+    SigmaPi L m t σ π (fun v => d v + c) = SigmaPi L m t σ π d := by
+  unfold SigmaPi selfE
+  refine sum_congr rfl fun F _ => selfW_add_const F _ (fun e x y c => ?_) d c
+  exact Theta_sub_one_add_const hL (hm _ _) x y c
+
+/-- **Lemma 3.10 (1), symmetry**, for every `σ` and `π`: `Σ^(π)(t,σ,-d) = Σ^(π)(t,σ,d)`. -/
+theorem SigmaPi_neg (hL : 3 ≤ L) (σ : Fin n → Bool) (π : Finset (Fin n × Fin n))
+    (d : Fin n → ZMod L) :
+    SigmaPi L m t σ π (fun v => -d v) = SigmaPi L m t σ π d := by
+  unfold SigmaPi selfE
+  refine sum_congr rfl fun F _ => selfW_neg F _ (fun e x y => ?_) d
+  exact Theta_sub_one_neg hL (hm _ _) x y
+
+end Symmetry
+
+section RowSums
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+omit [NeZero n] in
+/-- Column sums of `Θ_ξ`: `∑_x (Θ_ξ)_{xy} = (1 - ξ)^{-1}`. -/
+theorem sum_Theta_col (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (y : ZMod L) :
+    ∑ x : ZMod L, Theta L ξ x y = (1 - ξ)⁻¹ := by
+  rw [← sum_Theta_row L hL hξ y]
+  refine sum_congr rfl fun x _ => ?_
+  exact congrFun (congrFun (Theta_transpose L hL hξ) y) x
+
+variable (m : Bool → ℂ) {t : ℝ} (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hm
+
+/-- **(3.47)–(3.48)**: `∑_a K^(π)(t,σ,a) = ∏_i (1 - t m_i m_{i+1})^{-1} ∑_d Σ^(π)(t,σ,d)`. -/
+theorem sum_Kpi_eq (hL : 3 ≤ L) (σ : Fin n → Bool) (π : Finset (Fin n × Fin n)) :
+    ∑ a : Fin n → ZMod L, Kpi L m t σ a π =
+      (∏ v, (1 - (t : ℂ) * (m (σ v) * m (σ (v + 1))))⁻¹) *
+        ∑ d : Fin n → ZMod L, SigmaPi L m t σ π d := by
+  simp_rw [Kpi_eq_sum_SigmaPi]
+  rw [sum_comm, mul_sum]
+  refine sum_congr rfl fun d _ => ?_
+  rw [← mul_sum, mul_comm]
+  congr 1
+  have h := (prod_univ_sum (fun _ : Fin n => (univ : Finset (ZMod L)))
+    (fun v x => thetaEdge L m t (σ v) (σ (v + 1)) x (d v))).symm
+  rw [Fintype.piFinset_univ] at h
+  rw [h]
+  refine prod_congr rfl fun v _ => ?_
+  exact sum_Theta_col hL (hm _ _) (d v)
+
+end RowSums
+
+section SumOut
+
+/-- **Summing out one coordinate.**  If `f` does not depend on the coordinate `i`, and `G y b`
+does not depend on it either and has `∑_y G y b = r`, then
+`|Z| ∑_b f(b) G(b_i, b) = r ∑_b f(b)`. -/
+theorem sum_out {ι Z : Type*} [Fintype ι] [DecidableEq ι] [Fintype Z] (i : ι)
+    (f : (ι → Z) → ℂ) (G : Z → (ι → Z) → ℂ) (r : ℂ)
+    (hf : ∀ b x, f (Function.update b i x) = f b)
+    (hG : ∀ b x y, G y (Function.update b i x) = G y b)
+    (hr : ∀ b, ∑ x, G x b = r) :
+    (Fintype.card Z : ℂ) * ∑ b, f b * G (b i) b = r * ∑ b, f b := by
+  classical
+  rcases isEmpty_or_nonempty Z with hZ | ⟨⟨x0⟩⟩
+  · have : IsEmpty (ι → Z) := ⟨fun b => isEmptyElim (b i)⟩
+    simp
+  set e := Equiv.piSplitAt i (fun _ : ι => Z)
+  have hs : ∀ x b', e.symm (x, b') = Function.update (e.symm (x0, b')) i x := by
+    intro x b'
+    funext j
+    by_cases hj : j = i
+    · subst hj; simp [e, Equiv.piSplitAt]
+    · simp [e, Equiv.piSplitAt, hj]
+  have hsi : ∀ x b', e.symm (x, b') i = x := by
+    intro x b'; rw [hs, Function.update_self]
+  have h1 : ∀ x b', f (e.symm (x, b')) = f (e.symm (x0, b')) := by
+    intro x b'; rw [hs, hf]
+  have h2 : ∀ x y b', G y (e.symm (x, b')) = G y (e.symm (x0, b')) := by
+    intro x y b'; rw [hs, hG]
+  rw [← Equiv.sum_comp e.symm, ← Equiv.sum_comp e.symm (fun b => f b),
+    Fintype.sum_prod_type, Fintype.sum_prod_type]
+  have hl : ∀ x, ∑ b' : {j // j ≠ i} → Z, f (e.symm (x, b')) * G (e.symm (x, b') i) (e.symm (x, b'))
+      = ∑ b' : {j // j ≠ i} → Z, f (e.symm (x0, b')) * G x (e.symm (x0, b')) := by
+    intro x
+    refine sum_congr rfl fun b' _ => ?_
+    rw [h1, hsi, h2]
+  have hr' : ∀ x, ∑ b' : {j // j ≠ i} → Z, f (e.symm (x, b'))
+      = ∑ b' : {j // j ≠ i} → Z, f (e.symm (x0, b')) := fun x => sum_congr rfl fun b' _ => h1 x b'
+  simp only [hl, hr']
+  rw [sum_comm, sum_const, card_univ, nsmul_eq_mul]
+  simp only [← mul_sum, hr]
+  rw [← sum_mul]
+  ring
+
+end SumOut
+
+section TreeSum
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- A tree without boundary edges, all labels summed: `∑_b ∏_e E_e(b_e, b_{par e})`. -/
+noncomputable def treeZ (F : Finset (Fin n × Fin n)) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) : ℂ :=
+  ∑ b : ↥(nodes F) → ZMod L,
+    ∏ d : ↥F, E d (b ⟨d.1, mem_nodes_of_mem d.2⟩) (b ⟨nodePar F d, nodePar_mem F d⟩)
+
+omit [NeZero n] in
+theorem arcWidth_lt {d e : Fin n × Fin n} (hde : ArcLe d e) (hne : d ≠ e) (hd : d.1 ≤ d.2) :
+    arcWidth d < arcWidth e := by
+  obtain ⟨h1, h2⟩ := hde
+  have h : d.1.val ≠ e.1.val ∨ d.2.val ≠ e.2.val := by
+    by_contra h
+    exact hne (Prod.ext (Fin.ext (by omega)) (Fin.ext (by omega)))
+  simp only [arcWidth]
+  rw [Fin.le_def] at h1 h2 hd
+  omega
+
+/-- **Peeling.**  If every edge weight has constant column sums `r_e`, then for every set `G`
+of edges, `L^{|G|} ∑_b ∏_{e ∈ G} E_e(b_e, b_{par e}) = ∏_{e ∈ G} r_e · ∑_b 1`.  An edge of `G`
+of smallest arc is childless in `G`, so its lower label can be summed out (`sum_out`). -/
+theorem treeZ_peel {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n)
+    (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (r : ↥F → ℂ) (hr : ∀ d y, ∑ x, E d x y = r d) :
+    ∀ G : Finset ↥F, (L : ℂ) ^ G.card * ∑ b : ↥(nodes F) → ZMod L,
+        ∏ d ∈ G, E d (b ⟨d.1, mem_nodes_of_mem d.2⟩) (b ⟨nodePar F d, nodePar_mem F d⟩) =
+      (∏ d ∈ G, r d) * ∑ _b : ↥(nodes F) → ZMod L, (1 : ℂ) := by
+  intro G
+  induction G using Finset.strongInduction with
+  | H G ih =>
+  rcases G.eq_empty_or_nonempty with rfl | hne
+  · simp
+  obtain ⟨e, he, hmin⟩ := G.exists_min_image (fun d : ↥F => arcWidth d.1) hne
+  set i : ↥(nodes F) := ⟨e.1, mem_nodes_of_mem e.2⟩
+  have hpe := nodePar_spec hF hn (mem_nodes_of_mem e.2) (ne_wholeP hF e.2)
+  -- the parents of the other edges of `G` are not `e`
+  have hpar : ∀ d ∈ G.erase e, nodePar F d.1 ≠ e.1 := by
+    intro d hd heq
+    obtain ⟨hdne, hdG⟩ := mem_erase.1 hd
+    obtain ⟨-, hdp, hpd, -⟩ := nodePar_spec hF hn (mem_nodes_of_mem d.2) (ne_wholeP hF d.2)
+    rw [heq] at hdp hpd
+    have hdd : d.1.1 ≤ d.1.2 := le_of_lt (hF.1 _ d.2).1
+    have := arcWidth_lt hdp (Ne.symm hpd) hdd
+    exact absurd (hmin d hdG) (not_le.2 this)
+  have hself : ∀ d ∈ G.erase e, (⟨d.1, mem_nodes_of_mem d.2⟩ : ↥(nodes F)) ≠ i := by
+    intro d hd h
+    have h' : d.1 = e.1 := by simpa [i] using congrArg Subtype.val h
+    exact (mem_erase.1 hd).1 (Subtype.ext h')
+  set f : (↥(nodes F) → ZMod L) → ℂ := fun b =>
+    ∏ d ∈ G.erase e, E d (b ⟨d.1, mem_nodes_of_mem d.2⟩) (b ⟨nodePar F d, nodePar_mem F d⟩)
+  set Gf : ZMod L → (↥(nodes F) → ZMod L) → ℂ := fun y b =>
+    E e y (b ⟨nodePar F e, nodePar_mem F e⟩)
+  have hsplit : ∀ b : ↥(nodes F) → ZMod L,
+      ∏ d ∈ G, E d (b ⟨d.1, mem_nodes_of_mem d.2⟩) (b ⟨nodePar F d, nodePar_mem F d⟩)
+        = f b * Gf (b i) b := by
+    intro b
+    rw [← mul_prod_erase G _ he, mul_comm]
+  have hf : ∀ b x, f (Function.update b i x) = f b := by
+    intro b x
+    refine prod_congr rfl fun d hd => ?_
+    have h1 : (⟨nodePar F d, nodePar_mem F d⟩ : ↥(nodes F)) ≠ i := by
+      intro h; exact hpar d hd (congrArg Subtype.val h)
+    rw [Function.update_of_ne (hself d hd), Function.update_of_ne h1]
+  have hG : ∀ b x y, Gf y (Function.update b i x) = Gf y b := by
+    intro b x y
+    have h1 : (⟨nodePar F e, nodePar_mem F e⟩ : ↥(nodes F)) ≠ i := by
+      intro h; exact hpe.2.2.1 (congrArg Subtype.val h)
+    simp only [Gf, Function.update_of_ne h1]
+  have hsum := sum_out i f Gf (r e) hf hG (fun b => hr e _)
+  rw [ZMod.card] at hsum
+  have hcard : G.card = (G.erase e).card + 1 := (card_erase_add_one he).symm
+  have hlt : G.erase e ⊂ G := erase_ssubset he
+  have hih := ih _ hlt
+  simp only [hsplit]
+  rw [hcard, pow_succ, mul_assoc, hsum, ← mul_prod_erase G _ he]
+  rw [mul_left_comm, hih]
+  ring
+
+/-- **The closed form of a fully summed tree**: `∑_b ∏_e E_e(b_e, b_{par e}) = L ∏_e r_e`. -/
+theorem treeZ_eq {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n)
+    (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) (r : ↥F → ℂ) (hr : ∀ d y, ∑ x, E d x y = r d) :
+    treeZ F E = L * ∏ d, r d := by
+  have h := treeZ_peel hF hn E r hr univ
+  have hc : Fintype.card ↥(nodes F) = F.card + 1 := by
+    rw [Fintype.card_coe, nodes, card_insert_of_notMem (wholeP_not_mem hF)]
+  simp only [sum_const, card_univ, Fintype.card_pi, prod_const, Fintype.card_coe, hc,
+    ZMod.card, nsmul_eq_mul, mul_one] at h
+  have hL0 : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne L)
+  have hpow : (L : ℂ) ^ F.card ≠ 0 := pow_ne_zero _ hL0
+  unfold treeZ
+  apply mul_left_cancel₀ hpow
+  rw [h]
+  push_cast
+  ring
+
+/-- Summing the self-energy over `d` removes the Kronecker deltas. -/
+theorem sum_selfW (F : Finset (Fin n × Fin n)) (E : ↥F → Matrix (ZMod L) (ZMod L) ℂ) :
+    ∑ d : Fin n → ZMod L, selfW L F E d = treeZ F E := by
+  unfold selfW treeZ
+  rw [sum_comm]
+  refine sum_congr rfl fun b _ => ?_
+  rw [← sum_mul]
+  have h := (prod_univ_sum (fun _ : Fin n => (univ : Finset (ZMod L)))
+    (fun v x => if x = b ⟨leafPar F v, leafPar_mem F v⟩ then (1 : ℂ) else 0)).symm
+  rw [Fintype.piFinset_univ] at h
+  rw [h]
+  simp
+
+end TreeSum
+
+section Closed
+
+variable {L : ℕ} [NeZero L] {n : ℕ} [NeZero n]
+
+/-- The column sum of an internal edge `Θ_ξ - 1`, `ξ = t m(s) m(s')`: `(1 - ξ)^{-1} - 1`. -/
+noncomputable def edgeR (m : Bool → ℂ) (t : ℝ) (s s' : Bool) : ℂ :=
+  (1 - (t : ℂ) * (m s * m s'))⁻¹ - 1
+
+/-- `Q(σ,π) = ∑_{F ∈ T_SP(σ,π)} ∏_{e ∈ F} ((1 - ξ_e)^{-1} - 1)`. -/
+noncomputable def Qlayer (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool)
+    (π : Finset (Fin n × Fin n)) : ℂ :=
+  ∑ F ∈ TSPlong n σ π, ∏ e ∈ F, edgeR m t (σ e.1) (σ e.2)
+
+/-- `A(σ,π) = L^{-1} ∑_a K^(π)(t,σ,a) = ∏_v (1 - ξ_v)^{-1} · Q(σ,π)` (`sum_Kpi_closed`); it
+depends neither on `L` nor on `W`. -/
+noncomputable def Alayer (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool)
+    (π : Finset (Fin n × Fin n)) : ℂ :=
+  (∏ v, (1 - (t : ℂ) * (m (σ v) * m (σ (v + 1))))⁻¹) * Qlayer m t σ π
+
+omit [NeZero n] in
+theorem sum_Theta_sub_one_col (hL : 3 ≤ L) {ξ : ℂ} (hξ : ‖ξ‖ < 1) (y : ZMod L) :
+    ∑ x : ZMod L, (Theta L ξ - 1) x y = (1 - ξ)⁻¹ - 1 := by
+  simp only [Matrix.sub_apply, sum_sub_distrib, sum_Theta_col hL hξ, Matrix.one_apply]
+  simp
+
+variable (m : Bool → ℂ) {t : ℝ} (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1)
+include hm
+
+/-- `∑_d Σ^(π)(t,σ,d) = L · Q(σ,π)`. -/
+theorem sum_SigmaPi (hL : 3 ≤ L) (hn : 2 ≤ n) (σ : Fin n → Bool) (π : Finset (Fin n × Fin n)) :
+    ∑ d : Fin n → ZMod L, SigmaPi L m t σ π d = L * Qlayer m t σ π := by
+  unfold SigmaPi Qlayer
+  rw [sum_comm, mul_sum]
+  refine sum_congr rfl fun F hF => ?_
+  have hT : IsTSP F := isTSP_of_mem_TSP (TSPlong_subset σ π hF)
+  unfold selfE
+  rw [sum_selfW, treeZ_eq hT hn (fun e => thetaEdge L m t (σ e.1.1) (σ e.1.2) - 1)
+    (fun e => edgeR m t (σ e.1.1) (σ e.1.2))
+    (fun e y => sum_Theta_sub_one_col hL (hm _ _) y)]
+  rw [prod_coe_sort F (fun e => edgeR m t (σ e.1) (σ e.2))]
+
+/-- **The closed form of (3.48)**: `∑_a K^(π)(t,σ,a) = L · A(σ,π)`. -/
+theorem sum_Kpi_closed (hL : 3 ≤ L) (hn : 2 ≤ n) (σ : Fin n → Bool)
+    (π : Finset (Fin n × Fin n)) :
+    ∑ a : Fin n → ZMod L, Kpi L m t σ a π = L * Alayer m t σ π := by
+  rw [sum_Kpi_eq m hm hL, sum_SigmaPi m hm hL hn, Alayer]
+  ring
+
+end Closed
+
+section Molecule
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- The charges of the inside polygon of the cut at `J`: its region `k` is region `J.1 + k`
+(`k = wIn J` is region `J.2`). -/
+def sigmaIn (σ : Fin n → Bool) (J : Fin n × Fin n) : Fin (wIn J + 1) → Bool :=
+  fun k => σ ⟨min (J.1.val + k.val) (n - 1), by have := NeZero.pos n; omega⟩
+
+/-- The charges of the outside polygon of the cut at `J`: its region `k` is region
+`unCol J k` (the regions strictly between `J.1` and `J.2` are removed). -/
+def sigmaOut (σ : Fin n → Bool) (J : Fin n × Fin n) : Fin (n - wIn J + 1) → Bool :=
+  fun k => σ ⟨min (unCol J k.val) (n - 1), by have := NeZero.pos n; omega⟩
+
+omit [NeZero n] in
+theorem arcLe_le {d : Fin n × Fin n} (h : ArcLe d J) (h12 : d.1 ≤ d.2) :
+    J.1.val ≤ d.1.val ∧ d.2.val ≤ J.2.val ∧ d.1.val ≤ d.2.val := by
+  simp only [ArcLe, Fin.le_def] at h h12
+  exact ⟨h.1, h.2, h12⟩
+
+theorem sigmaIn_shiftIn (σ : Fin n → Bool) {d : Fin n × Fin n} (hd : ArcLe d J)
+    (h12 : d.1 ≤ d.2) :
+    sigmaIn σ J (shiftIn J d).1 = σ d.1 ∧ sigmaIn σ J (shiftIn J d).2 = σ d.2 := by
+  obtain ⟨h1, h2⟩ := shiftIn_val hd h12
+  obtain ⟨a1, a2, a3⟩ := arcLe_le hd h12
+  have hd1 := d.1.isLt
+  have hd2 := d.2.isLt
+  constructor <;> (unfold sigmaIn; congr 1; ext; simp only [h1, h2]; omega)
+
+theorem sigmaOut_shiftOut (σ : Fin n → Bool) {d : Fin n × Fin n} (hd : OutEnds J d)
+    (hJ : J.1.val + 2 ≤ J.2.val) :
+    sigmaOut σ J (shiftOut J d).1 = σ d.1 ∧ sigmaOut σ J (shiftOut J d).2 = σ d.2 := by
+  obtain ⟨h1, h2⟩ := shiftOut_val d (by omega : J.1.val < J.2.val)
+  have hd1 := d.1.isLt
+  have hd2 := d.2.isLt
+  have e1 := unCol_col hd.1 hJ
+  have e2 := unCol_col hd.2.1 hJ
+  constructor <;> (unfold sigmaOut; congr 1; ext; simp only [h1, h2, e1, e2]; omega)
+
+variable {F : Finset (Fin n × Fin n)} (hF : IsTSP F) (hn : 2 ≤ n) (hJ : J ∈ F)
+include hF hn hJ
+
+/-- **A product over the edges of `F ∋ J` splits over the cut**: the edge `J`, the outside
+family and the inside family, each with its own charges. -/
+theorem prod_cut (σ : Fin n → Bool) (w : Bool → Bool → ℂ) :
+    ∏ e ∈ F, w (σ e.1) (σ e.2) =
+      w (σ J.1) (σ J.2) * (∏ g ∈ FOut F J, w (sigmaOut σ J g.1) (sigmaOut σ J g.2)) *
+        ∏ h ∈ FIn F J, w (sigmaIn σ J h.1) (sigmaIn σ J h.2) := by
+  have hJw := diag_width hF hJ
+  have h12 : ∀ d ∈ F, d.1 ≤ d.2 := fun d hd => le_of_lt (hF.1 d hd).1
+  rw [← mul_prod_erase F _ hJ, mul_assoc]
+  congr 1
+  rw [← prod_filter_mul_prod_filter_not (F.erase J) (fun d => ArcLe d J), mul_comm]
+  have hout : (F.erase J).filter (fun d => ¬ArcLe d J) = F.filter (fun d => ¬ArcLe d J) := by
+    ext d
+    simp only [mem_filter, mem_erase]
+    constructor
+    · exact fun h => ⟨h.1.2, h.2⟩
+    · exact fun h => ⟨⟨fun hdJ => h.2 (hdJ ▸ ⟨le_rfl, le_rfl⟩), h.1⟩, h.2⟩
+  have hin : (F.erase J).filter (fun d => ArcLe d J) = F.filter (fun d => ArcLe d J ∧ d ≠ J) := by
+    ext d
+    simp only [mem_filter, mem_erase]
+    tauto
+  rw [hout, hin]
+  congr 1
+  · unfold FOut
+    rw [prod_image]
+    · refine prod_congr rfl fun d hd => ?_
+      obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+      obtain ⟨e1, e2⟩ := sigmaOut_shiftOut σ (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw
+      rw [e1, e2]
+    · intro d hd e he h
+      obtain ⟨hdF, hdJ⟩ := mem_filter.1 hd
+      obtain ⟨heF, heJ⟩ := mem_filter.1 he
+      exact shiftOut_injOn (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ)
+        (outEnds_of hF hn hJ (mem_nodes_of_mem heF) heJ) hJw h
+  · unfold FIn
+    rw [prod_image]
+    · refine prod_congr rfl fun d hd => ?_
+      obtain ⟨hdF, hdJ, -⟩ := mem_filter.1 hd
+      obtain ⟨e1, e2⟩ := sigmaIn_shiftIn σ hdJ (h12 d hdF)
+      rw [e1, e2]
+    · intro d hd e he h
+      obtain ⟨hdF, hdJ, -⟩ := mem_filter.1 hd
+      obtain ⟨heF, heJ, -⟩ := mem_filter.1 he
+      exact shiftIn_injOn hdJ (h12 d hdF) heJ (h12 e heF) h
+
+/-- The long edges of the outside family are the outside long edges of `F`. -/
+theorem Flong_FOut (σ : Fin n → Bool) :
+    Flong (FOut F J) (sigmaOut σ J) =
+      ((Flong F σ).filter fun d => ¬ArcLe d J).image (shiftOut J) := by
+  have hJw := diag_width hF hJ
+  unfold Flong FOut
+  rw [filter_image]
+  congr 1
+  ext d
+  simp only [mem_filter]
+  constructor
+  · rintro ⟨⟨hdF, hdJ⟩, hl⟩
+    obtain ⟨e1, e2⟩ := sigmaOut_shiftOut σ (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw
+    exact ⟨⟨hdF, by rwa [e1, e2] at hl⟩, hdJ⟩
+  · rintro ⟨⟨hdF, hl⟩, hdJ⟩
+    obtain ⟨e1, e2⟩ := sigmaOut_shiftOut σ (outEnds_of hF hn hJ (mem_nodes_of_mem hdF) hdJ) hJw
+    exact ⟨⟨hdF, hdJ⟩, by rwa [e1, e2]⟩
+
+omit hn hJ in
+/-- The long edges of the inside family are the long edges of `F` strictly inside `J`. -/
+theorem Flong_FIn (σ : Fin n → Bool) :
+    Flong (FIn F J) (sigmaIn σ J) =
+      ((Flong F σ).filter fun d => ArcLe d J ∧ d ≠ J).image (shiftIn J) := by
+  have h12 : ∀ d ∈ F, d.1 ≤ d.2 := fun d hd => le_of_lt (hF.1 d hd).1
+  unfold Flong FIn
+  rw [filter_image]
+  congr 1
+  ext d
+  simp only [mem_filter]
+  constructor
+  · rintro ⟨⟨hdF, hdJ, hne⟩, hl⟩
+    obtain ⟨e1, e2⟩ := sigmaIn_shiftIn σ hdJ (h12 d hdF)
+    exact ⟨⟨hdF, by rwa [e1, e2] at hl⟩, hdJ, hne⟩
+  · rintro ⟨⟨hdF, hl⟩, hdJ, hne⟩
+    obtain ⟨e1, e2⟩ := sigmaIn_shiftIn σ hdJ (h12 d hdF)
+    exact ⟨⟨hdF, hdJ, hne⟩, by rwa [e1, e2]⟩
+
+/-- **The layer condition across the cut.**  Let `π = F_long(F₀, σ)` for some tree `F₀` and let
+`J ∈ π` be innermost (no other long edge of `π` inside `J`).  Then a tree `F ∋ J` lies in the
+layer `π` iff its inside family has no long edges and the long edges of its outside family are
+`π ∖ {J}`, collapsed. -/
+theorem Flong_eq_iff_cut (σ : Fin n → Bool) {F₀ : Finset (Fin n × Fin n)} (hF₀ : IsTSP F₀)
+    {π : Finset (Fin n × Fin n)} (hπ : Flong F₀ σ = π) (hJπ : J ∈ π)
+    (hinner : ∀ e ∈ π, ArcLe e J → e = J) :
+    Flong F σ = π ↔ Flong (FOut F J) (sigmaOut σ J) = (π.erase J).image (shiftOut J) ∧
+      Flong (FIn F J) (sigmaIn σ J) = ∅ := by
+  have hJw := diag_width hF hJ
+  have hJF₀ : J ∈ F₀ := Flong_subset F₀ σ (hπ ▸ hJπ)
+  have hJlong : σ J.1 ≠ σ J.2 := (mem_Flong.1 (hπ ▸ hJπ)).2
+  have hπout : ∀ e ∈ π.erase J, OutEnds J e ∧ ¬ArcLe e J := by
+    intro e he
+    obtain ⟨hne, heπ⟩ := mem_erase.1 he
+    have hnot : ¬ArcLe e J := fun h => hne (hinner e heπ h)
+    exact ⟨outEnds_of hF₀ hn hJF₀ (mem_nodes_of_mem (Flong_subset F₀ σ (hπ ▸ heπ))) hnot, hnot⟩
+  have hπerase : π.filter (fun d => ¬ArcLe d J) = π.erase J := by
+    ext e
+    simp only [mem_filter, mem_erase]
+    constructor
+    · rintro ⟨heπ, hnot⟩
+      exact ⟨fun h => hnot (h ▸ ⟨le_rfl, le_rfl⟩), heπ⟩
+    · rintro ⟨hne, heπ⟩
+      exact ⟨heπ, fun h => hne (hinner e heπ h)⟩
+  have hπin : π.filter (fun d => ArcLe d J ∧ d ≠ J) = ∅ := by
+    refine filter_eq_empty_iff.2 fun e heπ h => h.2 (hinner e heπ h.1)
+  rw [Flong_FOut hF hn hJ, Flong_FIn hF σ]
+  constructor
+  · intro h
+    rw [h, hπerase, hπin, image_empty]
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨hout, hin⟩
+    have hin' : (Flong F σ).filter (fun d => ArcLe d J ∧ d ≠ J) = ∅ := image_eq_empty.1 hin
+    have hout' : (Flong F σ).filter (fun d => ¬ArcLe d J) = π.erase J := by
+      ext e
+      constructor
+      · intro he
+        obtain ⟨heF, heJ⟩ := mem_filter.1 he
+        have heO := outEnds_of hF hn hJ (mem_nodes_of_mem (Flong_subset F σ heF)) heJ
+        have : shiftOut J e ∈ (π.erase J).image (shiftOut J) := hout ▸ mem_image_of_mem _ he
+        obtain ⟨e', he', hee'⟩ := mem_image.1 this
+        rwa [← shiftOut_injOn (hπout e' he').1 heO hJw hee']
+      · intro he
+        have : shiftOut J e ∈ ((Flong F σ).filter fun d => ¬ArcLe d J).image (shiftOut J) :=
+          hout ▸ mem_image_of_mem _ he
+        obtain ⟨e', he', hee'⟩ := mem_image.1 this
+        obtain ⟨he'F, he'J⟩ := mem_filter.1 he'
+        have he'O := outEnds_of hF hn hJ (mem_nodes_of_mem (Flong_subset F σ he'F)) he'J
+        rwa [← shiftOut_injOn he'O (hπout e he).1 hJw hee']
+    ext e
+    constructor
+    · intro he
+      by_cases heJ : e = J
+      · exact heJ ▸ hJπ
+      by_cases hin : ArcLe e J
+      · have : e ∈ (Flong F σ).filter (fun d => ArcLe d J ∧ d ≠ J) := mem_filter.2 ⟨he, hin, heJ⟩
+        rw [hin'] at this
+        exact absurd this (notMem_empty e)
+      · have : e ∈ (Flong F σ).filter (fun d => ¬ArcLe d J) := mem_filter.2 ⟨he, hin⟩
+        rw [hout'] at this
+        exact (mem_erase.1 this).2
+    · intro he
+      by_cases heJ : e = J
+      · exact heJ ▸ mem_Flong.2 ⟨hJ, hJlong⟩
+      · have : e ∈ π.erase J := mem_erase.2 ⟨heJ, he⟩
+        rw [← hout'] at this
+        exact (mem_filter.1 this).1
+
+end Molecule
+
+section MoleculeSum
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- **The molecule factorization (3.53)–(3.58), closed form.**  If `J` is an innermost long edge
+of the layer `π = F_long(F₀, σ)`, then
+`Q(σ, π) = r_J · Q(σ_out, π ∖ {J}) · Q(σ_in, ∅)`: the inside of `J` is a single molecule. -/
+theorem Qlayer_cut (hn : 2 ≤ n) (m : Bool → ℂ) (t : ℝ) (σ : Fin n → Bool)
+    {F₀ : Finset (Fin n × Fin n)} (hF₀ : F₀ ∈ TSP n) {π : Finset (Fin n × Fin n)}
+    (hπ : Flong F₀ σ = π) (hJπ : J ∈ π) (hinner : ∀ e ∈ π, ArcLe e J → e = J) :
+    Qlayer m t σ π = edgeR m t (σ J.1) (σ J.2) *
+      Qlayer m t (sigmaOut σ J) ((π.erase J).image (shiftOut J)) *
+        Qlayer m t (sigmaIn σ J) ∅ := by
+  have hF₀' := isTSP_of_mem_TSP hF₀
+  have hJF₀ : J ∈ F₀ := Flong_subset F₀ σ (hπ ▸ hJπ)
+  have hJd : IsDiag n J.1 J.2 := hF₀'.1 J hJF₀
+  set π' := (π.erase J).image (shiftOut J)
+  set f : Finset (Fin (n - wIn J + 1) × Fin (n - wIn J + 1)) →
+      Finset (Fin (wIn J + 1) × Fin (wIn J + 1)) → ℂ := fun G H =>
+    (if Flong G (sigmaOut σ J) = π' then
+      ∏ g ∈ G, edgeR m t (sigmaOut σ J g.1) (sigmaOut σ J g.2) else 0) *
+    (if Flong H (sigmaIn σ J) = ∅ then
+      ∏ h ∈ H, edgeR m t (sigmaIn σ J h.1) (sigmaIn σ J h.2) else 0)
+  have hlayer : TSPlong n σ π = ((TSP n).filter fun F => J ∈ F).filter fun F => Flong F σ = π := by
+    ext F
+    simp only [TSPlong, mem_filter]
+    constructor
+    · rintro ⟨hF, h⟩
+      exact ⟨⟨hF, Flong_subset F σ (h ▸ hJπ)⟩, h⟩
+    · rintro ⟨⟨hF, -⟩, h⟩
+      exact ⟨hF, h⟩
+  have hpt : ∀ F ∈ (TSP n).filter (fun F => J ∈ F),
+      (if Flong F σ = π then ∏ e ∈ F, edgeR m t (σ e.1) (σ e.2) else 0)
+        = edgeR m t (σ J.1) (σ J.2) * f (FOut F J) (FIn F J) := by
+    intro F hF
+    obtain ⟨hFT, hJF⟩ := mem_filter.1 hF
+    have hF' := isTSP_of_mem_TSP hFT
+    have hiff := Flong_eq_iff_cut hF' hn hJF σ hF₀' hπ hJπ hinner
+    by_cases h : Flong F σ = π
+    · obtain ⟨h1, h2⟩ := hiff.1 h
+      have h1' : Flong (FOut F J) (sigmaOut σ J) = π' := h1
+      simp only [f, h, h1', h2, ↓reduceIte, prod_cut hF' hn hJF σ]
+      ring
+    · simp only [f, h, ↓reduceIte]
+      by_cases h1 : Flong (FOut F J) (sigmaOut σ J) = π'
+      · have h2 : ¬Flong (FIn F J) (sigmaIn σ J) = ∅ := fun h2 => h (hiff.2 ⟨h1, h2⟩)
+        simp [h2]
+      · simp [h1]
+  unfold Qlayer
+  rw [hlayer, sum_filter, sum_congr rfl hpt, ← mul_sum, sum_cut hJd hn f]
+  simp only [f, ← sum_mul_sum, ← sum_filter]
+  rw [mul_assoc]
+  rfl
+
+end MoleculeSum
+
+section Leaves
+
+theorem fin_congr {N : ℕ} {α : Type*} (σ : Fin N → α) {a b : ℕ} (ha : a < N) (hb : b < N)
+    (h : a = b) : σ ⟨a, ha⟩ = σ ⟨b, hb⟩ := by
+  subst h; rfl
+
+/-- A cyclic product over consecutive pairs, written over `range`. -/
+theorem prod_cyc {k : ℕ} (τ : Fin (k + 1) → Bool) (g : Bool → Bool → ℂ) :
+    ∏ v : Fin (k + 1), g (τ v) (τ (v + 1)) =
+      (∏ v ∈ range k, g (τ ⟨min v k, by omega⟩) (τ ⟨min (v + 1) k, by omega⟩)) *
+        g (τ (Fin.last k)) (τ 0) := by
+  rw [Fin.prod_univ_castSucc, Fin.last_add_one]
+  refine congrArg₂ (· * ·) ?_ rfl
+  rw [← Fin.prod_univ_eq_prod_range
+    (fun v => g (τ ⟨min v k, by omega⟩) (τ ⟨min (v + 1) k, by omega⟩)) k]
+  refine prod_congr rfl fun i _ => ?_
+  have hi := i.isLt
+  have h1 : Fin.castSucc i = ⟨min i k, by omega⟩ :=
+    Fin.ext (by rw [Fin.val_castSucc]; exact (min_eq_left hi.le).symm)
+  have h2 : Fin.castSucc i + 1 = ⟨min (i + 1) k, by omega⟩ := by
+    ext
+    rw [Fin.val_add_one_of_lt (Fin.castSucc_lt_last i), Fin.val_castSucc]
+    exact (min_eq_left hi).symm
+  rw [h2, h1]
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- **The boundary edges across the cut.**  Every boundary edge of the `n`-gon is a boundary
+edge of exactly one of the two smaller polygons, and each of them has one more boundary edge,
+the cut edge `J` (read from each side):
+`∏_v g(σ_v, σ_{v+1}) · g(σ_j, σ_i) g(σ_i, σ_j) = ∏_{in} · ∏_{out}`. -/
+theorem prod_leaves_cut (hJd : IsDiag n J.1 J.2) (σ : Fin n → Bool) (g : Bool → Bool → ℂ) :
+    (∏ v : Fin n, g (σ v) (σ (v + 1))) * (g (σ J.2) (σ J.1) * g (σ J.1) (σ J.2)) =
+      (∏ k : Fin (wIn J + 1), g (sigmaIn σ J k) (sigmaIn σ J (k + 1))) *
+        ∏ k : Fin (n - wIn J + 1), g (sigmaOut σ J k) (sigmaOut σ J (k + 1)) := by
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by have := NeZero.pos n; omega⟩
+  obtain ⟨hlt, hne1, hnot⟩ := hJd
+  rw [Fin.lt_def] at hlt
+  have hjn : J.2.val ≤ n' := by have := J.2.isLt; omega
+  have hw : wIn J = J.2.val - J.1.val := rfl
+  have hunc : ∀ v, v ≤ J.1.val → unCol J v = v := fun v hv => unCol_of_le hv
+  have hunc' : ∀ v, J.1.val < v → unCol J v = v + (wIn J - 1) := fun v hv => unCol_of_gt hv
+  -- the extended charges
+  set σ' : ℕ → Bool := fun r => σ ⟨min r n', by omega⟩ with hσ'
+  set G : ℕ → ℂ := fun r => g (σ' r) (σ' (r + 1)) with hG
+  have hJ1 : σ J.1 = σ' J.1.val := fin_congr σ J.1.isLt (by omega) (by omega)
+  have hJ2 : σ J.2 = σ' J.2.val := fin_congr σ J.2.isLt (by omega) (by omega)
+  have horig : ∏ v : Fin (n' + 1), g (σ v) (σ (v + 1)) =
+      (∏ v ∈ range n', G v) * g (σ' n') (σ' 0) := by
+    rw [prod_cyc σ g]
+    refine congrArg₂ (· * ·) rfl (congrArg₂ g ?_ ?_) <;>
+      exact fin_congr σ _ _ (by simp)
+  have hin : ∏ k : Fin (wIn J + 1), g (sigmaIn σ J k) (sigmaIn σ J (k + 1)) =
+      (∏ v ∈ Ico J.1.val J.2.val, G v) * g (σ' J.2.val) (σ' J.1.val) := by
+    rw [prod_cyc (sigmaIn σ J) g, prod_Ico_eq_prod_range]
+    refine congrArg₂ (· * ·) (prod_congr rfl fun v hv => ?_) (congrArg₂ g ?_ ?_)
+    · rw [mem_range] at hv
+      exact congrArg₂ g (fin_congr σ _ _ (by simp; omega)) (fin_congr σ _ _ (by simp; omega))
+    · exact fin_congr σ _ _ (by simp; omega)
+    · exact fin_congr σ _ _ (by simp)
+  have hout : ∏ k : Fin (n' + 1 - wIn J + 1), g (sigmaOut σ J k) (sigmaOut σ J (k + 1)) =
+      (∏ v ∈ range J.1.val, G v) * g (σ' J.1.val) (σ' J.2.val) *
+        (∏ v ∈ Ico J.2.val n', G v) * g (σ' n') (σ' 0) := by
+    rw [prod_cyc (sigmaOut σ J) g]
+    refine congrArg₂ (· * ·) ?_ (congrArg₂ g ?_ ?_)
+    · rw [← prod_range_mul_prod_Ico _ (show J.1.val ≤ n' + 1 - wIn J by omega),
+        prod_eq_prod_Ico_succ_bot (show J.1.val < n' + 1 - wIn J by omega), ← mul_assoc]
+      refine congrArg₂ (· * ·) (congrArg₂ (· * ·) (prod_congr rfl fun v hv => ?_) ?_) ?_
+      · rw [mem_range] at hv
+        refine congrArg₂ g (fin_congr σ _ _ ?_) (fin_congr σ _ _ ?_)
+        · simp only [min_eq_left (show v ≤ n' + 1 - wIn J by omega)]
+          rw [hunc _ (by omega)]; omega
+        · simp only [min_eq_left (show v + 1 ≤ n' + 1 - wIn J by omega)]
+          rw [hunc _ (by omega)]; omega
+      · refine congrArg₂ g (fin_congr σ _ _ ?_) (fin_congr σ _ _ ?_)
+        · simp only [min_eq_left (show J.1.val ≤ n' + 1 - wIn J by omega)]
+          rw [hunc _ le_rfl]; omega
+        · simp only [min_eq_left (show J.1.val + 1 ≤ n' + 1 - wIn J by omega)]
+          rw [hunc' _ (by omega)]; omega
+      · rw [prod_Ico_eq_prod_range, prod_Ico_eq_prod_range,
+          show n' + 1 - wIn J - (J.1.val + 1) = n' - J.2.val by omega]
+        refine prod_congr rfl fun v hv => ?_
+        rw [mem_range] at hv
+        refine congrArg₂ g (fin_congr σ _ _ ?_) (fin_congr σ _ _ ?_)
+        · simp only [min_eq_left (show J.1.val + 1 + v ≤ n' + 1 - wIn J by omega)]
+          rw [hunc' _ (by omega)]; omega
+        · simp only [min_eq_left (show J.1.val + 1 + v + 1 ≤ n' + 1 - wIn J by omega)]
+          rw [hunc' _ (by omega)]; omega
+    · refine fin_congr σ _ _ ?_
+      simp only [Fin.val_last, min_self]
+      rw [hunc' _ (by omega)]; omega
+    · refine fin_congr σ _ _ ?_
+      simp only [Fin.val_zero, Nat.zero_min]
+      rw [hunc _ (Nat.zero_le _)]; omega
+  rw [horig, hin, hout, hJ1, hJ2]
+  rw [← prod_range_mul_prod_Ico G (show J.1.val ≤ n' by omega),
+    ← prod_Ico_consecutive G (show J.1.val ≤ J.2.val by omega) hjn]
+  ring
+
+end Leaves
+
+section MoleculeA
+
+variable {n : ℕ} [NeZero n] {J : Fin n × Fin n}
+
+/-- **(3.60)–(3.64) in closed form.**  At an innermost long edge `J` of the layer `π`,
+`A(σ, π) = ξ_J (1 - ξ_J) · A(σ_in, ∅) · A(σ_out, π ∖ {J})`; for a long edge `ξ_J = t|m|²`. -/
+theorem Alayer_cut (hn : 2 ≤ n) (m : Bool → ℂ) {t : ℝ}
+    (hm : ∀ s s' : Bool, ‖(t : ℂ) * (m s * m s')‖ < 1) (σ : Fin n → Bool)
+    {F₀ : Finset (Fin n × Fin n)} (hF₀ : F₀ ∈ TSP n) {π : Finset (Fin n × Fin n)}
+    (hπ : Flong F₀ σ = π) (hJπ : J ∈ π) (hinner : ∀ e ∈ π, ArcLe e J → e = J) :
+    Alayer m t σ π = (t * (m (σ J.1) * m (σ J.2))) * (1 - t * (m (σ J.1) * m (σ J.2))) *
+      Alayer m t (sigmaIn σ J) ∅ * Alayer m t (sigmaOut σ J) ((π.erase J).image (shiftOut J)) := by
+  have hJd : IsDiag n J.1 J.2 :=
+    (isTSP_of_mem_TSP hF₀).1 J (Flong_subset F₀ σ (hπ ▸ hJπ))
+  set g : Bool → Bool → ℂ := fun s s' => (1 - (t : ℂ) * (m s * m s'))⁻¹ with hg
+  have hP := prod_leaves_cut hJd σ g
+  set ξ : ℂ := (t : ℂ) * (m (σ J.1) * m (σ J.2)) with hξ
+  have hx : 1 - ξ ≠ 0 := by
+    intro h
+    have : ‖ξ‖ = 1 := by rw [show ξ = 1 by linear_combination -h, norm_one]
+    exact absurd (hm (σ J.1) (σ J.2)) (by rw [this]; exact lt_irrefl 1)
+  have hgJ : g (σ J.2) (σ J.1) = (1 - ξ)⁻¹ := by simp only [g, ξ, mul_comm (m (σ J.2))]
+  have hgJ' : g (σ J.1) (σ J.2) = (1 - ξ)⁻¹ := rfl
+  rw [hgJ, hgJ'] at hP
+  unfold Alayer
+  rw [Qlayer_cut hn m t σ hF₀ hπ hJπ hinner]
+  unfold edgeR
+  simp only [g] at hP
+  rw [← hξ]
+  have hP' : ∏ v, (1 - (t : ℂ) * (m (σ v) * m (σ (v + 1))))⁻¹ =
+      (∏ k : Fin (wIn J + 1), (1 - (t : ℂ) * (m (sigmaIn σ J k) * m (sigmaIn σ J (k + 1))))⁻¹) *
+        (∏ k : Fin (n - wIn J + 1),
+          (1 - (t : ℂ) * (m (sigmaOut σ J k) * m (sigmaOut σ J (k + 1))))⁻¹) * (1 - ξ) ^ 2 := by
+    rw [← hP]
+    field_simp
+  rw [hP']
+  field_simp
+  ring
+
+end MoleculeA
+
+section Bound349
+
+theorem allSum_eq_sum_ofFn {L : ℕ} [NeZero L] : ∀ (n : ℕ) (g : List (ZMod L) → ℂ),
+    allSum L n g = ∑ a : Fin n → ZMod L, g (List.ofFn a)
+  | 0, g => by simp [allSum]
+  | n + 1, g => by
+    rw [allSum]
+    simp_rw [allSum_eq_sum_ofFn n]
+    rw [← (Fin.consEquiv (fun _ : Fin (n + 1) => ZMod L)).sum_comp, Fintype.sum_prod_type]
+    refine sum_congr rfl fun x _ => sum_congr rfl fun a _ => ?_
+    simp [Fin.consEquiv, List.ofFn_succ]
+
+variable {E : ℝ}
+
+/-- **(3.49)** in closed form: `|∑_π A(σ, π)| ≤ C_n(k) η_t^{-(n-1)}` in the bulk `|E| ≤ 2 - k`.
+This is Corollary 3.7 (`cor37_bulk`, with `W = 1`) combined with (3.41) and the closed form
+`L^{-1} ∑_a K^(π) = A(σ, π)`; `A` depends neither on `L` nor on `W`. -/
+theorem norm_sum_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {t : ℝ}
+    (ht0 : 0 ≤ t) (ht1 : t < 1) {n : ℕ} [NeZero n] (hn : 3 ≤ n) (σ : Fin n → Bool) :
+    ‖∑ π ∈ (diagonals n).powerset, Alayer (mSigma E) t σ π‖ ≤
+      cor37Const n k * (etaT E t)⁻¹ ^ (n - 1) := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  have hm := norm_mul_mSigma_lt_one hE2 ht0 ht1
+  set σL : List Bool := List.ofFn σ with hσL_def
+  have hσL : σL.length = n := List.length_ofFn
+  have hprod : ‖∏ i, mSigma E (σ i)‖ = 1 := by
+    rw [norm_prod]; exact prod_eq_one fun i _ => norm_mSigma hE2 (σ i)
+  have hprod0 : ∏ i, mSigma E (σ i) ≠ 0 := by
+    intro h; rw [h, norm_zero] at hprod; exact zero_ne_one hprod
+  -- `∑_π A = 3⁻¹ ∑_a ∑_π K^(π)`
+  have h1 : ∑ π ∈ (diagonals n).powerset, Alayer (mSigma E) t σ π
+      = (3 : ℂ)⁻¹ * ∑ a : Fin n → ZMod 3,
+          ∑ π ∈ (diagonals n).powerset, Kpi 3 (mSigma E) t σ a π := by
+    rw [sum_comm, mul_sum]
+    refine sum_congr rfl fun π _ => ?_
+    rw [sum_Kpi_closed (mSigma E) hm (by norm_num) (by omega)]
+    push_cast
+    field_simp
+  -- `∑_π K^(π) = m_σ⁻¹ K` (3.41), with `W = 1`
+  have h2 : ∀ a : Fin n → ZMod 3, ∑ π ∈ (diagonals n).powerset, Kpi 3 (mSigma E) t σ a π
+      = (∏ i, mSigma E (σ i))⁻¹ * Kgen 3 1 (mSigma E) t ⟨σL, List.ofFn a⟩ := by
+    intro a
+    rw [Kgen_eq 1 (mSigma E) t hn _ (by simp [LoopIdx.length])]
+    have hσ' : (fun i : Fin n => σL.getD i false) = σ := by
+      funext i; simp [σL]
+    have ha' : (fun i : Fin n => (List.ofFn a).getD i 0) = a := by
+      funext i; simp
+    rw [hσ', ha', Kn_eq_sum_Kpi]
+    field_simp
+    simp
+  -- the total sum and the partial sum of Corollary 3.7
+  have h3 : ∑ a : Fin n → ZMod 3, Kgen 3 1 (mSigma E) t ⟨σL, List.ofFn a⟩
+      = totalSum 3 (Kgen 3 1 (mSigma E) t) σL := by
+    rw [totalSum, hσL, allSum_eq_sum_ofFn]
+  have h4 := partialSum_eq (Kgen 3 1 (mSigma E) t) σL (by omega)
+    (fun c I hI h2 => Kgen_shift (le_refl 3) 1 hE ht0 ht1 c I hI h2) 0
+  have h5 := cor37_bulk (le_refl 3) 1 hk0 hk1 hEk ht0 ht1 σL (by omega) 0
+  rw [hσL] at h5 h4
+  push_cast at h4
+  simp_rw [h2] at h1
+  rw [← mul_sum, h3, mul_left_comm, ← h4] at h1
+  rw [h1, norm_mul, norm_inv, hprod, inv_one, one_mul]
+  refine h5.trans (le_of_eq ?_)
+  push_cast
+  rw [one_mul]
+
+end Bound349
+
+section Induction350
+
+variable {E : ℝ}
+
+/-- A long edge has `m_i m_j = m \bar m = |m|² = 1`, so `ξ = t`. -/
+theorem mSigma_mul_of_ne (hE : |E| ≤ 2) {s s' : Bool} (h : s ≠ s') :
+    mSigma E s * mSigma E s' = 1 := by
+  have h1 : mE E * (starRingEnd ℂ) (mE E) = 1 := by
+    rw [Complex.mul_conj', norm_mE hE]; simp
+  cases s <;> cases s' <;> simp_all [mSigma, mul_comm]
+
+/-- An innermost long edge: a long edge of `π` of smallest arc has no other long edge inside. -/
+theorem exists_innermost {n : ℕ} [NeZero n] {F₀ : Finset (Fin n × Fin n)} (hF₀ : IsTSP F₀)
+    {σ : Fin n → Bool} (hne : (Flong F₀ σ).Nonempty) :
+    ∃ J ∈ Flong F₀ σ, ∀ e ∈ Flong F₀ σ, ArcLe e J → e = J := by
+  obtain ⟨J, hJ, hmin⟩ := (Flong F₀ σ).exists_min_image arcWidth hne
+  refine ⟨J, hJ, fun e he heJ => ?_⟩
+  by_contra hne'
+  have he12 : e.1 ≤ e.2 := le_of_lt (hF₀.1 e (Flong_subset F₀ σ he)).1
+  exact absurd (hmin e he) (not_le.2 (arcWidth_lt heJ hne' he12))
+
+theorem Alayer_eq_zero_of_empty {n : ℕ} [NeZero n] (m : Bool → ℂ) (t : ℝ) {σ : Fin n → Bool}
+    {π : Finset (Fin n × Fin n)} (h : TSPlong n σ π = ∅) : Alayer m t σ π = 0 := by
+  simp [Alayer, Qlayer, h]
+
+theorem cor37Const_nonneg' {n : ℕ} {k : ℝ} (hk0 : 0 < k) : 0 ≤ cor37Const n k := by
+  unfold cor37Const
+  have : 0 ≤ ∑ m ∈ Finset.Icc 2 n, 2 * pureConst m k :=
+    sum_nonneg fun m hm => mul_nonneg zero_le_two (pureConst_nonneg (mem_Icc.1 hm).1 hk0)
+  positivity
+
+/-- **(3.50)**: `|A(σ, π)| = |L^{-1} ∑_a K^(π)(t,σ,a)| ≤ C_n η_t^{-(n-1)}` for every `σ` and `π`,
+in the bulk, by induction on `n`.  For `π ≠ ∅` cut at an innermost long edge
+(`Alayer_cut`, the paper's (3.52)–(3.64)); for `π = ∅` subtract the other layers from (3.49)
+(the paper's (3.65)).  One constant serves all sizes `3 ≤ n ≤ N`. -/
+theorem norm_Alayer_le {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) (N : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (n : ℕ) [NeZero n], 3 ≤ n → n ≤ N →
+      ∀ (σ : Fin n → Bool) (π : Finset (Fin n × Fin n)) (t : ℝ), 0 ≤ t → t < 1 →
+        ‖Alayer (mSigma E) t σ π‖ ≤ C * (etaT E t)⁻¹ ^ (n - 1) := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  set ι := (mE E).im with hι
+  have hι0 : 0 < ι := mE_im_pos hE
+  induction N with
+  | zero => exact ⟨0, le_rfl, fun n _ h3 hN => by omega⟩
+  | succ N ih =>
+  obtain ⟨C, hC0, hC⟩ := ih
+  have hcor0 : 0 ≤ cor37Const (N + 1) k := cor37Const_nonneg' hk0
+  refine ⟨C + cor37Const (N + 1) k + (2 ^ ((N + 1) * (N + 1)) + 1) * (C * C * ι⁻¹),
+    by positivity, fun n _ h3 hN σ π t ht0 ht1 => ?_⟩
+  have hη : 0 < etaT E t := etaT_pos hE ht1
+  set η := etaT E t with hηdef
+  have hη' : η = (1 - t) * ι := rfl
+  have hpow0 : 0 ≤ η⁻¹ ^ (n - 1) := by positivity
+  have hCC : 0 ≤ C * C * ι⁻¹ := by positivity
+  rcases Nat.lt_or_ge n (N + 1) with hlt | hge
+  · refine (hC n h3 (by omega) σ π t ht0 ht1).trans ?_
+    gcongr
+    have := mul_nonneg (by positivity : (0 : ℝ) ≤ 2 ^ ((N + 1) * (N + 1)) + 1) hCC
+    linarith
+  have hn : n = N + 1 := by omega
+  -- the layers with a long edge
+  have hne_bound : ∀ π : Finset (Fin n × Fin n), π.Nonempty →
+      ‖Alayer (mSigma E) t σ π‖ ≤ C * C * ι⁻¹ * η⁻¹ ^ (n - 1) := by
+    intro π hπne
+    rcases (TSPlong n σ π).eq_empty_or_nonempty with hemp | ⟨F₀, hF₀⟩
+    · rw [Alayer_eq_zero_of_empty _ _ hemp, norm_zero]; positivity
+    obtain ⟨hF₀T, hπ⟩ := mem_TSPlong.1 hF₀
+    have hF₀' := isTSP_of_mem_TSP hF₀T
+    obtain ⟨J, hJ, hinner⟩ := exists_innermost hF₀' (σ := σ) (hπ ▸ hπne)
+    rw [hπ] at hJ hinner
+    have hm := norm_mul_mSigma_lt_one hE2 ht0 ht1
+    have hJd : IsDiag n J.1 J.2 := hF₀'.1 J (Flong_subset F₀ σ (hπ ▸ hJ))
+    have hJlong : σ J.1 ≠ σ J.2 := (mem_Flong.1 (hπ ▸ hJ)).2
+    rw [Alayer_cut (by omega) (mSigma E) hm σ hF₀T hπ hJ hinner,
+      mSigma_mul_of_ne hE2 hJlong, mul_one]
+    have hw := width_of_isDiag hJd
+    have hw' : wIn J + 1 < n := by
+      obtain ⟨-, -, hnot⟩ := hJd
+      have := J.2.isLt
+      simp only [wIn]
+      omega
+    have hwv : wIn J = J.2.val - J.1.val := rfl
+    have hin := hC (wIn J + 1) (by omega) (by omega) (sigmaIn σ J) ∅ t ht0 ht1
+    have hout := hC (n - wIn J + 1) (by omega) (by omega) (sigmaOut σ J)
+      ((π.erase J).image (shiftOut J)) t ht0 ht1
+    simp only [Nat.add_sub_cancel] at hin hout
+    have ht : ‖(t : ℂ)‖ = t := Complex.norm_of_nonneg ht0
+    have h1t : ‖(1 : ℂ) - t‖ = 1 - t := by
+      rw [show (1 : ℂ) - t = ((1 - t : ℝ) : ℂ) by push_cast; ring]
+      exact Complex.norm_of_nonneg (by linarith)
+    rw [norm_mul, norm_mul, norm_mul, ht, h1t]
+    have hkey : (1 - t) * (η⁻¹ ^ wIn J * η⁻¹ ^ (n - wIn J)) = ι⁻¹ * η⁻¹ ^ (n - 1) := by
+      have h1t0 : 1 - t ≠ 0 := (by linarith : (0 : ℝ) < 1 - t).ne'
+      have hι0' : ι ≠ 0 := hι0.ne'
+      rw [← pow_add, show wIn J + (n - wIn J) = n - 1 + 1 by omega, pow_succ, hη']
+      field_simp
+    calc t * (1 - t) * ‖Alayer (mSigma E) t (sigmaIn σ J) ∅‖ *
+          ‖Alayer (mSigma E) t (sigmaOut σ J) ((π.erase J).image (shiftOut J))‖
+        ≤ (1 - t) * (C * η⁻¹ ^ wIn J) * (C * η⁻¹ ^ (n - wIn J)) := by
+          gcongr
+          all_goals nlinarith
+        _ = C * C * ((1 - t) * (η⁻¹ ^ wIn J * η⁻¹ ^ (n - wIn J))) := by ring
+        _ = C * C * ι⁻¹ * η⁻¹ ^ (n - 1) := by rw [hkey]; ring
+  rcases π.eq_empty_or_nonempty with rfl | hπne
+  · -- the layer without long edges: (3.49) minus the others
+    have hsum := norm_sum_Alayer_le hk0 hk1 hEk ht0 ht1 h3 σ
+    have hmem : (∅ : Finset (Fin n × Fin n)) ∈ (diagonals n).powerset := empty_mem_powerset _
+    rw [← add_sum_erase _ _ hmem] at hsum
+    have hrest : ‖∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖
+        ≤ 2 ^ ((N + 1) * (N + 1)) * (C * C * ι⁻¹ * η⁻¹ ^ (n - 1)) := by
+      refine (norm_sum_le _ _).trans ?_
+      refine (sum_le_sum fun π hπ => hne_bound π
+        (nonempty_iff_ne_empty.2 (mem_erase.1 hπ).1)).trans ?_
+      rw [sum_const, nsmul_eq_mul]
+      gcongr
+      have hc : ((diagonals n).powerset.erase ∅).card ≤ 2 ^ (n * n) := by
+        refine (card_erase_le).trans ?_
+        rw [card_powerset]
+        refine Nat.pow_le_pow_right (by norm_num) ?_
+        have := card_le_univ (diagonals n)
+        simpa using this
+      rw [← hn]
+      exact_mod_cast hc
+    have htri : ‖Alayer (mSigma E) t σ ∅‖ ≤
+        ‖Alayer (mSigma E) t σ ∅ +
+            ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ +
+          ‖∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π‖ := by
+      have := norm_sub_le (Alayer (mSigma E) t σ ∅ +
+        ∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π)
+        (∑ π ∈ ((diagonals n).powerset).erase ∅, Alayer (mSigma E) t σ π)
+      rwa [add_sub_cancel_right] at this
+    have hcor : cor37Const n k = cor37Const (N + 1) k := by rw [hn]
+    rw [hcor] at hsum
+    calc ‖Alayer (mSigma E) t σ ∅‖
+        ≤ cor37Const (N + 1) k * η⁻¹ ^ (n - 1) +
+            2 ^ ((N + 1) * (N + 1)) * (C * C * ι⁻¹ * η⁻¹ ^ (n - 1)) := by
+          linarith
+      _ ≤ _ := by
+          have h2 : (0 : ℝ) ≤ 2 ^ ((N + 1) * (N + 1)) := by positivity
+          nlinarith [mul_nonneg hC0 hpow0, mul_nonneg hCC hpow0]
+  · refine (hne_bound π hπne).trans ?_
+    gcongr
+    have := mul_nonneg (by positivity : (0 : ℝ) ≤ 2 ^ ((N + 1) * (N + 1))) hCC
+    linarith
+
+end Induction350
+
+section Lemma310
+
+variable {E : ℝ}
+
+/-- **Lemma 3.10 (2), the sum-zero property (3.44)**: in the bulk `|E| ≤ 2 - k`, for an
+alternating loop (`σ_v ≠ σ_{v+1}` for all `v`, cyclically; so `n` is even) the single-molecule
+self-energy satisfies `|L^{-1} ∑_{d ∈ Z_L^n} Σ^(∅)(t, σ, d)| ≤ C η_t`, uniformly in `L` and
+`t ∈ [0,1)`.  (Lemma 3.10 (1) is `SigmaPi_add_const` / `SigmaPi_neg`, for every `σ` and `π`.) -/
+theorem sum_zero {k : ℝ} (hk0 : 0 < k) (hk1 : k ≤ 1) (hEk : |E| ≤ 2 - k) {n : ℕ} [NeZero n]
+    (hn : 3 ≤ n) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℕ) [NeZero L], 3 ≤ L → ∀ t : ℝ, 0 ≤ t → t < 1 →
+      ∀ σ : Fin n → Bool, (∀ v, σ v ≠ σ (v + 1)) →
+        ‖(L : ℂ)⁻¹ * ∑ d : Fin n → ZMod L, SigmaPi L (mSigma E) t σ ∅ d‖ ≤ C * etaT E t := by
+  have hE2 : |E| ≤ 2 := by linarith
+  have hE : |E| < 2 := by linarith
+  set ι := (mE E).im with hι
+  have hι0 : 0 < ι := mE_im_pos hE
+  obtain ⟨C, hC0, hC⟩ := norm_Alayer_le hk0 hk1 hEk n
+  refine ⟨C * ι⁻¹ ^ n, by positivity, fun L _ hL t ht0 ht1 σ halt => ?_⟩
+  have hm := norm_mul_mSigma_lt_one hE2 ht0 ht1
+  have hL0 : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne L)
+  rw [sum_SigmaPi (mSigma E) hm hL (by omega), ← mul_assoc, inv_mul_cancel₀ hL0, one_mul]
+  -- `Q = ∏_v (1 - ξ_v) · A`, and every `ξ_v = t`
+  have hξ : ∀ v, (1 : ℂ) - t * (mSigma E (σ v) * mSigma E (σ (v + 1))) = ((1 - t : ℝ) : ℂ) := by
+    intro v; rw [mSigma_mul_of_ne hE2 (halt v)]; push_cast; ring
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  have hQ : Qlayer (mSigma E) t σ ∅ = ((1 - t : ℝ) : ℂ) ^ n * Alayer (mSigma E) t σ ∅ := by
+    unfold Alayer
+    simp_rw [hξ]
+    rw [prod_const, card_univ, Fintype.card_fin, ← mul_assoc, ← mul_pow,
+      mul_inv_cancel₀ (by exact_mod_cast h1t.ne'), one_pow, one_mul]
+  have hA := hC n hn le_rfl σ ∅ t ht0 ht1
+  have hη : etaT E t = (1 - t) * ι := rfl
+  rw [hQ, norm_mul, norm_pow, Complex.norm_of_nonneg h1t.le]
+  calc (1 - t) ^ n * ‖Alayer (mSigma E) t σ ∅‖
+      ≤ (1 - t) ^ n * (C * (etaT E t)⁻¹ ^ (n - 1)) := by gcongr
+    _ = C * ι⁻¹ ^ n * etaT E t := by
+        have key : ∀ p : ℕ, (1 - t) ^ (p + 1) * (C * ((1 - t) * ι)⁻¹ ^ p) =
+            C * ι⁻¹ ^ (p + 1) * ((1 - t) * ι) := by
+          intro p
+          have h1 : (1 - t) ≠ 0 := h1t.ne'
+          have h2 : ι ≠ 0 := hι0.ne'
+          rw [mul_inv, mul_pow, pow_succ, pow_succ]
+          field_simp
+          rw [one_div, inv_pow]
+          field_simp
+        have := key (n - 1)
+        rwa [Nat.sub_add_cancel (by omega : 1 ≤ n), ← hη] at this
+
+end Lemma310
+
+end RBM

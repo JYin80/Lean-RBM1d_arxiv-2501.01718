@@ -37,9 +37,11 @@ distance at most 1 on `Z_L`, and `W ≥ N^{1/2+c}` (2.2).
 
 The proof uses exactly one result from the literature without proving it: the fixed-energy
 universality of Dyson Brownian motion, [51, Theorem 2.2] (B. Landon, P. Sosoe, H.-T. Yau, *Fixed
-energy universality of Dyson Brownian motion*, Adv. Math. 346 (2019)), in its complex Hermitian
-form. It enters only Theorem 2.6, as the explicit hypothesis `LSY22'`. `docs/PAPER-VS-LEAN.md` §4
-states it, explains the unit-density form used in Lean and lists what the Lean proves around it.
+energy universality of Dyson Brownian motion*, Adv. Math. 346 (2019)), in the form stated in
+[arXiv:1609.09011v4](https://arxiv.org/abs/1609.09011v4), whose Remark after Theorem 2.2 covers the
+complex Hermitian case. It enters only Theorem 2.6, as the explicit hypothesis `LSY22'`.
+`docs/PAPER-VS-LEAN.md` §4 states it, explains how the Lean hypothesis matches it and lists what the
+Lean proves around it.
 
 ## Axioms
 

@@ -5,7 +5,7 @@
 to this PDF.
 
 **Cited works.** [51] = B. Landon, P. Sosoe, H.-T. Yau, *Fixed energy universality of Dyson Brownian
-motion*, Adv. Math. 346 (2019), arXiv:1609.09011v3. [37] = L. Erdős, H.-T. Yau, *A dynamical approach to
+motion*, Adv. Math. 346 (2019), in the form of arXiv:1609.09011v4. [37] = L. Erdős, H.-T. Yau, *A dynamical approach to
 random matrix theory*, AMS 2017. [70] = C. Xu et al., *Bulk universality and quantum unique ergodicity
 for random band matrices in high dimensions*, Ann. Probab. 52 (2024).
 
@@ -49,7 +49,7 @@ contains a compiled command that classifies every binder of the five statements 
 only non-parameter hypothesis is `h51` in Theorem 2.6.
 
 **The single external input.** Theorem 2.6 assumes `RBM.Gauss.LSY22' d`, which is [51, Theorem 2.2]
-for complex Hermitian matrices, read at unit density (§4). It is a hypothesis of the theorem, not an
+in the form of arXiv:1609.09011v4, for complex Hermitian matrices (§4). It is a hypothesis of the theorem, not an
 axiom, so it does not appear in the axiom list below. Theorems 2.2–2.5 use no external input.
 
 **Axioms.** The five theorems depend only on `propext`, `Classical.choice` and `Quot.sound`. To check:
@@ -302,7 +302,7 @@ The paper uses one result from the literature that the Lean proof does not prove
 universality of Dyson Brownian motion, [51, Theorem 2.2], in Step 1 of the proof of Theorem 2.6
 (p. 12, (2.21)). In Lean it is the hypothesis `h51 : RBM.Gauss.LSY22' d` of `RBM.Paper.theorem2_6`.
 
-### 4.1 The printed statement
+### 4.1 The statement in arXiv:1609.09011v4
 
 [51] considers `H_t = V + √t W` with `V` a deterministic diagonal matrix and `W` a GOE matrix. Its
 (2.7) defines `p^{(k)}_{H_t}(λ_1, …, λ_k) = ∫ p^{(N)}_{H_t}(λ_1, …, λ_N) dλ_{k+1} ⋯ dλ_N`, where
@@ -311,20 +311,23 @@ universality of Dyson Brownian motion, [51, Theorem 2.2], in Step 1 of the proof
 `O ∈ C_c^∞(ℝ^k)`,
 
 ```
-| ∫ O(α) p^{(k)}_{H_t}(E + α_1/(Nρ_{fc,t}(E)), …) dα − ∫ O(α) p^{(k)}_{GOE}(E + α_1/(Nρ_sc(E)), …) dα | ≤ C N^{−κ}.   (2.9)
+| ρ_{fc,t}(E)^{−k} ∫ O(α) p^{(k)}_{H_t}(E + α_1/(Nρ_{fc,t}(E)), …) dα
+    − ρ_sc(E)^{−k} ∫ O(α) p^{(k)}_{GOE}(E + α_1/(Nρ_sc(E)), …) dα | ≤ C N^{−κ}.   (2.9)
 ```
 
-### 4.2 The unit-density form used in Lean
+The factors `ρ_{fc,t}(E)^{−k}` and `ρ_sc(E)^{−k}` are part of (2.9) in arXiv:1609.09011v4; earlier
+versions printed (2.9) without them.
+
+### 4.2 The form used in Lean
 
 The change of variables `α = ρβ` gives, for any `ρ > 0`,
 
 ```
-∫ O(α) p^{(k)}(E + α/(Nρ)) dα = ρ^k ∫ O(ρβ) p^{(k)}(E + β/N) dβ.
+ρ^{−k} ∫ O(α) p^{(k)}(E + α/(Nρ)) dα = ∫ O(ρβ) p^{(k)}(E + β/N) dβ.
 ```
 
-The statement that the Lean uses is (2.9) with each side divided by its own `ρ^k`, where
-`ρ = ρ_{fc,t}(E)` on the first side and `ρ = ρ_sc(E)` on the second; equivalently, each side's test
-function is dilated by that side's density, `O ↦ O(ρ·)`:
+So (2.9) says that, after each side's test function is dilated by that side's density, `O ↦ O(ρ·)`,
+with `ρ = ρ_{fc,t}(E)` on the first side and `ρ = ρ_sc(E)` on the second,
 
 ```
 ∫ O(ρ_{fc,t}(E) β) p^{(k)}_{H_t}(E + β/N) dβ − ∫ O(ρ_sc(E) β) p^{(k)}_{GUE}(E + β/N) dβ → 0.
@@ -345,43 +348,29 @@ function is dilated by that side's density, `O ↦ O(ρ·)`:
 - `RBM.Gauss.scaledPairing_eq_pow_mul` records the identity between the two normalizations
   (`ρ^k` times the dilated pairing).
 
-### 4.3 Why the unit-density form (a check with `k = 1`)
+### 4.3 A consistency check of the normalization (`k = 1`)
 
 For `k = 1`, `p^{(1)}` is `N^{−1}` times the mean eigenvalue density, so
 
 ```
-∫ O(α) p^{(1)}(E + α/(Nρ)) dα = ρ · E Σ_i O(Nρ(λ_i − E)).
+ρ^{−1} ∫ O(α) p^{(1)}(E + α/(Nρ)) dα = E Σ_i O(Nρ(λ_i − E)).
 ```
 
 Average this over `E` against `φ((E − E_0)/ℓ)/ℓ`, with `φ ≥ 0` smooth, `∫ φ = 1`, and a mesoscopic
 scale `N^{−1} ≪ ℓ ≪ 1`. Since `O(Nρ(λ − E))` has width `1/(Nρ) ≪ ℓ` in `E`, the average is
-`N^{−1} ∫O · E Σ_i φ((λ_i − E_0)/ℓ)/ℓ` up to lower-order terms. By the local law at scale `ℓ`, this tends
-to `ρ_true(E_0) ∫O`, where `ρ_true` is the limiting density of the matrix (`ρ_{fc,t}` for `H_t`, `ρ_sc`
-for the GOE or GUE). Hence:
-
-- **printed (2.9):** the energy average of the difference tends to `(ρ_{fc,t}(E_0) − ρ_sc(E_0)) ∫O`,
-  which is not zero when `ρ_{fc,t}(E_0) ≠ ρ_sc(E_0)`; this contradicts the bound `C N^{−κ}`, which is
-  uniform in `|E| ≤ qG`;
-- **unit-density form:** each side is divided by its own `ρ`, both averages tend to `∫O`, and the
-  difference tends to 0, as it should.
-
-A concrete case: `E_0 = 0`, `V` the diagonal matrix of the `N` quantiles of the semicircle law of
-variance `1/2`, `t = N^{−1/2}`, `g = N^{−1+δ}`, `G = N^{−δ}` with `δ, σ < 1/6` (so that (2.8) holds).
-Then `V` is `(g, G)`-regular, `ρ_{fc,t}(0) → √2/π`, and `ρ_sc(0) = 1/π`. So the printed (2.9) fails for
-this `V`, while the unit-density form is consistent. The printed (2.9) therefore lacks the factors
-`ρ_{fc,t}(E)^{−k}` and `ρ_sc(E)^{−k}`, and the Lean hypothesis restores them. (This check is a paper
-argument; it is not compiled.) The normalization is a matter of [51, (2.9)] and not of the paper, which
-uses [51, Theorem 2.2] together with the rescaling of the correlation functions by the density of the
-free convolution (the sentence after (2.21), p. 12).
+`(Nρ)^{−1} ∫O · E Σ_i φ((λ_i − E_0)/ℓ)/ℓ` up to lower-order terms. By the local law at scale `ℓ`, this
+tends to `(ρ_true(E_0)/ρ(E_0)) ∫O`, where `ρ_true` is the limiting density of the matrix (`ρ_{fc,t}` for
+`H_t`, `ρ_sc` for the GOE or GUE). With `ρ = ρ_true`, as in (2.9) of arXiv:1609.09011v4, both averages
+tend to `∫O` and their difference tends to 0, consistently with the bound `C N^{−κ}`, which is uniform in
+`|E| ≤ qG`. (This check is a paper argument; it is not compiled.)
 
 ### 4.4 The complex Hermitian case
 
 [51, Theorem 2.2] is stated for the real symmetric case (GOE). The band matrix of the paper is complex
-Hermitian, and (2.21) compares with the GUE. The abstract of [51] states the result for the classical
-values of `β`, including the GUE case. The paper's footnote at Step 1 of the proof of Theorem 2.6
-(p. 12) says that [51, Theorem 2.2] is stated for the real symmetric case and that the complex Hermitian
-case, asserted in the abstract of [51], follows from the same proof, since the homogenization argument
-of [51, Section 3.2.1] uses only rigidity and the regularity of the free convolution.
+Hermitian, and (2.21) compares with the GUE. The Remark following Theorem 2.2 in arXiv:1609.09011v4
+states that the methods and results of [51] hold also for the complex Hermitian case, with essentially
+only notational changes; the paper's footnote at Step 1 of the proof of Theorem 2.6 (p. 12) cites it in
+this form.
 
 ### 4.5 What the Lean proves around the input
 

@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUCommonCarrier
-import RBM1D.Flow.Universality
+
+module
+
+public import RBM1D.Flow.OUCommonCarrier
+public import RBM1D.Flow.Universality
+
+@[expose] public section
 
 /-!
 # The `OUFlow` instance carried by the common carrier

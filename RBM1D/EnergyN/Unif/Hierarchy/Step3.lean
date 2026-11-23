@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step3
-import RBM1D.EnergyN.Unif.Flow.Iteration
+
+module
+
+public import RBM1D.Hierarchy.Step3
+public import RBM1D.EnergyN.Unif.Flow.Iteration
+
+@[expose] public section
 
 /-!
 # The `∃ C after E` reorder for the constant producer of `Hierarchy/Step3.lean`

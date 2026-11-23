@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.MomentDuhamelBddT
-import RBM1D.Gauss.Step6HierarchyGauss
-import RBM1D.Gauss.DischargeBDG
-import RBM1D.Gauss.SteinMatrix
-import RBM1D.Gauss.EEUker
+
+module
+
+public import RBM1D.Gauss.MomentDuhamelBddT
+public import RBM1D.Gauss.Step6HierarchyGauss
+public import RBM1D.Gauss.DischargeBDG
+public import RBM1D.Gauss.SteinMatrix
+public import RBM1D.Gauss.EEUker
+
+@[expose] public section
 
 /-!
 # The moment route's drift integrand: the pointwise generator and path continuity

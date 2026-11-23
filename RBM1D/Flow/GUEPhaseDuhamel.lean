@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseStep
-import RBM1D.Flow.GUEPhaseMarkov
-import RBM1D.Gauss.GridAzuma
-import RBM1D.Gauss.GridStop
-import RBM1D.Gauss.LoopC2
-import RBM1D.Gauss.GridStepDecomp
+
+module
+
+public import RBM1D.Flow.GUEPhaseStep
+public import RBM1D.Flow.GUEPhaseMarkov
+public import RBM1D.Gauss.GridAzuma
+public import RBM1D.Gauss.GridStop
+public import RBM1D.Gauss.LoopC2
+public import RBM1D.Gauss.GridStepDecomp
+
+@[expose] public section
 
 /-!
 # The loop Duhamel tail of the GUE phase

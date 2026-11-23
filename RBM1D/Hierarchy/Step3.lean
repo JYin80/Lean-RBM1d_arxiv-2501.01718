@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.StochDomMono
-import RBM1D.Flow.FlowFamiliesCore
-import RBM1D.Flow.Iteration
+
+module
+
+public import RBM1D.Defs.StochDomMono
+public import RBM1D.Flow.FlowFamiliesCore
+public import RBM1D.Flow.Iteration
+
+@[expose] public section
 
 /-!
 # Step 3 of the proof of Theorem 2.21: the sharp loop bound (2.77)

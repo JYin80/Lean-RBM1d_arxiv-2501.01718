@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.EntryBoundTime
-import RBM1D.EnergyN.Gauss.Lemma41FlowGauss
-import RBM1D.EnergyN.Hierarchy.Step1
-import RBM1D.EnergyN.Gauss.LDENetClose
-import RBM1D.EnergyN.Green.EntryBoundFloor
-import RBM1D.EnergyN.Green.EntryBoundFloorIdx
-import RBM1D.EnergyN.Gauss.Step1Hyp
-import RBM1D.EnergyN.Gauss.DistEq
+
+module
+
+public import RBM1D.Gauss.EntryBoundTime
+public import RBM1D.EnergyN.Gauss.Lemma41FlowGauss
+public import RBM1D.EnergyN.Hierarchy.Step1
+public import RBM1D.EnergyN.Gauss.LDENetClose
+public import RBM1D.EnergyN.Green.EntryBoundFloor
+public import RBM1D.EnergyN.Green.EntryBoundFloorIdx
+public import RBM1D.EnergyN.Gauss.Step1Hyp
+public import RBM1D.EnergyN.Gauss.DistEq
+
+@[expose] public section
 
 /-!
 # The entry bounds of Lemma 4.1 along the flow, at an `N`-dependent energy

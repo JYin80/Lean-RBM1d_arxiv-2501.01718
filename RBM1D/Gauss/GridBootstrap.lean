@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step2Gauss
-import RBM1D.Gauss.GridStop
+
+module
+
+public import RBM1D.Gauss.Step2Gauss
+public import RBM1D.Gauss.GridStop
+
+@[expose] public section
 
 /-!
 # The grid bootstrap: the stopping time does not fire, and `jSMat → lkErrMat`

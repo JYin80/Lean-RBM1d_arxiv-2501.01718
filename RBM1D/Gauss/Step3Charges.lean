@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step2Close
+
+module
+
+public import RBM1D.Gauss.Step2Close
+
+@[expose] public section
 
 /-!
 # The `2`-loop by charges: the `(+,+)` input isolated

@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Green.EntryBound
-import RBM1D.Flow.Hypotheses
+
+module
+
+public import RBM1D.Green.EntryBound
+public import RBM1D.Flow.Hypotheses
+
+@[expose] public section
 
 /-!
 # The minor replacement error `|G_{ll} - G^{(k)}_{ll}| ≺ Ψ²`: the entry bridge

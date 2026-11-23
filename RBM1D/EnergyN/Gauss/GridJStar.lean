@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridJStar
-import RBM1D.EnergyN.Gauss.Step2Eq557
-import RBM1D.EnergyN.Gauss.EntryBoundTime
-import RBM1D.EnergyN.Hierarchy.Step1
+
+module
+
+public import RBM1D.Gauss.GridJStar
+public import RBM1D.EnergyN.Gauss.Step2Eq557
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+public import RBM1D.EnergyN.Hierarchy.Step1
+
+@[expose] public section
 
 /-!
 # The events of (2.73) and (5.57) along the flow and on the grid, at an `N`-dependent energy

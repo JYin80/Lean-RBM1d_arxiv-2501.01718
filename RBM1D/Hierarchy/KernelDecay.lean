@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Kernel
-import RBM1D.Propagator.DiffComplex
-import RBM1D.Propagator.Edges
-import RBM1D.Analysis.StretchedExp
+
+module
+
+public import RBM1D.Hierarchy.Kernel
+public import RBM1D.Propagator.DiffComplex
+public import RBM1D.Propagator.Edges
+public import RBM1D.Analysis.StretchedExp
+
+@[expose] public section
 
 /-!
 # Lemmas 7.2 and 7.3: the evolution kernel on decaying tensors

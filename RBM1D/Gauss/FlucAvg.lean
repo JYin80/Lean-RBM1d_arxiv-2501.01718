@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.FlucCount
-import RBM1D.Gauss.Envelope
-import Mathlib.Analysis.Matrix.MeasurableSpace
-import RBM1D.Defs.MatrixMeasurable
+
+module
+
+public import RBM1D.Gauss.FlucCount
+public import RBM1D.Gauss.Envelope
+public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import RBM1D.Defs.MatrixMeasurable
+
+@[expose] public section
 
 /-!
 # Assembling the fluctuation averaging: the pieces of (4.12) and (4.5)

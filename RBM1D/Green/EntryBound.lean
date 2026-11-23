@@ -3,10 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Green.Minor
-import RBM1D.Loop.GLoop
-import RBM1D.Defs.StochDom
-import RBM1D.Propagator.Edges
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Green.Minor
+public import RBM1D.Loop.GLoop
+public import RBM1D.Defs.StochDom
+public import RBM1D.Propagator.Edges
+
+@[expose] public section
 
 /-!
 # Lemma 4.1: entry estimates for the Green's function
@@ -918,17 +924,7 @@ section Block
 
 variable (L W : ℕ)
 
-/-- The kernel of `S^(B)` as a real function: `1/3` on `{0, 1, -1}`, zero elsewhere. -/
-noncomputable def sbKre (u : ZMod L) : ℝ := if u ∈ sbSupport L then 1 / 3 else 0
-
-/-- The variance profile `S = S^(B) ⊗ S_W` of Section 2.1 as a real matrix on the
-block/offset index: `S_{(a,α),(b,β)} = S^(B)_{ab} / W`. -/
-noncomputable def Sblk (i j : ZMod L × Fin W) : ℝ := sbKre L (i.1 - j.1) / W
-
 variable {L W}
-
-theorem sbKre_nonneg (u : ZMod L) : 0 ≤ sbKre L u := by
-  unfold sbKre; split_ifs <;> norm_num
 
 theorem sbKre_le (u : ZMod L) : sbKre L u ≤ 1 / 3 := by
   unfold sbKre; split_ifs <;> norm_num
@@ -991,10 +987,6 @@ theorem sum_sbKre_sub_mul' (b : ZMod L) (f : ZMod L → ℝ) :
   rw [Finset.sum_ite_mem, Finset.univ_inter]
 
 variable [NeZero W]
-
-omit [NeZero L] [NeZero W] in
-theorem Sblk_nonneg (i j : ZMod L × Fin W) : 0 ≤ Sblk L W i j :=
-  div_nonneg (sbKre_nonneg _) (Nat.cast_nonneg _)
 
 omit [NeZero L] in
 theorem Sblk_le (i j : ZMod L × Fin W) :

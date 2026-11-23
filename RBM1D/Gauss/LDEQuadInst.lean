@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.IBPPoly
-import RBM1D.Gauss.LDEQuadT
-import RBM1D.Gauss.RowIndep
-import RBM1D.Gauss.LDEHyp
-import RBM1D.Loop.Split
+
+module
+
+public import RBM1D.Gauss.IBPPoly
+public import RBM1D.Gauss.LDEQuadT
+public import RBM1D.Gauss.RowIndep
+public import RBM1D.Gauss.LDEHyp
+public import RBM1D.Loop.Split
+
+@[expose] public section
 
 /-!
 # The row chaos of the Gaussian model

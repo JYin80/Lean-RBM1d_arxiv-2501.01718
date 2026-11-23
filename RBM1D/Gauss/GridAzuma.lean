@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Probability.Moments.SubGaussian
-import Mathlib.Probability.Martingale.OptionalStopping
+
+module
+
+public import Mathlib.Probability.Moments.SubGaussian
+public import Mathlib.Probability.Martingale.OptionalStopping
+
+@[expose] public section
 
 /-!
 # Pure-probability grid lemmas (BDG replacement)

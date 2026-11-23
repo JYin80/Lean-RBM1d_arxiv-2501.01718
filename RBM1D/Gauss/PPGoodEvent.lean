@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridGoodEvent
-import RBM1D.Gauss.GridStopFilt
-import RBM1D.Gauss.GridBootstrap
-import RBM1D.Gauss.LoopDecayFixed
-import RBM1D.Gauss.OneLoopSharpGrid
-import RBM1D.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.GridGoodEvent
+public import RBM1D.Gauss.GridStopFilt
+public import RBM1D.Gauss.GridBootstrap
+public import RBM1D.Gauss.LoopDecayFixed
+public import RBM1D.Gauss.OneLoopSharpGrid
+public import RBM1D.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # The (+,+) good set, good-set-exit stopping time, initial value

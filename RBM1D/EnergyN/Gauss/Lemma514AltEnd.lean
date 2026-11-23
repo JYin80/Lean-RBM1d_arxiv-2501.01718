@@ -3,15 +3,20 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514AltEnd
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Flow.Scales
-import RBM1D.EnergyN.Gauss.Lemma514NonAlt
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.EnergyN.Gauss.Lemma510Fixed
-import RBM1D.EnergyN.Gauss.GridAssembly
-import RBM1D.EnergyN.Gauss.Lemma514Moment
-import RBM1D.EnergyN.Unif.Gauss.Lemma514NonAlt
+
+module
+
+public import RBM1D.Gauss.Lemma514AltEnd
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Flow.Scales
+public import RBM1D.EnergyN.Gauss.Lemma514NonAlt
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.EnergyN.Gauss.Lemma510Fixed
+public import RBM1D.EnergyN.Gauss.GridAssembly
+public import RBM1D.EnergyN.Gauss.Lemma514Moment
+public import RBM1D.EnergyN.Unif.Gauss.Lemma514NonAlt
+
+@[expose] public section
 
 /-!
 # The alternating endpoint case of Lemma 5.14 at an `N`-dependent energy

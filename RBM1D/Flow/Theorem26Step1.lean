@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Step1BandNorm
-import RBM1D.Flow.Step1GUETranslation
+
+module
+
+public import RBM1D.Flow.Step1BandNorm
+public import RBM1D.Flow.Step1GUETranslation
+
+@[expose] public section
 
 /-!
 # Theorem 2.6 Step 1 assembly and Theorem 2.6 against the GUE matrix model

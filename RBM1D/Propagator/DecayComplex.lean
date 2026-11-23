@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Poisson
-import RBM1D.Propagator.Decay
-import Mathlib.Analysis.PSeries
+
+module
+
+public import RBM1D.Propagator.Poisson
+public import RBM1D.Propagator.Decay
+public import Mathlib.Analysis.PSeries
+
+@[expose] public section
 
 /-!
 # (2.52) on the torus for complex `ξ`, via the Fourier route

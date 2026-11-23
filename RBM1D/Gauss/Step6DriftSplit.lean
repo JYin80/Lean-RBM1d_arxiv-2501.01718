@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6HierarchyGauss
-import RBM1D.Hierarchy.DriftBound
+
+module
+
+public import RBM1D.Gauss.Step6HierarchyGauss
+public import RBM1D.Hierarchy.DriftBound
+
+@[expose] public section
 
 /-!
 # The size obligations of Step 6's pinned drift

@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6EnvWindow
-import RBM1D.Gauss.DriftEnvelope
-import RBM1D.Gauss.MomentDuhamelHypGauss
-import RBM1D.Gauss.Step6DriftSplit
+
+module
+
+public import RBM1D.Gauss.Step6EnvWindow
+public import RBM1D.Gauss.DriftEnvelope
+public import RBM1D.Gauss.MomentDuhamelHypGauss
+public import RBM1D.Gauss.Step6DriftSplit
+
+@[expose] public section
 
 /-!
 # Time continuity of `E(L-K)` and interval integrability of `U ∘ E E^{(·)}`

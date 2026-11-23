@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Kernel
-import RBM1D.Hierarchy.KernelDecay
-import RBM1D.Hierarchy.Dynamics
-import RBM1D.Gauss.Hierarchy
-import RBM1D.Propagator.Edges
-import RBM1D.Loop.Split
-import RBM1D.Gauss.LoopLipschitz
+
+module
+
+public import RBM1D.Hierarchy.Kernel
+public import RBM1D.Hierarchy.KernelDecay
+public import RBM1D.Hierarchy.Dynamics
+public import RBM1D.Gauss.Hierarchy
+public import RBM1D.Propagator.Edges
+public import RBM1D.Loop.Split
+public import RBM1D.Gauss.LoopLipschitz
+
+@[expose] public section
 
 /-!
 # The deterministic `n = 2`, `σ = (+,+)` drift and kernel bounds

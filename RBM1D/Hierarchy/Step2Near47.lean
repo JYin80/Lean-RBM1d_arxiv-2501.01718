@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Gauss.CutoffBounds
-import RBM1D.Hierarchy.Step2Moment
-import RBM1D.Hierarchy.Step2MomentStep
+
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Gauss.CutoffBounds
+public import RBM1D.Hierarchy.Step2Moment
+public import RBM1D.Hierarchy.Step2MomentStep
+
+@[expose] public section
 
 /-!
 # The sharp bound `J*_{u,D} ≺ (η_s/η_u)²` (the remark after (5.47)): the drift near field

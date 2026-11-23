@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step3Charges
-import RBM1D.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.Step3Charges
+public import RBM1D.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # `(η_s/η_u)^4 ≤ (W ℓ_u η_u)^{1/4}` from the plain pair, at an `N`-dependent energy

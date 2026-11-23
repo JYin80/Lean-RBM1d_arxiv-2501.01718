@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.WardStep
-import RBM1D.Loop.Ward
-import RBM1D.Loop.Cyclic
+
+module
+
+public import RBM1D.Loop.WardStep
+public import RBM1D.Loop.Ward
+public import RBM1D.Loop.Cyclic
+
+@[expose] public section
 
 /-!
 # Ward's identity for `K` at every length (Lemma 3.6, (3.13))

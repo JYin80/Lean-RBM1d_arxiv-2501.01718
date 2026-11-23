@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridGoodEvent
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import RBM1D.Gauss.GridGoodEvent
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # The Azuma constant of the grid good event at an `N`-dependent energy

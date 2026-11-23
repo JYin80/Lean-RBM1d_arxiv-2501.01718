@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridBootstrap
-import RBM1D.Gauss.GridNetLift
-import RBM1D.Gauss.LoopLipschitz
-import RBM1D.Gauss.Step1Hyp
-import RBM1D.Gauss.Step2Plain
-import RBM1D.Hierarchy.Step2FarMart
-import RBM1D.Hierarchy.Step2MomentStep
+
+module
+
+public import RBM1D.Gauss.GridBootstrap
+public import RBM1D.Gauss.GridNetLift
+public import RBM1D.Gauss.LoopLipschitz
+public import RBM1D.Gauss.Step1Hyp
+public import RBM1D.Gauss.Step2Plain
+public import RBM1D.Hierarchy.Step2FarMart
+public import RBM1D.Hierarchy.Step2MomentStep
+
+@[expose] public section
 
 /-!
 # The time-uniform far lift: the left net point and the far bad-set transfer

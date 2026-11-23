@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Kernel
+
+module
+
+public import RBM1D.Hierarchy.Kernel
+
+@[expose] public section
 
 /-!
 # Definition 5.12: the sum-zero operator `Q_t`

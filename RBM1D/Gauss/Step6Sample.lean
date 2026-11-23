@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6DriftEG
-import RBM1D.Gauss.Step6Hyp
-import RBM1D.Gauss.SteinMatrix
-import RBM1D.Gauss.LoopIto
-import RBM1D.Flow.Initial
-import RBM1D.Flow.Iteration
+
+module
+
+public import RBM1D.Gauss.Step6DriftEG
+public import RBM1D.Gauss.Step6Hyp
+public import RBM1D.Gauss.SteinMatrix
+public import RBM1D.Gauss.LoopIto
+public import RBM1D.Flow.Initial
+public import RBM1D.Flow.Iteration
+
+@[expose] public section
 
 /-!
 # The sample side of Step 6, and the time quantifier of its envelope hypotheses

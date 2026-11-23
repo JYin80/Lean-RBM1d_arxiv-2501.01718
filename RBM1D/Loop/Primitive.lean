@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Index
-import RBM1D.Defs.Semicircle
-import RBM1D.Propagator.Deriv
-import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Comp
+
+module
+
+public import RBM1D.Loop.Index
+public import RBM1D.Defs.Semicircle
+public import RBM1D.Propagator.Deriv
+public import Mathlib.Analysis.Complex.RealDeriv
+public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import Mathlib.Analysis.Calculus.Deriv.Comp
+
+@[expose] public section
 
 /-!
 # The primitive equation

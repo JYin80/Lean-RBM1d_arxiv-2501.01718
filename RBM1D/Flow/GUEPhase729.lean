@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseStep
-import RBM1D.Flow.GUEPhaseOneLoop
-import RBM1D.Flow.GUEPhaseKTilde
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import RBM1D.Flow.GUEPhaseStep
+public import RBM1D.Flow.GUEPhaseOneLoop
+public import RBM1D.Flow.GUEPhaseKTilde
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # (7.29) at `t₀` on the GUE-phase grid

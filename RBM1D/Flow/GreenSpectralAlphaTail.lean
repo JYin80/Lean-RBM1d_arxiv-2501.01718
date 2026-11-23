@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GreenSpectralL1
-import RBM1D.Green.EntryBound
+
+module
+
+public import RBM1D.Flow.GreenSpectralL1
+public import RBM1D.Green.EntryBound
+
+@[expose] public section
 
 /-!
 # Deterministic spectral tail for the block profile

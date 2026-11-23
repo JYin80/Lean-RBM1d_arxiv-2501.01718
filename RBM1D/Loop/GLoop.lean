@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.Model
-import RBM1D.Delocalization
-import RBM1D.Loop.Index
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Defs.Model
+public import RBM1D.Delocalization
+public import RBM1D.Loop.Index
+
+@[expose] public section
 
 /-!
 # The `G`-loops of Definition 2.9
@@ -35,16 +41,6 @@ open Matrix
 section Gsig
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- `G(σ)`: the resolvent at `z` for `σ = true` (the paper's `+`) and at `conj z`
-for `σ = false`. -/
-noncomputable def Gsig (H : Matrix n n ℂ) (z : ℂ) (σ : Bool) : Matrix n n ℂ :=
-  green H (if σ then z else (starRingEnd ℂ) z)
-
-@[simp] theorem Gsig_true (H : Matrix n n ℂ) (z : ℂ) : Gsig H z true = green H z := rfl
-
-@[simp] theorem Gsig_false (H : Matrix n n ℂ) (z : ℂ) :
-    Gsig H z false = green H ((starRingEnd ℂ) z) := rfl
 
 /-- `(H - z)ᴴ = H - z̄` for Hermitian `H`. -/
 theorem conjTranspose_sub_smul {H : Matrix n n ℂ} (hH : H.IsHermitian) (z : ℂ) :
@@ -119,23 +115,9 @@ section Loop
 
 variable (L W : ℕ) [NeZero L] [NeZero W]
 
-/-- The matrix product `∏_i G(σ_i) E_{a_i}` of (2.41). -/
-noncomputable def gloopProd (H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) (z : ℂ)
-    (I : LoopIdx (ZMod L)) : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ :=
-  (I.σ.zip I.a).foldr (fun p M => Gsig H z p.1 * Eblk L W p.2 * M) 1
-
-/-- **The `n`-`G` loop of (2.41)**, `L_{σ,a} = ⟨∏_i G(σ_i) E_{a_i}⟩`. -/
-noncomputable def gloop (H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ) (z : ℂ)
-    (I : LoopIdx (ZMod L)) : ℂ :=
-  Matrix.trace (gloopProd L W H z I)
-
 variable {L W} {H : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ} {z : ℂ}
 
 @[simp] theorem gloopProd_nil : gloopProd L W H z ⟨[], []⟩ = 1 := rfl
-
-@[simp] theorem gloopProd_cons (s : Bool) (b : ZMod L) (σ : List Bool) (a : List (ZMod L)) :
-    gloopProd L W H z ⟨s :: σ, b :: a⟩
-      = Gsig H z s * Eblk L W b * gloopProd L W H z ⟨σ, a⟩ := rfl
 
 /-- The loop product of a concatenation is the product of the loop products.
 Requires the two blocks to be well formed, so that `zip` distributes. -/

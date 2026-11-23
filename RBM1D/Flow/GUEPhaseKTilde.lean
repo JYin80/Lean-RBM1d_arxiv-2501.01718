@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.GUEPhase
-import RBM1D.Loop.KBound
-import Mathlib.Analysis.ODE.ExistUnique
+
+module
+
+public import RBM1D.Hierarchy.GUEPhase
+public import RBM1D.Loop.KBound
+public import Mathlib.Analysis.ODE.ExistUnique
+
+@[expose] public section
 
 /-!
 # GUE-phase primitive loops and the uniform (2.59)

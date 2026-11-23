@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DimsExample
-import RBM1D.Flow.Universality
-import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Gauss.DimsExample
+public import RBM1D.Flow.Universality
+public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
+
+@[expose] public section
 
 /-!
 # Fixed-time Gaussian OU marginals
@@ -28,24 +34,8 @@ open scoped NNReal ENNReal ComplexConjugate
 
 namespace RBM.Gauss
 
-/-- The number of rows and columns at the paper's matrix size `M`.  This is definitionally
-`(Gauss.band d).size N = L N * W N`; in particular it is positive even at parameter `N = 0`. -/
-def ouMatrixSize (d : Dims) (N : ℕ) : ℕ := d.L N * d.W N
-
 theorem ouMatrixSize_pos (d : Dims) (N : ℕ) : 0 < ouMatrixSize d N := by
   exact Nat.mul_pos (by have := d.three_le_L N; omega) (d.W_pos N)
-
-/-- Real-coordinate variance of a normalized Hermitian GUE matrix.  A diagonal entry is real with
-variance `1/M`; each off-diagonal real or imaginary component has variance `1/(2M)`. -/
-noncomputable def gueCoordVar (d : Dims) (N : ℕ) (c : Coord d) : ℝ≥0 :=
-  if c.2.1 = c.2.2.1 then
-    (1 : ℝ≥0) / (ouMatrixSize d N : ℝ≥0)
-  else
-    (1 : ℝ≥0) / (2 * (ouMatrixSize d N : ℝ≥0))
-
-/-- An independent normalized GUE coordinate field at size `M=L N*W N`. -/
-noncomputable def gueMeasure (d : Dims) (N : ℕ) : Measure (Ω d) :=
-  Measure.infinitePi fun c => gaussianReal 0 (gueCoordVar d N c)
 
 instance gueMeasure_isProbabilityMeasure (d : Dims) (N : ℕ) :
     IsProbabilityMeasure (gueMeasure d N) := by

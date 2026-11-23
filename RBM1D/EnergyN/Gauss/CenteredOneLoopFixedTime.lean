@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.SingletonLocalLaw
-import RBM1D.Gauss.DetAvgIBPFlow
-import RBM1D.EnergyN.Gauss.SingletonLocalLaw
-import RBM1D.EnergyN.Gauss.DetAvgIBPFlow
+
+module
+
+public import RBM1D.Gauss.SingletonLocalLaw
+public import RBM1D.Gauss.DetAvgIBPFlow
+public import RBM1D.EnergyN.Gauss.SingletonLocalLaw
+public import RBM1D.EnergyN.Gauss.DetAvgIBPFlow
+
+@[expose] public section
 
 /-!
 # The centered one-loop trace at a fixed time, at an `N`-dependent energy

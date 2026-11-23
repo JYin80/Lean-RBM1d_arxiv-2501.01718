@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.RawSources
-import RBM1D.EnergyN.Gauss.EntryBoundTime
-import RBM1D.EnergyN.Hierarchy.Step1
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import RBM1D.Gauss.RawSources
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+public import RBM1D.EnergyN.Hierarchy.Step1
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # The raw sources of the moving local law, at an `N`-dependent energy

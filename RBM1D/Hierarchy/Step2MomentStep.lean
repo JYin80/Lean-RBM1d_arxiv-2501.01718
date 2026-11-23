@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.ChargeReduce
-import RBM1D.Hierarchy.Step45
-import RBM1D.Hierarchy.Lemma57
+
+module
+
+public import RBM1D.Hierarchy.ChargeReduce
+public import RBM1D.Hierarchy.Step45
+public import RBM1D.Hierarchy.Lemma57
+
+@[expose] public section
 
 /-!
 # Step 2: the near/far split of (5.48), and the far field of a near-diagonal tensor

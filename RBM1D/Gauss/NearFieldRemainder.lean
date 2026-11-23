@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.QVEndpoint
+
+module
+
+public import RBM1D.Gauss.QVEndpoint
+
+@[expose] public section
 
 /-!
 # The near field remainder in (5.64)

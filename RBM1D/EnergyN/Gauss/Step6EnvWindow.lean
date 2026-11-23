@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6EnvWindow
-import RBM1D.EnergyN.Hierarchy.Step6
-import RBM1D.EnergyN.Gauss.Step6DriftSplit
-import RBM1D.EnergyN.Unif.Flow.Iteration
+
+module
+
+public import RBM1D.Gauss.Step6EnvWindow
+public import RBM1D.EnergyN.Hierarchy.Step6
+public import RBM1D.EnergyN.Gauss.Step6DriftSplit
+public import RBM1D.EnergyN.Unif.Flow.Iteration
+
+@[expose] public section
 
 /-!
 # Step 6, the window theorems, drift half, at an `N`-dependent energy

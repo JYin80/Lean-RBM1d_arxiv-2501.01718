@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GoodSetFlow
-import RBM1D.EnergyN.Flow.Hypotheses
+
+module
+
+public import RBM1D.Gauss.GoodSetFlow
+public import RBM1D.EnergyN.Flow.Hypotheses
+
+@[expose] public section
 
 /-!
 # The uniform local law and the good set along the flow, at an `N`-dependent energy

@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Lean
+
+module
+
+public import Lean
+
+@[expose] public section
 
 /-!
 # Axiom check: the `#assert_rbm_axioms` command
@@ -21,7 +26,7 @@ namespace RBM.Audit
 open Lean Elab Command
 
 /-- The axioms every `RBM` declaration may use. -/
-def allowedAxioms : List Name := [``propext, ``Classical.choice, ``Quot.sound]
+meta def allowedAxioms : List Name := [``propext, ``Classical.choice, ``Quot.sound]
 
 /-- Fails unless every declaration in `RBM` uses only `RBM.Audit.allowedAxioms`. -/
 elab "#assert_rbm_axioms" : command => do

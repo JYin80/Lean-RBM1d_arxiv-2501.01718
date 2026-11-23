@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUCommonFlow
-import RBM1D.Flow.OUComparisonHessian
-import RBM1D.Flow.GreenSpectralAlphaTail
-import RBM1D.Flow.StieltjesEtaMonotone
-import RBM1D.Defs.MatrixMeasurable
-import RBM1D.Delocalization
+
+module
+
+public import RBM1D.Flow.OUCommonFlow
+public import RBM1D.Flow.OUComparisonHessian
+public import RBM1D.Flow.GreenSpectralAlphaTail
+public import RBM1D.Flow.StieltjesEtaMonotone
+public import RBM1D.Defs.MatrixMeasurable
+public import RBM1D.Delocalization
+
+@[expose] public section
 
 /-!
 # Step 3 of Theorem 2.6: the covering lemma and the weighted `L₁` kernel bound

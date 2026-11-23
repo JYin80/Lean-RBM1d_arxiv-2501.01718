@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUCommonCarrier
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Gauss.DistEq
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Flow.OUCommonCarrier
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Gauss.DistEq
+
+@[expose] public section
 
 /-!
 # The Step 1 interface of Theorem 2.6: the OU marginal, the GUE matrix and [51, Theorem 2.2]
@@ -35,27 +41,10 @@ namespace RBM.Gauss
 
 variable (d : Dims)
 
-/-- The matrix size `M = L W` as a real number. -/
-noncomputable def msize (N : ℕ) : ℝ := (ouMatrixSize d N : ℝ)
-
-/-- `∫ O(α) ρ^{(k)}_{GUE}(E + α/M) dα` for the GUE matrix `H_∞` (size `M = L W`,
-`E|h_ij|² = 1/M`). -/
-noncomputable def gueMatPairing (N k : ℕ) (O : (Fin k → ℝ) → ℝ) (E : ℝ) : ℝ :=
-  RBM.corrPairing (gueMeasure d N) (Xmat d N) (Xmat_isHermitian d N) k O E
-
 /-- `∫ O(α) ρ^{(k)}_{H_t}(E + α/M) dα` for the fixed-time OU marginal
 `H_t = e^{-t/2} H + √(1 - e^{-t}) H_GUE` of (2.19). -/
 noncomputable def ouPairing (N : ℕ) (t : ℝ) (k : ℕ) (O : (Fin k → ℝ) → ℝ) (E : ℝ) : ℝ :=
   RBM.corrPairing (ouProductMeasure d N) (ouMatrix d N t) (ouMatrix_isHermitian d N t) k O E
-
-/-- `∫ O(α) ρ^{(k)}_H(E + α/M) dα` for the band matrix `H`. -/
-noncomputable def bandPairing (N k : ℕ) (O : (Fin k → ℝ) → ℝ) (E : ℝ) : ℝ :=
-  RBM.corrPairing (P d) (Xmat d N) (Xmat_isHermitian d N) k O E
-
-/-- **(2.18) against the GUE matrix model**. -/
-def BulkUniversalityMat (κ : ℝ) : Prop :=
-  ∀ E : ℝ, |E| ≤ 2 - κ → ∀ k : ℕ, ∀ O : (Fin k → ℝ) → ℝ, RBM.IsTestFun O →
-    Tendsto (fun N => bandPairing d N k O E - gueMatPairing d N k O E) atTop (𝓝 0)
 
 /-- **Step 1, (2.21)**, for `τ_* ∈ (0,1)`, `t_* = M^{-1+τ_*}`. -/
 def Step1Target (κ : ℝ) : Prop :=
@@ -81,43 +70,6 @@ theorem theorem2_6_mat_of_steps (κ : ℝ) (h1 : Step1Target d κ) (h2 : Step2Ou
   rw [add_zero] at h
   refine h.congr fun N => ?_
   ring
-
-/-- `m_V(z) = N^{-1} ∑_i (v_i - z)^{-1}`, the Stieltjes transform of the diagonal matrix `V`. -/
-noncomputable def stieltjesVec {n : Type*} [Fintype n] (v : n → ℝ) (z : ℂ) : ℂ :=
-  (Fintype.card n : ℂ)⁻¹ * ∑ i, ((v i : ℂ) - z)⁻¹
-
-/-- **[51, Definition 2.1]**: `V = diag v` is `(g,G)`-regular, (2.2) and (2.3). -/
-def IsRegular51 {n : Type*} [Fintype n] (v : n → ℝ) (g G c C CV : ℝ) : Prop :=
-  (∀ E η : ℝ, |E| ≤ G → g ≤ η → η ≤ 10 →
-      c ≤ (stieltjesVec v ⟨E, η⟩).im ∧ (stieltjesVec v ⟨E, η⟩).im ≤ C) ∧
-    ∀ i, |v i| ≤ (Fintype.card n : ℝ) ^ CV
-
-/-- **[51, (2.5)]**: `m` solves the free-convolution equation on the upper half plane, with
-`Im m > 0`. -/
-def IsFreeConv51 {n : Type*} [Fintype n] (v : n → ℝ) (t : ℝ) (m : ℂ → ℂ) : Prop :=
-  ∀ z : ℂ, 0 < z.im → 0 < (m z).im ∧
-    m z = (Fintype.card n : ℂ)⁻¹ * ∑ i, ((v i : ℂ) - z - (t : ℂ) * m z)⁻¹
-
-/-- **[51, (2.1)]** with GOE → GUE: `H_t = V + √t W`, `V = diag v`, `W = Xmat` (under
-`gueMeasure`, the standard GUE). -/
-noncomputable def dbmMatrix (N : ℕ) (v : d.Idx N → ℝ) (t : ℝ) (ω : Ω d) :
-    Matrix (d.Idx N) (d.Idx N) ℂ :=
-  Matrix.diagonal (fun i => (v i : ℂ)) + (Real.sqrt t : ℂ) • Xmat d N ω
-
-theorem dbmMatrix_isHermitian (N : ℕ) (v : d.Idx N → ℝ) (t : ℝ) (ω : Ω d) :
-    (dbmMatrix d N v t ω).IsHermitian := by
-  unfold dbmMatrix
-  refine Matrix.IsHermitian.add ?_ ?_
-  · exact Matrix.isHermitian_diagonal_of_self_adjoint _ (by
-      ext i; simp [Pi.star_apply])
-  · have hX := Xmat_isHermitian d N ω
-    unfold Matrix.IsHermitian at hX ⊢
-    rw [Matrix.conjTranspose_smul, hX]
-    simp
-
-/-- **[51, (2.4)]** (= the paper's semicircle density): `ρ_sc(E) = (2π)^{-1} 1_{|E|≤2} √(4-E²)`. -/
-noncomputable def rhoSc (E : ℝ) : ℝ :=
-  if |E| ≤ 2 then Real.sqrt (4 - E ^ 2) / (2 * Real.pi) else 0
 
 /-- `∫ O(α) p^{(k)}(E + α/(Mρ)) dα`, written as `ρ^k · ∫ O(ρβ) p^{(k)}(E + β/M) dβ`
 (change of variables `α = ρβ`; valid for `ρ > 0`). -/

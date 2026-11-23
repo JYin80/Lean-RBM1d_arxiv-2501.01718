@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.EarlyQVRate
-import RBM1D.Hierarchy.Step2Near47
-import RBM1D.Gauss.Step6Hyp
-import RBM1D.Flow.FirstCell
-import RBM1D.Gauss.WeightedSumSqrt
-import RBM1D.Gauss.MomentDuhamelHypGauss
-import RBM1D.Hierarchy.Step2MomentStep
-import RBM1D.Gauss.Lemma514Moment
+
+module
+
+public import RBM1D.Gauss.EarlyQVRate
+public import RBM1D.Hierarchy.Step2Near47
+public import RBM1D.Gauss.Step6Hyp
+public import RBM1D.Flow.FirstCell
+public import RBM1D.Gauss.WeightedSumSqrt
+public import RBM1D.Gauss.MomentDuhamelHypGauss
+public import RBM1D.Hierarchy.Step2MomentStep
+public import RBM1D.Gauss.Lemma514Moment
+
+@[expose] public section
 
 /-!
 # The doubled evolution kernel in the endpoint quadratic variation

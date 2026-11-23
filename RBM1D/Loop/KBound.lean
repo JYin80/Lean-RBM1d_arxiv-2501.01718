@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.SumZero
-import RBM1D.Propagator.LongDiff
+
+module
+
+public import RBM1D.Loop.SumZero
+public import RBM1D.Propagator.LongDiff
+
+@[expose] public section
 
 /-!
 # Lemma 3.11: the bound on `K^(π)`

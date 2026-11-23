@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarClosure
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.EnergyN.Gauss.Step2Gauss
-import RBM1D.EnergyN.Gauss.GridSharp47
-import RBM1D.EnergyN.Gauss.GridFarMart
-import RBM1D.EnergyN.Gauss.GridFarLift
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Flow.Scales
+
+module
+
+public import RBM1D.Gauss.GridFarClosure
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.EnergyN.Gauss.Step2Gauss
+public import RBM1D.EnergyN.Gauss.GridSharp47
+public import RBM1D.EnergyN.Gauss.GridFarMart
+public import RBM1D.EnergyN.Gauss.GridFarLift
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Flow.Scales
+
+@[expose] public section
 
 /-!
 # The far-field closure on the grid at an `N`-dependent energy

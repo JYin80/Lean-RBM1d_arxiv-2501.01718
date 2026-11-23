@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Gauss.LoopLeibniz
-import RBM1D.Hierarchy.ChargeReduce
+
+module
+
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Gauss.LoopLeibniz
+public import RBM1D.Hierarchy.ChargeReduce
+
+@[expose] public section
 
 /-!
 # The `U`-conjugated **bilinear** form of (5.22), i.e. `(U ⊗ U) ∘ (E ⊗ E)`

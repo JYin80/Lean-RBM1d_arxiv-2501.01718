@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DischargeBDG
-import RBM1D.Gauss.LoopIto
-import RBM1D.Gauss.IBP
-import RBM1D.Gauss.DimsExample
+
+module
+
+public import RBM1D.Gauss.DischargeBDG
+public import RBM1D.Gauss.LoopIto
+public import RBM1D.Gauss.IBP
+public import RBM1D.Gauss.DimsExample
+
+@[expose] public section
 
 /-!
 # The chain rule `E^{(M)}(α) = ∑_k E^{(M)}(α,k)`, and the differentiability of the loop
@@ -155,7 +160,7 @@ section Bridge
 variable {L W : ℕ} [NeZero L]
 
 /-- The list of `(charge, block)` pairs of a loop, with the blocks turned into matrices. -/
-private noncomputable abbrev embEblk (L W : ℕ) :
+noncomputable abbrev embEblk (L W : ℕ) :
     Bool × ZMod L → Bool × Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ :=
   Prod.map id (Eblk L W)
 

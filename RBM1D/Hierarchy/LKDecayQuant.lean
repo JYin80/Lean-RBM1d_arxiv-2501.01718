@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Green.EntryBoundFloor
-import RBM1D.Hierarchy.Decay
-import RBM1D.Hierarchy.SumZeroDyn
-import RBM1D.Defs.StochDomHighProb
+
+module
+
+public import RBM1D.Green.EntryBoundFloor
+public import RBM1D.Hierarchy.Decay
+public import RBM1D.Hierarchy.SumZeroDyn
+public import RBM1D.Defs.StochDomHighProb
+
+@[expose] public section
 
 /-!
 # Quantitative estimates for Lemma 5.9 along the flow

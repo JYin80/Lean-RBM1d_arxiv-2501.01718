@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.EETensorBound
-import RBM1D.Gauss.GridAssembly
+
+module
+
+public import RBM1D.Gauss.EETensorBound
+public import RBM1D.Gauss.GridAssembly
+
+@[expose] public section
 
 /-!
 # The `n = 2`, `σ = (+,+)` conditional-variance bound

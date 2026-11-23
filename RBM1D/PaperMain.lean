@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.EnergyN.Gauss.Thm221Gauss
-import RBM1D.EnergyN.Gauss.Theorems24And25Gauss
-import RBM1D.Flow.Theorem26Gauss
+
+module
+
+public import RBM1D.EnergyN.Gauss.Thm221Gauss
+public import RBM1D.EnergyN.Gauss.Theorems24And25Gauss
+public import RBM1D.Flow.Theorem26Gauss
+
+@[expose] public section
 
 /-!
 # The paper's main results, Theorems 2.2–2.6, in final Lean form
@@ -325,12 +330,12 @@ namespace RBM.Paper.HypothesisTable
 
 open Lean Meta Elab Command
 
-def isRealOrder (e : Expr) : Bool :=
+meta def isRealOrder (e : Expr) : Bool :=
   (e.isAppOfArity ``LT.lt 4 || e.isAppOfArity ``LE.le 4) && (e.getArg! 0).isConstOf ``Real
 
-def isNat (e : Expr) : Bool := e.isConstOf ``Nat
+meta def isNat (e : Expr) : Bool := e.isConstOf ``Nat
 
-def classify (t : Expr) : String :=
+meta def classify (t : Expr) : String :=
   if t.isConstOf ``RBM.Gauss.Dims || t.isConstOf ``Real || isRealOrder t then "S"
   else match t with
     | .forallE _ dom body _ =>

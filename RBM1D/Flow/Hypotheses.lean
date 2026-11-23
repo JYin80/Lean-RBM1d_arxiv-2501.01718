@@ -3,12 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.StochDom
-import RBM1D.Defs.Dist
-import RBM1D.Loop.GLoop
-import RBM1D.Loop.KBound
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Defs.StochDom
+public import RBM1D.Defs.Dist
+public import RBM1D.Loop.GLoop
+public import RBM1D.Loop.KBound
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+
+@[expose] public section
 
 /-!
 # The random layer as explicit hypotheses (§2.4, §2.6, §2.7)
@@ -101,12 +107,6 @@ theorem StochDom.precomp_param {U V : ℕ → Type*} {ξ ζ : ∀ N, U N → Ω 
     obtain ⟨v, hv⟩ := hω
     exact ⟨φ N v, hv⟩
 
-/-- A pointwise smaller family is dominated by whatever dominates the larger one. -/
-theorem StochDom.of_le_left {U : ℕ → Type*} {ξ ξ' ζ : ∀ N, U N → Ω → ℝ}
-    (hle : ∀ N u ω, ξ N u ω ≤ ξ' N u ω) (h : StochDom P ξ' ζ) : StochDom P ξ ζ :=
-  StochDom.of_subset h fun τ hτ =>
-    ⟨τ, hτ, Eventually.of_forall fun N ω ⟨u, hu⟩ => ⟨u, lt_of_lt_of_le hu (hle N u ω)⟩⟩
-
 /-- Restricting (or reindexing) the parameter set preserves deterministic `≺`. -/
 theorem UnifDetDom.precomp_param {U V : ℕ → Type*} {f g : ∀ N, U N → ℝ}
     (h : UnifDetDom f g) (φ : ∀ N, V N → U N) :
@@ -136,39 +136,11 @@ def pmLoop {L : ℕ} (a b : ZMod L) : LoopIdx (ZMod L) := ⟨[true, false], [a, 
 
 /-! ### The model -/
 
-/-- **The band model: dimensions, bandwidth (2.2), probability measure.**
-
-At index `N` the matrix has `L N` blocks of size `W N`.  The paper's `N = W L` is replaced by
-`W L ≤ N ≤ 2 W L` for large `N` (a relation that can hold for every large `N`, unlike
-`N = W L`).  `bandwidth` is (2.2) `W ≥ N^{1/2 + c}`. -/
-structure Band (Ω : Type*) [MeasurableSpace Ω] where
-  /-- The probability measure. -/
-  P : Measure Ω
-  isProbabilityMeasure : IsProbabilityMeasure P
-  /-- The block size `W = W(N)`. -/
-  W : ℕ → ℕ
-  /-- The number of blocks `L = L(N)`. -/
-  L : ℕ → ℕ
-  W_pos : ∀ N, 0 < W N
-  three_le_L : ∀ N, 3 ≤ L N
-  /-- `N = W L` up to a factor `2`. -/
-  dim : ∀ᶠ N : ℕ in atTop, W N * L N ≤ N ∧ N ≤ 2 * (W N * L N)
-  /-- The constant `c > 0` of (2.2). -/
-  c : ℝ
-  c_pos : 0 < c
-  /-- **(2.2)** `W ≥ N^{1/2 + c}`. -/
-  bandwidth : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ ((1 : ℝ) / 2 + c) ≤ W N
-
 namespace Band
 
 variable {Ω : Type*} [MeasurableSpace Ω] (B : Band Ω)
 
 instance neZeroW (N : ℕ) : NeZero (B.W N) := ⟨(B.W_pos N).ne'⟩
-
-instance neZeroL (N : ℕ) : NeZero (B.L N) := ⟨by have := B.three_le_L N; omega⟩
-
-/-- The row index `ZMod L × Fin W` of the `N × N` matrices (block, offset). -/
-abbrev Idx (N : ℕ) : Type := ZMod (B.L N) × Fin (B.W N)
 
 /-- `ℓ_t = ℓ̂(t) = min((1-t)^{-1/2}, L)` (2.59). -/
 noncomputable def ell (N : ℕ) (t : ℝ) : ℝ := ellHat (B.L N) (t : ℂ)
@@ -204,34 +176,9 @@ theorem scale_pos {E : ℝ} (hE : |E| < 2) (N : ℕ) {t : ℝ} (ht0 : 0 < t) (ht
 
 end Band
 
-/-- **The stochastic flow (2.34), per `N`.**  `H N t ω` is the matrix `H_t`; it is Hermitian,
-`H_0 = 0` and entrywise measurable.  The law of the flow (a matrix Brownian motion with variance
-profile `S`) is not formalized; its consequences enter as hypotheses: the fields of
-`RBM.Transfer`, and the bounds of Lemmas 2.18–2.20 and Theorem 2.21 (`RBM.BoundsN`,
-`RBM.Thm221N'` in `Flow/EnergyUniform.lean`). -/
-structure Sample {Ω : Type*} [MeasurableSpace Ω] (B : Band Ω) where
-  /-- The matrix flow `t ↦ H_t`. -/
-  H : ∀ N, ℝ → Ω → Matrix (B.Idx N) (B.Idx N) ℂ
-  hermitian : ∀ N t ω, Matrix.IsHermitian (H N t ω)
-  /-- `H_0 = 0` (2.34). -/
-  H_zero : ∀ N ω, H N 0 ω = 0
-  measurable : ∀ N t i j, Measurable fun ω => H N t ω i j
-
 namespace Sample
 
 variable {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B)
-
-/-- **(2.36)** `G_t = (H_t - z_t)⁻¹`, `z_t = E + (1-t) m^{(E)}` (Definition 2.7). -/
-noncomputable def G (E : ℝ) (N : ℕ) (t : ℝ) (ω : Ω) : Matrix (B.Idx N) (B.Idx N) ℂ :=
-  green (X.H N t ω) (zt E t)
-
-/-- **(2.41)** the `n`-`G` loop `L_{t,σ,a} = ⟨∏ G_t(σ_i) E_{a_i}⟩`. -/
-noncomputable def Lval (E : ℝ) (N : ℕ) (t : ℝ) (ω : Ω) (I : LoopIdx (ZMod (B.L N))) : ℂ :=
-  gloop (B.L N) (B.W N) (X.H N t ω) (zt E t) I
-
-/-- The expectation `E L_{t,σ,a}`. -/
-noncomputable def ELval (E : ℝ) (N : ℕ) (t : ℝ) (I : LoopIdx (ZMod (B.L N))) : ℂ :=
-  ∫ ω, X.Lval E N t ω I ∂B.P
 
 /-- `|L_{t,σ,a} - K_{t,σ,a}|`. -/
 noncomputable def lkErr (E : ℝ) (N : ℕ) (t : ℝ) (ω : Ω) (I : LoopIdx (ZMod (B.L N))) : ℝ :=
@@ -264,47 +211,6 @@ def TimeIcc.last (hst : ∀ N, s N ≤ t N) (N : ℕ) : TimeIcc s t N := ⟨t N,
 end Bounds
 
 /-! ### The distributional identities (2.39), (2.65), (2.66) -/
-
-/-- **The band matrix and the identities in law (2.39), (2.66)** (Lemma 2.8), written as
-transfers of `≺`-bounds rather than equalities of laws.
-
-For `Im z > 0` let `E = lemE z`, `t = lemT z` (Lemma 2.8, `RBM.lemE`, `RBM.lemT`; then
-`z = t^{-1/2} z_t^{(E)}` and `m_sc(z) = t^{1/2} m^{(E)}` are proved in `Defs/Semicircle.lean`).
-Since `H` and `t^{-1/2} H_t` have the same law, so do `G(z)` and `t^{1/2} G_t^{(E)}` (2.39), and
-the loops `Tr G(z) E_a G(z) E_b`, `Tr G(z) E_a G(z)† E_b` and `t L_{t,(+,±),(a,b)}` (2.66).
-Equality in law of finitely many measurable random variables transfers every bound of the form
-`max_u |ξ(u) - c(u)| ≤ N^τ ζ(u)` with deterministic `c`, `ζ`; that is what is recorded.
-Only the direction `G_t → G(z)` is used in the paper. -/
-structure Transfer {Ω : Type*} [MeasurableSpace Ω] {B : Band Ω} (X : Sample B) where
-  /-- The band matrix `H` of Section 2.1, one for each `N`. -/
-  Hband : ∀ N, Ω → Matrix (B.Idx N) (B.Idx N) ℂ
-  hermitian : ∀ N ω, Matrix.IsHermitian (Hband N ω)
-  /-- **(2.39)** `G(z) ∼ t^{1/2} G_t^{(E)}`, entrywise, with deterministic centering `c`. -/
-  green : ∀ z : ℕ → ℂ, (∀ N, 0 < (z N).im) →
-    ∀ (c : ∀ N, B.Idx N × B.Idx N → ℂ) (ζ : ∀ N, B.Idx N × B.Idx N → ℝ),
-    StochDom B.P
-      (fun N ij ω => ‖(Real.sqrt (lemT (z N)) : ℂ) *
-        X.G (lemE (z N)) N (lemT (z N)) ω ij.1 ij.2 - c N ij‖)
-      (fun N ij _ => ζ N ij) →
-    StochDom B.P (fun N ij ω => ‖RBM.green (Hband N ω) (z N) ij.1 ij.2 - c N ij‖)
-      (fun N ij _ => ζ N ij)
-  /-- **(2.66)** `Tr G(z) E_a G(z)^{(±)} E_b ∼ t L_{t,(+,±),(a,b)}`, with deterministic
-  centering `c` (`σ₂ = true`: `G(z)`; `σ₂ = false`: `G(z)† = G(z̄)`). -/
-  loop2 : ∀ z : ℕ → ℂ, (∀ N, 0 < (z N).im) → ∀ σ₂ : Bool,
-    ∀ (c : ∀ N, ZMod (B.L N) × ZMod (B.L N) → ℂ) (ζ : ∀ N, ZMod (B.L N) × ZMod (B.L N) → ℝ),
-    StochDom B.P
-      (fun N ab ω => ‖(lemT (z N) : ℂ) *
-        X.Lval (lemE (z N)) N (lemT (z N)) ω ⟨[true, σ₂], [ab.1, ab.2]⟩ - c N ab‖)
-      (fun N ab _ => ζ N ab) →
-    StochDom B.P
-      (fun N ab ω => ‖gloop (B.L N) (B.W N) (Hband N ω) (z N) ⟨[true, σ₂], [ab.1, ab.2]⟩ -
-        c N ab‖)
-      (fun N ab _ => ζ N ab)
-  /-- **(2.66) in expectation** (used for (2.8), (2.9) together with (2.62)). -/
-  loop2_expect : ∀ z : ℕ → ℂ, (∀ N, 0 < (z N).im) → ∀ (σ₂ : Bool) (N : ℕ)
-    (a b : ZMod (B.L N)),
-    ∫ ω, gloop (B.L N) (B.W N) (Hband N ω) (z N) ⟨[true, σ₂], [a, b]⟩ ∂B.P =
-      (lemT (z N) : ℂ) * X.ELval (lemE (z N)) N (lemT (z N)) ⟨[true, σ₂], [a, b]⟩
 
 namespace Transfer
 

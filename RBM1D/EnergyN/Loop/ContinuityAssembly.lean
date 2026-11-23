@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.ContinuityAssembly
+
+module
+
+public import RBM1D.Loop.ContinuityAssembly
+
+@[expose] public section
 
 /-!
 # Lemma 5.1 and its threshold generalization, at an `N`-dependent energy

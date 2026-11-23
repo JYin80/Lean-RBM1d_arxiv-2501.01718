@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Universality
-import RBM1D.Delocalization
-import RBM1D.Loop.GLoop
+
+module
+
+public import RBM1D.Flow.Universality
+public import RBM1D.Delocalization
+public import RBM1D.Loop.GLoop
+
+@[expose] public section
 
 /-!
 # The deterministic spectral precursor to (2.31)

@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.DBMInputNorm
+
+module
+
+public import RBM1D.Flow.DBMInputNorm
+
+@[expose] public section
 
 /-!
 # Step 1 of Theorem 2.6 for the band model, at unit density
@@ -917,6 +922,7 @@ theorem step1_band' (d : Dims) (h51 : LSY22' d) {κ : ℝ} (hκ : 0 < κ)
     refine (integral_mono_of_nonneg (Eventually.of_forall fun ω => abs_nonneg _)
       ((integrable_const _).add ((integrable_const _).indicator hTm))
       (Eventually.of_forall hpt)).trans ?_
+    simp only [Pi.add_apply]
     rw [integral_add (integrable_const _) ((integrable_const _).indicator hTm), integral_const,
       integral_indicator_const _ hTm, probReal_univ, one_smul, smul_eq_mul]
   have hTreal : (P d).real T ≤ (N : ℝ) ^ (-((2 * k + 1 : ℕ) : ℝ)) := by

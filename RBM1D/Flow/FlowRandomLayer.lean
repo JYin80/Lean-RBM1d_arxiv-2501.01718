@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseBounds
-import RBM1D.Flow.GUEPhase729
-import RBM1D.Flow.OUCommonFlow
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import RBM1D.Flow.GUEPhaseBounds
+public import RBM1D.Flow.GUEPhase729
+public import RBM1D.Flow.OUCommonFlow
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # The §7.2 random layer: `FlowLocalLaw` and `FlowEq747` from the Step 1–5 inputs
@@ -773,7 +778,7 @@ theorem flowEq747_of_steps (d : Dims) {κ : ℝ} (hκ : 0 < κ) (hG2 : BoundsNIn
     (by norm_num) hE' ht1 ht10 ht0 h730 hscale hell Kt hKinit hK hK2 hB hP
   have hzim : ∀ N, 0 < (z N).im := fun N => by
     rw [hzdef, Band.queZ_im]; exact queEta_pos (hSpos N) (hW0 N)
-  refine GUEPhase.eq747_of_inputs (ouCommonFlow d) t (by positivity) (fun _ => E)
+  refine GUEPhase.eq747_of_inputs (ouCommonFlow d) t (τ := (ouCommonBand d).c / 3) (div_nonneg hc.le (by norm_num)) (fun _ => E)
     (fun N => ouZeta (t N)) (fun _ => by have := abs_nonneg E; linarith)
     (Eventually.of_forall fun N => ⟨frl_ouZeta_nonneg (ht0' N), frl_ouZeta_le_one _⟩)
     (GUEGrid.gueFlowCommon d t) ⟨GUEGrid.law726_gueFlowCommon d t _ _, ?_, ?_, ?_⟩

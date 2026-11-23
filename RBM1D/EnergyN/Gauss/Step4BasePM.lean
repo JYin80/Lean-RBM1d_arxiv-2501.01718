@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step3Charges
-import RBM1D.Gauss.Step2Plain
-import RBM1D.EnergyN.Gauss.Step2Gauss
-import RBM1D.EnergyN.Gauss.Step3Charges
-import RBM1D.EnergyN.Gauss.Step3Plain
-import RBM1D.EnergyN.Hierarchy.StepGlue
+
+module
+
+public import RBM1D.Gauss.Step3Charges
+public import RBM1D.Gauss.Step2Plain
+public import RBM1D.EnergyN.Gauss.Step2Gauss
+public import RBM1D.EnergyN.Gauss.Step3Charges
+public import RBM1D.EnergyN.Gauss.Step3Plain
+public import RBM1D.EnergyN.Hierarchy.StepGlue
+
+@[expose] public section
 
 /-!
 # The estimates `S(m, 0)`, `S(1, l)` and the `(+,-)` 2-loop, for the Gaussian flow

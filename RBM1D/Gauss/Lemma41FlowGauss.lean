@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma41Glue
-import RBM1D.Gauss.GoodSetFlowCore
+
+module
+
+public import RBM1D.Gauss.Lemma41Glue
+public import RBM1D.Gauss.GoodSetFlowCore
+
+@[expose] public section
 
 /-!
 # Lemma 4.1 along the flow: the good events at a time-independent threshold

@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.LDEQuad
+
+module
+
+public import RBM1D.Gauss.LDEQuad
+
+@[expose] public section
 
 /-!
 # The positive chaos moment bound `E[T^p] ≤ C_p E[Vq^p]`

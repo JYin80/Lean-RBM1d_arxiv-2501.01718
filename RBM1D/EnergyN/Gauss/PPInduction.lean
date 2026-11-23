@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.PPInduction
-import RBM1D.EnergyN.Gauss.PPGoodEvent
-import RBM1D.EnergyN.Gauss.GridAssembly
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.EnergyN.Unif.Gauss.Lemma514Holder
+
+module
+
+public import RBM1D.Gauss.PPInduction
+public import RBM1D.EnergyN.Gauss.PPGoodEvent
+public import RBM1D.EnergyN.Gauss.GridAssembly
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.EnergyN.Unif.Gauss.Lemma514Holder
+
+@[expose] public section
 
 /-!
 # The `(+,+)` induction on the grid at an `N`-dependent energy

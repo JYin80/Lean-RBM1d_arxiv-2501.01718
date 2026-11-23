@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.EarlyQVRate
-import RBM1D.Hierarchy.Step2Near47
-import RBM1D.Gauss.Step6Hyp
-import RBM1D.Flow.Thm221Bare
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Hierarchy.Step2FarMart
-import RBM1D.Flow.Eq548Producer
-import RBM1D.Gauss.EntryBoundTime
+
+module
+
+public import RBM1D.Gauss.EarlyQVRate
+public import RBM1D.Hierarchy.Step2Near47
+public import RBM1D.Gauss.Step6Hyp
+public import RBM1D.Flow.Thm221Bare
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Hierarchy.Step2FarMart
+public import RBM1D.Flow.Eq548Producer
+public import RBM1D.Gauss.EntryBoundTime
+
+@[expose] public section
 
 /-!
 # The structural inputs of `(S3)`: the `4`-loop maximum and the glued `6`-loops

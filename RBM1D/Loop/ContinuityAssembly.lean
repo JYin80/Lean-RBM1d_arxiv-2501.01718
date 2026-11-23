@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Split
-import RBM1D.Loop.Continuity
-import RBM1D.Flow.Hypotheses
+
+module
+
+public import RBM1D.Loop.Split
+public import RBM1D.Loop.Continuity
+public import RBM1D.Flow.Hypotheses
+
+@[expose] public section
 
 /-!
 # The assembly of §6: Lemma 5.1 (continuity estimate on loops)

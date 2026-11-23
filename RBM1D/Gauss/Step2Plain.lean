@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step2Close
+
+module
+
+public import RBM1D.Gauss.Step2Close
+
+@[expose] public section
 
 /-!
 # Step 2 under the plain (2.72) with the `−3/7` exponent in (5.35)

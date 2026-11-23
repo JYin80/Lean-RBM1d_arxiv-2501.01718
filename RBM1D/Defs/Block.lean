@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.LinearAlgebra.Matrix.Circulant
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Analysis.Matrix.Normed
+
+module
+
+public import RBM1D.MainDefs
+public import Mathlib.LinearAlgebra.Matrix.Circulant
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Analysis.Matrix.Normed
+
+@[expose] public section
 
 /-!
 # The block covariance matrix `S^(B)`
@@ -38,16 +44,6 @@ open Finset Matrix
 section Defs
 
 variable (L : ℕ)
-
-/-- The nearest-neighbour support `{0, 1, -1} ⊆ ZMod L`. -/
-def sbSupport : Finset (ZMod L) := {0, 1, -1}
-
-/-- The generating kernel of `S^(B)`: the value `1/3` on `{0, 1, -1}`, zero elsewhere. -/
-noncomputable def sbKernel : ZMod L → ℂ :=
-  fun u => if u ∈ sbSupport L then (3 : ℂ)⁻¹ else 0
-
-/-- The block covariance matrix `S^(B)` of Section 2.1. -/
-noncomputable def SB : Matrix (ZMod L) (ZMod L) ℂ := circulant (sbKernel L)
 
 theorem SB_apply (a b : ZMod L) : SB L a b = sbKernel L (a - b) := rfl
 

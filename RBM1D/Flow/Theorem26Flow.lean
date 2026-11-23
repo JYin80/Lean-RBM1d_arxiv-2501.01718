@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GreenCorrComparison
-import RBM1D.Flow.GreenComparisonOU
-import RBM1D.Flow.Step3KernelBounds
-import RBM1D.Flow.Step3KernelBoundsL2
-import RBM1D.Flow.DBMInput
-import RBM1D.Flow.EigenMeasurable
+
+module
+
+public import RBM1D.Flow.GreenCorrComparison
+public import RBM1D.Flow.GreenComparisonOU
+public import RBM1D.Flow.Step3KernelBounds
+public import RBM1D.Flow.Step3KernelBoundsL2
+public import RBM1D.Flow.DBMInput
+public import RBM1D.Flow.EigenMeasurable
+
+@[expose] public section
 
 /-!
 # Theorem 2.6, Steps 2–3: the terminal assembly on the common OU carrier

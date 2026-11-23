@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Hierarchy
-import RBM1D.Hierarchy.Dynamics
-import RBM1D.Flow.Initial
-import RBM1D.Gauss.MomentGronwall
-import RBM1D.Gauss.LoopC2
-import RBM1D.Hierarchy.Decay
+
+module
+
+public import RBM1D.Gauss.Hierarchy
+public import RBM1D.Hierarchy.Dynamics
+public import RBM1D.Flow.Initial
+public import RBM1D.Gauss.MomentGronwall
+public import RBM1D.Gauss.LoopC2
+public import RBM1D.Hierarchy.Decay
+
+@[expose] public section
 
 /-!
 # The moving spectral parameter and the drift of `L - K`

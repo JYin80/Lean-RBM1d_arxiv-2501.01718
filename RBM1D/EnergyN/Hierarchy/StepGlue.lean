@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.StepGlue
-import RBM1D.EnergyN.Hierarchy.Step3
-import RBM1D.EnergyN.Flow.Hypotheses
-import RBM1D.Flow.EnergyUniform
+
+module
+
+public import RBM1D.Hierarchy.StepGlue
+public import RBM1D.EnergyN.Hierarchy.Step3
+public import RBM1D.EnergyN.Flow.Hypotheses
+public import RBM1D.Flow.EnergyUniform
+
+@[expose] public section
 
 /-!
 # Flow inputs of Steps 3–5 at an `N`-dependent energy
@@ -108,7 +113,7 @@ theorem flow_S_zero'N (X : Sample B) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1
     have hr0 : 0 ≤ B.ell N p.1 / B.ell N (s N) := by
       have := (Step3.ellHat_pos_of_lt_one (L := B.L N) (B.one_le_L N)
         (p.1.2.2.trans_lt (ht1 N))).le
-      positivity
+      exact div_nonneg this hℓs.le
     have hpow : (B.ell N p.1 / B.ell N (s N)) ^ (m - 1) ≤ R N ^ (m - 1) :=
       pow_le_pow_left₀ hr0 hratio _
     have hR1 : (1 : ℝ) ≤ R N ^ (m - 1) := one_le_pow₀ hR

@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.TreeRep
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Data.List.GetD
+
+module
+
+public import RBM1D.Loop.TreeRep
+public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import Mathlib.Data.List.GetD
+
+@[expose] public section
 
 /-!
 # Lemma 3.4 for general `n`: a pivot-free tree value

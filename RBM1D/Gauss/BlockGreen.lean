@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.QVEndpoint
-import RBM1D.Gauss.EntryBoundTime
-import RBM1D.Gauss.GoodSetFlow
-import RBM1D.Gauss.EarlyQVRateEv
-import RBM1D.Hierarchy.Step2FarInputs
-import RBM1D.Gauss.GoodSetFlowCore
+
+module
+
+public import RBM1D.Gauss.QVEndpoint
+public import RBM1D.Gauss.EntryBoundTime
+public import RBM1D.Gauss.GoodSetFlow
+public import RBM1D.Gauss.EarlyQVRateEv
+public import RBM1D.Hierarchy.Step2FarInputs
+public import RBM1D.Gauss.GoodSetFlowCore
+
+@[expose] public section
 
 /-!
 # Block-resolved Green control for (5.42)

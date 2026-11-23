@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.EEBridgeArgCore
-import RBM1D.Hierarchy.SumZeroDyn
-import RBM1D.Hierarchy.Decay
+
+module
+
+public import RBM1D.Hierarchy.EEBridgeArgCore
+public import RBM1D.Hierarchy.SumZeroDyn
+public import RBM1D.Hierarchy.Decay
+
+@[expose] public section
 
 /-!
 # The glued `(2n+2)`-loop of `E ⊗ E`, (5.23)

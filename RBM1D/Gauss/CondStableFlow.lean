@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GoodSetFlow
-import RBM1D.Gauss.CondStableInst
+
+module
+
+public import RBM1D.Gauss.GoodSetFlow
+public import RBM1D.Gauss.CondStableInst
+
+@[expose] public section
 
 /-!
 # `≺` under the row conditional expectation `E_k`, uniformly in the time

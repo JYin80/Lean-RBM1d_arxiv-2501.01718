@@ -3,18 +3,23 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514Holder
-import RBM1D.Gauss.MomentDuhamelHypGauss
-import Mathlib.Probability.Distributions.Geometric
-import RBM1D.Gauss.FastDecayFlow
-import RBM1D.Gauss.GridAssemblyKerClass
-import RBM1D.Gauss.Lemma510Fixed
-import RBM1D.Gauss.EETensorBound
-import RBM1D.Gauss.GridStepDecompC
-import RBM1D.Gauss.GridDuhamel
-import RBM1D.Gauss.GridHierarchyN
-import RBM1D.Gauss.FastDecayFlow
-import RBM1D.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.Lemma514Holder
+public import RBM1D.Gauss.MomentDuhamelHypGauss
+public import Mathlib.Probability.Distributions.Geometric
+public import RBM1D.Gauss.FastDecayFlow
+public import RBM1D.Gauss.GridAssemblyKerClass
+public import RBM1D.Gauss.Lemma510Fixed
+public import RBM1D.Gauss.EETensorBound
+public import RBM1D.Gauss.GridStepDecompC
+public import RBM1D.Gauss.GridDuhamel
+public import RBM1D.Gauss.GridHierarchyN
+public import RBM1D.Gauss.FastDecayFlow
+public import RBM1D.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # Lemma 5.14, the non-alternating charges: (5.20) + (7.16) Case 1

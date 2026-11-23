@@ -3,11 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Hypotheses
-import RBM1D.Green.EntryBound
-import Mathlib.Probability.ProductMeasure
-import Mathlib.Probability.Distributions.Gaussian.Real
-import Mathlib.Analysis.CStarAlgebra.Matrix
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Flow.Hypotheses
+public import RBM1D.Green.EntryBound
+public import Mathlib.Probability.ProductMeasure
+public import Mathlib.Probability.Distributions.Gaussian.Real
+public import Mathlib.Analysis.CStarAlgebra.Matrix
+
+@[expose] public section
 
 /-!
 # The Gaussian band matrix `X` and the flow `H_u = √u · X` (the "moment route")
@@ -117,33 +123,9 @@ open scoped NNReal ENNReal
 
 /-! ### The dimensions -/
 
-/-- The dimension data of the band model: everything in `RBM.Band` except the probability
-measure (which this file constructs).  The fields are literally the fields of `RBM.Band`. -/
-structure Dims where
-  /-- The block size `W = W(N)`. -/
-  W : ℕ → ℕ
-  /-- The number of blocks `L = L(N)`. -/
-  L : ℕ → ℕ
-  W_pos : ∀ N, 0 < W N
-  three_le_L : ∀ N, 3 ≤ L N
-  /-- `N = W L` up to a factor `2`. -/
-  dim : ∀ᶠ N : ℕ in atTop, W N * L N ≤ N ∧ N ≤ 2 * (W N * L N)
-  /-- The constant `c > 0` of (2.2). -/
-  c : ℝ
-  c_pos : 0 < c
-  /-- **(2.2)** `W ≥ N^{1/2 + c}`. -/
-  bandwidth : ∀ᶠ N : ℕ in atTop, (N : ℝ) ^ ((1 : ℝ) / 2 + c) ≤ W N
-
 namespace Dims
 
 variable (d : Dims)
-
-instance neZeroW (N : ℕ) : NeZero (d.W N) := ⟨(d.W_pos N).ne'⟩
-
-instance neZeroL (N : ℕ) : NeZero (d.L N) := ⟨by have := d.three_le_L N; omega⟩
-
-/-- The matrix index `ZMod L × Fin W` (block, offset); definitionally `RBM.Band.Idx`. -/
-abbrev Idx (N : ℕ) : Type := ZMod (d.L N) × Fin (d.W N)
 
 end Dims
 
@@ -152,49 +134,7 @@ end Dims
 `idxKey` is the linear order that decides which of `X_ij`, `X_ji` carries the independent
 coordinates.  `X_ij` for `idxKey i ≤ idxKey j` are the independent entries. -/
 
-/-- The injective key `W * a.val + α` on `Idx d N = ZMod (L N) × Fin (W N)`. -/
-def idxKey (d : Dims) (N : ℕ) (i : d.Idx N) : ℕ := d.W N * i.1.val + (i.2 : ℕ)
-
-theorem idxKey_injective (d : Dims) (N : ℕ) : Function.Injective (idxKey d N) := by
-  rintro ⟨a, α⟩ ⟨b, β⟩ h
-  simp only [idxKey] at h
-  have hW : 0 < d.W N := d.W_pos N
-  have hα : (α : ℕ) < d.W N := α.isLt
-  have hβ : (β : ℕ) < d.W N := β.isLt
-  have hmod := congrArg (· % d.W N) h
-  have hdiv := congrArg (· / d.W N) h
-  simp only [Nat.mul_add_mod, Nat.mod_eq_of_lt hα, Nat.mod_eq_of_lt hβ] at hmod
-  simp only [Nat.mul_add_div hW, Nat.div_eq_of_lt hα, Nat.div_eq_of_lt hβ, add_zero] at hdiv
-  have : a = b := ZMod.val_injective (d.L N) hdiv
-  subst this
-  exact Prod.ext rfl (Fin.ext hmod)
-
-theorem idxKey_lt_or_eq_or_lt (d : Dims) (N : ℕ) (i j : d.Idx N) :
-    idxKey d N i < idxKey d N j ∨ i = j ∨ idxKey d N j < idxKey d N i := by
-  rcases lt_trichotomy (idxKey d N i) (idxKey d N j) with h | h | h
-  · exact Or.inl h
-  · exact Or.inr (Or.inl (idxKey_injective d N h))
-  · exact Or.inr (Or.inr h)
-
 /-! ### The probability space -/
-
-/-- The independent real coordinates: `⟨N, i, j, b⟩` with `b = true` the real part and
-`b = false` the imaginary part of the entry `X_ij` at size parameter `N`.  Only the pairs with
-`idxKey i ≤ idxKey j` are read by `Xentry`. -/
-abbrev Coord (d : Dims) : Type := Σ N : ℕ, d.Idx N × d.Idx N × Bool
-
-/-- The sample space: one real coordinate per element of `Coord d`. -/
-abbrev Ω (d : Dims) : Type := Coord d → ℝ
-
-/-- The variance of the coordinate `⟨N, i, j, b⟩`: `S_ij` on the diagonal (one real Gaussian),
-`S_ij / 2` off the diagonal (two independent real Gaussians), so that `E|X_ij|² = S_ij`
-in both cases.  `S` is `RBM.Sblk`, the real form of `S = S^(B) ⊗ S_W`. -/
-noncomputable def gvar (d : Dims) : Coord d → ℝ≥0 := fun c =>
-  ⟨if c.2.1 = c.2.2.1 then Sblk (d.L c.1) (d.W c.1) c.2.1 c.2.2.1
-    else Sblk (d.L c.1) (d.W c.1) c.2.1 c.2.2.1 / 2, by
-      split_ifs
-      · exact Sblk_nonneg _ _
-      · exact div_nonneg (Sblk_nonneg _ _) (by norm_num)⟩
 
 @[simp] theorem gvar_diag (d : Dims) (N : ℕ) (i : d.Idx N) (b : Bool) :
     (gvar d ⟨N, i, i, b⟩ : ℝ) = Sblk (d.L N) (d.W N) i i := by
@@ -206,14 +146,6 @@ theorem gvar_offDiag (d : Dims) (N : ℕ) (i j : d.Idx N) (b : Bool) (hij : i �
   show (if i = j then Sblk (d.L N) (d.W N) i j else Sblk (d.L N) (d.W N) i j / 2) = _
   exact ite_eq_right hij
 
-/-- The measure: the infinite product of the centred one-dimensional Gaussians
-`gaussianReal 0 (gvar d c)`.  All coordinates are independent. -/
-noncomputable def P (d : Dims) : Measure (Ω d) :=
-  Measure.infinitePi fun c => gaussianReal 0 (gvar d c)
-
-instance isProbabilityMeasure_P (d : Dims) : IsProbabilityMeasure (P d) := by
-  unfold P; infer_instance
-
 /-- **The law of one coordinate.**  Entry point for the one-dimensional Stein identity. -/
 theorem P_map_eval (d : Dims) (c : Coord d) :
     (P d).map (fun ω => ω c) = gaussianReal 0 (gvar d c) :=
@@ -221,48 +153,8 @@ theorem P_map_eval (d : Dims) (c : Coord d) :
 
 /-! ### The Gaussian band matrix `X` -/
 
-/-- The entry `X_ij`, read off from the coordinates of the pair `(min i j, max i j)` in the
-`idxKey` order.  See the file header for the table. -/
-noncomputable def Xentry (d : Dims) (N : ℕ) (ω : Ω d) (i j : d.Idx N) : ℂ :=
-  if idxKey d N i < idxKey d N j then
-    (ω ⟨N, i, j, true⟩ : ℂ) + Complex.I * (ω ⟨N, i, j, false⟩ : ℂ)
-  else if idxKey d N j < idxKey d N i then
-    (ω ⟨N, j, i, true⟩ : ℂ) - Complex.I * (ω ⟨N, j, i, false⟩ : ℂ)
-  else (ω ⟨N, i, j, true⟩ : ℂ)
-
-/-- The fixed Gaussian band matrix `X` at size parameter `N`. -/
-noncomputable def Xmat (d : Dims) (N : ℕ) (ω : Ω d) : Matrix (d.Idx N) (d.Idx N) ℂ :=
-  Matrix.of fun i j => Xentry d N ω i j
-
 @[simp] theorem Xmat_apply (d : Dims) (N : ℕ) (ω : Ω d) (i j : d.Idx N) :
     Xmat d N ω i j = Xentry d N ω i j := rfl
-
-/-- `X_ji = conj X_ij`, **pointwise** in `ω`. -/
-theorem Xentry_swap (d : Dims) (N : ℕ) (ω : Ω d) (i j : d.Idx N) :
-    Xentry d N ω j i = (starRingEnd ℂ) (Xentry d N ω i j) := by
-  unfold Xentry
-  rcases idxKey_lt_or_eq_or_lt d N i j with h | h | h
-  · rw [ite_eq_right (asymm h), ite_eq_left h, ite_eq_left h]
-    simp only [map_add, map_mul, Complex.conj_I, Complex.conj_ofReal]
-    ring
-  · subst h
-    rw [ite_eq_right (lt_irrefl _), ite_eq_right (lt_irrefl _)]
-    simp only [Complex.conj_ofReal]
-  · rw [ite_eq_left h, ite_eq_right (asymm h), ite_eq_left h]
-    simp only [map_sub, map_mul, Complex.conj_I, Complex.conj_ofReal]
-    ring
-
-/-- **`X` is Hermitian** — the `hermitian` field of `RBM.Sample`. -/
-theorem Xmat_isHermitian (d : Dims) (N : ℕ) (ω : Ω d) : (Xmat d N ω).IsHermitian := by
-  ext i j
-  exact (Xentry_swap d N ω j i).symm
-
-/-- **Entrywise measurability** — the `measurable` field of `RBM.Sample` (before the scaling). -/
-theorem measurable_Xentry (d : Dims) (N : ℕ) (i j : d.Idx N) :
-    Measurable fun ω : Ω d => Xentry d N ω i j := by
-  unfold Xentry
-  split_ifs <;>
-    exact by fun_prop
 
 /-! ### `E|X_ij|² = S_ij`
 
@@ -340,56 +232,11 @@ end SecondMoment
 
 /-! ### The flow `H_u = √u • X` -/
 
-/-- **(2.34) in the moment route**: `H_u := √u • X`.  For each fixed `u ≥ 0` this has exactly
-the law of the paper's `H_u`; the path `u ↦ H_u` is *not* a Brownian motion. -/
-noncomputable def Hflow (d : Dims) (N : ℕ) (u : ℝ) (ω : Ω d) : Matrix (d.Idx N) (d.Idx N) ℂ :=
-  (Real.sqrt u : ℂ) • Xmat d N ω
-
-@[simp] theorem Hflow_apply (d : Dims) (N : ℕ) (u : ℝ) (ω : Ω d) (i j : d.Idx N) :
-    Hflow d N u ω i j = (Real.sqrt u : ℂ) * Xentry d N ω i j := rfl
-
-/-- `H_0 = 0` — the `H_zero` field of `RBM.Sample`. -/
-@[simp] theorem Hflow_zero (d : Dims) (N : ℕ) (ω : Ω d) : Hflow d N 0 ω = 0 := by
-  simp [Hflow]
-
-theorem Hflow_isHermitian (d : Dims) (N : ℕ) (u : ℝ) (ω : Ω d) :
-    (Hflow d N u ω).IsHermitian := by
-  ext i j
-  show (starRingEnd ℂ) ((Real.sqrt u : ℂ) * Xentry d N ω j i)
-      = (Real.sqrt u : ℂ) * Xentry d N ω i j
-  rw [map_mul, Complex.conj_ofReal, ← Xentry_swap]
-
-theorem measurable_Hflow (d : Dims) (N : ℕ) (u : ℝ) (i j : d.Idx N) :
-    Measurable fun ω : Ω d => Hflow d N u ω i j := by
-  simp only [Hflow_apply]
-  exact (measurable_Xentry d N i j).const_mul _
-
 /-! ### The instance of the interface of `RBM1D/Flow/Hypotheses.lean` -/
-
-/-- The band model of `RBM1D/Flow/Hypotheses.lean` carried by the Gaussian space. -/
-noncomputable def band (d : Dims) : RBM.Band (Ω d) where
-  P := P d
-  isProbabilityMeasure := isProbabilityMeasure_P d
-  W := d.W
-  L := d.L
-  W_pos := d.W_pos
-  three_le_L := d.three_le_L
-  dim := d.dim
-  c := d.c
-  c_pos := d.c_pos
-  bandwidth := d.bandwidth
 
 @[simp] theorem band_P (d : Dims) : (band d).P = P d := rfl
 @[simp] theorem band_W (d : Dims) : (band d).W = d.W := rfl
 @[simp] theorem band_L (d : Dims) : (band d).L = d.L := rfl
-
-/-- **The `RBM.Sample` of the moment route.**  The three fields `hermitian`, `H_zero`,
-`measurable` are theorems, not hypotheses. -/
-noncomputable def sample (d : Dims) : RBM.Sample (band d) where
-  H := fun N u ω => Hflow d N u ω
-  hermitian := fun N u ω => Hflow_isHermitian d N u ω
-  H_zero := fun N ω => Hflow_zero d N ω
-  measurable := fun N u i j => measurable_Hflow d N u i j
 
 @[simp] theorem sample_H (d : Dims) (N : ℕ) (u : ℝ) (ω : Ω d) :
     (sample d).H N u ω = Hflow d N u ω := rfl

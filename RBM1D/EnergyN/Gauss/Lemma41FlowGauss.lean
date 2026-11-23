@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma41FlowGauss
+
+module
+
+public import RBM1D.Gauss.Lemma41FlowGauss
+
+@[expose] public section
 
 /-!
 # The loop hypothesis of Lemma 4.1 along the flow, at an `N`-dependent energy

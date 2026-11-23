@@ -3,15 +3,20 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.EarlyQVRateEv
-import RBM1D.Gauss.LoopLeibniz
-import RBM1D.Gauss.NearFieldRemainder
-import RBM1D.Gauss.GridDriftSum
-import RBM1D.Gauss.LoopLipschitz
-import RBM1D.Gauss.FlowHolder
-import RBM1D.Loop.Split
-import RBM1D.Gauss.DimsExample
-import RBM1D.Gauss.CutoffBounds
+
+module
+
+public import RBM1D.Gauss.EarlyQVRateEv
+public import RBM1D.Gauss.LoopLeibniz
+public import RBM1D.Gauss.NearFieldRemainder
+public import RBM1D.Gauss.GridDriftSum
+public import RBM1D.Gauss.LoopLipschitz
+public import RBM1D.Gauss.FlowHolder
+public import RBM1D.Loop.Split
+public import RBM1D.Gauss.DimsExample
+public import RBM1D.Gauss.CutoffBounds
+
+@[expose] public section
 
 /-!
 # The single-label quadratic variation on the good set, with the one-step time shift

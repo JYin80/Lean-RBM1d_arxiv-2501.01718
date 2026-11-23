@@ -3,15 +3,20 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridMarkov
-import RBM1D.Gauss.GridOneStep
-import RBM1D.Gauss.GridStopFilt
-import RBM1D.Gauss.LoopC2
-import RBM1D.Gauss.MomentGronwall
-import RBM1D.Gauss.OpNorm
-import RBM1D.Hierarchy.Kernel
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
-import Mathlib.Analysis.Convex.Mul
+
+module
+
+public import RBM1D.Gauss.GridMarkov
+public import RBM1D.Gauss.GridOneStep
+public import RBM1D.Gauss.GridStopFilt
+public import RBM1D.Gauss.LoopC2
+public import RBM1D.Gauss.MomentGronwall
+public import RBM1D.Gauss.OpNorm
+public import RBM1D.Hierarchy.Kernel
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+public import Mathlib.Analysis.Convex.Mul
+
+@[expose] public section
 
 /-!
 # The pathwise `Z`/`Y` decomposition of one grid step

@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514NonAlt
-import RBM1D.Gauss.Lemma514Two
-import RBM1D.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.Lemma514NonAlt
+public import RBM1D.Gauss.Lemma514Two
+public import RBM1D.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # Lemma 5.14 at loop length `n = 2`, non-alternating charges (`σ 0 = σ 1`)

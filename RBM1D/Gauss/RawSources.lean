@@ -3,23 +3,28 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step2Near47
-import RBM1D.Gauss.Step6Hyp
-import Mathlib.Analysis.Calculus.Deriv.Abs
-import RBM1D.Hierarchy.DriftDef
-import RBM1D.Gauss.MomentDuhamelGauss
-import RBM1D.Gauss.TestFunHerm
-import RBM1D.Gauss.WeightedSumSqrt
-import RBM1D.Gauss.EarlyQVRate
-import RBM1D.Flow.FirstCell
-import RBM1D.Gauss.EarlyQVRateEv
-import RBM1D.Gauss.FullQuadVar
-import RBM1D.Gauss.MinorDiffCond
-import RBM1D.Gauss.TwoChargeOneLoop
-import RBM1D.Gauss.DetAvgIBPFlow
-import RBM1D.Gauss.FullQuadVar
-import RBM1D.Gauss.EntryBoundTime
-import RBM1D.Gauss.Step1Hyp
+
+module
+
+public import RBM1D.Hierarchy.Step2Near47
+public import RBM1D.Gauss.Step6Hyp
+public import Mathlib.Analysis.Calculus.Deriv.Abs
+public import RBM1D.Hierarchy.DriftDef
+public import RBM1D.Gauss.MomentDuhamelGauss
+public import RBM1D.Gauss.TestFunHerm
+public import RBM1D.Gauss.WeightedSumSqrt
+public import RBM1D.Gauss.EarlyQVRate
+public import RBM1D.Flow.FirstCell
+public import RBM1D.Gauss.EarlyQVRateEv
+public import RBM1D.Gauss.FullQuadVar
+public import RBM1D.Gauss.MinorDiffCond
+public import RBM1D.Gauss.TwoChargeOneLoop
+public import RBM1D.Gauss.DetAvgIBPFlow
+public import RBM1D.Gauss.FullQuadVar
+public import RBM1D.Gauss.EntryBoundTime
+public import RBM1D.Gauss.Step1Hyp
+
+@[expose] public section
 
 /-!
 # The Gaussian raw-source carrier for arbitrary dimensions

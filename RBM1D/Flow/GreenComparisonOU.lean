@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUCommonFlow
-import RBM1D.Flow.OUGenerator
-import RBM1D.Flow.OUComparisonKernelBound
-import RBM1D.Defs.MatrixMeasurable
+
+module
+
+public import RBM1D.Flow.OUCommonFlow
+public import RBM1D.Flow.OUGenerator
+public import RBM1D.Flow.OUComparisonKernelBound
+public import RBM1D.Defs.MatrixMeasurable
+
+@[expose] public section
 
 /-!
 # (2.25) on the common carrier

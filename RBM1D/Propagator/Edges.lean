@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.Semicircle
-import RBM1D.Propagator.DecayComplex
-import RBM1D.Defs.Sums
+
+module
+
+public import RBM1D.Defs.Semicircle
+public import RBM1D.Propagator.DecayComplex
+public import RBM1D.Defs.Sums
+
+@[expose] public section
 
 /-!
 # Short and long edges: the two spectral parameters of (3.35)--(3.36)

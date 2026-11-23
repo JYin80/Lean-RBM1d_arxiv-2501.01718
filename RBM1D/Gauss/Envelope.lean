@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Domination
-import RBM1D.Loop.Split
-import RBM1D.Loop.Ward
-import Mathlib.MeasureTheory.Integral.Bochner.Set
+
+module
+
+public import RBM1D.Gauss.Domination
+public import RBM1D.Loop.Split
+public import RBM1D.Loop.Ward
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+
+@[expose] public section
 
 /-!
 # The first-moment reverse bridge `≺ ⟹ ∫`, and the deterministic envelope of a loop

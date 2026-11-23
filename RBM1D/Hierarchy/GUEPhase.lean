@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Universality
-import RBM1D.Hierarchy.Step1
-import Mathlib.Data.Set.Finite.List
+
+module
+
+public import RBM1D.Flow.Universality
+public import RBM1D.Hierarchy.Step1
+public import Mathlib.Data.Set.Finite.List
+
+@[expose] public section
 
 /-!
 # §7.2: the GUE phase of the flow — (7.25)–(7.47)

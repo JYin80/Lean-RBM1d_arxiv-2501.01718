@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUMarginalGaussian
-import Mathlib.Probability.Independence.InfinitePi
+
+module
+
+public import RBM1D.Flow.OUMarginalGaussian
+public import Mathlib.Probability.Independence.InfinitePi
+
+@[expose] public section
 
 /-!
 # The `L ≡ 3` band model is the GUE

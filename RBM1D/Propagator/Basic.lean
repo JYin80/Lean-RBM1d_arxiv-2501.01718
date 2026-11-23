@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.Block
-import Mathlib.Analysis.Normed.Ring.Units
-import Mathlib.Analysis.SpecificLimits.Normed
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Defs.Block
+public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.Analysis.SpecificLimits.Normed
+
+@[expose] public section
 
 /-!
 # The propagator `Θ_ξ`
@@ -75,10 +81,6 @@ end Norm
 section Defs
 
 variable (L : ℕ) [NeZero L]
-
-/-- Definition 2.13: the propagator `Θ_ξ = (1 - ξ S^(B))⁻¹`. -/
-noncomputable def Theta (ξ : ℂ) : Matrix (ZMod L) (ZMod L) ℂ :=
-  Ring.inverse (1 - ξ • SB L)
 
 /-- `Θ_0 = 1`: at `ξ = 0` the propagator is the identity. -/
 theorem Theta_zero : Theta L 0 = 1 := by

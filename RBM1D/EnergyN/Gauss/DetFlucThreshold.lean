@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DetFlucThreshold
-import RBM1D.EnergyN.Gauss.GoodSetFlow
-import RBM1D.EnergyN.Gauss.DetFlucAvg
+
+module
+
+public import RBM1D.Gauss.DetFlucThreshold
+public import RBM1D.EnergyN.Gauss.GoodSetFlow
+public import RBM1D.EnergyN.Gauss.DetFlucAvg
+
+@[expose] public section
 
 /-!
 # The fluctuation threshold at a fixed time, at an `N`-dependent energy

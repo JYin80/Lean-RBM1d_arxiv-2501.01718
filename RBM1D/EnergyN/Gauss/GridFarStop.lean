@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarStop
-import RBM1D.EnergyN.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.GridFarStop
+public import RBM1D.EnergyN.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # The Chebyshev bound for the grid drift sum at a stopping index, at an `N`-dependent energy
@@ -150,13 +155,13 @@ theorem cheb_grid_at_stop_plainN {E : ℕ → ℝ} (hE : ∀ N, |E N| < 2) {s t 
       obtain ⟨hf, hR, hΦ, hC₂, _⟩ := hstep b j hj
       have hm := ((memLp_stepY' s u K N j hΦ hR hC₂ hΔ0
         (ukerMat (d.L N) (time s u K N (j + 1)) (u N)) b).indicator
-        ((filt d).le j _ (hτmeas j))).re
+        ((filt d).le j _ (hτmeas j)).nullMeasurableSet).re
       exact hm.ae_eq (hf.fun_comp Complex.re).symm)
     (fun b j hj => by
       obtain ⟨hf, hR, hΦ, hC₂, _⟩ := hstep b j hj
       have hm := ((memLp_stepY' s u K N j hΦ hR hC₂ hΔ0
         (ukerMat (d.L N) (time s u K N (j + 1)) (u N)) b).indicator
-        ((filt d).le j _ (hτmeas j))).im
+        ((filt d).le j _ (hτmeas j)).nullMeasurableSet).im
       exact hm.ae_eq (hf.fun_comp Complex.im).symm)
     (fun b j hj => by
       obtain ⟨hf, hR, hΦ, hC₂, hrow⟩ := hstep b j hj

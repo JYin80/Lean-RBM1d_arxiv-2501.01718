@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step2MomentStep
-import RBM1D.Hierarchy.DriftDef
+
+module
+
+public import RBM1D.Hierarchy.Step2MomentStep
+public import RBM1D.Hierarchy.DriftDef
+
+@[expose] public section
 
 /-!
 # The far field of (5.48): the `J` bridge at the `(+,-)` `2`-loop, and `Ξ ≺ 1`

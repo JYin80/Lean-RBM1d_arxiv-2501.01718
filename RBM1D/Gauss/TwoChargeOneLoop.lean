@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.EGDef
-import RBM1D.Gauss.Model
-import RBM1D.Gauss.DimsExample
+
+module
+
+public import RBM1D.Hierarchy.EGDef
+public import RBM1D.Gauss.Model
+public import RBM1D.Gauss.DimsExample
+
+@[expose] public section
 
 /-!
 # Centered block one-loops at both charges on one Gaussian sample

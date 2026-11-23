@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.IBP
-import RBM1D.Gauss.OpNorm
+
+module
+
+public import RBM1D.Gauss.IBP
+public import RBM1D.Gauss.OpNorm
+
+@[expose] public section
 
 /-!
 # The trace moments `E Tr(X^{2p}) ≤ C_p N`

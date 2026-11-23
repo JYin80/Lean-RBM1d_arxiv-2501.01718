@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseStep
-import RBM1D.Flow.GUEPhaseEntry
-import RBM1D.Flow.GUEPhaseKTilde
-import RBM1D.Hierarchy.GUEPhaseG
-import RBM1D.Gauss.GridDuhamelTail
-import RBM1D.Flow.EnergyUniformReg
-import RBM1D.Flow.GUEPhaseHyp
-import RBM1D.Hierarchy.GUEPhaseGEven
+
+module
+
+public import RBM1D.Flow.GUEPhaseStep
+public import RBM1D.Flow.GUEPhaseEntry
+public import RBM1D.Flow.GUEPhaseKTilde
+public import RBM1D.Hierarchy.GUEPhaseG
+public import RBM1D.Gauss.GridDuhamelTail
+public import RBM1D.Flow.EnergyUniformReg
+public import RBM1D.Flow.GUEPhaseHyp
+public import RBM1D.Hierarchy.GUEPhaseGEven
+
+@[expose] public section
 
 /-!
 # The output of the §7.2 random layer: `gueGrid_pathBounds`

@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.IBP
-import RBM1D.Gauss.MinorReplace
+
+module
+
+public import RBM1D.Gauss.IBP
+public import RBM1D.Gauss.MinorReplace
+
+@[expose] public section
 
 /-!
 # `≺` under the conditional expectation `E_k`, and the diagonal term of the integration by parts

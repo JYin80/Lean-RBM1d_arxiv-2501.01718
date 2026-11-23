@@ -3,17 +3,22 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514AltEnd
-import RBM1D.Gauss.SigmaExhaust
-import RBM1D.Gauss.Step3Charges
-import RBM1D.Gauss.TraceMoment
-import RBM1D.Flow.EnergyUniform
-import RBM1D.EnergyN.Gauss.Lemma514NonAlt
-import RBM1D.EnergyN.Gauss.Lemma514AltEnd
-import RBM1D.EnergyN.Gauss.Lemma514Assemble
-import RBM1D.EnergyN.Gauss.Lemma514Moment
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.EnergyN.Gauss.Step4Gauss
+
+module
+
+public import RBM1D.Gauss.Lemma514AltEnd
+public import RBM1D.Gauss.SigmaExhaust
+public import RBM1D.Gauss.Step3Charges
+public import RBM1D.Gauss.TraceMoment
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.EnergyN.Gauss.Lemma514NonAlt
+public import RBM1D.EnergyN.Gauss.Lemma514AltEnd
+public import RBM1D.EnergyN.Gauss.Lemma514Assemble
+public import RBM1D.EnergyN.Gauss.Lemma514Moment
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.EnergyN.Gauss.Step4Gauss
+
+@[expose] public section
 
 /-!
 # Lemma 5.14 for all loop lengths `n ≥ 3`, at an `N`-dependent energy

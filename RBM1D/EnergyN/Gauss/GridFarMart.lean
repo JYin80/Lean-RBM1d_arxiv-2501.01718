@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarMart
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Flow.Scales
+
+module
+
+public import RBM1D.Gauss.GridFarMart
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Flow.Scales
+
+@[expose] public section
 
 /-!
 # The far-field martingale on the grid at an `N`-dependent energy
@@ -1244,7 +1249,7 @@ theorem farQV_sum_leN {κ : ℝ} (hκ0 : 0 < κ) {E : ℕ → ℝ} (hE : ∀ N, 
             _ ≤ N := by linarith
         have hJN : (N : ℝ) ^ (2 * (δ / 4)) * thrFar (E N) s δ N w ≤ (N : ℝ) ^ (1 : ℝ) := by
           rw [Real.rpow_one]; exact hJw.trans hJvN
-        have h := EEDef.nearEpsilon_le_inv (D := D) hWe (by positivity) hℓw0 hηw hN1'
+        have h := EEDef.nearEpsilon_le_inv (D := D) hWe (by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one ((band d).one_le_L N)) hℓw0 hηw hN1'
           zero_le_one hJw0 (by linarith only [hD]) hNinv hAw1 hAwN hWL hNW hJN
           (by nlinarith only [hlogW, hD0]) (by nlinarith only [hlogW, hD0])
         exact h.trans (inv_le_one_of_one_le₀ hW1)

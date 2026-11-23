@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step1Hyp
-import RBM1D.Gauss.Lemma514Moment
+
+module
+
+public import RBM1D.Gauss.Step1Hyp
+public import RBM1D.Gauss.Lemma514Moment
+
+@[expose] public section
 
 /-!
 # A Hölder modulus in the time for the moment route to Lemma 5.14

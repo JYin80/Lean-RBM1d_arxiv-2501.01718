@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step1Hyp
-import RBM1D.EnergyN.Hierarchy.Step1
-import RBM1D.EnergyN.Loop.ContinuityAssembly
-import RBM1D.Flow.EnergyUniform
+
+module
+
+public import RBM1D.Gauss.Step1Hyp
+public import RBM1D.EnergyN.Hierarchy.Step1
+public import RBM1D.EnergyN.Loop.ContinuityAssembly
+public import RBM1D.Flow.EnergyUniform
+
+@[expose] public section
 
 /-!
 # The hypotheses of Step 1 for the Gaussian flow, at an `N`-dependent energy

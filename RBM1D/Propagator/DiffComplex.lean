@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Decay
-import RBM1D.Propagator.RateComplex
-import RBM1D.Propagator.Edges
+
+module
+
+public import RBM1D.Propagator.Decay
+public import RBM1D.Propagator.RateComplex
+public import RBM1D.Propagator.Edges
+
+@[expose] public section
 
 /-!
 # The difference estimates (2.53)--(2.54) for complex spectral parameter

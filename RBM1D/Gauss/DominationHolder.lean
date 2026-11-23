@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Domination
-import RBM1D.Flow.Hypotheses
+
+module
+
+public import RBM1D.Gauss.Domination
+public import RBM1D.Flow.Hypotheses
+
+@[expose] public section
 
 /-!
 # The union bound with an exceptional event, and the time net on an `N`-dependent interval

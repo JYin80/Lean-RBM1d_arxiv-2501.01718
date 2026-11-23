@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Hypotheses
-import RBM1D.Flow.Scales
-import RBM1D.Loop.Split
+
+module
+
+public import RBM1D.Flow.Hypotheses
+public import RBM1D.Flow.Scales
+public import RBM1D.Loop.Split
+
+@[expose] public section
 
 /-!
 # Elementary flow families used by Step 3

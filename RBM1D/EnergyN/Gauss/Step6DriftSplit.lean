@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6DriftSplit
-import RBM1D.EnergyN.Hierarchy.SumZeroDyn
-import RBM1D.EnergyN.Hierarchy.Step6
+
+module
+
+public import RBM1D.Gauss.Step6DriftSplit
+public import RBM1D.EnergyN.Hierarchy.SumZeroDyn
+public import RBM1D.EnergyN.Hierarchy.Step6
+
+@[expose] public section
 
 /-!
 # The drift-target bound and the pinned-pair hierarchy at an `N`-dependent energy

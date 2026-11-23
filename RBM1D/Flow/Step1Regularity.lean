@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.DBMInput
-import RBM1D.Flow.FreeConvStability
-import RBM1D.Flow.EventuallyUniformBySequences
-import RBM1D.Gauss.TraceMoment
+
+module
+
+public import RBM1D.Flow.DBMInput
+public import RBM1D.Flow.FreeConvStability
+public import RBM1D.Flow.EventuallyUniformBySequences
+public import RBM1D.Gauss.TraceMoment
+
+@[expose] public section
 
 /-!
 # The regularity event of Step 1 of Theorem 2.6

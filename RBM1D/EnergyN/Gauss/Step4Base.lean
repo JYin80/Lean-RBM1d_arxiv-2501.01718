@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step4Base
-import RBM1D.EnergyN.Gauss.Step4BasePM
-import RBM1D.EnergyN.Gauss.PPUniform
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.EnergyN.Hierarchy.Step3
+
+module
+
+public import RBM1D.Gauss.Step4Base
+public import RBM1D.EnergyN.Gauss.Step4BasePM
+public import RBM1D.EnergyN.Gauss.PPUniform
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.EnergyN.Hierarchy.Step3
+
+@[expose] public section
 
 /-!
 # The base cases `n = 2` of Step 4 for the Gaussian flow, at an `N`-dependent energy

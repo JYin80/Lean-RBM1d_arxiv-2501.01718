@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514Holder
-import RBM1D.EnergyN.Unif.Gauss.Lemma514Holder
+
+module
+
+public import RBM1D.Gauss.Lemma514Holder
+public import RBM1D.EnergyN.Unif.Gauss.Lemma514Holder
+
+@[expose] public section
 
 /-!
 # Hölder continuity in time and the kernel bound along the flow, at an `N`-dependent energy

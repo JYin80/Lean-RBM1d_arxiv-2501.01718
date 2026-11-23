@@ -3,7 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Iteration
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Flow.Iteration
+
+@[expose] public section
 
 /-!
 # Theorems 2.3 and 2.4 from Lemmas 2.18–2.20 (§2.6)
@@ -72,9 +78,6 @@ open MeasureTheory Filter
 namespace Band
 
 variable {Ω : Type*} [MeasurableSpace Ω] (B : Band Ω)
-
-/-- The scale `W ℓ(z) η`, `η = Im z`, `ℓ(z) = min(η^{-1/2}, L) + 1` (2.1), of (2.3)–(2.9). -/
-noncomputable def zScale (N : ℕ) (z : ℂ) : ℝ := (B.W N : ℝ) * ellZ (B.L N) z * z.im
 
 theorem one_le_ellZ (L : ℕ) (z : ℂ) : 1 ≤ ellZ L z := by
   have : 0 ≤ min (1 / Real.sqrt z.im) (L : ℝ) :=

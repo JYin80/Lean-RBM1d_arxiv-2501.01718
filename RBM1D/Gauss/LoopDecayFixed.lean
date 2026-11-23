@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridJStar
-import RBM1D.Gauss.Step2Close
-import RBM1D.Gauss.Step2Plain
-import RBM1D.Hierarchy.Decay
-import RBM1D.Hierarchy.LKDecayQuant
-import Mathlib.Logic.Equiv.List
+
+module
+
+public import RBM1D.Gauss.GridJStar
+public import RBM1D.Gauss.Step2Close
+public import RBM1D.Gauss.Step2Plain
+public import RBM1D.Hierarchy.Decay
+public import RBM1D.Hierarchy.LKDecayQuant
+public import Mathlib.Logic.Equiv.List
+
+@[expose] public section
 
 /-!
 # Lemma 5.9 at a fixed time

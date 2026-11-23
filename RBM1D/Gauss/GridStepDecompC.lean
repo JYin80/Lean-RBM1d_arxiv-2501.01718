@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridQVForm
-import RBM1D.Gauss.GridExpansion
+
+module
+
+public import RBM1D.Gauss.GridQVForm
+public import RBM1D.Gauss.GridExpansion
+
+@[expose] public section
 
 /-!
 # The complex-valued `Z`/`Y` decomposition and the `E⊗E` tensor

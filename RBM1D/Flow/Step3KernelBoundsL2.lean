@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Step3KernelBounds
-import RBM1D.Flow.GreenSpectralL2
+
+module
+
+public import RBM1D.Flow.Step3KernelBounds
+public import RBM1D.Flow.GreenSpectralL2
+
+@[expose] public section
 
 /-!
 # Step 3 of Theorem 2.6: the weighted `L₂` kernel bound

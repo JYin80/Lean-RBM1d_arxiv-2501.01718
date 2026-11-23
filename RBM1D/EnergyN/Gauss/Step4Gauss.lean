@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step4Base
-import RBM1D.Gauss.Lemma514NonAltTwo
-import RBM1D.Gauss.OneLoopTimeIcc
-import RBM1D.EnergyN.Gauss.Step4Base
-import RBM1D.EnergyN.Gauss.Lemma514NonAltTwo
-import RBM1D.EnergyN.Gauss.Lemma514Two
-import RBM1D.EnergyN.Gauss.OneLoopTimeIcc
-import RBM1D.EnergyN.Hierarchy.Step45
+
+module
+
+public import RBM1D.Gauss.Step4Base
+public import RBM1D.Gauss.Lemma514NonAltTwo
+public import RBM1D.Gauss.OneLoopTimeIcc
+public import RBM1D.EnergyN.Gauss.Step4Base
+public import RBM1D.EnergyN.Gauss.Lemma514NonAltTwo
+public import RBM1D.EnergyN.Gauss.Lemma514Two
+public import RBM1D.EnergyN.Gauss.OneLoopTimeIcc
+public import RBM1D.EnergyN.Hierarchy.Step45
+
+@[expose] public section
 
 /-!
 # Step 4 for the Gaussian flow from Lemma 5.14, at an `N`-dependent energy

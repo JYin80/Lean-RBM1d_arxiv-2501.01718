@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarLift
-import RBM1D.EnergyN.Gauss.Lemma514Holder
-import RBM1D.EnergyN.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.GridFarLift
+public import RBM1D.EnergyN.Gauss.Lemma514Holder
+public import RBM1D.EnergyN.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # The far-field pointwise bound and the far part of (2.76), at an `N`-dependent energy

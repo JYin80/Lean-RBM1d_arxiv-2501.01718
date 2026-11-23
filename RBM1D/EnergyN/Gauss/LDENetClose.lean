@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.LDENetClose
-import RBM1D.EnergyN.Gauss.LDEFlow
+
+module
+
+public import RBM1D.Gauss.LDENetClose
+public import RBM1D.EnergyN.Gauss.LDEFlow
+
+@[expose] public section
 
 /-!
 # The large-deviation bounds along the flow with a floor, at an `N`-dependent energy

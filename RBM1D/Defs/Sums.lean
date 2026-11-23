@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.Dist
-import Mathlib.Algebra.Order.Field.GeomSum
-import Mathlib.Analysis.SpecialFunctions.Exp
+
+module
+
+public import RBM1D.Defs.Dist
+public import Mathlib.Algebra.Order.Field.GeomSum
+public import Mathlib.Analysis.SpecialFunctions.Exp
+
+@[expose] public section
 
 /-!
 # Sums on the cycle `ZMod L`

@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step1
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Flow.Scales
-import RBM1D.EnergyN.Loop.ContinuityAssembly
-import RBM1D.EnergyN.Flow.Iteration
+
+module
+
+public import RBM1D.Hierarchy.Step1
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Flow.Scales
+public import RBM1D.EnergyN.Loop.ContinuityAssembly
+public import RBM1D.EnergyN.Flow.Iteration
+
+@[expose] public section
 
 /-!
 # Step 1 of the proof of Theorem 2.21 at an `N`-dependent energy

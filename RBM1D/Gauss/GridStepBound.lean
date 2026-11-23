@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridExpansion
-import RBM1D.Gauss.GridDriftSum
-import RBM1D.Gauss.GridDuhamelTail
-import RBM1D.Gauss.GridNetLift
-import RBM1D.Gauss.GridJStar
-import RBM1D.Gauss.DimsExample
+
+module
+
+public import RBM1D.Gauss.GridExpansion
+public import RBM1D.Gauss.GridDriftSum
+public import RBM1D.Gauss.GridDuhamelTail
+public import RBM1D.Gauss.GridNetLift
+public import RBM1D.Gauss.GridJStar
+public import RBM1D.Gauss.DimsExample
+
+@[expose] public section
 
 /-!
 # The grid step bound: the η-pairing, the remainder sum and `phi_arith'`

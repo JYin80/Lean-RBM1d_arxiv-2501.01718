@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step3
-import RBM1D.Hierarchy.KernelDecay
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+
+module
+
+public import RBM1D.Hierarchy.Step3
+public import RBM1D.Hierarchy.KernelDecay
+public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+
+@[expose] public section
 
 /-!
 # Step 6 of the proof of Theorem 2.21: the sharp `E(L-K)` bound (2.80)

@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.WardInd
-import RBM1D.Loop.Primitive
+
+module
+
+public import RBM1D.Loop.WardInd
+public import RBM1D.Loop.Primitive
+
+@[expose] public section
 
 /-!
 # The derivative identity behind Ward's identity at general `n`

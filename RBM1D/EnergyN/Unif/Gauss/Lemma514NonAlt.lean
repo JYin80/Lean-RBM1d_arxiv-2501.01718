@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514NonAlt
-import RBM1D.EnergyN.Unif.Gauss.Lemma510Fixed
+
+module
+
+public import RBM1D.Gauss.Lemma514NonAlt
+public import RBM1D.EnergyN.Unif.Gauss.Lemma510Fixed
+
+@[expose] public section
 
 /-!
 # The `∃ C after E` reorder for the constant producer of `Gauss/Lemma514NonAlt.lean`

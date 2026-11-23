@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridBootstrap
-import RBM1D.Gauss.GridGoodEvent
-import RBM1D.Gauss.GridDriftPoint
-import RBM1D.Gauss.GridStepBound
+
+module
+
+public import RBM1D.Gauss.GridBootstrap
+public import RBM1D.Gauss.GridGoodEvent
+public import RBM1D.Gauss.GridDriftPoint
+public import RBM1D.Gauss.GridStepBound
+
+@[expose] public section
 
 /-!
 # Step 2 on the grid: interface bridges and the a.e. data at the endpoint
@@ -80,8 +85,7 @@ theorem measurableSet_rowSet (E : ℝ) (N : ℕ) (v ℓs τ : ℝ) :
         measurable_const.mul (measurable_green_matrix d N (zt E v) r p).norm) measurable_const
     convert hm using 2
     simp [hr]
-  · convert MeasurableSet.univ using 2
-    simp [hr]
+  · exact MeasurableSet.univ.congr (by ext M; simp [hr])
 
 /-! ### Bridge 4: the drift constant of the good-set drift bound -/
 

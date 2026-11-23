@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.BlockGreen
-import RBM1D.Gauss.NearFieldRemainder
-import RBM1D.Hierarchy.Step2
-import RBM1D.Gauss.GridJStar
-import RBM1D.Gauss.GridPath
-import RBM1D.Gauss.GridGoodSet
-import RBM1D.Gauss.GridExpansion
+
+module
+
+public import RBM1D.Gauss.BlockGreen
+public import RBM1D.Gauss.NearFieldRemainder
+public import RBM1D.Hierarchy.Step2
+public import RBM1D.Gauss.GridJStar
+public import RBM1D.Gauss.GridPath
+public import RBM1D.Gauss.GridGoodSet
+public import RBM1D.Gauss.GridExpansion
+
+@[expose] public section
 
 /-!
 # The pointwise drift bound on the good set

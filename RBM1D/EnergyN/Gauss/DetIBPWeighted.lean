@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DetIBPWeighted
-import RBM1D.EnergyN.Gauss.CondStableFlow
+
+module
+
+public import RBM1D.Gauss.DetIBPWeighted
+public import RBM1D.EnergyN.Gauss.CondStableFlow
+
+@[expose] public section
 
 /-!
 # The weighted conditional expectation of the diagonal, at an `N`-dependent energy

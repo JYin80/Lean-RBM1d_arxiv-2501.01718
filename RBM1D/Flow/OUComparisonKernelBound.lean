@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.StieltjesEtaMonotone
-import RBM1D.Flow.OUComparisonProductContraction
+
+module
+
+public import RBM1D.Flow.StieltjesEtaMonotone
+public import RBM1D.Flow.OUComparisonProductContraction
+
+@[expose] public section
 
 /-!
 # Pointwise absolute-kernel bound for the centered product contraction

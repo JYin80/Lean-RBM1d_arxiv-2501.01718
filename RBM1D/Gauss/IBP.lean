@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.FlucAvg
-import RBM1D.Gauss.MomentGronwall
-import RBM1D.Gauss.IBPPoly
-import RBM1D.Gauss.Hierarchy
-import RBM1D.Gauss.SteinMatrix
+
+module
+
+public import RBM1D.Gauss.FlucAvg
+public import RBM1D.Gauss.MomentGronwall
+public import RBM1D.Gauss.IBPPoly
+public import RBM1D.Gauss.Hierarchy
+public import RBM1D.Gauss.SteinMatrix
+
+@[expose] public section
 
 /-!
 # The Gaussian integration-by-parts display in the proof of (4.5)

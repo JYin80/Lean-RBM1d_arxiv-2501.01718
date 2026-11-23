@@ -3,21 +3,26 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step2Plain
-import RBM1D.Gauss.Step4Base
-import RBM1D.Gauss.Lemma514NonAltTwo
-import RBM1D.Gauss.OneLoopTimeIcc
-import RBM1D.Gauss.Lemma514AltEnd
-import RBM1D.Gauss.SigmaExhaust
-import RBM1D.Gauss.GridFarLift
-import RBM1D.Gauss.GridFarClosure
-import RBM1D.Gauss.Theorem22Gauss
-import RBM1D.Flow.EnergyUniformReg
-import RBM1D.Flow.BandLocalLawReg
-import RBM1D.EnergyN.Flow.Thm221NoEL
-import RBM1D.EnergyN.Gauss.Step2Gauss
-import RBM1D.EnergyN.Gauss.Step4Closed
-import RBM1D.EnergyN.Gauss.Step5Gauss
+
+module
+
+public import RBM1D.Gauss.Step2Plain
+public import RBM1D.Gauss.Step4Base
+public import RBM1D.Gauss.Lemma514NonAltTwo
+public import RBM1D.Gauss.OneLoopTimeIcc
+public import RBM1D.Gauss.Lemma514AltEnd
+public import RBM1D.Gauss.SigmaExhaust
+public import RBM1D.Gauss.GridFarLift
+public import RBM1D.Gauss.GridFarClosure
+public import RBM1D.Gauss.Theorem22Gauss
+public import RBM1D.Flow.EnergyUniformReg
+public import RBM1D.Flow.BandLocalLawReg
+public import RBM1D.EnergyN.Flow.Thm221NoEL
+public import RBM1D.EnergyN.Gauss.Step2Gauss
+public import RBM1D.EnergyN.Gauss.Step4Closed
+public import RBM1D.EnergyN.Gauss.Step5Gauss
+
+@[expose] public section
 
 /-!
 # Energy-uniform Theorem 2.21, Theorem 2.2 and Theorem 2.3 for the Gaussian model

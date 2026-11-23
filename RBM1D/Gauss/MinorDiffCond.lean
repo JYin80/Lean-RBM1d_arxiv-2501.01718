@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.MinorDiffGain
-import RBM1D.Gauss.Eq45FlowInputs
-import RBM1D.Gauss.CondStableFlow
+
+module
+
+public import RBM1D.Gauss.MinorDiffGain
+public import RBM1D.Gauss.Eq45FlowInputs
+public import RBM1D.Gauss.CondStableFlow
+
+@[expose] public section
 
 /-!
 # Conditionalizing the minor-difference gain on the good event

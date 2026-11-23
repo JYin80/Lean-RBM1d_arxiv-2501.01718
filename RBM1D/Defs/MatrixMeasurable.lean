@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Analysis.Matrix.MeasurableSpace
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.Topology.Instances.Matrix
+
+module
+
+public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.Topology.Instances.Matrix
+
+@[expose] public section
 
 /-!
 # Measurability of the matrix inverse

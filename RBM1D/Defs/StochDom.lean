@@ -3,8 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.Domination
-import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Defs.Domination
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+
+@[expose] public section
 
 /-!
 # Stochastic domination `≺` and high-probability events
@@ -65,15 +71,6 @@ section Defs
 
 variable {U : ℕ → Type*}
 
-/-- The failure event `{∃ u, ξ(N,u) > N^τ ζ(N,u)}`. -/
-def badSet (ξ ζ : ∀ N, U N → Ω → ℝ) (τ : ℝ) (N : ℕ) : Set Ω :=
-  {ω | ∃ u, (N : ℝ) ^ τ * ζ N u ω < ξ N u ω}
-
-/-- **Definition 2.1 (i)**: `ξ ≺ ζ`, uniformly in `u ∈ U(N)`. -/
-def StochDom (ξ ζ : ∀ N, U N → Ω → ℝ) : Prop :=
-  ∀ τ > (0 : ℝ), ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
-    P (badSet ξ ζ τ N) ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))
-
 /-- **Definition 2.1 (iv)**: `Ξ` holds with high probability. -/
 def HighProb (Ξ : ℕ → Set Ω) : Prop :=
   ∀ D > (0 : ℝ), ∀ᶠ N : ℕ in atTop, P (Ξ N)ᶜ ≤ ENNReal.ofReal ((N : ℝ) ^ (-D))
@@ -83,15 +80,6 @@ end Defs
 namespace StochDom
 
 variable {P} {U : ℕ → Type*} {ξ ζ χ ξ₁ ξ₂ ζ₁ ζ₂ : ∀ N, U N → Ω → ℝ}
-
-/-- A failure event eventually contained in the failure event of a single domination. -/
-theorem of_subset (h : StochDom P ξ₁ ζ₁)
-    (hsub : ∀ τ > (0 : ℝ), ∃ τ' > (0 : ℝ), ∀ᶠ N : ℕ in atTop,
-      badSet ξ ζ τ N ⊆ badSet ξ₁ ζ₁ τ' N) : StochDom P ξ ζ := by
-  intro τ hτ D hD
-  obtain ⟨τ', hτ', hs⟩ := hsub τ hτ
-  filter_upwards [hs, h τ' hτ' D hD] with N h1 h2
-  exact (measure_mono h1).trans h2
 
 /-- A failure event eventually contained in the union of two failure events. -/
 theorem of_subset_union {U₁ U₂ : ℕ → Type*} {f₁ g₁ : ∀ N, U₁ N → Ω → ℝ}

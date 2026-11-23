@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseGrid
-import RBM1D.Gauss.SteinMatrix
-import RBM1D.Gauss.IBP
-import RBM1D.Gauss.Step6Hyp
-import RBM1D.Propagator.Edges
+
+module
+
+public import RBM1D.Flow.GUEPhaseGrid
+public import RBM1D.Gauss.SteinMatrix
+public import RBM1D.Gauss.IBP
+public import RBM1D.Gauss.Step6Hyp
+public import RBM1D.Propagator.Edges
+
+@[expose] public section
 
 /-!
 # Lemma 5.15 for the GUE-phase profile

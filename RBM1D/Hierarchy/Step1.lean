@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step45
-import RBM1D.Loop.ContinuityAssembly
-import RBM1D.Defs.StochDomHighProb
-import RBM1D.Gauss.GoodSetFlowCore
+
+module
+
+public import RBM1D.Hierarchy.Step45
+public import RBM1D.Loop.ContinuityAssembly
+public import RBM1D.Defs.StochDomHighProb
+public import RBM1D.Gauss.GoodSetFlowCore
+
+@[expose] public section
 
 /-!
 # Step 1 of the proof of Theorem 2.21: (2.73) and (2.74)

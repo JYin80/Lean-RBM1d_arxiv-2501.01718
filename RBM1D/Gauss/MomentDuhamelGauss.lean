@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Gauss.LoopC2
+
+module
+
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Gauss.LoopC2
+
+@[expose] public section
 
 /-!
 # The Gaussian unloading of the moment Duhamel: joint `C²` of the resolvent

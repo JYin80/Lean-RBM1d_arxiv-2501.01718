@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DistEq
-import RBM1D.EnergyN.Loop.ContinuityAssembly
+
+module
+
+public import RBM1D.Gauss.DistEq
+public import RBM1D.EnergyN.Loop.ContinuityAssembly
+
+@[expose] public section
 
 /-!
 # (6.1) for the Gaussian model at an `N`-dependent energy

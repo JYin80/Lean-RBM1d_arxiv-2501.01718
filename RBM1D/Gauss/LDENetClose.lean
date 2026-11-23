@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.LDEFlow
-import RBM1D.Gauss.Step1Hyp
+
+module
+
+public import RBM1D.Gauss.LDEFlow
+public import RBM1D.Gauss.Step1Hyp
+
+@[expose] public section
 
 /-!
 # (4.2) along the flow: the deterministic modulus, and why the net comparison needs a floor

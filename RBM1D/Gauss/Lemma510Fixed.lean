@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.LoopDecayFixed
-import RBM1D.Gauss.OneLoopSharpGrid
-import RBM1D.Gauss.GridHierarchyN
-import RBM1D.Gauss.Step2Plain
-import RBM1D.Hierarchy.DriftDef
-import RBM1D.Hierarchy.LKDecayQuant
+
+module
+
+public import RBM1D.Gauss.LoopDecayFixed
+public import RBM1D.Gauss.OneLoopSharpGrid
+public import RBM1D.Gauss.GridHierarchyN
+public import RBM1D.Gauss.Step2Plain
+public import RBM1D.Hierarchy.DriftDef
+public import RBM1D.Hierarchy.LKDecayQuant
+
+@[expose] public section
 
 /-!
 # Lemma 5.10 at a fixed time

@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUCommonCarrier
-import RBM1D.Gauss.SteinMatrix
-import RBM1D.Gauss.TestFunHerm
-import RBM1D.Flow.OUComparisonHessian
+
+module
+
+public import RBM1D.Flow.OUCommonCarrier
+public import RBM1D.Gauss.SteinMatrix
+public import RBM1D.Gauss.TestFunHerm
+public import RBM1D.Flow.OUComparisonHessian
+
+@[expose] public section
 
 /-!
 # The OU generator identity
@@ -1133,7 +1138,7 @@ private theorem continuous_g (hΦ : TestFun' d N Φ) :
       (RBM.centeredVarianceEntry d N a b : ℂ) *
         ∫ ω, wirtSecond d N Φ (ouMatrix d N t (ouCommonProjection d N ω)) a b
           ∂(ouCommonMeasure d) :=
-    continuous_finset_sum _ fun a _ => continuous_finset_sum _ fun b _ =>
+    continuous_finsetSum _ fun a _ => continuous_finsetSum _ fun b _ =>
       continuous_const.mul (continuous_ouCommon_integral_wirtSecond hΦ a b)
   exact hc.smul hs
 

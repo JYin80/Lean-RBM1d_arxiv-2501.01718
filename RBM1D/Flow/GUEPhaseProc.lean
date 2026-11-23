@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseStep
-import RBM1D.Flow.GUEPhaseEntry
-import RBM1D.Flow.GUEPhaseKTilde
-import RBM1D.Gauss.GridStop
+
+module
+
+public import RBM1D.Flow.GUEPhaseStep
+public import RBM1D.Flow.GUEPhaseEntry
+public import RBM1D.Flow.GUEPhaseKTilde
+public import RBM1D.Gauss.GridStop
+
+@[expose] public section
 
 /-!
 # The GUE-phase random layer's process definitions and structural lemmas
@@ -126,7 +131,7 @@ private theorem gueInterp_continuousOn (f : ℕ → ℝ) :
   · simp only [if_pos h0]
     exact continuousOn_const
   · simp only [if_neg h0]
-    exact (continuous_finset_sum _ fun k _ => continuous_const.mul (gueTent_continuous k)).continuousOn
+    exact (continuous_finsetSum _ fun k _ => continuous_const.mul (gueTent_continuous k)).continuousOn
 
 private theorem gueInterp_sqrt_mul_le {a b : ℕ → ℝ} (ha : ∀ k, 0 ≤ a k) (hb : ∀ k, 0 ≤ b k)
     (t : ℝ) :

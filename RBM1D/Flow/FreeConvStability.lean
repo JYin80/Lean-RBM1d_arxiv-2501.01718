@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.FreeConvolution
-import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Topology.MetricSpace.Contracting
-import Mathlib.RingTheory.Polynomial.Hermite.Basic
+
+module
+
+public import RBM1D.Flow.FreeConvolution
+public import Mathlib.Analysis.Complex.Liouville
+public import Mathlib.Topology.MetricSpace.Contracting
+public import Mathlib.RingTheory.Polynomial.Hermite.Basic
+
+@[expose] public section
 
 /-!
 # Stability of the free convolution near the semicircle

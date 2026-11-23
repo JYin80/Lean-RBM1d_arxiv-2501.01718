@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.StochDom
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
+
+module
+
+public import RBM1D.Defs.StochDom
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+
+@[expose] public section
 
 /-!
 # From moment bounds to stochastic domination, and the time net

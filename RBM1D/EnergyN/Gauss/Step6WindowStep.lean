@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6EnvWindow
-import RBM1D.EnergyN.Gauss.Step6EnvWindow
-import RBM1D.EnergyN.Unif.Gauss.Step6EnvWindow
-import RBM1D.EnergyN.Gauss.Step6Hyp
-import RBM1D.EnergyN.Gauss.Step6Sample
-import RBM1D.EnergyN.Flow.Hypotheses
+
+module
+
+public import RBM1D.Gauss.Step6EnvWindow
+public import RBM1D.EnergyN.Gauss.Step6EnvWindow
+public import RBM1D.EnergyN.Unif.Gauss.Step6EnvWindow
+public import RBM1D.EnergyN.Gauss.Step6Hyp
+public import RBM1D.EnergyN.Gauss.Step6Sample
+public import RBM1D.EnergyN.Flow.Hypotheses
+
+@[expose] public section
 
 /-!
 # Step 6, the window theorems, envelope and step, at an `N`-dependent energy

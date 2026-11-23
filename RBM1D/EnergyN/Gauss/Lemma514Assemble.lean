@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514Holder
-import RBM1D.EnergyN.Gauss.Lemma514Holder
-import RBM1D.EnergyN.Gauss.Lemma514Moment
+
+module
+
+public import RBM1D.Gauss.Lemma514Holder
+public import RBM1D.EnergyN.Gauss.Lemma514Holder
+public import RBM1D.EnergyN.Gauss.Lemma514Moment
+
+@[expose] public section
 
 /-!
 # Lemma 5.14 from its endpoint estimate, at an `N`-dependent energy

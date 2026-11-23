@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Chain
-import RBM1D.Loop.Ward
-import Mathlib.Algebra.Order.Chebyshev
+
+module
+
+public import RBM1D.Loop.Chain
+public import RBM1D.Loop.Ward
+public import Mathlib.Algebra.Order.Chebyshev
+
+@[expose] public section
 
 /-!
 # The deterministic skeleton of §6 (continuity estimates on loops)

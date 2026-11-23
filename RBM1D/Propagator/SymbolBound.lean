@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Symbol
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.Data.ZMod.ValMinAbs
-import Mathlib.Analysis.Real.Pi.Bounds
+
+module
+
+public import RBM1D.Propagator.Symbol
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import Mathlib.Data.ZMod.ValMinAbs
+public import Mathlib.Analysis.Real.Pi.Bounds
+
+@[expose] public section
 
 /-!
 # Two-sided bound on the Fourier multiplier (B.3)

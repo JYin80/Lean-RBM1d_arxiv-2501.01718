@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Model
-import RBM1D.Gauss.Domination
-import RBM1D.Gauss.Moments
-import Mathlib.Analysis.Matrix.MeasurableSpace
-import Mathlib.Algebra.Order.Chebyshev
+
+module
+
+public import RBM1D.Gauss.Model
+public import RBM1D.Gauss.Domination
+public import RBM1D.Gauss.Moments
+public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import Mathlib.Algebra.Order.Chebyshev
+
+@[expose] public section
 
 /-!
 # The operator norm of the Gaussian band matrix: `‖X‖ ≺ 1`

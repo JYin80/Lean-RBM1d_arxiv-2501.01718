@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DetAvgIBPFlow
-import RBM1D.EnergyN.Gauss.DetIBPWeighted
-import RBM1D.EnergyN.Gauss.DetFlucAvgComplete
-import RBM1D.EnergyN.Gauss.DetFlucThreshold
+
+module
+
+public import RBM1D.Gauss.DetAvgIBPFlow
+public import RBM1D.EnergyN.Gauss.DetIBPWeighted
+public import RBM1D.EnergyN.Gauss.DetFlucAvgComplete
+public import RBM1D.EnergyN.Gauss.DetFlucThreshold
+
+@[expose] public section
 
 /-!
 # The block trace `tr((G_u - m) E_b)` by integration by parts, at an `N`-dependent energy

@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridStepDecompC
-import RBM1D.Gauss.EEUker
-import RBM1D.Gauss.FastDecayFlow
-import RBM1D.Gauss.LoopDecayFixed
-import RBM1D.Gauss.Q716Pointwise
-import RBM1D.Hierarchy.EEBridge
-import RBM1D.Flow.Initial
+
+module
+
+public import RBM1D.Gauss.GridStepDecompC
+public import RBM1D.Gauss.EEUker
+public import RBM1D.Gauss.FastDecayFlow
+public import RBM1D.Gauss.LoopDecayFixed
+public import RBM1D.Gauss.Q716Pointwise
+public import RBM1D.Hierarchy.EEBridge
+public import RBM1D.Flow.Initial
+
+@[expose] public section
 
 /-!
 # The Hermitian `E ⊗ E` tensor: loop expansion, joint decay, (5.81), (5.105)

@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DetAvgIBPFlow
-import RBM1D.Gauss.Eq45Flow
-import RBM1D.Gauss.GoodSetFlow
-import RBM1D.Gauss.Step2Close
-import RBM1D.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.DetAvgIBPFlow
+public import RBM1D.Gauss.Eq45Flow
+public import RBM1D.Gauss.GoodSetFlow
+public import RBM1D.Gauss.Step2Close
+public import RBM1D.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # The sharp one-loop bound `Ξ₁ ≺ 1` at a grid point: the scale arithmetic

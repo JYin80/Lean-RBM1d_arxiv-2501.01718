@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step2FarInputs
-import RBM1D.Gauss.CutoffBounds
+
+module
+
+public import RBM1D.Hierarchy.Step2FarInputs
+public import RBM1D.Gauss.CutoffBounds
+
+@[expose] public section
 
 /-!
 # The far index set of (5.48) along the flow

@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Consequences
+
+module
+
+public import RBM1D.Flow.Consequences
+
+@[expose] public section
 
 /-!
 # Theorem 2.21 and Lemmas 2.18–2.20 at an `N`-dependent energy; Theorem 2.2

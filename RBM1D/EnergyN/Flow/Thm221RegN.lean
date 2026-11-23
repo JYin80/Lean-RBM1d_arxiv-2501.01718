@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # Theorem 2.21 with (2.71), at an `N`-dependent energy

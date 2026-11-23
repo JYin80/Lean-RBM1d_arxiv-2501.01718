@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Eq45Flow
-import RBM1D.Gauss.DominationHolder
-import RBM1D.Gauss.CondStableInst
-import RBM1D.Gauss.FlowHolder
-import RBM1D.Gauss.TraceMoment
-import RBM1D.Gauss.FlucIter
-import RBM1D.Gauss.GoodSetFlowCore
+
+module
+
+public import RBM1D.Gauss.Eq45Flow
+public import RBM1D.Gauss.DominationHolder
+public import RBM1D.Gauss.CondStableInst
+public import RBM1D.Gauss.FlowHolder
+public import RBM1D.Gauss.TraceMoment
+public import RBM1D.Gauss.FlucIter
+public import RBM1D.Gauss.GoodSetFlowCore
+
+@[expose] public section
 
 /-!
 # Fixed-time domination uniform in the time, and the net theorem with a random control

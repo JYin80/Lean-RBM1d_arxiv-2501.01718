@@ -3,18 +3,23 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarLift
-import RBM1D.Gauss.Step4Base
-import RBM1D.Gauss.Lemma514NonAltTwo
-import RBM1D.Gauss.OneLoopTimeIcc
-import RBM1D.Gauss.Lemma514AltEnd
-import RBM1D.Gauss.SigmaExhaust
-import RBM1D.Gauss.GridFarClosure
-import RBM1D.EnergyN.Gauss.Step4Closed
-import RBM1D.EnergyN.Gauss.GridFarLift
-import RBM1D.EnergyN.Gauss.GridFarClosure
-import RBM1D.EnergyN.Hierarchy.Step2MomentStep
-import RBM1D.EnergyN.Hierarchy.Step45
+
+module
+
+public import RBM1D.Gauss.GridFarLift
+public import RBM1D.Gauss.Step4Base
+public import RBM1D.Gauss.Lemma514NonAltTwo
+public import RBM1D.Gauss.OneLoopTimeIcc
+public import RBM1D.Gauss.Lemma514AltEnd
+public import RBM1D.Gauss.SigmaExhaust
+public import RBM1D.Gauss.GridFarClosure
+public import RBM1D.EnergyN.Gauss.Step4Closed
+public import RBM1D.EnergyN.Gauss.GridFarLift
+public import RBM1D.EnergyN.Gauss.GridFarClosure
+public import RBM1D.EnergyN.Hierarchy.Step2MomentStep
+public import RBM1D.EnergyN.Hierarchy.Step45
+
+@[expose] public section
 
 /-!
 # Step 5 for the Gaussian flow at an `N`-dependent energy

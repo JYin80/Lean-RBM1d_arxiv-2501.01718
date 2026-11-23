@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridDriftPoint
-import RBM1D.Gauss.GridStepBound
-import RBM1D.Hierarchy.Step2Near47
-import RBM1D.Hierarchy.Step3
+
+module
+
+public import RBM1D.Gauss.GridDriftPoint
+public import RBM1D.Gauss.GridStepBound
+public import RBM1D.Hierarchy.Step2Near47
+public import RBM1D.Hierarchy.Step3
+
+@[expose] public section
 
 /-!
 # The joint near-drift grid sum

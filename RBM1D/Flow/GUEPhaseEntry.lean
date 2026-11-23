@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.GUEPhaseGrid
-import RBM1D.Green.EntryBound
-import RBM1D.Gauss.LDEFlow
-import RBM1D.Loop.Split
-import RBM1D.Gauss.LDEQuadDom
-import RBM1D.Loop.Continuity
-import RBM1D.Flow.Scales
+
+module
+
+public import RBM1D.Flow.GUEPhaseGrid
+public import RBM1D.Green.EntryBound
+public import RBM1D.Gauss.LDEFlow
+public import RBM1D.Loop.Split
+public import RBM1D.Gauss.LDEQuadDom
+public import RBM1D.Loop.Continuity
+public import RBM1D.Flow.Scales
+
+@[expose] public section
 
 /-!
 # Lemma 4.1 (4.2)/(4.3) for the GUE-phase profile

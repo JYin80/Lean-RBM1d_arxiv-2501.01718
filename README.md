@@ -52,7 +52,7 @@ the namespace `RBM`, and makes the build fail otherwise.
 
 ## Build and check
 
-The toolchain is `leanprover/lean4:v4.34.0` (file `lean-toolchain`) with Mathlib `v4.34.0`.
+The toolchain is `leanprover/lean4:v4.36.0-rc1` (file `lean-toolchain`) with Mathlib `v4.36.0-rc1`.
 
 ```
 lake exe cache get
@@ -123,3 +123,16 @@ than [51]).
 The code is released under the Apache License 2.0; see [`LICENSE`](LICENSE).
 
 Paper: Horng-Tzer Yau and Jun Yin. Lean formalization: Jun Yin.
+
+## Palomar
+
+The repository is laid out for the [Palomar registry](https://palomar-registry.org/) of Lean-verified mathematics.
+All source files use Lean's module system. [`RBM1D/MainDefs.lean`](RBM1D/MainDefs.lean) holds the definitions used
+by the statements of Theorems 2.2–2.6, with the lemmas these definitions need, and depends on Mathlib only;
+[`Challenge.lean`](Challenge.lean) is the statement to audit: it imports Mathlib only, repeats the part of
+`RBM1D/MainDefs.lean` that Theorems 2.2–2.5 use, and states these four theorems (Theorem 2.6, which has an external
+input as a hypothesis, is not in it). [`Solution.lean`](Solution.lean) proves the four statements from the library,
+[`comparator.json`](comparator.json) names the compared theorems and [`formalization.yaml`](formalization.yaml)
+holds the metadata. `lake build` also builds `Challenge.lean` (four `sorry` warnings, by design) and
+`Solution.lean`. `python3 scripts/check-lean-sources.py` and `./scripts/verify-comparator.sh` (Linux, needs
+`bwrap`) run the checks locally; submissions go to <https://submit.palomar-registry.org/>.

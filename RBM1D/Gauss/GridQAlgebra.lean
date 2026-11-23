@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.SumZeroDyn
-import RBM1D.Gauss.GridHierarchyN
-import RBM1D.Gauss.LoopDecayFixed
-import RBM1D.Gauss.DriftEnvelope
-import Mathlib.Probability.Distributions.Geometric
-import RBM1D.Hierarchy.ChargeReduce
-import RBM1D.Flow.Initial
-import Mathlib.Analysis.Calculus.Taylor
+
+module
+
+public import RBM1D.Hierarchy.SumZeroDyn
+public import RBM1D.Gauss.GridHierarchyN
+public import RBM1D.Gauss.LoopDecayFixed
+public import RBM1D.Gauss.DriftEnvelope
+public import Mathlib.Probability.Distributions.Geometric
+public import RBM1D.Hierarchy.ChargeReduce
+public import RBM1D.Flow.Initial
+public import Mathlib.Analysis.Calculus.Taylor
+
+@[expose] public section
 
 /-!
 # The Q-algebra on the grid

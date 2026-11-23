@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma510Fixed
-import RBM1D.EnergyN.Gauss.OneLoopSharpGridAll
-import RBM1D.EnergyN.Gauss.LoopDecayFixed
-import RBM1D.EnergyN.Gauss.GridJStar
-import RBM1D.Flow.EnergyUniform
+
+module
+
+public import RBM1D.Gauss.Lemma510Fixed
+public import RBM1D.EnergyN.Gauss.OneLoopSharpGridAll
+public import RBM1D.EnergyN.Gauss.LoopDecayFixed
+public import RBM1D.EnergyN.Gauss.GridJStar
+public import RBM1D.Flow.EnergyUniform
+
+@[expose] public section
 
 /-!
 # The grid good set of Lemma 5.14 with high probability, at an `N`-dependent energy

@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Root
-import RBM1D.Defs.Dist
-import RBM1D.Defs.Sums
+
+module
+
+public import RBM1D.Propagator.Root
+public import RBM1D.Defs.Dist
+public import RBM1D.Defs.Sums
+
+@[expose] public section
 
 /-!
 # The closed form of the propagator, towards (2.52)

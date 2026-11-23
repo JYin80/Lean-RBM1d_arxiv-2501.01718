@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Generator
-import RBM1D.Loop.Split
-import RBM1D.Loop.Primitive
+
+module
+
+public import RBM1D.Gauss.Generator
+public import RBM1D.Loop.Split
+public import RBM1D.Loop.Primitive
+
+@[expose] public section
 
 /-!
 # (2.34) and Lemma 2.11 in moment form

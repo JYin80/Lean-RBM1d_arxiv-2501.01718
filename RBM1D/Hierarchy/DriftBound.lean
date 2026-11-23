@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.DriftDef
+
+module
+
+public import RBM1D.Hierarchy.DriftDef
+
+@[expose] public section
 
 /-!
 # The power counts (5.76) as pointwise bounds on `L - K`

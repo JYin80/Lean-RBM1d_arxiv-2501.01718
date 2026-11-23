@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.EnergyN.Flow.Consequences
-import RBM1D.Flow.Universality
+
+module
+
+public import RBM1D.EnergyN.Flow.Consequences
+public import RBM1D.Flow.Universality
+
+@[expose] public section
 
 /-!
 # Theorems 2.4 and 2.5 from the gained Theorem 2.21, at an `N`-dependent energy

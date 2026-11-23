@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Eq45FlowInputs
-import RBM1D.Gauss.LDEHyp
+
+module
+
+public import RBM1D.Gauss.Eq45FlowInputs
+public import RBM1D.Gauss.LDEHyp
+
+@[expose] public section
 
 /-!
 # The large deviation estimates (4.2) along the flow: the net engine and the fixed-time input

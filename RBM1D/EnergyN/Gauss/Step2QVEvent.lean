@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.FullQuadVar
-import RBM1D.Gauss.RawSources
-import RBM1D.EnergyN.Gauss.RawSources
-import RBM1D.EnergyN.Gauss.GoodSetFlowProb
-import RBM1D.EnergyN.Gauss.BlockGreen
-import RBM1D.EnergyN.Gauss.EntryBoundTime
+
+module
+
+public import RBM1D.Gauss.FullQuadVar
+public import RBM1D.Gauss.RawSources
+public import RBM1D.EnergyN.Gauss.RawSources
+public import RBM1D.EnergyN.Gauss.GoodSetFlowProb
+public import RBM1D.EnergyN.Gauss.BlockGreen
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+
+@[expose] public section
 
 /-!
 # The quadratic-variation event of Step 2, at an `N`-dependent energy

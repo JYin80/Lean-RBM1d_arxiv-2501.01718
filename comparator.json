@@ -1,0 +1,17 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "RBM.Paper.theorem_2_2",
+    "RBM.Paper.theorem_2_3",
+    "RBM.Paper.theorem_2_4",
+    "RBM.Paper.theorem_2_5"
+  ],
+  "definition_names": [],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": true
+}

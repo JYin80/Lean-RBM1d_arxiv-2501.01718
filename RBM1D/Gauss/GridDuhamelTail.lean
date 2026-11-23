@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridAzuma
-import RBM1D.Gauss.GridDuhamel
-import RBM1D.Gauss.GridStop
-import RBM1D.Hierarchy.UkerBackBound
+
+module
+
+public import RBM1D.Gauss.GridAzuma
+public import RBM1D.Gauss.GridDuhamel
+public import RBM1D.Gauss.GridStop
+public import RBM1D.Hierarchy.UkerBackBound
+
+@[expose] public section
 
 /-!
 # Tail bounds for the stopped discrete Duhamel martingale

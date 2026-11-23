@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.EigenMeasurable
-import Mathlib.Probability.Distributions.Gaussian.Multivariate
-import Mathlib.Probability.Independence.InfinitePi
+
+module
+
+public import RBM1D.Flow.EigenMeasurable
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+public import Mathlib.Probability.Independence.InfinitePi
+
+@[expose] public section
 
 /-!
 # GUE unitary invariance

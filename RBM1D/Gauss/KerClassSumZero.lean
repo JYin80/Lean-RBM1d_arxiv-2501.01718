@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridAssemblyKerClass
-import RBM1D.Gauss.GridQAlgebra
-import RBM1D.Gauss.Lemma514Alt
+
+module
+
+public import RBM1D.Gauss.GridAssemblyKerClass
+public import RBM1D.Gauss.GridQAlgebra
+public import RBM1D.Gauss.Lemma514Alt
+
+@[expose] public section
 
 /-!
 # Case 2 class bridges for `KerClass` (the hypotheses `hDcls`/`hA0cls`)

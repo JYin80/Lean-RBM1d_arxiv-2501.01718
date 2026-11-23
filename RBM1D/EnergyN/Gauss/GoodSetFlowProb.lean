@@ -3,25 +3,30 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Analysis.SpecialFunctions.Exp
-import RBM1D.Hierarchy.Step2Near47
-import RBM1D.Gauss.Step6Hyp
-import Mathlib.Analysis.Calculus.Deriv.Abs
-import RBM1D.Hierarchy.DriftDef
-import RBM1D.Gauss.MomentDuhamelGauss
-import RBM1D.Gauss.TestFunHerm
-import RBM1D.Gauss.WeightedSumSqrt
-import RBM1D.Gauss.EarlyQVRate
-import RBM1D.Flow.FirstCell
-import RBM1D.Gauss.EarlyQVRateEv
-import RBM1D.Gauss.Lemma514Moment
-import RBM1D.Gauss.QVEndpoint
-import RBM1D.Gauss.GoodSetFlow
-import RBM1D.Gauss.MinorDiffCond
-import RBM1D.EnergyN.Gauss.Step1Hyp
-import RBM1D.EnergyN.Gauss.EntryBoundTime
-import RBM1D.EnergyN.Hierarchy.Step1
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Exp
+public import RBM1D.Hierarchy.Step2Near47
+public import RBM1D.Gauss.Step6Hyp
+public import Mathlib.Analysis.Calculus.Deriv.Abs
+public import RBM1D.Hierarchy.DriftDef
+public import RBM1D.Gauss.MomentDuhamelGauss
+public import RBM1D.Gauss.TestFunHerm
+public import RBM1D.Gauss.WeightedSumSqrt
+public import RBM1D.Gauss.EarlyQVRate
+public import RBM1D.Flow.FirstCell
+public import RBM1D.Gauss.EarlyQVRateEv
+public import RBM1D.Gauss.Lemma514Moment
+public import RBM1D.Gauss.QVEndpoint
+public import RBM1D.Gauss.GoodSetFlow
+public import RBM1D.Gauss.MinorDiffCond
+public import RBM1D.EnergyN.Gauss.Step1Hyp
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+public import RBM1D.EnergyN.Hierarchy.Step1
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # The good set along the flow with high probability, at an `N`-dependent energy

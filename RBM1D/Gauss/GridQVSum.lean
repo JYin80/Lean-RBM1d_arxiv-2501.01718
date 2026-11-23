@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridPath
-import RBM1D.Gauss.NearFieldRemainder
-import RBM1D.Gauss.EarlyQVRateEv
-import RBM1D.Hierarchy.Lemma57
-import RBM1D.Hierarchy.Step2
-import RBM1D.Flow.FlowFamiliesCore
+
+module
+
+public import RBM1D.Gauss.GridPath
+public import RBM1D.Gauss.NearFieldRemainder
+public import RBM1D.Gauss.EarlyQVRateEv
+public import RBM1D.Hierarchy.Lemma57
+public import RBM1D.Hierarchy.Step2
+public import RBM1D.Flow.FlowFamiliesCore
+
+@[expose] public section
 
 /-!
 # (5.44) on the grid: the label-free time sum `Λ_k`

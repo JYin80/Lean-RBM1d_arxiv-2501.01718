@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.CenteredOneLoopAllTime
-import RBM1D.EnergyN.Gauss.CenteredOneLoopFixedTime
-import RBM1D.EnergyN.Gauss.CenteredTraceModulus
+
+module
+
+public import RBM1D.Gauss.CenteredOneLoopAllTime
+public import RBM1D.EnergyN.Gauss.CenteredOneLoopFixedTime
+public import RBM1D.EnergyN.Gauss.CenteredTraceModulus
+
+@[expose] public section
 
 /-!
 # The centered one-loop trace on the whole time interval, at an `N`-dependent energy

@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Model
-import RBM1D.Green.Minor
-import RBM1D.Green.EntryBound
-import RBM1D.Gauss.LinearForm
-import RBM1D.Gauss.Generator
-import RBM1D.Gauss.Domination
-import RBM1D.Defs.MatrixMeasurable
+
+module
+
+public import RBM1D.Gauss.Model
+public import RBM1D.Green.Minor
+public import RBM1D.Green.EntryBound
+public import RBM1D.Gauss.LinearForm
+public import RBM1D.Gauss.Generator
+public import RBM1D.Gauss.Domination
+public import RBM1D.Defs.MatrixMeasurable
+
+@[expose] public section
 
 /-!
 # The minor resolvent does not read row `i`

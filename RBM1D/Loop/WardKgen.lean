@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.WardGeneral
-import RBM1D.Loop.TreeRepGeneral
-import RBM1D.Loop.Cor35
-import RBM1D.Propagator.Edges
+
+module
+
+public import RBM1D.Loop.WardGeneral
+public import RBM1D.Loop.TreeRepGeneral
+public import RBM1D.Loop.Cor35
+public import RBM1D.Propagator.Edges
+
+@[expose] public section
 
 /-!
 # Ward's identity and cyclic invariance for the primitive loop itself

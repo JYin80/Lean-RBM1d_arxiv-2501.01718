@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step2
+
+module
+
+public import RBM1D.Hierarchy.Step2
+
+@[expose] public section
 
 /-!
 # The weighted Duhamel sum for the drift terms, (5.39)–(5.41) on the grid

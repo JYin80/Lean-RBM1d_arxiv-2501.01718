@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.EnergyUniformReg
+
+module
+
+public import RBM1D.Flow.EnergyUniformReg
+
+@[expose] public section
 
 /-!
 # The bare-(2.72) arithmetic at an `N`-dependent energy

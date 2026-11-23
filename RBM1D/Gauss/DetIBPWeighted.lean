@@ -3,18 +3,23 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.CondStableFlow
-import RBM1D.Gauss.MinorDiffCond
-import RBM1D.Flow.Thm221Bare
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Hierarchy.ChargeReduce
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Gauss.CutoffBounds
-import RBM1D.Hierarchy.Step2MomentStep
-import RBM1D.Hierarchy.Step2FarMart
-import RBM1D.Flow.Eq548Producer
-import RBM1D.Gauss.EntryBoundTime
-import RBM1D.Gauss.LDENetClose
+
+module
+
+public import RBM1D.Gauss.CondStableFlow
+public import RBM1D.Gauss.MinorDiffCond
+public import RBM1D.Flow.Thm221Bare
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Hierarchy.ChargeReduce
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Gauss.CutoffBounds
+public import RBM1D.Hierarchy.Step2MomentStep
+public import RBM1D.Hierarchy.Step2FarMart
+public import RBM1D.Flow.Eq548Producer
+public import RBM1D.Gauss.EntryBoundTime
+public import RBM1D.Gauss.LDENetClose
+
+@[expose] public section
 
 /-!
 # Deterministic-scale weighted Gaussian IBP remainder

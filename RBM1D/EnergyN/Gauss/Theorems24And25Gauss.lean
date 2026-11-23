@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.EnergyN.Flow.Thm221Gain
-import RBM1D.EnergyN.Gauss.Thm221RegGauss
-import RBM1D.Gauss.Theorem22Gauss
+
+module
+
+public import RBM1D.EnergyN.Flow.Thm221Gain
+public import RBM1D.EnergyN.Gauss.Thm221RegGauss
+public import RBM1D.Gauss.Theorem22Gauss
+
+@[expose] public section
 
 /-!
 # Energy-uniform Theorems 2.4 and 2.5 for the Gaussian model

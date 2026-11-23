@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridGoodSet
-import RBM1D.Gauss.GridExpansion
-import RBM1D.Gauss.GridQVForm
-import RBM1D.Gauss.GridQVStep
-import RBM1D.Gauss.GridQVSum
-import RBM1D.Gauss.GridDuhamelTail
-import RBM1D.Gauss.GridNetLift
+
+module
+
+public import RBM1D.Gauss.GridGoodSet
+public import RBM1D.Gauss.GridExpansion
+public import RBM1D.Gauss.GridQVForm
+public import RBM1D.Gauss.GridQVStep
+public import RBM1D.Gauss.GridQVSum
+public import RBM1D.Gauss.GridDuhamelTail
+public import RBM1D.Gauss.GridNetLift
+
+@[expose] public section
 
 /-!
 # The grid stopping time and the good event
@@ -711,7 +716,7 @@ theorem integral_sq_indicator_stepY_le {S : Set (Ωg d)} (hS : MeasurableSet[fil
           * ∫ ω, ‖Xmat d N (ω (j + 1))‖ ^ 4 ∂(Pg d) := by
   have hm := memLp_stepY' s t K N j hΦ hReal hC₂ hΔ U b
   have hmI : MemLp (S.indicator (stepY d s t K N j Φ U b)) 2 (Pg d) :=
-    hm.indicator ((filt d).le j S hS)
+    hm.indicator ((filt d).le j S hS).nullMeasurableSet
   have hre : Integrable (fun ω => (S.indicator (stepY d s t K N j Φ U b) ω).re ^ 2) (Pg d) :=
     hmI.re.integrable_sq
   have him : Integrable (fun ω => (S.indicator (stepY d s t K N j Φ U b) ω).im ^ 2) (Pg d) :=

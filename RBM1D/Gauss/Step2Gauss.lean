@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridNetLift
-import RBM1D.Gauss.GridJStar
-import RBM1D.Gauss.EntryBoundTime
-import RBM1D.Hierarchy.Step2
+
+module
+
+public import RBM1D.Gauss.GridNetLift
+public import RBM1D.Gauss.GridJStar
+public import RBM1D.Gauss.EntryBoundTime
+public import RBM1D.Hierarchy.Step2
+
+@[expose] public section
 
 /-!
 # The matrix-level `lkErr` for the Gaussian model

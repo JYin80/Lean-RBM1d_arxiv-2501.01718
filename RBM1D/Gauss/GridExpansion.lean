@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridDuhamel
-import RBM1D.Gauss.GridStepDecomp
-import RBM1D.Gauss.GridDriftAlgebra
-import RBM1D.Gauss.GridQVConv
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Hierarchy.ChargeReduce
+
+module
+
+public import RBM1D.Gauss.GridDuhamel
+public import RBM1D.Gauss.GridStepDecomp
+public import RBM1D.Gauss.GridDriftAlgebra
+public import RBM1D.Gauss.GridQVConv
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Hierarchy.ChargeReduce
+
+@[expose] public section
 
 /-!
 # The grid Duhamel expansion of `A_k`, with the `Z`/`Y`/drift/`R` split

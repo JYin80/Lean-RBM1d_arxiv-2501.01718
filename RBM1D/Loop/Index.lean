@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Data.List.Basic
-import Mathlib.Data.List.Rotate
-import Mathlib.Data.ZMod.Defs
+
+module
+
+public import RBM1D.MainDefs
+public import Mathlib.Data.List.Basic
+public import Mathlib.Data.List.Rotate
+public import Mathlib.Data.ZMod.Defs
+
+@[expose] public section
 
 /-!
 # Index data of `G`-loops and the cut-and-glue operators
@@ -41,13 +47,6 @@ The operators of Definition 2.10 take the paper's `1`-based indices `k`, `l`:
 -/
 
 namespace RBM
-
-/-- Index data `(σ, a)` of a `G`-loop: charges (`true` for `+`) and block labels. -/
-@[ext]
-structure LoopIdx (α : Type*) where
-  σ : List Bool
-  a : List α
-  deriving DecidableEq
 
 namespace LoopIdx
 

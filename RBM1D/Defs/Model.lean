@@ -3,9 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Defs.Block
-import Mathlib.LinearAlgebra.Matrix.Kronecker
-import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Defs.Block
+public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+
+@[expose] public section
 
 /-!
 # The block band model
@@ -51,10 +57,6 @@ noncomputable def Svar : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ := SB L 
 
 theorem Svar_apply (a b : ZMod L) (α β : Fin W) :
     Svar L W (a, α) (b, β) = SB L a b * (W : ℂ)⁻¹ := rfl
-
-/-- The normalized block projection `E_a` of (2.5): `(E_a)_{ij} = δ_{ij} W⁻¹ 1(i ∈ I_a)`. -/
-noncomputable def Eblk (a : ZMod L) : Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ :=
-  diagonal fun p => if p.1 = a then (W : ℂ)⁻¹ else 0
 
 /-- `∑_a E_a = W⁻¹ I`. -/
 theorem sum_Eblk [NeZero L] : ∑ a, Eblk L W a = (W : ℂ)⁻¹ • (1 : Matrix _ _ ℂ) := by

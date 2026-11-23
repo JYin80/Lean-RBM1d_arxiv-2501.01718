@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.LDEQuadDom
-import RBM1D.Hierarchy.Step1
+
+module
+
+public import RBM1D.Gauss.LDEQuadDom
+public import RBM1D.Hierarchy.Step1
+
+@[expose] public section
 
 /-!
 # The interface between `Green/EntryBound.lean` and `Hierarchy/Step1.lean`

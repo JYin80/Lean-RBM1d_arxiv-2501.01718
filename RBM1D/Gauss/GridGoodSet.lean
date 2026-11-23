@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridJStar
-import RBM1D.Gauss.FullQuadVar
-import RBM1D.Gauss.RawSources
-import RBM1D.Gauss.CenteredOneLoopAllTime
-import RBM1D.Gauss.EarlyQVRate
-import RBM1D.Gauss.LoopC2
+
+module
+
+public import RBM1D.Gauss.GridJStar
+public import RBM1D.Gauss.FullQuadVar
+public import RBM1D.Gauss.RawSources
+public import RBM1D.Gauss.CenteredOneLoopAllTime
+public import RBM1D.Gauss.EarlyQVRate
+public import RBM1D.Gauss.LoopC2
+
+@[expose] public section
 
 set_option maxHeartbeats 1000000
 
@@ -67,14 +72,14 @@ variable (d : Dims)
 /-! ## T1 : `jGMat`, the matrix form of `BlockGreen.jG` -/
 
 /-- The matrix form of `BlockGreen.gmBlk`. -/
-private noncomputable def gmBlkMat (E : ℝ) (N : ℕ) (u : ℝ)
+noncomputable def gmBlkMat (E : ℝ) (N : ℕ) (u : ℝ)
     (M : Matrix (d.Idx N) (d.Idx N) ℂ) (x y : ZMod (d.L N)) : ℝ :=
   (Finset.univ : Finset (Bool × Fin (d.W N) × Fin (d.W N))).sup'
     ⟨(true, ⟨0, d.W_pos N⟩, ⟨0, d.W_pos N⟩), Finset.mem_univ _⟩
     (fun z => ‖Gsig M (zt E u) z.1 (x, z.2.1) (y, z.2.2)‖)
 
 /-- The matrix form of `BlockGreen.gsqBlk`. -/
-private noncomputable def gsqBlkMat (E : ℝ) (N : ℕ) (u : ℝ)
+noncomputable def gsqBlkMat (E : ℝ) (N : ℕ) (u : ℝ)
     (M : Matrix (d.Idx N) (d.Idx N) ℂ) (x y : ZMod (d.L N)) : ℝ :=
   (Finset.univ : Finset (ZMod (d.L N))).sup'
     ⟨0, Finset.mem_univ _⟩

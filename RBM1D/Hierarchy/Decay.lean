@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Dynamics
-import RBM1D.Hierarchy.KernelDecay
-import RBM1D.Loop.Cor35
-import RBM1D.Green.EntryBound
-import RBM1D.Loop.Split
+
+module
+
+public import RBM1D.Hierarchy.Dynamics
+public import RBM1D.Hierarchy.KernelDecay
+public import RBM1D.Loop.Cor35
+public import RBM1D.Green.EntryBound
+public import RBM1D.Loop.Split
+
+@[expose] public section
 
 /-!
 # Section 5.4: the fast decay property and the bounds on the `E`-terms

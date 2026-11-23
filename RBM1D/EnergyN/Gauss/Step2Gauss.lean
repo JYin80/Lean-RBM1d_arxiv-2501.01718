@@ -3,17 +3,22 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.EnergyN.Gauss.Step2Plain
-import RBM1D.EnergyN.Gauss.GridGoodSet
-import RBM1D.EnergyN.Gauss.GridGoodEvent
-import RBM1D.EnergyN.Gauss.Lemma514Holder
-import RBM1D.EnergyN.Gauss.EntryBoundTime
-import RBM1D.EnergyN.Hierarchy.Step1
-import RBM1D.EnergyN.Hierarchy.Step2
-import RBM1D.EnergyN.Hierarchy.StepGlue
-import RBM1D.EnergyN.Gauss.GridBootstrap
-import RBM1D.EnergyN.Gauss.Step2Close
-import RBM1D.EnergyN.Gauss.Steps12Gauss
+
+module
+
+public import RBM1D.EnergyN.Gauss.Step2Plain
+public import RBM1D.EnergyN.Gauss.GridGoodSet
+public import RBM1D.EnergyN.Gauss.GridGoodEvent
+public import RBM1D.EnergyN.Gauss.Lemma514Holder
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+public import RBM1D.EnergyN.Hierarchy.Step1
+public import RBM1D.EnergyN.Hierarchy.Step2
+public import RBM1D.EnergyN.Hierarchy.StepGlue
+public import RBM1D.EnergyN.Gauss.GridBootstrap
+public import RBM1D.EnergyN.Gauss.Step2Close
+public import RBM1D.EnergyN.Gauss.Steps12Gauss
+
+@[expose] public section
 
 /-!
 # Steps 1–2 for the Gaussian flow under the plain pair, at an `N`-dependent energy

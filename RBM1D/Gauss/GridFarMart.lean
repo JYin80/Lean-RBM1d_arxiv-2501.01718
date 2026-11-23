@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarStop
-import RBM1D.Gauss.GridFarQVConv
+
+module
+
+public import RBM1D.Gauss.GridFarStop
+public import RBM1D.Gauss.GridFarQVConv
+
+@[expose] public section
 
 /-!
 # The far martingale at the stopping level `thrFar`: the Azuma constants

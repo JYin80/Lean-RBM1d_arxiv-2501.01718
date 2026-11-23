@@ -3,15 +3,20 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridAssemblyKerClass
-import RBM1D.Gauss.PPDrift
-import RBM1D.Gauss.PPGoodEvent
-import RBM1D.Gauss.PPCondVar
-import RBM1D.Gauss.GridHierarchyN
-import RBM1D.Gauss.GridStepBound
-import RBM1D.Gauss.FlowHolder
-import RBM1D.Gauss.LoopLipschitz
-import RBM1D.Gauss.TraceMoment
+
+module
+
+public import RBM1D.Gauss.GridAssemblyKerClass
+public import RBM1D.Gauss.PPDrift
+public import RBM1D.Gauss.PPGoodEvent
+public import RBM1D.Gauss.PPCondVar
+public import RBM1D.Gauss.GridHierarchyN
+public import RBM1D.Gauss.GridStepBound
+public import RBM1D.Gauss.FlowHolder
+public import RBM1D.Gauss.LoopLipschitz
+public import RBM1D.Gauss.TraceMoment
+
+@[expose] public section
 
 /-!
 # The `(+,+)` 2-loop grid bound, induction form

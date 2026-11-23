@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Basic
-import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
-import Mathlib.Analysis.Fourier.FiniteAbelian.Orthogonality
-import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+
+module
+
+public import RBM1D.Propagator.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.Analysis.Fourier.FiniteAbelian.Orthogonality
+public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+
+@[expose] public section
 
 /-!
 # The Fourier representation of `Θ_ξ`

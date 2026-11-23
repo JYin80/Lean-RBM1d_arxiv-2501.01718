@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.DriftDef
-import RBM1D.Gauss.Lemma514Holder
-import RBM1D.Hierarchy.Decay
+
+module
+
+public import RBM1D.Hierarchy.DriftDef
+public import RBM1D.Gauss.Lemma514Holder
+public import RBM1D.Hierarchy.Decay
+
+@[expose] public section
 
 /-!
 # The pointwise deterministic envelope of the drift `F` of (5.15)

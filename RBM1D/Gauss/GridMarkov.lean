@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridPath
-import RBM1D.Gauss.LinearForm
-import Mathlib.Probability.Moments.SubGaussian
+
+module
+
+public import RBM1D.Gauss.GridPath
+public import RBM1D.Gauss.LinearForm
+public import Mathlib.Probability.Moments.SubGaussian
+
+@[expose] public section
 
 /-!
 # The discrete grid Markov property (2.34), §5.3

@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Basic
-import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Topology.Instances.Matrix
+
+module
+
+public import RBM1D.Propagator.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Slope
+public import Mathlib.Topology.Instances.Matrix
+
+@[expose] public section
 
 /-!
 # The derivative of the propagator, equation (2.51)

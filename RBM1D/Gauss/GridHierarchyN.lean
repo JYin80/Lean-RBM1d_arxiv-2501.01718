@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridDriftAlgebra
-import RBM1D.Gauss.Lemma514Holder
+
+module
+
+public import RBM1D.Gauss.GridDriftAlgebra
+public import RBM1D.Gauss.Lemma514Holder
+
+@[expose] public section
 
 /-!
 # The grid hierarchy step for general loop length `n`

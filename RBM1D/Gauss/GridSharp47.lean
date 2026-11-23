@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridFarStop
-import RBM1D.Gauss.GridDriftSplit
-import RBM1D.Gauss.GridNearDriftSum
+
+module
+
+public import RBM1D.Gauss.GridFarStop
+public import RBM1D.Gauss.GridDriftSplit
+public import RBM1D.Gauss.GridNearDriftSum
+
+@[expose] public section
 
 /-!
 # Pass 1 (the first improvement) as a bootstrap at the far stopping index

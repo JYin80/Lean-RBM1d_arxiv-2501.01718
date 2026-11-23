@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step45
-import RBM1D.EnergyN.Hierarchy.Step3
+
+module
+
+public import RBM1D.Hierarchy.Step45
+public import RBM1D.EnergyN.Hierarchy.Step3
+
+@[expose] public section
 
 /-!
 # Steps 4 and 5 of the proof of Theorem 2.21 at an `N`-dependent energy

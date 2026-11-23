@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.DBMInput
+
+module
+
+public import RBM1D.Flow.DBMInput
+
+@[expose] public section
 
 /-!
 # Existence and uniqueness of the free-convolution subordination equation

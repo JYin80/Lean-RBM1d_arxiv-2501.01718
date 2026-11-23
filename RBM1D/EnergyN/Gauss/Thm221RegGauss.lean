@@ -3,22 +3,27 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step2Plain
-import RBM1D.Gauss.Step4Base
-import RBM1D.Gauss.Lemma514NonAltTwo
-import RBM1D.Gauss.OneLoopTimeIcc
-import RBM1D.Gauss.Lemma514AltEnd
-import RBM1D.Gauss.SigmaExhaust
-import RBM1D.Gauss.GridFarLift
-import RBM1D.Gauss.GridFarClosure
-import RBM1D.EnergyN.Gauss.Thm221Gauss
-import RBM1D.EnergyN.Gauss.Step6PairInputs
-import RBM1D.EnergyN.Gauss.LoopDecayFixed
-import RBM1D.EnergyN.Gauss.Step4Closed
-import RBM1D.EnergyN.Hierarchy.StepGlue
-import RBM1D.EnergyN.Flow.Thm221RegN
-import RBM1D.Flow.FlowRandomLayer
-import RBM1D.Flow.Theorem26Assembly
+
+module
+
+public import RBM1D.Gauss.Step2Plain
+public import RBM1D.Gauss.Step4Base
+public import RBM1D.Gauss.Lemma514NonAltTwo
+public import RBM1D.Gauss.OneLoopTimeIcc
+public import RBM1D.Gauss.Lemma514AltEnd
+public import RBM1D.Gauss.SigmaExhaust
+public import RBM1D.Gauss.GridFarLift
+public import RBM1D.Gauss.GridFarClosure
+public import RBM1D.EnergyN.Gauss.Thm221Gauss
+public import RBM1D.EnergyN.Gauss.Step6PairInputs
+public import RBM1D.EnergyN.Gauss.LoopDecayFixed
+public import RBM1D.EnergyN.Gauss.Step4Closed
+public import RBM1D.EnergyN.Hierarchy.StepGlue
+public import RBM1D.EnergyN.Flow.Thm221RegN
+public import RBM1D.Flow.FlowRandomLayer
+public import RBM1D.Flow.Theorem26Assembly
+
+@[expose] public section
 
 /-!
 # Theorem 2.21 with (2.71) and Lemmas 2.18–2.20 including (2.62), energy-uniform, Gaussian model

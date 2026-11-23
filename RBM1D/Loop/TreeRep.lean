@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Example3
-import RBM1D.Loop.Unique
-import RBM1D.Propagator.Bounds
+
+module
+
+public import RBM1D.Loop.Example3
+public import RBM1D.Loop.Unique
+public import RBM1D.Propagator.Bounds
+
+@[expose] public section
 
 /-!
 # Lemma 3.4: the tree representation, for `n ≤ 4`

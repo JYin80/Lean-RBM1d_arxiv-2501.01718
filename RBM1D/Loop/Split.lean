@@ -3,10 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Chain
-import Mathlib.Analysis.CStarAlgebra.Matrix
-import Mathlib.Analysis.InnerProductSpace.GramMatrix
-import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
+
+module
+
+public import RBM1D.Loop.Chain
+public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
+
+@[expose] public section
 
 /-!
 # Splitting loops into chains: (5.2), (5.114)–(5.118), (6.4) and Lemma 6.1

@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridDuhamelTail
-import RBM1D.Gauss.GridStopFilt
-import RBM1D.Gauss.GridNetLift
-import RBM1D.Gauss.GridGoodEvent
-import RBM1D.Gauss.GridBootstrap
-import RBM1D.Gauss.GridStepDecompC
+
+module
+
+public import RBM1D.Gauss.GridDuhamelTail
+public import RBM1D.Gauss.GridStopFilt
+public import RBM1D.Gauss.GridNetLift
+public import RBM1D.Gauss.GridGoodEvent
+public import RBM1D.Gauss.GridBootstrap
+public import RBM1D.Gauss.GridStepDecompC
+
+@[expose] public section
 
 /-!
 # The fixed-endpoint grid assembly: the probability budget and the linear increment

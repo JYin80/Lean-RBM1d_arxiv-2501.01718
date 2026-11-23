@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.DominationHolder
-import RBM1D.Gauss.FlowHolder
-import RBM1D.Gauss.DistEq
-import RBM1D.Gauss.Lemma41FlowGauss
-import RBM1D.Gauss.TraceMoment
+
+module
+
+public import RBM1D.Gauss.DominationHolder
+public import RBM1D.Gauss.FlowHolder
+public import RBM1D.Gauss.DistEq
+public import RBM1D.Gauss.Lemma41FlowGauss
+public import RBM1D.Gauss.TraceMoment
+
+@[expose] public section
 
 /-!
 # Step 1 for the Gaussian model: continuity in the time and the time net

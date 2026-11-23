@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridGoodSet
-import RBM1D.EnergyN.Gauss.Step2QVEvent
-import RBM1D.EnergyN.Gauss.Step2JGle
-import RBM1D.EnergyN.Gauss.CenteredOneLoopAllTime
-import RBM1D.EnergyN.Gauss.EntryBoundTime
-import RBM1D.EnergyN.Gauss.GridJStar
+
+module
+
+public import RBM1D.Gauss.GridGoodSet
+public import RBM1D.EnergyN.Gauss.Step2QVEvent
+public import RBM1D.EnergyN.Gauss.Step2JGle
+public import RBM1D.EnergyN.Gauss.CenteredOneLoopAllTime
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+public import RBM1D.EnergyN.Gauss.GridJStar
+
+@[expose] public section
 
 set_option maxHeartbeats 1000000
 

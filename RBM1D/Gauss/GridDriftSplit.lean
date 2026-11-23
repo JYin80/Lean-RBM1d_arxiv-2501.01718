@@ -3,7 +3,12 @@ Copyright (c) 2026. All rights reserved.
 
 The unmerged and split drift bound on the goodSet.
 -/
-import RBM1D.Gauss.Step2Plain
+
+module
+
+public import RBM1D.Gauss.Step2Plain
+
+@[expose] public section
 
 /-!
 # Unmerged and split drift from the goodSet

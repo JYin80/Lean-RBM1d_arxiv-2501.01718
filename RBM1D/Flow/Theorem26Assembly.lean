@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Theorem26Step1
-import RBM1D.Flow.BandLocalLawReg
-import RBM1D.Flow.GUELocalLaw
-import RBM1D.Flow.FlowRandomLayer
-import RBM1D.Flow.Theorem26Flow
+
+module
+
+public import RBM1D.Flow.Theorem26Step1
+public import RBM1D.Flow.BandLocalLawReg
+public import RBM1D.Flow.GUELocalLaw
+public import RBM1D.Flow.FlowRandomLayer
+public import RBM1D.Flow.Theorem26Flow
+
+@[expose] public section
 
 /-!
 # Theorem 2.6 (2.18), conditional on the Theorem 2.21 inputs

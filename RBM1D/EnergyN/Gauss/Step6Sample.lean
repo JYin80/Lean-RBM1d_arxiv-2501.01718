@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step6Sample
-import RBM1D.Flow.EnergyUniform
+
+module
+
+public import RBM1D.Gauss.Step6Sample
+public import RBM1D.Flow.EnergyUniform
+
+@[expose] public section
 
 /-!
 # The (2.71) half of the induction step at an `N`-dependent energy

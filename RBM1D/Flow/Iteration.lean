@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Hypotheses
-import RBM1D.Flow.Initial
-import RBM1D.Flow.Scales
+
+module
+
+public import RBM1D.Flow.Hypotheses
+public import RBM1D.Flow.Initial
+public import RBM1D.Flow.Scales
+
+@[expose] public section
 
 /-!
 # Ingredients of the proof of Lemmas 2.18, 2.19, 2.20 from Theorem 2.21 (§2.7)

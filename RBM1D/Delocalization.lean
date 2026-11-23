@@ -3,8 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Analysis.Matrix.Spectrum
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+
+module
+
+public import RBM1D.MainDefs
+public import Mathlib.Analysis.Matrix.Spectrum
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+
+@[expose] public section
 
 /-!
 # Delocalization from a bound on the Green's function
@@ -50,9 +56,6 @@ namespace RBM
 open Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The Green's function `G(z) = (H - z)⁻¹`. -/
-noncomputable def green (H : Matrix n n ℂ) (z : ℂ) : Matrix n n ℂ := (H - z • 1)⁻¹
 
 variable {H : Matrix n n ℂ} (hH : H.IsHermitian)
 

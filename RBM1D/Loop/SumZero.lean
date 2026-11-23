@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Layer
-import RBM1D.Loop.WardKgen
+
+module
+
+public import RBM1D.Loop.Layer
+public import RBM1D.Loop.WardKgen
+
+@[expose] public section
 
 /-!
 # Lemma 3.10: symmetry and the sum-zero property of the self-energy

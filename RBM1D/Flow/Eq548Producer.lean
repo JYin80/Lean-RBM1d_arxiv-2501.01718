@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import RBM1D.Hierarchy.Step2FarMart
-import RBM1D.Hierarchy.Step2Near47
-import RBM1D.Defs.MatrixMeasurable
-import RBM1D.Gauss.FlowHolder
-import RBM1D.Gauss.LoopLipschitz
+
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import RBM1D.Hierarchy.Step2FarMart
+public import RBM1D.Hierarchy.Step2Near47
+public import RBM1D.Defs.MatrixMeasurable
+public import RBM1D.Gauss.FlowHolder
+public import RBM1D.Gauss.LoopLipschitz
+
+@[expose] public section
 
 /-!
 # Measurability of the flow matrix `ω ↦ H_u(ω)`

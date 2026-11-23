@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Step4Base
-import RBM1D.Gauss.Lemma514NonAltTwo
-import RBM1D.Gauss.OneLoopTimeIcc
-import RBM1D.Gauss.Lemma514AltEnd
-import RBM1D.Gauss.SigmaExhaust
-import RBM1D.EnergyN.Gauss.Step4Gauss
-import RBM1D.EnergyN.Gauss.Lemma514All
-import RBM1D.EnergyN.Gauss.Lemma514AltEnd
+
+module
+
+public import RBM1D.Gauss.Step4Base
+public import RBM1D.Gauss.Lemma514NonAltTwo
+public import RBM1D.Gauss.OneLoopTimeIcc
+public import RBM1D.Gauss.Lemma514AltEnd
+public import RBM1D.Gauss.SigmaExhaust
+public import RBM1D.EnergyN.Gauss.Step4Gauss
+public import RBM1D.EnergyN.Gauss.Lemma514All
+public import RBM1D.EnergyN.Gauss.Lemma514AltEnd
+
+@[expose] public section
 
 /-!
 # Step 4 for the Gaussian flow, closed form, at an `N`-dependent energy

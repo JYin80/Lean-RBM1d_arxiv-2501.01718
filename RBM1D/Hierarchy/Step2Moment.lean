@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.Step2
-import RBM1D.Gauss.Envelope
-import RBM1D.Gauss.Step2JStar
+
+module
+
+public import RBM1D.Hierarchy.Step2
+public import RBM1D.Gauss.Envelope
+public import RBM1D.Gauss.Step2JStar
+
+@[expose] public section
 
 /-!
 # Step 2 without the stopping time: the moment route

@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.IBP
-import RBM1D.Gauss.IBPPoly
-import RBM1D.Hierarchy.Step6
+
+module
+
+public import RBM1D.Gauss.IBP
+public import RBM1D.Gauss.IBPPoly
+public import RBM1D.Hierarchy.Step6
+
+@[expose] public section
 
 /-!
 # The random-layer hypotheses of Step 6, in the Gaussian model

@@ -3,8 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Loop.Ward
-import RBM1D.Propagator.Edges
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Loop.Ward
+public import RBM1D.Propagator.Edges
+
+@[expose] public section
 
 /-!
 # The scales of the flow and the time grid of the induction
@@ -403,12 +409,6 @@ theorem etaT_div_etaT {E : ℝ} (hE : |E| < 2) (a b : ℝ) :
 /-- `η_t ≤ 1 - t`. -/
 theorem etaT_le {E : ℝ} (hE : |E| ≤ 2) {t : ℝ} (ht : t ≤ 1) : etaT E t ≤ 1 - t := by
   rw [etaT_eq_zt_im]; exact zt_im_le hE ht
-
-/-- `η ↦ min(η^{-1/2}, L) + 1`. -/
-noncomputable def ellOf (L : ℕ) (η : ℝ) : ℝ := min (1 / Real.sqrt η) (L : ℝ) + 1
-
-/-- The diffusion length at the block level (2.1): `ℓ(z) = min(η^{-1/2}, L) + 1`, `η = Im z`. -/
-noncomputable def ellZ (L : ℕ) (z : ℂ) : ℝ := ellOf L z.im
 
 theorem ellOf_antitone {L : ℕ} {η₁ η₂ : ℝ} (h0 : 0 < η₁) (h : η₁ ≤ η₂) :
     ellOf L η₂ ≤ ellOf L η₁ := by

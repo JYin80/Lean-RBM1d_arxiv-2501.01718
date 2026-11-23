@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import Mathlib.Analysis.Calculus.Deriv.Abs
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import RBM1D.Hierarchy.DriftDef
-import RBM1D.Gauss.MomentDuhamelGauss
-import RBM1D.Gauss.TestFunHerm
+
+module
+
+public import Mathlib.Analysis.Calculus.Deriv.Abs
+public import Mathlib.Analysis.Calculus.ContDiff.Deriv
+public import RBM1D.Hierarchy.DriftDef
+public import RBM1D.Gauss.MomentDuhamelGauss
+public import RBM1D.Gauss.TestFunHerm
+
+@[expose] public section
 
 /-!
 # Joint regularity in `(time, matrix)` for the moment route's `Ψ`

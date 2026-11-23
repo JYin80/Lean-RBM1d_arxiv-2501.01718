@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514NonAlt
-import RBM1D.Gauss.KerClassSumZero
-import RBM1D.Gauss.PPInduction
-import RBM1D.Gauss.Lemma514Two
+
+module
+
+public import RBM1D.Gauss.Lemma514NonAlt
+public import RBM1D.Gauss.KerClassSumZero
+public import RBM1D.Gauss.PPInduction
+public import RBM1D.Gauss.Lemma514Two
+
+@[expose] public section
 
 /-!
 # The all-`n` endpoint of Lemma 5.14 for the alternating charges (Case 2 + `Q`)

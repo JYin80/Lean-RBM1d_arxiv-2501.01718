@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Hierarchy.SumZero
-import RBM1D.Hierarchy.KernelDecay
-import RBM1D.Hierarchy.Step3
-import RBM1D.Loop.WardKgen
-import RBM1D.Loop.SumZero
-import RBM1D.Propagator.Deriv
-import RBM1D.Loop.Continuity
+
+module
+
+public import RBM1D.Hierarchy.SumZero
+public import RBM1D.Hierarchy.KernelDecay
+public import RBM1D.Hierarchy.Step3
+public import RBM1D.Loop.WardKgen
+public import RBM1D.Loop.SumZero
+public import RBM1D.Propagator.Deriv
+public import RBM1D.Loop.Continuity
+
+@[expose] public section
 
 /-!
 # §5.5, the dynamical half: the estimates behind Lemma 5.14 (5.92)

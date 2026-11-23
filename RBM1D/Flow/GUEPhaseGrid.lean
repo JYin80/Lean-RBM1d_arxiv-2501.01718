@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.OUCommonFlow
-import RBM1D.Gauss.GridPath
-import RBM1D.Gauss.DistEq
-import RBM1D.Hierarchy.GUEPhase
+
+module
+
+public import RBM1D.Flow.OUCommonFlow
+public import RBM1D.Gauss.GridPath
+public import RBM1D.Gauss.DistEq
+public import RBM1D.Hierarchy.GUEPhase
+
+@[expose] public section
 
 /-!
 # The GUE-phase grid carrier, path and laws (7.25)/(7.26)
@@ -581,7 +586,7 @@ structure GUEPathBounds (E t1 t0 : ℕ → ℝ) (K : ℕ → ℕ) (n0 : ℕ)
 
 /-! ### The GUE-phase flow carrying only the `t₀`-marginal, and (7.26) -/
 
-private lemma smul_isHermitian {n : Type*} (r : ℝ)
+lemma smul_isHermitian {n : Type*} (r : ℝ)
     (M : Matrix n n ℂ) (hM : M.IsHermitian) : ((r : ℂ) • M).IsHermitian :=
   hM.smul (R := ℂ) (Complex.conj_ofReal r)
 

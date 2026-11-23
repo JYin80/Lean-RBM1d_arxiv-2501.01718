@@ -3,8 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Consequences
-import RBM1D.Propagator.ZeroMode
+
+module
+
+public import RBM1D.MainDefs
+public import RBM1D.Flow.Consequences
+public import RBM1D.Propagator.ZeroMode
+
+@[expose] public section
 
 /-!
 # Theorems 2.5 (generalized QUE) and 2.6 (bulk universality)
@@ -112,10 +118,6 @@ variable {H : Matrix n n ℂ} (hH : H.IsHermitian)
 /-- The spectral weight `η / ((λ_l - E)² + η²) = η |λ_l - z|⁻²` of `Im G(E + iη)`. -/
 noncomputable def specWeight (E η : ℝ) (l : n) : ℝ :=
   η / ((hH.eigenvalues l - E) ^ 2 + η ^ 2)
-
-/-- The overlap `ψ_i* A ψ_j` of two eigenvectors of `H` through a matrix `A`. -/
-noncomputable def eigOverlap (A : Matrix n n ℂ) (i j : n) : ℂ :=
-  star (fun x => hH.eigenvectorBasis i x) ⬝ᵥ (A *ᵥ fun x => hH.eigenvectorBasis j x)
 
 theorem eigOverlap_eq (A : Matrix n n ℂ) (i j : n) :
     eigOverlap hH A i j = (star (hH.eigenvectorUnitary : Matrix n n ℂ) * A *
@@ -851,9 +853,6 @@ end SingleN
 
 section Scale
 
-/-- **The spectral scale of Theorem 2.5**: `η = N^{-1-τ*} (W²/N)^{1/3}`; `J_E = [E - η, E + η]`. -/
-noncomputable def queEta (N W τ : ℝ) : ℝ := N ^ (-1 - τ) * (W ^ 2 / N) ^ ((1 : ℝ) / 3)
-
 variable {N W τ : ℝ}
 
 theorem queEta_pos (hN : 0 < N) (hW : 0 < W) : 0 < queEta N W τ := by
@@ -1068,9 +1067,6 @@ namespace Band
 
 variable (B : Band Ω)
 
-/-- The matrix size `N = L W` (the paper's `N`; the index of `RBM.Band` is only comparable). -/
-def size (N : ℕ) : ℕ := B.L N * B.W N
-
 theorem tendsto_size : Tendsto B.size atTop atTop := by
   refine tendsto_atTop.2 fun b => ?_
   filter_upwards [B.dim, eventually_ge_atTop (2 * b)] with N hN hb
@@ -1098,10 +1094,6 @@ theorem eventually_size_rpow_le_W_sq :
     _ ≤ (B.W N : ℝ) ^ 2 := pow_le_pow_left₀ (by positivity) h1 2
 
 end Band
-
-/-- The spectral scale `η_N = N^{-1-τ*} (W²/N)^{1/3}` of Theorem 2.5 at index `N` (`N = L W`). -/
-noncomputable def Band.queEtaN (B : Band Ω) (τ : ℝ) (N : ℕ) : ℝ :=
-  queEta (B.size N : ℝ) (B.W N : ℝ) τ
 
 /-- The spectral parameter `z = E_N + i η_N` of the proof of Theorem 2.5. -/
 noncomputable def Band.queZ (B : Band Ω) (τ : ℝ) (E : ℕ → ℝ) (N : ℕ) : ℂ :=
@@ -1356,22 +1348,6 @@ theorem thetaOsc_ThetaTilde (B : Band Ω) {κ τ : ℝ} (hκ : 0 < κ) (hτ : 0 
 
 /-! #### Theorem 2.5 in the form of (2.12), (2.13) -/
 
-/-- The event of **(2.12)**: `max_{λ_i, λ_j ∈ J_E} |N ψ_i* (E_a - N⁻¹ I) ψ_j|² ≥ ε`. -/
-def queEvent212 {L W : ℕ} [NeZero L] {H : Ω → Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ}
-    (hH : ∀ ω, (H ω).IsHermitian) (a : ZMod L) (E η ε : ℝ) : Set Ω :=
-  {ω | ∃ i j, |(hH ω).eigenvalues i - E| ≤ η ∧ |(hH ω).eigenvalues j - E| ≤ η ∧
-    ε ≤ ‖((L * W : ℕ) : ℂ) *
-      eigOverlap (hH ω) (Eblk L W a - ((L * W : ℕ) : ℂ)⁻¹ • (1 : Matrix _ _ ℂ)) i j‖ ^ 2}
-
-/-- The event of **(2.13)**: `max_{λ_k ∈ J_E} |∑_{a ∈ A} ∑_{x ∈ I_a} |ψ_k(x)|² - |A| W / N|
-≥ |A| W / N^{1 + τ*/12}`. -/
-def queEvent213 {L W : ℕ} [NeZero L] {H : Ω → Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ}
-    (hH : ∀ ω, (H ω).IsHermitian) (A : Finset (ZMod L)) (E η τ : ℝ) : Set Ω :=
-  {ω | ∃ k, |(hH ω).eigenvalues k - E| ≤ η ∧
-    (A.card * W : ℕ) / ((L * W : ℕ) : ℝ) ^ (1 + τ / 12) ≤
-      |∑ a ∈ A, ∑ x : Fin W, ‖(hH ω).eigenvectorBasis k (a, x)‖ ^ 2 -
-        (A.card * W : ℕ) / ((L * W : ℕ) : ℝ)|}
-
 omit [MeasurableSpace Ω] in
 theorem queEvent212_eq {L W : ℕ} [NeZero L] {H : Ω → Matrix (ZMod L × Fin W) (ZMod L × Fin W) ℂ}
     (hH : ∀ ω, (H ω).IsHermitian) (a : ZMod L) (E η ε : ℝ) :
@@ -1488,18 +1464,6 @@ section CorrelationFunctions
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
-/-- **The pairing `∫_{ℝ^k} O(α) ρ^{(k)}_H(E + α/N) dα`** for a random Hermitian `N × N` matrix `H`,
-written without densities: if the unordered eigenvalues have joint density `ρ^{(N)}_H` and
-`ρ^{(k)}_H` is its `k`-marginal (the paper's definition before Theorem 2.6), then by symmetry
-`∫ O(α) ρ^{(k)}_H(E + α/N) dα
-  = N^k (N-k)!/N! · E ∑_{i : Fin k ↪ [N]} O(N(λ_{i_1} - E), …, N(λ_{i_k} - E))`,
-which is what is defined here (it makes sense with or without a density). -/
-noncomputable def corrPairing {n : Type*} [Fintype n] [DecidableEq n] (P : Measure Ω)
-    (H : Ω → Matrix n n ℂ) (hH : ∀ ω, (H ω).IsHermitian) (k : ℕ) (O : (Fin k → ℝ) → ℝ)
-    (E : ℝ) : ℝ :=
-  (Fintype.card n : ℝ) ^ k * (((Fintype.card n - k).factorial : ℝ) / (Fintype.card n).factorial) *
-    ∫ ω, ∑ f : Fin k ↪ n, O (fun j => (Fintype.card n : ℝ) * ((hH ω).eigenvalues (f j) - E)) ∂P
-
 /-- The Stieltjes transform `m(z) = N⁻¹ Tr (H - z)⁻¹` (`m_t` of (2.23)). -/
 noncomputable def stieltjes {n : Type*} [Fintype n] [DecidableEq n] (H : Matrix n n ℂ) (z : ℂ) :
     ℂ :=
@@ -1523,9 +1487,6 @@ structure OUFlow (B : Band Ω) (H : ∀ N, Ω → Matrix (B.Idx N) (B.Idx N) ℂ
 
 /-- The times `t = N^{-1+τ}` (`t_* = N^{-1+τ_*}`, `t_U = N^{-1+τ_U}`), `N = L W`. -/
 noncomputable def Band.tPow (B : Band Ω) (τ : ℝ) (N : ℕ) : ℝ := (B.size N : ℝ) ^ (-1 + τ)
-
-/-- The test functions of Theorem 2.6: smooth with compact support. -/
-def IsTestFun {k : ℕ} (O : (Fin k → ℝ) → ℝ) : Prop := ContDiff ℝ (⊤ : ℕ∞) O ∧ HasCompactSupport O
 
 variable {B : Band Ω} {H : ∀ N, Ω → Matrix (B.Idx N) (B.Idx N) ℂ}
 

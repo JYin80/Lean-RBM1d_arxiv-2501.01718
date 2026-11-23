@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.NearFieldRemainder
-import RBM1D.Gauss.BlockGreen
-import RBM1D.Gauss.FlowContInt
+
+module
+
+public import RBM1D.Gauss.NearFieldRemainder
+public import RBM1D.Gauss.BlockGreen
+public import RBM1D.Gauss.FlowContInt
+
+@[expose] public section
 
 /-!
 # Uncut quadratic variation from actual block Green witnesses

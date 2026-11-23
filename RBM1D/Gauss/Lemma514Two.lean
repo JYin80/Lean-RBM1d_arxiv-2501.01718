@@ -3,7 +3,12 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Lemma514Alt
+
+module
+
+public import RBM1D.Gauss.Lemma514Alt
+
+@[expose] public section
 
 /-!
 # Lemma 5.14 at n = 2 from the endpoint, and the n = 2 charge split

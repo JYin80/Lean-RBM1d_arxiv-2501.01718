@@ -3,13 +3,18 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Thm221Bare
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Hierarchy.ChargeReduce
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Gauss.CutoffBounds
-import RBM1D.Hierarchy.Step2MomentStep
-import RBM1D.EnergyN.Flow.Hypotheses
+
+module
+
+public import RBM1D.Flow.Thm221Bare
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Hierarchy.ChargeReduce
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Gauss.CutoffBounds
+public import RBM1D.Hierarchy.Step2MomentStep
+public import RBM1D.EnergyN.Flow.Hypotheses
+
+@[expose] public section
 
 /-!
 # (2.68)–(2.70) from the flow, at an `N`-dependent energy

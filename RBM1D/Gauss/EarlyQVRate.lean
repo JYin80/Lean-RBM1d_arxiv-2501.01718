@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.EEUker
-import RBM1D.Gauss.TestFunHerm
-import RBM1D.Hierarchy.EGDef
-import RBM1D.Hierarchy.EEDef
+
+module
+
+public import RBM1D.Gauss.EEUker
+public import RBM1D.Gauss.TestFunHerm
+public import RBM1D.Hierarchy.EGDef
+public import RBM1D.Hierarchy.EEDef
+
+@[expose] public section
 
 /-!
 # The early-time quadratic-variation rate, `U = id`

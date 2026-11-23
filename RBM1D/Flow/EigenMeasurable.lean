@@ -3,9 +3,14 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.EigenWeyl
-import RBM1D.Flow.DBMInput
-import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
+
+module
+
+public import RBM1D.Flow.EigenWeyl
+public import RBM1D.Flow.DBMInput
+public import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
+
+@[expose] public section
 
 /-!
 # Measurability and law congruence of correlation pairings
@@ -246,7 +251,7 @@ private lemma EigenMeasurable.scalar_eq_smul_one (c : ℂ) :
   simp [Matrix.scalar_apply, Matrix.diagonal_apply, Matrix.one_apply, Matrix.smul_apply]
 
 /-- The energy shift `A - E₀ • 1` of a Hermitian matrix is Hermitian. -/
-private lemma EigenMeasurable.isHermitian_sub_smul_one {A : Matrix n n ℂ} (hA : A.IsHermitian)
+lemma EigenMeasurable.isHermitian_sub_smul_one {A : Matrix n n ℂ} (hA : A.IsHermitian)
     (c : ℝ) : (A - (c : ℂ) • (1 : Matrix n n ℂ)).IsHermitian :=
   hA.sub (Matrix.isHermitian_one.smul (by simp [IsSelfAdjoint]))
 

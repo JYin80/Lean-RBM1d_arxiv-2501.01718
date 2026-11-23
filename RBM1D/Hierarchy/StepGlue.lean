@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Green.EntryBound
-import RBM1D.Hierarchy.Step2
-import RBM1D.Hierarchy.Step2Moment
-import RBM1D.Hierarchy.Step45
+
+module
+
+public import RBM1D.Green.EntryBound
+public import RBM1D.Hierarchy.Step2
+public import RBM1D.Hierarchy.Step2Moment
+public import RBM1D.Hierarchy.Step45
+
+@[expose] public section
 
 /-!
 # The deterministic glue between Steps 1–2 and Steps 3–5

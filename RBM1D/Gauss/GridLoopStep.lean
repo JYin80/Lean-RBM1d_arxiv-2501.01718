@@ -3,14 +3,19 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridPath
-import RBM1D.Gauss.GridMarkov
-import RBM1D.Gauss.GridOneStep
-import RBM1D.Gauss.GridDriftLip
-import RBM1D.Gauss.GridStopFilt
-import RBM1D.Gauss.LoopIto
-import RBM1D.Gauss.LoopC2
-import RBM1D.Gauss.MomentDuhamelHypGauss
+
+module
+
+public import RBM1D.Gauss.GridPath
+public import RBM1D.Gauss.GridMarkov
+public import RBM1D.Gauss.GridOneStep
+public import RBM1D.Gauss.GridDriftLip
+public import RBM1D.Gauss.GridStopFilt
+public import RBM1D.Gauss.LoopIto
+public import RBM1D.Gauss.LoopC2
+public import RBM1D.Gauss.MomentDuhamelHypGauss
+
+@[expose] public section
 
 /-!
 # The one-step drift identity of the 2-loop on the grid (discrete (2.45))

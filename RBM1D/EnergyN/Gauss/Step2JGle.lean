@@ -3,11 +3,16 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.BlockGreen
-import RBM1D.Gauss.MinorDiffCond
-import RBM1D.EnergyN.Gauss.BlockGreen
-import RBM1D.EnergyN.Gauss.GoodSetFlowProb
-import RBM1D.EnergyN.Gauss.EntryBoundTime
+
+module
+
+public import RBM1D.Gauss.BlockGreen
+public import RBM1D.Gauss.MinorDiffCond
+public import RBM1D.EnergyN.Gauss.BlockGreen
+public import RBM1D.EnergyN.Gauss.GoodSetFlowProb
+public import RBM1D.EnergyN.Gauss.EntryBoundTime
+
+@[expose] public section
 
 /-!
 # `jG ≤ N^{2ε} jS` along the flow, at an `N`-dependent energy

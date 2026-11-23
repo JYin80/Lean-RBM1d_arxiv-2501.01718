@@ -3,8 +3,13 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Propagator.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
+
+module
+
+public import RBM1D.Propagator.Basic
+public import Mathlib.Analysis.Complex.Polynomial.Basic
+
+@[expose] public section
 
 /-!
 # The characteristic root `ρ(ξ)`

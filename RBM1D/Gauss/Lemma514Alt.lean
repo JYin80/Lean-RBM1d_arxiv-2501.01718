@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.GridAssemblyKerClass
-import RBM1D.Gauss.GridQAlgebra
-import RBM1D.Gauss.EETensorBound
-import RBM1D.Gauss.Lemma510Fixed
-import RBM1D.Gauss.OpNorm
-import Mathlib.Probability.ConditionalExpectation
+
+module
+
+public import RBM1D.Gauss.GridAssemblyKerClass
+public import RBM1D.Gauss.GridQAlgebra
+public import RBM1D.Gauss.EETensorBound
+public import RBM1D.Gauss.Lemma510Fixed
+public import RBM1D.Gauss.OpNorm
+public import Mathlib.Probability.ConditionalExpectation
+
+@[expose] public section
 
 /-!
 # Lemma 5.14, all-`n` endpoint, alternating charges (Case 2 + Q): the ingredients

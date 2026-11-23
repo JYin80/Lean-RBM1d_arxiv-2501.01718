@@ -3,12 +3,17 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Flow.Thm221Bare
-import RBM1D.Flow.EnergyUniform
-import RBM1D.Hierarchy.ChargeReduce
-import RBM1D.Gauss.MomentDuhamel
-import RBM1D.Gauss.CutoffBounds
-import RBM1D.Hierarchy.Step2MomentStep
+
+module
+
+public import RBM1D.Flow.Thm221Bare
+public import RBM1D.Flow.EnergyUniform
+public import RBM1D.Hierarchy.ChargeReduce
+public import RBM1D.Gauss.MomentDuhamel
+public import RBM1D.Gauss.CutoffBounds
+public import RBM1D.Hierarchy.Step2MomentStep
+
+@[expose] public section
 
 /-!
 # The energy-uniform `Reg` interface

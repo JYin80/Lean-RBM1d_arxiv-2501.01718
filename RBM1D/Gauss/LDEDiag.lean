@@ -3,10 +3,15 @@ Copyright (c) 2026 Jun Yin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jun Yin
 -/
-import RBM1D.Gauss.Moments
-import RBM1D.Gauss.LinearForm
-import RBM1D.Gauss.Domination
-import RBM1D.Green.EntryBound
+
+module
+
+public import RBM1D.Gauss.Moments
+public import RBM1D.Gauss.LinearForm
+public import RBM1D.Gauss.Domination
+public import RBM1D.Green.EntryBound
+
+@[expose] public section
 
 /-!
 # The diagonal large deviation bound `|H_{ii}|² ≺ S_{ii}`
